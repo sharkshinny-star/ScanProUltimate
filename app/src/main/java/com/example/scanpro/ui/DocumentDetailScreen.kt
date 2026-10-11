@@ -491,8 +491,8 @@ fun DocumentDetailScreen(
     }
 
     if (renameOpen) TextInputDialog("Rename document", document.title, "Name", onDismiss = { renameOpen = false }) { onRename(it); renameOpen = false }
-    if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
-    if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
+    if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
+    if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
     if (watermarkOpen) TextInputDialog("Watermark all pages", label = "Watermark text", confirmLabel = "Apply", onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }
     if (passwordOpen) PasswordInputDialog(
         title = "Protect PDF copy",

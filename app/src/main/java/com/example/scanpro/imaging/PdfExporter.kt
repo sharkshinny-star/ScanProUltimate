@@ -33,8 +33,9 @@ object PdfExporter {
         val pdf = PdfDocument()
         try {
             pages.sortedBy { it.position }.forEachIndexed { index, pageModel ->
+                // Fail loudly: silently skipping a page would produce a short PDF with wrong page numbers.
                 val bitmap = ImageProcessor.decodeScaled(pageModel.imagePath, quality.maxImageDimension)
-                    ?: return@forEachIndexed
+                    ?: error("Could not read page ${index + 1}")
                 val (pageWidth, pageHeight) = pageDimensions(pageSize, bitmap.width, bitmap.height)
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
                 val page = pdf.startPage(info)

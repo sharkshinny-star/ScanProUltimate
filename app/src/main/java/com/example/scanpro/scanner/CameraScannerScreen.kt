@@ -171,17 +171,23 @@ fun CameraScannerScreen(
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     scope.launch {
-                        val result = withContext(Dispatchers.Default) {
-                            OpenCvScanProcessor.correctCapturedPage(raw, corrected)
-                        }
-                        raw.delete()
-                        pages.add(Uri.fromFile(result.output))
-                        capturing = false
-                        status = when {
-                            scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
-                            scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
-                            result.perspectiveCorrected -> "Page ${pages.size} captured"
-                            else -> "Page ${pages.size} captured · adjust crop if needed"
+                        // Always release the shutter and clean up, even if processing fails.
+                        try {
+                            val result = withContext(Dispatchers.Default) {
+                                OpenCvScanProcessor.correctCapturedPage(raw, corrected)
+                            }
+                            pages.add(Uri.fromFile(result.output))
+                            status = when {
+                                scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
+                                scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
+                                result.perspectiveCorrected -> "Page ${pages.size} captured"
+                                else -> "Page ${pages.size} captured · adjust crop if needed"
+                            }
+                        } catch (error: Exception) {
+                            status = "Could not process page: ${error.message ?: "try again"}"
+                        } finally {
+                            raw.delete()
+                            capturing = false
                         }
                     }
                 }

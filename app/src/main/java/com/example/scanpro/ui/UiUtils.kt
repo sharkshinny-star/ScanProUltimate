@@ -10,8 +10,6 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.example.scanpro.data.ScanDocument
 import java.io.File
-import kotlin.math.ln
-import kotlin.math.pow
 
 fun sharePdf(context: Context, document: ScanDocument) {
     val file = File(document.pdfPath)
@@ -114,10 +112,11 @@ fun copyText(context: Context, text: String) {
 fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
     val units = arrayOf("B", "KB", "MB", "GB")
-    val digitGroups = (ln(bytes.toDouble()) / ln(1024.0)).toInt().coerceIn(0, units.lastIndex)
-    val value = bytes / 1024.0.pow(digitGroups.toDouble())
-    return if (digitGroups == 0) "${value.toInt()} ${units[digitGroups]}"
-    else String.format("%.1f %s", value, units[digitGroups])
+    var value = bytes.toDouble()
+    var group = 0
+    // 1023.95 so a value that would print as "1024.0" rolls over to the next unit.
+    while (value >= 1023.95 && group < units.lastIndex) { value /= 1024.0; group++ }
+    return if (group == 0) "$bytes B" else String.format("%.1f %s", value, units[group])
 }
 
 fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String) {

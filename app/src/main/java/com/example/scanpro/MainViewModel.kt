@@ -291,20 +291,26 @@ class MainViewModel @Inject constructor(
     fun setAppLock(value: Boolean) { viewModelScope.launch { settings.setAppLock(value) } }
 
     private fun launchBusy(label: String?, successMessage: String?, action: suspend () -> Unit) {
-        if (_busy.value) return
+        if (_busy.value) {
+            _message.value = "Still working on the previous task. Try again in a moment."
+            return
+        }
         viewModelScope.launch {
             _busy.value = true
             _busyLabel.value = label
-            runCatching { action() }
-                .onSuccess {
+            try {
+                runCatching { action() }
+                    .onSuccess { if (successMessage != null) _message.value = successMessage }
+                    .onFailure { error -> _message.value = error.message ?: "Something went wrong" }
+                runCatching {
                     _documents.value = if (_query.value.isBlank()) repository.loadAll() else repository.search(_query.value)
                     _trash.value = repository.loadTrash()
                     _storageBytes.value = repository.storageBytes()
-                    if (successMessage != null) _message.value = successMessage
                 }
-                .onFailure { error -> _message.value = error.message ?: "Something went wrong" }
-            _busyLabel.value = null
-            _busy.value = false
+            } finally {
+                _busyLabel.value = null
+                _busy.value = false
+            }
         }
     }
 }

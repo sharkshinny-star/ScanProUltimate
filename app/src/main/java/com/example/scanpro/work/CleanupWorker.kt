@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters
 import com.example.scanpro.data.DocumentRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltWorker
 class CleanupWorker @AssistedInject constructor(
@@ -16,10 +17,14 @@ class CleanupWorker @AssistedInject constructor(
     private val repository: DocumentRepository
 ) : CoroutineWorker(appContext, params) {
 
-    override suspend fun doWork(): WorkResult = runCatching {
+    override suspend fun doWork(): WorkResult = try {
         repository.purgeExpiredTrash(maxAgeDays = 30)
         WorkResult.success()
-    }.getOrElse { WorkResult.retry() }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Exception) {
+        WorkResult.retry()
+    }
 
     companion object {
         const val UNIQUE_NAME = "scanpro-library-maintenance"

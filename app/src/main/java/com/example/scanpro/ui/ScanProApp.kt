@@ -376,6 +376,12 @@ private fun LibraryScreen(
         }
     }
 
+    // Drop selections hidden by a folder/favorites/sort change so bulk actions only touch visible items.
+    LaunchedEffect(visible) {
+        val visibleIds = visible.mapTo(HashSet()) { it.id }
+        selected.removeAll { it !in visibleIds }
+    }
+
     fun toggleSelection(id: String) {
         if (id in selected) selected.remove(id) else selected.add(id)
     }

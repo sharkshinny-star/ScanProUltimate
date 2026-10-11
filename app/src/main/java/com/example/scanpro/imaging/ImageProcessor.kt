@@ -288,15 +288,20 @@ object ImageProcessor {
                 }
                 AnnotationType.SIGNATURE -> {
                     if (item.assetPath.isNotBlank()) {
-                        BitmapFactory.decodeFile(item.assetPath)?.let { signature ->
-                            canvas.drawBitmap(
-                                signature,
-                                null,
-                                rect,
-                                Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
-                                    alpha = (255 * item.opacity.coerceIn(0f, 1f)).toInt()
-                                }
-                            )
+                        // Downscale: a full-resolution signature is decoded on every re-render.
+                        decodeScaled(item.assetPath, 1600)?.let { signature ->
+                            try {
+                                canvas.drawBitmap(
+                                    signature,
+                                    null,
+                                    rect,
+                                    Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+                                        alpha = (255 * item.opacity.coerceIn(0f, 1f)).toInt()
+                                    }
+                                )
+                            } finally {
+                                signature.recycle()
+                            }
                         }
                     }
                 }

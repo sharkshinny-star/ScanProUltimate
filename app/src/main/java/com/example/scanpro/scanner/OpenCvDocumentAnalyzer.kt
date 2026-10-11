@@ -18,6 +18,8 @@ class OpenCvDocumentAnalyzer(
     private var previousQuad: CropQuad? = null
     private var stableFrames = 0
     private var lastAutoCaptureAt = 0L
+    // Re-armed only after the document leaves the frame, so one held page is not captured repeatedly.
+    private var armed = true
 
     @Volatile
     var autoCaptureEnabled: Boolean = true
@@ -31,7 +33,9 @@ class OpenCvDocumentAnalyzer(
                 main.post { onDetection(result, stable) }
 
                 val now = System.currentTimeMillis()
-                if (autoCaptureEnabled && stable && result.isReady && now - lastAutoCaptureAt > 2200L) {
+                if (!result.isReady) armed = true
+                if (autoCaptureEnabled && armed && stable && result.isReady && now - lastAutoCaptureAt > 2200L) {
+                    armed = false
                     lastAutoCaptureAt = now
                     stableFrames = 0
                     main.post(onAutoCapture)

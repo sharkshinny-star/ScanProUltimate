@@ -47,6 +47,14 @@ class EncryptedDocumentPackage(private val context: Context) {
     )
 
     fun export(document: ScanDocument, password: CharArray, destination: File) {
+        try {
+            writePackage(document, password, destination)
+        } finally {
+            password.fill('\u0000')
+        }
+    }
+
+    private fun writePackage(document: ScanDocument, password: CharArray, destination: File) {
         require(password.size >= 6) { "Use a backup password with at least 6 characters" }
         destination.parentFile?.mkdirs()
         val salt = ByteArray(16).also(SecureRandom()::nextBytes)
@@ -99,7 +107,6 @@ class EncryptedDocumentPackage(private val context: Context) {
                 }
             }
         }
-        password.fill('\u0000')
     }
 
     fun import(source: Uri, password: CharArray): RestoredDocument {
@@ -110,8 +117,10 @@ class EncryptedDocumentPackage(private val context: Context) {
             FileOutputStream(encrypted).use { input.copyTo(it) }
         }
         val outDir = File(context.cacheDir, "restore_${UUID.randomUUID()}").apply { mkdirs() }
+        var rawInput: FileInputStream? = null
         try {
-            val input = DataInputStream(BufferedInputStream(FileInputStream(encrypted)))
+            rawInput = FileInputStream(encrypted)
+            val input = DataInputStream(BufferedInputStream(rawInput))
             val magic = ByteArray(MAGIC.size)
             input.readFully(magic)
             require(magic.contentEquals(MAGIC)) { "Not a ScanPro encrypted package" }
@@ -147,8 +156,9 @@ class EncryptedDocumentPackage(private val context: Context) {
             val pages = buildList {
                 for (index in 0 until pageArray.length()) {
                     val pageJson = pageArray.getJSONObject(index)
-                    val file = File(outDir, pageJson.getString("file"))
-                    require(file.exists()) { "Backup page is missing" }
+                    val file = File(outDir, pageJson.getString("file")).canonicalFile
+                    require(file.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup page path" }
+                    require(file.isFile) { "Backup page is missing" }
                     add(RestoredPage(file, pageJson.optString("ocr")))
                 }
             }
@@ -173,6 +183,7 @@ class EncryptedDocumentPackage(private val context: Context) {
             outDir.deleteRecursively()
             throw IllegalArgumentException("Could not decrypt backup. Check the password and file.", error)
         } finally {
+            runCatching { rawInput?.close() }
             encrypted.delete()
             password.fill('\u0000')
         }

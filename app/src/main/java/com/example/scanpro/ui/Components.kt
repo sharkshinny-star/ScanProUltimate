@@ -69,6 +69,7 @@ fun TextInputDialog(
     label: String,
     confirmLabel: String = "Save",
     maxLines: Int = 3,
+    allowBlank: Boolean = false,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
@@ -87,7 +88,7 @@ fun TextInputDialog(
         },
         confirmButton = {
             TextButton(
-                enabled = value.isNotBlank(),
+                enabled = allowBlank || value.isNotBlank(),
                 onClick = { onConfirm(value) }
             ) { Text(confirmLabel) }
         },

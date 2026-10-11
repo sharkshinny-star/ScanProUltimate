@@ -28,7 +28,8 @@ object SpecialExporters {
                 RectF(62f, 430f, 533f, 680f)
             )
             selected.forEachIndexed { index, model ->
-                val bitmap = ImageProcessor.decodeScaled(model.imagePath, quality.maxImageDimension) ?: return@forEachIndexed
+                val bitmap = ImageProcessor.decodeScaled(model.imagePath, quality.maxImageDimension)
+                    ?: error("Could not read ID page ${index + 1}")
                 drawFit(page.canvas, bitmap, slots[index])
             }
             val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -47,10 +48,10 @@ object SpecialExporters {
 
     fun exportLongImage(pages: List<ScanPage>, destination: File, maxWidth: Int = 1800) {
         require(pages.isNotEmpty()) { "No pages" }
-        val bitmaps = pages.sortedBy { it.position }.mapNotNull {
-            ImageProcessor.decodeScaled(it.imagePath, maxWidth)
+        // decodeScaled bounds the longest side, so decode larger than maxWidth and scale to width below.
+        val bitmaps = pages.sortedBy { it.position }.mapIndexed { index, page ->
+            ImageProcessor.decodeScaled(page.imagePath, 3400) ?: error("Could not read page ${index + 1}")
         }
-        require(bitmaps.isNotEmpty()) { "Could not decode pages" }
         val targetWidth = bitmaps.maxOf { it.width }.coerceAtMost(maxWidth)
         val scaled = bitmaps.map { bitmap ->
             if (bitmap.width == targetWidth) bitmap else {

@@ -48,7 +48,12 @@ class DocumentRepository @Inject constructor(
         autoTitle: Boolean,
         mode: ScanMode = ScanMode.DOCUMENT
     ): ScanDocument = withContext(Dispatchers.IO) {
-        createDocument(pdfUri, imageUris, quality, autoTitle, mode)
+        // A PDF-only scan result has no page images; import it as a PDF so the document gets real pages.
+        if (imageUris.isEmpty() && pdfUri != null) {
+            importPdf(pdfUri, quality, autoTitle)
+        } else {
+            createDocument(pdfUri, imageUris, quality, autoTitle, mode)
+        }
     }
 
     suspend fun importImages(
@@ -152,7 +157,7 @@ class DocumentRepository @Inject constructor(
         val target = newName.trim().take(80)
         require(source.isNotBlank()) { "Folder name is required" }
         require(target.isNotBlank()) { "New folder name is required" }
-        db.loadAll()
+        db.loadAll(includeTrashed = true)
             .filter { it.folderName.equals(source, ignoreCase = true) }
             .forEach { doc -> db.saveDocument(doc.copy(folderName = target, updatedAt = now())) }
     }
@@ -379,18 +384,20 @@ class DocumentRepository @Inject constructor(
                 position = index,
                 sourcePath = source.absolutePath,
                 imagePath = rendered.absolutePath,
-                ocrText = runCatching { ocr.recognize(rendered) }.getOrDefault("")
+                ocrText = runCatching { ocr.recognize(rendered, doc.ocrScript) }.getOrDefault("")
             )
         }
 
         val left = makeHalf(true)
         val right = makeHalf(false)
-        File(page.sourcePath).delete()
-        File(page.imagePath).delete()
         pages.removeAt(index)
         pages.add(index, right)
         pages.add(index, left)
-        regenerateAndSave(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        val saved = regenerateAndSave(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        // Only discard the original spread once the split pages are safely saved.
+        File(page.sourcePath).delete()
+        File(page.imagePath).delete()
+        saved
     }
 
     suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
@@ -425,11 +432,13 @@ class DocumentRepository @Inject constructor(
             moveToTrash(documentId)
             return@withContext
         }
+        val pages = normalize(doc.pages.filterNot { it.id == pageId })
+        val saved = regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
+        // Only discard the page files once the document without them is safely saved.
         File(target.sourcePath).delete()
         File(target.imagePath).delete()
         target.annotations.filter { it.type == AnnotationType.SIGNATURE }.forEach { File(it.assetPath).delete() }
-        val pages = normalize(doc.pages.filterNot { it.id == pageId })
-        regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
+        saved
     }
 
     suspend fun moveToTrash(id: String) = mutateDocument(id) { doc ->
@@ -452,8 +461,8 @@ class DocumentRepository @Inject constructor(
     suspend fun purgeExpiredTrash(maxAgeDays: Int = 30): Int = withContext(Dispatchers.IO) {
         val cutoff = now() - maxAgeDays.coerceAtLeast(1) * 24L * 60L * 60L * 1000L
         val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
-        expired.forEach { deleteDocumentFilesAndRecord(it) }
-        expired.size
+        // One undeletable item must not block purging the rest.
+        expired.count { runCatching { deleteDocumentFilesAndRecord(it) }.isSuccess }
     }
 
     suspend fun exportIdCopy(id: String): File = withContext(Dispatchers.IO) {
@@ -571,7 +580,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(id)
         val selected = script ?: doc.ocrScript
         val pages = doc.pages.map { page ->
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), selected) }.getOrDefault(page.ocrText))
+            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), selected) }.getOrDefault(""))
         }
         regenerateAndSave(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
     }
@@ -705,7 +714,7 @@ class DocumentRepository @Inject constructor(
         )
         return if (runOcr) {
             val script = db.loadDocument(page.documentId)?.ocrScript ?: OcrScript.LATIN
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }.getOrDefault(page.ocrText))
+            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }.getOrDefault(""))
         } else page
     }
 
@@ -718,14 +727,21 @@ class DocumentRepository @Inject constructor(
         val sorted = document.pages.sortedBy { it.position }
         require(sorted.isNotEmpty()) { "Document has no pages" }
         val pdf = File(document.pdfPath)
-        PdfExporter.export(
-            pages = sorted,
-            destination = pdf,
-            quality = document.pdfQuality,
-            pageSize = document.pdfPageSize,
-            searchable = document.searchablePdf,
-            pageNumbers = document.pageNumbers
-        )
+        // Write to a temp file first so a failed export cannot truncate the existing PDF.
+        val temp = File(pdf.parentFile, "${pdf.name}.tmp")
+        try {
+            PdfExporter.export(
+                pages = sorted,
+                destination = temp,
+                quality = document.pdfQuality,
+                pageSize = document.pdfPageSize,
+                searchable = document.searchablePdf,
+                pageNumbers = document.pageNumbers
+            )
+            temp.copyTo(pdf, overwrite = true)
+        } finally {
+            temp.delete()
+        }
         val final = document.copy(
             pages = sorted,
             sizeBytes = pdf.length(),
