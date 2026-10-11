@@ -531,15 +531,30 @@ class DocumentRepository @Inject constructor(
                 val pageId = UUID.randomUUID().toString()
                 val sourceFile = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 val renderedFile = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")
-                restoredPage.file.copyTo(sourceFile, overwrite = true)
+                // Newer backups carry the original image so edits re-render from it; older ones only have the
+                // flattened page, which is then used for both.
+                (restoredPage.sourceFile ?: restoredPage.file).copyTo(sourceFile, overwrite = true)
                 restoredPage.file.copyTo(renderedFile, overwrite = true)
+                val annotations = restoredPage.annotations.map { annotation ->
+                    if (annotation.type != AnnotationType.SIGNATURE) annotation else {
+                        val signatureDir = File(folder, "signatures").apply { mkdirs() }
+                        val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
+                        File(annotation.assetPath).copyTo(asset, overwrite = true)
+                        annotation.copy(assetPath = asset.absolutePath)
+                    }
+                }
                 ScanPage(
                     id = pageId,
                     documentId = id,
                     position = index,
                     sourcePath = sourceFile.absolutePath,
                     imagePath = renderedFile.absolutePath,
-                    ocrText = restoredPage.ocrText
+                    ocrText = restoredPage.ocrText,
+                    filter = restoredPage.filter,
+                    rotationDegrees = restoredPage.rotationDegrees,
+                    crop = restoredPage.crop,
+                    adjustments = restoredPage.adjustments,
+                    annotations = annotations
                 )
             }
             val pdf = File(folder, "document.pdf")
