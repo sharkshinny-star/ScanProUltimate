@@ -191,7 +191,6 @@ fun DocumentDetailScreen(
                     IconButton(onClick = onToggleFavorite, enabled = !busy) {
                         Icon(if (document.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorite")
                     }
-                    IconButton(onClick = { sharePdf(context, document) }) { Icon(Icons.Default.Share, contentDescription = "Share PDF") }
                     IconButton(onClick = { renameOpen = true }) { Icon(Icons.Default.Edit, contentDescription = "Rename") }
                 }
             )
@@ -368,12 +367,10 @@ fun DocumentDetailScreen(
                         Icon(Icons.Default.OpenInNew, contentDescription = null); Spacer(Modifier.width(5.dp)); Text("Open PDF")
                     }
                 }
-                item { ToolButton("Share PDF") { sharePdf(context, document) } }
                 item { ToolButton("Save PDF") { savePdfLauncher.launch("${document.title}.pdf") } }
                 item { ToolButton("Print") { printPdf(context, document) } }
                 item { ToolButton("Protect PDF", !busy) { passwordOpen = true } }
                 item { ToolButton("Encrypted backup", !busy) { backupPasswordOpen = true } }
-                item { ToolButton("JPEGs") { shareImages(context, document) } }
                 item { ToolButton("OCR text") { shareOcrText(context, document) } }
                 item { ToolButton("TXT file", !busy && document.ocrText.isNotBlank()) { onExportOcrTextFile() } }
                 item {
