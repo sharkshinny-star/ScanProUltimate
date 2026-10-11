@@ -205,6 +205,28 @@ fun DocumentDetailScreen(
             }
 
             if (currentPage != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { sharePdf(context, document) },
+                        modifier = Modifier.weight(1f),
+                        enabled = !busy
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Share PDF")
+                    }
+                    OutlinedButton(
+                        onClick = { shareImages(context, document) },
+                        modifier = Modifier.weight(1f),
+                        enabled = !busy
+                    ) {
+                        Text("Share JPG")
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
                 PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(480.dp))
                 Spacer(Modifier.height(8.dp))
                 Text("Page ${currentIndex + 1} of ${pages.size}", modifier = Modifier.align(Alignment.CenterHorizontally), fontWeight = FontWeight.Medium)

@@ -18,8 +18,8 @@
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:label="@string/app_name"
-        android:icon="@drawable/ic_scanpro"
-        android:roundIcon="@drawable/ic_scanpro"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ScanPro"
         android:enableOnBackInvokedCallback="true">

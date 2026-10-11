@@ -61,6 +61,10 @@ class MainViewModel @Inject constructor(
     private val _exportArtifact = MutableStateFlow<ExportArtifact?>(null)
     val exportArtifact: StateFlow<ExportArtifact?> = _exportArtifact.asStateFlow()
 
+    private val _newScanId = MutableStateFlow<String?>(null)
+    val newScanId: StateFlow<String?> = _newScanId.asStateFlow()
+    fun clearNewScanId() { _newScanId.value = null }
+
     val defaultPdfQuality = settings.pdfQuality.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
@@ -116,7 +120,8 @@ class MainViewModel @Inject constructor(
     fun importCameraSession(imageUris: List<Uri>, mode: ScanMode) {
         if (imageUris.isEmpty()) return
         launchBusy("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", "Scan saved") {
-            repository.importImages(imageUris, defaultPdfQuality.value, autoTitle.value, mode)
+            val newDocument = repository.importImages(imageUris, defaultPdfQuality.value, autoTitle.value, mode)
+            _newScanId.value = newDocument.id
         }
     }
 

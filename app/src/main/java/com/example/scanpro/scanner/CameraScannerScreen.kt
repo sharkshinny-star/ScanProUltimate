@@ -121,14 +121,24 @@ fun CameraScannerScreen(
     var status by remember { mutableStateOf("Point the camera at a document") }
     var autoCaptureSignal by remember { mutableIntStateOf(0) }
     var scanMode by remember { mutableStateOf(ScanMode.DOCUMENT) }
+    var scanBothSides by remember { mutableStateOf(false) }
     val pages = remember { mutableStateListOf<Uri>() }
+    val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permissionGranted = it
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
-        if (uris.isNotEmpty()) pages.addAll(uris)
+        if (uris.isNotEmpty()) {
+            val remaining = (pageLimit - pages.size).coerceAtLeast(0)
+            pages.addAll(uris.take(remaining))
+            status = when {
+                scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front ready · capture the back"
+                pages.isNotEmpty() -> "${pages.size} page(s) ready"
+                else -> "Select a document to scan"
+            }
+        }
     }
 
     val analyzer = remember {
@@ -141,11 +151,11 @@ fun CameraScannerScreen(
             onAutoCapture = { autoCaptureSignal++ }
         )
     }
-    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing }
+    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && pages.size < pageLimit }
 
     fun capturePage() {
         val capture = imageCapture ?: return
-        if (capturing) return
+        if (capturing || pages.size >= pageLimit) return
         capturing = true
         status = "Capturing…"
 
@@ -167,7 +177,12 @@ fun CameraScannerScreen(
                         raw.delete()
                         pages.add(Uri.fromFile(result.output))
                         capturing = false
-                        status = if (result.perspectiveCorrected) "Page ${pages.size} captured" else "Page ${pages.size} captured · adjust crop if needed"
+                        status = when {
+                            scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
+                            scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
+                            result.perspectiveCorrected -> "Page ${pages.size} captured"
+                            else -> "Page ${pages.size} captured · adjust crop if needed"
+                        }
                     }
                 }
 
@@ -180,7 +195,7 @@ fun CameraScannerScreen(
     }
 
     LaunchedEffect(autoCaptureSignal) {
-        if (autoCaptureSignal > 0 && autoCapture && !capturing) capturePage()
+        if (autoCaptureSignal > 0 && autoCapture && !capturing && pages.size < pageLimit) capturePage()
     }
 
     LaunchedEffect(permissionGranted, lifecycleOwner) {
@@ -317,12 +332,41 @@ fun CameraScannerScreen(
                 items(ScanMode.entries, key = { it.name }) { mode ->
                     FilterChip(
                         selected = scanMode == mode,
-                        onClick = { scanMode = mode },
+                        onClick = { scanMode = mode; scanBothSides = false },
+                        enabled = pages.isEmpty(),
                         label = { Text(mode.label) }
                     )
                 }
             }
 
+            if (scanMode == ScanMode.ID_CARD) {
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !scanBothSides,
+                        enabled = pages.isEmpty(),
+                        onClick = { scanBothSides = false },
+                        label = { Text("Front only") }
+                    )
+                    FilterChip(
+                        selected = scanBothSides,
+                        enabled = pages.isEmpty(),
+                        onClick = { scanBothSides = true },
+                        label = { Text("Front + back") }
+                    )
+                }
+                Text(
+                    when {
+                        scanBothSides && pages.isEmpty() -> "Capture the front of your ID first"
+                        scanBothSides && pages.size == 1 -> "Front captured. Capture the back or undo to retake."
+                        scanBothSides -> "Both sides captured. Ready to save and share."
+                        pages.isEmpty() -> "Capture the front of your ID"
+                        else -> "Front captured. Ready to save and share."
+                    },
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("1×", color = Color.White, style = MaterialTheme.typography.labelSmall)
@@ -364,7 +408,7 @@ fun CameraScannerScreen(
 
                 Surface(
                     onClick = { capturePage() },
-                    enabled = !capturing,
+                    enabled = !capturing && pages.size < pageLimit,
                     shape = CircleShape,
                     color = Color.White,
                     modifier = Modifier.size(78.dp)
@@ -379,7 +423,10 @@ fun CameraScannerScreen(
                         Icon(Icons.Default.DocumentScanner, contentDescription = "Compatibility scanner", tint = Color.White)
                     }
                 } else {
-                    Button(onClick = { onComplete(pages.toList(), scanMode) }) {
+                    Button(
+                        enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
+                        onClick = { onComplete(pages.toList(), scanMode) }
+                    ) {
                         Icon(Icons.Default.TaskAlt, contentDescription = null)
                         Spacer(Modifier.width(5.dp))
                         Text("Done ${pages.size}")

@@ -15,6 +15,10 @@ import kotlin.math.pow
 
 fun sharePdf(context: Context, document: ScanDocument) {
     val file = File(document.pdfPath)
+    if (!file.isFile) {
+        Toast.makeText(context, "PDF is not available yet", Toast.LENGTH_SHORT).show()
+        return
+    }
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "application/pdf"
@@ -50,19 +54,27 @@ fun sharePdfs(context: Context, documents: List<ScanDocument>) {
 fun shareImages(context: Context, document: ScanDocument) {
     val uris = ArrayList<Uri>()
     document.pages.sortedBy { it.position }.forEach { page ->
-        uris += FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.files",
-            File(page.imagePath)
-        )
+        val file = File(page.imagePath)
+        if (file.isFile) {
+            uris += FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.files",
+                file
+            )
+        }
     }
-    if (uris.isEmpty()) return
-    val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+    if (uris.isEmpty()) {
+        Toast.makeText(context, "JPG images are not available", Toast.LENGTH_SHORT).show()
+        return
+    }
+    val single = uris.size == 1
+    val intent = Intent(if (single) Intent.ACTION_SEND else Intent.ACTION_SEND_MULTIPLE).apply {
         type = "image/jpeg"
-        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+        if (single) putExtra(Intent.EXTRA_STREAM, uris.first())
+        else putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent, "Share page images"))
+    context.startActivity(Intent.createChooser(intent, if (single) "Share JPG" else "Share JPG pages"))
 }
 
 fun shareOcrText(context: Context, document: ScanDocument) {

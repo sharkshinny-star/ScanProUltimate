@@ -105,7 +105,7 @@ class DocumentRepository @Inject constructor(
                     }
                 }
             }
-            val fallbackTitle = SimpleDateFormat("Imported yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val fallbackTitle = SimpleDateFormat("'Imported' yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
             val allText = pages.joinToString("\n") { it.ocrText }
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val pdf = File(folder, "document.pdf")
@@ -621,7 +621,7 @@ class DocumentRepository @Inject constructor(
                 error("No scan pages were returned")
             }
 
-            val fallbackTitle = SimpleDateFormat("Scan yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val fallbackTitle = SimpleDateFormat("'Scan' yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
             val allText = pages.joinToString("\n") { it.ocrText }
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val doc = ScanDocument(

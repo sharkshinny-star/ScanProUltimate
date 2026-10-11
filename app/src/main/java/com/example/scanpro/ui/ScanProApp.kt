@@ -116,6 +116,7 @@ fun ScanProApp(
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val exportArtifact by viewModel.exportArtifact.collectAsStateWithLifecycle()
+    val newScanId by viewModel.newScanId.collectAsStateWithLifecycle()
     val pdfQuality by viewModel.defaultPdfQuality.collectAsStateWithLifecycle()
     val autoTitle by viewModel.autoTitle.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
@@ -135,6 +136,14 @@ fun ScanProApp(
         exportArtifact?.let {
             shareFile(context, it.path, it.mimeType, it.title)
             viewModel.clearExportArtifact()
+        }
+    }
+
+    LaunchedEffect(newScanId, documents) {
+        val id = newScanId ?: return@LaunchedEffect
+        if (documents.any { it.id == id }) {
+            navController.navigate("$ROUTE_DETAIL/$id") { launchSingleTop = true }
+            viewModel.clearNewScanId()
         }
     }
 
@@ -453,22 +462,22 @@ private fun LibraryScreen(
             }
 
             if (mode == ROUTE_HOME) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onStartScan, enabled = !busy) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item { Button(onClick = onStartScan, enabled = !busy) {
                         Icon(Icons.Default.CameraAlt, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text("Scan")
-                    }
-                    OutlinedButton(onClick = onImportImages, enabled = !busy) {
+                    } }
+                    item { OutlinedButton(onClick = onImportImages, enabled = !busy) {
                         Icon(Icons.Default.Image, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text("Photos")
-                    }
-                    OutlinedButton(onClick = onImportPdf, enabled = !busy) {
+                    } }
+                    item { OutlinedButton(onClick = onImportPdf, enabled = !busy) {
                         Icon(Icons.Default.PictureAsPdf, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text("PDF")
-                    }
+                    } }
                 }
                 Spacer(Modifier.height(10.dp))
             }
