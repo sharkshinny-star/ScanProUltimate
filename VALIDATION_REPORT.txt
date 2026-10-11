@@ -1,0 +1,23 @@
+ScanPro Ultimate 4.0 - validation report
+Date: 2026-10-08
+
+Executed in generation container:
+PASS - Portable Kotlin core harness compiled and executed.
+PASS - Invoice reference regression: "Invoice No: INV-2026-1042" extraction.
+PASS - Unsupported-question grounding behavior.
+PASS - SmartTitle portable logic.
+PASS - CropQuad identity/default behavior.
+PASS - PageAdjustments clamping/default behavior.
+PASS - Android XML resources parsed: 6 files.
+PASS - Static Kotlin parser/arity diagnostic scan: no matching project diagnostics.
+PASS - TODO/FIXME/NotImplemented implementation-marker scan: none in app source.
+
+Environment limitation:
+NOT RUN - Gradle dependency resolution.
+NOT RUN - Android lint / assembleDebug / bundleRelease.
+NOT RUN - Android instrumentation / physical CameraX/OpenCV tests.
+NOT RUN - device performance, OCR accuracy, accessibility, thermal/battery benchmarking.
+
+Reason: Android SDK, Android Studio, Gradle distribution, emulator, and physical camera hardware are not installed in this container.
+
+See BUILD_STATUS.md and SCAN_QUALITY_TEST_PLAN.md before release.
