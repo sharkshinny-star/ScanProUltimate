@@ -80,6 +80,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.ScanMode
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -191,7 +192,10 @@ fun CameraScannerScreen(
                                 result.perspectiveCorrected -> "Page ${pages.size} captured"
                                 else -> "Page ${pages.size} captured · adjust crop if needed"
                             }
-                        } catch (error: Exception) {
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Throwable) {
+                            // Throwable: a failed OpenCV native load throws UnsatisfiedLinkError, not an Exception.
                             status = "Could not process page: ${error.message ?: "try again"}"
                         } finally {
                             raw.delete()

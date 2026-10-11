@@ -2,6 +2,7 @@ package com.example.scanpro
 
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
@@ -27,6 +28,7 @@ class MainActivity : FragmentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private var sessionUnlocked by mutableStateOf(false)
+    private var stoppedAt = 0L
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -90,8 +92,15 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // Re-lock when the app leaves the foreground.
-        sessionUnlocked = false
+        stoppedAt = SystemClock.elapsedRealtime()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Re-lock after a real absence, but not for quick trips to the photo picker, camera or share sheet.
+        if (stoppedAt != 0L && SystemClock.elapsedRealtime() - stoppedAt > LOCK_TIMEOUT_MS) {
+            sessionUnlocked = false
+        }
     }
 
     private fun startCompatibilityScanner() {
@@ -142,5 +151,9 @@ class MainActivity : FragmentActivity() {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) infoBuilder.setNegativeButtonText("Cancel")
         prompt.authenticate(infoBuilder.build())
+    }
+
+    private companion object {
+        const val LOCK_TIMEOUT_MS = 30_000L
     }
 }

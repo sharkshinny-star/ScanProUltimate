@@ -184,12 +184,23 @@ class EncryptedDocumentPackage(private val context: Context) {
             CipherInputStream(input, cipher).use { decrypted ->
                 ZipInputStream(BufferedInputStream(decrypted)).use { zip ->
                     var entry = zip.nextEntry
+                    var extractedBytes = 0L
                     while (entry != null) {
                         val safe = File(outDir, entry.name).canonicalFile
                         require(safe.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup entry" }
                         if (entry.isDirectory) safe.mkdirs() else {
                             safe.parentFile?.mkdirs()
-                            FileOutputStream(safe).use { zip.copyTo(it) }
+                            FileOutputStream(safe).use { out ->
+                                // Cap total unpacked size so a crafted backup cannot fill the device (zip bomb).
+                                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                while (true) {
+                                    val read = zip.read(buffer)
+                                    if (read < 0) break
+                                    extractedBytes += read
+                                    require(extractedBytes <= MAX_RESTORE_BYTES) { "Backup is too large to restore" }
+                                    out.write(buffer, 0, read)
+                                }
+                            }
                         }
                         zip.closeEntry()
                         entry = zip.nextEntry
@@ -277,5 +288,6 @@ class EncryptedDocumentPackage(private val context: Context) {
     companion object {
         private val MAGIC = byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte())
         private const val ITERATIONS = 210_000
+        private const val MAX_RESTORE_BYTES = 2L * 1024 * 1024 * 1024
     }
 }
