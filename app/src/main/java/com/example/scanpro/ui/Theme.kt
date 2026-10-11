@@ -17,64 +17,84 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// ScanPro's own fallback identity. Android 12+ can still opt into the user's dynamic palette.
+// ScanPro 2.1 "day & night" palette, taken from the approved design (refined Android concept).
 private val ScanProLight = lightColorScheme(
-    primary = Color(0xFF3157D5),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFDDE4FF),
-    onPrimaryContainer = Color(0xFF0A1C54),
-    secondary = Color(0xFF006B60),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFF9FF2E3),
-    onSecondaryContainer = Color(0xFF00201C),
-    tertiary = Color(0xFF75546F),
-    background = Color(0xFFF9F9FC),
-    surface = Color(0xFFF9F9FC),
-    surfaceVariant = Color(0xFFE3E2E8),
-    onSurface = Color(0xFF1B1B1F),
-    onSurfaceVariant = Color(0xFF46464F),
-    outline = Color(0xFF777680)
+    primary = Color(0xFF4D53D7),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFE9ECFF),
+    onPrimaryContainer = Color(0xFF4248BD),
+    secondary = Color(0xFF087B64),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFE2F5ED),
+    onSecondaryContainer = Color(0xFF12664F),
+    tertiary = Color(0xFF94601D),
+    tertiaryContainer = Color(0xFFFBF0DF),
+    onTertiaryContainer = Color(0xFF94601D),
+    background = Color(0xFFF5F7FB),
+    onBackground = Color(0xFF19263B),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF19263B),
+    surfaceVariant = Color(0xFFEDF1F8),
+    onSurfaceVariant = Color(0xFF5E6D82),
+    surfaceContainer = Color(0xFFFFFFFF),
+    surfaceContainerHigh = Color(0xFFEDF1F8),
+    outline = Color(0xFFDFE6EF),
+    outlineVariant = Color(0xFFDFE6EF)
 )
 
 private val ScanProDark = darkColorScheme(
-    primary = Color(0xFFB8C4FF),
-    onPrimary = Color(0xFF002A77),
-    primaryContainer = Color(0xFF173FBA),
-    onPrimaryContainer = Color(0xFFDDE4FF),
-    secondary = Color(0xFF83D5C7),
+    primary = Color(0xFFB1BDFF),
+    onPrimary = Color(0xFF1C2856),
+    primaryContainer = Color(0xFF2C3A61),
+    onPrimaryContainer = Color(0xFFC8D2FF),
+    secondary = Color(0xFF83DABB),
     onSecondary = Color(0xFF003730),
-    secondaryContainer = Color(0xFF005047),
-    onSecondaryContainer = Color(0xFF9FF2E3),
-    tertiary = Color(0xFFE4BADB),
-    background = Color(0xFF121316),
-    surface = Color(0xFF121316),
-    surfaceVariant = Color(0xFF46464F),
-    onSurface = Color(0xFFE4E1E6),
-    onSurfaceVariant = Color(0xFFC7C5D0),
-    outline = Color(0xFF918F99)
+    secondaryContainer = Color(0xFF1A3D35),
+    onSecondaryContainer = Color(0xFF9BE4C9),
+    tertiary = Color(0xFFE6BE7B),
+    tertiaryContainer = Color(0xFF3F3427),
+    onTertiaryContainer = Color(0xFFE6BE7B),
+    background = Color(0xFF121A27),
+    onBackground = Color(0xFFECF1FA),
+    surface = Color(0xFF1D2838),
+    onSurface = Color(0xFFECF1FA),
+    surfaceVariant = Color(0xFF273448),
+    onSurfaceVariant = Color(0xFFADBBCF),
+    surfaceContainer = Color(0xFF1D2838),
+    surfaceContainerHigh = Color(0xFF273448),
+    outline = Color(0xFF344259),
+    outlineVariant = Color(0xFF344259)
 )
 
+// Corner radii from the design: chips ~10dp, cards ~15dp, hero/sheets ~20dp.
 private val ScanProShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(26.dp),
-    extraLarge = RoundedCornerShape(34.dp)
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(15.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(26.dp)
 )
 
 private val ScanProTypography = Typography().let { base ->
     base.copy(
-        headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.4f).sp),
-        headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = (-0.25f).sp),
-        titleLarge = base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+        headlineLarge = base.headlineLarge.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
+        headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
+        headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.6).sp),
+        titleLarge = base.titleLarge.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.7).sp),
         titleMedium = base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        labelLarge = base.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+        titleSmall = base.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+        labelLarge = base.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        labelMedium = base.labelMedium.copy(fontWeight = FontWeight.SemiBold)
     )
 }
 
+/**
+ * [dynamicColor] defaults to false so the app keeps the designed ScanPro palette. Turn it on to
+ * follow the user's wallpaper colours on Android 12 and newer.
+ */
 @Composable
 fun ScanProTheme(
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
