@@ -44,6 +44,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -474,12 +475,12 @@ private fun LibraryScreen(
                         Spacer(Modifier.width(6.dp))
                         Text("Scan")
                     } }
-                    item { OutlinedButton(onClick = onImportImages, enabled = !busy) {
+                    item { FilledTonalButton(onClick = onImportImages, enabled = !busy) {
                         Icon(Icons.Default.Image, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text("Photos")
                     } }
-                    item { OutlinedButton(onClick = onImportPdf, enabled = !busy) {
+                    item { FilledTonalButton(onClick = onImportPdf, enabled = !busy) {
                         Icon(Icons.Default.PictureAsPdf, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
                         Text("PDF")
