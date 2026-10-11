@@ -29,7 +29,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
@@ -369,6 +373,7 @@ private fun LibraryScreen(
     var sortName by rememberSaveable { mutableStateOf(LibrarySort.UPDATED.name) }
     var folder by rememberSaveable { mutableStateOf("") }
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
+    var sortMenuOpen by remember { mutableStateOf(false) }
     var renameFolderSource by remember { mutableStateOf<String?>(null) }
     val selected = remember { mutableStateListOf<String>() }
     val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
@@ -423,6 +428,22 @@ private fun LibraryScreen(
                             Icon(Icons.Default.Clear, contentDescription = "Clear selection")
                         }
                     } else {
+                        Box {
+                            IconButton(onClick = { sortMenuOpen = true }) {
+                                Icon(Icons.Default.Sort, contentDescription = "Sort by ${sort.label}")
+                            }
+                            DropdownMenu(expanded = sortMenuOpen, onDismissRequest = { sortMenuOpen = false }) {
+                                LibrarySort.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option.label) },
+                                        leadingIcon = if (sort == option) {
+                                            { Icon(Icons.Default.Check, contentDescription = null) }
+                                        } else null,
+                                        onClick = { sortName = option.name; sortMenuOpen = false }
+                                    )
+                                }
+                            }
+                        }
                         IconButton(onClick = { gridMode = !gridMode }) {
                             Icon(if (gridMode) Icons.Default.List else Icons.Default.GridView, contentDescription = "Toggle layout")
                         }
@@ -525,15 +546,6 @@ private fun LibraryScreen(
                         label = { Text("Favorites") },
                         leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Star else Icons.Outlined.StarOutline, null) }
                     )
-                }
-                LibrarySort.entries.forEach { option ->
-                    item(key = "sort_${option.name}") {
-                        FilterChip(
-                            selected = sort == option,
-                            onClick = { sortName = option.name },
-                            label = { Text(option.label) }
-                        )
-                    }
                 }
             }
             if (mode == ROUTE_DOCUMENTS && folder.isNotBlank()) {

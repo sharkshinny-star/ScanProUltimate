@@ -5,6 +5,12 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -165,6 +171,7 @@ fun DocumentDetailScreen(
     var passwordOpen by remember { mutableStateOf(false) }
     var backupPasswordOpen by remember { mutableStateOf(false) }
     var ocrEditOpen by remember { mutableStateOf(false) }
+    var moreToolsOpen by remember { mutableStateOf(false) }
 
     val appendLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
         if (uris.isNotEmpty()) onAppendImages(uris)
@@ -369,8 +376,6 @@ fun DocumentDetailScreen(
                 }
                 item { ToolButton("Save PDF") { savePdfLauncher.launch("${document.title}.pdf") } }
                 item { ToolButton("Print") { printPdf(context, document) } }
-                item { ToolButton("Protect PDF", !busy) { passwordOpen = true } }
-                item { ToolButton("Encrypted backup", !busy) { backupPasswordOpen = true } }
                 item { ToolButton("OCR text") { shareOcrText(context, document) } }
                 item { ToolButton("TXT file", !busy && document.ocrText.isNotBlank()) { onExportOcrTextFile() } }
                 item {
@@ -380,123 +385,140 @@ fun DocumentDetailScreen(
                 }
                 item { ToolButton("Merge", !busy && otherDocuments.isNotEmpty()) { mergeOpen = true } }
                 item { ToolButton("Split all", !busy && document.pageCount > 1) { onSplitDocument() } }
-                item { ToolButton("ID copy", !busy) { onExportIdCopy() } }
-                item { ToolButton("Long image", !busy) { onExportLongImage() } }
-                item { ToolButton("Watermark", !busy) { watermarkOpen = true } }
-                item { ToolButton("Refresh OCR", !busy) { onReOcr() } }
                 item { ToolButton("Folder", !busy) { folderOpen = true } }
                 item { ToolButton("Tags", !busy) { tagsOpen = true } }
-            }
-
-            SectionTitle("PDF output")
-            Text("Quality", style = MaterialTheme.typography.labelLarge)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(PdfQuality.entries, key = { it.name }) { quality ->
-                    FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(quality.label) })
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text("Page size", style = MaterialTheme.typography.labelLarge)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(PdfPageSize.entries, key = { it.name }) { size ->
-                    FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(size.label) })
-                }
-            }
-            ToggleRow("Searchable OCR PDF", "Adds recognized text to the PDF so document search can index it.", document.searchablePdf, !busy, onSearchablePdf)
-            ToggleRow("Page numbers", "Adds page x / total at the bottom of exported PDF pages.", document.pageNumbers, !busy, onPageNumbers)
-
-            SectionTitle("Document mode")
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(ScanMode.entries, key = { it.name }) { mode ->
-                    FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(mode.label) })
+                item {
+                    Box {
+                        OutlinedButton(onClick = { moreToolsOpen = true }, enabled = !busy) {
+                            Text("More")
+                            Icon(Icons.Default.ExpandMore, contentDescription = null)
+                        }
+                        DropdownMenu(expanded = moreToolsOpen, onDismissRequest = { moreToolsOpen = false }) {
+                            DropdownMenuItem(text = { Text("Protect PDF") }, onClick = { moreToolsOpen = false; passwordOpen = true })
+                            DropdownMenuItem(text = { Text("Encrypted backup") }, onClick = { moreToolsOpen = false; backupPasswordOpen = true })
+                            DropdownMenuItem(text = { Text("Watermark") }, onClick = { moreToolsOpen = false; watermarkOpen = true })
+                            DropdownMenuItem(text = { Text("ID copy") }, onClick = { moreToolsOpen = false; onExportIdCopy() })
+                            DropdownMenuItem(text = { Text("Long image") }, onClick = { moreToolsOpen = false; onExportLongImage() })
+                            DropdownMenuItem(text = { Text("Refresh OCR") }, onClick = { moreToolsOpen = false; onReOcr() })
+                        }
+                    }
                 }
             }
 
-            SectionTitle("OCR language script")
-            Text("Choose the primary script, then ScanPro re-runs OCR locally on every page.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(OcrScript.entries, key = { it.name }) { script ->
-                    FilterChip(
-                        selected = document.ocrScript == script,
+            CollapsibleSection("PDF output") {
+                Text("Quality", style = MaterialTheme.typography.labelLarge)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(PdfQuality.entries, key = { it.name }) { quality ->
+                        FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(quality.label) })
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text("Page size", style = MaterialTheme.typography.labelLarge)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(PdfPageSize.entries, key = { it.name }) { size ->
+                        FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(size.label) })
+                    }
+                }
+                ToggleRow("Searchable OCR PDF", "Adds recognized text to the PDF so document search can index it.", document.searchablePdf, !busy, onSearchablePdf)
+                ToggleRow("Page numbers", "Adds page x / total at the bottom of exported PDF pages.", document.pageNumbers, !busy, onPageNumbers)
+            }
+
+            CollapsibleSection("Document mode") {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(ScanMode.entries, key = { it.name }) { mode ->
+                        FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(mode.label) })
+                    }
+                }
+            }
+
+            CollapsibleSection("OCR language script") {
+                Text("Choose the primary script, then ScanPro re-runs OCR locally on every page.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(OcrScript.entries, key = { it.name }) { script ->
+                        FilterChip(
+                            selected = document.ocrScript == script,
+                            enabled = !busy,
+                            onClick = { onOcrScript(script) },
+                            label = { Text(script.label) }
+                        )
+                    }
+                }
+            }
+
+            CollapsibleSection("Smart insights · offline") {
+                Text(insights.kind.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(4.dp))
+                Text(insights.summary, style = MaterialTheme.typography.bodyMedium)
+                if (insights.amounts.isNotEmpty()) Text("Amounts: ${insights.amounts.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                if (insights.dates.isNotEmpty()) Text("Dates: ${insights.dates.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                if (insights.references.isNotEmpty()) Text("References: ${insights.references.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                if (insights.actionItems.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text("Potential action items", style = MaterialTheme.typography.labelLarge)
+                    insights.actionItems.forEach { item ->
+                        Text("• $item", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                if (insights.suggestedTags.isNotEmpty()) {
+                    Text("Suggested tags: ${insights.suggestedTags.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                    TextButton(
                         enabled = !busy,
-                        onClick = { onOcrScript(script) },
-                        label = { Text(script.label) }
-                    )
+                        onClick = {
+                            val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
+                            onTags(merged.joinToString(", "))
+                        }
+                    ) { Text("Apply suggested tags") }
+                }
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = assistantQuestion,
+                    onValueChange = { assistantQuestion = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Ask about this scan") },
+                    supportingText = { Text("Answers are extracted only from OCR text; no document is uploaded.") },
+                    maxLines = 3
+                )
+                Button(
+                    onClick = { assistantAnswer = DocumentIntelligenceEngine.answer(assistantQuestion, document.ocrText) },
+                    enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank(),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) { Text("Find answer") }
+                if (assistantAnswer.isNotBlank()) {
+                    Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        Text(assistantAnswer, modifier = Modifier.padding(12.dp))
+                    }
                 }
             }
 
-            SectionTitle("Smart insights · offline")
-            Text(insights.kind.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(4.dp))
-            Text(insights.summary, style = MaterialTheme.typography.bodyMedium)
-            if (insights.amounts.isNotEmpty()) Text("Amounts: ${insights.amounts.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-            if (insights.dates.isNotEmpty()) Text("Dates: ${insights.dates.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-            if (insights.references.isNotEmpty()) Text("References: ${insights.references.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-            if (insights.actionItems.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                Text("Potential action items", style = MaterialTheme.typography.labelLarge)
-                insights.actionItems.forEach { item ->
-                    Text("• $item", style = MaterialTheme.typography.bodySmall)
+            CollapsibleSection("Translate OCR") {
+                Text("Translation runs with ML Kit. The language model may download once, then works on-device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(TranslationEngine.commonTargets, key = { it.languageTag }) { target ->
+                        FilterChip(
+                            selected = translationTarget == target.languageTag,
+                            onClick = { translationTarget = target.languageTag },
+                            label = { Text(target.label) }
+                        )
+                    }
                 }
-            }
-            if (insights.suggestedTags.isNotEmpty()) {
-                Text("Suggested tags: ${insights.suggestedTags.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-                TextButton(
-                    enabled = !busy,
+                Button(
                     onClick = {
-                        val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
-                        onTags(merged.joinToString(", "))
+                        detailScope.launch {
+                            translating = true
+                            translationResult = runCatching { TranslationEngine.translate(document.ocrText, translationTarget) }
+                                .getOrElse { it.message ?: "Translation failed" }
+                            translating = false
+                        }
+                    },
+                    enabled = document.ocrText.isNotBlank() && !translating,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) { Text(if (translating) "Translating…" else "Translate") }
+                if (translationResult.isNotBlank()) {
+                    Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        SelectionContainer { Text(translationResult, modifier = Modifier.padding(12.dp)) }
                     }
-                ) { Text("Apply suggested tags") }
-            }
-            Spacer(Modifier.height(10.dp))
-            OutlinedTextField(
-                value = assistantQuestion,
-                onValueChange = { assistantQuestion = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ask about this scan") },
-                supportingText = { Text("Answers are extracted only from OCR text; no document is uploaded.") },
-                maxLines = 3
-            )
-            Button(
-                onClick = { assistantAnswer = DocumentIntelligenceEngine.answer(assistantQuestion, document.ocrText) },
-                enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank(),
-                modifier = Modifier.padding(top = 8.dp)
-            ) { Text("Find answer") }
-            if (assistantAnswer.isNotBlank()) {
-                Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    Text(assistantAnswer, modifier = Modifier.padding(12.dp))
-                }
-            }
-
-            SectionTitle("Translate OCR")
-            Text("Translation runs with ML Kit. The language model may download once, then works on-device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(TranslationEngine.commonTargets, key = { it.languageTag }) { target ->
-                    FilterChip(
-                        selected = translationTarget == target.languageTag,
-                        onClick = { translationTarget = target.languageTag },
-                        label = { Text(target.label) }
-                    )
-                }
-            }
-            Button(
-                onClick = {
-                    detailScope.launch {
-                        translating = true
-                        translationResult = runCatching { TranslationEngine.translate(document.ocrText, translationTarget) }
-                            .getOrElse { it.message ?: "Translation failed" }
-                        translating = false
-                    }
-                },
-                enabled = document.ocrText.isNotBlank() && !translating,
-                modifier = Modifier.padding(top = 8.dp)
-            ) { Text(if (translating) "Translating…" else "Translate") }
-            if (translationResult.isNotBlank()) {
-                Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    SelectionContainer { Text(translationResult, modifier = Modifier.padding(12.dp)) }
                 }
             }
 
@@ -636,6 +658,30 @@ private fun SectionTitle(value: String) {
     Spacer(Modifier.height(22.dp))
     Text(value, style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
+}
+
+/** A titled section that starts collapsed so the viewer stays short; the open state survives rotation. */
+@Composable
+private fun ColumnScope.CollapsibleSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    var expanded by rememberSaveable(title) { mutableStateOf(false) }
+    Spacer(Modifier.height(14.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Icon(
+            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+            contentDescription = if (expanded) "Collapse $title" else "Expand $title"
+        )
+    }
+    if (expanded) {
+        Spacer(Modifier.height(4.dp))
+        content()
+    }
 }
 
 @Composable
