@@ -303,7 +303,8 @@ fun CameraScannerScreen(
         return
     }
 
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    // Dark blue-grey scanner backdrop from the approved design (not pure black).
+    Box(Modifier.fillMaxSize().background(Color(0xFF0E141D))) {
         AndroidView(
             factory = { previewView },
             modifier = Modifier.fillMaxSize(),
