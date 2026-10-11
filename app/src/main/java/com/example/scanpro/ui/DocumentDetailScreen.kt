@@ -61,6 +61,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -234,10 +235,13 @@ fun DocumentDetailScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
                         var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
+                        // The gesture block outlives reorders, so read the live position instead of the captured one.
+                        val latestIndex by rememberUpdatedState(index)
+                        val latestLast by rememberUpdatedState(pages.lastIndex)
                         Card(
                             modifier = Modifier
                                 .size(width = 64.dp, height = 86.dp)
-                                .pointerInput(item.id, pages.size) {
+                                .pointerInput(item.id) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { dragDistance = 0f },
                                         onDragEnd = { dragDistance = 0f },
@@ -246,10 +250,10 @@ fun DocumentDetailScreen(
                                             change.consume()
                                             dragDistance += amount.x
                                             val threshold = 46.dp.toPx()
-                                            if (dragDistance > threshold && index < pages.lastIndex) {
+                                            if (dragDistance > threshold && latestIndex < latestLast) {
                                                 onMove(item.id, 1)
                                                 dragDistance = 0f
-                                            } else if (dragDistance < -threshold && index > 0) {
+                                            } else if (dragDistance < -threshold && latestIndex > 0) {
                                                 onMove(item.id, -1)
                                                 dragDistance = 0f
                                             }

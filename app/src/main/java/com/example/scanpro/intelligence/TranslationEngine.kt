@@ -43,7 +43,8 @@ object TranslationEngine {
         )
         return try {
             translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
-            translator.translate(text.take(30000)).await()
+            // Translate in chunks so long documents are not silently truncated.
+            text.chunked(30000).joinToString("") { translator.translate(it).await() }
         } finally {
             translator.close()
         }

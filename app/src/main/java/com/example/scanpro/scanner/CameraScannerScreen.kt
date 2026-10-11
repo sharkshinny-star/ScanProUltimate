@@ -1,8 +1,10 @@
 package com.example.scanpro.scanner
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -79,11 +81,13 @@ import androidx.core.content.ContextCompat
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.ScanMode
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
 fun CameraScannerScreen(
@@ -118,7 +122,11 @@ fun CameraScannerScreen(
     var exposureMin by remember { mutableIntStateOf(0) }
     var exposureMax by remember { mutableIntStateOf(0) }
     var capturing by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Point the camera at a document") }
+    // `status` holds short-lived feedback (captured, errors); live detection guidance is kept separately
+    // so the per-frame analyzer callback cannot overwrite it.
+    var status by remember { mutableStateOf<String?>(null) }
+    var liveGuidance by remember { mutableStateOf("Point the camera at a document") }
+    val disposed = remember { AtomicBoolean(false) }
     var autoCaptureSignal by remember { mutableIntStateOf(0) }
     var scanMode by remember { mutableStateOf(ScanMode.DOCUMENT) }
     var scanBothSides by remember { mutableStateOf(false) }
@@ -146,7 +154,7 @@ fun CameraScannerScreen(
             onDetection = { result, isStable ->
                 detection = result
                 stable = isStable
-                status = if (isStable && result.isReady) "Hold… capturing" else result.guidance
+                liveGuidance = if (isStable && result.isReady) "Hold… capturing" else result.guidance
             },
             onAutoCapture = { autoCaptureSignal++ }
         )
@@ -200,6 +208,13 @@ fun CameraScannerScreen(
         )
     }
 
+    LaunchedEffect(status) {
+        if (status != null) {
+            delay(3000)
+            status = null
+        }
+    }
+
     LaunchedEffect(autoCaptureSignal) {
         if (autoCaptureSignal > 0 && autoCapture && !capturing && pages.size < pageLimit) capturePage()
     }
@@ -208,6 +223,8 @@ fun CameraScannerScreen(
         if (!permissionGranted) return@LaunchedEffect
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
+            // The screen may have been left before the camera provider became ready.
+            if (disposed.get()) return@addListener
             runCatching {
                 val provider = future.get()
                 cameraProvider = provider
@@ -244,13 +261,14 @@ fun CameraScannerScreen(
                     exposureIndex = 0
                 }
             }.onFailure {
-                status = "Camera unavailable. Use compatibility scanner."
+                liveGuidance = "Camera unavailable. Use compatibility scanner."
             }
         }, mainExecutor)
     }
 
     DisposableEffect(Unit) {
         onDispose {
+            disposed.set(true)
             cameraProvider?.unbindAll()
             analysisExecutor.shutdown()
         }
@@ -330,7 +348,7 @@ fun CameraScannerScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
-                Text(status, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
+                Text(status ?: liveGuidance, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
             }
 
             Spacer(Modifier.height(10.dp))
@@ -457,6 +475,7 @@ fun CameraScannerScreen(
 
 @Composable
 private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClose: () -> Unit) {
+    val context = LocalContext.current
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Card(Modifier.padding(24.dp)) {
             Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -467,6 +486,13 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
                 Text("The Pro scanner needs camera access only while you scan. Your documents stay on this device by default.")
                 Spacer(Modifier.height(16.dp))
                 Button(onClick = onRequest) { Text("Allow camera") }
+                // After "Don't ask again" the system dialog no longer appears; settings is the only way back.
+                TextButton(onClick = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }) { Text("Open app settings") }
                 OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text("Use compatibility scanner") }
                 TextButton(onClick = onClose) { Text("Cancel") }
             }
