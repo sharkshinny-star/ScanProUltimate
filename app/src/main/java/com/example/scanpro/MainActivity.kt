@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.ui.ScanProApp
 import com.example.scanpro.ui.ScanProTheme
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
@@ -67,7 +68,8 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ScanProTheme {
+            val appearance by viewModel.appearance.collectAsStateWithLifecycle()
+            ScanProTheme(appearance = appearance) {
                 ScanProApp(
                     viewModel = viewModel,
                     sessionUnlocked = sessionUnlocked,

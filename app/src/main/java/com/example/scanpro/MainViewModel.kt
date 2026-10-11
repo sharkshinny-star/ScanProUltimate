@@ -13,6 +13,7 @@ import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
+import com.example.scanpro.data.AppearanceMode
 import com.example.scanpro.data.SettingsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -72,6 +73,7 @@ class MainViewModel @Inject constructor(
     )
     val autoTitle = settings.autoTitle.stateIn(viewModelScope, SharingStarted.Eagerly, true)
     val appLockEnabled = settings.appLock.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val appearance = settings.appearance.stateIn(viewModelScope, SharingStarted.Eagerly, AppearanceMode.SYSTEM)
 
     private var searchJob: Job? = null
 
@@ -289,6 +291,7 @@ class MainViewModel @Inject constructor(
     fun setDefaultPdfQuality(value: PdfQuality) { viewModelScope.launch { settings.setPdfQuality(value) } }
     fun setAutoTitle(value: Boolean) { viewModelScope.launch { settings.setAutoTitle(value) } }
     fun setAppLock(value: Boolean) { viewModelScope.launch { settings.setAppLock(value) } }
+    fun setAppearance(value: AppearanceMode) { viewModelScope.launch { settings.setAppearance(value) } }
 
     private fun launchBusy(label: String?, successMessage: String?, action: suspend () -> Unit) {
         if (_busy.value) {

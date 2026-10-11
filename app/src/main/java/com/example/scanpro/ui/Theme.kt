@@ -1,5 +1,12 @@
 package com.example.scanpro.ui
 
+import android.app.Activity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowInsetsControllerCompat
+import com.example.scanpro.data.AppearanceMode
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -88,27 +95,46 @@ private val ScanProTypography = Typography().let { base ->
     )
 }
 
+/** True when the app is showing its dark palette, which can differ from the system setting. */
+val LocalScanProDark = compositionLocalOf { false }
+
 /**
  * [dynamicColor] defaults to false so the app keeps the designed ScanPro palette. Turn it on to
- * follow the user's wallpaper colours on Android 12 and newer.
+ * follow the user's wallpaper colours on Android 12 and newer. [appearance] picks Day, Night or
+ * the device setting; the system bar icons are updated to stay readable against the choice.
  */
 @Composable
 fun ScanProTheme(
     dynamicColor: Boolean = false,
+    appearance: AppearanceMode = AppearanceMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val dark = isSystemInDarkTheme()
+    val dark = when (appearance) {
+        AppearanceMode.DAY -> false
+        AppearanceMode.NIGHT -> true
+        AppearanceMode.SYSTEM -> isSystemInDarkTheme()
+    }
     val colors = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dark -> dynamicDarkColorScheme(context)
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicLightColorScheme(context)
         dark -> ScanProDark
         else -> ScanProLight
     }
-    MaterialTheme(
-        colorScheme = colors,
-        typography = ScanProTypography,
-        shapes = ScanProShapes,
-        content = content
-    )
+    val view = LocalView.current
+    SideEffect {
+        val window = (view.context as? Activity)?.window ?: return@SideEffect
+        WindowInsetsControllerCompat(window, view).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+        }
+    }
+    CompositionLocalProvider(LocalScanProDark provides dark) {
+        MaterialTheme(
+            colorScheme = colors,
+            typography = ScanProTypography,
+            shapes = ScanProShapes,
+            content = content
+        )
+    }
 }

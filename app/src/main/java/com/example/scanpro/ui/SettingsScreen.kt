@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.data.AppearanceMode
 import com.example.scanpro.data.PdfQuality
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +47,7 @@ fun SettingsScreen(
     pdfQuality: PdfQuality,
     autoTitle: Boolean,
     appLock: Boolean,
+    appearance: AppearanceMode,
     documentCount: Int,
     trashCount: Int,
     storageBytes: Long,
@@ -54,6 +56,7 @@ fun SettingsScreen(
     onPdfQualityChange: (PdfQuality) -> Unit,
     onAutoTitleChange: (Boolean) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
+    onAppearanceChange: (AppearanceMode) -> Unit,
     onImportBackup: (Uri, String) -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
@@ -83,6 +86,24 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            Text("Appearance", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Day and Night set the colour scheme. System follows your device setting.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(10.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(AppearanceMode.entries) { mode ->
+                    FilterChip(
+                        selected = mode == appearance,
+                        onClick = { onAppearanceChange(mode) },
+                        label = { Text(mode.label()) }
+                    )
+                }
+            }
+            Spacer(Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Default.PictureAsPdf, contentDescription = null)
                 Text("Default PDF quality", style = MaterialTheme.typography.titleMedium)
@@ -176,4 +197,10 @@ fun SettingsScreen(
         }
     }
 
+}
+
+private fun AppearanceMode.label(): String = when (this) {
+    AppearanceMode.SYSTEM -> "System"
+    AppearanceMode.DAY -> "Day"
+    AppearanceMode.NIGHT -> "Night"
 }

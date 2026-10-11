@@ -7,7 +7,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -122,6 +121,7 @@ fun ScanProApp(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
+    val appearance by viewModel.appearance.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val exportArtifact by viewModel.exportArtifact.collectAsStateWithLifecycle()
     val newScanId by viewModel.newScanId.collectAsStateWithLifecycle()
@@ -226,6 +226,7 @@ fun ScanProApp(
                 pdfQuality = pdfQuality,
                 autoTitle = autoTitle,
                 appLock = appLock,
+                appearance = appearance,
                 documentCount = documents.size,
                 trashCount = trash.size,
                 storageBytes = storageBytes,
@@ -234,6 +235,7 @@ fun ScanProApp(
                 onPdfQualityChange = viewModel::setDefaultPdfQuality,
                 onAutoTitleChange = viewModel::setAutoTitle,
                 onAppLockChange = onAppLockChange,
+                onAppearanceChange = viewModel::setAppearance,
                 onImportBackup = viewModel::importEncryptedBackup,
                 bottomBar = {
                     LibraryNavigationBar(
@@ -682,7 +684,7 @@ private fun DocumentGridCard(
 /** Gradient "Smart scan" hero from the approved design. Primary entry point on the home screen. */
 @Composable
 private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean) {
-    val dark = isSystemInDarkTheme()
+    val dark = LocalScanProDark.current
     val start = if (dark) Color(0xFF31477D) else Color(0xFF4F5BD0)
     val end = if (dark) Color(0xFF26365F) else Color(0xFF3543AA)
     val caption = if (dark) Color(0xFFCCD6EF) else Color(0xFFE6EAFF)
