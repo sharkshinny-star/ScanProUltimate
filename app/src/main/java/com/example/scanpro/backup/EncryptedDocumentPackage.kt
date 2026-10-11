@@ -197,7 +197,7 @@ class EncryptedDocumentPackage(private val context: Context) {
                                     val read = zip.read(buffer)
                                     if (read < 0) break
                                     extractedBytes += read
-                                    require(extractedBytes <= MAX_RESTORE_BYTES) { "Backup is too large to restore" }
+                                    if (extractedBytes > MAX_RESTORE_BYTES) throw BackupTooLargeException()
                                     out.write(buffer, 0, read)
                                 }
                             }
@@ -258,6 +258,9 @@ class EncryptedDocumentPackage(private val context: Context) {
                 pages = pages,
                 tempDir = outDir
             )
+        } catch (error: BackupTooLargeException) {
+            outDir.deleteRecursively()
+            throw error
         } catch (error: Throwable) {
             outDir.deleteRecursively()
             throw IllegalArgumentException("Could not decrypt backup. Check the password and file.", error)
@@ -267,6 +270,8 @@ class EncryptedDocumentPackage(private val context: Context) {
             password.fill('\u0000')
         }
     }
+
+    private class BackupTooLargeException : IllegalArgumentException("Backup is too large to restore")
 
     /** Resolves a manifest-relative path and refuses anything that escapes the restore directory. */
     private fun safeBackupFile(outDir: File, relative: String): File {

@@ -368,7 +368,7 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
-        fun makeHalf(left: Boolean): ScanPage {
+        suspend fun makeHalf(left: Boolean): ScanPage {
             val halfWidth = bitmap.width / 2
             val x = if (left) 0 else halfWidth
             val width = if (left) halfWidth else bitmap.width - halfWidth
@@ -376,8 +376,12 @@ class DocumentRepository @Inject constructor(
             val id = UUID.randomUUID().toString()
             val source = File(sourceDir, "book_$id.jpg")
             val rendered = File(renderedDir, "book_$id.jpg")
-            ImageProcessor.saveBitmapJpeg(half, source, 98)
-            ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+            try {
+                ImageProcessor.saveBitmapJpeg(half, source, 98)
+                ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+            } finally {
+                half.recycle()
+            }
             return ScanPage(
                 id = id,
                 documentId = doc.id,
@@ -388,8 +392,11 @@ class DocumentRepository @Inject constructor(
             )
         }
 
-        val left = makeHalf(true)
-        val right = makeHalf(false)
+        val (left, right) = try {
+            makeHalf(true) to makeHalf(false)
+        } finally {
+            bitmap.recycle()
+        }
         pages.removeAt(index)
         pages.add(index, right)
         pages.add(index, left)
