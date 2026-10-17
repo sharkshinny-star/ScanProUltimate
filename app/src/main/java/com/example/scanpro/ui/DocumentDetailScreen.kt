@@ -61,6 +61,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -206,6 +207,28 @@ fun DocumentDetailScreen(
             }
 
             if (currentPage != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { sharePdf(context, document) },
+                        modifier = Modifier.weight(1f),
+                        enabled = !busy
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Share PDF")
+                    }
+                    OutlinedButton(
+                        onClick = { shareImages(context, document) },
+                        modifier = Modifier.weight(1f),
+                        enabled = !busy
+                    ) {
+                        Text("Share JPG")
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
                 PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(480.dp))
                 Spacer(Modifier.height(8.dp))
                 Text("Page ${currentIndex + 1} of ${pages.size}", modifier = Modifier.align(Alignment.CenterHorizontally), fontWeight = FontWeight.Medium)
@@ -213,10 +236,13 @@ fun DocumentDetailScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
                         var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
+                        // The gesture block outlives reorders, so read the live position instead of the captured one.
+                        val latestIndex by rememberUpdatedState(index)
+                        val latestLast by rememberUpdatedState(pages.lastIndex)
                         Card(
                             modifier = Modifier
                                 .size(width = 64.dp, height = 86.dp)
-                                .pointerInput(item.id, pages.size) {
+                                .pointerInput(item.id) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { dragDistance = 0f },
                                         onDragEnd = { dragDistance = 0f },
@@ -225,10 +251,10 @@ fun DocumentDetailScreen(
                                             change.consume()
                                             dragDistance += amount.x
                                             val threshold = 46.dp.toPx()
-                                            if (dragDistance > threshold && index < pages.lastIndex) {
+                                            if (dragDistance > threshold && latestIndex < latestLast) {
                                                 onMove(item.id, 1)
                                                 dragDistance = 0f
-                                            } else if (dragDistance < -threshold && index > 0) {
+                                            } else if (dragDistance < -threshold && latestIndex > 0) {
                                                 onMove(item.id, -1)
                                                 dragDistance = 0f
                                             }
@@ -470,8 +496,8 @@ fun DocumentDetailScreen(
     }
 
     if (renameOpen) TextInputDialog("Rename document", document.title, "Name", onDismiss = { renameOpen = false }) { onRename(it); renameOpen = false }
-    if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
-    if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
+    if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
+    if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
     if (watermarkOpen) TextInputDialog("Watermark all pages", label = "Watermark text", confirmLabel = "Apply", onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }
     if (passwordOpen) PasswordInputDialog(
         title = "Protect PDF copy",

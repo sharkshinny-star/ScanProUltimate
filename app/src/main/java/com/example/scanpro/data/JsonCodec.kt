@@ -69,30 +69,29 @@ object JsonCodec {
         }
     }.toString()
 
-    fun decodeAnnotations(raw: String?): List<PageAnnotation> = runCatching {
-        if (raw.isNullOrBlank()) return@runCatching emptyList()
-        val array = JSONArray(raw)
-        buildList {
-            for (index in 0 until array.length()) {
+    fun decodeAnnotations(raw: String?): List<PageAnnotation> {
+        if (raw.isNullOrBlank()) return emptyList()
+        val array = runCatching { JSONArray(raw) }.getOrNull() ?: return emptyList()
+        // Decode per item so one corrupt entry cannot drop (and later overwrite) every annotation.
+        return (0 until array.length()).mapNotNull { index ->
+            runCatching {
                 val item = array.getJSONObject(index)
-                add(
-                    PageAnnotation(
-                        id = item.optString("id"),
-                        type = runCatching { AnnotationType.valueOf(item.optString("type")) }
-                            .getOrDefault(AnnotationType.TEXT),
-                        x = item.optDouble("x", 0.1).toFloat(),
-                        y = item.optDouble("y", 0.1).toFloat(),
-                        width = item.optDouble("w", 0.3).toFloat(),
-                        height = item.optDouble("h", 0.1).toFloat(),
-                        rotationDegrees = item.optDouble("rotation", 0.0).toFloat(),
-                        text = item.optString("text"),
-                        assetPath = item.optString("asset"),
-                        opacity = item.optDouble("opacity", 1.0).toFloat()
-                    )
+                PageAnnotation(
+                    id = item.optString("id"),
+                    type = runCatching { AnnotationType.valueOf(item.optString("type")) }
+                        .getOrDefault(AnnotationType.TEXT),
+                    x = item.optDouble("x", 0.1).toFloat(),
+                    y = item.optDouble("y", 0.1).toFloat(),
+                    width = item.optDouble("w", 0.3).toFloat(),
+                    height = item.optDouble("h", 0.1).toFloat(),
+                    rotationDegrees = item.optDouble("rotation", 0.0).toFloat(),
+                    text = item.optString("text"),
+                    assetPath = item.optString("asset"),
+                    opacity = item.optDouble("opacity", 1.0).toFloat()
                 )
-            }
+            }.getOrNull()
         }
-    }.getOrDefault(emptyList())
+    }
 
     private fun point(point: NormalizedPoint) = JSONObject().apply {
         put("x", point.x.toDouble())

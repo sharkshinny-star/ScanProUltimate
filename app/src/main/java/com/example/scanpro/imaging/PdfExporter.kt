@@ -33,8 +33,9 @@ object PdfExporter {
         val pdf = PdfDocument()
         try {
             pages.sortedBy { it.position }.forEachIndexed { index, pageModel ->
+                // Fail loudly: silently skipping a page would produce a short PDF with wrong page numbers.
                 val bitmap = ImageProcessor.decodeScaled(pageModel.imagePath, quality.maxImageDimension)
-                    ?: return@forEachIndexed
+                    ?: error("Could not read page ${index + 1}")
                 val (pageWidth, pageHeight) = pageDimensions(pageSize, bitmap.width, bitmap.height)
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
                 val page = pdf.startPage(info)
@@ -59,6 +60,8 @@ object PdfExporter {
                     RectF(left, top, left + drawWidth, top + drawHeight),
                     Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
                 )
+                // The page is drawn; free the decoded bitmap now instead of holding every page until GC.
+                bitmap.recycle()
 
                 if (searchable && pageModel.ocrText.isNotBlank()) {
                     // Android PdfDocument records Canvas text as PDF text operators. Keeping this
@@ -143,9 +146,14 @@ object PdfExporter {
         val output = mutableListOf<String>()
         var start = 0
         while (start < text.length) {
-            val end = min(text.length, start + size)
-            output += text.substring(start, end)
-            start = end
+            var end = min(text.length, start + size)
+            if (end < text.length) {
+                // Break at the last space so a word is never split across two text runs (which breaks search).
+                val space = text.lastIndexOf(' ', end)
+                if (space > start) end = space
+            }
+            output += text.substring(start, end).trim()
+            start = if (end < text.length && text[end] == ' ') end + 1 else end
         }
         return output
     }

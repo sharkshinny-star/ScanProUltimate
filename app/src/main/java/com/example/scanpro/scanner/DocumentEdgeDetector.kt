@@ -79,6 +79,7 @@ object DocumentEdgeDetector {
             val frameArea = working.cols().toDouble() * working.rows().toDouble()
             var best: Candidate? = null
 
+            try {
             contours.forEach { contour ->
                 val area = abs(Imgproc.contourArea(contour))
                 if (area < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
@@ -115,7 +116,10 @@ object DocumentEdgeDetector {
                     contour2f.release()
                 }
             }
-            contours.forEach(MatOfPoint::release)
+            } finally {
+                // Release native contour memory even if candidate scoring throws.
+                contours.forEach(MatOfPoint::release)
+            }
 
             val candidate = best
             val confidence = candidate?.score ?: 0f

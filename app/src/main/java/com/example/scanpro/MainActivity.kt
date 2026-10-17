@@ -2,6 +2,7 @@ package com.example.scanpro
 
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
@@ -27,6 +28,7 @@ class MainActivity : FragmentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private var sessionUnlocked by mutableStateOf(false)
+    private var stoppedAt = 0L
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -77,18 +79,27 @@ class MainActivity : FragmentActivity() {
                     },
                     onUnlock = { authenticate { sessionUnlocked = true } },
                     onAppLockChange = { enabled ->
-                        if (!enabled) {
-                            viewModel.setAppLock(false)
+                        // Turning the lock off needs authentication too, or anyone holding the phone could disable it.
+                        authenticate {
+                            viewModel.setAppLock(enabled)
                             sessionUnlocked = true
-                        } else {
-                            authenticate {
-                                viewModel.setAppLock(true)
-                                sessionUnlocked = true
-                            }
                         }
                     }
                 )
             }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        stoppedAt = SystemClock.elapsedRealtime()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Re-lock after a real absence, but not for quick trips to the photo picker, camera or share sheet.
+        if (stoppedAt != 0L && SystemClock.elapsedRealtime() - stoppedAt > LOCK_TIMEOUT_MS) {
+            sessionUnlocked = false
         }
     }
 
@@ -140,5 +151,9 @@ class MainActivity : FragmentActivity() {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) infoBuilder.setNegativeButtonText("Cancel")
         prompt.authenticate(infoBuilder.build())
+    }
+
+    private companion object {
+        const val LOCK_TIMEOUT_MS = 30_000L
     }
 }

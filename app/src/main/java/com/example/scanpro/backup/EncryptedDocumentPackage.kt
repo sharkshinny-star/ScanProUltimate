@@ -2,6 +2,12 @@ package com.example.scanpro.backup
 
 import android.content.Context
 import android.net.Uri
+import com.example.scanpro.data.AnnotationType
+import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.JsonCodec
+import com.example.scanpro.data.PageAdjustments
+import com.example.scanpro.data.PageAnnotation
+import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.OcrScript
@@ -29,9 +35,24 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
-/** Password-encrypted, portable ScanPro package. Visible page output + OCR metadata are preserved. */
+/**
+ * Password-encrypted, portable ScanPro package. Stores each page's rendered output, OCR text, original source
+ * image, and edit settings (filter, rotation, crop, adjustments, annotations + signature images) so a restored
+ * document stays fully editable. Older packages without the extra fields still restore as flattened pages.
+ */
 class EncryptedDocumentPackage(private val context: Context) {
-    data class RestoredPage(val file: File, val ocrText: String)
+    data class RestoredPage(
+        val file: File,
+        val ocrText: String,
+        /** Original source image, or null for older backups that only contain the rendered page. */
+        val sourceFile: File? = null,
+        val filter: PageFilter = PageFilter.ORIGINAL,
+        val rotationDegrees: Int = 0,
+        val crop: CropQuad = CropQuad.DEFAULT,
+        val adjustments: PageAdjustments = PageAdjustments.DEFAULT,
+        /** Signature annotations point at extracted files inside the restore temp dir. */
+        val annotations: List<PageAnnotation> = emptyList()
+    )
     data class RestoredDocument(
         val title: String,
         val folderName: String,
@@ -47,6 +68,14 @@ class EncryptedDocumentPackage(private val context: Context) {
     )
 
     fun export(document: ScanDocument, password: CharArray, destination: File) {
+        try {
+            writePackage(document, password, destination)
+        } finally {
+            password.fill('\u0000')
+        }
+    }
+
+    private fun writePackage(document: ScanDocument, password: CharArray, destination: File) {
         require(password.size >= 6) { "Use a backup password with at least 6 characters" }
         destination.parentFile?.mkdirs()
         val salt = ByteArray(16).also(SecureRandom()::nextBytes)
@@ -55,6 +84,18 @@ class EncryptedDocumentPackage(private val context: Context) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
             init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(128, iv))
         }
+
+        val sortedPages = document.pages.sortedBy { it.position }
+        fun pageEntry(index: Int) = "pages/${index.toString().padStart(4, '0')}.jpg"
+        fun sourceEntry(index: Int) = "sources/${index.toString().padStart(4, '0')}"
+        fun assetEntry(index: Int, annotation: Int) = "assets/${index.toString().padStart(4, '0')}_$annotation.png"
+        // Signature images live in app storage, so annotations are rewritten to point at the package entries.
+        fun portableAnnotations(index: Int, page: com.example.scanpro.data.ScanPage): List<PageAnnotation> =
+            page.annotations.mapIndexedNotNull { k, annotation ->
+                if (annotation.type != AnnotationType.SIGNATURE) annotation
+                else if (File(annotation.assetPath).isFile) annotation.copy(assetPath = assetEntry(index, k))
+                else null
+            }
 
         FileOutputStream(destination).use { raw ->
             val header = DataOutputStream(BufferedOutputStream(raw))
@@ -78,10 +119,16 @@ class EncryptedDocumentPackage(private val context: Context) {
                         put("scanMode", document.scanMode.name)
                         put("ocrScript", document.ocrScript.name)
                         put("pages", JSONArray().apply {
-                            document.pages.sortedBy { it.position }.forEachIndexed { index, page ->
+                            sortedPages.forEachIndexed { index, page ->
                                 put(JSONObject().apply {
-                                    put("file", "pages/${index.toString().padStart(4, '0')}.jpg")
+                                    put("file", pageEntry(index))
                                     put("ocr", page.ocrText)
+                                    if (File(page.sourcePath).isFile) put("source", sourceEntry(index))
+                                    put("filter", page.filter.name)
+                                    put("rotation", page.rotationDegrees)
+                                    put("crop", JsonCodec.encodeCrop(page.crop))
+                                    put("adjustments", JsonCodec.encodeAdjustments(page.adjustments))
+                                    put("annotations", JsonCodec.encodeAnnotations(portableAnnotations(index, page)))
                                 })
                             }
                         })
@@ -90,16 +137,24 @@ class EncryptedDocumentPackage(private val context: Context) {
                     zip.write(manifest.toString().toByteArray(Charsets.UTF_8))
                     zip.closeEntry()
 
-                    document.pages.sortedBy { it.position }.forEachIndexed { index, page ->
-                        val file = File(page.imagePath)
-                        zip.putNextEntry(ZipEntry("pages/${index.toString().padStart(4, '0')}.jpg"))
+                    fun addFile(name: String, file: File) {
+                        zip.putNextEntry(ZipEntry(name))
                         FileInputStream(file).use { it.copyTo(zip) }
                         zip.closeEntry()
+                    }
+                    sortedPages.forEachIndexed { index, page ->
+                        addFile(pageEntry(index), File(page.imagePath))
+                        val source = File(page.sourcePath)
+                        if (source.isFile) addFile(sourceEntry(index), source)
+                        page.annotations.forEachIndexed { k, annotation ->
+                            if (annotation.type == AnnotationType.SIGNATURE && File(annotation.assetPath).isFile) {
+                                addFile(assetEntry(index, k), File(annotation.assetPath))
+                            }
+                        }
                     }
                 }
             }
         }
-        password.fill('\u0000')
     }
 
     fun import(source: Uri, password: CharArray): RestoredDocument {
@@ -110,8 +165,10 @@ class EncryptedDocumentPackage(private val context: Context) {
             FileOutputStream(encrypted).use { input.copyTo(it) }
         }
         val outDir = File(context.cacheDir, "restore_${UUID.randomUUID()}").apply { mkdirs() }
+        var rawInput: FileInputStream? = null
         try {
-            val input = DataInputStream(BufferedInputStream(FileInputStream(encrypted)))
+            rawInput = FileInputStream(encrypted)
+            val input = DataInputStream(BufferedInputStream(rawInput))
             val magic = ByteArray(MAGIC.size)
             input.readFully(magic)
             require(magic.contentEquals(MAGIC)) { "Not a ScanPro encrypted package" }
@@ -127,12 +184,23 @@ class EncryptedDocumentPackage(private val context: Context) {
             CipherInputStream(input, cipher).use { decrypted ->
                 ZipInputStream(BufferedInputStream(decrypted)).use { zip ->
                     var entry = zip.nextEntry
+                    var extractedBytes = 0L
                     while (entry != null) {
                         val safe = File(outDir, entry.name).canonicalFile
                         require(safe.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup entry" }
                         if (entry.isDirectory) safe.mkdirs() else {
                             safe.parentFile?.mkdirs()
-                            FileOutputStream(safe).use { zip.copyTo(it) }
+                            FileOutputStream(safe).use { out ->
+                                // Cap total unpacked size so a crafted backup cannot fill the device (zip bomb).
+                                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                while (true) {
+                                    val read = zip.read(buffer)
+                                    if (read < 0) break
+                                    extractedBytes += read
+                                    if (extractedBytes > MAX_RESTORE_BYTES) throw BackupTooLargeException()
+                                    out.write(buffer, 0, read)
+                                }
+                            }
                         }
                         zip.closeEntry()
                         entry = zip.nextEntry
@@ -147,9 +215,30 @@ class EncryptedDocumentPackage(private val context: Context) {
             val pages = buildList {
                 for (index in 0 until pageArray.length()) {
                     val pageJson = pageArray.getJSONObject(index)
-                    val file = File(outDir, pageJson.getString("file"))
-                    require(file.exists()) { "Backup page is missing" }
-                    add(RestoredPage(file, pageJson.optString("ocr")))
+                    val file = safeBackupFile(outDir, pageJson.getString("file"))
+                    require(file.isFile) { "Backup page is missing" }
+                    // Everything below is optional so backups made before editable restore still import.
+                    val sourceFile = pageJson.optString("source").takeIf { it.isNotBlank() }
+                        ?.let { safeBackupFile(outDir, it) }?.takeIf { it.isFile }
+                    val annotations = JsonCodec.decodeAnnotations(pageJson.optString("annotations"))
+                        .mapNotNull { annotation ->
+                            if (annotation.type != AnnotationType.SIGNATURE) annotation
+                            else runCatching { safeBackupFile(outDir, annotation.assetPath) }.getOrNull()
+                                ?.takeIf { it.isFile }
+                                ?.let { annotation.copy(assetPath = it.absolutePath) }
+                        }
+                    add(
+                        RestoredPage(
+                            file = file,
+                            ocrText = pageJson.optString("ocr"),
+                            sourceFile = sourceFile,
+                            filter = enumOrDefault(pageJson.optString("filter"), PageFilter.ORIGINAL),
+                            rotationDegrees = pageJson.optInt("rotation", 0),
+                            crop = JsonCodec.decodeCrop(pageJson.optString("crop")),
+                            adjustments = JsonCodec.decodeAdjustments(pageJson.optString("adjustments")),
+                            annotations = annotations
+                        )
+                    )
                 }
             }
             require(pages.isNotEmpty()) { "Backup contains no pages" }
@@ -169,13 +258,26 @@ class EncryptedDocumentPackage(private val context: Context) {
                 pages = pages,
                 tempDir = outDir
             )
+        } catch (error: BackupTooLargeException) {
+            outDir.deleteRecursively()
+            throw error
         } catch (error: Throwable) {
             outDir.deleteRecursively()
             throw IllegalArgumentException("Could not decrypt backup. Check the password and file.", error)
         } finally {
+            runCatching { rawInput?.close() }
             encrypted.delete()
             password.fill('\u0000')
         }
+    }
+
+    private class BackupTooLargeException : IllegalArgumentException("Backup is too large to restore")
+
+    /** Resolves a manifest-relative path and refuses anything that escapes the restore directory. */
+    private fun safeBackupFile(outDir: File, relative: String): File {
+        val file = File(outDir, relative).canonicalFile
+        require(file.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup path" }
+        return file
     }
 
     private fun deriveKey(password: CharArray, salt: ByteArray, iterations: Int): SecretKeySpec {
@@ -191,5 +293,6 @@ class EncryptedDocumentPackage(private val context: Context) {
     companion object {
         private val MAGIC = byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte())
         private const val ITERATIONS = 210_000
+        private const val MAX_RESTORE_BYTES = 2L * 1024 * 1024 * 1024
     }
 }

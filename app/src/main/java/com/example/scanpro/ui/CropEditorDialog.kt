@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -47,6 +48,7 @@ fun CropEditorDialog(
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(sourcePath, 1800) }
     }
     var crop by remember(initial) { mutableStateOf(initial) }
+    val latestCrop by rememberUpdatedState(crop)
     var activeCorner by remember { mutableIntStateOf(0) }
     var draggingCorner by remember { mutableStateOf(false) }
     val undoStack = remember(initial) { mutableStateListOf<CropQuad>() }
@@ -67,14 +69,14 @@ fun CropEditorDialog(
                             .fillMaxWidth()
                             .padding(top = 12.dp)
                             .aspectRatio(image.width.toFloat() / image.height.toFloat())
-                            .pointerInput(crop) {
+                            .pointerInput(Unit) {
                                 detectDragGestures(
                                     onDragStart = { start ->
-                                        undoStack.add(crop)
+                                        undoStack.add(latestCrop)
                                         if (undoStack.size > 20) undoStack.removeAt(0)
                                         redoStack.clear()
                                         draggingCorner = true
-                                        val points = cropPoints(crop, size.width.toFloat(), size.height.toFloat())
+                                        val points = cropPoints(latestCrop, size.width.toFloat(), size.height.toFloat())
                                         activeCorner = points.indices.minByOrNull { index ->
                                             hypot(
                                                 (points[index].x - start.x).toDouble(),
@@ -87,10 +89,10 @@ fun CropEditorDialog(
                                     onDrag = { change, dragAmount ->
                                         change.consume()
                                         val points = listOf(
-                                            crop.topLeft,
-                                            crop.topRight,
-                                            crop.bottomRight,
-                                            crop.bottomLeft
+                                            latestCrop.topLeft,
+                                            latestCrop.topRight,
+                                            latestCrop.bottomRight,
+                                            latestCrop.bottomLeft
                                         ).toMutableList()
                                         val current = points[activeCorner]
                                         points[activeCorner] = NormalizedPoint(

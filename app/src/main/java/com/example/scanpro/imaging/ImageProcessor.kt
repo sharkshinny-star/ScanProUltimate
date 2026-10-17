@@ -46,16 +46,20 @@ object ImageProcessor {
             ExifInterface(source.absolutePath).rotationDegrees
         }.getOrDefault(0)
 
-        if (exifRotation != 0) bitmap = rotate(bitmap, exifRotation)
-        if (!crop.isIdentity()) bitmap = perspectiveCrop(bitmap, crop)
+        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
+        if (!crop.isIdentity()) bitmap = bitmap.then { perspectiveCrop(it, crop) }
 
         val totalRotation = ((manualRotationDegrees % 360) + 360) % 360
-        if (totalRotation != 0) bitmap = rotate(bitmap, totalRotation)
+        if (totalRotation != 0) bitmap = bitmap.then { rotate(it, totalRotation) }
 
-        bitmap = applyNamedFilter(bitmap, filter)
-        if (!adjustments.isNeutral()) bitmap = applyUserAdjustments(bitmap, adjustments.normalized())
-        if (annotations.isNotEmpty()) bitmap = applyAnnotations(bitmap, annotations)
-        saveJpeg(bitmap, destination, 96)
+        bitmap = bitmap.then { applyNamedFilter(it, filter) }
+        if (!adjustments.isNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
+        if (annotations.isNotEmpty()) bitmap = bitmap.then { applyAnnotations(it, annotations) }
+        try {
+            saveJpeg(bitmap, destination, 96)
+        } finally {
+            bitmap.recycle()
+        }
     }
 
     /**
@@ -74,13 +78,13 @@ object ImageProcessor {
         var bitmap = decodeScaled(source.absolutePath, maxDimension)
             ?: error("Unable to decode ${source.name}")
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
-        if (exifRotation != 0) bitmap = rotate(bitmap, exifRotation)
-        if (!crop.isIdentity()) bitmap = perspectiveCrop(bitmap, crop)
+        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
+        if (!crop.isIdentity()) bitmap = bitmap.then { perspectiveCrop(it, crop) }
         val totalRotation = ((manualRotationDegrees % 360) + 360) % 360
-        if (totalRotation != 0) bitmap = rotate(bitmap, totalRotation)
-        bitmap = applyNamedFilter(bitmap, filter)
-        if (!adjustments.isNeutral()) bitmap = applyUserAdjustments(bitmap, adjustments.normalized())
-        if (annotations.isNotEmpty()) bitmap = applyAnnotations(bitmap, annotations)
+        if (totalRotation != 0) bitmap = bitmap.then { rotate(it, totalRotation) }
+        bitmap = bitmap.then { applyNamedFilter(it, filter) }
+        if (!adjustments.isNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
+        if (annotations.isNotEmpty()) bitmap = bitmap.then { applyAnnotations(it, annotations) }
         return bitmap
     }
 
@@ -90,7 +94,7 @@ object ImageProcessor {
         PageFilter.COLOR -> autoDocumentEnhance(source, colorBoost = true)
         PageFilter.GRAY -> enhancedGrayscale(source)
         PageFilter.BW -> adaptiveBlackWhite(source)
-        PageFilter.WHITEBOARD -> whiteboard(autoDocumentEnhance(source, colorBoost = true))
+        PageFilter.WHITEBOARD -> autoDocumentEnhance(source, colorBoost = true).then { whiteboard(it) }
     }
 
     private fun applyUserAdjustments(source: Bitmap, adjustments: PageAdjustments): Bitmap {
@@ -126,64 +130,23 @@ object ImageProcessor {
         }
     }
 
-    /** Compatibility helper for older UI flows. Newer code stores signatures as overlays. */
-    fun stampSignature(renderedPage: File, sourceDestination: File, signature: Bitmap) {
-        val base = decodeScaled(renderedPage.absolutePath, 3400)
-            ?: error("Unable to open page for signature")
-        val output = base.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(output)
-        val targetWidth = (output.width * 0.38f).toInt().coerceAtLeast(1)
-        val targetHeight = (signature.height * (targetWidth.toFloat() / signature.width.toFloat()))
-            .toInt()
-            .coerceAtLeast(1)
-        val margin = (output.width * 0.05f).toInt()
-        val left = (output.width - targetWidth - margin).coerceAtLeast(0)
-        val top = (output.height - targetHeight - margin).coerceAtLeast(0)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-        canvas.drawBitmap(
-            signature,
-            null,
-            android.graphics.Rect(left, top, left + targetWidth, top + targetHeight),
-            paint
-        )
-        saveJpeg(output, sourceDestination, 96)
-        saveJpeg(output, renderedPage, 96)
-    }
-
-    fun stampWatermark(renderedPage: File, sourceDestination: File, text: String) {
-        val clean = text.trim()
-        if (clean.isBlank()) return
-        val base = decodeScaled(renderedPage.absolutePath, 3400)
-            ?: error("Unable to open page for watermark")
-        val output = base.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(output)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(70, 20, 20, 20)
-            textSize = (output.width * 0.09f).coerceAtLeast(36f)
-            textAlign = Paint.Align.CENTER
-            isFakeBoldText = true
-        }
-        canvas.save()
-        canvas.rotate(-32f, output.width / 2f, output.height / 2f)
-        canvas.drawText(clean.take(48), output.width / 2f, output.height / 2f, paint)
-        canvas.restore()
-        saveJpeg(output, sourceDestination, 96)
-        saveJpeg(output, renderedPage, 96)
-    }
-
     fun cropSourceToNewFile(source: File, destination: File, quad: CropQuad) {
         var bitmap = decodeScaled(source.absolutePath, 4200) ?: error("Unable to decode source")
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
-        if (exifRotation != 0) bitmap = rotate(bitmap, exifRotation)
-        val cropped = perspectiveCrop(bitmap, quad)
-        saveJpeg(cropped, destination, 98)
+        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
+        val cropped = bitmap.then { perspectiveCrop(it, quad) }
+        try {
+            saveJpeg(cropped, destination, 98)
+        } finally {
+            cropped.recycle()
+        }
     }
 
 
     fun decodeOrientedScaled(path: String, maxDimension: Int): Bitmap? {
         var bitmap = decodeScaled(path, maxDimension) ?: return null
         val exifRotation = runCatching { ExifInterface(path).rotationDegrees }.getOrDefault(0)
-        if (exifRotation != 0) bitmap = rotate(bitmap, exifRotation)
+        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
         return bitmap
     }
 
@@ -288,15 +251,20 @@ object ImageProcessor {
                 }
                 AnnotationType.SIGNATURE -> {
                     if (item.assetPath.isNotBlank()) {
-                        BitmapFactory.decodeFile(item.assetPath)?.let { signature ->
-                            canvas.drawBitmap(
-                                signature,
-                                null,
-                                rect,
-                                Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
-                                    alpha = (255 * item.opacity.coerceIn(0f, 1f)).toInt()
-                                }
-                            )
+                        // Downscale: a full-resolution signature is decoded on every re-render.
+                        decodeScaled(item.assetPath, 1600)?.let { signature ->
+                            try {
+                                canvas.drawBitmap(
+                                    signature,
+                                    null,
+                                    rect,
+                                    Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+                                        alpha = (255 * item.opacity.coerceIn(0f, 1f)).toInt()
+                                    }
+                                )
+                            } finally {
+                                signature.recycle()
+                            }
                         }
                     }
                 }
@@ -368,7 +336,7 @@ object ImageProcessor {
             val output = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
             Utils.matToBitmap(outputRgba, output)
             return if (colorBoost) {
-                applyColorMatrix(output, saturation = 1.10f, contrast = 1.04f, brightness = 1f)
+                output.then { applyColorMatrix(it, saturation = 1.10f, contrast = 1.04f, brightness = 1f) }
             } else output
         } finally {
             channels.forEach(Mat::release)
@@ -442,7 +410,7 @@ object ImageProcessor {
             pixels[index] = Color.rgb(nr, ng, nb)
         }
         val bright = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
-        return applyColorMatrix(bright, saturation = 1.08f, contrast = 1.28f, brightness = 6f)
+        return bright.then { applyColorMatrix(it, saturation = 1.08f, contrast = 1.28f, brightness = 6f) }
     }
 
     /** Adaptive thresholding keeps text readable under uneven paper lighting. */
@@ -489,6 +457,16 @@ object ImageProcessor {
         }
 
         return Bitmap.createBitmap(outputPixels, width, height, Bitmap.Config.ARGB_8888)
+    }
+
+    /**
+     * Runs one pipeline step and frees the input bitmap if the step produced a new one. Pages are
+     * up to ~3400px (~45 MB each), so dropping intermediates for GC causes avoidable OOMs.
+     */
+    private inline fun Bitmap.then(step: (Bitmap) -> Bitmap): Bitmap {
+        val result = step(this)
+        if (result !== this && !isRecycled) recycle()
+        return result
     }
 
     fun saveBitmapJpeg(bitmap: Bitmap, file: File, quality: Int = 96) {

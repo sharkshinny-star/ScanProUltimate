@@ -1,8 +1,10 @@
 package com.example.scanpro.scanner
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -78,12 +80,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.ScanMode
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
 fun CameraScannerScreen(
@@ -118,17 +123,31 @@ fun CameraScannerScreen(
     var exposureMin by remember { mutableIntStateOf(0) }
     var exposureMax by remember { mutableIntStateOf(0) }
     var capturing by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Point the camera at a document") }
+    // `status` holds short-lived feedback (captured, errors); live detection guidance is kept separately
+    // so the per-frame analyzer callback cannot overwrite it.
+    var status by remember { mutableStateOf<String?>(null) }
+    var liveGuidance by remember { mutableStateOf("Point the camera at a document") }
+    val disposed = remember { AtomicBoolean(false) }
     var autoCaptureSignal by remember { mutableIntStateOf(0) }
     var scanMode by remember { mutableStateOf(ScanMode.DOCUMENT) }
+    var scanBothSides by remember { mutableStateOf(false) }
     val pages = remember { mutableStateListOf<Uri>() }
+    val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permissionGranted = it
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
-        if (uris.isNotEmpty()) pages.addAll(uris)
+        if (uris.isNotEmpty()) {
+            val remaining = (pageLimit - pages.size).coerceAtLeast(0)
+            pages.addAll(uris.take(remaining))
+            status = when {
+                scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front ready · capture the back"
+                pages.isNotEmpty() -> "${pages.size} page(s) ready"
+                else -> "Select a document to scan"
+            }
+        }
     }
 
     val analyzer = remember {
@@ -136,16 +155,16 @@ fun CameraScannerScreen(
             onDetection = { result, isStable ->
                 detection = result
                 stable = isStable
-                status = if (isStable && result.isReady) "Hold… capturing" else result.guidance
+                liveGuidance = if (isStable && result.isReady) "Hold… capturing" else result.guidance
             },
             onAutoCapture = { autoCaptureSignal++ }
         )
     }
-    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing }
+    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && pages.size < pageLimit }
 
     fun capturePage() {
         val capture = imageCapture ?: return
-        if (capturing) return
+        if (capturing || pages.size >= pageLimit) return
         capturing = true
         status = "Capturing…"
 
@@ -161,13 +180,27 @@ fun CameraScannerScreen(
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     scope.launch {
-                        val result = withContext(Dispatchers.Default) {
-                            OpenCvScanProcessor.correctCapturedPage(raw, corrected)
+                        // Always release the shutter and clean up, even if processing fails.
+                        try {
+                            val result = withContext(Dispatchers.Default) {
+                                OpenCvScanProcessor.correctCapturedPage(raw, corrected)
+                            }
+                            pages.add(Uri.fromFile(result.output))
+                            status = when {
+                                scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
+                                scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
+                                result.perspectiveCorrected -> "Page ${pages.size} captured"
+                                else -> "Page ${pages.size} captured · adjust crop if needed"
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Throwable) {
+                            // Throwable: a failed OpenCV native load throws UnsatisfiedLinkError, not an Exception.
+                            status = "Could not process page: ${error.message ?: "try again"}"
+                        } finally {
+                            raw.delete()
+                            capturing = false
                         }
-                        raw.delete()
-                        pages.add(Uri.fromFile(result.output))
-                        capturing = false
-                        status = if (result.perspectiveCorrected) "Page ${pages.size} captured" else "Page ${pages.size} captured · adjust crop if needed"
                     }
                 }
 
@@ -179,14 +212,23 @@ fun CameraScannerScreen(
         )
     }
 
+    LaunchedEffect(status) {
+        if (status != null) {
+            delay(3000)
+            status = null
+        }
+    }
+
     LaunchedEffect(autoCaptureSignal) {
-        if (autoCaptureSignal > 0 && autoCapture && !capturing) capturePage()
+        if (autoCaptureSignal > 0 && autoCapture && !capturing && pages.size < pageLimit) capturePage()
     }
 
     LaunchedEffect(permissionGranted, lifecycleOwner) {
         if (!permissionGranted) return@LaunchedEffect
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
+            // The screen may have been left before the camera provider became ready.
+            if (disposed.get()) return@addListener
             runCatching {
                 val provider = future.get()
                 cameraProvider = provider
@@ -223,13 +265,14 @@ fun CameraScannerScreen(
                     exposureIndex = 0
                 }
             }.onFailure {
-                status = "Camera unavailable. Use compatibility scanner."
+                liveGuidance = "Camera unavailable. Use compatibility scanner."
             }
         }, mainExecutor)
     }
 
     DisposableEffect(Unit) {
         onDispose {
+            disposed.set(true)
             cameraProvider?.unbindAll()
             analysisExecutor.shutdown()
         }
@@ -309,7 +352,7 @@ fun CameraScannerScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
-                Text(status, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
+                Text(status ?: liveGuidance, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
             }
 
             Spacer(Modifier.height(10.dp))
@@ -317,12 +360,41 @@ fun CameraScannerScreen(
                 items(ScanMode.entries, key = { it.name }) { mode ->
                     FilterChip(
                         selected = scanMode == mode,
-                        onClick = { scanMode = mode },
+                        onClick = { scanMode = mode; scanBothSides = false },
+                        enabled = pages.isEmpty(),
                         label = { Text(mode.label) }
                     )
                 }
             }
 
+            if (scanMode == ScanMode.ID_CARD) {
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !scanBothSides,
+                        enabled = pages.isEmpty(),
+                        onClick = { scanBothSides = false },
+                        label = { Text("Front only") }
+                    )
+                    FilterChip(
+                        selected = scanBothSides,
+                        enabled = pages.isEmpty(),
+                        onClick = { scanBothSides = true },
+                        label = { Text("Front + back") }
+                    )
+                }
+                Text(
+                    when {
+                        scanBothSides && pages.isEmpty() -> "Capture the front of your ID first"
+                        scanBothSides && pages.size == 1 -> "Front captured. Capture the back or undo to retake."
+                        scanBothSides -> "Both sides captured. Ready to save and share."
+                        pages.isEmpty() -> "Capture the front of your ID"
+                        else -> "Front captured. Ready to save and share."
+                    },
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("1×", color = Color.White, style = MaterialTheme.typography.labelSmall)
@@ -364,7 +436,7 @@ fun CameraScannerScreen(
 
                 Surface(
                     onClick = { capturePage() },
-                    enabled = !capturing,
+                    enabled = !capturing && pages.size < pageLimit,
                     shape = CircleShape,
                     color = Color.White,
                     modifier = Modifier.size(78.dp)
@@ -379,7 +451,10 @@ fun CameraScannerScreen(
                         Icon(Icons.Default.DocumentScanner, contentDescription = "Compatibility scanner", tint = Color.White)
                     }
                 } else {
-                    Button(onClick = { onComplete(pages.toList(), scanMode) }) {
+                    Button(
+                        enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
+                        onClick = { onComplete(pages.toList(), scanMode) }
+                    ) {
                         Icon(Icons.Default.TaskAlt, contentDescription = null)
                         Spacer(Modifier.width(5.dp))
                         Text("Done ${pages.size}")
@@ -404,6 +479,7 @@ fun CameraScannerScreen(
 
 @Composable
 private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClose: () -> Unit) {
+    val context = LocalContext.current
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Card(Modifier.padding(24.dp)) {
             Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -414,6 +490,13 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
                 Text("The Pro scanner needs camera access only while you scan. Your documents stay on this device by default.")
                 Spacer(Modifier.height(16.dp))
                 Button(onClick = onRequest) { Text("Allow camera") }
+                // After "Don't ask again" the system dialog no longer appears; settings is the only way back.
+                TextButton(onClick = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }) { Text("Open app settings") }
                 OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text("Use compatibility scanner") }
                 TextButton(onClick = onClose) { Text("Cancel") }
             }

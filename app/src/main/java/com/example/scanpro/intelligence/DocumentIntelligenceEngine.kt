@@ -36,7 +36,7 @@ object DocumentIntelligenceEngine {
     private val dateRegex = Regex("\\b(?:\\d{1,2}[/-]\\d{1,2}[/-](?:\\d{2}|\\d{4})|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2},?\\s+\\d{4})\\b", RegexOption.IGNORE_CASE)
     private val emailRegex = Regex("[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", RegexOption.IGNORE_CASE)
     private val phoneRegex = Regex("(?<!\\d)(?:\\+?\\d[\\d .()-]{7,}\\d)(?!\\d)")
-    private val referenceRegex = Regex("""(?i)\b(?:invoice|receipt|order|ref(?:erence)?|gstin|tax id|account|contract)[ \t]*(?:(?:no\.?|number|#)[ \t]*)?[:#-]?[ \t]*([A-Z0-9][A-Z0-9/_-]{3,})""")
+    private val referenceRegex = Regex("""(?i)\b(?:invoice|receipt|order|ref(?:erence)?|gstin|tax id|account|contract)[ \t]*(?:(?:no\.?|number|#)[ \t]*)?[:#-]?[ \t]*([A-Z0-9](?=[A-Z0-9/_-]*\d)[A-Z0-9/_-]{3,})""")
 
     fun analyze(raw: String): DocumentInsights {
         val text = normalize(raw)
@@ -85,7 +85,15 @@ object DocumentIntelligenceEngine {
     }
 
     private fun classify(lower: String): DocumentKind {
-        fun score(vararg terms: String) = terms.count { lower.contains(it) }
+        // Match whole words so "mobile" does not hit "automobile" or "change" hit "exchange".
+        // Boundaries are only enforced on sides where the term starts/ends with a letter or digit.
+        fun hasTerm(term: String): Boolean {
+            val t = term.trim()
+            val head = if (t.first().isLetterOrDigit()) "(?<![\\p{L}\\p{N}])" else ""
+            val tail = if (t.last().isLetterOrDigit()) "(?![\\p{L}\\p{N}])" else ""
+            return Regex(head + Regex.escape(t) + tail).containsMatchIn(lower)
+        }
+        fun score(vararg terms: String) = terms.count { hasTerm(it) }
         val scores = mapOf(
             DocumentKind.INVOICE to score("invoice", "gstin", "subtotal", "tax invoice", "amount due"),
             DocumentKind.RECEIPT to score("receipt", "cash", "change", "total", "thank you"),
