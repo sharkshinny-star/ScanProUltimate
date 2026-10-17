@@ -44,7 +44,11 @@ object TranslationEngine {
         return try {
             translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
             // Translate in chunks so long documents are not silently truncated.
-            text.chunked(30000).joinToString("") { translator.translate(it).await() }
+            val translatedChunks = mutableListOf<String>()
+            for (chunk in text.chunked(30000)) {
+                translatedChunks.add(translator.translate(chunk).await())
+            }
+            translatedChunks.joinToString("")
         } finally {
             translator.close()
         }

@@ -10,5 +10,9 @@
 -dontwarn org.bouncycastle.**
 
 # OpenCV's Java classes are looked up from native code; keep them intact when minifying.
--keep class org.opencv.** { *; }
+-keep class org.opencv.** {
+    native <methods>;
+    <fields>;
+    <methods>;
+}
 -dontwarn org.opencv.**

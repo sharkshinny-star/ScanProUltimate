@@ -1,6 +1,7 @@
 package com.example.scanpro.ui
 
 import android.graphics.Bitmap
+import androidx.core.graphics.createBitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint as AndroidPaint
@@ -104,7 +105,7 @@ fun SignaturePadDialog(
 private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize): Bitmap {
     val width = size.width.coerceAtLeast(1)
     val height = size.height.coerceAtLeast(1)
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(width, height)
     val canvas = AndroidCanvas(bitmap)
     canvas.drawColor(AndroidColor.TRANSPARENT)
     val paint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {

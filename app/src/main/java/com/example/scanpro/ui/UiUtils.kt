@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.example.scanpro.data.ScanDocument
 import java.io.File
+import java.util.Locale
 
 fun sharePdf(context: Context, document: ScanDocument) {
     val file = File(document.pdfPath)
@@ -116,7 +117,7 @@ fun formatBytes(bytes: Long): String {
     var group = 0
     // 1023.95 so a value that would print as "1024.0" rolls over to the next unit.
     while (value >= 1023.95 && group < units.lastIndex) { value /= 1024.0; group++ }
-    return if (group == 0) "$bytes B" else String.format("%.1f %s", value, units[group])
+    return if (group == 0) "$bytes B" else String.format(Locale.getDefault(), "%.1f %s", value, units[group])
 }
 
 fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String) {
