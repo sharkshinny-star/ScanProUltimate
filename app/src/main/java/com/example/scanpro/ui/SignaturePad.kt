@@ -57,7 +57,7 @@ fun SignaturePadDialog(
                         .pointerInput(Unit) {
                             detectDragGestures(
                                 onDragStart = { start ->
-                                    strokes = strokes + listOf(start)
+                                    strokes = strokes + listOf(listOf(start))
                                 },
                                 onDrag = { change, _ ->
                                     if (strokes.isNotEmpty()) {

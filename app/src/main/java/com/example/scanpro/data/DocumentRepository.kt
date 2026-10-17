@@ -1,3 +1,5 @@
+@file:Suppress("SpellCheckingInspection")
+
 package com.example.scanpro.data
 
 import android.content.Context
@@ -6,6 +8,7 @@ import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import android.net.Uri
+import androidx.core.graphics.createBitmap
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,7 +87,7 @@ class DocumentRepository @Inject constructor(
                             val scale = minOf(maxDimension / page.width.toFloat(), maxDimension / page.height.toFloat(), 2.5f)
                             val width = (page.width * scale).toInt().coerceAtLeast(1)
                             val height = (page.height * scale).toInt().coerceAtLeast(1)
-                            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                            val bitmap = createBitmap(width, height)
                             bitmap.eraseColor(Color.WHITE)
                             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                             val pageId = UUID.randomUUID().toString()
@@ -363,28 +366,8 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
-        fun makeHalf(left: Boolean): ScanPage {
-            val halfWidth = bitmap.width / 2
-            val x = if (left) 0 else halfWidth
-            val width = if (left) halfWidth else bitmap.width - halfWidth
-            val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)
-            val id = UUID.randomUUID().toString()
-            val source = File(sourceDir, "book_$id.jpg")
-            val rendered = File(renderedDir, "book_$id.jpg")
-            ImageProcessor.saveBitmapJpeg(half, source, 98)
-            ImageProcessor.saveBitmapJpeg(half, rendered, 96)
-            return ScanPage(
-                id = id,
-                documentId = doc.id,
-                position = index,
-                sourcePath = source.absolutePath,
-                imagePath = rendered.absolutePath,
-                ocrText = runCatching { ocr.recognize(rendered) }.getOrDefault("")
-            )
-        }
-
-        val left = makeHalf(true)
-        val right = makeHalf(false)
+        val left = makeHalf(bitmap, true, doc.id, index, sourceDir, renderedDir)
+        val right = makeHalf(bitmap, false, doc.id, index, sourceDir, renderedDir)
         File(page.sourcePath).delete()
         File(page.imagePath).delete()
         pages.removeAt(index)
@@ -644,7 +627,7 @@ class DocumentRepository @Inject constructor(
         }
     }
 
-    private suspend fun createFromPages(
+    private fun createFromPages(
         sourcePages: List<ScanPage>,
         title: String,
         quality: PdfQuality,
@@ -709,7 +692,7 @@ class DocumentRepository @Inject constructor(
         } else page
     }
 
-    private suspend fun mutateDocument(id: String, block: suspend (ScanDocument) -> ScanDocument) =
+    private suspend fun mutateDocument(id: String, block: (ScanDocument) -> ScanDocument) =
         withContext(Dispatchers.IO) {
             db.saveDocument(block(requireDocument(id)))
         }
@@ -733,6 +716,33 @@ class DocumentRepository @Inject constructor(
         )
         db.saveDocument(final)
         return final
+    }
+
+    private suspend fun makeHalf(
+        bitmap: Bitmap,
+        left: Boolean,
+        docId: String,
+        index: Int,
+        sourceDir: File,
+        renderedDir: File
+    ): ScanPage {
+        val halfWidth = bitmap.width / 2
+        val x = if (left) 0 else halfWidth
+        val width = if (left) halfWidth else bitmap.width - halfWidth
+        val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)
+        val id = UUID.randomUUID().toString()
+        val source = File(sourceDir, "book_$id.jpg")
+        val rendered = File(renderedDir, "book_$id.jpg")
+        ImageProcessor.saveBitmapJpeg(half, source, 98)
+        ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+        return ScanPage(
+            id = id,
+            documentId = docId,
+            position = index,
+            sourcePath = source.absolutePath,
+            imagePath = rendered.absolutePath,
+            ocrText = runCatching { ocr.recognize(rendered) }.getOrDefault("")
+        )
     }
 
     private fun copyFlattenedPage(source: ScanPage, documentId: String, folder: File, position: Int): ScanPage {
