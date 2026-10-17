@@ -234,7 +234,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun moveToTrash(id: String) = launchBusy(null, "Moved to recycle bin") { repository.moveToTrash(id) }
-    fun restore(id: String) = launchBusy(null, "Document restored") { repository.restore(id) }
+    fun restore(id: String) = launchBusy(null, "File restored successfully.") { repository.restore(id) }
     fun deleteForever(id: String) = launchBusy(null, "Document permanently deleted") { repository.deleteForever(id) }
     fun emptyTrash() = launchBusy("Emptying recycle bin…", "Recycle bin emptied") { repository.emptyTrash() }
 

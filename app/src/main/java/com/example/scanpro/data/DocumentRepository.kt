@@ -23,19 +23,23 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import androidx.core.graphics.createBitmap
 
 @Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: DocumentDatabase,
-    private val ocr: OcrEngine
+    private val ocr: OcrEngine,
 ) {
     private val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
     private val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
     private val encryptedPackages = EncryptedDocumentPackage(context)
 
     suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
-    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadTrash() }
+    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
+        purgeExpiredTrash(maxAgeDays = 7)
+        db.loadTrash()
+    }
     suspend fun search(query: String): List<ScanDocument> = withContext(Dispatchers.IO) { db.search(query) }
     suspend fun storageBytes(): Long = withContext(Dispatchers.IO) {
         rootDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
@@ -46,7 +50,7 @@ class DocumentRepository @Inject constructor(
         imageUris: List<Uri>,
         quality: PdfQuality,
         autoTitle: Boolean,
-        mode: ScanMode = ScanMode.DOCUMENT
+        mode: ScanMode = ScanMode.DOCUMENT,
     ): ScanDocument = withContext(Dispatchers.IO) {
         createDocument(pdfUri, imageUris, quality, autoTitle, mode)
     }
@@ -55,7 +59,7 @@ class DocumentRepository @Inject constructor(
         imageUris: List<Uri>,
         quality: PdfQuality,
         autoTitle: Boolean,
-        mode: ScanMode = ScanMode.DOCUMENT
+        mode: ScanMode = ScanMode.DOCUMENT,
     ): ScanDocument = withContext(Dispatchers.IO) {
         require(imageUris.isNotEmpty()) { "Choose at least one image" }
         createDocument(null, imageUris, quality, autoTitle, mode)
@@ -64,7 +68,7 @@ class DocumentRepository @Inject constructor(
     suspend fun importPdf(
         pdfUri: Uri,
         quality: PdfQuality,
-        autoTitle: Boolean
+        autoTitle: Boolean,
     ): ScanDocument = withContext(Dispatchers.IO) {
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -77,14 +81,14 @@ class DocumentRepository @Inject constructor(
             val pages = mutableListOf<ScanPage>()
             ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
                 PdfRenderer(descriptor).use { renderer ->
-                    require(renderer.pageCount in 1..300) { "PDF must contain between 1 and 300 pages" }
+                    require(renderer.pageCount in (1..300)) { "PDF must contain between 1 and 300 pages" }
                     for (index in 0 until renderer.pageCount) {
                         renderer.openPage(index).use { page ->
                             val maxDimension = 2400f
                             val scale = minOf(maxDimension / page.width.toFloat(), maxDimension / page.height.toFloat(), 2.5f)
                             val width = (page.width * scale).toInt().coerceAtLeast(1)
                             val height = (page.height * scale).toInt().coerceAtLeast(1)
-                            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                            val bitmap = createBitmap(width, height)
                             bitmap.eraseColor(Color.WHITE)
                             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                             val pageId = UUID.randomUUID().toString()
@@ -106,7 +110,7 @@ class DocumentRepository @Inject constructor(
                 }
             }
             val fallbackTitle = "Imported " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
-            val allText = pages.joinToString("\n") { it.ocrText }
+            val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val pdf = File(folder, "document.pdf")
             val doc = ScanDocument(
@@ -135,11 +139,12 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun setTags(id: String, tagsText: String) = mutateDocument(id) { doc ->
-        val tags = tagsText.split(',', '#')
+        val tags = tagsText.splitToSequence(',', '#')
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .distinctBy { it.lowercase() }
             .take(20)
+            .toList()
         doc.copy(tags = tags, updatedAt = now())
     }
 
@@ -153,7 +158,7 @@ class DocumentRepository @Inject constructor(
         require(source.isNotBlank()) { "Folder name is required" }
         require(target.isNotBlank()) { "New folder name is required" }
         db.loadAll()
-            .filter { it.folderName.equals(source, ignoreCase = true) }
+            .filter { doc -> doc.folderName.equals(source, ignoreCase = true) }
             .forEach { doc -> db.saveDocument(doc.copy(folderName = target, updatedAt = now())) }
     }
 
@@ -301,7 +306,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val from = pages.indexOfFirst { it.id == pageId }
         if (from == -1) error("Page not found")
         val to = (from + delta).coerceIn(0, pages.lastIndex)
@@ -313,7 +318,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun duplicatePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
         require(index >= 0) { "Page not found" }
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
@@ -353,7 +358,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun splitBookSpread(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
         require(index >= 0) { "Page not found" }
         val page = pages[index]
@@ -363,8 +368,8 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
-        val left = makeHalf(bitmap, true, doc.id, index, sourceDir, renderedDir)
-        val right = makeHalf(bitmap, false, doc.id, index, sourceDir, renderedDir)
+        val left = makeHalf(bitmap, left = true, doc.id, index, sourceDir, renderedDir)
+        val right = makeHalf(bitmap, left = false, doc.id, index, sourceDir, renderedDir)
         File(page.sourcePath).delete()
         File(page.imagePath).delete()
         pages.removeAt(index)
@@ -429,7 +434,7 @@ class DocumentRepository @Inject constructor(
         db.loadTrash().forEach { deleteDocumentFilesAndRecord(it) }
     }
 
-    suspend fun purgeExpiredTrash(maxAgeDays: Int = 30): Int = withContext(Dispatchers.IO) {
+    suspend fun purgeExpiredTrash(maxAgeDays: Int = 7): Int = withContext(Dispatchers.IO) {
         val cutoff = now() - maxAgeDays.coerceAtLeast(1) * 24L * 60L * 60L * 1000L
         val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
         expired.forEach { deleteDocumentFilesAndRecord(it) }
@@ -602,7 +607,7 @@ class DocumentRepository @Inject constructor(
             }
 
             val fallbackTitle = "Scan " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
-            val allText = pages.joinToString("\n") { it.ocrText }
+            val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val doc = ScanDocument(
                 id = id,
@@ -624,7 +629,7 @@ class DocumentRepository @Inject constructor(
         }
     }
 
-    private suspend fun createFromPages(
+    private fun createFromPages(
         sourcePages: List<ScanPage>,
         title: String,
         quality: PdfQuality,
