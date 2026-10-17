@@ -226,7 +226,6 @@ fun ScanProApp(
                 onPdfQualityChange = viewModel::setDefaultPdfQuality,
                 onAutoTitleChange = viewModel::setAutoTitle,
                 onAppLockChange = onAppLockChange,
-                onImportBackup = viewModel::importEncryptedBackup,
                 bottomBar = {
                     LibraryNavigationBar(
                         selectedRoute = ROUTE_SETTINGS,
@@ -625,13 +624,8 @@ private fun DocumentListCard(
                     Text(document.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     if (document.isFavorite) Icon(Icons.Default.Star, contentDescription = "Favorite", modifier = Modifier.size(18.dp))
                 }
-                Text("${document.pageCount} pages · ${formatBytes(document.sizeBytes)} · ${document.pdfQuality.label}", style = MaterialTheme.typography.bodySmall)
-                val meta = buildList {
-                    if (document.folderName.isNotBlank()) add(document.folderName)
-                    if (document.tags.isNotEmpty()) add(document.tags.take(3).joinToString(" · "))
-                    if (document.searchablePdf) add("OCR PDF")
-                }.joinToString(" · ")
-                if (meta.isNotBlank()) Text(meta, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val pagesLabel = if (document.pageCount == 1) "1 page" else "${document.pageCount} pages"
+                Text("PDF • $pagesLabel • ${formatBytes(document.sizeBytes)}", style = MaterialTheme.typography.bodySmall)
                 Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(document.updatedAt)), style = MaterialTheme.typography.labelSmall)
             }
             if (selected) Checkbox(checked = true, onCheckedChange = { onClick() })
@@ -662,8 +656,8 @@ private fun DocumentGridCard(
             }
             Spacer(Modifier.height(8.dp))
             Text(document.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("${document.pageCount} pages · ${formatBytes(document.sizeBytes)}", style = MaterialTheme.typography.bodySmall)
-            if (document.folderName.isNotBlank()) Text(document.folderName, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val pagesLabel = if (document.pageCount == 1) "1 page" else "${document.pageCount} pages"
+            Text("PDF • $pagesLabel • ${formatBytes(document.sizeBytes)}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
