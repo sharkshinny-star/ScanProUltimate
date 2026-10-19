@@ -6,6 +6,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,6 +64,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -375,7 +383,7 @@ private fun LibraryScreen(
                     Text(
                         when {
                             selected.isNotEmpty() -> "${selected.size} selected"
-                            mode == ROUTE_DOCUMENTS -> "Documents"
+                            mode == ROUTE_DOCUMENTS -> "My files"
                             mode == ROUTE_SEARCH -> "Search"
                             else -> "ScanPro"
                         }
@@ -457,7 +465,7 @@ private fun LibraryScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (selected.isEmpty()) {
+            if (selected.isEmpty() && mode != ROUTE_HOME) {
                 ExtendedFloatingActionButton(
                     onClick = onStartScan,
                     icon = { Icon(Icons.Default.CameraAlt, contentDescription = null) },
@@ -479,10 +487,19 @@ private fun LibraryScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            if (mode == ROUTE_HOME && documents.isNotEmpty()) {
+            if (mode == ROUTE_HOME) {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    "${documents.size} documents" + if (documents.any { it.isFavorite }) " · ${documents.count { it.isFavorite }} favorites" else "",
-                    style = MaterialTheme.typography.bodyMedium,
+                    "YOUR DOCUMENT WORKSPACE",
+                    style = MaterialTheme.typography.labelSmall,
+                    letterSpacing = 1.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text("A little less paper.", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    if (documents.isEmpty()) "Scan, clean, OCR and export your first document."
+                    else "${documents.size} documents · ${documents.count { it.isFavorite }} favorites${if (trashCount > 0) " · $trashCount in trash" else ""}",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(8.dp))
@@ -505,6 +522,24 @@ private fun LibraryScreen(
                     },
                     shape = RoundedCornerShape(28.dp)
                 )
+                Spacer(Modifier.height(10.dp))
+            }
+
+            if (mode == ROUTE_HOME) {
+                ScanHeroCard(onStartScan = onStartScan, enabled = !busy)
+                Spacer(Modifier.height(12.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item { FilledTonalButton(onClick = onImportImages, enabled = !busy) {
+                        Icon(Icons.Default.Image, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Photos")
+                    } }
+                    item { FilledTonalButton(onClick = onImportPdf, enabled = !busy) {
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("PDF")
+                    } }
+                }
                 Spacer(Modifier.height(10.dp))
             }
 
@@ -702,12 +737,59 @@ private fun DocumentGridCard(
 
 private fun pagesLabel(count: Int) = if (count == 1) "1 page" else "$count pages"
 
+/** Gradient "Smart scan" hero from the approved design. Primary entry point on the home screen. */
+@Composable
+private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean) {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val start = if (dark) Color(0xFF31477D) else Color(0xFF4F5BD0)
+    val end = if (dark) Color(0xFF26365F) else Color(0xFF3543AA)
+    val caption = if (dark) Color(0xFFCCD6EF) else Color(0xFFE6EAFF)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .background(Brush.linearGradient(listOf(start, end)))
+            .padding(18.dp)
+    ) {
+        Column {
+            Text(
+                "SMART SCAN",
+                style = MaterialTheme.typography.labelSmall,
+                letterSpacing = 1.sp,
+                color = caption
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Every detail.\nPerfectly captured.",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Auto-crop. Clean up. Make it searchable.",
+                style = MaterialTheme.typography.bodySmall,
+                color = caption
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onStartScan,
+                enabled = enabled,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = end)
+            ) {
+                Icon(Icons.Default.CameraAlt, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Start scanning")
+            }
+        }
+    }
+}
+
 @Composable
 private fun LibraryNavigationBar(selectedRoute: String, onTab: (String) -> Unit) {
     NavigationBar {
         listOf(
             Triple(ROUTE_HOME, "Home", Icons.Default.Home),
-            Triple(ROUTE_DOCUMENTS, "Documents", Icons.Default.Description),
+            Triple(ROUTE_DOCUMENTS, "Files", Icons.Default.Description),
             Triple(ROUTE_SEARCH, "Search", Icons.Default.Search),
             Triple(ROUTE_SETTINGS, "Settings", Icons.Default.Settings)
         ).forEach { (route, label, icon) ->

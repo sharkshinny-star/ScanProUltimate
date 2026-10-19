@@ -24,7 +24,7 @@ import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Highlight
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.Button
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lock
@@ -71,6 +71,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
@@ -231,7 +235,6 @@ fun DocumentDetailScreen(
                     IconButton(onClick = onToggleFavorite, enabled = !busy) {
                         Icon(if (document.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorite")
                     }
-                    IconButton(onClick = { sharePdf(context, document) }) { Icon(Icons.Default.Share, contentDescription = "Share PDF") }
                     Box {
                         IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "More options") }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
@@ -245,6 +248,38 @@ fun DocumentDetailScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            // Export lives in a fixed bottom bar, as in the approved viewer design.
+            if (currentPage != null) {
+                Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilledTonalButton(
+                            onClick = { shareImages(context, document) },
+                            enabled = !busy,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = "Share JPG")
+                        }
+                        Button(
+                            onClick = { sharePdf(context, document) },
+                            enabled = !busy,
+                            modifier = Modifier.weight(1f).height(52.dp)
+                        ) {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Export PDF")
+                        }
+                    }
+                }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
@@ -262,6 +297,29 @@ fun DocumentDetailScreen(
             Spacer(Modifier.height(8.dp))
 
             if (currentPage != null) {
+                // "Ready to export" status row, as in the viewer design. Export actions are in the bottom bar.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Ready to export", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        }
+                    }
+                    Text(
+                        "${document.pages.size} ${if (document.pages.size == 1) "page" else "pages"} · searchable",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
                 PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE)
                 Spacer(Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -361,7 +419,6 @@ fun DocumentDetailScreen(
                         ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF") { openPdf(context, document) }
                         ToolTile(Icons.Default.Save, "Save PDF") { savePdfLauncher.launch("${document.title}.pdf") }
                         ToolTile(Icons.Default.Print, "Print") { printPdf(context, document) }
-                        ToolTile(Icons.Default.Image, "JPEGs") { shareImages(context, document) }
                         ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
                         ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
                         ToolTile(Icons.Default.ViewDay, "Long image", !busy) { onExportLongImage() }

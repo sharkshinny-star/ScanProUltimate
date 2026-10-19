@@ -16,6 +16,6 @@ class AppSmokeTest {
     @Test
     fun homeScreenShowsPrimaryScanAction() {
         composeRule.onNodeWithText("ScanPro").assertExists()
-        composeRule.onNodeWithText("Scan").assertExists()
+        composeRule.onNodeWithText("Start scanning").assertExists()
     }
 }
