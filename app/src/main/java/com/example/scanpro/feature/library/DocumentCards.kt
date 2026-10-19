@@ -2,6 +2,7 @@ package com.example.scanpro.feature.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,10 +42,19 @@ internal fun DocumentListCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
+    // Formatting a date allocates a formatter; do it once per value rather than on every recomposition.
+    val updatedText = remember(document.updatedAt) {
+        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(document.updatedAt))
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .combinedClickable(
+                onClickLabel = "Open",
+                onLongClickLabel = if (selected) "Deselect" else "Select",
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow
         )
@@ -66,7 +76,7 @@ internal fun DocumentListCard(
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "${pagesLabel(document.pageCount)} · ${formatBytes(document.sizeBytes)} · ${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(document.updatedAt))}",
+                    "${pagesLabel(document.pageCount)} · ${formatBytes(document.sizeBytes)} · $updatedText",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -89,7 +99,12 @@ internal fun DocumentGridCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .combinedClickable(
+                onClickLabel = "Open",
+                onLongClickLabel = if (selected) "Deselect" else "Select",
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
     ) {
         Column(Modifier.padding(10.dp)) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {

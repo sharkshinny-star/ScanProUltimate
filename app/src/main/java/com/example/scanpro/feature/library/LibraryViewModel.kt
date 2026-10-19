@@ -3,6 +3,7 @@ package com.example.scanpro.feature.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.scanpro.core.operations.OperationRunner
+import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.ScanDocument
@@ -48,10 +49,17 @@ class LibraryViewModel @Inject constructor(
 
     fun moveManyToTrash(ids: Set<String>) {
         if (ids.isEmpty()) return
-        operations.run("Moving ${ids.size} documents to recycle bin…", "${ids.size} documents moved to recycle bin") {
+        val label = if (ids.size == 1) "Moved to recycle bin" else "${ids.size} documents moved to recycle bin"
+        operations.run("Moving ${ids.size} documents to recycle bin…", null) {
             ids.forEach { repository.moveToTrash(it) }
+            operations.showMessage(UiMessage(label, actionLabel = "Undo") { restore(ids) })
         }
     }
+
+    private fun restore(ids: Set<String>) =
+        operations.run(null, if (ids.size == 1) "Document restored" else "${ids.size} documents restored") {
+            ids.forEach { repository.restore(it) }
+        }
 
     /** Hands [onReady] the selected documents with current PDFs, rebuilding stale ones first. */
     fun withFreshPdfs(ids: Set<String>, onReady: (List<ScanDocument>) -> Unit) {

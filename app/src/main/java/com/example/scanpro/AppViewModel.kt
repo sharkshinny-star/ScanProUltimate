@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.scanpro.core.operations.ExportArtifact
 import com.example.scanpro.core.operations.OperationRunner
+import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.ScanDocument
@@ -52,7 +53,7 @@ class AppViewModel @Inject constructor(
     /** Set by the "Scan" launcher shortcut; the shell opens the camera once the app is unlocked. */
     val scanRequested: StateFlow<Boolean> = _scanRequested.asStateFlow()
     val documents: StateFlow<List<ScanDocument>> = library.documents
-    val message: StateFlow<String?> = operations.message
+    val message: StateFlow<UiMessage?> = operations.message
     val exportArtifact: StateFlow<ExportArtifact?> = operations.exportArtifact
     val openDocumentRequest: StateFlow<String?> = operations.openDocumentRequest
 

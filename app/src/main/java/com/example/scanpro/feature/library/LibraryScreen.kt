@@ -86,6 +86,8 @@ import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.core.ui.sharePdfs
 import com.example.scanpro.navigation.ScanProBottomBar
 import com.example.scanpro.navigation.ScanProDestinations
+import com.example.scanpro.core.designsystem.TitleWithStatus
+import com.example.scanpro.core.designsystem.TopBarWithProgress
 
 private enum class LibrarySort(val label: String) {
     UPDATED("Recent"), NAME("Name"), SIZE("Size")
@@ -202,15 +204,16 @@ internal fun LibraryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            TopBarWithProgress(busy) { TopAppBar(
                 title = {
-                    Text(
-                        when {
+                    TitleWithStatus(
+                        title = when {
                             selected.isNotEmpty() -> "${selected.size} selected"
                             mode == ScanProDestinations.FILES -> "My files"
                             isSearch -> "Search"
                             else -> "ScanPro"
-                        }
+                        },
+                        status = if (busy) busyLabel else null
                     )
                 },
                 navigationIcon = {
@@ -294,7 +297,7 @@ internal fun LibraryScreen(
                         }
                     }
                 }
-            )
+            ) }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
@@ -314,12 +317,6 @@ internal fun LibraryScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            if (busy) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                if (!busyLabel.isNullOrBlank()) Text(busyLabel, style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.height(8.dp))
-            }
-
             if (isHome) {
                 HomeDashboard(
                     documents = documents,

@@ -147,6 +147,8 @@ import com.example.scanpro.core.ui.shareImages
 import com.example.scanpro.core.ui.shareOcrText
 import com.example.scanpro.core.ui.sharePdf
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.designsystem.TitleWithStatus
+import com.example.scanpro.core.designsystem.TopBarWithProgress
 
 @Composable
 fun DocumentRoute(
@@ -316,8 +318,8 @@ internal fun DocumentDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(document.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            TopBarWithProgress(busy) { TopAppBar(
+                title = { TitleWithStatus(document.title, if (busy) busyLabel else null) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
@@ -337,7 +339,7 @@ internal fun DocumentDetailScreen(
                         }
                     }
                 }
-            )
+            ) }
         },
         bottomBar = {
             // Export lives in a fixed bottom bar, as in the approved viewer design.
@@ -380,10 +382,6 @@ internal fun DocumentDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            if (busy) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                if (!busyLabel.isNullOrBlank()) Text(busyLabel, style = MaterialTheme.typography.bodySmall)
-            }
             Spacer(Modifier.height(8.dp))
 
             if (currentPage != null) {
@@ -699,7 +697,7 @@ internal fun DocumentDetailScreen(
         confirmLabel = "Create backup",
         onDismiss = { backupPasswordOpen = false }
     ) { onExportEncryptedBackup(it); backupPasswordOpen = false }
-    if (annotationTextOpen && currentPage != null) TextInputDialog("Add text to page", label = "Text", confirmLabel = "Add", onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
+    if (annotationTextOpen && currentPage != null) TextInputDialog("Add text to page", label = "Text", confirmLabel = "Add", maxLines = 3, onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
     if (ocrEditOpen && currentPage != null) TextInputDialog(
         title = "Edit recognized text",
         initial = currentPage.ocrText,

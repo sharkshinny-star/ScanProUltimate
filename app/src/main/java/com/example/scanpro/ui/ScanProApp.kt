@@ -6,7 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,8 +47,14 @@ fun ScanProApp(
     }
 
     LaunchedEffect(message) {
-        message?.let {
-            snackbarHostState.showSnackbar(it)
+        message?.let { current ->
+            val result = snackbarHostState.showSnackbar(
+                message = current.text,
+                actionLabel = current.actionLabel,
+                // Leave undoable messages up long enough to react to.
+                duration = if (current.actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) current.onAction?.invoke()
             viewModel.clearMessage()
         }
     }

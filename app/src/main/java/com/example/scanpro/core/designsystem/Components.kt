@@ -5,6 +5,17 @@ import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -72,7 +83,10 @@ fun PageThumbnail(path: String?, modifier: Modifier = Modifier, maxDimension: In
     ) {
         val image = bitmap
         if (image == null) {
-            if (path != null) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            // Lists show only the placeholder tint while thumbnails load; a spinner per card flickers on scroll.
+            if (path != null && maxDimension >= THUMBNAIL_LARGE) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            }
         } else {
             val imageBitmap = remember(image) { image.asImageBitmap() }
             Image(
@@ -91,12 +105,18 @@ fun TextInputDialog(
     initial: String = "",
     label: String,
     confirmLabel: String = "Save",
-    maxLines: Int = 3,
+    maxLines: Int = 1,
     allowBlank: Boolean = false,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var value by remember(initial) { mutableStateOf(initial) }
+    // Single-line values (names, tags) start selected so typing replaces them; longer text such as OCR
+    // starts with the cursor at the end so a stray keypress can't wipe it.
+    val initialSelection = if (maxLines == 1) TextRange(0, initial.length) else TextRange(initial.length)
+    var value by remember(initial) { mutableStateOf(TextFieldValue(initial, initialSelection)) }
+    val focusRequester = remember { FocusRequester() }
+    val canConfirm = allowBlank || value.text.isNotBlank()
+    LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -105,14 +125,20 @@ fun TextInputDialog(
                 value = value,
                 onValueChange = { value = it },
                 label = { Text(label) },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = maxLines
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                maxLines = maxLines,
+                singleLine = maxLines == 1,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = if (maxLines == 1) ImeAction.Done else ImeAction.Default
+                ),
+                keyboardActions = KeyboardActions(onDone = { if (canConfirm) onConfirm(value.text) })
             )
         },
         confirmButton = {
             TextButton(
-                enabled = allowBlank || value.isNotBlank(),
-                onClick = { onConfirm(value) }
+                enabled = canConfirm,
+                onClick = { onConfirm(value.text) }
             ) { Text(confirmLabel) }
         },
         dismissButton = {
@@ -179,4 +205,35 @@ fun PasswordInputDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
+}
+
+/**
+ * Wraps a top app bar with a progress strip that always reserves its 4dp, so starting or finishing a
+ * task never shifts the screen's content up or down.
+ */
+@Composable
+fun TopBarWithProgress(busy: Boolean, topBar: @Composable () -> Unit) {
+    androidx.compose.foundation.layout.Column {
+        topBar()
+        Box(Modifier.fillMaxWidth().height(4.dp)) {
+            if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/** App bar title with an optional one-line status underneath, used to show what a running task is doing. */
+@Composable
+fun TitleWithStatus(title: String, status: String?) {
+    androidx.compose.foundation.layout.Column {
+        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (!status.isNullOrBlank()) {
+            Text(
+                status,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
 }

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.scanpro.core.operations.ExportArtifact
 import com.example.scanpro.core.operations.OperationRunner
+import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
@@ -167,7 +168,14 @@ class DocumentViewModel @Inject constructor(
         operations.publishExport(ExportArtifact(file.absolutePath, "application/octet-stream", "Share encrypted ScanPro backup"))
     }
 
-    fun moveToTrash() = run(null, "Moved to recycle bin") { repository.moveToTrash(id) }
+    fun moveToTrash() = run(null, null) {
+        repository.moveToTrash(id)
+        operations.showMessage(
+            UiMessage("Moved to recycle bin", actionLabel = "Undo") {
+                operations.run(null, "Document restored") { repository.restore(id) }
+            }
+        )
+    }
 
     /**
      * Runs [onReady] with a document whose PDF is current. Page edits defer the PDF rebuild, so share,
