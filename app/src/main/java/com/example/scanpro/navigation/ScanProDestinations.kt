@@ -13,6 +13,6 @@ object ScanProDestinations {
     const val DOCUMENT = "detail/{$DOCUMENT_ID_ARG}"
     fun document(id: String) = "detail/$id"
 
-    /** Tabs shown in the bottom bar. */
-    val topLevel = listOf(HOME, FILES, SEARCH, SETTINGS)
+    /** Tabs shown in the bottom bar. Search is opened from the top bar instead of being a tab. */
+    val topLevel = listOf(HOME, FILES, SETTINGS)
 }

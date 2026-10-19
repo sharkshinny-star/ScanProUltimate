@@ -1,5 +1,11 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -94,6 +100,8 @@ fun LibraryRoute(
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
     onTrash: () -> Unit,
+    onSearch: () -> Unit,
+    onBack: () -> Unit,
     onTab: (String) -> Unit,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
@@ -116,6 +124,8 @@ fun LibraryRoute(
         onImportImages = onImportImages,
         onImportPdf = onImportPdf,
         onTrash = onTrash,
+        onSearch = onSearch,
+        onBack = onBack,
         onBulkDelete = viewModel::moveManyToTrash,
         onRenameFolder = viewModel::renameFolder,
         onTab = onTab
@@ -138,12 +148,16 @@ internal fun LibraryScreen(
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
     onTrash: () -> Unit,
+    onSearch: () -> Unit,
+    onBack: () -> Unit,
     onBulkDelete: (Set<String>) -> Unit,
     onRenameFolder: (String, String) -> Unit,
     onTab: (String) -> Unit
 ) {
     val context = LocalContext.current
-    var gridMode by rememberSaveable { mutableStateOf(mode != ScanProDestinations.HOME) }
+    val isHome = mode == ScanProDestinations.HOME
+    val isSearch = mode == ScanProDestinations.SEARCH
+    var gridMode by rememberSaveable { mutableStateOf(mode == ScanProDestinations.FILES) }
     var sortName by rememberSaveable { mutableStateOf(LibrarySort.UPDATED.name) }
     var folder by rememberSaveable { mutableStateOf("") }
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
@@ -176,6 +190,14 @@ internal fun LibraryScreen(
         if (id in selected) selected.remove(id) else selected.add(id)
     }
 
+    // Standard selection mode: system back leaves selection before leaving the screen.
+    BackHandler(enabled = selected.isNotEmpty()) { selected.clear() }
+
+    val searchFocus = remember { FocusRequester() }
+    if (isSearch) {
+        LaunchedEffect(Unit) { runCatching { searchFocus.requestFocus() } }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -184,7 +206,7 @@ internal fun LibraryScreen(
                         when {
                             selected.isNotEmpty() -> "${selected.size} selected"
                             mode == ScanProDestinations.FILES -> "My files"
-                            mode == ScanProDestinations.SEARCH -> "Search"
+                            isSearch -> "Search"
                             else -> "ScanPro"
                         }
                     )
@@ -193,6 +215,10 @@ internal fun LibraryScreen(
                     if (selected.isNotEmpty()) {
                         IconButton(onClick = { selected.clear() }) {
                             Icon(Icons.Default.Clear, contentDescription = "Clear selection")
+                        }
+                    } else if (isSearch) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     }
                 },
@@ -208,7 +234,12 @@ internal fun LibraryScreen(
                             Icon(Icons.Default.Delete, contentDescription = "Move selected to trash")
                         }
                     } else {
-                        Box {
+                        if (!isSearch) {
+                            IconButton(onClick = onSearch) {
+                                Icon(Icons.Default.Search, contentDescription = "Search")
+                            }
+                        }
+                        if (!isHome) Box {
                             IconButton(onClick = { sortMenuOpen = true }) {
                                 Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
                             }
@@ -225,10 +256,10 @@ internal fun LibraryScreen(
                                 }
                             }
                         }
-                        IconButton(onClick = { gridMode = !gridMode }) {
+                        if (!isHome) IconButton(onClick = { gridMode = !gridMode }) {
                             Icon(if (gridMode) Icons.Default.List else Icons.Default.GridView, contentDescription = "Toggle layout")
                         }
-                        Box {
+                        if (!isSearch) Box {
                             IconButton(onClick = { moreMenuOpen = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More options")
                             }
@@ -265,7 +296,7 @@ internal fun LibraryScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (selected.isEmpty() && mode != ScanProDestinations.HOME) {
+            if (selected.isEmpty() && mode == ScanProDestinations.FILES) {
                 ExtendedFloatingActionButton(
                     onClick = onStartScan,
                     icon = { Icon(Icons.Default.CameraAlt, contentDescription = null) },
@@ -273,7 +304,7 @@ internal fun LibraryScreen(
                 )
             }
         },
-        bottomBar = { ScanProBottomBar(selectedRoute = mode, onTab = onTab) }
+        bottomBar = { if (!isSearch) ScanProBottomBar(selectedRoute = mode, onTab = onTab) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -287,157 +318,136 @@ internal fun LibraryScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            if (mode == ScanProDestinations.HOME) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "YOUR DOCUMENT WORKSPACE",
-                    style = MaterialTheme.typography.labelSmall,
-                    letterSpacing = 1.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            if (isHome) {
+                HomeDashboard(
+                    documents = documents,
+                    trashCount = trashCount,
+                    busy = busy,
+                    selected = selected,
+                    onStartScan = onStartScan,
+                    onImportImages = onImportImages,
+                    onImportPdf = onImportPdf,
+                    onSeeAll = { onTab(ScanProDestinations.FILES) },
+                    onOpenDocument = onOpenDocument,
+                    onToggleSelection = ::toggleSelection
                 )
-                Text("A little less paper.", style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    if (documents.isEmpty()) "Scan, clean, OCR and export your first document."
-                    else "${documents.size} documents · ${documents.count { it.isFavorite }} favorites${if (trashCount > 0) " · $trashCount in trash" else ""}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-            }
+            } else {
+                if (isSearch) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = onQueryChange,
+                        modifier = Modifier.fillMaxWidth().focusRequester(searchFocus),
+                        singleLine = true,
+                        placeholder = { Text("Search titles, tags, folders and text") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (query.isNotEmpty()) {
+                                IconButton(onClick = { onQueryChange("") }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(28.dp)
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
 
-            if (mode == ScanProDestinations.SEARCH) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = { Text("Search titles, tags, folders and text") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (query.isNotEmpty()) {
-                            IconButton(onClick = { onQueryChange("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                // Folder/favorite filters only earn their space once there is something to filter.
+                if (documents.isNotEmpty() && (folders.isNotEmpty() || documents.any { it.isFavorite } || favoritesOnly)) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        item {
+                            FilterChip(
+                                selected = folder.isBlank() && !favoritesOnly,
+                                onClick = { folder = ""; favoritesOnly = false },
+                                label = { Text("All") }
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = favoritesOnly,
+                                onClick = { favoritesOnly = !favoritesOnly },
+                                label = { Text("Favorites") },
+                                leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Star else Icons.Outlined.StarOutline, null) }
+                            )
+                        }
+                        folders.forEach { name ->
+                            item(key = "folder_$name") {
+                                FilterChip(
+                                    selected = folder == name,
+                                    onClick = { folder = if (folder == name) "" else name },
+                                    label = { Text(name, maxLines = 1) },
+                                    leadingIcon = { Icon(Icons.Default.Folder, null) }
+                                )
                             }
                         }
-                    },
-                    shape = RoundedCornerShape(28.dp)
-                )
-                Spacer(Modifier.height(10.dp))
-            }
-
-            if (mode == ScanProDestinations.HOME) {
-                ScanHeroCard(onStartScan = onStartScan, enabled = !busy)
-                Spacer(Modifier.height(12.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { FilledTonalButton(onClick = onImportImages, enabled = !busy) {
-                        Icon(Icons.Default.Image, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Photos")
-                    } }
-                    item { FilledTonalButton(onClick = onImportPdf, enabled = !busy) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("PDF")
-                    } }
+                    }
+                    Spacer(Modifier.height(10.dp))
                 }
-                Spacer(Modifier.height(10.dp))
-            }
 
-            // Folder/favorite filters only earn their space once there is something to filter.
-            if (documents.isNotEmpty() && (folders.isNotEmpty() || documents.any { it.isFavorite } || favoritesOnly)) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        FilterChip(
-                            selected = folder.isBlank() && !favoritesOnly,
-                            onClick = { folder = ""; favoritesOnly = false },
-                            label = { Text("All") }
-                        )
-                    }
-                    item {
-                        FilterChip(
-                            selected = favoritesOnly,
-                            onClick = { favoritesOnly = !favoritesOnly },
-                            label = { Text("Favorites") },
-                            leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Star else Icons.Outlined.StarOutline, null) }
-                        )
-                    }
-                    folders.forEach { name ->
-                        item(key = "folder_$name") {
-                            FilterChip(
-                                selected = folder == name,
-                                onClick = { folder = if (folder == name) "" else name },
-                                label = { Text(name, maxLines = 1) },
-                                leadingIcon = { Icon(Icons.Default.Folder, null) }
+                if (visible.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                if (query.isNotBlank()) Icons.Default.Search else Icons.Default.Description,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-            }
-
-            if (visible.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            if (query.isNotBlank()) Icons.Default.Search else Icons.Default.Description,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            when {
-                                query.isNotBlank() -> "No matching documents"
-                                favoritesOnly -> "No favorite documents yet"
-                                folder.isNotBlank() -> "No documents in this folder"
-                                else -> "No documents yet"
-                            },
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        if (query.isBlank() && !favoritesOnly && folder.isBlank()) {
+                            Spacer(Modifier.height(12.dp))
                             Text(
-                                "Tap Scan to capture your first document.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                when {
+                                    query.isNotBlank() -> "No matching documents"
+                                    favoritesOnly -> "No favorite documents yet"
+                                    folder.isNotBlank() -> "No documents in this folder"
+                                    else -> "No documents yet"
+                                },
+                                style = MaterialTheme.typography.titleMedium
                             )
+                            if (query.isBlank() && !favoritesOnly && folder.isBlank()) {
+                                Text(
+                                    "Tap Scan to capture your first document.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
-                }
-            } else if (gridMode) {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(150.dp),
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    gridItems(visible, key = { it.id }) { doc ->
-                        DocumentGridCard(
-                            document = doc,
-                            selected = doc.id in selected,
-                            onClick = {
-                                if (selected.isNotEmpty()) toggleSelection(doc.id) else onOpenDocument(doc.id)
-                            },
-                            onLongClick = { toggleSelection(doc.id) }
-                        )
+                } else if (gridMode) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(150.dp),
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        gridItems(visible, key = { it.id }) { doc ->
+                            DocumentGridCard(
+                                document = doc,
+                                selected = doc.id in selected,
+                                onClick = {
+                                    if (selected.isNotEmpty()) toggleSelection(doc.id) else onOpenDocument(doc.id)
+                                },
+                                onLongClick = { toggleSelection(doc.id) }
+                            )
+                        }
+                        item { Spacer(Modifier.height(90.dp)) }
                     }
-                    item { Spacer(Modifier.height(90.dp)) }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(visible, key = { it.id }) { doc ->
-                        DocumentListCard(
-                            document = doc,
-                            selected = doc.id in selected,
-                            onClick = {
-                                if (selected.isNotEmpty()) toggleSelection(doc.id) else onOpenDocument(doc.id)
-                            },
-                            onLongClick = { toggleSelection(doc.id) }
-                        )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(visible, key = { it.id }) { doc ->
+                            DocumentListCard(
+                                document = doc,
+                                selected = doc.id in selected,
+                                onClick = {
+                                    if (selected.isNotEmpty()) toggleSelection(doc.id) else onOpenDocument(doc.id)
+                                },
+                                onLongClick = { toggleSelection(doc.id) }
+                            )
+                        }
+                        item { Spacer(Modifier.height(90.dp)) }
                     }
-                    item { Spacer(Modifier.height(90.dp)) }
                 }
             }
         }
@@ -455,6 +465,77 @@ internal fun LibraryScreen(
             folder = target.trim()
             renameFolderSource = null
         }
+    }
+}
+
+private const val RECENT_LIMIT = 8
+
+/** Home tab: workspace header, primary scan entry points and the most recent documents. */
+@Composable
+private fun HomeDashboard(
+    documents: List<ScanDocument>,
+    trashCount: Int,
+    busy: Boolean,
+    selected: List<String>,
+    onStartScan: () -> Unit,
+    onImportImages: () -> Unit,
+    onImportPdf: () -> Unit,
+    onSeeAll: () -> Unit,
+    onOpenDocument: (String) -> Unit,
+    onToggleSelection: (String) -> Unit
+) {
+    val recent = remember(documents) { documents.sortedByDescending { it.updatedAt }.take(RECENT_LIMIT) }
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Column {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "YOUR DOCUMENT WORKSPACE",
+                    style = MaterialTheme.typography.labelSmall,
+                    letterSpacing = 1.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text("A little less paper.", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    if (documents.isEmpty()) "Scan, clean, OCR and export your first document."
+                    else "${documents.size} documents · ${documents.count { it.isFavorite }} favorites${if (trashCount > 0) " · $trashCount in trash" else ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        item { ScanHeroCard(onStartScan = onStartScan, enabled = !busy) }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(onClick = onImportImages, enabled = !busy) {
+                    Icon(Icons.Default.Image, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Photos")
+                }
+                FilledTonalButton(onClick = onImportPdf, enabled = !busy) {
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("PDF")
+                }
+            }
+        }
+        if (recent.isNotEmpty()) {
+            item {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Recent", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    if (documents.size > recent.size) TextButton(onClick = onSeeAll) { Text("See all") }
+                }
+            }
+            items(recent, key = { it.id }) { doc ->
+                DocumentListCard(
+                    document = doc,
+                    selected = doc.id in selected,
+                    onClick = { if (selected.isNotEmpty()) onToggleSelection(doc.id) else onOpenDocument(doc.id) },
+                    onLongClick = { onToggleSelection(doc.id) }
+                )
+            }
+        }
+        item { Spacer(Modifier.height(16.dp)) }
     }
 }
 

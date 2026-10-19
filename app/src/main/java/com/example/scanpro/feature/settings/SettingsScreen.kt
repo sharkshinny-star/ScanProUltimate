@@ -1,8 +1,5 @@
 package com.example.scanpro.feature.settings
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,19 +7,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,8 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -47,7 +39,6 @@ import com.example.scanpro.core.ui.formatBytes
 @Composable
 fun SettingsRoute(
     snackbarHostState: SnackbarHostState,
-    onBack: () -> Unit,
     onAppLockChange: (Boolean) -> Unit,
     bottomBar: @Composable () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
@@ -68,7 +59,6 @@ fun SettingsRoute(
         trashCount = trashCount,
         storageBytes = storageBytes,
         snackbarHostState = snackbarHostState,
-        onBack = onBack,
         onPdfQualityChange = viewModel::setPdfQuality,
         onAutoTitleChange = viewModel::setAutoTitle,
         onAppLockChange = onAppLockChange,
@@ -88,7 +78,6 @@ fun SettingsScreen(
     trashCount: Int,
     storageBytes: Long,
     snackbarHostState: SnackbarHostState,
-    onBack: () -> Unit,
     onPdfQualityChange: (PdfQuality) -> Unit,
     onAutoTitleChange: (Boolean) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
@@ -98,12 +87,8 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
+                // Settings is a top-level tab, so it has no Up arrow.
+                title = { Text("Settings") }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },

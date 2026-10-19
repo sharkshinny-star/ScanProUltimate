@@ -28,6 +28,7 @@ fun ScanProNavHost(
     val onTab: (String) -> Unit = { route -> navController.navigateToTopLevel(route) }
 
     NavHost(navController = navController, startDestination = ScanProDestinations.HOME) {
+        // Search shares the library screen but is pushed on top of a tab rather than being one.
         listOf(ScanProDestinations.HOME, ScanProDestinations.FILES, ScanProDestinations.SEARCH).forEach { route ->
             composable(route) {
                 LibraryRoute(
@@ -38,6 +39,8 @@ fun ScanProNavHost(
                     onImportImages = onImportImages,
                     onImportPdf = onImportPdf,
                     onTrash = { navController.navigate(ScanProDestinations.TRASH) },
+                    onSearch = { navController.navigate(ScanProDestinations.SEARCH) { launchSingleTop = true } },
+                    onBack = { navController.popBackStack() },
                     onTab = onTab
                 )
             }
@@ -45,7 +48,6 @@ fun ScanProNavHost(
         composable(ScanProDestinations.SETTINGS) {
             SettingsRoute(
                 snackbarHostState = snackbarHostState,
-                onBack = { navController.popBackStack() },
                 onAppLockChange = onAppLockChange,
                 bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.SETTINGS, onTab = onTab) }
             )

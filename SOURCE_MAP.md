@@ -51,7 +51,7 @@
 
 ## Features (each: `*Route` + stateless `*Screen` + `*ViewModel`)
 
-- `feature/library/` — Home, Files and Search tabs (`LibraryScreen.kt`, `DocumentCards.kt`)
+- `feature/library/` — Home dashboard (recent documents), Files tab and the Search screen (`LibraryScreen.kt`, `DocumentCards.kt`)
 - `feature/document/` — document workspace (`DocumentScreen.kt`), crop editor, adjustments, signature pad
 - `feature/trash/` — recycle bin with 7-day countdown
 - `feature/settings/` — defaults, theme, app lock, storage
@@ -61,7 +61,7 @@
 
 - `navigation/ScanProDestinations.kt` — route strings and arguments
 - `navigation/ScanProNavHost.kt` — navigation graph and tab navigation
-- `navigation/ScanProBottomBar.kt` — bottom navigation bar
+- `navigation/ScanProBottomBar.kt` — bottom navigation bar (Home, Files, Settings)
 - `ui/ScanProApp.kt` — app shell: lock gate, snackbar, share and open-document effects
 
 ## Tests
