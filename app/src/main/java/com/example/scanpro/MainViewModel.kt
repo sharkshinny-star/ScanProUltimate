@@ -33,6 +33,11 @@ data class ExportArtifact(
     val title: String
 )
 
+data class ExternalPdfToView(
+    val uri: Uri,
+    val title: String
+)
+
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val repository: DocumentRepository,
@@ -46,6 +51,17 @@ class MainViewModel @Inject constructor(
 
     private val _storageBytes = MutableStateFlow(0L)
     val storageBytes: StateFlow<Long> = _storageBytes.asStateFlow()
+
+    private val _externalPdfToView = MutableStateFlow<ExternalPdfToView?>(null)
+    val externalPdfToView: StateFlow<ExternalPdfToView?> = _externalPdfToView.asStateFlow()
+
+    fun openExternalPdf(uri: Uri, title: String) {
+        _externalPdfToView.value = ExternalPdfToView(uri, title)
+    }
+
+    fun clearExternalPdfToView() {
+        _externalPdfToView.value = null
+    }
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -194,10 +210,17 @@ class MainViewModel @Inject constructor(
     fun deletePage(documentId: String, pageId: String) =
         launchBusy("Removing page…", "Page removed") { repository.deletePage(documentId, pageId) }
 
-    fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
-        launchBusy("Adding signature overlay…", "Signature added") {
-            repository.stampSignature(documentId, pageId, signature)
-        }
+    fun stampSignature(
+        documentId: String,
+        pageId: String,
+        signature: Bitmap,
+        x: Float = 0.56f,
+        y: Float = 0.78f,
+        width: Float = 0.34f,
+        height: Float = 0.12f
+    ) = launchBusy("Adding signature overlay…", "Signature added") {
+        repository.stampSignature(documentId, pageId, signature, x, y, width, height)
+    }
 
     fun addTextAnnotation(documentId: String, pageId: String, text: String) =
         launchBusy("Adding text annotation…", "Text added") { repository.addTextAnnotation(documentId, pageId, text) }

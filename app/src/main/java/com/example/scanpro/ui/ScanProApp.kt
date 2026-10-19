@@ -232,25 +232,32 @@ fun ScanProApp(
             )
         }
         composable(ROUTE_TOOLS) {
-            Scaffold(
+            PdfToolsScreen(
+                viewModel = viewModel,
+                onOpenPdfViewer = { uri, title ->
+                    val fileUri = if (uri.scheme == "file") {
+                        uri
+                    } else {
+                        val tempFile = java.io.File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf")
+                        val ok = runCatching {
+                            context.contentResolver.openInputStream(uri)?.use { input ->
+                                java.io.FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                            }
+                            true
+                        }.getOrDefault(false)
+                        if (ok && tempFile.exists()) Uri.fromFile(tempFile) else uri
+                    }
+                    val encodedUri = Uri.encode(fileUri.toString())
+                    val encodedTitle = Uri.encode(title)
+                    navController.navigate("$ROUTE_PDF_VIEWER?uri=$encodedUri&title=$encodedTitle")
+                },
                 bottomBar = {
                     LibraryNavigationBar(
                         selectedRoute = ROUTE_TOOLS,
                         onTab = { route -> navigateLibrary(navController, route, viewModel) }
                     )
                 }
-            ) { innerPadding ->
-                Box(Modifier.padding(innerPadding)) {
-                    PdfToolsScreen(
-                        viewModel = viewModel,
-                        onOpenPdfViewer = { uri, title ->
-                            val encodedUri = Uri.encode(uri.toString())
-                            val encodedTitle = Uri.encode(title)
-                            navController.navigate("$ROUTE_PDF_VIEWER?uri=$encodedUri&title=$encodedTitle")
-                        }
-                    )
-                }
-            }
+            )
         }
         composable("$ROUTE_PDF_VIEWER?uri={uri}&title={title}") { entry ->
             val uriStr = entry.arguments?.getString("uri") ?: ""
@@ -326,6 +333,23 @@ fun ScanProApp(
                     busyLabel = busyLabel,
                     snackbarHostState = snackbarHostState,
                     onBack = { navController.popBackStack() },
+                    onOpenPdfViewer = { uri, title ->
+                        val fileUri = if (uri.scheme == "file") {
+                            uri
+                        } else {
+                            val tempFile = java.io.File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf")
+                            val ok = runCatching {
+                                context.contentResolver.openInputStream(uri)?.use { input ->
+                                    java.io.FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                                }
+                                true
+                            }.getOrDefault(false)
+                            if (ok && tempFile.exists()) Uri.fromFile(tempFile) else uri
+                        }
+                        val encodedUri = Uri.encode(fileUri.toString())
+                        val encodedTitle = Uri.encode(title)
+                        navController.navigate("$ROUTE_PDF_VIEWER?uri=$encodedUri&title=$encodedTitle")
+                    },
                     onRename = { viewModel.rename(selected.id, it) },
                     onTags = { viewModel.setTags(selected.id, it) },
                     onFolder = { viewModel.setFolder(selected.id, it) },
@@ -345,7 +369,7 @@ fun ScanProApp(
                     onExtractPage = { viewModel.extractPage(selected.id, it) },
                     onSplitBook = { viewModel.splitBookSpread(selected.id, it) },
                     onDeletePage = { viewModel.deletePage(selected.id, it) },
-                    onSign = { pageId, bitmap -> viewModel.stampSignature(selected.id, pageId, bitmap) },
+                    onSign = { pageId, bitmap, x, y, w, h -> viewModel.stampSignature(selected.id, pageId, bitmap, x, y, w, h) },
                     onTextAnnotation = { pageId, text -> viewModel.addTextAnnotation(selected.id, pageId, text) },
                     onHighlight = { viewModel.addHighlight(selected.id, it) },
                     onRedact = { viewModel.addRedaction(selected.id, it) },
@@ -519,22 +543,40 @@ private fun LibraryScreen(
             }
 
             if (mode == ROUTE_HOME) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { Button(onClick = onStartScan, enabled = !busy) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Scan")
-                    } }
-                    item { OutlinedButton(onClick = onImportImages, enabled = !busy) {
-                        Icon(Icons.Default.Image, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Photos")
-                    } }
-                    item { OutlinedButton(onClick = onImportPdf, enabled = !busy) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("PDF")
-                    } }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onStartScan,
+                        enabled = !busy,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Scan", maxLines = 1)
+                    }
+                    OutlinedButton(
+                        onClick = onImportImages,
+                        enabled = !busy,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Photos", maxLines = 1)
+                    }
+                    OutlinedButton(
+                        onClick = onImportPdf,
+                        enabled = !busy,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("PDF", maxLines = 1)
+                    }
                 }
                 Spacer(Modifier.height(10.dp))
             }
@@ -721,7 +763,6 @@ private fun LibraryNavigationBar(selectedRoute: String, onTab: (String) -> Unit)
             Triple(ROUTE_HOME, "Home", Icons.Default.Home),
             Triple(ROUTE_DOCUMENTS, "Documents", Icons.Default.Description),
             Triple(ROUTE_TOOLS, "PDF Tools", Icons.Default.PictureAsPdf),
-            Triple(ROUTE_SEARCH, "Search", Icons.Default.Search),
             Triple(ROUTE_SETTINGS, "Settings", Icons.Default.Settings)
         ).forEach { (route, label, icon) ->
             NavigationBarItem(

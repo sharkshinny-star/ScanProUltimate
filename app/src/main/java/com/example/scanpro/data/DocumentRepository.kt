@@ -267,22 +267,29 @@ class DocumentRepository @Inject constructor(
             renderAndOcr(updated)
         }
 
-    suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
-        editSinglePage(documentId, pageId) { page ->
-            val folder = File(page.imagePath).parentFile?.parentFile ?: error("Invalid page folder")
-            val signatureDir = File(folder, "signatures").apply { mkdirs() }
-            val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
-            ImageProcessor.saveSignature(signature, asset)
-            val annotation = PageAnnotation(
-                type = AnnotationType.SIGNATURE,
-                x = 0.56f,
-                y = 0.78f,
-                width = 0.34f,
-                height = 0.12f,
-                assetPath = asset.absolutePath
-            )
-            renderAndOcr(page.copy(annotations = page.annotations + annotation))
-        }
+    suspend fun stampSignature(
+        documentId: String,
+        pageId: String,
+        signature: Bitmap,
+        x: Float = 0.56f,
+        y: Float = 0.78f,
+        width: Float = 0.34f,
+        height: Float = 0.12f
+    ) = editSinglePage(documentId, pageId) { page ->
+        val folder = File(page.imagePath).parentFile?.parentFile ?: error("Invalid page folder")
+        val signatureDir = File(folder, "signatures").apply { mkdirs() }
+        val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
+        ImageProcessor.saveSignature(signature, asset)
+        val annotation = PageAnnotation(
+            type = AnnotationType.SIGNATURE,
+            x = x,
+            y = y,
+            width = width,
+            height = height,
+            assetPath = asset.absolutePath
+        )
+        renderAndOcr(page.copy(annotations = page.annotations + annotation))
+    }
 
     suspend fun addWatermark(documentId: String, watermark: String) = withContext(Dispatchers.IO) {
         val clean = watermark.trim()

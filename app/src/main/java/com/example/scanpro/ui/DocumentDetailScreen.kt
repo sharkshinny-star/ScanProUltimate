@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -49,11 +50,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -61,11 +63,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -83,8 +85,8 @@ import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
-import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.TranslationEngine
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
 
@@ -97,6 +99,7 @@ fun DocumentDetailScreen(
     busyLabel: String?,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
+    onOpenPdfViewer: (Uri, String) -> Unit,
     onRename: (String) -> Unit,
     onTags: (String) -> Unit,
     onFolder: (String) -> Unit,
@@ -116,7 +119,7 @@ fun DocumentDetailScreen(
     onExtractPage: (String) -> Unit,
     onSplitBook: (String) -> Unit,
     onDeletePage: (String) -> Unit,
-    onSign: (String, Bitmap) -> Unit,
+    onSign: (pageId: String, bitmap: Bitmap, x: Float, y: Float, w: Float, h: Float) -> Unit,
     onTextAnnotation: (String, String) -> Unit,
     onHighlight: (String) -> Unit,
     onRedact: (String) -> Unit,
@@ -140,13 +143,13 @@ fun DocumentDetailScreen(
     var selectedPageId by rememberSaveable(document.id) { mutableStateOf(pages.firstOrNull()?.id) }
     val currentPage = pages.firstOrNull { it.id == selectedPageId } ?: pages.firstOrNull()
     val currentIndex = pages.indexOfFirst { it.id == currentPage?.id }.coerceAtLeast(0)
-    val insights = remember(document.ocrText) { DocumentIntelligenceEngine.analyze(document.ocrText) }
-    var assistantQuestion by rememberSaveable(document.id) { mutableStateOf("") }
-    var assistantAnswer by rememberSaveable(document.id) { mutableStateOf("") }
     val detailScope = rememberCoroutineScope()
     var translationTarget by rememberSaveable(document.id) { mutableStateOf("en") }
     var translationResult by rememberSaveable(document.id) { mutableStateOf("") }
     var translating by remember { mutableStateOf(false) }
+
+    var selectedTabIndex by rememberSaveable(document.id) { mutableIntStateOf(0) }
+    val tabTitles = listOf("Enhance & Edit", "Markup & Sign", "PDF Settings", "OCR & Translation")
 
     var renameOpen by remember { mutableStateOf(false) }
     var tagsOpen by remember { mutableStateOf(false) }
@@ -162,6 +165,8 @@ fun DocumentDetailScreen(
     var passwordOpen by remember { mutableStateOf(false) }
     var backupPasswordOpen by remember { mutableStateOf(false) }
     var ocrEditOpen by remember { mutableStateOf(false) }
+    var pendingSignatureBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var signaturePlacementOpen by remember { mutableStateOf(false) }
 
     val appendLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
         if (uris.isNotEmpty()) onAppendImages(uris)
@@ -209,36 +214,13 @@ fun DocumentDetailScreen(
             }
 
             if (currentPage != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = { sharePdf(context, document) },
-                        modifier = Modifier.weight(1f),
-                        enabled = !busy
-                    ) {
-                        Icon(Icons.Default.Share, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Share PDF")
-                    }
-                    OutlinedButton(
-                        onClick = { shareImages(context, document) },
-                        modifier = Modifier.weight(1f),
-                        enabled = !busy
-                    ) {
-                        Text("Share JPG")
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(480.dp))
+                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(420.dp))
                 Spacer(Modifier.height(8.dp))
                 Text("Page ${currentIndex + 1} of ${pages.size}", modifier = Modifier.align(Alignment.CenterHorizontally), fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
                         var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
-                        // The gesture block outlives reorders, so read the live position instead of the captured one.
                         val latestIndex by rememberUpdatedState(index)
                         val latestLast by rememberUpdatedState(pages.lastIndex)
                         Card(
@@ -271,227 +253,290 @@ fun DocumentDetailScreen(
                     }
                 }
 
-                SectionTitle("Scan enhancement")
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(PageFilter.entries, key = { it.name }) { filter ->
-                        FilterChip(
-                            selected = currentPage.filter == filter,
-                            enabled = !busy,
-                            onClick = { onApplyFilter(currentPage.id, filter) },
-                            label = { Text(filter.label) }
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { onOpenPdfViewer(Uri.fromFile(java.io.File(document.pdfPath)), document.title) },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Open", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelLarge)
+                    }
+                    OutlinedButton(
+                        onClick = { sharePdf(context, document) },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Share", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelLarge)
+                    }
+                    OutlinedButton(
+                        onClick = { savePdfLauncher.launch("${document.title}.pdf") },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                    ) {
+                        Text("Save", maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            ScrollableTabRow(
+                selectedTabIndex = selectedTabIndex,
+                edgePadding = 0.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = {
+                            Text(
+                                title,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedTabIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            when (selectedTabIndex) {
+                0 -> {
+                    // Tab 0: Enhance & Edit
+                    if (currentPage != null) {
+                        SectionTitle("Scan Enhancement Filter")
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(PageFilter.entries, key = { it.name }) { filter ->
+                                FilterChip(
+                                    selected = currentPage.filter == filter,
+                                    enabled = !busy,
+                                    onClick = { onApplyFilter(currentPage.id, filter) },
+                                    label = { Text(filter.label) }
+                                )
+                            }
+                        }
+
+                        SectionTitle("Page Operations")
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item { ToolButton("Crop", !busy) { cropOpen = true } }
+                            item { ToolButton("Fine tune", !busy) { adjustmentsOpen = true } }
+                            item {
+                                OutlinedButton(onClick = { onRotate(currentPage.id) }, enabled = !busy) {
+                                    Icon(Icons.Default.RotateRight, contentDescription = null)
+                                    Spacer(Modifier.width(5.dp)); Text("Rotate")
+                                }
+                            }
+                            item { ToolButton("Reset", !busy) { onResetPage(currentPage.id) } }
+                            item {
+                                OutlinedButton(onClick = { onMove(currentPage.id, -1) }, enabled = !busy && currentIndex > 0) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = null); Text("Left")
+                                }
+                            }
+                            item {
+                                OutlinedButton(onClick = { onMove(currentPage.id, 1) }, enabled = !busy && currentIndex < pages.lastIndex) {
+                                    Text("Right"); Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null)
+                                }
+                            }
+                            item { ToolButton("Duplicate", !busy) { onDuplicatePage(currentPage.id) } }
+                            item { ToolButton("Extract", !busy) { onExtractPage(currentPage.id) } }
+                            item { ToolButton("Split book", !busy) { onSplitBook(currentPage.id) } }
+                            item { ToolButton("Delete page", !busy) { deletePageOpen = true } }
+                        }
+                    }
+                }
+                1 -> {
+                    // Tab 1: Markup & Sign
+                    if (currentPage != null) {
+                        SectionTitle("Markup and Signing")
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item {
+                                OutlinedButton(onClick = { signatureOpen = true }, enabled = !busy) {
+                                    Icon(Icons.Default.Draw, contentDescription = null)
+                                    Spacer(Modifier.width(5.dp)); Text("Signature")
+                                }
+                            }
+                            item { ToolButton("Add text", !busy) { annotationTextOpen = true } }
+                            item { ToolButton("Highlight", !busy) { onHighlight(currentPage.id) } }
+                            item { ToolButton("Redact", !busy) { onRedact(currentPage.id) } }
+                            item { ToolButton("Watermark", !busy) { watermarkOpen = true } }
+                            item { ToolButton("Undo markup", !busy && currentPage.annotations.isNotEmpty()) { onUndoAnnotation(currentPage.id) } }
+                        }
+                    }
+                }
+                2 -> {
+                    // Tab 2: PDF Settings & Document Operations
+                    SectionTitle("PDF Quality")
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(PdfQuality.entries, key = { it.name }) { quality ->
+                            FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(quality.label) })
+                        }
+                    }
+
+                    val rawPagesBytes = remember(document.pages) {
+                        document.pages.sumOf { java.io.File(it.imagePath).length() }.coerceAtLeast(100000L)
+                    }
+                    val estHigh = (rawPagesBytes * 0.70).toLong()
+                    val estBalanced = (rawPagesBytes * 0.35).toLong()
+                    val estSmall = (rawPagesBytes * 0.15).toLong()
+
+                    val selectedEstSize = when (document.pdfQuality) {
+                        PdfQuality.HIGH -> estHigh
+                        PdfQuality.BALANCED -> estBalanced
+                        PdfQuality.SMALL -> estSmall
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                "Estimated PDF Size: ~${formatBytes(selectedEstSize)}",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "Quality size range: High (~${formatBytes(estHigh)}) · Balanced (~${formatBytes(estBalanced)}) · Small (~${formatBytes(estSmall)})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    Text("Page size", style = MaterialTheme.typography.labelLarge)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(PdfPageSize.entries, key = { it.name }) { size ->
+                            FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(size.label) })
+                        }
+                    }
+                    ToggleRow("Searchable OCR PDF", "Adds recognized text to the PDF so document search can index it.", document.searchablePdf, !busy, onSearchablePdf)
+                    ToggleRow("Page numbers", "Adds page x / total at the bottom of exported PDF pages.", document.pageNumbers, !busy, onPageNumbers)
+
+                    SectionTitle("Document Operations")
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        item { ToolButton("Print") { printPdf(context, document) } }
+                        item { ToolButton("Protect PDF", !busy) { passwordOpen = true } }
+                        item { ToolButton("Encrypted backup", !busy) { backupPasswordOpen = true } }
+                        item { ToolButton("Share JPEGs") { shareImages(context, document) } }
+                        item {
+                            OutlinedButton(enabled = !busy, onClick = { appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+                                Icon(Icons.Default.AddPhotoAlternate, contentDescription = null); Spacer(Modifier.width(5.dp)); Text("Add pages")
+                            }
+                        }
+                        item { ToolButton("Merge", !busy && otherDocuments.isNotEmpty()) { mergeOpen = true } }
+                        item { ToolButton("Split all", !busy && document.pageCount > 1) { onSplitDocument() } }
+                        item { ToolButton("ID copy", !busy) { onExportIdCopy() } }
+                        item { ToolButton("Long image", !busy) { onExportLongImage() } }
+                        item { ToolButton("Folder", !busy) { folderOpen = true } }
+                        item { ToolButton("Tags", !busy) { tagsOpen = true } }
+                    }
+                }
+                3 -> {
+                    // Tab 3: OCR & Translation
+                    SectionTitle("OCR Operations")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { onReOcr() }, enabled = !busy) {
+                            Text("Re-run OCR")
+                        }
+                        if (document.ocrText.isNotBlank()) {
+                            OutlinedButton(onClick = { onExportOcrTextFile() }, enabled = !busy) {
+                                Text("Export .TXT")
+                            }
+                        }
+                    }
+
+                    SectionTitle("Translate OCR")
+                    Text("Translation runs with ML Kit on-device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(8.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(TranslationEngine.commonTargets, key = { it.languageTag }) { target ->
+                            FilterChip(
+                                selected = translationTarget == target.languageTag,
+                                onClick = { translationTarget = target.languageTag },
+                                label = { Text(target.label) }
+                            )
+                        }
+                    }
+                    Button(
+                        enabled = !translating && document.ocrText.isNotBlank(),
+                        onClick = {
+                            detailScope.launch {
+                                translating = true
+                                translationResult = runCatching { TranslationEngine.translate(document.ocrText, translationTarget) }
+                                    .getOrElse { it.message ?: "Translation failed" }
+                                translating = false
+                            }
+                        },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(if (translating) "Translating…" else "Translate")
+                    }
+                    if (translationResult.isNotBlank()) {
+                        SelectionContainer {
+                            Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                                Text(translationResult, modifier = Modifier.padding(12.dp))
+                            }
+                        }
+                    }
+
+                    SectionTitle("Recognized Text (OCR)")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            if (document.ocrText.isBlank()) "No text detected yet." else "${document.ocrText.length} characters recognized",
+                            style = MaterialTheme.typography.bodySmall
                         )
-                    }
-                }
-
-                Spacer(Modifier.height(10.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { ToolButton("Crop", !busy) { cropOpen = true } }
-                    item { ToolButton("Fine tune", !busy) { adjustmentsOpen = true } }
-                    item {
-                        OutlinedButton(onClick = { onRotate(currentPage.id) }, enabled = !busy) {
-                            Icon(Icons.Default.RotateRight, contentDescription = null)
-                            Spacer(Modifier.width(5.dp)); Text("Rotate")
+                        Row {
+                            IconButton(onClick = { shareOcrText(context, document) }, enabled = document.ocrText.isNotBlank()) {
+                                Icon(Icons.Default.Share, contentDescription = "Share OCR text")
+                            }
+                            IconButton(onClick = { copyText(context, document.ocrText) }, enabled = document.ocrText.isNotBlank()) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy text")
+                            }
+                            IconButton(onClick = { ocrEditOpen = true }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit text")
+                            }
                         }
                     }
-                    item { ToolButton("Reset", !busy) { onResetPage(currentPage.id) } }
-                    item {
-                        OutlinedButton(onClick = { onMove(currentPage.id, -1) }, enabled = !busy && currentIndex > 0) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = null); Text("Left")
+                    if (document.ocrText.isNotBlank()) {
+                        SelectionContainer {
+                            Card(Modifier.fillMaxWidth()) {
+                                Text(document.ocrText, modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
+                            }
                         }
                     }
-                    item {
-                        OutlinedButton(onClick = { onMove(currentPage.id, 1) }, enabled = !busy && currentIndex < pages.lastIndex) {
-                            Text("Right"); Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null)
-                        }
-                    }
-                    item { ToolButton("Duplicate", !busy) { onDuplicatePage(currentPage.id) } }
-                    item { ToolButton("Extract", !busy) { onExtractPage(currentPage.id) } }
-                    item { ToolButton("Split book", !busy) { onSplitBook(currentPage.id) } }
-                    item { ToolButton("Delete page", !busy) { deletePageOpen = true } }
-                }
-
-                SectionTitle("Markup and signing")
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        OutlinedButton(onClick = { signatureOpen = true }, enabled = !busy) {
-                            Icon(Icons.Default.Draw, contentDescription = null)
-                            Spacer(Modifier.width(5.dp)); Text("Signature")
-                        }
-                    }
-                    item { ToolButton("Add text", !busy) { annotationTextOpen = true } }
-                    item { ToolButton("Highlight", !busy) { onHighlight(currentPage.id) } }
-                    item { ToolButton("Redact", !busy) { onRedact(currentPage.id) } }
-                    item { ToolButton("Undo markup", !busy && currentPage.annotations.isNotEmpty()) { onUndoAnnotation(currentPage.id) } }
                 }
             }
 
-            SectionTitle("Document tools")
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    Button(onClick = { openPdf(context, document) }) {
-                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null); Spacer(Modifier.width(5.dp)); Text("Open PDF")
-                    }
-                }
-                item { ToolButton("Share PDF") { sharePdf(context, document) } }
-                item { ToolButton("Save PDF") { savePdfLauncher.launch("${document.title}.pdf") } }
-                item { ToolButton("Print") { printPdf(context, document) } }
-                item { ToolButton("Protect PDF", !busy) { passwordOpen = true } }
-                item { ToolButton("Encrypted backup", !busy) { backupPasswordOpen = true } }
-                item { ToolButton("JPEGs") { shareImages(context, document) } }
-                item { ToolButton("OCR text") { shareOcrText(context, document) } }
-                item { ToolButton("TXT file", !busy && document.ocrText.isNotBlank()) { onExportOcrTextFile() } }
-                item {
-                    OutlinedButton(enabled = !busy, onClick = { appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null); Spacer(Modifier.width(5.dp)); Text("Add pages")
-                    }
-                }
-                item { ToolButton("Merge", !busy && otherDocuments.isNotEmpty()) { mergeOpen = true } }
-                item { ToolButton("Split all", !busy && document.pageCount > 1) { onSplitDocument() } }
-                item { ToolButton("ID copy", !busy) { onExportIdCopy() } }
-                item { ToolButton("Long image", !busy) { onExportLongImage() } }
-                item { ToolButton("Watermark", !busy) { watermarkOpen = true } }
-                item { ToolButton("Refresh OCR", !busy) { onReOcr() } }
-                item { ToolButton("Folder", !busy) { folderOpen = true } }
-                item { ToolButton("Tags", !busy) { tagsOpen = true } }
-            }
+            SectionTitle("Document Info")
+            Text("Pages: ${document.pageCount}", style = MaterialTheme.typography.bodySmall)
+            Text("PDF size: ${formatBytes(document.sizeBytes)}", style = MaterialTheme.typography.bodySmall)
+            Text("Updated: ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(document.updatedAt))}", style = MaterialTheme.typography.bodySmall)
+            if (document.folderName.isNotBlank()) Text("Folder: ${document.folderName}", style = MaterialTheme.typography.bodySmall)
+            if (document.tags.isNotEmpty()) Text("Tags: ${document.tags.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
 
-            SectionTitle("PDF output")
-            Text("Quality", style = MaterialTheme.typography.labelLarge)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(PdfQuality.entries, key = { it.name }) { quality ->
-                    FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(quality.label) })
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text("Page size", style = MaterialTheme.typography.labelLarge)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(PdfPageSize.entries, key = { it.name }) { size ->
-                    FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(size.label) })
-                }
-            }
-            ToggleRow("Searchable OCR PDF", "Adds recognized text to the PDF so document search can index it.", document.searchablePdf, !busy, onSearchablePdf)
-            ToggleRow("Page numbers", "Adds page x / total at the bottom of exported PDF pages.", document.pageNumbers, !busy, onPageNumbers)
-
-            SectionTitle("Document mode")
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(ScanMode.entries, key = { it.name }) { mode ->
-                    FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(mode.label) })
-                }
-            }
-
-            SectionTitle("OCR language script")
-            Text("Choose the primary script, then ScanPro re-runs OCR locally on every page.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(OcrScript.entries, key = { it.name }) { script ->
-                    FilterChip(
-                        selected = document.ocrScript == script,
-                        enabled = !busy,
-                        onClick = { onOcrScript(script) },
-                        label = { Text(script.label) }
-                    )
-                }
-            }
-
-            SectionTitle("Smart insights · offline")
-            Text(insights.kind.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(4.dp))
-            Text(insights.summary, style = MaterialTheme.typography.bodyMedium)
-            if (insights.amounts.isNotEmpty()) Text("Amounts: ${insights.amounts.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-            if (insights.dates.isNotEmpty()) Text("Dates: ${insights.dates.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-            if (insights.references.isNotEmpty()) Text("References: ${insights.references.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-            if (insights.actionItems.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                Text("Potential action items", style = MaterialTheme.typography.labelLarge)
-                insights.actionItems.forEach { item ->
-                    Text("• $item", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            if (insights.suggestedTags.isNotEmpty()) {
-                Text("Suggested tags: ${insights.suggestedTags.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-                TextButton(
-                    enabled = !busy,
-                    onClick = {
-                        val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
-                        onTags(merged.joinToString(", "))
-                    }
-                ) { Text("Apply suggested tags") }
-            }
-            Spacer(Modifier.height(10.dp))
-            OutlinedTextField(
-                value = assistantQuestion,
-                onValueChange = { assistantQuestion = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ask about this scan") },
-                supportingText = { Text("Answers are extracted only from OCR text; no document is uploaded.") },
-                maxLines = 3
-            )
-            Button(
-                onClick = { assistantAnswer = DocumentIntelligenceEngine.answer(assistantQuestion, document.ocrText) },
-                enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank(),
-                modifier = Modifier.padding(top = 8.dp)
-            ) { Text("Find answer") }
-            if (assistantAnswer.isNotBlank()) {
-                Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    Text(assistantAnswer, modifier = Modifier.padding(12.dp))
-                }
-            }
-
-            SectionTitle("Translate OCR")
-            Text("Translation runs with ML Kit. The language model may download once, then works on-device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(TranslationEngine.commonTargets, key = { it.languageTag }) { target ->
-                    FilterChip(
-                        selected = translationTarget == target.languageTag,
-                        onClick = { translationTarget = target.languageTag },
-                        label = { Text(target.label) }
-                    )
-                }
-            }
-            Button(
-                onClick = {
-                    detailScope.launch {
-                        translating = true
-                        translationResult = runCatching { TranslationEngine.translate(document.ocrText, translationTarget) }
-                            .getOrElse { it.message ?: "Translation failed" }
-                        translating = false
-                    }
-                },
-                enabled = document.ocrText.isNotBlank() && !translating,
-                modifier = Modifier.padding(top = 8.dp)
-            ) { Text(if (translating) "Translating…" else "Translate") }
-            if (translationResult.isNotBlank()) {
-                Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    SelectionContainer { Text(translationResult, modifier = Modifier.padding(12.dp)) }
-                }
-            }
-
-            SectionTitle("Recognized text")
-            if (!currentPage?.ocrText.isNullOrBlank()) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    IconButton(onClick = { ocrEditOpen = true }, enabled = !busy) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit recognized text")
-                    }
-                    IconButton(onClick = { copyText(context, currentPage!!.ocrText) }) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy text")
-                    }
-                }
-            }
-            SelectionContainer {
-                Text(currentPage?.ocrText?.ifBlank { "No text recognized on this page." } ?: "No page selected.")
-            }
-
-            SectionTitle("Document info")
-            Text("Pages: ${document.pageCount}")
-            Text("PDF size: ${formatBytes(document.sizeBytes)}")
-            Text("Updated: ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(document.updatedAt))}")
-            if (document.folderName.isNotBlank()) Text("Folder: ${document.folderName}")
-            if (document.tags.isNotEmpty()) Text("Tags: ${document.tags.joinToString(", ")}")
-
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(16.dp))
             TextButton(onClick = { deleteDocumentOpen = true }, enabled = !busy) {
-                Icon(Icons.Default.Delete, contentDescription = null); Spacer(Modifier.width(5.dp)); Text("Move document to recycle bin")
+                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                Spacer(Modifier.width(5.dp))
+                Text("Move document to recycle bin", color = MaterialTheme.colorScheme.error)
             }
             Spacer(Modifier.height(32.dp))
         }
@@ -527,9 +572,27 @@ fun DocumentDetailScreen(
 
     if (signatureOpen && currentPage != null) {
         SignaturePadDialog(onDismiss = { signatureOpen = false }) { bitmap ->
-            onSign(currentPage.id, bitmap)
             signatureOpen = false
+            pendingSignatureBitmap = bitmap
+            signaturePlacementOpen = true
         }
+    }
+
+    if (signaturePlacementOpen && currentPage != null && pendingSignatureBitmap != null) {
+        SignaturePlacementDialog(
+            pageImagePath = currentPage.imagePath,
+            signatureBitmap = pendingSignatureBitmap!!,
+            onDismiss = {
+                signaturePlacementOpen = false
+                pendingSignatureBitmap = null
+            },
+            onConfirmPlacement = { x, y, w, h ->
+                val bmp = pendingSignatureBitmap!!
+                signaturePlacementOpen = false
+                pendingSignatureBitmap = null
+                onSign(currentPage.id, bmp, x, y, w, h)
+            }
+        )
     }
 
     if (cropOpen && currentPage != null) {
@@ -600,8 +663,8 @@ fun DocumentDetailScreen(
 
 @Composable
 private fun SectionTitle(value: String) {
-    Spacer(Modifier.height(22.dp))
-    Text(value, style = MaterialTheme.typography.titleMedium)
+    Spacer(Modifier.height(16.dp))
+    Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(8.dp))
 }
 

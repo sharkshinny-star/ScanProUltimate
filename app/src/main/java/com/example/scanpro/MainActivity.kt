@@ -137,6 +137,16 @@ class MainActivity : FragmentActivity() {
                 val uri = intent.data
                 if (uri != null) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
+                        val title = uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() } ?: "PDF Document"
+                        val cacheFile = java.io.File(cacheDir, "ext_view_${System.currentTimeMillis()}.pdf")
+                        val ok = runCatching {
+                            contentResolver.openInputStream(uri)?.use { input ->
+                                java.io.FileOutputStream(cacheFile).use { output -> input.copyTo(output) }
+                            }
+                            true
+                        }.getOrDefault(false)
+                        val finalUri = if (ok && cacheFile.exists()) Uri.fromFile(cacheFile) else uri
+                        viewModel.openExternalPdf(finalUri, title)
                         viewModel.importPdf(uri)
                     } else if (type.startsWith("image/")) {
                         viewModel.importImages(listOf(uri))

@@ -1,6 +1,7 @@
 package com.example.scanpro.ui
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -25,10 +26,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
@@ -55,6 +61,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,6 +77,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -93,8 +102,18 @@ fun PdfViewerScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var pfd by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
     var pdfRenderer by remember { mutableStateOf<PdfRenderer?>(null) }
+    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var isImageMode by remember { mutableStateOf(false) }
+
     var showJumpDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+
+    // Search state
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var matchingPageIndices by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var currentMatchIdx by remember { mutableIntStateOf(0) }
+    var isSearchingText by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
     var scale by remember { mutableFloatStateOf(1f) }
@@ -113,10 +132,47 @@ fun PdfViewerScreen(
             try {
                 isLoading = true
                 errorMessage = null
+                val path = pdfUri.path?.lowercase() ?: ""
+                val uriStr = pdfUri.toString().lowercase()
+                val isImage = path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".png") ||
+                        uriStr.endsWith(".jpg") || uriStr.endsWith(".jpeg") || uriStr.endsWith(".png")
+
+                if (isImage) {
+                    isImageMode = true
+                    val bmp = if (pdfUri.scheme == "file" && pdfUri.path != null) {
+                        BitmapFactory.decodeFile(pdfUri.path)
+                    } else {
+                        context.contentResolver.openInputStream(pdfUri)?.use { input ->
+                            BitmapFactory.decodeStream(input)
+                        }
+                    }
+                    if (bmp != null) {
+                        imageBitmap = bmp
+                        pageCount = 1
+                        isLoading = false
+                        return@launch
+                    }
+                }
+
+                // PDF rendering mode
+                isImageMode = false
                 val tempFile = File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf")
+                if (pdfUri.scheme == "file" && pdfUri.path != null) {
+                    val srcFile = File(pdfUri.path!!)
+                    if (srcFile.exists()) {
+                        val descriptor = ParcelFileDescriptor.open(srcFile, ParcelFileDescriptor.MODE_READ_ONLY)
+                        val renderer = PdfRenderer(descriptor)
+                        pfd = descriptor
+                        pdfRenderer = renderer
+                        pageCount = renderer.pageCount
+                        isLoading = false
+                        return@launch
+                    }
+                }
+
                 context.contentResolver.openInputStream(pdfUri)?.use { input ->
                     FileOutputStream(tempFile).use { output -> input.copyTo(output) }
-                } ?: throw Exception("Could not open PDF file")
+                } ?: throw Exception("Could not open file")
 
                 val descriptor = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY)
                 val renderer = PdfRenderer(descriptor)
@@ -125,7 +181,7 @@ fun PdfViewerScreen(
                 pageCount = renderer.pageCount
                 isLoading = false
             } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: "Failed to load PDF document"
+                errorMessage = e.localizedMessage ?: "Failed to load document"
                 isLoading = false
             }
         }
@@ -133,6 +189,55 @@ fun PdfViewerScreen(
         onDispose {
             pdfRenderer?.close()
             pfd?.close()
+            imageBitmap?.recycle()
+        }
+    }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isBlank() || isImageMode) {
+            matchingPageIndices = emptyList()
+            currentMatchIdx = 0
+            isSearchingText = false
+            return@LaunchedEffect
+        }
+
+        withContext(Dispatchers.IO) {
+            try {
+                isSearchingText = true
+                val matches = mutableListOf<Int>()
+                val tempPdf = File(context.cacheDir, "search_temp_${System.currentTimeMillis()}.pdf")
+                val stream = if (pdfUri.scheme == "file" && pdfUri.path != null) {
+                    File(pdfUri.path!!)
+                } else {
+                    context.contentResolver.openInputStream(pdfUri)?.use { input ->
+                        FileOutputStream(tempPdf).use { output -> input.copyTo(output) }
+                    }
+                    tempPdf
+                }
+
+                if (stream.exists()) {
+                    PDDocument.load(stream).use { pdDoc ->
+                        val stripper = PDFTextStripper()
+                        for (i in 0 until pdDoc.numberOfPages) {
+                            stripper.startPage = i + 1
+                            stripper.endPage = i + 1
+                            val pageText = stripper.getText(pdDoc)
+                            if (pageText.contains(searchQuery, ignoreCase = true)) {
+                                matches.add(i)
+                            }
+                        }
+                    }
+                }
+                matchingPageIndices = matches
+                currentMatchIdx = 0
+                if (matches.isNotEmpty()) {
+                    listState.scrollToItem(matches.first())
+                }
+            } catch (_: Exception) {
+                matchingPageIndices = emptyList()
+            } finally {
+                isSearchingText = false
+            }
         }
     }
 
@@ -140,20 +245,39 @@ fun PdfViewerScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    if (isSearchActive) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search keyword in PDF…") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            trailingIcon = {
+                                if (isSearchingText) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                                } else if (searchQuery.isNotBlank()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                    }
+                                }
+                            }
                         )
-                        if (pageCount > 0) {
+                    } else {
+                        Column {
                             Text(
-                                text = "Page $currentPage of $pageCount",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
+                            if (pageCount > 0) {
+                                Text(
+                                    text = if (isImageMode) "Image Preview" else "Page $currentPage of $pageCount",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 },
@@ -163,46 +287,102 @@ fun PdfViewerScreen(
                     }
                 },
                 actions = {
-                    if (pageCount > 1) {
-                        TextButton(onClick = { showJumpDialog = true }) {
-                            Text("Go to page", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                    IconButton(onClick = { scale = if (scale > 1f) 1f else 1.8f; offsetX = 0f; offsetY = 0f }) {
-                        Icon(
-                            if (scale > 1f) Icons.Default.ZoomOut else Icons.Default.ZoomIn,
-                            contentDescription = "Zoom"
-                        )
-                    }
-                    IconButton(onClick = onShare) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
-                    }
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        if (onCompress != null) {
-                            DropdownMenuItem(
-                                text = { Text("Compress PDF") },
-                                onClick = { showMenu = false; onCompress() },
-                                leadingIcon = { Icon(Icons.Default.Compress, contentDescription = null) }
+                    if (isSearchActive) {
+                        if (matchingPageIndices.isNotEmpty()) {
+                            Text(
+                                "${currentMatchIdx + 1}/${matchingPageIndices.size}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                            IconButton(
+                                onClick = {
+                                    if (matchingPageIndices.isNotEmpty()) {
+                                        currentMatchIdx = (currentMatchIdx - 1 + matchingPageIndices.size) % matchingPageIndices.size
+                                        scope.launch { listState.scrollToItem(matchingPageIndices[currentMatchIdx]) }
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.ArrowUpward, contentDescription = "Previous match")
+                            }
+                            IconButton(
+                                onClick = {
+                                    if (matchingPageIndices.isNotEmpty()) {
+                                        currentMatchIdx = (currentMatchIdx + 1) % matchingPageIndices.size
+                                        scope.launch { listState.scrollToItem(matchingPageIndices[currentMatchIdx]) }
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.ArrowDownward, contentDescription = "Next match")
+                            }
+                        } else if (searchQuery.isNotBlank() && !isSearchingText) {
+                            Text(
+                                "0 matches",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(horizontal = 4.dp)
                             )
                         }
-                        if (onProtect != null) {
-                            DropdownMenuItem(
-                                text = { Text("Protect with Password") },
-                                onClick = { showMenu = false; onProtect() },
-                                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
-                            )
+                        IconButton(onClick = { isSearchActive = false; searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close search")
                         }
-                        DropdownMenuItem(
-                            text = { Text("Print / Save as PDF") },
-                            onClick = { showMenu = false; shareFile(context, pdfUri.toString(), "application/pdf", title) },
-                            leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) }
-                        )
+                    } else {
+                        if (!isImageMode) {
+                            IconButton(onClick = { isSearchActive = true }) {
+                                Icon(Icons.Default.Search, contentDescription = "Search PDF")
+                            }
+                        }
+                        IconButton(onClick = onShare) {
+                            Icon(Icons.Default.Share, contentDescription = "Share")
+                        }
+                        if (!isImageMode) {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More")
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                if (pageCount > 1) {
+                                    DropdownMenuItem(
+                                        text = { Text("Go to Page") },
+                                        onClick = { showMenu = false; showJumpDialog = true },
+                                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(if (scale > 1f) "Reset Zoom" else "Zoom In") },
+                                    onClick = {
+                                        showMenu = false
+                                        scale = if (scale > 1f) 1f else 1.8f
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                    },
+                                    leadingIcon = {
+                                        Icon(if (scale > 1f) Icons.Default.ZoomOut else Icons.Default.ZoomIn, contentDescription = null)
+                                    }
+                                )
+                                if (onCompress != null) {
+                                    DropdownMenuItem(
+                                        text = { Text("Compress PDF") },
+                                        onClick = { showMenu = false; onCompress() },
+                                        leadingIcon = { Icon(Icons.Default.Compress, contentDescription = null) }
+                                    )
+                                }
+                                if (onProtect != null) {
+                                    DropdownMenuItem(
+                                        text = { Text("Protect with Password") },
+                                        onClick = { showMenu = false; onProtect() },
+                                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("Print / Save as PDF") },
+                                    onClick = { showMenu = false; shareFile(context, pdfUri.path ?: "", "application/pdf", title) },
+                                    leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) }
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -223,7 +403,7 @@ fun PdfViewerScreen(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Rendering PDF document…", style = MaterialTheme.typography.bodyMedium)
+                        Text("Loading document…", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
                 errorMessage != null -> {
@@ -235,7 +415,7 @@ fun PdfViewerScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Error Loading PDF",
+                            text = "Error Loading File",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Bold
@@ -245,6 +425,37 @@ fun PdfViewerScreen(
                             text = errorMessage ?: "Unknown error",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                isImageMode && imageBitmap != null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    scale = (scale * zoom).coerceIn(1f, 3.5f)
+                                    if (scale > 1f) {
+                                        offsetX += pan.x
+                                        offsetY += pan.y
+                                    } else {
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                    }
+                                }
+                            }
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                translationX = offsetX,
+                                translationY = offsetY
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            bitmap = imageBitmap!!.asImageBitmap(),
+                            contentDescription = title,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
@@ -339,9 +550,9 @@ private fun PdfPageItem(
                 isPageLoading = true
                 renderer.openPage(pageIndex).use { page ->
                     aspectRatio = page.width.toFloat() / page.height.toFloat()
-                    val targetW = 1080
+                    val targetW = 2160
                     val targetH = (targetW / aspectRatio).toInt().coerceAtLeast(1)
-                    val bmp = createBitmap(targetW, targetH)
+                    val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
                     page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                     bitmap = bmp
                 }
@@ -356,8 +567,8 @@ private fun PdfPageItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-        shape = RoundedCornerShape(8.dp),
+            .padding(horizontal = 8.dp),
+        shape = androidx.compose.ui.graphics.RectangleShape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -372,7 +583,8 @@ private fun PdfPageItem(
                 Image(
                     bitmap = bitmap!!.asImageBitmap(),
                     contentDescription = "Page ${pageIndex + 1}",
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    filterQuality = androidx.compose.ui.graphics.FilterQuality.High
                 )
             } else if (isPageLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(32.dp))
