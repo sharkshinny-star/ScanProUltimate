@@ -170,65 +170,27 @@ fun ScanProApp(
     }
 
     NavHost(navController = navController, startDestination = ROUTE_HOME) {
-        composable(ROUTE_HOME) {
-            LibraryScreen(
-                mode = ROUTE_HOME,
-                documents = documents,
-                trashCount = trash.size,
-                query = query,
-                busy = busy,
-                busyLabel = busyLabel,
-                snackbarHostState = snackbarHostState,
-                onQueryChange = viewModel::setQuery,
-                onOpenDocument = { navController.navigate("$ROUTE_DETAIL/$it") },
-                onStartScan = { navController.navigate(ROUTE_CAMERA) },
-                onImportImages = onImportImages,
-                onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
-                onTrash = { navController.navigate(ROUTE_TRASH) },
-                onBulkDelete = viewModel::moveManyToTrash,
-                onRenameFolder = viewModel::renameFolder,
-                onTab = { route -> navigateLibrary(navController, route, viewModel) }
-            )
-        }
-        composable(ROUTE_DOCUMENTS) {
-            LibraryScreen(
-                mode = ROUTE_DOCUMENTS,
-                documents = documents,
-                trashCount = trash.size,
-                query = query,
-                busy = busy,
-                busyLabel = busyLabel,
-                snackbarHostState = snackbarHostState,
-                onQueryChange = viewModel::setQuery,
-                onOpenDocument = { navController.navigate("$ROUTE_DETAIL/$it") },
-                onStartScan = { navController.navigate(ROUTE_CAMERA) },
-                onImportImages = onImportImages,
-                onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
-                onTrash = { navController.navigate(ROUTE_TRASH) },
-                onBulkDelete = viewModel::moveManyToTrash,
-                onRenameFolder = viewModel::renameFolder,
-                onTab = { route -> navigateLibrary(navController, route, viewModel) }
-            )
-        }
-        composable(ROUTE_SEARCH) {
-            LibraryScreen(
-                mode = ROUTE_SEARCH,
-                documents = documents,
-                trashCount = trash.size,
-                query = query,
-                busy = busy,
-                busyLabel = busyLabel,
-                snackbarHostState = snackbarHostState,
-                onQueryChange = viewModel::setQuery,
-                onOpenDocument = { navController.navigate("$ROUTE_DETAIL/$it") },
-                onStartScan = { navController.navigate(ROUTE_CAMERA) },
-                onImportImages = onImportImages,
-                onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
-                onTrash = { navController.navigate(ROUTE_TRASH) },
-                onBulkDelete = viewModel::moveManyToTrash,
-                onRenameFolder = viewModel::renameFolder,
-                onTab = { route -> navigateLibrary(navController, route, viewModel) }
-            )
+        listOf(ROUTE_HOME, ROUTE_DOCUMENTS, ROUTE_SEARCH).forEach { route ->
+            composable(route) {
+                LibraryScreen(
+                    mode = route,
+                    documents = documents,
+                    trashCount = trash.size,
+                    query = query,
+                    busy = busy,
+                    busyLabel = busyLabel,
+                    snackbarHostState = snackbarHostState,
+                    onQueryChange = viewModel::setQuery,
+                    onOpenDocument = { navController.navigate("$ROUTE_DETAIL/$it") },
+                    onStartScan = { navController.navigate(ROUTE_CAMERA) },
+                    onImportImages = onImportImages,
+                    onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
+                    onTrash = { navController.navigate(ROUTE_TRASH) },
+                    onBulkDelete = viewModel::moveManyToTrash,
+                    onRenameFolder = viewModel::renameFolder,
+                    onTab = { tab -> navigateLibrary(navController, tab, viewModel) }
+                )
+            }
         }
         composable(ROUTE_SETTINGS) {
             SettingsScreen(
@@ -382,7 +344,7 @@ private fun LibraryScreen(
     var moreMenuOpen by remember { mutableStateOf(false) }
     val selected = remember { mutableStateListOf<String>() }
     val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
-    val folders = documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted()
+    val folders = remember(documents) { documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted() }
 
     val visible = remember(documents, mode, folder, favoritesOnly, sort) {
         val base = documents.asSequence()
@@ -680,7 +642,8 @@ private fun DocumentListCard(
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             PageThumbnail(
                 path = document.pages.firstOrNull()?.imagePath,
-                modifier = Modifier.size(width = 48.dp, height = 64.dp)
+                modifier = Modifier.size(width = 48.dp, height = 64.dp),
+                maxDimension = THUMBNAIL_SMALL
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -914,7 +877,7 @@ private fun TrashScreen(
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                PageThumbnail(doc.pages.firstOrNull()?.imagePath, Modifier.size(width = 56.dp, height = 74.dp))
+                                PageThumbnail(doc.pages.firstOrNull()?.imagePath, Modifier.size(width = 56.dp, height = 74.dp), THUMBNAIL_SMALL)
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(doc.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)

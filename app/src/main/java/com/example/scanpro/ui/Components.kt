@@ -1,6 +1,7 @@
 package com.example.scanpro.ui
 
 import android.graphics.Bitmap
+import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -33,12 +34,32 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
+// Decoded thumbnails keyed by path, file version and decode size, so scrolling back
+// through the library reuses bitmaps instead of hitting the disk again.
+private val thumbnailCache = object : LruCache<String, Bitmap>(
+    (Runtime.getRuntime().maxMemory() / 8).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+) {
+    override fun sizeOf(key: String, value: Bitmap): Int = value.allocationByteCount
+}
+
+/** Decode size for small list/strip thumbnails. */
+const val THUMBNAIL_SMALL = 256
+/** Decode size for grid cards. */
+const val THUMBNAIL_MEDIUM = 640
+/** Decode size for the full-width page preview. */
+const val THUMBNAIL_LARGE = 1600
+
 @Composable
-fun PageThumbnail(path: String?, modifier: Modifier = Modifier) {
+fun PageThumbnail(path: String?, modifier: Modifier = Modifier, maxDimension: Int = THUMBNAIL_MEDIUM) {
     val fileVersion = path?.let { runCatching { File(it).lastModified() }.getOrDefault(0L) } ?: 0L
-    val bitmap by produceState<Bitmap?>(initialValue = null, key1 = path, key2 = fileVersion) {
-        value = if (path == null) null else withContext(Dispatchers.IO) {
-            ImageProcessor.decodeScaled(path, 1600)
+    val cacheKey = path?.let { "$it|$fileVersion|$maxDimension" }
+    val bitmap by produceState(initialValue = cacheKey?.let { thumbnailCache.get(it) }, key1 = cacheKey) {
+        if (path == null || cacheKey == null) {
+            value = null
+            return@produceState
+        }
+        value = thumbnailCache.get(cacheKey) ?: withContext(Dispatchers.IO) {
+            ImageProcessor.decodeScaled(path, maxDimension)?.also { thumbnailCache.put(cacheKey, it) }
         }
     }
 
@@ -49,11 +70,13 @@ fun PageThumbnail(path: String?, modifier: Modifier = Modifier) {
         ),
         contentAlignment = Alignment.Center
     ) {
-        if (bitmap == null) {
-            CircularProgressIndicator(modifier = Modifier.size(26.dp))
+        val image = bitmap
+        if (image == null) {
+            if (path != null) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
         } else {
+            val imageBitmap = remember(image) { image.asImageBitmap() }
             Image(
-                bitmap = bitmap!!.asImageBitmap(),
+                bitmap = imageBitmap,
                 contentDescription = "Scanned page",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit

@@ -175,7 +175,7 @@ fun DocumentDetailScreen(
     onDeleteDocument: () -> Unit
 ) {
     val context = LocalContext.current
-    val pages = document.pages.sortedBy { it.position }
+    val pages = remember(document.pages) { document.pages.sortedBy { it.position } }
     var selectedPageId by rememberSaveable(document.id) { mutableStateOf(pages.firstOrNull()?.id) }
     val currentPage = pages.firstOrNull { it.id == selectedPageId } ?: pages.firstOrNull()
     val currentIndex = pages.indexOfFirst { it.id == currentPage?.id }.coerceAtLeast(0)
@@ -262,7 +262,7 @@ fun DocumentDetailScreen(
             Spacer(Modifier.height(8.dp))
 
             if (currentPage != null) {
-                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp))
+                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE)
                 Spacer(Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
@@ -297,7 +297,7 @@ fun DocumentDetailScreen(
                             shape = RoundedCornerShape(8.dp),
                             border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
                         ) {
-                            PageThumbnail(item.imagePath, Modifier.fillMaxSize())
+                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL)
                         }
                     }
                 }
