@@ -1,4 +1,4 @@
-package com.example.scanpro.ui
+package com.example.scanpro.feature.settings
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,6 +40,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ThemeMode
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanpro.core.ui.formatBytes
+
+@Composable
+fun SettingsRoute(
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onAppLockChange: (Boolean) -> Unit,
+    bottomBar: @Composable () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val pdfQuality by viewModel.pdfQuality.collectAsStateWithLifecycle()
+    val autoTitle by viewModel.autoTitle.collectAsStateWithLifecycle()
+    val appLock by viewModel.appLock.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val documentCount by viewModel.documentCount.collectAsStateWithLifecycle()
+    val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
+    val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
+    SettingsScreen(
+        pdfQuality = pdfQuality,
+        autoTitle = autoTitle,
+        appLock = appLock,
+        themeMode = themeMode,
+        documentCount = documentCount,
+        trashCount = trashCount,
+        storageBytes = storageBytes,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onPdfQualityChange = viewModel::setPdfQuality,
+        onAutoTitleChange = viewModel::setAutoTitle,
+        onAppLockChange = onAppLockChange,
+        onThemeModeChange = viewModel::setThemeMode,
+        bottomBar = bottomBar
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

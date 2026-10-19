@@ -1,6 +1,6 @@
 @file:Suppress("SpellCheckingInspection")
 
-package com.example.scanpro.ui
+package com.example.scanpro.feature.document
 
 import android.graphics.Bitmap
 import android.net.Uri
@@ -130,10 +130,96 @@ import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.TranslationEngine
 import java.text.DateFormat
 import java.util.Date
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanpro.core.designsystem.ConfirmDialog
+import com.example.scanpro.core.designsystem.PageThumbnail
+import com.example.scanpro.core.designsystem.PasswordInputDialog
+import com.example.scanpro.core.designsystem.THUMBNAIL_LARGE
+import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
+import com.example.scanpro.core.designsystem.TextInputDialog
+import com.example.scanpro.core.ui.copyFileToUri
+import com.example.scanpro.core.ui.copyText
+import com.example.scanpro.core.ui.openPdf
+import com.example.scanpro.core.ui.printPdf
+import com.example.scanpro.core.ui.shareImages
+import com.example.scanpro.core.ui.shareOcrText
+import com.example.scanpro.core.ui.sharePdf
+import com.example.scanpro.core.ui.formatBytes
+
+@Composable
+fun DocumentRoute(
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    viewModel: DocumentViewModel = hiltViewModel()
+) {
+    val document by viewModel.document.collectAsStateWithLifecycle()
+    val otherDocuments by viewModel.otherDocuments.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
+
+    val current = document
+    if (current == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(48.dp))
+            else Text("Document is unavailable")
+        }
+        return
+    }
+
+    DocumentDetailScreen(
+        document = current,
+        otherDocuments = otherDocuments,
+        busy = busy,
+        busyLabel = busyLabel,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onRename = viewModel::rename,
+        onTags = viewModel::setTags,
+        onFolder = viewModel::setFolder,
+        onToggleFavorite = viewModel::toggleFavorite,
+        onPdfQuality = viewModel::setPdfQuality,
+        onPdfPageSize = viewModel::setPdfPageSize,
+        onSearchablePdf = viewModel::setSearchablePdf,
+        onPageNumbers = viewModel::setPageNumbers,
+        onScanMode = viewModel::setScanMode,
+        onApplyFilter = viewModel::applyFilter,
+        onRotate = viewModel::rotatePage,
+        onCrop = viewModel::applyCrop,
+        onAdjustments = viewModel::applyAdjustments,
+        onResetPage = viewModel::resetPage,
+        onMove = viewModel::movePage,
+        onDuplicatePage = viewModel::duplicatePage,
+        onExtractPage = viewModel::extractPage,
+        onSplitBook = viewModel::splitBookSpread,
+        onDeletePage = viewModel::deletePage,
+        onSign = viewModel::stampSignature,
+        onTextAnnotation = viewModel::addTextAnnotation,
+        onHighlight = viewModel::addHighlight,
+        onRedact = viewModel::addRedaction,
+        onUndoAnnotation = viewModel::undoLastAnnotation,
+        onWatermark = viewModel::addWatermark,
+        onAppendImages = viewModel::appendImages,
+        onMergeWith = viewModel::mergeWith,
+        onReOcr = { viewModel.reOcr() },
+        onUpdateOcrText = viewModel::updatePageOcrText,
+        onOcrScript = { script -> viewModel.reOcr(script) },
+        onExportIdCopy = viewModel::exportIdCopy,
+        onExportLongImage = viewModel::exportLongImage,
+        onExportOcrTextFile = viewModel::exportOcrTextFile,
+        onSplitDocument = viewModel::splitDocument,
+        onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
+        onExportEncryptedBackup = viewModel::exportEncryptedBackup,
+        onDeleteDocument = {
+            viewModel.moveToTrash()
+            onBack()
+        }
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DocumentDetailScreen(
+internal fun DocumentDetailScreen(
     document: ScanDocument,
     otherDocuments: List<ScanDocument>,
     busy: Boolean,

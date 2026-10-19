@@ -17,7 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.example.scanpro.ui.ScanProApp
-import com.example.scanpro.ui.ScanProTheme
+import com.example.scanpro.core.designsystem.ScanProTheme
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
@@ -29,7 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: AppViewModel by viewModels()
     private var sessionUnlocked by mutableStateOf(false)
     private var stoppedAt = 0L
 

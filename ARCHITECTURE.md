@@ -5,18 +5,35 @@
 The app is deliberately offline-first. Network access is not required for the core scan-to-PDF path.
 
 ```text
-Compose UI
-   ↓ events / StateFlow
-MainViewModel
-   ↓
-DocumentRepository
-   ├── Room + FTS
-   ├── ImageProcessor / OpenCV
-   ├── OcrEngine / ML Kit
-   ├── PdfExporter / PdfSecurity
-   ├── EncryptedDocumentPackage
-   └── file-system document workspace
+feature/<screen>/   Route (stateful)  →  Screen (stateless Compose UI)
+        ↑ StateFlow            ↓ events
+feature/<screen>/   <Screen>ViewModel   (one per screen, @HiltViewModel)
+        ↓                                ↓
+core/operations/OperationRunner   data/DocumentLibrary  (single source of truth)
+        ↓                                ↓
+                 data/DocumentRepository
+                    ├── Room + FTS
+                    ├── ImageProcessor / OpenCV
+                    ├── OcrEngine / ML Kit
+                    ├── PdfExporter / PdfSecurity
+                    ├── EncryptedDocumentPackage
+                    └── file-system document workspace
 ```
+
+The app follows the layered, package-by-feature structure recommended in Android's architecture guide:
+
+- **UI layer (`feature/*`, `navigation/`, `ui/`)**: each screen has a stateful `*Route` that collects
+  its ViewModel's `StateFlow`s and a stateless `*Screen` that only takes values and callbacks, which
+  keeps screens previewable and testable. `navigation/ScanProNavHost.kt` owns the graph, and route
+  strings live in `ScanProDestinations`. `ui/ScanProApp.kt` is the app shell (lock gate, snackbar,
+  share effects).
+- **ViewModels**: `AppViewModel` (activity: theme, lock, imports, app-wide events), `LibraryViewModel`,
+  `DocumentViewModel` (document id from `SavedStateHandle`), `TrashViewModel`, `SettingsViewModel`.
+- **`core/`**: `designsystem` (theme, shared components), `ui` (share/format helpers), `operations`
+  (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
+  survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).
+- **Data layer (`data/`)**: `DocumentLibrary` exposes the active, trash and storage flows every screen
+  observes and is refreshed after each operation; `DocumentRepository` does the work.
 
 Hilt supplies repository/database/settings/work dependencies. WorkManager is used for periodic library maintenance.
 

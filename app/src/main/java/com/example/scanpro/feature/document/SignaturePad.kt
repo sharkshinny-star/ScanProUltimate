@@ -1,4 +1,4 @@
-package com.example.scanpro.ui
+package com.example.scanpro.feature.document
 
 import android.graphics.Bitmap
 import androidx.core.graphics.createBitmap
