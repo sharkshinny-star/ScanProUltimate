@@ -157,11 +157,27 @@ fun CameraScannerScreen(
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
         if (uris.isNotEmpty()) {
             val remaining = (pageLimit - pages.size).coerceAtLeast(0)
-            pages.addAll(uris.take(remaining))
-            status = when {
-                scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front ready · capture the back"
-                pages.isNotEmpty() -> "${pages.size} page(s) ready"
-                else -> "Select a document to scan"
+            scope.launch {
+                // Copy picks into the session folder: the picker's read grant ends with the process,
+                // so pages restored after process death would otherwise be unreadable.
+                val copied = withContext(Dispatchers.IO) {
+                    sessionDir.mkdirs()
+                    uris.take(remaining).mapNotNull { uri ->
+                        runCatching {
+                            val target = File(sessionDir, "pick_${UUID.randomUUID()}.jpg")
+                            context.contentResolver.openInputStream(uri)?.use { input ->
+                                target.outputStream().use { input.copyTo(it) }
+                            } ?: error("Could not open image")
+                            Uri.fromFile(target)
+                        }.getOrNull()
+                    }
+                }
+                pages.addAll(copied)
+                status = when {
+                    scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front ready · capture the back"
+                    pages.isNotEmpty() -> "${pages.size} page(s) ready"
+                    else -> "Select a document to scan"
+                }
             }
         }
     }
@@ -501,8 +517,11 @@ fun CameraScannerScreen(
                     Button(
                         enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
                         onClick = {
-                            completed = true
-                            onComplete(pages.toList(), scanMode)
+                            // Ignore a second tap during the exit animation; it would import twice.
+                            if (!completed) {
+                                completed = true
+                                onComplete(pages.toList(), scanMode)
+                            }
                         }
                     ) {
                         Icon(Icons.Default.TaskAlt, contentDescription = null)

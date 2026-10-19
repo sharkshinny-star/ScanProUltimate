@@ -131,6 +131,9 @@ class MainActivity : FragmentActivity() {
 
     private fun handleIntent(intent: android.content.Intent?) {
         if (intent == null) return
+        // Queued imports outlive this Activity (they wait in the ViewModel until unlock), so capture
+        // the ViewModel itself rather than `this`, which would leak a rotated-away Activity.
+        val appViewModel = viewModel
         val action = intent.action
         val type = intent.type.orEmpty()
 
@@ -145,9 +148,9 @@ class MainActivity : FragmentActivity() {
                 }
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf") {
-                        viewModel.submitExternalImport { viewModel.importPdf(uri) }
+                        appViewModel.submitExternalImport { appViewModel.importPdf(uri) }
                     } else if (type.startsWith("image/")) {
-                        viewModel.submitExternalImport { viewModel.importImages(listOf(uri)) }
+                        appViewModel.submitExternalImport { appViewModel.importImages(listOf(uri)) }
                     }
                 }
             }
@@ -159,16 +162,16 @@ class MainActivity : FragmentActivity() {
                     intent.getParcelableArrayListExtra<Uri>(android.content.Intent.EXTRA_STREAM).orEmpty()
                 }.filter(::isAllowedExternalUri)
                 if (uris.isNotEmpty()) {
-                    viewModel.submitExternalImport { viewModel.importImages(uris) }
+                    appViewModel.submitExternalImport { appViewModel.importImages(uris) }
                 }
             }
             action == android.content.Intent.ACTION_VIEW -> {
                 val uri = intent.data
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
-                        viewModel.submitExternalImport { viewModel.importPdf(uri) }
+                        appViewModel.submitExternalImport { appViewModel.importPdf(uri) }
                     } else if (type.startsWith("image/")) {
-                        viewModel.submitExternalImport { viewModel.importImages(listOf(uri)) }
+                        appViewModel.submitExternalImport { appViewModel.importImages(listOf(uri)) }
                     }
                 }
             }

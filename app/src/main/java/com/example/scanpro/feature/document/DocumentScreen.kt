@@ -3,6 +3,8 @@
 package com.example.scanpro.feature.document
 
 import android.graphics.Bitmap
+import kotlinx.coroutines.CancellationException
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableIntStateOf
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -134,6 +136,7 @@ import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
+import com.example.scanpro.intelligence.DocumentInsights
 import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.TranslationEngine
 import java.text.DateFormat
@@ -227,7 +230,7 @@ fun DocumentRoute(
         onSplitDocument = viewModel::splitDocument,
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
-        onWithFreshPdf = viewModel::withFreshPdf,
+        onWithFreshPdf = { onFailed, onReady -> viewModel.withFreshPdf(onFailed, onReady) },
         onDeleteDocument = {
             viewModel.moveToTrash()
             onBack()
@@ -280,8 +283,8 @@ internal fun DocumentDetailScreen(
     onSplitDocument: () -> Unit,
     onExportProtectedPdf: (String) -> Unit,
     onExportEncryptedBackup: (String) -> Unit,
-    /** Runs the action with a current PDF; page edits rebuild the PDF lazily. */
-    onWithFreshPdf: ((ScanDocument) -> Unit) -> Unit,
+    /** Runs onReady with a current PDF (page edits rebuild it lazily), or onFailed if that isn't possible. */
+    onWithFreshPdf: (onFailed: () -> Unit, onReady: (ScanDocument) -> Unit) -> Unit,
     onDeleteDocument: () -> Unit
 ) {
     val context = LocalContext.current
@@ -289,12 +292,16 @@ internal fun DocumentDetailScreen(
     var selectedPageId by rememberSaveable(document.id) { mutableStateOf(pages.firstOrNull()?.id) }
     val currentPage = pages.firstOrNull { it.id == selectedPageId } ?: pages.firstOrNull()
     val currentIndex = pages.indexOfFirst { it.id == currentPage?.id }.coerceAtLeast(0)
-    val insights = remember(document.ocrText) { DocumentIntelligenceEngine.analyze(document.ocrText) }
+    // ~40 regex passes over the whole OCR text; off the main thread so long documents don't jank.
+    val insights: DocumentInsights by produceState(initialValue = remember { DocumentIntelligenceEngine.analyze("") }, document.ocrText) {
+        value = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.analyze(document.ocrText) }
+    }
     var assistantQuestion by rememberSaveable(document.id) { mutableStateOf("") }
     var assistantAnswer by rememberSaveable(document.id) { mutableStateOf("") }
     val detailScope = rememberCoroutineScope()
     var translationTarget by rememberSaveable(document.id) { mutableStateOf("en") }
-    var translationResult by rememberSaveable(document.id) { mutableStateOf("") }
+    // Plain remember: a whole translated document in saved state can exceed the Binder limit and crash.
+    var translationResult by remember(document.id) { mutableStateOf("") }
     var translating by remember { mutableStateOf(false) }
 
     var renameOpen by remember { mutableStateOf(false) }
@@ -323,11 +330,12 @@ internal fun DocumentDetailScreen(
         if (uri != null) {
             // An edit may have finished while the picker was open, so make sure the PDF is current again,
             // then copy off the main thread (cloud providers can be slow).
-            onWithFreshPdf { fresh ->
+            val deleteDestination = { runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) } }
+            onWithFreshPdf({ deleteDestination() }) { fresh ->
                 detailScope.launch {
                     val ok = withContext(Dispatchers.IO) {
                         copyFileToUri(context, fresh.pdfPath, uri).also { copied ->
-                            if (!copied) runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
+                            if (!copied) deleteDestination()
                         }
                     }
                     if (!ok) android.widget.Toast.makeText(context, "Could not save PDF", android.widget.Toast.LENGTH_SHORT).show()
@@ -339,7 +347,11 @@ internal fun DocumentDetailScreen(
     // When the selected page disappears (deleted, or split into two new pages), stay at the same
     // position instead of jumping back to page 1.
     var lastSelectedIndex by rememberSaveable(document.id) { mutableIntStateOf(0) }
-    LaunchedEffect(currentIndex) { lastSelectedIndex = currentIndex }
+    // Record only while the selected page still exists: when it disappears, currentPage briefly falls
+    // back to page 1 and would otherwise overwrite the position we want to return to.
+    LaunchedEffect(currentIndex, selectedPageId) {
+        if (pages.any { it.id == selectedPageId }) lastSelectedIndex = currentIndex
+    }
     LaunchedEffect(pages.map { it.id }) {
         if (pages.none { it.id == selectedPageId }) {
             selectedPageId = pages.getOrNull(lastSelectedIndex.coerceAtMost(pages.lastIndex))?.id
@@ -391,7 +403,7 @@ internal fun DocumentDetailScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share JPG")
                         }
                         Button(
-                            onClick = { onWithFreshPdf { sharePdf(context, it) } },
+                            onClick = { onWithFreshPdf({}) { sharePdf(context, it) } },
                             enabled = !busy,
                             modifier = Modifier.weight(1f).height(52.dp)
                         ) {
@@ -538,9 +550,9 @@ internal fun DocumentDetailScreen(
                 DetailTab.EXPORT -> {
                     SubHeader("Share and save")
                     ToolGrid {
-                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy) { onWithFreshPdf { openPdf(context, it) } }
+                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy) { onWithFreshPdf({}) { openPdf(context, it) } }
                         ToolTile(Icons.Default.Save, "Save PDF", !busy) { savePdfLauncher.launch("${document.title}.pdf") }
-                        ToolTile(Icons.Default.Print, "Print", !busy) { onWithFreshPdf { printPdf(context, it) } }
+                        ToolTile(Icons.Default.Print, "Print", !busy) { onWithFreshPdf({}) { printPdf(context, it) } }
                         ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
                         ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
                         ToolTile(Icons.Default.ViewDay, "Long image", !busy) { onExportLongImage() }
@@ -617,8 +629,13 @@ internal fun DocumentDetailScreen(
                         onClick = {
                             detailScope.launch {
                                 translating = true
-                                translationResult = runCatching { TranslationEngine.translate(document.ocrText, translationTarget) }
-                                    .getOrElse { it.message ?: "Translation failed" }
+                                translationResult = try {
+                                    TranslationEngine.translate(document.ocrText, translationTarget)
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    error.message ?: "Translation failed"
+                                }
                                 translating = false
                             }
                         },

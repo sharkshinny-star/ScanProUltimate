@@ -6,12 +6,22 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
+import java.io.IOException
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.scanProSettings by preferencesDataStore(name = "scanpro_settings")
+// A corrupt preferences file is replaced with defaults instead of failing every read (and crashing
+// the app at launch).
+private val Context.scanProSettings by preferencesDataStore(
+    name = "scanpro_settings",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() }
+)
 
 @Singleton
 class SettingsStore @Inject constructor(@ApplicationContext private val context: Context) {
@@ -19,19 +29,25 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     private val keyAutoTitle = booleanPreferencesKey("auto_title")
     private val keyAppLock = booleanPreferencesKey("app_lock")
 
-    val pdfQuality: Flow<PdfQuality> = context.scanProSettings.data.map { preferences ->
+    /** Preferences that fall back to defaults when the file can't be read, instead of throwing. */
+    private val preferences: Flow<Preferences> = context.scanProSettings.data.catch { error ->
+        if (error is IOException) emit(emptyPreferences()) else throw error
+    }
+
+    val pdfQuality: Flow<PdfQuality> = preferences.map { preferences ->
         runCatching {
             PdfQuality.valueOf(preferences[keyQuality] ?: PdfQuality.BALANCED.name)
         }.getOrDefault(PdfQuality.BALANCED)
     }
 
-    val autoTitle: Flow<Boolean> = context.scanProSettings.data.map { preferences ->
+    val autoTitle: Flow<Boolean> = preferences.map { preferences ->
         preferences[keyAutoTitle] ?: true
     }
 
-    val appLock: Flow<Boolean> = context.scanProSettings.data.map { preferences ->
-        preferences[keyAppLock] ?: false
-    }
+    // On a read error, stay locked rather than silently opening the library.
+    val appLock: Flow<Boolean> = context.scanProSettings.data
+        .map { preferences -> preferences[keyAppLock] ?: false }
+        .catch { error -> if (error is IOException) emit(true) else throw error }
 
     suspend fun setPdfQuality(value: PdfQuality) {
         context.scanProSettings.edit { it[keyQuality] = value.name }
@@ -47,7 +63,7 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
 
     private val keyThemeMode = stringPreferencesKey("theme_mode")
 
-    val themeMode: Flow<ThemeMode> = context.scanProSettings.data.map { preferences ->
+    val themeMode: Flow<ThemeMode> = preferences.map { preferences ->
         runCatching {
             ThemeMode.valueOf(preferences[keyThemeMode] ?: ThemeMode.LIGHT.name)
         }.getOrDefault(ThemeMode.LIGHT)

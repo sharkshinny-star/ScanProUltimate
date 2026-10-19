@@ -25,7 +25,7 @@ object OpenCvScanProcessor {
         }
         val crop = detection?.quad
 
-        val corrected = crop != null && detection.confidence >= 0.34f && runCatching {
+        val corrected = crop != null && detection != null && detection.confidence >= 0.34f && runCatching {
             ImageProcessor.cropSourceToNewFile(source, destination, crop)
             true
         }.getOrDefault(false)

@@ -184,7 +184,7 @@ fun printPdf(context: Context, document: ScanDocument) {
     val file = File(document.pdfPath)
     manager.print(
         document.title,
-        PdfFilePrintAdapter(file, document.pageCount),
+        PdfFilePrintAdapter(file),
         android.print.PrintAttributes.Builder().build()
     )
 }
@@ -200,8 +200,7 @@ fun copyFileToUri(context: Context, sourcePath: String, destination: Uri): Boole
 }.getOrDefault(false)
 
 private class PdfFilePrintAdapter(
-    private val file: File,
-    private val pageCount: Int
+    private val file: File
 ) : android.print.PrintDocumentAdapter() {
     override fun onLayout(
         oldAttributes: android.print.PrintAttributes?,
@@ -217,7 +216,9 @@ private class PdfFilePrintAdapter(
         callback.onLayoutFinished(
             android.print.PrintDocumentInfo.Builder(file.name)
                 .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                .setPageCount(pageCount.coerceAtLeast(1))
+                // The print framework reads the real count from the PDF; the page list can be empty
+                // for a document built from the scanner's fallback PDF.
+                .setPageCount(android.print.PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
                 .build(),
             true
         )
@@ -237,14 +238,18 @@ private class PdfFilePrintAdapter(
             callback.onWriteCancelled()
             return
         }
-        runCatching {
-            java.io.FileOutputStream(destination.fileDescriptor).use { output ->
-                file.inputStream().use { input -> input.copyTo(output) }
+        // onWrite is called on the main thread; copy a large PDF in the background to avoid an ANR.
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        Thread {
+            val result = runCatching {
+                java.io.FileOutputStream(destination.fileDescriptor).use { output ->
+                    file.inputStream().use { input -> input.copyTo(output) }
+                }
             }
-        }.onSuccess {
-            callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
-        }.onFailure {
-            callback.onWriteFailed(it.message ?: "Could not print PDF")
-        }
+            mainHandler.post {
+                result.onSuccess { callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES)) }
+                    .onFailure { callback.onWriteFailed(it.message ?: "Could not print PDF") }
+            }
+        }.start()
     }
 }

@@ -79,10 +79,11 @@ object PdfExporter {
                         .filter { it.isNotBlank() }
                         .take(160)
                         .toList()
-                    var y = (pageHeight - 3f).coerceAtLeast(3f)
+                    // Top to bottom, so viewers that order text by position copy it in reading order.
+                    var y = (pageHeight - 3f - 1.5f * (lines.size - 1)).coerceAtLeast(1f)
                     lines.forEach { line ->
                         canvas.drawText(line, 2f, y, hiddenPaint)
-                        y = (y - 1.5f).coerceAtLeast(1f)
+                        y += 1.5f
                     }
                 }
 

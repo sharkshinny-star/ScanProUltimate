@@ -126,11 +126,12 @@ fun TextInputDialog(
     var value by remember(initial) { mutableStateOf(TextFieldValue(initial, initialSelection)) }
     val focusRequester = remember { FocusRequester() }
     val canConfirm = allowBlank || value.text.isNotBlank()
-    LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
+            // Inside the dialog's own window, where the field exists by the time the effect runs.
+            LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
             OutlinedTextField(
                 value = value,
                 onValueChange = { value = it },

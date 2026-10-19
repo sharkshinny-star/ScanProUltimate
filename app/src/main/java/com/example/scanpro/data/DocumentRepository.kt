@@ -728,8 +728,10 @@ class DocumentRepository @Inject constructor(
         val final = document.copy(pages = sorted, updatedAt = now())
         // Under the document's lock so a concurrent rebuild can't finish after this and look current.
         synchronized(pdfLock(final.id)) {
-            db.saveDocument(final)
+            // Marker first: if the process dies between the two steps, the PDF is rebuilt needlessly
+            // rather than an outdated PDF being treated as current.
             final.stalePdfMarker.createNewFile()
+            db.saveDocument(final)
         }
         return final
     }
@@ -770,7 +772,7 @@ class DocumentRepository @Inject constructor(
                 searchable = document.searchablePdf,
                 pageNumbers = document.pageNumbers
             )
-            pdf.delete()
+            // rename() replaces the old file atomically, so there is never a moment with no PDF.
             check(partial.renameTo(pdf)) { "Could not save the PDF" }
             document.stalePdfMarker.delete()
         } finally {

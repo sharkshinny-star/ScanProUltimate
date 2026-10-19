@@ -126,5 +126,15 @@ private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize): Bitmap 
             )
         }
     }
-    return bitmap
+    // Crop to the ink plus a margin, so blank pad space doesn't shrink the signature on the page.
+    val points = strokes.flatten()
+    if (points.isEmpty()) return bitmap
+    val margin = paint.strokeWidth * 2
+    val left = (points.minOf { it.x } - margin).toInt().coerceIn(0, width - 1)
+    val top = (points.minOf { it.y } - margin).toInt().coerceIn(0, height - 1)
+    val right = (points.maxOf { it.x } + margin).toInt().coerceIn(left + 1, width)
+    val bottom = (points.maxOf { it.y } + margin).toInt().coerceIn(top + 1, height)
+    val cropped = Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top)
+    if (cropped !== bitmap) bitmap.recycle()
+    return cropped
 }
