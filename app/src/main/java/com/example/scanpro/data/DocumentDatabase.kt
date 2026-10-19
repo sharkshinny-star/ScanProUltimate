@@ -18,6 +18,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+// Stay under SQLite's historical 999 bound-variable limit for IN (...) queries.
+private const val SQL_VARIABLE_CHUNK = 900
+
 @Entity(tableName = "documents")
 data class DocumentEntity(
     @androidx.room.PrimaryKey val id: String,
@@ -90,6 +93,12 @@ internal interface ScanDao {
 
     @Query("SELECT * FROM pages WHERE document_id = :documentId ORDER BY position ASC")
     fun loadPages(documentId: String): List<PageEntity>
+
+    @Query("SELECT * FROM documents WHERE id IN (:ids)")
+    fun loadDocuments(ids: List<String>): List<DocumentEntity>
+
+    @Query("SELECT * FROM pages WHERE document_id IN (:documentIds) ORDER BY document_id, position ASC")
+    fun loadPagesForDocuments(documentIds: List<String>): List<PageEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun putDocument(document: DocumentEntity)
@@ -171,16 +180,18 @@ class DocumentDatabase @Inject constructor(
         dao.replaceDocument(entity, pageEntities, ftsRows)
     }
 
-    fun loadAll(includeTrashed: Boolean = false): List<ScanDocument> {
+    fun loadAll(includeTrashed: Boolean = false): List<ScanDocument> = room.runInTransaction<List<ScanDocument>> {
         val docs = if (includeTrashed) {
             dao.loadActiveDocuments() + dao.loadTrashDocuments()
         } else {
             dao.loadActiveDocuments()
         }
-        return docs.map(::hydrate)
+        hydrateAll(docs)
     }
 
-    fun loadTrash(): List<ScanDocument> = dao.loadTrashDocuments().map(::hydrate)
+    fun loadTrash(): List<ScanDocument> = room.runInTransaction<List<ScanDocument>> {
+        hydrateAll(dao.loadTrashDocuments())
+    }
 
     fun loadDocument(id: String): ScanDocument? = dao.loadDocument(id)?.let(::hydrate)
 
@@ -192,20 +203,36 @@ class DocumentDatabase @Inject constructor(
     fun search(query: String): List<ScanDocument> {
         val clean = query.trim()
         if (clean.isBlank()) return loadAll()
-        val metadata = dao.searchMetadata(clean)
-        val fts = buildFtsQuery(clean)?.let { safeQuery ->
-            runCatching { dao.searchOcrDocumentIds(safeQuery) }.getOrDefault(emptyList())
-        }.orEmpty().toSet()
+        return room.runInTransaction<List<ScanDocument>> {
+            val metadata = dao.searchMetadata(clean)
+            val fts = buildFtsQuery(clean)?.let { safeQuery ->
+                runCatching { dao.searchOcrDocumentIds(safeQuery) }.getOrDefault(emptyList())
+            }.orEmpty().toSet()
 
-        val byId = LinkedHashMap<String, DocumentEntity>()
-        metadata.forEach { byId[it.id] = it }
-        fts.forEach { id -> dao.loadDocument(id)?.takeIf { it.trashedAt == 0L }?.let { byId[id] = it } }
-        return byId.values.sortedByDescending { it.updatedAt }.map(::hydrate)
+            val byId = LinkedHashMap<String, DocumentEntity>()
+            metadata.forEach { byId[it.id] = it }
+            val ftsOnly = fts.filterNot { it in byId }
+            ftsOnly.chunked(SQL_VARIABLE_CHUNK)
+                .flatMap(dao::loadDocuments)
+                .filter { it.trashedAt == 0L }
+                .forEach { byId[it.id] = it }
+            hydrateAll(byId.values.sortedByDescending { it.updatedAt })
+        }
     }
 
     private fun hydrate(entity: DocumentEntity): ScanDocument = entity.toModel(
         pages = dao.loadPages(entity.id).map { it.toModel() }
     )
+
+    /** Loads pages for many documents in batched IN queries instead of one query per document. */
+    private fun hydrateAll(entities: List<DocumentEntity>): List<ScanDocument> {
+        if (entities.isEmpty()) return emptyList()
+        val pagesByDocument = entities.map { it.id }
+            .chunked(SQL_VARIABLE_CHUNK)
+            .flatMap(dao::loadPagesForDocuments)
+            .groupBy({ it.documentId }, { it.toModel() })
+        return entities.map { it.toModel(pages = pagesByDocument[it.id].orEmpty()) }
+    }
 
     private fun buildFtsQuery(raw: String): String? {
         val tokens = raw.lowercase()
