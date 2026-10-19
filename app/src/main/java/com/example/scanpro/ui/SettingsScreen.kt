@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.data.PdfQuality
+import com.example.scanpro.data.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +47,7 @@ fun SettingsScreen(
     pdfQuality: PdfQuality,
     autoTitle: Boolean,
     appLock: Boolean,
+    themeMode: ThemeMode,
     documentCount: Int,
     trashCount: Int,
     storageBytes: Long,
@@ -54,6 +56,7 @@ fun SettingsScreen(
     onPdfQualityChange: (PdfQuality) -> Unit,
     onAutoTitleChange: (Boolean) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
+    onThemeModeChange: (ThemeMode) -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
     Scaffold(
@@ -94,6 +97,19 @@ fun SettingsScreen(
                         selected = quality == pdfQuality,
                         onClick = { onPdfQualityChange(quality) },
                         label = { Text(quality.label) }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Text("App Theme", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(ThemeMode.entries) { mode ->
+                    FilterChip(
+                        selected = mode == themeMode,
+                        onClick = { onThemeModeChange(mode) },
+                        label = { Text(mode.label) }
                     )
                 }
             }

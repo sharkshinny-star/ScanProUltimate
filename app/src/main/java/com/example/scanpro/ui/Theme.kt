@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.scanpro.data.ThemeMode
 
 // ScanPro's own fallback identity. Android 12+ can still opt into the user's dynamic palette.
 private val ScanProLight = lightColorScheme(
@@ -74,14 +75,20 @@ private val ScanProTypography = Typography().let { base ->
 
 @Composable
 fun ScanProTheme(
+    themeMode: ThemeMode = ThemeMode.LIGHT,
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val dark = isSystemInDarkTheme()
+    val darkSystem = isSystemInDarkTheme()
+    val dark = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> darkSystem
+    }
     val colors = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && dark -> dynamicDarkColorScheme(context)
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> dynamicLightColorScheme(context)
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !dark -> dynamicLightColorScheme(context)
         dark -> ScanProDark
         else -> ScanProLight
     }

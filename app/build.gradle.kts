@@ -53,7 +53,9 @@ android {
                 "META-INF/LICENSE",
                 "META-INF/LICENSE.txt",
                 "META-INF/NOTICE",
-                "META-INF/NOTICE.txt"
+                "META-INF/NOTICE.txt",
+                "**/sike*",
+                "**/picnic*"
             )
         }
     }
@@ -69,6 +71,7 @@ hilt {
 }
 
 dependencies {
+    implementation("com.google.firebase:firebase-crashlytics:21.0.0")
     val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)

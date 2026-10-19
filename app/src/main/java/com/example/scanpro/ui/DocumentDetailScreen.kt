@@ -1,3 +1,5 @@
+@file:Suppress("SpellCheckingInspection")
+
 package com.example.scanpro.ui
 
 import android.graphics.Bitmap
@@ -24,17 +26,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowLeft
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowLeft
-import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -180,7 +182,7 @@ fun DocumentDetailScreen(
             TopAppBar(
                 title = { Text(document.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
                     IconButton(onClick = onToggleFavorite, enabled = !busy) {
@@ -294,12 +296,12 @@ fun DocumentDetailScreen(
                     item { ToolButton("Reset", !busy) { onResetPage(currentPage.id) } }
                     item {
                         OutlinedButton(onClick = { onMove(currentPage.id, -1) }, enabled = !busy && currentIndex > 0) {
-                            Icon(Icons.Default.ArrowLeft, contentDescription = null); Text("Left")
+                            Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = null); Text("Left")
                         }
                     }
                     item {
                         OutlinedButton(onClick = { onMove(currentPage.id, 1) }, enabled = !busy && currentIndex < pages.lastIndex) {
-                            Text("Right"); Icon(Icons.Default.ArrowRight, contentDescription = null)
+                            Text("Right"); Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null)
                         }
                     }
                     item { ToolButton("Duplicate", !busy) { onDuplicatePage(currentPage.id) } }
@@ -327,7 +329,7 @@ fun DocumentDetailScreen(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
                     Button(onClick = { openPdf(context, document) }) {
-                        Icon(Icons.Default.OpenInNew, contentDescription = null); Spacer(Modifier.width(5.dp)); Text("Open PDF")
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null); Spacer(Modifier.width(5.dp)); Text("Open PDF")
                     }
                 }
                 item { ToolButton("Share PDF") { sharePdf(context, document) } }

@@ -134,6 +134,7 @@ fun ScanProApp(
     val pdfQuality by viewModel.defaultPdfQuality.collectAsStateWithLifecycle()
     val autoTitle by viewModel.autoTitle.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -232,6 +233,7 @@ fun ScanProApp(
                 pdfQuality = pdfQuality,
                 autoTitle = autoTitle,
                 appLock = appLock,
+                themeMode = themeMode,
                 documentCount = documents.size,
                 trashCount = trash.size,
                 storageBytes = storageBytes,
@@ -240,6 +242,7 @@ fun ScanProApp(
                 onPdfQualityChange = viewModel::setDefaultPdfQuality,
                 onAutoTitleChange = viewModel::setAutoTitle,
                 onAppLockChange = onAppLockChange,
+                onThemeModeChange = viewModel::setThemeMode,
                 bottomBar = {
                     LibraryNavigationBar(
                         selectedRoute = ROUTE_SETTINGS,
@@ -460,7 +463,7 @@ private fun LibraryScreen(
                 Spacer(Modifier.height(4.dp))
                 Text("Your document workspace", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                 Text(
-                    if (documents.isEmpty()) "Scan, clean, OCR and export your first document."
+                    if (documents.isEmpty()) "Scan, clean, and export your first document."
                     else "${documents.size} documents · ${documents.count { it.isFavorite }} favorites${if (trashCount > 0) " · $trashCount in trash" else ""}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -474,7 +477,7 @@ private fun LibraryScreen(
                     onValueChange = onQueryChange,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    label = { Text("Search title, OCR, tags or folders") },
+                    label = { Text("Search title, tags or folders") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
                 )
                 Spacer(Modifier.height(10.dp))

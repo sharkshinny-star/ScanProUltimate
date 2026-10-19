@@ -44,4 +44,16 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     suspend fun setAppLock(value: Boolean) {
         context.scanProSettings.edit { it[keyAppLock] = value }
     }
+
+    private val keyThemeMode = stringPreferencesKey("theme_mode")
+
+    val themeMode: Flow<ThemeMode> = context.scanProSettings.data.map { preferences ->
+        runCatching {
+            ThemeMode.valueOf(preferences[keyThemeMode] ?: ThemeMode.LIGHT.name)
+        }.getOrDefault(ThemeMode.LIGHT)
+    }
+
+    suspend fun setThemeMode(value: ThemeMode) {
+        context.scanProSettings.edit { it[keyThemeMode] = value.name }
+    }
 }

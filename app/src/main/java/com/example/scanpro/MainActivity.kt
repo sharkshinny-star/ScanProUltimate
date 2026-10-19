@@ -23,6 +23,9 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import dagger.hilt.android.AndroidEntryPoint
 
+import android.net.Uri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
@@ -65,9 +68,11 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIntent(intent)
         enableEdgeToEdge()
         setContent {
-            ScanProTheme {
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            ScanProTheme(themeMode = themeMode) {
                 ScanProApp(
                     viewModel = viewModel,
                     sessionUnlocked = sessionUnlocked,
@@ -86,6 +91,57 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                 )
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: android.content.Intent?) {
+        if (intent == null) return
+        val action = intent.action
+        val type = intent.type.orEmpty()
+
+        when {
+            action == android.content.Intent.ACTION_SEND -> {
+                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM)
+                }
+                if (uri != null) {
+                    if (type == "application/pdf") {
+                        viewModel.importPdf(uri)
+                    } else if (type.startsWith("image/")) {
+                        viewModel.importImages(listOf(uri))
+                    }
+                }
+            }
+            action == android.content.Intent.ACTION_SEND_MULTIPLE -> {
+                val uris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableArrayListExtra<Uri>(android.content.Intent.EXTRA_STREAM).orEmpty()
+                }
+                if (uris.isNotEmpty()) {
+                    viewModel.importImages(uris)
+                }
+            }
+            action == android.content.Intent.ACTION_VIEW -> {
+                val uri = intent.data
+                if (uri != null) {
+                    if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
+                        viewModel.importPdf(uri)
+                    } else if (type.startsWith("image/")) {
+                        viewModel.importImages(listOf(uri))
+                    }
+                }
             }
         }
     }
