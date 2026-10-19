@@ -147,6 +147,8 @@ import com.example.scanpro.core.ui.shareImages
 import com.example.scanpro.core.ui.shareOcrText
 import com.example.scanpro.core.ui.sharePdf
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.designsystem.TitleWithStatus
+import com.example.scanpro.core.designsystem.TopBarWithProgress
 
 @Composable
 fun DocumentRoute(
@@ -211,6 +213,7 @@ fun DocumentRoute(
         onSplitDocument = viewModel::splitDocument,
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
+        onWithFreshPdf = viewModel::withFreshPdf,
         onDeleteDocument = {
             viewModel.moveToTrash()
             onBack()
@@ -263,6 +266,8 @@ internal fun DocumentDetailScreen(
     onSplitDocument: () -> Unit,
     onExportProtectedPdf: (String) -> Unit,
     onExportEncryptedBackup: (String) -> Unit,
+    /** Runs the action with a current PDF; page edits rebuild the PDF lazily. */
+    onWithFreshPdf: ((ScanDocument) -> Unit) -> Unit,
     onDeleteDocument: () -> Unit
 ) {
     val context = LocalContext.current
@@ -313,8 +318,8 @@ internal fun DocumentDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(document.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            TopBarWithProgress(busy) { TopAppBar(
+                title = { TitleWithStatus(document.title, if (busy) busyLabel else null) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
@@ -334,7 +339,7 @@ internal fun DocumentDetailScreen(
                         }
                     }
                 }
-            )
+            ) }
         },
         bottomBar = {
             // Export lives in a fixed bottom bar, as in the approved viewer design.
@@ -356,7 +361,7 @@ internal fun DocumentDetailScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share JPG")
                         }
                         Button(
-                            onClick = { sharePdf(context, document) },
+                            onClick = { onWithFreshPdf { sharePdf(context, it) } },
                             enabled = !busy,
                             modifier = Modifier.weight(1f).height(52.dp)
                         ) {
@@ -377,10 +382,6 @@ internal fun DocumentDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            if (busy) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                if (!busyLabel.isNullOrBlank()) Text(busyLabel, style = MaterialTheme.typography.bodySmall)
-            }
             Spacer(Modifier.height(8.dp))
 
             if (currentPage != null) {
@@ -503,9 +504,9 @@ internal fun DocumentDetailScreen(
                 DetailTab.EXPORT -> {
                     SubHeader("Share and save")
                     ToolGrid {
-                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF") { openPdf(context, document) }
-                        ToolTile(Icons.Default.Save, "Save PDF") { savePdfLauncher.launch("${document.title}.pdf") }
-                        ToolTile(Icons.Default.Print, "Print") { printPdf(context, document) }
+                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF") { onWithFreshPdf { openPdf(context, it) } }
+                        ToolTile(Icons.Default.Save, "Save PDF") { onWithFreshPdf { savePdfLauncher.launch("${it.title}.pdf") } }
+                        ToolTile(Icons.Default.Print, "Print") { onWithFreshPdf { printPdf(context, it) } }
                         ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
                         ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
                         ToolTile(Icons.Default.ViewDay, "Long image", !busy) { onExportLongImage() }
@@ -696,7 +697,7 @@ internal fun DocumentDetailScreen(
         confirmLabel = "Create backup",
         onDismiss = { backupPasswordOpen = false }
     ) { onExportEncryptedBackup(it); backupPasswordOpen = false }
-    if (annotationTextOpen && currentPage != null) TextInputDialog("Add text to page", label = "Text", confirmLabel = "Add", onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
+    if (annotationTextOpen && currentPage != null) TextInputDialog("Add text to page", label = "Text", confirmLabel = "Add", maxLines = 3, onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
     if (ocrEditOpen && currentPage != null) TextInputDialog(
         title = "Edit recognized text",
         initial = currentPage.ocrText,

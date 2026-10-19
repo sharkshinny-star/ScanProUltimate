@@ -10,6 +10,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/** A snackbar message, optionally with one action such as Undo. */
+data class UiMessage(
+    val text: String,
+    val actionLabel: String? = null,
+    val onAction: (() -> Unit)? = null
+)
+
 /** A file produced by an export that the UI should hand to the share sheet. */
 data class ExportArtifact(
     val path: String,
@@ -32,8 +39,8 @@ class OperationRunner @Inject constructor(
     private val _busyLabel = MutableStateFlow<String?>(null)
     val busyLabel: StateFlow<String?> = _busyLabel.asStateFlow()
 
-    private val _message = MutableStateFlow<String?>(null)
-    val message: StateFlow<String?> = _message.asStateFlow()
+    private val _message = MutableStateFlow<UiMessage?>(null)
+    val message: StateFlow<UiMessage?> = _message.asStateFlow()
 
     private val _exportArtifact = MutableStateFlow<ExportArtifact?>(null)
     val exportArtifact: StateFlow<ExportArtifact?> = _exportArtifact.asStateFlow()
@@ -42,7 +49,8 @@ class OperationRunner @Inject constructor(
     /** Id of a newly created document the UI should open once it appears in the library. */
     val openDocumentRequest: StateFlow<String?> = _openDocumentRequest.asStateFlow()
 
-    fun showMessage(value: String) { _message.value = value }
+    fun showMessage(value: String) { _message.value = UiMessage(value) }
+    fun showMessage(value: UiMessage) { _message.value = value }
     fun clearMessage() { _message.value = null }
     fun publishExport(artifact: ExportArtifact) { _exportArtifact.value = artifact }
     fun clearExportArtifact() { _exportArtifact.value = null }
@@ -55,7 +63,7 @@ class OperationRunner @Inject constructor(
      */
     fun run(label: String?, successMessage: String?, action: suspend () -> Unit) {
         if (_busy.value) {
-            _message.value = "Still working on the previous task. Try again in a moment."
+            _message.value = UiMessage("Still working on the previous task. Try again in a moment.")
             return
         }
         _busy.value = true
@@ -63,8 +71,8 @@ class OperationRunner @Inject constructor(
         scope.launch {
             try {
                 runCatching { action() }
-                    .onSuccess { if (successMessage != null) _message.value = successMessage }
-                    .onFailure { error -> _message.value = error.message ?: "Something went wrong" }
+                    .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
+                    .onFailure { error -> _message.value = UiMessage(error.message ?: "Something went wrong") }
                 runCatching { library.refresh() }
             } finally {
                 _busyLabel.value = null

@@ -86,6 +86,8 @@ import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.core.ui.sharePdfs
 import com.example.scanpro.navigation.ScanProBottomBar
 import com.example.scanpro.navigation.ScanProDestinations
+import com.example.scanpro.core.designsystem.TitleWithStatus
+import com.example.scanpro.core.designsystem.TopBarWithProgress
 
 private enum class LibrarySort(val label: String) {
     UPDATED("Recent"), NAME("Name"), SIZE("Size")
@@ -105,6 +107,7 @@ fun LibraryRoute(
     onTab: (String) -> Unit,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val documents by viewModel.documents.collectAsStateWithLifecycle()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
@@ -127,6 +130,7 @@ fun LibraryRoute(
         onSearch = onSearch,
         onBack = onBack,
         onBulkDelete = viewModel::moveManyToTrash,
+        onShareSelected = { ids -> viewModel.withFreshPdfs(ids) { docs -> sharePdfs(context, docs) } },
         onRenameFolder = viewModel::renameFolder,
         onTab = onTab
     )
@@ -151,10 +155,10 @@ internal fun LibraryScreen(
     onSearch: () -> Unit,
     onBack: () -> Unit,
     onBulkDelete: (Set<String>) -> Unit,
+    onShareSelected: (Set<String>) -> Unit,
     onRenameFolder: (String, String) -> Unit,
     onTab: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
     var gridMode by rememberSaveable { mutableStateOf(mode == ScanProDestinations.FILES) }
@@ -200,15 +204,16 @@ internal fun LibraryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            TopBarWithProgress(busy) { TopAppBar(
                 title = {
-                    Text(
-                        when {
+                    TitleWithStatus(
+                        title = when {
                             selected.isNotEmpty() -> "${selected.size} selected"
                             mode == ScanProDestinations.FILES -> "My files"
                             isSearch -> "Search"
                             else -> "ScanPro"
-                        }
+                        },
+                        status = if (busy) busyLabel else null
                     )
                 },
                 navigationIcon = {
@@ -224,7 +229,7 @@ internal fun LibraryScreen(
                 },
                 actions = {
                     if (selected.isNotEmpty()) {
-                        IconButton(onClick = { sharePdfs(context, documents.filter { it.id in selected }) }) {
+                        IconButton(onClick = { onShareSelected(selected.toSet()) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share selected")
                         }
                         IconButton(onClick = {
@@ -292,7 +297,7 @@ internal fun LibraryScreen(
                         }
                     }
                 }
-            )
+            ) }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
@@ -312,12 +317,6 @@ internal fun LibraryScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            if (busy) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                if (!busyLabel.isNullOrBlank()) Text(busyLabel, style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.height(8.dp))
-            }
-
             if (isHome) {
                 HomeDashboard(
                     documents = documents,
