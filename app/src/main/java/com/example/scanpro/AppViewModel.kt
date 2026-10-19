@@ -12,7 +12,9 @@ import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.ThemeMode
+import com.example.scanpro.scanner.SESSION_ROOT
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -58,7 +60,7 @@ class AppViewModel @Inject constructor(
     val openDocumentRequest: StateFlow<String?> = operations.openDocumentRequest
 
     fun showMessage(value: String) = operations.showMessage(value)
-    fun clearMessage() = operations.clearMessage()
+    fun clearMessage(shown: UiMessage) = operations.clearMessage(shown)
     fun clearExportArtifact() = operations.clearExportArtifact()
     fun clearOpenDocumentRequest() = operations.clearOpenDocumentRequest()
 
@@ -98,7 +100,7 @@ class AppViewModel @Inject constructor(
     }
 
     fun importScan(pdfUri: Uri?, imageUris: List<Uri>) {
-        operations.run("Enhancing pages, generating OCR, and building searchable PDF…", "Scan saved") {
+        operations.enqueue("Enhancing pages, generating OCR, and building searchable PDF…", "Scan saved") {
             repository.importScan(pdfUri, imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
         }
     }
@@ -109,22 +111,32 @@ class AppViewModel @Inject constructor(
             operations.showMessage("Import up to $MAX_IMPORT_IMAGES images at a time")
             return
         }
-        operations.run("Importing pages, enhancing them, and running OCR…", "Document saved") {
+        operations.enqueue("Importing pages, enhancing them, and running OCR…", "Document saved") {
             repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
         }
     }
 
     fun importPdf(uri: Uri) {
-        operations.run("Importing PDF pages and building OCR index…", "PDF imported") {
+        operations.enqueue("Importing PDF pages and building OCR index…", "PDF imported") {
             repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first())
         }
     }
 
     fun importCameraSession(imageUris: List<Uri>, mode: ScanMode) {
         if (imageUris.isEmpty()) return
-        operations.run("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", "Scan saved") {
-            val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode)
-            operations.requestOpenDocument(newDocument.id)
+        operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", "Scan saved") {
+            try {
+                val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode)
+                operations.requestOpenDocument(newDocument.id)
+            } finally {
+                // The document now holds its own copies; drop the scanner session's temporary captures.
+                imageUris.asSequence()
+                    .filter { it.scheme == "file" }
+                    .mapNotNull { uri -> uri.path?.let { File(it).parentFile } }
+                    .filter { it.parentFile?.name == SESSION_ROOT }
+                    .distinct()
+                    .forEach { it.deleteRecursively() }
+            }
         }
     }
 }

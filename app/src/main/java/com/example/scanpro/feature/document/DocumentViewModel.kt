@@ -18,10 +18,10 @@ import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
+import com.example.scanpro.data.hasCurrentPdf
 import com.example.scanpro.navigation.ScanProDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.withContext
@@ -172,7 +172,7 @@ class DocumentViewModel @Inject constructor(
         repository.moveToTrash(id)
         operations.showMessage(
             UiMessage("Moved to recycle bin", actionLabel = "Undo") {
-                operations.run(null, "Document restored") { repository.restore(id) }
+                operations.enqueue(null, "Document restored") { repository.restore(id) }
             }
         )
     }
@@ -183,7 +183,7 @@ class DocumentViewModel @Inject constructor(
      */
     fun withFreshPdf(onReady: (ScanDocument) -> Unit) {
         val current = document.value ?: return
-        if (File(current.pdfPath).isFile) {
+        if (current.hasCurrentPdf()) {
             onReady(current)
             return
         }

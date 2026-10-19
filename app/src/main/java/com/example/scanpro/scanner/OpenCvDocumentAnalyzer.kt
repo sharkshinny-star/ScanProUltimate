@@ -106,17 +106,26 @@ private fun ImageProxy.toRotatedGrayMat(): Mat {
     }
 
     val source = Mat(height, width, CvType.CV_8UC1)
-    source.put(0, 0, bytes)
-    val rotation = imageInfo.rotationDegrees
-    if (rotation == 0) return source
-
     val rotated = Mat()
-    when (rotation) {
-        90 -> Core.rotate(source, rotated, Core.ROTATE_90_CLOCKWISE)
-        180 -> Core.rotate(source, rotated, Core.ROTATE_180)
-        270 -> Core.rotate(source, rotated, Core.ROTATE_90_COUNTERCLOCKWISE)
-        else -> source.copyTo(rotated)
+    try {
+        source.put(0, 0, bytes)
+        val rotation = imageInfo.rotationDegrees
+        if (rotation == 0) {
+            rotated.release()
+            return source
+        }
+        when (rotation) {
+            90 -> Core.rotate(source, rotated, Core.ROTATE_90_CLOCKWISE)
+            180 -> Core.rotate(source, rotated, Core.ROTATE_180)
+            270 -> Core.rotate(source, rotated, Core.ROTATE_90_COUNTERCLOCKWISE)
+            else -> source.copyTo(rotated)
+        }
+        source.release()
+        return rotated
+    } catch (error: Throwable) {
+        // Release native memory on failure; the caller's catch would otherwise leak it every frame.
+        source.release()
+        rotated.release()
+        throw error
     }
-    source.release()
-    return rotated
 }

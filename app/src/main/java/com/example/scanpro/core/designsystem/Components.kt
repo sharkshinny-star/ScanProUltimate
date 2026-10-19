@@ -61,9 +61,19 @@ const val THUMBNAIL_MEDIUM = 640
 const val THUMBNAIL_LARGE = 1600
 
 @Composable
-fun PageThumbnail(path: String?, modifier: Modifier = Modifier, maxDimension: Int = THUMBNAIL_MEDIUM) {
+fun PageThumbnail(
+    path: String?,
+    modifier: Modifier = Modifier,
+    maxDimension: Int = THUMBNAIL_MEDIUM,
+    /**
+     * Anything that changes when the image is re-rendered in place, normally the page itself. Edits
+     * overwrite the same file, and with unchanged arguments this call would be skipped and keep showing
+     * the old cached bitmap.
+     */
+    version: Any? = null
+) {
     val fileVersion = path?.let { runCatching { File(it).lastModified() }.getOrDefault(0L) } ?: 0L
-    val cacheKey = path?.let { "$it|$fileVersion|$maxDimension" }
+    val cacheKey = path?.let { "$it|$fileVersion|${version.hashCode()}|$maxDimension" }
     val bitmap by produceState(initialValue = cacheKey?.let { thumbnailCache.get(it) }, key1 = cacheKey) {
         if (path == null || cacheKey == null) {
             value = null

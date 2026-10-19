@@ -99,7 +99,18 @@ class MainActivity : FragmentActivity() {
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     },
-                    onUnlock = { authenticate { viewModel.markUnlocked() } },
+                    onUnlock = {
+                        authenticate(
+                            // The screen lock was removed after app lock was turned on. Only the device
+                            // owner can remove it, so let them in and switch app lock off rather than
+                            // locking them out of their documents for good.
+                            onNoScreenLock = {
+                                viewModel.setAppLock(false)
+                                viewModel.markUnlocked()
+                                viewModel.showMessage("This device no longer has a screen lock, so app lock was turned off")
+                            }
+                        ) { viewModel.markUnlocked() }
+                    },
                     onAppLockChange = { enabled ->
                         // Turning the lock off needs authentication too, or anyone holding the phone could disable it.
                         authenticate {
@@ -204,17 +215,32 @@ class MainActivity : FragmentActivity() {
             }
     }
 
-    private fun authenticate(onSuccess: () -> Unit) {
+    /**
+     * Shows the system prompt. The device PIN, pattern or password is always allowed as a fallback, so
+     * removing a fingerprint can't lock anyone out. [onNoScreenLock] runs instead when the device has no
+     * screen lock at all.
+     */
+    private fun authenticate(onNoScreenLock: (() -> Unit)? = null, onSuccess: () -> Unit) {
         val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL
         } else {
-            BiometricManager.Authenticators.BIOMETRIC_WEAK
+            // BIOMETRIC_WEAK | DEVICE_CREDENTIAL is the combination supported before Android 11.
+            BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
         }
 
-        if (BiometricManager.from(this).canAuthenticate(authenticators) != BiometricManager.BIOMETRIC_SUCCESS) {
-            viewModel.showMessage("Set up a device biometric before enabling app lock")
-            return
+        when (BiometricManager.from(this).canAuthenticate(authenticators)) {
+            BiometricManager.BIOMETRIC_SUCCESS -> Unit
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+                if (onNoScreenLock != null) onNoScreenLock()
+                else viewModel.showMessage("Set up a screen lock on this device to use app lock")
+                return
+            }
+            else -> {
+                viewModel.showMessage("Device authentication is unavailable right now. Try again shortly.")
+                return
+            }
         }
 
         val prompt = BiometricPrompt(
@@ -240,7 +266,6 @@ class MainActivity : FragmentActivity() {
             .setSubtitle("Authenticate to access your private document library")
             .setAllowedAuthenticators(authenticators)
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) infoBuilder.setNegativeButtonText("Cancel")
         prompt.authenticate(infoBuilder.build())
     }
 

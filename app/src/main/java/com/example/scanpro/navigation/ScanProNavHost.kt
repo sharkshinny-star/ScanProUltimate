@@ -2,6 +2,7 @@ package com.example.scanpro.navigation
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -15,6 +16,7 @@ import com.example.scanpro.feature.settings.SettingsRoute
 import com.example.scanpro.feature.trash.TrashRoute
 import com.example.scanpro.scanner.CameraScannerScreen
 
+/** Back handlers use dropUnlessResumed so a double tap during the exit animation can't pop two screens. */
 @Composable
 fun ScanProNavHost(
     navController: NavHostController,
@@ -40,7 +42,7 @@ fun ScanProNavHost(
                     onImportPdf = onImportPdf,
                     onTrash = { navController.navigate(ScanProDestinations.TRASH) },
                     onSearch = { navController.navigate(ScanProDestinations.SEARCH) { launchSingleTop = true } },
-                    onBack = { navController.popBackStack() },
+                    onBack = dropUnlessResumed { navController.popBackStack() },
                     onTab = onTab
                 )
             }
@@ -54,7 +56,7 @@ fun ScanProNavHost(
         }
         composable(ScanProDestinations.CAMERA) {
             CameraScannerScreen(
-                onClose = { navController.popBackStack() },
+                onClose = dropUnlessResumed { navController.popBackStack() },
                 onComplete = { uris, mode ->
                     onCameraScanComplete(uris, mode)
                     navController.popBackStack()
@@ -68,7 +70,7 @@ fun ScanProNavHost(
         composable(ScanProDestinations.TRASH) {
             TrashRoute(
                 snackbarHostState = snackbarHostState,
-                onBack = { navController.popBackStack() }
+                onBack = dropUnlessResumed { navController.popBackStack() }
             )
         }
         composable(
@@ -77,7 +79,7 @@ fun ScanProNavHost(
         ) {
             DocumentRoute(
                 snackbarHostState = snackbarHostState,
-                onBack = { navController.popBackStack() }
+                onBack = dropUnlessResumed { navController.popBackStack() }
             )
         }
     }

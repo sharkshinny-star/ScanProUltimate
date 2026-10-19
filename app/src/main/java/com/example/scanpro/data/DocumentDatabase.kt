@@ -14,7 +14,6 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
-import androidx.room.Update
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -104,9 +103,26 @@ internal interface ScanDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun putDocument(document: DocumentEntity)
 
-    // A real UPDATE, not REPLACE: REPLACE deletes the row first, which would cascade-delete its pages.
-    @Update
-    fun updateDocument(document: DocumentEntity)
+    // Targeted UPDATEs, never REPLACE (which deletes the row and cascade-deletes its pages). Each writer
+    // touches only its own columns, so a background PDF rebuild and a rename can't overwrite each other.
+    @Query(
+        "UPDATE documents SET title = :title, updated_at = :updatedAt, is_favorite = :isFavorite, " +
+            "tags_json = :tagsJson, folder_name = :folderName, scan_mode = :scanMode, trashed_at = :trashedAt " +
+            "WHERE id = :id"
+    )
+    fun updateMetadata(
+        id: String,
+        title: String,
+        updatedAt: Long,
+        isFavorite: Boolean,
+        tagsJson: String,
+        folderName: String,
+        scanMode: String,
+        trashedAt: Long
+    )
+
+    @Query("UPDATE documents SET size_bytes = :sizeBytes WHERE id = :id")
+    fun updateSize(id: String, sizeBytes: Long)
 
     @Query("SELECT ocr_script FROM documents WHERE id = :id LIMIT 1")
     fun loadOcrScript(id: String): String?
@@ -131,7 +147,9 @@ internal interface ScanDao {
 
     @Query(
         "SELECT * FROM documents WHERE trashed_at = 0 AND " +
-            "(LOWER(title) LIKE '%' || LOWER(:query) || '%' OR LOWER(folder_name) LIKE '%' || LOWER(:query) || '%' OR LOWER(tags_json) LIKE '%' || LOWER(:query) || '%') " +
+            "(LOWER(title) LIKE '%' || LOWER(:query) || '%' ESCAPE '\\' OR " +
+            "LOWER(folder_name) LIKE '%' || LOWER(:query) || '%' ESCAPE '\\' OR " +
+            "LOWER(tags_json) LIKE '%' || LOWER(:query) || '%' ESCAPE '\\') " +
             "ORDER BY updated_at DESC"
     )
     fun searchMetadata(query: String): List<DocumentEntity>
@@ -170,7 +188,7 @@ class DocumentDatabase @Inject constructor(
         "scanpro-room.db"
     )
         .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-        .fallbackToDestructiveMigrationOnDowngrade()
+        .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
         .build()
 
     private val dao = room.scanDao()
@@ -203,8 +221,22 @@ class DocumentDatabase @Inject constructor(
 
     fun loadDocument(id: String): ScanDocument? = dao.loadDocument(id)?.let(::hydrate)
 
-    /** Saves document-level fields only (title, tags, folder, favorite, trash state); pages are untouched. */
-    fun saveDocumentMetadata(document: ScanDocument) = dao.updateDocument(document.toEntity())
+    /** Saves document-level fields only (title, tags, folder, favorite, mode, trash state); pages and PDF size are untouched. */
+    fun saveDocumentMetadata(document: ScanDocument) {
+        val entity = document.toEntity()
+        dao.updateMetadata(
+            id = entity.id,
+            title = entity.title,
+            updatedAt = entity.updatedAt,
+            isFavorite = entity.isFavorite,
+            tagsJson = entity.tagsJson,
+            folderName = entity.folderName,
+            scanMode = entity.scanMode,
+            trashedAt = entity.trashedAt
+        )
+    }
+
+    fun updateSize(id: String, sizeBytes: Long) = dao.updateSize(id, sizeBytes)
 
     fun loadOcrScript(id: String): OcrScript? =
         dao.loadOcrScript(id)?.let { runCatching { OcrScript.valueOf(it) }.getOrNull() }
@@ -220,7 +252,8 @@ class DocumentDatabase @Inject constructor(
         val clean = query.trim()
         if (clean.isBlank()) return loadAll()
         return room.runInTransaction<List<ScanDocument>> {
-            val metadata = dao.searchMetadata(clean)
+            // Escape LIKE wildcards so typing % or _ searches for those characters instead of matching everything.
+        val metadata = dao.searchMetadata(clean.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"))
             val fts = buildFtsQuery(clean)?.let { safeQuery ->
                 runCatching { dao.searchOcrDocumentIds(safeQuery) }.getOrDefault(emptyList())
             }.orEmpty().toSet()
@@ -257,7 +290,10 @@ class DocumentDatabase @Inject constructor(
             .split(Regex("\\s+"))
             .filter { it.length >= 2 }
             .take(8)
-        return tokens.takeIf { it.isNotEmpty() }?.joinToString(" AND ") { "\"${it.replace("\"", "") }\"*" }
+        // FTS4 prefix queries are `term*` without quotes ("term"* never matches), and limiting each term to
+        // the content column keeps short prefixes from matching document/page id fragments. Tokens are
+        // letters and digits only, so they need no further escaping. Space-separated terms are ANDed.
+        return tokens.takeIf { it.isNotEmpty() }?.joinToString(" ") { "content:$it*" }
     }
 }
 

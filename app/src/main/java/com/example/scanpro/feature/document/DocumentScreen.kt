@@ -3,6 +3,13 @@
 package com.example.scanpro.feature.document
 
 import android.graphics.Bitmap
+import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import android.provider.DocumentsContract
+import kotlin.math.roundToInt
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -82,7 +89,7 @@ import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -160,6 +167,13 @@ fun DocumentRoute(
     val otherDocuments by viewModel.otherDocuments.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
+
+    // If the open document disappears (trashed or deleted elsewhere), leave instead of stranding the
+    // user on an "unavailable" screen with no way back.
+    var hadDocument by remember { mutableStateOf(false) }
+    LaunchedEffect(document == null) {
+        if (document != null) hadDocument = true else if (hadDocument) onBack()
+    }
 
     val current = document
     if (current == null) {
@@ -307,13 +321,29 @@ internal fun DocumentDetailScreen(
     }
     val savePdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
         if (uri != null) {
-            val ok = copyFileToUri(context, document.pdfPath, uri)
-            if (!ok) android.widget.Toast.makeText(context, "Could not save PDF", android.widget.Toast.LENGTH_SHORT).show()
+            // An edit may have finished while the picker was open, so make sure the PDF is current again,
+            // then copy off the main thread (cloud providers can be slow).
+            onWithFreshPdf { fresh ->
+                detailScope.launch {
+                    val ok = withContext(Dispatchers.IO) {
+                        copyFileToUri(context, fresh.pdfPath, uri).also { copied ->
+                            if (!copied) runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
+                        }
+                    }
+                    if (!ok) android.widget.Toast.makeText(context, "Could not save PDF", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
+    // When the selected page disappears (deleted, or split into two new pages), stay at the same
+    // position instead of jumping back to page 1.
+    var lastSelectedIndex by rememberSaveable(document.id) { mutableIntStateOf(0) }
+    LaunchedEffect(currentIndex) { lastSelectedIndex = currentIndex }
     LaunchedEffect(pages.map { it.id }) {
-        if (pages.none { it.id == selectedPageId }) selectedPageId = pages.firstOrNull()?.id
+        if (pages.none { it.id == selectedPageId }) {
+            selectedPageId = pages.getOrNull(lastSelectedIndex.coerceAtMost(pages.lastIndex))?.id
+        }
     }
 
     Scaffold(
@@ -408,7 +438,7 @@ internal fun DocumentDetailScreen(
                     )
                 }
                 Spacer(Modifier.height(12.dp))
-                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE)
+                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE, version = currentPage)
                 Spacer(Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
@@ -416,26 +446,30 @@ internal fun DocumentDetailScreen(
                         // The gesture block outlives reorders, so read the live position instead of the captured one.
                         val latestIndex by rememberUpdatedState(index)
                         val latestLast by rememberUpdatedState(pages.lastIndex)
+                        val latestBusy by rememberUpdatedState(busy)
                         val isCurrent = item.id == currentPage.id
                         Card(
                             modifier = Modifier
                                 .size(width = 52.dp, height = 70.dp)
+                                // The thumbnail follows the finger while dragging.
+                                .graphicsLayer { translationX = dragDistance }
+                                .zIndex(if (dragDistance != 0f) 1f else 0f)
                                 .pointerInput(item.id) {
+                                    // One move per gesture, applied on release. Moving on every slot
+                                    // crossing raced the one-operation-at-a-time rule and dropped moves.
+                                    val slot = 60.dp.toPx() // thumbnail width plus spacing
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { dragDistance = 0f },
-                                        onDragEnd = { dragDistance = 0f },
+                                        onDragEnd = {
+                                            val target = (latestIndex + (dragDistance / slot).roundToInt()).coerceIn(0, latestLast)
+                                            val delta = target - latestIndex
+                                            dragDistance = 0f
+                                            if (delta != 0 && !latestBusy) onMove(item.id, delta)
+                                        },
                                         onDragCancel = { dragDistance = 0f },
                                         onDrag = { change, amount ->
                                             change.consume()
                                             dragDistance += amount.x
-                                            val threshold = 46.dp.toPx()
-                                            if (dragDistance > threshold && latestIndex < latestLast) {
-                                                onMove(item.id, 1)
-                                                dragDistance = 0f
-                                            } else if (dragDistance < -threshold && latestIndex > 0) {
-                                                onMove(item.id, -1)
-                                                dragDistance = 0f
-                                            }
                                         }
                                     )
                                 }
@@ -443,7 +477,7 @@ internal fun DocumentDetailScreen(
                             shape = RoundedCornerShape(8.dp),
                             border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
                         ) {
-                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL)
+                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item)
                         }
                     }
                 }
@@ -479,7 +513,7 @@ internal fun DocumentDetailScreen(
                     ToolGrid {
                         ToolTile(Icons.Default.Crop, "Crop", !busy) { cropOpen = true }
                         ToolTile(Icons.Default.Tune, "Fine tune", !busy) { adjustmentsOpen = true }
-                        ToolTile(Icons.Default.RotateRight, "Rotate", !busy) { onRotate(currentPage.id) }
+                        ToolTile(Icons.AutoMirrored.Filled.RotateRight, "Rotate", !busy) { onRotate(currentPage.id) }
                         ToolTile(Icons.Default.RestartAlt, "Reset", !busy) { onResetPage(currentPage.id) }
                         ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Move left", !busy && currentIndex > 0) { onMove(currentPage.id, -1) }
                         ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Move right", !busy && currentIndex < pages.lastIndex) { onMove(currentPage.id, 1) }
@@ -504,9 +538,9 @@ internal fun DocumentDetailScreen(
                 DetailTab.EXPORT -> {
                     SubHeader("Share and save")
                     ToolGrid {
-                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF") { onWithFreshPdf { openPdf(context, it) } }
-                        ToolTile(Icons.Default.Save, "Save PDF") { onWithFreshPdf { savePdfLauncher.launch("${it.title}.pdf") } }
-                        ToolTile(Icons.Default.Print, "Print") { onWithFreshPdf { printPdf(context, it) } }
+                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy) { onWithFreshPdf { openPdf(context, it) } }
+                        ToolTile(Icons.Default.Save, "Save PDF", !busy) { savePdfLauncher.launch("${document.title}.pdf") }
+                        ToolTile(Icons.Default.Print, "Print", !busy) { onWithFreshPdf { printPdf(context, it) } }
                         ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
                         ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
                         ToolTile(Icons.Default.ViewDay, "Long image", !busy) { onExportLongImage() }
@@ -762,10 +796,13 @@ internal fun DocumentDetailScreen(
     if (deletePageOpen && currentPage != null) {
         ConfirmDialog(
             title = "Delete this page?",
-            message = if (pages.size == 1) "This is the only page, so the document will move to the recycle bin." else "The page will be removed and the PDF rebuilt.",
+            message = if (pages.size == 1) "This is the only page, so the document will move to the recycle bin." else "The page will be removed from this document.",
             confirmLabel = "Delete",
             onDismiss = { deletePageOpen = false },
-            onConfirm = { onDeletePage(currentPage.id); deletePageOpen = false }
+            onConfirm = {
+                deletePageOpen = false
+                if (pages.size == 1) onDeleteDocument() else onDeletePage(currentPage.id)
+            }
         )
     }
 

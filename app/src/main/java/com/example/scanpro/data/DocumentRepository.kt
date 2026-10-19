@@ -34,8 +34,12 @@ class DocumentRepository @Inject constructor(
     private val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
     private val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
     private val encryptedPackages = EncryptedDocumentPackage(context)
-    /** Guards PDF rebuilds against page saves, so a rebuild never overwrites newer edits. */
-    private val pdfLock = Any()
+    /**
+     * Per-document locks that serialise page saves with PDF rebuilds, so a rebuild never publishes a PDF
+     * older than the pages, and a long rebuild of one document doesn't block edits to another.
+     */
+    private val pdfLocks = java.util.concurrent.ConcurrentHashMap<String, Any>()
+    private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
     suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
     suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
@@ -219,7 +223,7 @@ class DocumentRepository @Inject constructor(
                     adjustments = PageAdjustments.DEFAULT,
                     annotations = emptyList()
                 )
-            )
+            ).also { deleteSignatureAssets(page.annotations) }
         }
 
     suspend fun addTextAnnotation(documentId: String, pageId: String, text: String) =
@@ -266,7 +270,7 @@ class DocumentRepository @Inject constructor(
     suspend fun removeLastAnnotation(documentId: String, pageId: String) =
         editSinglePage(documentId, pageId) { page ->
             val updated = page.copy(annotations = page.annotations.dropLast(1))
-            renderAndOcr(updated)
+            renderAndOcr(updated).also { deleteSignatureAssets(page.annotations.takeLast(1)) }
         }
 
     suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
@@ -283,7 +287,12 @@ class DocumentRepository @Inject constructor(
                 height = 0.12f,
                 assetPath = asset.absolutePath
             )
-            renderAndOcr(page.copy(annotations = page.annotations + annotation))
+            try {
+                renderAndOcr(page.copy(annotations = page.annotations + annotation))
+            } catch (error: Throwable) {
+                asset.delete()
+                throw error
+            }
         }
 
     suspend fun addWatermark(documentId: String, watermark: String) = withContext(Dispatchers.IO) {
@@ -370,10 +379,15 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
-        val left = makeHalf(bitmap, left = true, doc.id, index, sourceDir, renderedDir)
-        val right = makeHalf(bitmap, left = false, doc.id, index, sourceDir, renderedDir)
+        val (left, right) = try {
+            makeHalf(bitmap, left = true, doc.id, index, sourceDir, renderedDir, doc.ocrScript) to
+                makeHalf(bitmap, left = false, doc.id, index, sourceDir, renderedDir, doc.ocrScript)
+        } finally {
+            bitmap.recycle()
+        }
         File(page.sourcePath).delete()
         File(page.imagePath).delete()
+        deleteSignatureAssets(page.annotations)
         pages.removeAt(index)
         pages.add(index, right)
         pages.add(index, left)
@@ -414,7 +428,7 @@ class DocumentRepository @Inject constructor(
         }
         File(target.sourcePath).delete()
         File(target.imagePath).delete()
-        target.annotations.filter { it.type == AnnotationType.SIGNATURE }.forEach { File(it.assetPath).delete() }
+        deleteSignatureAssets(target.annotations)
         val pages = normalize(doc.pages.filterNot { it.id == pageId })
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
@@ -704,17 +718,18 @@ class DocumentRepository @Inject constructor(
 
     /**
      * Saves page edits without rebuilding the PDF. Rebuilding re-decodes every page, so doing it on each
-     * filter, rotate or markup made edits slow on long documents. The stale PDF is deleted and rebuilt
-     * once by [ensurePdf] when it's next needed (share, open, print, save, or leaving the document).
+     * filter, rotate or markup made edits slow on long documents. The PDF is marked stale (the old file is
+     * kept as a fallback) and rebuilt once by [ensurePdf] when it's next needed: share, open, print, save,
+     * or leaving the document.
      */
     private fun saveWithStalePdf(document: ScanDocument): ScanDocument {
         val sorted = document.pages.sortedBy { it.position }
         require(sorted.isNotEmpty()) { "Document has no pages" }
         val final = document.copy(pages = sorted, updatedAt = now())
-        // Under the PDF lock so a concurrent rebuild can't finish after this and look current.
-        synchronized(pdfLock) {
+        // Under the document's lock so a concurrent rebuild can't finish after this and look current.
+        synchronized(pdfLock(final.id)) {
             db.saveDocument(final)
-            File(final.pdfPath).delete()
+            final.stalePdfMarker.createNewFile()
         }
         return final
     }
@@ -724,17 +739,22 @@ class DocumentRepository @Inject constructor(
 
     /** Ids of active documents whose PDF still needs rebuilding. */
     suspend fun documentsNeedingPdf(): List<String> = withContext(Dispatchers.IO) {
-        db.loadAll().filter { !File(it.pdfPath).isFile }.map { it.id }
+        db.loadAll().filterNot { it.hasCurrentPdf() }.map { it.id }
     }
 
-    private fun ensurePdfNow(id: String): ScanDocument = synchronized(pdfLock) {
+    private fun ensurePdfNow(id: String): ScanDocument = synchronized(pdfLock(id)) {
         // Reload inside the lock so the rebuild always uses the latest saved pages.
         val doc = requireDocument(id)
-        // A deferred rebuild isn't a user edit, so it keeps the document's place in Recent.
-        if (File(doc.pdfPath).isFile) doc else regenerateAndSave(doc, touch = false)
+        if (doc.hasCurrentPdf()) return@synchronized doc
+        val size = writePdf(doc)
+        // Only the size column changes. Writing the whole row would undo a rename, favorite or trash
+        // made while this rebuild ran, and a deferred rebuild keeps the document's place in Recent.
+        db.updateSize(doc.id, size)
+        doc.copy(sizeBytes = size)
     }
 
-    private fun regenerateAndSave(document: ScanDocument, touch: Boolean = true): ScanDocument = synchronized(pdfLock) {
+    /** Builds the PDF beside the real file and renames it into place; returns its size. */
+    private fun writePdf(document: ScanDocument): Long {
         val sorted = document.pages.sortedBy { it.position }
         require(sorted.isNotEmpty()) { "Document has no pages" }
         val pdf = File(document.pdfPath)
@@ -752,12 +772,19 @@ class DocumentRepository @Inject constructor(
             )
             pdf.delete()
             check(partial.renameTo(pdf)) { "Could not save the PDF" }
+            document.stalePdfMarker.delete()
         } finally {
             partial.delete()
         }
+        return pdf.length()
+    }
+
+    private fun regenerateAndSave(document: ScanDocument, touch: Boolean = true): ScanDocument = synchronized(pdfLock(document.id)) {
+        val sorted = document.pages.sortedBy { it.position }
+        val size = writePdf(document)
         val final = document.copy(
             pages = sorted,
-            sizeBytes = pdf.length(),
+            sizeBytes = size,
             updatedAt = if (touch) now() else document.updatedAt
         )
         db.saveDocument(final)
@@ -770,7 +797,8 @@ class DocumentRepository @Inject constructor(
         docId: String,
         index: Int,
         sourceDir: File,
-        renderedDir: File
+        renderedDir: File,
+        script: OcrScript
     ): ScanPage {
         val halfWidth = bitmap.width / 2
         val x = if (left) 0 else halfWidth
@@ -779,15 +807,19 @@ class DocumentRepository @Inject constructor(
         val id = UUID.randomUUID().toString()
         val source = File(sourceDir, "book_$id.jpg")
         val rendered = File(renderedDir, "book_$id.jpg")
-        ImageProcessor.saveBitmapJpeg(half, source, 98)
-        ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+        try {
+            ImageProcessor.saveBitmapJpeg(half, source, 98)
+            ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+        } finally {
+            if (half !== bitmap) half.recycle()
+        }
         return ScanPage(
             id = id,
             documentId = docId,
             position = index,
             sourcePath = source.absolutePath,
             imagePath = rendered.absolutePath,
-            ocrText = runCatching { ocr.recognize(rendered) }.getOrDefault("")
+            ocrText = runCatching { ocr.recognize(rendered, script) }.getOrDefault("")
         )
     }
 
@@ -810,6 +842,12 @@ class DocumentRepository @Inject constructor(
     }
 
     private fun normalize(pages: List<ScanPage>) = pages.mapIndexed { index, page -> page.copy(position = index) }
+
+    /** Deletes the image files behind signature annotations that are being removed. */
+    private fun deleteSignatureAssets(annotations: List<PageAnnotation>) {
+        annotations.filter { it.type == AnnotationType.SIGNATURE && it.assetPath.isNotBlank() }
+            .forEach { File(it.assetPath).delete() }
+    }
 
     private fun requireDocument(id: String) = db.loadDocument(id) ?: error("Document not found")
 
