@@ -196,8 +196,10 @@ class DocumentDatabase @Inject constructor(
     fun loadDocument(id: String): ScanDocument? = dao.loadDocument(id)?.let(::hydrate)
 
     fun deleteDocument(id: String) {
-        dao.deleteFtsForDocument(id)
-        dao.deleteDocument(id)
+        room.runInTransaction(Runnable {
+            dao.deleteFtsForDocument(id)
+            dao.deleteDocument(id)
+        })
     }
 
     fun search(query: String): List<ScanDocument> {

@@ -774,17 +774,36 @@ class DocumentRepository @Inject constructor(
         db.deleteDocument(doc.id)
     }
 
+    /** Copies an imported file into app storage, refusing anything over [MAX_IMPORT_BYTES] so a huge share can't fill the device. */
     private fun copyUri(source: Uri, destination: File) {
         destination.parentFile?.mkdirs()
         context.contentResolver.openInputStream(source).use { input ->
-            requireNotNull(input) { "Could not open $source" }
-            destination.outputStream().use { output -> input.copyTo(output) }
+            requireNotNull(input) { "Could not open the selected file" }
+            destination.outputStream().use { output ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                var total = 0L
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    total += read
+                    if (total > MAX_IMPORT_BYTES) {
+                        output.close()
+                        destination.delete()
+                        throw IllegalArgumentException("File is too large to import (limit ${MAX_IMPORT_BYTES / (1024 * 1024)} MB)")
+                    }
+                    output.write(buffer, 0, read)
+                }
+            }
         }
     }
 
     private fun freshExportFile(base: String, extension: String): File {
         exportDir.listFiles()?.filter { it.lastModified() < now() - 24 * 60 * 60 * 1000L }?.forEach { it.delete() }
         return File(exportDir, "${base}_${now()}.$extension")
+    }
+
+    private companion object {
+        const val MAX_IMPORT_BYTES = 300L * 1024 * 1024
     }
 
     private fun safeName(value: String): String = value.replace(Regex("[^A-Za-z0-9._-]+"), "_").take(60)

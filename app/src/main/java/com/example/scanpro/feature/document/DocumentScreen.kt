@@ -119,6 +119,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.data.CropQuad
+import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
@@ -684,7 +685,7 @@ internal fun DocumentDetailScreen(
     if (passwordOpen) PasswordInputDialog(
         title = "Protect PDF copy",
         message = "Create a password-protected PDF for sharing.",
-        minimumLength = 4,
+        minimumLength = PdfSecurity.MIN_PASSWORD_LENGTH,
         confirmLabel = "Create",
         onDismiss = { passwordOpen = false }
     ) { onExportProtectedPdf(it); passwordOpen = false }

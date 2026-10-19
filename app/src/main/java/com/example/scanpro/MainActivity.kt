@@ -11,9 +11,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import android.content.ContentResolver
+import android.view.WindowManager
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.example.scanpro.ui.ScanProApp
@@ -30,8 +37,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 class MainActivity : FragmentActivity() {
 
     private val viewModel: AppViewModel by viewModels()
-    private var sessionUnlocked by mutableStateOf(false)
-    private var stoppedAt = 0L
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -68,10 +73,22 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleIntent(intent)
+        // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
+        if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
+        publishScanShortcut()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // With app lock on, keep documents out of screenshots and the recent-apps preview.
+                viewModel.appLockEnabled.collect { locked ->
+                    if (locked != false) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
+        }
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
             ScanProTheme(themeMode = themeMode) {
                 ScanProApp(
                     viewModel = viewModel,
@@ -82,12 +99,12 @@ class MainActivity : FragmentActivity() {
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     },
-                    onUnlock = { authenticate { sessionUnlocked = true } },
+                    onUnlock = { authenticate { viewModel.markUnlocked() } },
                     onAppLockChange = { enabled ->
                         // Turning the lock off needs authentication too, or anyone holding the phone could disable it.
                         authenticate {
                             viewModel.setAppLock(enabled)
-                            sessionUnlocked = true
+                            viewModel.markUnlocked()
                         }
                     }
                 )
@@ -107,6 +124,7 @@ class MainActivity : FragmentActivity() {
         val type = intent.type.orEmpty()
 
         when {
+            action == ACTION_SCAN_NOW -> viewModel.requestScan()
             action == android.content.Intent.ACTION_SEND -> {
                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM, Uri::class.java)
@@ -114,11 +132,11 @@ class MainActivity : FragmentActivity() {
                     @Suppress("DEPRECATION")
                     intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM)
                 }
-                if (uri != null) {
+                if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf") {
-                        viewModel.importPdf(uri)
+                        viewModel.submitExternalImport { viewModel.importPdf(uri) }
                     } else if (type.startsWith("image/")) {
-                        viewModel.importImages(listOf(uri))
+                        viewModel.submitExternalImport { viewModel.importImages(listOf(uri)) }
                     }
                 }
             }
@@ -128,35 +146,52 @@ class MainActivity : FragmentActivity() {
                 } else {
                     @Suppress("DEPRECATION")
                     intent.getParcelableArrayListExtra<Uri>(android.content.Intent.EXTRA_STREAM).orEmpty()
-                }
+                }.filter(::isAllowedExternalUri)
                 if (uris.isNotEmpty()) {
-                    viewModel.importImages(uris)
+                    viewModel.submitExternalImport { viewModel.importImages(uris) }
                 }
             }
             action == android.content.Intent.ACTION_VIEW -> {
                 val uri = intent.data
-                if (uri != null) {
+                if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
-                        viewModel.importPdf(uri)
+                        viewModel.submitExternalImport { viewModel.importPdf(uri) }
                     } else if (type.startsWith("image/")) {
-                        viewModel.importImages(listOf(uri))
+                        viewModel.submitExternalImport { viewModel.importImages(listOf(uri)) }
                     }
                 }
             }
         }
     }
 
+    /**
+     * Only content:// URIs from other apps are imported. file:// URIs and URIs served by ScanPro's own
+     * providers are refused, so another app can't point the importer at ScanPro's private files.
+     */
+    private fun isAllowedExternalUri(uri: Uri): Boolean =
+        uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
+
+    /** Launcher "Scan" shortcut. Published at runtime so it targets the right package in debug and release. */
+    private fun publishScanShortcut() {
+        runCatching {
+            val shortcut = ShortcutInfoCompat.Builder(this, "scan_now")
+                .setShortLabel(getString(R.string.shortcut_scan_short))
+                .setLongLabel(getString(R.string.shortcut_scan_long))
+                .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
+                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(ACTION_SCAN_NOW))
+                .build()
+            ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
+        }
+    }
+
     override fun onStop() {
         super.onStop()
-        stoppedAt = SystemClock.elapsedRealtime()
+        viewModel.onAppStopped(SystemClock.elapsedRealtime())
     }
 
     override fun onStart() {
         super.onStart()
-        // Re-lock after a real absence, but not for quick trips to the photo picker, camera or share sheet.
-        if (stoppedAt != 0L && SystemClock.elapsedRealtime() - stoppedAt > LOCK_TIMEOUT_MS) {
-            sessionUnlocked = false
-        }
+        viewModel.onAppStarted(SystemClock.elapsedRealtime(), LOCK_TIMEOUT_MS)
     }
 
     private fun startCompatibilityScanner() {
@@ -211,5 +246,6 @@ class MainActivity : FragmentActivity() {
 
     private companion object {
         const val LOCK_TIMEOUT_MS = 30_000L
+        const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
     }
 }

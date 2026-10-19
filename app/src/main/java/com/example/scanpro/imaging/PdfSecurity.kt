@@ -7,8 +7,11 @@ import java.io.File
 import java.util.UUID
 
 object PdfSecurity {
+    /** PDF passwords can be attacked offline, so very short ones offer little protection. */
+    const val MIN_PASSWORD_LENGTH = 6
+
     fun protect(source: File, destination: File, password: String) {
-        require(password.length >= 4) { "Use a password with at least 4 characters" }
+        require(password.length >= MIN_PASSWORD_LENGTH) { "Use a password with at least $MIN_PASSWORD_LENGTH characters" }
         destination.parentFile?.mkdirs()
         PDDocument.load(source).use { document ->
             val permissions = AccessPermission().apply {
