@@ -24,14 +24,18 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
@@ -50,19 +54,17 @@ import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -376,6 +378,8 @@ private fun LibraryScreen(
     var folder by rememberSaveable { mutableStateOf("") }
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
     var renameFolderSource by remember { mutableStateOf<String?>(null) }
+    var sortMenuOpen by remember { mutableStateOf(false) }
+    var moreMenuOpen by remember { mutableStateOf(false) }
     val selected = remember { mutableStateListOf<String>() }
     val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
     val folders = documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted()
@@ -407,12 +411,20 @@ private fun LibraryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        when (mode) {
-                            ROUTE_DOCUMENTS -> "Documents"
-                            ROUTE_SEARCH -> "Search"
+                        when {
+                            selected.isNotEmpty() -> "${selected.size} selected"
+                            mode == ROUTE_DOCUMENTS -> "Documents"
+                            mode == ROUTE_SEARCH -> "Search"
                             else -> "ScanPro"
                         }
                     )
+                },
+                navigationIcon = {
+                    if (selected.isNotEmpty()) {
+                        IconButton(onClick = { selected.clear() }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear selection")
+                        }
+                    }
                 },
                 actions = {
                     if (selected.isNotEmpty()) {
@@ -425,15 +437,57 @@ private fun LibraryScreen(
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Move selected to trash")
                         }
-                        IconButton(onClick = { selected.clear() }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear selection")
-                        }
                     } else {
+                        Box {
+                            IconButton(onClick = { sortMenuOpen = true }) {
+                                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
+                            }
+                            DropdownMenu(expanded = sortMenuOpen, onDismissRequest = { sortMenuOpen = false }) {
+                                LibrarySort.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option.label) },
+                                        trailingIcon = { if (sort == option) Icon(Icons.Default.Check, contentDescription = "Selected") },
+                                        onClick = {
+                                            sortName = option.name
+                                            sortMenuOpen = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                         IconButton(onClick = { gridMode = !gridMode }) {
                             Icon(if (gridMode) Icons.Default.List else Icons.Default.GridView, contentDescription = "Toggle layout")
                         }
-                        IconButton(onClick = onTrash) {
-                            Icon(Icons.Default.Delete, contentDescription = "Recycle bin")
+                        Box {
+                            IconButton(onClick = { moreMenuOpen = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            }
+                            DropdownMenu(expanded = moreMenuOpen, onDismissRequest = { moreMenuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Import photos") },
+                                    leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
+                                    enabled = !busy,
+                                    onClick = { moreMenuOpen = false; onImportImages() }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Import PDF") },
+                                    leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) },
+                                    enabled = !busy,
+                                    onClick = { moreMenuOpen = false; onImportPdf() }
+                                )
+                                if (mode == ROUTE_DOCUMENTS && folder.isNotBlank()) {
+                                    DropdownMenuItem(
+                                        text = { Text("Rename folder") },
+                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                        onClick = { moreMenuOpen = false; renameFolderSource = folder }
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(if (trashCount > 0) "Recycle bin ($trashCount)" else "Recycle bin") },
+                                    leadingIcon = { Icon(Icons.Default.DeleteOutline, contentDescription = null) },
+                                    onClick = { moreMenuOpen = false; onTrash() }
+                                )
+                            }
                         }
                     }
                 }
@@ -441,8 +495,12 @@ private fun LibraryScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onStartScan) {
-                Icon(Icons.Default.CameraAlt, contentDescription = "Scan")
+            if (selected.isEmpty()) {
+                ExtendedFloatingActionButton(
+                    onClick = onStartScan,
+                    icon = { Icon(Icons.Default.CameraAlt, contentDescription = null) },
+                    text = { Text("Scan") }
+                )
             }
         },
         bottomBar = { LibraryNavigationBar(selectedRoute = mode, onTab = onTab) }
@@ -459,108 +517,94 @@ private fun LibraryScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            if (mode == ROUTE_HOME) {
-                Spacer(Modifier.height(4.dp))
-                Text("Your document workspace", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            if (mode == ROUTE_HOME && documents.isNotEmpty()) {
                 Text(
-                    if (documents.isEmpty()) "Scan, clean, and export your first document."
-                    else "${documents.size} documents · ${documents.count { it.isFavorite }} favorites${if (trashCount > 0) " · $trashCount in trash" else ""}",
+                    "${documents.size} documents" + if (documents.any { it.isFavorite }) " · ${documents.count { it.isFavorite }} favorites" else "",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
             }
 
-            if (mode == ROUTE_SEARCH || mode == ROUTE_HOME) {
+            if (mode == ROUTE_SEARCH) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = onQueryChange,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    label = { Text("Search title, tags or folders") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                    placeholder = { Text("Search titles, tags, folders and text") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { onQueryChange("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(28.dp)
                 )
                 Spacer(Modifier.height(10.dp))
             }
 
-            if (mode == ROUTE_HOME) {
+            // Folder/favorite filters only earn their space once there is something to filter.
+            if (documents.isNotEmpty() && (folders.isNotEmpty() || documents.any { it.isFavorite } || favoritesOnly)) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { Button(onClick = onStartScan, enabled = !busy) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Scan")
-                    } }
-                    item { OutlinedButton(onClick = onImportImages, enabled = !busy) {
-                        Icon(Icons.Default.Image, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Photos")
-                    } }
-                    item { OutlinedButton(onClick = onImportPdf, enabled = !busy) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("PDF")
-                    } }
+                    item {
+                        FilterChip(
+                            selected = folder.isBlank() && !favoritesOnly,
+                            onClick = { folder = ""; favoritesOnly = false },
+                            label = { Text("All") }
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = favoritesOnly,
+                            onClick = { favoritesOnly = !favoritesOnly },
+                            label = { Text("Favorites") },
+                            leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Star else Icons.Outlined.StarOutline, null) }
+                        )
+                    }
+                    folders.forEach { name ->
+                        item(key = "folder_$name") {
+                            FilterChip(
+                                selected = folder == name,
+                                onClick = { folder = if (folder == name) "" else name },
+                                label = { Text(name, maxLines = 1) },
+                                leadingIcon = { Icon(Icons.Default.Folder, null) }
+                            )
+                        }
+                    }
                 }
                 Spacer(Modifier.height(10.dp))
             }
 
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    FilterChip(
-                        selected = folder.isBlank(),
-                        onClick = { folder = "" },
-                        label = { Text("All") }
-                    )
-                }
-                folders.forEach { name ->
-                    item(key = "folder_$name") {
-                        FilterChip(
-                            selected = folder == name,
-                            onClick = { folder = if (folder == name) "" else name },
-                            label = { Text(name, maxLines = 1) }
-                        )
-                    }
-                }
-                item {
-                    FilterChip(
-                        selected = favoritesOnly,
-                        onClick = { favoritesOnly = !favoritesOnly },
-                        label = { Text("Favorites") },
-                        leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Star else Icons.Outlined.StarOutline, null) }
-                    )
-                }
-                LibrarySort.entries.forEach { option ->
-                    item(key = "sort_${option.name}") {
-                        FilterChip(
-                            selected = sort == option,
-                            onClick = { sortName = option.name },
-                            label = { Text(option.label) }
-                        )
-                    }
-                }
-            }
-            if (mode == ROUTE_DOCUMENTS && folder.isNotBlank()) {
-                TextButton(onClick = { renameFolderSource = folder }) {
-                    Text("Rename ‘$folder’")
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-
-            if (selected.isNotEmpty()) {
-                Text("${selected.size} selected", style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(8.dp))
-            }
-
             if (visible.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        when {
-                            query.isNotBlank() -> "No matching documents"
-                            favoritesOnly -> "No favorite documents yet"
-                            folder.isNotBlank() -> "No documents in this folder"
-                            else -> "Scan your first document"
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            if (query.isNotBlank()) Icons.Default.Search else Icons.Default.Description,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            when {
+                                query.isNotBlank() -> "No matching documents"
+                                favoritesOnly -> "No favorite documents yet"
+                                folder.isNotBlank() -> "No documents in this folder"
+                                else -> "No documents yet"
+                            },
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (query.isBlank() && !favoritesOnly && folder.isBlank()) {
+                            Text(
+                                "Tap Scan to capture your first document.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    )
+                    }
                 }
             } else if (gridMode) {
                 LazyVerticalGrid(
@@ -628,24 +672,35 @@ private fun DocumentListCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow
+        )
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             PageThumbnail(
                 path = document.pages.firstOrNull()?.imagePath,
-                modifier = Modifier.size(width = 66.dp, height = 86.dp)
+                modifier = Modifier.size(width = 48.dp, height = 64.dp)
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(document.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    if (document.isFavorite) Icon(Icons.Default.Star, contentDescription = "Favorite", modifier = Modifier.size(18.dp))
+                    Text(document.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    if (document.isFavorite) {
+                        Spacer(Modifier.width(4.dp))
+                        Icon(Icons.Default.Star, contentDescription = "Favorite", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
-                val pagesLabel = if (document.pageCount == 1) "1 page" else "${document.pageCount} pages"
-                Text("PDF • $pagesLabel • ${formatBytes(document.sizeBytes)}", style = MaterialTheme.typography.bodySmall)
-                Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(document.updatedAt)), style = MaterialTheme.typography.labelSmall)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "${pagesLabel(document.pageCount)} · ${formatBytes(document.sizeBytes)} · ${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(document.updatedAt))}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-            if (selected) Checkbox(checked = true, onCheckedChange = { onClick() })
+            if (selected) Icon(Icons.Default.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -669,15 +724,20 @@ private fun DocumentGridCard(
                     path = document.pages.firstOrNull()?.imagePath,
                     modifier = Modifier.fillMaxWidth().height(170.dp)
                 )
-                if (selected) Icon(Icons.Default.CheckCircle, contentDescription = "Selected", modifier = Modifier.padding(6.dp))
+                if (selected) Icon(Icons.Default.CheckCircle, contentDescription = "Selected", modifier = Modifier.padding(6.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.height(8.dp))
-            Text(document.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val pagesLabel = if (document.pageCount == 1) "1 page" else "${document.pageCount} pages"
-            Text("PDF • $pagesLabel • ${formatBytes(document.sizeBytes)}", style = MaterialTheme.typography.bodySmall)
+            Text(document.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                "${pagesLabel(document.pageCount)} · ${formatBytes(document.sizeBytes)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
+
+private fun pagesLabel(count: Int) = if (count == 1) "1 page" else "$count pages"
 
 @Composable
 private fun LibraryNavigationBar(selectedRoute: String, onTab: (String) -> Unit) {
