@@ -71,7 +71,6 @@ hilt {
 }
 
 dependencies {
-    implementation("com.google.firebase:firebase-crashlytics:21.0.0")
     val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)

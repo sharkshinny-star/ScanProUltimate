@@ -1,5 +1,6 @@
 package com.example.scanpro.ui
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -102,11 +103,13 @@ import java.util.Date
 
 private const val ROUTE_HOME = "home"
 private const val ROUTE_DOCUMENTS = "documents"
+private const val ROUTE_TOOLS = "tools"
 private const val ROUTE_SEARCH = "search"
 private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_CAMERA = "camera"
 private const val ROUTE_TRASH = "trash"
 private const val ROUTE_DETAIL = "detail"
+private const val ROUTE_PDF_VIEWER = "pdf_viewer"
 
 private enum class LibrarySort(val label: String) {
     UPDATED("Recent"), NAME("Name"), SIZE("Size")
@@ -226,6 +229,38 @@ fun ScanProApp(
                 onBulkDelete = viewModel::moveManyToTrash,
                 onRenameFolder = viewModel::renameFolder,
                 onTab = { route -> navigateLibrary(navController, route, viewModel) }
+            )
+        }
+        composable(ROUTE_TOOLS) {
+            Scaffold(
+                bottomBar = {
+                    LibraryNavigationBar(
+                        selectedRoute = ROUTE_TOOLS,
+                        onTab = { route -> navigateLibrary(navController, route, viewModel) }
+                    )
+                }
+            ) { innerPadding ->
+                Box(Modifier.padding(innerPadding)) {
+                    PdfToolsScreen(
+                        viewModel = viewModel,
+                        onOpenPdfViewer = { uri, title ->
+                            val encodedUri = Uri.encode(uri.toString())
+                            val encodedTitle = Uri.encode(title)
+                            navController.navigate("$ROUTE_PDF_VIEWER?uri=$encodedUri&title=$encodedTitle")
+                        }
+                    )
+                }
+            }
+        }
+        composable("$ROUTE_PDF_VIEWER?uri={uri}&title={title}") { entry ->
+            val uriStr = entry.arguments?.getString("uri") ?: ""
+            val title = entry.arguments?.getString("title") ?: "PDF Document"
+            val pdfUri = Uri.parse(Uri.decode(uriStr))
+            PdfViewerScreen(
+                title = Uri.decode(title),
+                pdfUri = pdfUri,
+                onBack = { navController.popBackStack() },
+                onShare = { shareFile(context, pdfUri.path ?: "", "application/pdf", title) }
             )
         }
         composable(ROUTE_SETTINGS) {
@@ -685,6 +720,7 @@ private fun LibraryNavigationBar(selectedRoute: String, onTab: (String) -> Unit)
         listOf(
             Triple(ROUTE_HOME, "Home", Icons.Default.Home),
             Triple(ROUTE_DOCUMENTS, "Documents", Icons.Default.Description),
+            Triple(ROUTE_TOOLS, "PDF Tools", Icons.Default.PictureAsPdf),
             Triple(ROUTE_SEARCH, "Search", Icons.Default.Search),
             Triple(ROUTE_SETTINGS, "Settings", Icons.Default.Settings)
         ).forEach { (route, label, icon) ->
