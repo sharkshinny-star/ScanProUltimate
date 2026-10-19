@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.data.PdfQuality
+import com.example.scanpro.data.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +47,7 @@ fun SettingsScreen(
     pdfQuality: PdfQuality,
     autoTitle: Boolean,
     appLock: Boolean,
+    themeMode: ThemeMode,
     documentCount: Int,
     trashCount: Int,
     storageBytes: Long,
@@ -54,14 +56,9 @@ fun SettingsScreen(
     onPdfQualityChange: (PdfQuality) -> Unit,
     onAutoTitleChange: (Boolean) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
-    onImportBackup: (Uri, String) -> Unit,
+    onThemeModeChange: (ThemeMode) -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
-    var pendingBackup by remember { mutableStateOf<Uri?>(null) }
-    val backupPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) pendingBackup = uri
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -105,6 +102,19 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(20.dp))
+            Text("App Theme", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(ThemeMode.entries) { mode ->
+                    FilterChip(
+                        selected = mode == themeMode,
+                        onClick = { onThemeModeChange(mode) },
+                        label = { Text(mode.label) }
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
             ListItem(
                 headlineContent = { Text("Smart OCR titles") },
                 supportingContent = {
@@ -136,44 +146,13 @@ fun SettingsScreen(
             )
 
             Spacer(Modifier.height(24.dp))
-            Text("Secure backup", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Restore a password-encrypted .scanpro package. Backups include document images, OCR text and export settings.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
-            androidx.compose.material3.OutlinedButton(onClick = { backupPicker.launch(arrayOf("application/octet-stream", "application/zip", "*/*")) }) {
-                Text("Restore encrypted backup")
-            }
-
-            Spacer(Modifier.height(24.dp))
             Text("Privacy", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
             Text(
-                "ScanPro stores scans and OCR text in app-private storage by default. The primary scanner uses " +
-                    "CameraX and OpenCV on-device; Google Play services is only a compatibility fallback. OCR runs " +
-                    "on-device. Translation models may download from Google once and then run locally. No document " +
-                    "is uploaded by the offline insights feature.",
-                style = MaterialTheme.typography.bodyMedium,
+                "Your documents, images, and OCR text are processed entirely on-device and kept private in local app storage.",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
-
-    if (pendingBackup != null) {
-        PasswordInputDialog(
-            title = "Restore encrypted backup",
-            message = "Enter the password used when this ScanPro backup was created.",
-            minimumLength = 6,
-            confirmLabel = "Restore",
-            onDismiss = { pendingBackup = null }
-        ) { password ->
-            val uri = pendingBackup ?: return@PasswordInputDialog
-            onImportBackup(uri, password)
-            pendingBackup = null
-        }
-    }
-
 }

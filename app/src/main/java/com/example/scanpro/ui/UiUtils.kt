@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.example.scanpro.data.ScanDocument
 import java.io.File
+import java.util.Locale
 
 fun sharePdf(context: Context, document: ScanDocument) {
     val file = File(document.pdfPath)
@@ -116,7 +117,39 @@ fun formatBytes(bytes: Long): String {
     var group = 0
     // 1023.95 so a value that would print as "1024.0" rolls over to the next unit.
     while (value >= 1023.95 && group < units.lastIndex) { value /= 1024.0; group++ }
-    return if (group == 0) "$bytes B" else String.format("%.1f %s", value, units[group])
+    return if (group == 0) "$bytes B" else String.format(Locale.getDefault(), "%.1f %s", value, units[group])
+}
+
+fun formatTrashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis()): Pair<String, Boolean> {
+    val retentionMs = 7L * 24L * 60L * 60L * 1000L
+    val expirationMs = trashedAt + retentionMs
+    val remainingMs = expirationMs - nowMs
+
+    if (remainingMs <= 0) return Pair("Auto-deletes soon", true)
+
+    val hourMs = 60L * 60L * 1000L
+    val dayMs = 24L * hourMs
+    val minMs = 60L * 1000L
+
+    val isUrgent = remainingMs < dayMs
+
+    val text = when {
+        remainingMs >= dayMs -> {
+            val days = kotlin.math.ceil(remainingMs.toDouble() / dayMs.toDouble()).toInt().coerceAtLeast(1)
+            "Auto-deletes in $days ${if (days == 1) "day" else "days"}"
+        }
+        remainingMs >= hourMs -> {
+            val hours = kotlin.math.ceil(remainingMs.toDouble() / hourMs.toDouble()).toInt().coerceAtLeast(1)
+            "Auto-deletes in $hours ${if (hours == 1) "hour" else "hours"}"
+        }
+        remainingMs >= minMs -> {
+            val mins = kotlin.math.ceil(remainingMs.toDouble() / minMs.toDouble()).toInt().coerceAtLeast(1)
+            "Auto-deletes in $mins ${if (mins == 1) "minute" else "minutes"}"
+        }
+        else -> "Auto-deletes soon"
+    }
+
+    return Pair(text, isUrgent)
 }
 
 fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String) {

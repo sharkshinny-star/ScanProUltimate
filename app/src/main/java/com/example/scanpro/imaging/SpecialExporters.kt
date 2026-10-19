@@ -1,7 +1,6 @@
 package com.example.scanpro.imaging
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -29,13 +28,8 @@ object SpecialExporters {
                 RectF(62f, 430f, 533f, 680f)
             )
             selected.forEachIndexed { index, model ->
-                val bitmap = ImageProcessor.decodeScaled(model.imagePath, quality.maxImageDimension)
-                    ?: error("Could not read ID page ${index + 1}")
-                try {
-                    drawFit(page.canvas, bitmap, slots[index])
-                } finally {
-                    bitmap.recycle()
-                }
+                val bitmap = ImageProcessor.decodeScaled(model.imagePath, quality.maxImageDimension) ?: return@forEachIndexed
+                drawFit(page.canvas, bitmap, slots[index])
             }
             val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.DKGRAY
@@ -53,44 +47,31 @@ object SpecialExporters {
 
     fun exportLongImage(pages: List<ScanPage>, destination: File, maxWidth: Int = 1800) {
         require(pages.isNotEmpty()) { "No pages" }
-        val sorted = pages.sortedBy { it.position }
-        // Size everything from the image headers first, so an over-long document fails fast
-        // instead of after decoding every page.
-        val sizes = sorted.mapIndexed { index, page ->
-            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeFile(page.imagePath, bounds)
-            require(bounds.outWidth > 0 && bounds.outHeight > 0) { "Could not read page ${index + 1}" }
-            bounds.outWidth to bounds.outHeight
+        val bitmaps = pages.sortedBy { it.position }.mapNotNull {
+            ImageProcessor.decodeScaled(it.imagePath, maxWidth)
         }
-        val targetWidth = sizes.maxOf { it.first }.coerceAtMost(maxWidth)
-        val heights = sizes.map { (w, h) -> (h * (targetWidth.toFloat() / w)).toInt().coerceAtLeast(1) }
+        require(bitmaps.isNotEmpty()) { "Could not decode pages" }
+        val targetWidth = bitmaps.maxOf { it.width }.coerceAtMost(maxWidth)
+        val scaled = bitmaps.map { bitmap ->
+            if (bitmap.width == targetWidth) bitmap else {
+                val h = (bitmap.height * (targetWidth.toFloat() / bitmap.width)).toInt().coerceAtLeast(1)
+                Bitmap.createScaledBitmap(bitmap, targetWidth, h, true)
+            }
+        }
         val gap = 12
-        val totalHeight = heights.sum() + gap * (heights.size - 1)
+        val totalHeight = scaled.sumOf { it.height } + gap * (scaled.size - 1)
         require(totalHeight <= 30000) { "Document is too long for a single image. Export fewer pages." }
-
         val output = Bitmap.createBitmap(targetWidth, totalHeight, Bitmap.Config.ARGB_8888)
-        try {
-            val canvas = Canvas(output)
-            canvas.drawColor(Color.WHITE)
-            val paint = Paint(Paint.FILTER_BITMAP_FLAG)
-            var y = 0f
-            // Decode, draw and free one page at a time to keep peak memory to a single page.
-            sorted.forEachIndexed { index, page ->
-                val bitmap = ImageProcessor.decodeScaled(page.imagePath, 3400)
-                    ?: error("Could not read page ${index + 1}")
-                try {
-                    canvas.drawBitmap(bitmap, null, RectF(0f, y, targetWidth.toFloat(), y + heights[index]), paint)
-                } finally {
-                    bitmap.recycle()
-                }
-                y += heights[index] + gap
-            }
-            destination.parentFile?.mkdirs()
-            FileOutputStream(destination).use { stream ->
-                check(output.compress(Bitmap.CompressFormat.JPEG, 90, stream))
-            }
-        } finally {
-            output.recycle()
+        val canvas = Canvas(output)
+        canvas.drawColor(Color.WHITE)
+        var y = 0f
+        scaled.forEach { bitmap ->
+            canvas.drawBitmap(bitmap, 0f, y, Paint(Paint.FILTER_BITMAP_FLAG))
+            y += bitmap.height + gap
+        }
+        destination.parentFile?.mkdirs()
+        FileOutputStream(destination).use { stream ->
+            check(output.compress(Bitmap.CompressFormat.JPEG, 90, stream))
         }
     }
 

@@ -23,6 +23,12 @@ enum class PdfPageSize(val label: String) {
     LETTER("Letter")
 }
 
+enum class ThemeMode(val label: String) {
+    LIGHT("Light"),
+    DARK("Dark"),
+    SYSTEM("System default")
+}
+
 enum class ScanMode(val label: String) {
     DOCUMENT("Document"),
     RECEIPT("Receipt"),

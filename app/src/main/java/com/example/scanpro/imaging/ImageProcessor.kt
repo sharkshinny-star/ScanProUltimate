@@ -9,6 +9,9 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
+import androidx.core.graphics.withRotation
 import androidx.exifinterface.media.ExifInterface
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
@@ -111,7 +114,7 @@ object ImageProcessor {
             )
         )
         saturationMatrix.postConcat(tonalMatrix)
-        val output = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(source.width, source.height)
         Canvas(output).drawBitmap(
             source, 0f, 0f,
             Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
@@ -168,8 +171,7 @@ object ImageProcessor {
         val largest = max(decoded.width, decoded.height)
         if (largest <= maxDimension) return decoded
         val scale = maxDimension.toFloat() / largest.toFloat()
-        val scaled = Bitmap.createScaledBitmap(
-            decoded,
+        val scaled = decoded.scale(
             (decoded.width * scale).toInt().coerceAtLeast(1),
             (decoded.height * scale).toInt().coerceAtLeast(1),
             true
@@ -216,7 +218,7 @@ object ImageProcessor {
         )
         val matrix = Matrix()
         check(matrix.setPolyToPoly(src, 0, dst, 0, 4)) { "Invalid crop geometry" }
-        val output = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(outputWidth, outputHeight)
         Canvas(output).drawBitmap(
             source,
             matrix,
@@ -333,7 +335,7 @@ object ImageProcessor {
             Core.addWeighted(denoised, 1.22, blurred, -0.22, 0.0, sharpened)
             Imgproc.cvtColor(sharpened, outputRgba, Imgproc.COLOR_RGB2RGBA)
 
-            val output = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+            val output = createBitmap(source.width, source.height)
             Utils.matToBitmap(outputRgba, output)
             return if (colorBoost) {
                 output.then { applyColorMatrix(it, saturation = 1.10f, contrast = 1.04f, brightness = 1f) }
@@ -359,7 +361,7 @@ object ImageProcessor {
             val clahe = Imgproc.createCLAHE(2.4, Size(8.0, 8.0))
             try { clahe.apply(normalized, normalized) } finally { clahe.collectGarbage() }
             Imgproc.cvtColor(normalized, outputRgba, Imgproc.COLOR_GRAY2RGBA)
-            val output = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+            val output = createBitmap(source.width, source.height)
             Utils.matToBitmap(outputRgba, output)
             return output
         } finally {
@@ -385,7 +387,7 @@ object ImageProcessor {
         )
         saturationMatrix.postConcat(contrastMatrix)
 
-        val output = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+        val output = createBitmap(source.width, source.height)
         val canvas = Canvas(output)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
             colorFilter = ColorMatrixColorFilter(saturationMatrix)

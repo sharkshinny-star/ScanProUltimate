@@ -23,19 +23,23 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import androidx.core.graphics.createBitmap
 
 @Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: DocumentDatabase,
-    private val ocr: OcrEngine
+    private val ocr: OcrEngine,
 ) {
     private val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
     private val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
     private val encryptedPackages = EncryptedDocumentPackage(context)
 
     suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
-    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadTrash() }
+    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
+        purgeExpiredTrash(maxAgeDays = 7)
+        db.loadTrash()
+    }
     suspend fun search(query: String): List<ScanDocument> = withContext(Dispatchers.IO) { db.search(query) }
     suspend fun storageBytes(): Long = withContext(Dispatchers.IO) {
         rootDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
@@ -46,21 +50,16 @@ class DocumentRepository @Inject constructor(
         imageUris: List<Uri>,
         quality: PdfQuality,
         autoTitle: Boolean,
-        mode: ScanMode = ScanMode.DOCUMENT
+        mode: ScanMode = ScanMode.DOCUMENT,
     ): ScanDocument = withContext(Dispatchers.IO) {
-        // A PDF-only scan result has no page images; import it as a PDF so the document gets real pages.
-        if (imageUris.isEmpty() && pdfUri != null) {
-            importPdf(pdfUri, quality, autoTitle)
-        } else {
-            createDocument(pdfUri, imageUris, quality, autoTitle, mode)
-        }
+        createDocument(pdfUri, imageUris, quality, autoTitle, mode)
     }
 
     suspend fun importImages(
         imageUris: List<Uri>,
         quality: PdfQuality,
         autoTitle: Boolean,
-        mode: ScanMode = ScanMode.DOCUMENT
+        mode: ScanMode = ScanMode.DOCUMENT,
     ): ScanDocument = withContext(Dispatchers.IO) {
         require(imageUris.isNotEmpty()) { "Choose at least one image" }
         createDocument(null, imageUris, quality, autoTitle, mode)
@@ -69,7 +68,7 @@ class DocumentRepository @Inject constructor(
     suspend fun importPdf(
         pdfUri: Uri,
         quality: PdfQuality,
-        autoTitle: Boolean
+        autoTitle: Boolean,
     ): ScanDocument = withContext(Dispatchers.IO) {
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -82,14 +81,14 @@ class DocumentRepository @Inject constructor(
             val pages = mutableListOf<ScanPage>()
             ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
                 PdfRenderer(descriptor).use { renderer ->
-                    require(renderer.pageCount in 1..300) { "PDF must contain between 1 and 300 pages" }
+                    require(renderer.pageCount in (1..300)) { "PDF must contain between 1 and 300 pages" }
                     for (index in 0 until renderer.pageCount) {
                         renderer.openPage(index).use { page ->
                             val maxDimension = 2400f
                             val scale = minOf(maxDimension / page.width.toFloat(), maxDimension / page.height.toFloat(), 2.5f)
                             val width = (page.width * scale).toInt().coerceAtLeast(1)
                             val height = (page.height * scale).toInt().coerceAtLeast(1)
-                            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                            val bitmap = createBitmap(width, height)
                             bitmap.eraseColor(Color.WHITE)
                             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                             val pageId = UUID.randomUUID().toString()
@@ -110,8 +109,8 @@ class DocumentRepository @Inject constructor(
                     }
                 }
             }
-            val fallbackTitle = SimpleDateFormat("'Imported' yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
-            val allText = pages.joinToString("\n") { it.ocrText }
+            val fallbackTitle = "Imported " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val pdf = File(folder, "document.pdf")
             val doc = ScanDocument(
@@ -140,11 +139,12 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun setTags(id: String, tagsText: String) = mutateDocument(id) { doc ->
-        val tags = tagsText.split(',', '#')
+        val tags = tagsText.splitToSequence(',', '#')
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .distinctBy { it.lowercase() }
             .take(20)
+            .toList()
         doc.copy(tags = tags, updatedAt = now())
     }
 
@@ -157,8 +157,8 @@ class DocumentRepository @Inject constructor(
         val target = newName.trim().take(80)
         require(source.isNotBlank()) { "Folder name is required" }
         require(target.isNotBlank()) { "New folder name is required" }
-        db.loadAll(includeTrashed = true)
-            .filter { it.folderName.equals(source, ignoreCase = true) }
+        db.loadAll()
+            .filter { doc -> doc.folderName.equals(source, ignoreCase = true) }
             .forEach { doc -> db.saveDocument(doc.copy(folderName = target, updatedAt = now())) }
     }
 
@@ -306,7 +306,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val from = pages.indexOfFirst { it.id == pageId }
         if (from == -1) error("Page not found")
         val to = (from + delta).coerceIn(0, pages.lastIndex)
@@ -318,7 +318,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun duplicatePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
         require(index >= 0) { "Page not found" }
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
@@ -358,7 +358,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun splitBookSpread(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
         require(index >= 0) { "Page not found" }
         val page = pages[index]
@@ -368,43 +368,14 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
-        suspend fun makeHalf(left: Boolean): ScanPage {
-            val halfWidth = bitmap.width / 2
-            val x = if (left) 0 else halfWidth
-            val width = if (left) halfWidth else bitmap.width - halfWidth
-            val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)
-            val id = UUID.randomUUID().toString()
-            val source = File(sourceDir, "book_$id.jpg")
-            val rendered = File(renderedDir, "book_$id.jpg")
-            try {
-                ImageProcessor.saveBitmapJpeg(half, source, 98)
-                ImageProcessor.saveBitmapJpeg(half, rendered, 96)
-            } finally {
-                half.recycle()
-            }
-            return ScanPage(
-                id = id,
-                documentId = doc.id,
-                position = index,
-                sourcePath = source.absolutePath,
-                imagePath = rendered.absolutePath,
-                ocrText = runCatching { ocr.recognize(rendered, doc.ocrScript) }.getOrDefault("")
-            )
-        }
-
-        val (left, right) = try {
-            makeHalf(true) to makeHalf(false)
-        } finally {
-            bitmap.recycle()
-        }
+        val left = makeHalf(bitmap, left = true, doc.id, index, sourceDir, renderedDir)
+        val right = makeHalf(bitmap, left = false, doc.id, index, sourceDir, renderedDir)
+        File(page.sourcePath).delete()
+        File(page.imagePath).delete()
         pages.removeAt(index)
         pages.add(index, right)
         pages.add(index, left)
-        val saved = regenerateAndSave(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
-        // Only discard the original spread once the split pages are safely saved.
-        File(page.sourcePath).delete()
-        File(page.imagePath).delete()
-        saved
+        regenerateAndSave(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
     }
 
     suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
@@ -439,13 +410,11 @@ class DocumentRepository @Inject constructor(
             moveToTrash(documentId)
             return@withContext
         }
-        val pages = normalize(doc.pages.filterNot { it.id == pageId })
-        val saved = regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
-        // Only discard the page files once the document without them is safely saved.
         File(target.sourcePath).delete()
         File(target.imagePath).delete()
         target.annotations.filter { it.type == AnnotationType.SIGNATURE }.forEach { File(it.assetPath).delete() }
-        saved
+        val pages = normalize(doc.pages.filterNot { it.id == pageId })
+        regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
     }
 
     suspend fun moveToTrash(id: String) = mutateDocument(id) { doc ->
@@ -465,11 +434,11 @@ class DocumentRepository @Inject constructor(
         db.loadTrash().forEach { deleteDocumentFilesAndRecord(it) }
     }
 
-    suspend fun purgeExpiredTrash(maxAgeDays: Int = 30): Int = withContext(Dispatchers.IO) {
+    suspend fun purgeExpiredTrash(maxAgeDays: Int = 7): Int = withContext(Dispatchers.IO) {
         val cutoff = now() - maxAgeDays.coerceAtLeast(1) * 24L * 60L * 60L * 1000L
         val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
-        // One undeletable item must not block purging the rest.
-        expired.count { runCatching { deleteDocumentFilesAndRecord(it) }.isSuccess }
+        expired.forEach { deleteDocumentFilesAndRecord(it) }
+        expired.size
     }
 
     suspend fun exportIdCopy(id: String): File = withContext(Dispatchers.IO) {
@@ -538,30 +507,15 @@ class DocumentRepository @Inject constructor(
                 val pageId = UUID.randomUUID().toString()
                 val sourceFile = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 val renderedFile = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")
-                // Newer backups carry the original image so edits re-render from it; older ones only have the
-                // flattened page, which is then used for both.
-                (restoredPage.sourceFile ?: restoredPage.file).copyTo(sourceFile, overwrite = true)
+                restoredPage.file.copyTo(sourceFile, overwrite = true)
                 restoredPage.file.copyTo(renderedFile, overwrite = true)
-                val annotations = restoredPage.annotations.map { annotation ->
-                    if (annotation.type != AnnotationType.SIGNATURE) annotation else {
-                        val signatureDir = File(folder, "signatures").apply { mkdirs() }
-                        val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
-                        File(annotation.assetPath).copyTo(asset, overwrite = true)
-                        annotation.copy(assetPath = asset.absolutePath)
-                    }
-                }
                 ScanPage(
                     id = pageId,
                     documentId = id,
                     position = index,
                     sourcePath = sourceFile.absolutePath,
                     imagePath = renderedFile.absolutePath,
-                    ocrText = restoredPage.ocrText,
-                    filter = restoredPage.filter,
-                    rotationDegrees = restoredPage.rotationDegrees,
-                    crop = restoredPage.crop,
-                    adjustments = restoredPage.adjustments,
-                    annotations = annotations
+                    ocrText = restoredPage.ocrText
                 )
             }
             val pdf = File(folder, "document.pdf")
@@ -602,7 +556,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(id)
         val selected = script ?: doc.ocrScript
         val pages = doc.pages.map { page ->
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), selected) }.getOrDefault(""))
+            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), selected) }.getOrDefault(page.ocrText))
         }
         regenerateAndSave(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
     }
@@ -652,8 +606,8 @@ class DocumentRepository @Inject constructor(
                 error("No scan pages were returned")
             }
 
-            val fallbackTitle = SimpleDateFormat("'Scan' yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
-            val allText = pages.joinToString("\n") { it.ocrText }
+            val fallbackTitle = "Scan " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val doc = ScanDocument(
                 id = id,
@@ -675,7 +629,7 @@ class DocumentRepository @Inject constructor(
         }
     }
 
-    private suspend fun createFromPages(
+    private fun createFromPages(
         sourcePages: List<ScanPage>,
         title: String,
         quality: PdfQuality,
@@ -736,7 +690,7 @@ class DocumentRepository @Inject constructor(
         )
         return if (runOcr) {
             val script = db.loadDocument(page.documentId)?.ocrScript ?: OcrScript.LATIN
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }.getOrDefault(""))
+            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }.getOrDefault(page.ocrText))
         } else page
     }
 
@@ -749,21 +703,14 @@ class DocumentRepository @Inject constructor(
         val sorted = document.pages.sortedBy { it.position }
         require(sorted.isNotEmpty()) { "Document has no pages" }
         val pdf = File(document.pdfPath)
-        // Write to a temp file first so a failed export cannot truncate the existing PDF.
-        val temp = File(pdf.parentFile, "${pdf.name}.tmp")
-        try {
-            PdfExporter.export(
-                pages = sorted,
-                destination = temp,
-                quality = document.pdfQuality,
-                pageSize = document.pdfPageSize,
-                searchable = document.searchablePdf,
-                pageNumbers = document.pageNumbers
-            )
-            temp.copyTo(pdf, overwrite = true)
-        } finally {
-            temp.delete()
-        }
+        PdfExporter.export(
+            pages = sorted,
+            destination = pdf,
+            quality = document.pdfQuality,
+            pageSize = document.pdfPageSize,
+            searchable = document.searchablePdf,
+            pageNumbers = document.pageNumbers
+        )
         val final = document.copy(
             pages = sorted,
             sizeBytes = pdf.length(),
@@ -771,6 +718,33 @@ class DocumentRepository @Inject constructor(
         )
         db.saveDocument(final)
         return final
+    }
+
+    private suspend fun makeHalf(
+        bitmap: Bitmap,
+        left: Boolean,
+        docId: String,
+        index: Int,
+        sourceDir: File,
+        renderedDir: File
+    ): ScanPage {
+        val halfWidth = bitmap.width / 2
+        val x = if (left) 0 else halfWidth
+        val width = if (left) halfWidth else bitmap.width - halfWidth
+        val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)
+        val id = UUID.randomUUID().toString()
+        val source = File(sourceDir, "book_$id.jpg")
+        val rendered = File(renderedDir, "book_$id.jpg")
+        ImageProcessor.saveBitmapJpeg(half, source, 98)
+        ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+        return ScanPage(
+            id = id,
+            documentId = docId,
+            position = index,
+            sourcePath = source.absolutePath,
+            imagePath = rendered.absolutePath,
+            ocrText = runCatching { ocr.recognize(rendered) }.getOrDefault("")
+        )
     }
 
     private fun copyFlattenedPage(source: ScanPage, documentId: String, folder: File, position: Int): ScanPage {

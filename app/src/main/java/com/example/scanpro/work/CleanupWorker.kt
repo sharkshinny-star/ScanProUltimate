@@ -18,7 +18,7 @@ class CleanupWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): WorkResult = try {
-        repository.purgeExpiredTrash(maxAgeDays = 30)
+        repository.purgeExpiredTrash(maxAgeDays = 7)
         WorkResult.success()
     } catch (cancelled: CancellationException) {
         throw cancelled

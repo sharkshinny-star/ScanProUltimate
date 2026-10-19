@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">ScanPro Studio</string>
+    <string name="app_name">PDF Scanner - ScanPro</string>
+    <string name="shortcut_scan_short">Scan now</string>
+    <string name="shortcut_scan_long">Scan document now</string>
 </resources>
