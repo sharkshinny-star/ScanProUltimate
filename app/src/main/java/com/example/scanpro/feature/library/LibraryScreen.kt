@@ -173,8 +173,12 @@ internal fun LibraryScreen(
 
     // A folder filter whose folder no longer exists (renamed, or its documents trashed) would hide
     // everything with no chip left to clear it.
+    // Only on Files, and only once documents have loaded: an empty list just after launch, or search
+    // results that happen to miss the folder, don't mean the folder is gone.
     LaunchedEffect(folders) {
-        if (folder.isNotBlank() && folders.none { it.equals(folder, ignoreCase = true) }) folder = ""
+        if (mode == ScanProDestinations.FILES && documents.isNotEmpty() && folder.isNotBlank() &&
+            folders.none { it.equals(folder, ignoreCase = true) }
+        ) folder = ""
     }
 
     val visible = remember(documents, mode, folder, favoritesOnly, sort) {

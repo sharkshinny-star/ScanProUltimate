@@ -2,6 +2,7 @@ package com.example.scanpro.navigation
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -54,16 +55,23 @@ fun ScanProNavHost(
                 bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.SETTINGS, onTab = onTab) }
             )
         }
-        composable(ScanProDestinations.CAMERA) {
+        composable(ScanProDestinations.CAMERA) { entry ->
+            // Act only while this screen is resumed, so a double tap during the exit animation can't
+            // import twice or pop Home and leave an empty screen.
+            fun resumed() = entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             CameraScannerScreen(
                 onClose = dropUnlessResumed { navController.popBackStack() },
                 onComplete = { uris, mode ->
-                    onCameraScanComplete(uris, mode)
-                    navController.popBackStack()
+                    if (resumed()) {
+                        onCameraScanComplete(uris, mode)
+                        navController.popBackStack()
+                    }
                 },
                 onFallbackScanner = {
-                    navController.popBackStack()
-                    onFallbackScanner()
+                    if (resumed()) {
+                        navController.popBackStack()
+                        onFallbackScanner()
+                    }
                 }
             )
         }

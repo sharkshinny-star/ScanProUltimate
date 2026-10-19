@@ -187,7 +187,8 @@ class EncryptedDocumentPackage(private val context: Context) {
             }
 
             decryptedStream.use { decrypted ->
-                ZipInputStream(BufferedInputStream(decrypted)).use { zip ->
+                val buffered = BufferedInputStream(decrypted)
+                ZipInputStream(buffered).let { zip ->
                     var entry = zip.nextEntry
                     var extractedBytes = 0L
                     while (entry != null) {
@@ -210,6 +211,11 @@ class EncryptedDocumentPackage(private val context: Context) {
                         zip.closeEntry()
                         entry = zip.nextEntry
                     }
+                    // ZipInputStream stops at the central directory; read the rest so the final
+                    // chunk's tag and the "nothing after the end" check are verified too.
+                    val drain = ByteArray(DEFAULT_BUFFER_SIZE)
+                    while (buffered.read(drain) >= 0) Unit
+                    zip.close()
                 }
             }
 

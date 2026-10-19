@@ -8,7 +8,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -62,7 +61,11 @@ class OperationRunner @Inject constructor(
     fun clearOpenDocumentRequest() { _openDocumentRequest.value = null }
 
     private val mutex = Mutex()
-    private val pending = AtomicInteger(0)
+    // Guards the pending count together with the busy flags: start() runs on Main and the finish runs
+    // on a background thread, and without one lock a finishing job could clear busy just after a
+    // new job set it.
+    private val stateLock = Any()
+    private var pending = 0
 
     /**
      * Runs an edit the user triggered from a screen, then reloads the library. While another operation
@@ -85,21 +88,26 @@ class OperationRunner @Inject constructor(
         start(label, successMessage, action)
 
     private fun start(label: String?, successMessage: String?, action: suspend () -> Unit) {
-        pending.incrementAndGet()
-        _busy.value = true
+        synchronized(stateLock) {
+            pending++
+            _busy.value = true
+        }
         scope.launch {
             try {
                 mutex.withLock {
-                    _busyLabel.value = label
+                    synchronized(stateLock) { _busyLabel.value = label }
                     runCatching { action() }
                         .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
                         .onFailure { error -> _message.value = UiMessage(error.message ?: "Something went wrong") }
                     runCatching { library.refresh() }
                 }
             } finally {
-                if (pending.decrementAndGet() == 0) {
-                    _busyLabel.value = null
-                    _busy.value = false
+                synchronized(stateLock) {
+                    pending--
+                    if (pending == 0) {
+                        _busyLabel.value = null
+                        _busy.value = false
+                    }
                 }
             }
         }

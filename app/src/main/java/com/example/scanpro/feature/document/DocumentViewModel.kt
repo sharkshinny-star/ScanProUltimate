@@ -181,14 +181,25 @@ class DocumentViewModel @Inject constructor(
      * Runs [onReady] with a document whose PDF is current. Page edits defer the PDF rebuild, so share,
      * open, print and save go through here; when the PDF is already current this is immediate.
      */
-    fun withFreshPdf(onReady: (ScanDocument) -> Unit) {
-        val current = document.value ?: return
+    fun withFreshPdf(onFailed: () -> Unit = {}, onReady: (ScanDocument) -> Unit) {
+        val current = document.value
+        if (current == null) {
+            onFailed()
+            return
+        }
         if (current.hasCurrentPdf()) {
             onReady(current)
             return
         }
-        run("Preparing PDF…", null) {
-            val fresh = repository.ensurePdf(id)
+        // Queued rather than rejected while busy: by now the user has already asked for the file
+        // (and for Save, already created the destination), so dropping the request would lose it.
+        operations.enqueue("Preparing PDF…", null) {
+            val fresh = try {
+                repository.ensurePdf(id)
+            } catch (error: Throwable) {
+                withContext(Dispatchers.Main) { onFailed() }
+                throw error
+            }
             withContext(Dispatchers.Main) { onReady(fresh) }
         }
     }
