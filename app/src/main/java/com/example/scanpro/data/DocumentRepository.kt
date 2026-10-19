@@ -34,6 +34,8 @@ class DocumentRepository @Inject constructor(
     private val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
     private val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
     private val encryptedPackages = EncryptedDocumentPackage(context)
+    /** Guards PDF rebuilds against page saves, so a rebuild never overwrites newer edits. */
+    private val pdfLock = Any()
 
     suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
     suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
@@ -159,7 +161,7 @@ class DocumentRepository @Inject constructor(
         require(target.isNotBlank()) { "New folder name is required" }
         db.loadAll()
             .filter { doc -> doc.folderName.equals(source, ignoreCase = true) }
-            .forEach { doc -> db.saveDocument(doc.copy(folderName = target, updatedAt = now())) }
+            .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = target, updatedAt = now())) }
     }
 
     suspend fun toggleFavorite(id: String) = mutateDocument(id) { doc ->
@@ -301,7 +303,7 @@ class DocumentRepository @Inject constructor(
             )
             renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
         }
-        regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
 
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = withContext(Dispatchers.IO) {
@@ -313,7 +315,7 @@ class DocumentRepository @Inject constructor(
         if (to == from) return@withContext
         val moved = pages.removeAt(from)
         pages.add(to, moved)
-        regenerateAndSave(doc.copy(pages = normalize(pages), updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now()))
     }
 
     suspend fun duplicatePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
@@ -324,7 +326,7 @@ class DocumentRepository @Inject constructor(
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val copy = copyFlattenedPage(pages[index], doc.id, folder, index + 1)
         pages.add(index + 1, copy)
-        regenerateAndSave(doc.copy(pages = normalize(pages), updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now()))
     }
 
     suspend fun extractPage(documentId: String, pageId: String): ScanDocument = withContext(Dispatchers.IO) {
@@ -375,7 +377,7 @@ class DocumentRepository @Inject constructor(
         pages.removeAt(index)
         pages.add(index, right)
         pages.add(index, left)
-        regenerateAndSave(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
     }
 
     suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
@@ -400,7 +402,7 @@ class DocumentRepository @Inject constructor(
             )
             renderAndOcr(page)
         }
-        regenerateAndSave(doc.copy(pages = doc.pages + newPages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now()))
     }
 
     suspend fun deletePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
@@ -414,7 +416,7 @@ class DocumentRepository @Inject constructor(
         File(target.imagePath).delete()
         target.annotations.filter { it.type == AnnotationType.SIGNATURE }.forEach { File(it.assetPath).delete() }
         val pages = normalize(doc.pages.filterNot { it.id == pageId })
-        regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
 
     suspend fun moveToTrash(id: String) = mutateDocument(id) { doc ->
@@ -482,7 +484,7 @@ class DocumentRepository @Inject constructor(
     suspend fun exportPasswordProtectedPdf(id: String, password: String): File = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
         val file = freshExportFile("${safeName(doc.title)}_protected", "pdf")
-        PdfSecurity.protect(File(doc.pdfPath), file, password)
+        PdfSecurity.protect(File(ensurePdfNow(id).pdfPath), file, password)
         file
     }
 
@@ -549,7 +551,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(documentId)
         val pages = doc.pages.map { page -> if (page.id == pageId) page.copy(ocrText = text.trim()) else page }
         require(pages.any { it.id == pageId }) { "Page not found" }
-        regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
 
     suspend fun reOcrDocument(id: String, script: OcrScript? = null) = withContext(Dispatchers.IO) {
@@ -558,7 +560,7 @@ class DocumentRepository @Inject constructor(
         val pages = doc.pages.map { page ->
             page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), selected) }.getOrDefault(page.ocrText))
         }
-        regenerateAndSave(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
     }
 
     private suspend fun addAnnotation(documentId: String, pageId: String, annotation: PageAnnotation) =
@@ -675,7 +677,7 @@ class DocumentRepository @Inject constructor(
         val target = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
         val updatedPage = block(target)
         val pages = doc.pages.map { if (it.id == pageId) updatedPage else it }
-        regenerateAndSave(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
 
     private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true): ScanPage {
@@ -689,35 +691,77 @@ class DocumentRepository @Inject constructor(
             annotations = page.annotations
         )
         return if (runOcr) {
-            val script = db.loadDocument(page.documentId)?.ocrScript ?: OcrScript.LATIN
+            val script = db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
             page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }.getOrDefault(page.ocrText))
         } else page
     }
 
     private suspend fun mutateDocument(id: String, block: suspend (ScanDocument) -> ScanDocument) =
         withContext(Dispatchers.IO) {
-            db.saveDocument(block(requireDocument(id)))
+            // Metadata-only change: update the document row without rewriting every page and search row.
+            db.saveDocumentMetadata(block(requireDocument(id)))
         }
 
-    private fun regenerateAndSave(document: ScanDocument): ScanDocument {
+    /**
+     * Saves page edits without rebuilding the PDF. Rebuilding re-decodes every page, so doing it on each
+     * filter, rotate or markup made edits slow on long documents. The stale PDF is deleted and rebuilt
+     * once by [ensurePdf] when it's next needed (share, open, print, save, or leaving the document).
+     */
+    private fun saveWithStalePdf(document: ScanDocument): ScanDocument {
+        val sorted = document.pages.sortedBy { it.position }
+        require(sorted.isNotEmpty()) { "Document has no pages" }
+        val final = document.copy(pages = sorted, updatedAt = now())
+        // Under the PDF lock so a concurrent rebuild can't finish after this and look current.
+        synchronized(pdfLock) {
+            db.saveDocument(final)
+            File(final.pdfPath).delete()
+        }
+        return final
+    }
+
+    /** Returns the document with an up-to-date PDF, rebuilding it first if page edits made it stale. */
+    suspend fun ensurePdf(id: String): ScanDocument = withContext(Dispatchers.IO) { ensurePdfNow(id) }
+
+    /** Ids of active documents whose PDF still needs rebuilding. */
+    suspend fun documentsNeedingPdf(): List<String> = withContext(Dispatchers.IO) {
+        db.loadAll().filter { !File(it.pdfPath).isFile }.map { it.id }
+    }
+
+    private fun ensurePdfNow(id: String): ScanDocument = synchronized(pdfLock) {
+        // Reload inside the lock so the rebuild always uses the latest saved pages.
+        val doc = requireDocument(id)
+        // A deferred rebuild isn't a user edit, so it keeps the document's place in Recent.
+        if (File(doc.pdfPath).isFile) doc else regenerateAndSave(doc, touch = false)
+    }
+
+    private fun regenerateAndSave(document: ScanDocument, touch: Boolean = true): ScanDocument = synchronized(pdfLock) {
         val sorted = document.pages.sortedBy { it.position }
         require(sorted.isNotEmpty()) { "Document has no pages" }
         val pdf = File(document.pdfPath)
-        PdfExporter.export(
-            pages = sorted,
-            destination = pdf,
-            quality = document.pdfQuality,
-            pageSize = document.pdfPageSize,
-            searchable = document.searchablePdf,
-            pageNumbers = document.pageNumbers
-        )
+        // Write beside the real file and rename, so an interrupted build never leaves a partial
+        // PDF that would later be mistaken for an up-to-date one.
+        val partial = File(pdf.parentFile, "${pdf.name}.partial")
+        try {
+            PdfExporter.export(
+                pages = sorted,
+                destination = partial,
+                quality = document.pdfQuality,
+                pageSize = document.pdfPageSize,
+                searchable = document.searchablePdf,
+                pageNumbers = document.pageNumbers
+            )
+            pdf.delete()
+            check(partial.renameTo(pdf)) { "Could not save the PDF" }
+        } finally {
+            partial.delete()
+        }
         val final = document.copy(
             pages = sorted,
             sizeBytes = pdf.length(),
-            updatedAt = now()
+            updatedAt = if (touch) now() else document.updatedAt
         )
         db.saveDocument(final)
-        return final
+        final
     }
 
     private suspend fun makeHalf(

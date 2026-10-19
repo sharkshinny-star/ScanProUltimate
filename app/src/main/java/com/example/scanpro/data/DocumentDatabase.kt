@@ -14,6 +14,7 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
+import androidx.room.Update
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -102,6 +103,13 @@ internal interface ScanDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun putDocument(document: DocumentEntity)
+
+    // A real UPDATE, not REPLACE: REPLACE deletes the row first, which would cascade-delete its pages.
+    @Update
+    fun updateDocument(document: DocumentEntity)
+
+    @Query("SELECT ocr_script FROM documents WHERE id = :id LIMIT 1")
+    fun loadOcrScript(id: String): String?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun putPages(pages: List<PageEntity>)
@@ -194,6 +202,12 @@ class DocumentDatabase @Inject constructor(
     }
 
     fun loadDocument(id: String): ScanDocument? = dao.loadDocument(id)?.let(::hydrate)
+
+    /** Saves document-level fields only (title, tags, folder, favorite, trash state); pages are untouched. */
+    fun saveDocumentMetadata(document: ScanDocument) = dao.updateDocument(document.toEntity())
+
+    fun loadOcrScript(id: String): OcrScript? =
+        dao.loadOcrScript(id)?.let { runCatching { OcrScript.valueOf(it) }.getOrNull() }
 
     fun deleteDocument(id: String) {
         room.runInTransaction(Runnable {

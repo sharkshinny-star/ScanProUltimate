@@ -20,7 +20,10 @@ import com.example.scanpro.data.ScanMode
 import com.example.scanpro.navigation.ScanProDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import java.io.File
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -30,7 +33,7 @@ class DocumentViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
-    library: DocumentLibrary
+    private val library: DocumentLibrary
 ) : ViewModel() {
     private val id: String = checkNotNull(savedStateHandle[ScanProDestinations.DOCUMENT_ID_ARG])
 
@@ -165,4 +168,25 @@ class DocumentViewModel @Inject constructor(
     }
 
     fun moveToTrash() = run(null, "Moved to recycle bin") { repository.moveToTrash(id) }
+
+    /**
+     * Runs [onReady] with a document whose PDF is current. Page edits defer the PDF rebuild, so share,
+     * open, print and save go through here; when the PDF is already current this is immediate.
+     */
+    fun withFreshPdf(onReady: (ScanDocument) -> Unit) {
+        val current = document.value ?: return
+        if (File(current.pdfPath).isFile) {
+            onReady(current)
+            return
+        }
+        run("Preparing PDF…", null) {
+            val fresh = repository.ensurePdf(id)
+            withContext(Dispatchers.Main) { onReady(fresh) }
+        }
+    }
+
+    override fun onCleared() {
+        // Leaving the editor: bring the PDF up to date in the background so it's ready next time.
+        library.buildPdfInBackground(id)
+    }
 }

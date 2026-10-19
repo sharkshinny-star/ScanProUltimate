@@ -105,6 +105,7 @@ fun LibraryRoute(
     onTab: (String) -> Unit,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val documents by viewModel.documents.collectAsStateWithLifecycle()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
@@ -127,6 +128,7 @@ fun LibraryRoute(
         onSearch = onSearch,
         onBack = onBack,
         onBulkDelete = viewModel::moveManyToTrash,
+        onShareSelected = { ids -> viewModel.withFreshPdfs(ids) { docs -> sharePdfs(context, docs) } },
         onRenameFolder = viewModel::renameFolder,
         onTab = onTab
     )
@@ -151,10 +153,10 @@ internal fun LibraryScreen(
     onSearch: () -> Unit,
     onBack: () -> Unit,
     onBulkDelete: (Set<String>) -> Unit,
+    onShareSelected: (Set<String>) -> Unit,
     onRenameFolder: (String, String) -> Unit,
     onTab: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
     var gridMode by rememberSaveable { mutableStateOf(mode == ScanProDestinations.FILES) }
@@ -224,7 +226,7 @@ internal fun LibraryScreen(
                 },
                 actions = {
                     if (selected.isNotEmpty()) {
-                        IconButton(onClick = { sharePdfs(context, documents.filter { it.id in selected }) }) {
+                        IconButton(onClick = { onShareSelected(selected.toSet()) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share selected")
                         }
                         IconButton(onClick = {

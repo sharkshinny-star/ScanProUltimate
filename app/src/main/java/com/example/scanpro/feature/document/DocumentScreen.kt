@@ -211,6 +211,7 @@ fun DocumentRoute(
         onSplitDocument = viewModel::splitDocument,
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
+        onWithFreshPdf = viewModel::withFreshPdf,
         onDeleteDocument = {
             viewModel.moveToTrash()
             onBack()
@@ -263,6 +264,8 @@ internal fun DocumentDetailScreen(
     onSplitDocument: () -> Unit,
     onExportProtectedPdf: (String) -> Unit,
     onExportEncryptedBackup: (String) -> Unit,
+    /** Runs the action with a current PDF; page edits rebuild the PDF lazily. */
+    onWithFreshPdf: ((ScanDocument) -> Unit) -> Unit,
     onDeleteDocument: () -> Unit
 ) {
     val context = LocalContext.current
@@ -356,7 +359,7 @@ internal fun DocumentDetailScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share JPG")
                         }
                         Button(
-                            onClick = { sharePdf(context, document) },
+                            onClick = { onWithFreshPdf { sharePdf(context, it) } },
                             enabled = !busy,
                             modifier = Modifier.weight(1f).height(52.dp)
                         ) {
@@ -503,9 +506,9 @@ internal fun DocumentDetailScreen(
                 DetailTab.EXPORT -> {
                     SubHeader("Share and save")
                     ToolGrid {
-                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF") { openPdf(context, document) }
-                        ToolTile(Icons.Default.Save, "Save PDF") { savePdfLauncher.launch("${document.title}.pdf") }
-                        ToolTile(Icons.Default.Print, "Print") { printPdf(context, document) }
+                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF") { onWithFreshPdf { openPdf(context, it) } }
+                        ToolTile(Icons.Default.Save, "Save PDF") { onWithFreshPdf { savePdfLauncher.launch("${it.title}.pdf") } }
+                        ToolTile(Icons.Default.Print, "Print") { onWithFreshPdf { printPdf(context, it) } }
                         ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
                         ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
                         ToolTile(Icons.Default.ViewDay, "Long image", !busy) { onExportLongImage() }

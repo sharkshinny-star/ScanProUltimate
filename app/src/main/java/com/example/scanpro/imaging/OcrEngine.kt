@@ -35,8 +35,19 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
     }
 
     suspend fun recognize(file: File, script: OcrScript = OcrScript.LATIN): String {
-        val image = InputImage.fromFilePath(context, Uri.fromFile(file))
-        val recognizer = recognizerFor(script)
-        return recognizer.process(image).await().text.trim()
+        // Rendered pages are already upright. Decoding at a bounded size keeps body text well above
+        // ML Kit's minimum glyph height while avoiding a full 3400px decode per page.
+        val bitmap = ImageProcessor.decodeScaled(file.absolutePath, OCR_MAX_DIMENSION)
+        val image = bitmap?.let { InputImage.fromBitmap(it, 0) }
+            ?: InputImage.fromFilePath(context, Uri.fromFile(file))
+        return try {
+            recognizerFor(script).process(image).await().text.trim()
+        } finally {
+            bitmap?.recycle()
+        }
+    }
+
+    private companion object {
+        const val OCR_MAX_DIMENSION = 2400
     }
 }
