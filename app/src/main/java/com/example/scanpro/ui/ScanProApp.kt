@@ -2,11 +2,16 @@ package com.example.scanpro.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
@@ -32,6 +37,7 @@ fun ScanProApp(
     val exportArtifact by viewModel.exportArtifact.collectAsStateWithLifecycle()
     val openDocumentRequest by viewModel.openDocumentRequest.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
+    val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -50,18 +56,34 @@ fun ScanProApp(
             viewModel.clearExportArtifact()
         }
     }
-    // A finished camera scan opens its new document once the library has picked it up.
+    when {
+        // Draw nothing until the lock setting is known, so a locked library never flashes on screen.
+        appLock == null -> {
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+            return
+        }
+        appLock == true && !sessionUnlocked -> {
+            LockScreen(onUnlock)
+            return
+        }
+    }
+
+    // Launcher "Scan" shortcut: open the camera once the library is unlocked.
+    LaunchedEffect(scanRequested) {
+        if (scanRequested) {
+            navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true }
+            viewModel.clearScanRequest()
+        }
+    }
+
+    // A finished camera scan opens its new document once the library has picked it up. This sits
+    // below the lock gate: navigating before the NavHost has set its graph would crash.
     LaunchedEffect(openDocumentRequest, documents) {
         val id = openDocumentRequest ?: return@LaunchedEffect
         if (documents.any { it.id == id }) {
             navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
             viewModel.clearOpenDocumentRequest()
         }
-    }
-
-    if (appLock && !sessionUnlocked) {
-        LockScreen(onUnlock)
-        return
     }
 
     ScanProNavHost(
