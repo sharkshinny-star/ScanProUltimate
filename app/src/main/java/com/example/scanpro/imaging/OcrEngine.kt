@@ -40,11 +40,11 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
         val bitmap = ImageProcessor.decodeScaled(file.absolutePath, OCR_MAX_DIMENSION)
         val image = bitmap?.let { InputImage.fromBitmap(it, 0) }
             ?: InputImage.fromFilePath(context, Uri.fromFile(file))
-        return try {
-            recognizerFor(script).process(image).await().text.trim()
-        } finally {
-            bitmap?.recycle()
-        }
+        val task = recognizerFor(script).process(image)
+        // Recycle when ML Kit is done, not when this coroutine ends: a cancelled await would otherwise
+        // free the pixels while recognition is still reading them.
+        if (bitmap != null) task.addOnCompleteListener { bitmap.recycle() }
+        return task.await().text.trim()
     }
 
     private companion object {

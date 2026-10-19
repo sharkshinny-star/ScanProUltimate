@@ -74,7 +74,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -83,6 +87,7 @@ import com.example.scanpro.data.ScanMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -129,9 +134,20 @@ fun CameraScannerScreen(
     var liveGuidance by remember { mutableStateOf("Point the camera at a document") }
     val disposed = remember { AtomicBoolean(false) }
     var autoCaptureSignal by remember { mutableIntStateOf(0) }
-    var scanMode by remember { mutableStateOf(ScanMode.DOCUMENT) }
-    var scanBothSides by remember { mutableStateOf(false) }
-    val pages = remember { mutableStateListOf<Uri>() }
+    // Saveable, so captured pages survive rotation and process death instead of being lost (and
+    // their files orphaned) when the activity is recreated.
+    var scanMode by rememberSaveable { mutableStateOf(ScanMode.DOCUMENT) }
+    var scanBothSides by rememberSaveable { mutableStateOf(false) }
+    val pages = rememberSaveable(
+        saver = listSaver(save = { list -> list.map(Uri::toString) }, restore = { saved -> mutableStateListOf(*saved.map(Uri::parse).toTypedArray()) })
+    ) { mutableStateListOf<Uri>() }
+    // Each scanner session writes to its own folder, so closing one never deletes files another
+    // session's import is still reading.
+    val sessionId = rememberSaveable { UUID.randomUUID().toString() }
+    val sessionDir = remember(sessionId) { File(File(context.cacheDir, SESSION_ROOT), sessionId) }
+    var completed by remember { mutableStateOf(false) }
+    // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
+    var resumeCount by remember { mutableIntStateOf(0) }
     val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -168,7 +184,7 @@ fun CameraScannerScreen(
         capturing = true
         status = "Capturing…"
 
-        val sessionDir = File(context.cacheDir, "pro_scanner_session").apply { mkdirs() }
+        sessionDir.mkdirs()
         val id = UUID.randomUUID().toString()
         val raw = File(sessionDir, "raw_$id.jpg")
         val corrected = File(sessionDir, "scan_$id.jpg")
@@ -179,6 +195,12 @@ fun CameraScannerScreen(
             mainExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    // The screen was closed while the shutter was running; launching on its cancelled
+                    // scope would skip the cleanup below, so drop the raw file here.
+                    if (disposed.get()) {
+                        raw.delete()
+                        return
+                    }
                     scope.launch {
                         // Always release the shutter and clean up, even if processing fails.
                         try {
@@ -214,7 +236,7 @@ fun CameraScannerScreen(
 
     LaunchedEffect(status) {
         if (status != null) {
-            delay(3000)
+            delay(3.seconds)
             status = null
         }
     }
@@ -275,18 +297,40 @@ fun CameraScannerScreen(
             disposed.set(true)
             cameraProvider?.unbindAll()
             analysisExecutor.shutdown()
+            // Leaving without Done discards the session's captures. A rotation recreates the screen
+            // with the same saved pages, so keep the files then.
+            val changingConfigurations = (context as? android.app.Activity)?.isChangingConfigurations == true
+            if (!completed && !changingConfigurations) sessionDir.deleteRecursively()
         }
     }
 
-    LaunchedEffect(torchEnabled, boundCamera) {
+    // Clear out sessions abandoned by a crash or process death more than a day ago.
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val cutoff = System.currentTimeMillis() - 24L * 60 * 60 * 1000
+            File(context.cacheDir, SESSION_ROOT).listFiles()
+                ?.filter { it.name != sessionId && it.lastModified() < cutoff }
+                ?.forEach { it.deleteRecursively() }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) resumeCount++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(torchEnabled, boundCamera, resumeCount) {
         boundCamera?.cameraControl?.enableTorch(torchEnabled)
     }
 
-    LaunchedEffect(zoom, boundCamera) {
+    LaunchedEffect(zoom, boundCamera, resumeCount) {
         boundCamera?.cameraControl?.setLinearZoom(zoom.coerceIn(0f, 1f))
     }
 
-    LaunchedEffect(exposureIndex, exposureMin, exposureMax, boundCamera) {
+    LaunchedEffect(exposureIndex, exposureMin, exposureMax, boundCamera, resumeCount) {
         if (exposureMin < exposureMax) {
             boundCamera?.cameraControl?.setExposureCompensationIndex(
                 exposureIndex.coerceIn(exposureMin, exposureMax)
@@ -311,6 +355,8 @@ fun CameraScannerScreen(
             update = { view ->
                 view.setOnTouchListener { _, event ->
                     if (event.action == android.view.MotionEvent.ACTION_UP) {
+                        // Report the tap as a click for accessibility services.
+                        view.performClick()
                         boundCamera?.let { camera ->
                             val point = view.meteringPointFactory.createPoint(event.x, event.y)
                             val action = FocusMeteringAction.Builder(point).build()
@@ -454,7 +500,10 @@ fun CameraScannerScreen(
                 } else {
                     Button(
                         enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
-                        onClick = { onComplete(pages.toList(), scanMode) }
+                        onClick = {
+                            completed = true
+                            onComplete(pages.toList(), scanMode)
+                        }
                     ) {
                         Icon(Icons.Default.TaskAlt, contentDescription = null)
                         Spacer(Modifier.width(5.dp))
@@ -536,3 +585,6 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, stable: Boole
 }
 
 private fun CropQuad.asList() = listOf(topLeft, topRight, bottomRight, bottomLeft)
+
+/** Cache sub-folder holding one folder per scanner session; cleaned after import or when abandoned. */
+internal const val SESSION_ROOT = "pro_scanner_session"

@@ -9,6 +9,7 @@ import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.ScanDocument
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -35,7 +36,17 @@ class LibraryViewModel @Inject constructor(
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val documents: StateFlow<List<ScanDocument>> = combine(_query.debounce(180), library.documents) { query, all -> query to all }
-        .mapLatest { (query, all) -> if (query.isBlank()) all else runCatching { library.search(query) }.getOrDefault(emptyList()) }
+        .mapLatest { (query, all) ->
+            if (query.isBlank()) all
+            else try {
+                library.search(query)
+            } catch (cancelled: CancellationException) {
+                // A newer query superseded this one; don't emit an empty result for it.
+                throw cancelled
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value)
 
     val trashCount: StateFlow<Int> = library.trash
@@ -57,7 +68,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun restore(ids: Set<String>) =
-        operations.run(null, if (ids.size == 1) "Document restored" else "${ids.size} documents restored") {
+        operations.enqueue(null, if (ids.size == 1) "Document restored" else "${ids.size} documents restored") {
             ids.forEach { repository.restore(it) }
         }
 

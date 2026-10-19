@@ -8,7 +8,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** A snackbar message, optionally with one action such as Undo. */
 data class UiMessage(
@@ -51,32 +54,53 @@ class OperationRunner @Inject constructor(
 
     fun showMessage(value: String) { _message.value = UiMessage(value) }
     fun showMessage(value: UiMessage) { _message.value = value }
-    fun clearMessage() { _message.value = null }
+    /** Clears [shown] only if it is still the current message, so a newer one isn't lost unseen. */
+    fun clearMessage(shown: UiMessage) { _message.compareAndSet(shown, null) }
     fun publishExport(artifact: ExportArtifact) { _exportArtifact.value = artifact }
     fun clearExportArtifact() { _exportArtifact.value = null }
     fun requestOpenDocument(id: String) { _openDocumentRequest.value = id }
     fun clearOpenDocumentRequest() { _openDocumentRequest.value = null }
 
+    private val mutex = Mutex()
+    private val pending = AtomicInteger(0)
+
     /**
-     * Runs [action], then reloads the library. Only one operation runs at a time; a second request
-     * while busy is rejected with a message rather than queued.
+     * Runs an edit the user triggered from a screen, then reloads the library. While another operation
+     * is running the request is rejected with a message, because it was made against state that is
+     * about to change.
      */
     fun run(label: String?, successMessage: String?, action: suspend () -> Unit) {
         if (_busy.value) {
             _message.value = UiMessage("Still working on the previous task. Try again in a moment.")
             return
         }
+        start(label, successMessage, action)
+    }
+
+    /**
+     * Queues an operation that must not be lost, such as an import or an Undo; it runs as soon as the
+     * current one finishes. Operations still run one at a time.
+     */
+    fun enqueue(label: String?, successMessage: String?, action: suspend () -> Unit) =
+        start(label, successMessage, action)
+
+    private fun start(label: String?, successMessage: String?, action: suspend () -> Unit) {
+        pending.incrementAndGet()
         _busy.value = true
-        _busyLabel.value = label
         scope.launch {
             try {
-                runCatching { action() }
-                    .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
-                    .onFailure { error -> _message.value = UiMessage(error.message ?: "Something went wrong") }
-                runCatching { library.refresh() }
+                mutex.withLock {
+                    _busyLabel.value = label
+                    runCatching { action() }
+                        .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
+                        .onFailure { error -> _message.value = UiMessage(error.message ?: "Something went wrong") }
+                    runCatching { library.refresh() }
+                }
             } finally {
-                _busyLabel.value = null
-                _busy.value = false
+                if (pending.decrementAndGet() == 0) {
+                    _busyLabel.value = null
+                    _busy.value = false
+                }
             }
         }
     }

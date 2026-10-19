@@ -62,6 +62,7 @@ internal fun DocumentListCard(
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             PageThumbnail(
                 path = document.pages.firstOrNull()?.imagePath,
+                version = document.pages.firstOrNull(),
                 modifier = Modifier.size(width = 48.dp, height = 64.dp),
                 maxDimension = THUMBNAIL_SMALL
             )
@@ -110,6 +111,7 @@ internal fun DocumentGridCard(
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
                 PageThumbnail(
                     path = document.pages.firstOrNull()?.imagePath,
+                version = document.pages.firstOrNull(),
                     modifier = Modifier.fillMaxWidth().height(170.dp)
                 )
                 if (selected) Icon(Icons.Default.CheckCircle, contentDescription = "Selected", modifier = Modifier.padding(6.dp), tint = MaterialTheme.colorScheme.primary)

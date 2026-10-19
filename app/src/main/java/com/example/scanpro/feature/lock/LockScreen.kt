@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun LockScreen(onUnlock: () -> Unit) {
+fun LockScreen(onUnlock: () -> Unit, snackbarHostState: SnackbarHostState) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        // Authentication problems are reported as snackbars; without a host here they'd never be seen.
+        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter).padding(16.dp))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(52.dp))
             Spacer(Modifier.height(14.dp))

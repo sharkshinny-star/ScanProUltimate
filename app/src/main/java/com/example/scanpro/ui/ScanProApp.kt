@@ -54,8 +54,10 @@ fun ScanProApp(
                 // Leave undoable messages up long enough to react to.
                 duration = if (current.actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
             )
+            // Clear before running the action, so a message the action posts (e.g. "Document restored")
+            // isn't wiped by this clear.
+            viewModel.clearMessage(current)
             if (result == SnackbarResult.ActionPerformed) current.onAction?.invoke()
-            viewModel.clearMessage()
         }
     }
     LaunchedEffect(exportArtifact) {
@@ -71,7 +73,7 @@ fun ScanProApp(
             return
         }
         appLock == true && !sessionUnlocked -> {
-            LockScreen(onUnlock)
+            LockScreen(onUnlock, snackbarHostState)
             return
         }
     }

@@ -16,7 +16,8 @@ object OpenCvScanProcessor {
      */
     fun correctCapturedPage(source: File, destination: File): Result {
         destination.parentFile?.mkdirs()
-        val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 4600)
+        // Detection runs on a ~900px working copy, so a full-resolution decode here only costs memory.
+        val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600)
         val detection = try {
             bitmap?.let { runCatching { DocumentEdgeDetector.detect(it) }.getOrNull() }
         } finally {

@@ -28,6 +28,7 @@ import com.example.scanpro.data.ScanPage
 import com.example.scanpro.imaging.ImageProcessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.roundToInt
@@ -54,7 +55,7 @@ fun AdjustmentsDialog(
         page.annotations
     ) {
         // Avoid spawning expensive preview work for every tiny slider movement.
-        delay(70)
+        delay(70.milliseconds)
         value = withContext(Dispatchers.Default) {
             runCatching {
                 ImageProcessor.renderPreview(

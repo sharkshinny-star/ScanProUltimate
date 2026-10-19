@@ -43,7 +43,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
@@ -59,7 +59,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -172,7 +171,17 @@ internal fun LibraryScreen(
     val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
     val folders = remember(documents) { documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted() }
 
+    // A folder filter whose folder no longer exists (renamed, or its documents trashed) would hide
+    // everything with no chip left to clear it.
+    LaunchedEffect(folders) {
+        if (folder.isNotBlank() && folders.none { it.equals(folder, ignoreCase = true) }) folder = ""
+    }
+
     val visible = remember(documents, mode, folder, favoritesOnly, sort) {
+        // Home only shows the most recent documents, so selection and bulk actions are limited to those.
+        if (mode == ScanProDestinations.HOME) {
+            return@remember documents.sortedByDescending { it.updatedAt }.take(RECENT_LIMIT)
+        }
         val base = documents.asSequence()
             .filter { folder.isBlank() || it.folderName.equals(folder, ignoreCase = true) }
             .filter { !favoritesOnly || it.isFavorite }
@@ -262,7 +271,7 @@ internal fun LibraryScreen(
                             }
                         }
                         if (!isHome) IconButton(onClick = { gridMode = !gridMode }) {
-                            Icon(if (gridMode) Icons.Default.List else Icons.Default.GridView, contentDescription = "Toggle layout")
+                            Icon(if (gridMode) Icons.AutoMirrored.Filled.List else Icons.Default.GridView, contentDescription = "Toggle layout")
                         }
                         if (!isSearch) Box {
                             IconButton(onClick = { moreMenuOpen = true }) {
