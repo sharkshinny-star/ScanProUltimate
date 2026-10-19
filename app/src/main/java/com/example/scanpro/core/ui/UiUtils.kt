@@ -1,4 +1,4 @@
-package com.example.scanpro.ui
+package com.example.scanpro.core.ui
 
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -109,6 +109,8 @@ fun copyText(context: Context, text: String) {
     clipboard.setPrimaryClip(ClipData.newPlainText("Recognized text", text))
     Toast.makeText(context, "Text copied", Toast.LENGTH_SHORT).show()
 }
+
+fun pagesLabel(count: Int) = if (count == 1) "1 page" else "$count pages"
 
 fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"

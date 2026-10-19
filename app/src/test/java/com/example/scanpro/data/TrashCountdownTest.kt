@@ -1,6 +1,6 @@
 package com.example.scanpro.data
 
-import com.example.scanpro.ui.formatTrashCountdown
+import com.example.scanpro.core.ui.formatTrashCountdown
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

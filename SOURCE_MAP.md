@@ -3,7 +3,7 @@
 ## App / state
 
 - `MainActivity.kt` — root activity, fallback ML Kit scanner launcher, Photo Picker, biometric gate
-- `MainViewModel.kt` — StateFlow UI state and repository commands
+- `AppViewModel.kt` — activity-level state: theme, app lock, imports, app-wide messages/exports
 - `ScanProApplication.kt` — Hilt, PDFBox/OpenCV initialization, WorkManager setup
 
 ## Camera / CV
@@ -40,17 +40,29 @@
 - `backup/EncryptedDocumentPackage.kt` — password-encrypted `.scanpro` AES-GCM backup/restore
 - `work/CleanupWorker.kt` — recycle-bin expiry maintenance
 
-## Compose UI
+## Core
 
-- `ui/ScanProApp.kt` — Home/Documents/Search/Settings navigation and library UI
-- `ui/DocumentDetailScreen.kt` — document workspace and export/OCR/insight tools
-- `ui/CropEditorDialog.kt` — four-corner crop + loupe + undo/redo
-- `ui/AdjustmentsDialog.kt` — live low-res brightness/contrast/saturation preview
-- `ui/SignaturePad.kt` — signature capture
-- `ui/SettingsScreen.kt` — defaults, lock, storage and secure backup restore
-- `ui/Components.kt` — thumbnails/dialogs/shared UI
-- `ui/UiUtils.kt` — share/open/save/print utilities
-- `ui/Theme.kt` — original light/dark fallback palette, shapes/typography, Material You dynamic color
+- `core/di/CoroutineScopeModule.kt` — application-scoped coroutine scope
+- `core/operations/OperationRunner.kt` — one-at-a-time document jobs, progress, messages, exports
+- `core/designsystem/Theme.kt` — ScanPro palette, shapes, typography, light/dark/system theme
+- `core/designsystem/Components.kt` — cached page thumbnails and shared dialogs
+- `core/ui/UiUtils.kt` — share/open/save/print and formatting helpers
+- `data/DocumentLibrary.kt` — observable document, trash and storage state shared by all screens
+
+## Features (each: `*Route` + stateless `*Screen` + `*ViewModel`)
+
+- `feature/library/` — Home dashboard (recent documents), Files tab and the Search screen (`LibraryScreen.kt`, `DocumentCards.kt`)
+- `feature/document/` — document workspace (`DocumentScreen.kt`), crop editor, adjustments, signature pad
+- `feature/trash/` — recycle bin with 7-day countdown
+- `feature/settings/` — defaults, theme, app lock, storage
+- `feature/lock/` — app lock screen
+
+## Navigation / shell
+
+- `navigation/ScanProDestinations.kt` — route strings and arguments
+- `navigation/ScanProNavHost.kt` — navigation graph and tab navigation
+- `navigation/ScanProBottomBar.kt` — bottom navigation bar (Home, Files, Settings)
+- `ui/ScanProApp.kt` — app shell: lock gate, snackbar, share and open-document effects
 
 ## Tests
 
