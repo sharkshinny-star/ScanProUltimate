@@ -256,10 +256,9 @@ private class PdfFilePrintAdapter(
 
 /**
  * The app's Play Store package. Kept separate from the runtime package name because debug builds add
- * a ".debug" suffix. Change this to the published application id before release: Play does not
- * accept com.example.* ids.
+ * a ".debug" suffix.
  */
-const val PLAY_STORE_PACKAGE = "com.example.scanpro"
+const val PLAY_STORE_PACKAGE = "com.scanpro.app"
 
 /** Opens ScanPro's listing in the Play Store app, or on the Play website if the Store isn't installed. */
 fun openPlayStoreListing(context: Context) {
