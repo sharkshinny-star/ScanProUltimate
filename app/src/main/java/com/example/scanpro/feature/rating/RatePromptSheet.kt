@@ -30,20 +30,19 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -74,17 +73,17 @@ private data class RatingCopy(val emoji: String, val title: String, val message:
 
 private val Prompt = RatingCopy(
     emoji = "😊",
-    title = "Enjoying ScanPro?",
-    message = "Tap a star to tell us how it's going. It only takes a moment.",
-    label = "Tap to rate"
+    title = "How's ScanPro working for you?",
+    message = "Your rating helps us make every scan better.",
+    label = "Tap a star"
 )
 
 private val ByRating = listOf(
-    RatingCopy("😞", "We're sorry to hear that", "Tell us on Google Play what went wrong. We read every review and use it to improve.", "Not good"),
-    RatingCopy("😕", "Thanks for being honest", "Let us know on Google Play what we should fix. Your feedback shapes the next update.", "Could be better"),
-    RatingCopy("🙂", "Thanks for the feedback!", "A quick review on Google Play tells us what to improve next.", "It's okay"),
-    RatingCopy("😄", "Glad you like it!", "A quick review on Google Play helps other people find ScanPro.", "Really good"),
-    RatingCopy("🥰", "Much appreciated!", "Your support is our biggest motivation. A review on Google Play helps others find ScanPro.", "Love it!")
+    RatingCopy("😢", "Sorry we let you down", "Tell us what went wrong on Google Play.", "Poor"),
+    RatingCopy("😕", "We can do better", "Tell us what to fix on Google Play.", "Fair"),
+    RatingCopy("🙂", "Thanks for the feedback", "A quick review shows us what to improve.", "Good"),
+    RatingCopy("😍", "Glad you like it!", "A quick review helps others find ScanPro.", "Great"),
+    RatingCopy("🤩", "You made our day!", "Share the love with a quick review.", "Amazing!")
 )
 
 /**
@@ -131,13 +130,13 @@ internal fun RatePromptContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 20.dp)
             .navigationBarsPadding()
-            .padding(bottom = 16.dp),
+            .padding(bottom = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        EmojiHalo(emoji = copy.emoji, celebrating = rating >= 4)
-        Spacer(Modifier.height(8.dp))
+        EmojiBadge(emoji = copy.emoji, celebrating = rating == 5)
+        Spacer(Modifier.height(12.dp))
 
         AnimatedContent(
             targetState = copy,
@@ -147,11 +146,11 @@ internal fun RatePromptContent(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     shown.title,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     shown.message,
                     style = MaterialTheme.typography.bodyMedium,
@@ -161,83 +160,99 @@ internal fun RatePromptContent(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-        StarRow(rating = rating, onRate = onRatingChange)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            copy.label,
-            modifier = Modifier.height(20.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = if (rating == 0) MaterialTheme.colorScheme.onSurfaceVariant else StarGold,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Spacer(Modifier.height(20.dp))
-        Button(
-            onClick = onRate,
+        Spacer(Modifier.height(16.dp))
+        // Stars sit on a tinted tray, with the rating's word tucked underneath.
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(54.dp),
-            shape = MaterialTheme.shapes.large
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.large)
+                .padding(vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Rate on Google Play", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.width(8.dp))
-            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+            StarRow(rating = rating, onRate = onRatingChange)
+            Text(
+                copy.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (rating == 0) MaterialTheme.colorScheme.onSurfaceVariant else StarGold,
+                fontWeight = FontWeight.SemiBold
+            )
         }
-        TextButton(onClick = onLater, modifier = Modifier.padding(top = 4.dp)) {
-            Text("Maybe later", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FilledTonalButton(
+                onClick = onLater,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                modifier = Modifier.weight(1f).height(50.dp),
+                shape = CircleShape
+            ) {
+                Text("Not now", maxLines = 1)
+            }
+            Button(
+                onClick = onRate,
+                modifier = Modifier.weight(1.8f).height(50.dp),
+                shape = CircleShape
+            ) {
+                Text("Rate on Google Play", maxLines = 1, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
 
-/** The emoji on a soft glow, gently bobbing; hearts drift up around it for 4 and 5 stars. */
+/** The emoji on a soft gradient disc, gently bobbing; sparkles twinkle around it at five stars. */
 @Composable
-private fun EmojiHalo(emoji: String, celebrating: Boolean) {
-    val float = rememberInfiniteTransition(label = "emojiFloat")
-    val bob by float.animateFloat(
-        initialValue = -3f,
-        targetValue = 3f,
+private fun EmojiBadge(emoji: String, celebrating: Boolean) {
+    val loop = rememberInfiniteTransition(label = "emojiLoop")
+    val bob by loop.animateFloat(
+        initialValue = -2f,
+        targetValue = 2f,
         animationSpec = infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "bob"
     )
-    val heartRise by float.animateFloat(
+    val twinkle by loop.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2200, easing = LinearEasing)),
-        label = "hearts"
+        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing)),
+        label = "twinkle"
     )
-    val glow by animateColorAsState(
-        if (celebrating) StarGold.copy(alpha = 0.30f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+    val discTop by animateColorAsState(
+        if (celebrating) StarGold.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
         tween(400),
-        label = "glow"
+        label = "discTop"
     )
+    val discBottom = MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
 
-    Box(Modifier.size(120.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
         Box(
             Modifier
-                .size(120.dp)
-                .background(Brush.radialGradient(listOf(glow, glow.copy(alpha = 0f))), CircleShape)
+                .size(72.dp)
+                .background(Brush.linearGradient(listOf(discTop, discBottom)), CircleShape)
         )
         AnimatedContent(
             targetState = emoji,
             transitionSpec = {
-                (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy), initialScale = 0.6f) + fadeIn()) togetherWith
-                    (scaleOut(targetScale = 0.6f) + fadeOut())
+                (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy), initialScale = 0.5f) + fadeIn()) togetherWith
+                    (scaleOut(targetScale = 0.5f) + fadeOut())
             },
             label = "emoji"
         ) { shown ->
-            Text(shown, fontSize = 64.sp, modifier = Modifier.offset(y = bob.dp))
+            Text(shown, fontSize = 42.sp, modifier = Modifier.offset(y = bob.dp))
         }
         if (celebrating) {
-            // Three hearts on staggered phases of one loop, each rising and fading out.
-            listOf(Triple(-44, 0f, 15), Triple(42, 0.33f, 13), Triple(-6, 0.66f, 11)).forEach { (x, phase, size) ->
-                val t = (heartRise + phase) % 1f
+            // Three sparkles on staggered phases of one loop, each fading in and out.
+            listOf(Triple(-34, -26, 0f), Triple(34, -20, 0.33f), Triple(30, 28, 0.66f)).forEach { (x, y, phase) ->
+                val t = (twinkle + phase) % 1f
+                val pulse = if (t < 0.5f) t * 2 else (1f - t) * 2
                 Text(
-                    "❤️",
-                    fontSize = size.sp,
+                    "✨",
+                    fontSize = 14.sp,
                     modifier = Modifier
-                        .offset(x = x.dp, y = (20 - 70 * t).dp)
-                        .alpha(if (t < 0.15f) t / 0.15f else 1f - (t - 0.15f) / 0.85f)
+                        .offset(x = x.dp, y = y.dp)
+                        .scale(0.6f + 0.4f * pulse)
+                        .alpha(pulse)
                 )
             }
         }
@@ -246,7 +261,7 @@ private fun EmojiHalo(emoji: String, celebrating: Boolean) {
 
 @Composable
 private fun StarRow(rating: Int, onRate: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
         for (value in 1..5) {
             AnimatedStar(
                 value = value,
@@ -279,14 +294,14 @@ private fun AnimatedStar(value: Int, filled: Boolean, rating: Int, onClick: () -
 
     Box(
         modifier = Modifier
-            .size(52.dp)
+            .size(48.dp)
             .scale(scale.value)
             .selectable(
                 selected = filled,
                 onClick = onClick,
                 role = Role.RadioButton,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(bounded = false, radius = 26.dp)
+                indication = ripple(bounded = false, radius = 24.dp)
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -294,7 +309,7 @@ private fun AnimatedStar(value: Int, filled: Boolean, rating: Int, onClick: () -
             if (filled) Icons.Rounded.Star else Icons.Rounded.StarOutline,
             contentDescription = "$value star${if (value == 1) "" else "s"}",
             tint = tint,
-            modifier = Modifier.size(44.dp)
+            modifier = Modifier.size(38.dp)
         )
     }
 }
