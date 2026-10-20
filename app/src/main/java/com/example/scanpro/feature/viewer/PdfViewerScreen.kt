@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -69,6 +70,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -264,7 +267,7 @@ fun PdfViewerScreen(
                             }
                         )
                     } else {
-                        Column {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = title,
                                 style = MaterialTheme.typography.titleMedium,
@@ -276,7 +279,8 @@ fun PdfViewerScreen(
                                 Text(
                                     text = if (isImageMode) "Image Preview" else "Page $currentPage of $pageCount",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -393,7 +397,7 @@ fun PdfViewerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             when {
                 isLoading -> {
@@ -486,7 +490,8 @@ fun PdfViewerScreen(
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(pageCount) { index ->
                                 PdfPageItem(
@@ -498,22 +503,23 @@ fun PdfViewerScreen(
                         }
                     }
 
-                    // Floating page indicator badge
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 24.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        shadowElevation = 6.dp
-                    ) {
-                        Text(
-                            text = "$currentPage / $pageCount",
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                    if (pageCount > 1) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 16.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
+                            shadowElevation = 4.dp
+                        ) {
+                            Text(
+                                text = "$currentPage / $pageCount",
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
@@ -554,6 +560,8 @@ private fun PdfPageItem(
                     val targetW = 2160
                     val targetH = (targetW / aspectRatio).toInt().coerceAtLeast(1)
                     val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+                    val canvas = android.graphics.Canvas(bmp)
+                    canvas.drawColor(android.graphics.Color.WHITE)
                     page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                     bitmap = bmp
                 }
@@ -565,19 +573,16 @@ private fun PdfPageItem(
         }
     }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        shape = androidx.compose.ui.graphics.RectangleShape,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White,
+        shadowElevation = 1.dp
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(aspectRatio)
-                .background(MaterialTheme.colorScheme.surface),
+                .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
             if (bitmap != null) {
@@ -585,16 +590,10 @@ private fun PdfPageItem(
                     bitmap = bitmap!!.asImageBitmap(),
                     contentDescription = "Page ${pageIndex + 1}",
                     modifier = Modifier.fillMaxSize(),
-                    filterQuality = androidx.compose.ui.graphics.FilterQuality.High
+                    filterQuality = FilterQuality.High
                 )
             } else if (isPageLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(32.dp))
-            } else {
-                Text(
-                    text = "Page ${pageIndex + 1}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

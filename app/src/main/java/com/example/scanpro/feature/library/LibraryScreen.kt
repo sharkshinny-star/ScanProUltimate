@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -315,11 +316,20 @@ internal fun LibraryScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (selected.isEmpty() && mode == ScanProDestinations.FILES) {
-                ExtendedFloatingActionButton(
-                    onClick = onStartScan,
-                    icon = { Icon(Icons.Default.CameraAlt, contentDescription = null) },
-                    text = { Text("Scan") }
-                )
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SmallFloatingActionButton(
+                        onClick = onImportImages,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(Icons.Default.Image, contentDescription = "Import photos")
+                    }
+                    ExtendedFloatingActionButton(
+                        onClick = onStartScan,
+                        icon = { Icon(Icons.Default.CameraAlt, contentDescription = null) },
+                        text = { Text("Scan") }
+                    )
+                }
             }
         },
         bottomBar = { if (!isSearch) ScanProBottomBar(selectedRoute = mode, onTab = onTab) }

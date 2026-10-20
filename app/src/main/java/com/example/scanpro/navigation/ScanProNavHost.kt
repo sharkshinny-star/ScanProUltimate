@@ -139,6 +139,8 @@ fun ScanProNavHost(
 
 /** Switches bottom-bar tabs the standard way: one copy of each tab, with its state saved and restored. */
 fun NavHostController.navigateToTopLevel(route: String) {
+    // Tapping the tab that's already open does nothing, instead of rebuilding the screen.
+    if (currentDestination?.route == route) return
     navigate(route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
