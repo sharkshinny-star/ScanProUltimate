@@ -401,7 +401,10 @@ private fun navigateLibrary(
     route: String,
     viewModel: MainViewModel
 ) {
-    if (route != ROUTE_SEARCH) viewModel.setQuery("")
+    if (navController.currentDestination?.route == route) return
+    if (route != ROUTE_SEARCH && viewModel.query.value.isNotBlank()) {
+        viewModel.setQuery("")
+    }
     navController.navigate(route) {
         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
@@ -437,7 +440,9 @@ private fun LibraryScreen(
     var renameFolderSource by remember { mutableStateOf<String?>(null) }
     val selected = remember { mutableStateListOf<String>() }
     val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
-    val folders = documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted()
+    val folders = remember(documents) {
+        documents.asSequence().map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted().toList()
+    }
 
     val visible = remember(documents, mode, folder, favoritesOnly, sort) {
         val base = documents.asSequence()

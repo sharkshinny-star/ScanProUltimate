@@ -96,19 +96,28 @@ class MainViewModel @Inject constructor(
     init { refresh() }
 
     fun refresh() {
-        viewModelScope.launch {
-            _documents.value = if (_query.value.isBlank()) repository.loadAll() else repository.search(_query.value)
-            _trash.value = repository.loadTrash()
-            _storageBytes.value = repository.storageBytes()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val docs = if (_query.value.isBlank()) repository.loadAll() else repository.search(_query.value)
+            val tr = repository.loadTrash()
+            val bytes = repository.storageBytes()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                _documents.value = docs
+                _trash.value = tr
+                _storageBytes.value = bytes
+            }
         }
     }
 
     fun setQuery(value: String) {
+        if (_query.value == value) return
         _query.value = value
         searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            delay(180)
-            _documents.value = if (value.isBlank()) repository.loadAll() else repository.search(value)
+        searchJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            if (value.isNotBlank()) delay(180)
+            val result = if (value.isBlank()) repository.loadAll() else repository.search(value)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                _documents.value = result
+            }
         }
     }
 
@@ -325,13 +334,24 @@ class MainViewModel @Inject constructor(
             _busy.value = true
             _busyLabel.value = label
             try {
-                runCatching { action() }
+                runCatching {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        action()
+                    }
+                }
                     .onSuccess { if (successMessage != null) _message.value = successMessage }
                     .onFailure { error -> _message.value = error.message ?: "Something went wrong" }
                 runCatching {
-                    _documents.value = if (_query.value.isBlank()) repository.loadAll() else repository.search(_query.value)
-                    _trash.value = repository.loadTrash()
-                    _storageBytes.value = repository.storageBytes()
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        val allDocs = if (_query.value.isBlank()) repository.loadAll() else repository.search(_query.value)
+                        val allTrash = repository.loadTrash()
+                        val bytes = repository.storageBytes()
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            _documents.value = allDocs
+                            _trash.value = allTrash
+                            _storageBytes.value = bytes
+                        }
+                    }
                 }
             } finally {
                 _busyLabel.value = null
