@@ -29,6 +29,8 @@ The app follows the layered, package-by-feature structure recommended in Android
   share effects).
 - **ViewModels**: `AppViewModel` (activity: theme, lock, imports, app-wide events), `LibraryViewModel`,
   `DocumentViewModel` (document id from `SavedStateHandle`), `TrashViewModel`, `SettingsViewModel`.
+  The PDF Tools and PDF viewer screens (`feature/tools`, `feature/viewer`) work on files picked
+  from outside the library and keep their state in Compose, so they have no ViewModel.
 - **`core/`**: `designsystem` (theme, shared components), `ui` (share/format helpers), `operations`
   (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
   survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).

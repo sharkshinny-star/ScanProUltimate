@@ -169,7 +169,11 @@ class MainActivity : FragmentActivity() {
                 val uri = intent.data
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
-                        appViewModel.submitExternalImport { appViewModel.importPdf(uri) }
+                        // Opened PDFs are shown right away in the viewer, and also kept in the library.
+                        appViewModel.submitExternalImport {
+                            appViewModel.viewExternalPdf(uri)
+                            appViewModel.importPdf(uri)
+                        }
                     } else if (type.startsWith("image/")) {
                         appViewModel.submitExternalImport { appViewModel.importImages(listOf(uri)) }
                     }

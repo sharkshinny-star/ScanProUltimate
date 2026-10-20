@@ -273,27 +273,35 @@ class DocumentRepository @Inject constructor(
             renderAndOcr(updated).also { deleteSignatureAssets(page.annotations.takeLast(1)) }
         }
 
-    suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
-        editSinglePage(documentId, pageId) { page ->
-            val folder = File(page.imagePath).parentFile?.parentFile ?: error("Invalid page folder")
-            val signatureDir = File(folder, "signatures").apply { mkdirs() }
-            val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
-            ImageProcessor.saveSignature(signature, asset)
-            val annotation = PageAnnotation(
-                type = AnnotationType.SIGNATURE,
-                x = 0.56f,
-                y = 0.78f,
-                width = 0.34f,
-                height = 0.12f,
-                assetPath = asset.absolutePath
-            )
-            try {
-                renderAndOcr(page.copy(annotations = page.annotations + annotation))
-            } catch (error: Throwable) {
-                asset.delete()
-                throw error
-            }
+    /** Stamps [signature] onto a page; [x], [y], [width] and [height] are fractions of the page size. */
+    suspend fun stampSignature(
+        documentId: String,
+        pageId: String,
+        signature: Bitmap,
+        x: Float = 0.56f,
+        y: Float = 0.78f,
+        width: Float = 0.34f,
+        height: Float = 0.12f
+    ) = editSinglePage(documentId, pageId) { page ->
+        val folder = File(page.imagePath).parentFile?.parentFile ?: error("Invalid page folder")
+        val signatureDir = File(folder, "signatures").apply { mkdirs() }
+        val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
+        ImageProcessor.saveSignature(signature, asset)
+        val annotation = PageAnnotation(
+            type = AnnotationType.SIGNATURE,
+            x = x,
+            y = y,
+            width = width,
+            height = height,
+            assetPath = asset.absolutePath
+        )
+        try {
+            renderAndOcr(page.copy(annotations = page.annotations + annotation))
+        } catch (error: Throwable) {
+            asset.delete()
+            throw error
         }
+    }
 
     suspend fun addWatermark(documentId: String, watermark: String) = withContext(Dispatchers.IO) {
         val clean = watermark.trim()
@@ -882,7 +890,7 @@ class DocumentRepository @Inject constructor(
     }
 
     private fun freshExportFile(base: String, extension: String): File {
-        exportDir.listFiles()?.filter { it.lastModified() < now() - 24 * 60 * 60 * 1000L }?.forEach { it.delete() }
+        exportDir.listFiles()?.filter { it.lastModified() < now() - 24 * 60 * 60 * 1000L }?.forEach { it.deleteRecursively() }
         return File(exportDir, "${base}_${now()}.$extension")
     }
 

@@ -40,6 +40,7 @@ fun ScanProApp(
     val openDocumentRequest by viewModel.openDocumentRequest.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
+    val externalPdfToView by viewModel.externalPdfToView.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -93,6 +94,14 @@ fun ScanProApp(
         if (documents.any { it.id == id }) {
             navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
             viewModel.clearOpenDocumentRequest()
+        }
+    }
+
+    // A PDF opened from another app, below the lock gate for the same reason.
+    LaunchedEffect(externalPdfToView) {
+        externalPdfToView?.let {
+            navController.navigate(ScanProDestinations.pdfViewer(it.uri, it.title))
+            viewModel.clearExternalPdfToView()
         }
     }
 
