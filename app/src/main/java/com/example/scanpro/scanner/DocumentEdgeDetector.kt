@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import com.example.scanpro.imaging.OpenCvRuntime
 import android.graphics.Bitmap
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
@@ -28,7 +29,6 @@ data class DocumentDetection(
     val frameHeight: Int,
     val guidance: String
 ) {
-    val hasDocument: Boolean get() = quad != null
     val isBlurry: Boolean get() = blurScore < 85.0
     val isDark: Boolean get() = brightness < 48.0
     val isReady: Boolean get() = quad != null && confidence >= 0.52f && !isBlurry && !isDark
@@ -40,6 +40,8 @@ data class DocumentDetection(
  * is only used after the shutter is fired, keeping preview latency low.
  */
 object DocumentEdgeDetector {
+    init { OpenCvRuntime.ensureLoaded() }
+
     private const val ANALYSIS_LONG_SIDE = 900.0
     private const val MIN_DOCUMENT_AREA_RATIO = 0.12
 
@@ -107,7 +109,8 @@ object DocumentEdgeDetector {
                         val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
                         val edgeBalance = edgeBalance(ordered)
                         val score = (areaRatio * 0.58 + rectangularity * 0.25 + edgeBalance * 0.17).toFloat()
-                        if (best == null || score > best!!.score) best = Candidate(ordered, score)
+                        val current = best
+                        if (current == null || score > current.score) best = Candidate(ordered, score)
                     } finally {
                         polygon.release()
                     }
@@ -175,12 +178,18 @@ object DocumentEdgeDetector {
         return output
     }
 
+    /**
+     * Orders four corners as top-left, top-right, bottom-right, bottom-left. Sorting by angle around the
+     * centroid always yields four distinct corners; picking by min/max of x+y and x-y could choose the
+     * same point twice for a page tilted near 45 degrees.
+     */
     private fun order(points: Array<Point>): List<Point> {
-        val tl = points.minBy { it.x + it.y }
-        val br = points.maxBy { it.x + it.y }
-        val tr = points.maxBy { it.x - it.y }
-        val bl = points.minBy { it.x - it.y }
-        return listOf(tl, tr, br, bl)
+        val cx = points.sumOf { it.x } / points.size
+        val cy = points.sumOf { it.y } / points.size
+        // Clockwise in image coordinates (y grows downward), starting from the upper-left.
+        val clockwise = points.sortedBy { kotlin.math.atan2(it.y - cy, it.x - cx) }
+        val start = clockwise.indices.minBy { clockwise[it].x + clockwise[it].y }
+        return List(4) { clockwise[(start + it) % 4] }
     }
 
     private fun toNormalizedQuad(points: List<Point>, width: Int, height: Int): CropQuad {

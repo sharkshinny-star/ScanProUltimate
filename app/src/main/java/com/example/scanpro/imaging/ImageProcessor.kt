@@ -12,6 +12,7 @@ import android.graphics.RectF
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import androidx.core.graphics.withRotation
+import androidx.core.graphics.withRotation
 import androidx.exifinterface.media.ExifInterface
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
@@ -23,7 +24,6 @@ import java.io.FileOutputStream
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.Mat
-import org.opencv.core.MatOfDouble
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import kotlin.math.hypot
@@ -31,6 +31,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 object ImageProcessor {
+    init { OpenCvRuntime.ensureLoaded() }
+
+    private const val MAX_DECODE_PIXELS = 24_000_000L
 
     fun renderPage(
         source: File,
@@ -159,7 +162,12 @@ object ImageProcessor {
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
         var sample = 1
-        while (max(bounds.outWidth, bounds.outHeight) / sample > maxDimension * 2) sample *= 2
+        // Decode up to 2x the target and scale down for quality, but never more than MAX_DECODE_PIXELS:
+        // a 48-50 MP capture would otherwise decode at full size (~200 MB) and run out of memory.
+        while (
+            max(bounds.outWidth, bounds.outHeight) / sample > maxDimension * 2 ||
+            (bounds.outWidth.toLong() / sample) * (bounds.outHeight.toLong() / sample) > MAX_DECODE_PIXELS
+        ) sample *= 2
         val decoded = BitmapFactory.decodeFile(
             path,
             BitmapFactory.Options().apply {
@@ -216,8 +224,11 @@ object ImageProcessor {
             outputWidth.toFloat(), outputHeight.toFloat(),
             0f, outputHeight.toFloat()
         )
+        // A crop with (near) zero area or crossed edges can't be mapped to a rectangle; keep the page
+        // uncropped rather than failing the whole edit or producing a mirrored page.
+        if (!isUsableQuad(src, source.width.toFloat() * source.height)) return source
         val matrix = Matrix()
-        check(matrix.setPolyToPoly(src, 0, dst, 0, 4)) { "Invalid crop geometry" }
+        if (!matrix.setPolyToPoly(src, 0, dst, 0, 4)) return source
         val output = createBitmap(outputWidth, outputHeight)
         Canvas(output).drawBitmap(
             source,
@@ -225,6 +236,23 @@ object ImageProcessor {
             Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         )
         return output
+    }
+
+    /** True for a convex, consistently wound quad covering at least 1% of the image. */
+    private fun isUsableQuad(points: FloatArray, imageArea: Float): Boolean {
+        var area = 0f
+        var sign = 0
+        for (i in 0 until 4) {
+            val ax = points[i * 2]; val ay = points[i * 2 + 1]
+            val bx = points[(i + 1) % 4 * 2]; val by = points[(i + 1) % 4 * 2 + 1]
+            val cx = points[(i + 2) % 4 * 2]; val cy = points[(i + 2) % 4 * 2 + 1]
+            area += ax * by - bx * ay
+            val cross = (bx - ax) * (cy - by) - (by - ay) * (cx - bx)
+            val turn = if (cross > 0f) 1 else if (cross < 0f) -1 else 0
+            if (turn == 0) return false
+            if (sign == 0) sign = turn else if (turn != sign) return false
+        }
+        return kotlin.math.abs(area) / 2f >= imageArea * 0.01f
     }
 
     private fun applyAnnotations(source: Bitmap, annotations: List<PageAnnotation>): Bitmap {
@@ -236,8 +264,7 @@ object ImageProcessor {
             val width = item.width.coerceIn(0.01f, 1f) * output.width
             val height = item.height.coerceIn(0.01f, 1f) * output.height
             val rect = RectF(left, top, (left + width).coerceAtMost(output.width.toFloat()), (top + height).coerceAtMost(output.height.toFloat()))
-            canvas.save()
-            canvas.rotate(item.rotationDegrees, rect.centerX(), rect.centerY())
+            canvas.withRotation(item.rotationDegrees, rect.centerX(), rect.centerY()) {
             when (item.type) {
                 AnnotationType.REDACT -> canvas.drawRect(rect, Paint().apply { color = Color.BLACK })
                 AnnotationType.HIGHLIGHT -> canvas.drawRect(rect, Paint().apply {
@@ -256,10 +283,16 @@ object ImageProcessor {
                         // Downscale: a full-resolution signature is decoded on every re-render.
                         decodeScaled(item.assetPath, 1600)?.let { signature ->
                             try {
+                                // Fit inside the box keeping the signature's proportions; stretching it
+                                // to the box distorted every signature.
+                                val scale = min(rect.width() / signature.width, rect.height() / signature.height)
+                                val w = signature.width * scale
+                                val h = signature.height * scale
+                                val fitted = RectF(rect.centerX() - w / 2f, rect.centerY() - h / 2f, rect.centerX() + w / 2f, rect.centerY() + h / 2f)
                                 canvas.drawBitmap(
                                     signature,
                                     null,
-                                    rect,
+                                    fitted,
                                     Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
                                         alpha = (255 * item.opacity.coerceIn(0f, 1f)).toInt()
                                     }
@@ -271,7 +304,7 @@ object ImageProcessor {
                     }
                 }
             }
-            canvas.restore()
+            }
         }
         return output
     }

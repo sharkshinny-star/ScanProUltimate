@@ -1,4 +1,4 @@
-package com.example.scanpro.ui
+package com.example.scanpro.feature.tools
 
 import android.graphics.Bitmap
 import android.net.Uri
@@ -96,7 +96,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.scanpro.MainViewModel
+import com.example.scanpro.core.ui.copyFileToUri
+import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.imaging.CompressionPreset
@@ -143,7 +145,6 @@ private data class ThumbnailPageModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfToolsScreen(
-    viewModel: MainViewModel,
     onOpenPdfViewer: (Uri, String) -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
@@ -323,7 +324,7 @@ fun PdfToolsScreen(
                                 isProcessing = false
                                 lastResult = PdfToolResult(
                                     outputFile = res.outputFile,
-                                    pageCount = 1,
+                                    pageCount = res.pageCount,
                                     originalSizeBytes = res.originalSizeBytes,
                                     outputSizeBytes = res.compressedSizeBytes,
                                     message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})"
@@ -347,7 +348,7 @@ fun PdfToolsScreen(
                             try {
                                 isProcessing = true
                                 progressLabel = "Exporting PDF pages to ${format.extension.uppercase()}…"
-                                val outputDir = File(context.cacheDir, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
+                                val outputDir = PdfToolsEngine.outputLocation(context, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
                                 val files = PdfToolsEngine.pdfToImages(context, uri, format, outputDir,
                                     onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl }
                                 )
@@ -382,7 +383,7 @@ fun PdfToolsScreen(
                             try {
                                 isProcessing = true
                                 progressLabel = if (isProtect) "Encrypting PDF with password…" else "Unlocking PDF…"
-                                val outFile = File(context.cacheDir, "${if (isProtect) "protected" else "unlocked"}_${System.currentTimeMillis()}.pdf")
+                                val outFile = PdfToolsEngine.outputLocation(context, "${if (isProtect) "protected" else "unlocked"}_${System.currentTimeMillis()}.pdf")
                                 val res = if (isProtect) PdfToolsEngine.protectPdf(context, uri, pwd, outFile)
                                 else PdfToolsEngine.unlockPdf(context, uri, pwd, outFile)
                                 isProcessing = false
@@ -406,7 +407,7 @@ fun PdfToolsScreen(
                             try {
                                 isProcessing = true
                                 progressLabel = "Splitting PDF document…"
-                                val outputDir = File(context.cacheDir, "split_${System.currentTimeMillis()}").apply { mkdirs() }
+                                val outputDir = PdfToolsEngine.outputLocation(context, "split_${System.currentTimeMillis()}").apply { mkdirs() }
                                 val files = PdfToolsEngine.splitPdf(
                                     context = context,
                                     inputUri = uri,
@@ -448,7 +449,7 @@ fun PdfToolsScreen(
                             try {
                                 isProcessing = true
                                 progressLabel = "Saving PDF pages…"
-                                val outFile = File(context.cacheDir, "organized_${System.currentTimeMillis()}.pdf")
+                                val outFile = PdfToolsEngine.outputLocation(context, "organized_${System.currentTimeMillis()}.pdf")
                                 val res = when (tool) {
                                     "extract" -> PdfToolsEngine.extractPages(context, uri, extractedIndices, outFile,
                                         onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl })
@@ -1170,7 +1171,7 @@ private fun handleSinglePdfSelected(
                     onComplete(
                         PdfToolResult(
                             outputFile = res.outputFile,
-                            pageCount = 1,
+                            pageCount = res.pageCount,
                             originalSizeBytes = res.originalSizeBytes,
                             outputSizeBytes = res.compressedSizeBytes,
                             message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})"
@@ -1179,7 +1180,7 @@ private fun handleSinglePdfSelected(
                 }
                 "pdf2img" -> {
                     onStart("Exporting PDF pages to JPEG images…")
-                    val outputDir = File(context.cacheDir, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
+                    val outputDir = PdfToolsEngine.outputLocation(context, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
                     val files = PdfToolsEngine.pdfToImages(
                         context, uri, ImageExportFormat.JPEG, outputDir, onProgress
                     )
@@ -1199,7 +1200,7 @@ private fun handleSinglePdfSelected(
                 }
                 else -> {
                     onStart("Processing PDF document…")
-                    val outFile = File(context.cacheDir, "processed_${System.currentTimeMillis()}.pdf")
+                    val outFile = PdfToolsEngine.outputLocation(context, "processed_${System.currentTimeMillis()}.pdf")
                     val res = PdfToolsEngine.extractPages(context, uri, listOf(0), outFile, onProgress)
                     onComplete(res)
                 }
@@ -1222,7 +1223,7 @@ private fun handleMergePdfs(
     scope.launch {
         try {
             onStart("Merging ${uris.size} PDF files…")
-            val outFile = File(context.cacheDir, "merged_${System.currentTimeMillis()}.pdf")
+            val outFile = PdfToolsEngine.outputLocation(context, "merged_${System.currentTimeMillis()}.pdf")
             val res = PdfToolsEngine.mergePdfs(context, uris, outFile, onProgress)
             onComplete(res)
         } catch (e: Exception) {
@@ -1243,7 +1244,7 @@ private fun handleImagesToPdf(
     scope.launch {
         try {
             onStart("Converting ${uris.size} images to PDF…")
-            val outFile = File(context.cacheDir, "images_${System.currentTimeMillis()}.pdf")
+            val outFile = PdfToolsEngine.outputLocation(context, "images_${System.currentTimeMillis()}.pdf")
             val res = PdfToolsEngine.imagesToPdf(context, uris, PdfPageSize.AUTO, PdfQuality.BALANCED, outFile, onProgress)
             onComplete(res)
         } catch (e: Exception) {

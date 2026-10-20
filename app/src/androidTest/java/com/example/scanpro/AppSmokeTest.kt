@@ -1,6 +1,5 @@
 package com.example.scanpro
 
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,6 +15,6 @@ class AppSmokeTest {
     @Test
     fun homeScreenShowsPrimaryScanAction() {
         composeRule.onNodeWithText("ScanPro").assertExists()
-        composeRule.onNodeWithText("Scan").assertExists()
+        composeRule.onNodeWithText("Start scanning").assertExists()
     }
 }

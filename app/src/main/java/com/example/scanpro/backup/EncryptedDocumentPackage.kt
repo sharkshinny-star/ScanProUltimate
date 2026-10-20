@@ -29,7 +29,6 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
-import javax.crypto.CipherOutputStream
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
@@ -79,11 +78,8 @@ class EncryptedDocumentPackage(private val context: Context) {
         require(password.size >= 6) { "Use a backup password with at least 6 characters" }
         destination.parentFile?.mkdirs()
         val salt = ByteArray(16).also(SecureRandom()::nextBytes)
-        val iv = ByteArray(12).also(SecureRandom()::nextBytes)
+        val noncePrefix = ByteArray(ChunkedAead.PREFIX_BYTES).also(SecureRandom()::nextBytes)
         val key = deriveKey(password, salt, ITERATIONS)
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
-            init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(128, iv))
-        }
 
         val sortedPages = document.pages.sortedBy { it.position }
         fun pageEntry(index: Int) = "pages/${index.toString().padStart(4, '0')}.jpg"
@@ -99,13 +95,14 @@ class EncryptedDocumentPackage(private val context: Context) {
 
         FileOutputStream(destination).use { raw ->
             val header = DataOutputStream(BufferedOutputStream(raw))
-            header.write(MAGIC)
+            header.write(MAGIC_CHUNKED)
             header.writeInt(ITERATIONS)
             header.write(salt)
-            header.write(iv)
+            header.write(noncePrefix)
             header.flush()
 
-            CipherOutputStream(raw, cipher).use { encrypted ->
+            // Chunked AES-GCM: a single GCM stream is buffered whole in memory on Android.
+            ChunkedAead.Writer(raw, key, noncePrefix).use { encrypted ->
                 ZipOutputStream(BufferedOutputStream(encrypted)).use { zip ->
                     val manifest = JSONObject().apply {
                         put("version", 1)
@@ -171,18 +168,27 @@ class EncryptedDocumentPackage(private val context: Context) {
             val input = DataInputStream(BufferedInputStream(rawInput))
             val magic = ByteArray(MAGIC.size)
             input.readFully(magic)
-            require(magic.contentEquals(MAGIC)) { "Not a ScanPro encrypted package" }
+            val chunked = magic.contentEquals(MAGIC_CHUNKED)
+            require(chunked || magic.contentEquals(MAGIC)) { "Not a ScanPro encrypted package" }
             val iterations = input.readInt()
             require(iterations in 100_000..1_000_000) { "Invalid backup header" }
             val salt = ByteArray(16).also(input::readFully)
-            val iv = ByteArray(12).also(input::readFully)
             val key = deriveKey(password, salt, iterations)
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
-                init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+            val decryptedStream = if (chunked) {
+                val noncePrefix = ByteArray(ChunkedAead.PREFIX_BYTES).also(input::readFully)
+                ChunkedAead.Reader(input, key, noncePrefix)
+            } else {
+                // Version 1 packages: one GCM stream (kept so older backups still restore).
+                val iv = ByteArray(12).also(input::readFully)
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
+                    init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+                }
+                CipherInputStream(input, cipher)
             }
 
-            CipherInputStream(input, cipher).use { decrypted ->
-                ZipInputStream(BufferedInputStream(decrypted)).use { zip ->
+            decryptedStream.use { decrypted ->
+                val buffered = BufferedInputStream(decrypted)
+                ZipInputStream(buffered).let { zip ->
                     var entry = zip.nextEntry
                     var extractedBytes = 0L
                     while (entry != null) {
@@ -205,6 +211,11 @@ class EncryptedDocumentPackage(private val context: Context) {
                         zip.closeEntry()
                         entry = zip.nextEntry
                     }
+                    // ZipInputStream stops at the central directory; read the rest so the final
+                    // chunk's tag and the "nothing after the end" check are verified too.
+                    val drain = ByteArray(DEFAULT_BUFFER_SIZE)
+                    while (buffered.read(drain) >= 0) Unit
+                    zip.close()
                 }
             }
 
@@ -292,6 +303,7 @@ class EncryptedDocumentPackage(private val context: Context) {
 
     companion object {
         private val MAGIC = byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte())
+        private val MAGIC_CHUNKED = byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '2'.code.toByte())
         private const val ITERATIONS = 210_000
         private const val MAX_RESTORE_BYTES = 2L * 1024 * 1024 * 1024
     }

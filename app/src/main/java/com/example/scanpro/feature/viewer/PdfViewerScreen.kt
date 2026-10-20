@@ -1,4 +1,4 @@
-package com.example.scanpro.ui
+package com.example.scanpro.feature.viewer
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -85,6 +85,7 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.scanpro.core.ui.shareFile
 import java.io.File
 import java.io.FileOutputStream
 

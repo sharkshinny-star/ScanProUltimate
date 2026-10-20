@@ -1,8 +1,5 @@
-package com.example.scanpro.ui
+package com.example.scanpro.feature.settings
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,19 +7,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,13 +28,48 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ThemeMode
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.openPlayStoreListing
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
+
+@Composable
+fun SettingsRoute(
+    snackbarHostState: SnackbarHostState,
+    onAppLockChange: (Boolean) -> Unit,
+    bottomBar: @Composable () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val pdfQuality by viewModel.pdfQuality.collectAsStateWithLifecycle()
+    val autoTitle by viewModel.autoTitle.collectAsStateWithLifecycle()
+    val appLock by viewModel.appLock.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val documentCount by viewModel.documentCount.collectAsStateWithLifecycle()
+    val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
+    val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
+    SettingsScreen(
+        pdfQuality = pdfQuality,
+        autoTitle = autoTitle,
+        appLock = appLock,
+        themeMode = themeMode,
+        documentCount = documentCount,
+        trashCount = trashCount,
+        storageBytes = storageBytes,
+        snackbarHostState = snackbarHostState,
+        onPdfQualityChange = viewModel::setPdfQuality,
+        onAutoTitleChange = viewModel::setAutoTitle,
+        onAppLockChange = onAppLockChange,
+        onThemeModeChange = viewModel::setThemeMode,
+        bottomBar = bottomBar
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +82,6 @@ fun SettingsScreen(
     trashCount: Int,
     storageBytes: Long,
     snackbarHostState: SnackbarHostState,
-    onBack: () -> Unit,
     onPdfQualityChange: (PdfQuality) -> Unit,
     onAutoTitleChange: (Boolean) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
@@ -62,12 +91,8 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
+                // Settings is a top-level tab, so it has no Up arrow.
+                title = { Text("Settings") }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -134,6 +159,14 @@ fun SettingsScreen(
                 trailingContent = {
                     Switch(checked = appLock, onCheckedChange = onAppLockChange)
                 }
+            )
+
+            val context = LocalContext.current
+            ListItem(
+                modifier = Modifier.clickable { openPlayStoreListing(context) },
+                headlineContent = { Text("Rate ScanPro") },
+                supportingContent = { Text("Enjoying the app? Leave a review on Google Play.") },
+                leadingContent = { Icon(Icons.Default.StarRate, contentDescription = null) }
             )
 
             Spacer(Modifier.height(24.dp))

@@ -1,5 +1,7 @@
 package com.example.scanpro.data
 
+import java.io.File
+
 import java.util.UUID
 
 enum class PageFilter(val label: String) {
@@ -11,10 +13,10 @@ enum class PageFilter(val label: String) {
     WHITEBOARD("Whiteboard")
 }
 
-enum class PdfQuality(val label: String, val maxImageDimension: Int, val jpegQuality: Int) {
-    HIGH("High", 3200, 96),
-    BALANCED("Balanced", 2200, 90),
-    SMALL("Small", 1400, 78)
+enum class PdfQuality(val label: String, val maxImageDimension: Int) {
+    HIGH("High", 3200),
+    BALANCED("Balanced", 2200),
+    SMALL("Small", 1400)
 }
 
 enum class PdfPageSize(val label: String) {
@@ -156,3 +158,9 @@ data class ScanDocument(
     val pageCount: Int get() = pages.size
     val ocrText: String get() = pages.joinToString("\n\n") { it.ocrText }.trim()
 }
+
+/** Marker left beside a document's PDF when page edits have made it out of date. */
+val ScanDocument.stalePdfMarker: File get() = File("$pdfPath.stale")
+
+/** True when the PDF exists and reflects the latest page edits. */
+fun ScanDocument.hasCurrentPdf(): Boolean = File(pdfPath).isFile && !stalePdfMarker.exists()

@@ -32,10 +32,18 @@ data class DocumentInsights(
  * and must not replace this verifiable local layer.
  */
 object DocumentIntelligenceEngine {
-    private val amountRegex = Regex("(?i)(?:₹|Rs\\.?|INR|USD|EUR|GBP|AED|SAR|\\$|€|£)\\s?\\d[\\d,]*(?:\\.\\d{1,2})?|\\d[\\d,]*(?:\\.\\d{1,2})?\\s?(?:INR|USD|EUR|GBP|AED|SAR)")
-    private val dateRegex = Regex("\\b(?:\\d{1,2}[/-]\\d{1,2}[/-](?:\\d{2}|\\d{4})|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2},?\\s+\\d{4})\\b", RegexOption.IGNORE_CASE)
+    // Letter currency codes need word boundaries ("3 years 2024" must not read as "rs 2024"), and the
+    // gap between symbol and number is spaces only, so an amount never spans two lines.
+    private val amountRegex = Regex("(?i)(?:₹|\\$|€|£|\\b(?:Rs\\.?|INR|USD|EUR|GBP|AED|SAR)(?![a-z]))[ \\t]?\\d[\\d,]*(?:\\.\\d{1,2})?|\\b\\d[\\d,]*(?:\\.\\d{1,2})?[ \\t]?(?:INR|USD|EUR|GBP|AED|SAR)\\b")
+    private const val MONTH = "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\.?"
+    // Numeric (12/03/2024, 12-03-24, 08.10.2026, ISO 2026-10-08) and written (Mar 12, 2024 / 12 Mar 2024).
+    private val dateRegex = Regex(
+        "\\b(?:\\d{1,2}[/.-]\\d{1,2}[/.-](?:\\d{4}|\\d{2})|\\d{4}-\\d{1,2}-\\d{1,2}|$MONTH\\s+\\d{1,2},?\\s+\\d{4}|\\d{1,2}\\s+$MONTH,?\\s+\\d{4})\\b",
+        RegexOption.IGNORE_CASE
+    )
     private val emailRegex = Regex("[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", RegexOption.IGNORE_CASE)
-    private val phoneRegex = Regex("(?<!\\d)(?:\\+?\\d[\\d .()-]{7,}\\d)(?!\\d)")
+    // No dots: "10.00 20.00 30.00" is a column of prices, not a phone number.
+    private val phoneRegex = Regex("(?<!\\d)(?:\\+?\\d[\\d ()-]{7,}\\d)(?!\\d)")
     private val referenceRegex = Regex("""(?i)\b(?:invoice|receipt|order|ref(?:erence)?|gstin|tax id|account|contract)[ \t]*(?:(?:no\.?|number|#)[ \t]*)?[:#-]?[ \t]*([A-Z0-9](?=[A-Z0-9/_-]*\d)[A-Z0-9/_-]{3,})""")
 
     fun analyze(raw: String): DocumentInsights {
@@ -63,7 +71,8 @@ object DocumentIntelligenceEngine {
 
     fun answer(question: String, raw: String): String {
         val text = normalize(raw)
-        val qTokens = tokens(question).filter { it.length >= 3 }.toSet()
+        // Drop question words and filler so "What is the address?" matches on "address", not "the".
+        val qTokens = tokens(question).filter { it.length >= 3 && it !in STOPWORDS }.toSet()
         if (qTokens.isEmpty() || text.isBlank()) return "Ask a specific question about the recognized text."
 
         val chunks = text.split(Regex("\\n{2,}|(?<=[.!?])\\s+"))
@@ -73,9 +82,8 @@ object DocumentIntelligenceEngine {
 
         val ranked = chunks.map { chunk ->
             val chunkTokens = tokens(chunk).toSet()
-            val overlap = qTokens.count { it in chunkTokens }
-            val phraseBonus = qTokens.count { chunk.lowercase(Locale.ROOT).contains(it) }
-            chunk to (overlap * 3 + phraseBonus)
+            // Whole-word overlap only; substring matching let "the" hit "there" and "other".
+            chunk to qTokens.count { it in chunkTokens }
         }.filter { it.second > 0 }
             .sortedByDescending { it.second }
             .take(3)
@@ -146,4 +154,11 @@ object DocumentIntelligenceEngine {
     private fun tokens(value: String) = value.lowercase(Locale.ROOT)
         .split(Regex("[^\\p{L}\\p{N}]+"))
         .filter { it.isNotBlank() }
+
+    private val STOPWORDS = setOf(
+        "the", "and", "for", "are", "was", "were", "what", "when", "where", "which", "who", "whom", "why",
+        "how", "this", "that", "these", "those", "with", "from", "does", "did", "has", "have", "had", "can",
+        "could", "should", "would", "will", "shall", "about", "into", "onto", "any", "all", "you", "your",
+        "there", "their", "them", "they", "its", "our", "out", "please", "tell", "show", "give", "find", "much", "many"
+    )
 }

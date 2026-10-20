@@ -1,4 +1,4 @@
-package com.example.scanpro.ui
+package com.example.scanpro.feature.document
 
 import android.graphics.Bitmap
 import androidx.core.graphics.createBitmap
@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.core.designsystem.PageThumbnail
 
 data class DrawingStroke(
     val points: List<Offset>,
@@ -344,5 +345,15 @@ private fun signatureBitmap(strokes: List<DrawingStroke>, size: IntSize): Bitmap
             )
         }
     }
-    return bitmap
+    // Crop to the ink plus a margin, so blank pad space doesn't shrink the signature on the page.
+    val points = strokes.flatMap { it.points }
+    if (points.isEmpty()) return bitmap
+    val margin = (strokes.maxOf { it.strokeWidthDp } * 1.5f) * 2
+    val left = (points.minOf { it.x } - margin).toInt().coerceIn(0, width - 1)
+    val top = (points.minOf { it.y } - margin).toInt().coerceIn(0, height - 1)
+    val right = (points.maxOf { it.x } + margin).toInt().coerceIn(left + 1, width)
+    val bottom = (points.maxOf { it.y } + margin).toInt().coerceIn(top + 1, height)
+    val cropped = Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top)
+    if (cropped !== bitmap) bitmap.recycle()
+    return cropped
 }

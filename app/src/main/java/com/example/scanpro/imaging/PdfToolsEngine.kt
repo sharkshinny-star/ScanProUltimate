@@ -11,6 +11,7 @@ import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanPage
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -41,7 +42,101 @@ enum class ImageExportFormat(val extension: String, val mimeType: String, val la
     PNG("png", "image/png", "PNG Image (.png)")
 }
 
+enum class CompressionPreset(val quality: PdfQuality) {
+    HIGH(PdfQuality.HIGH),
+    BALANCED(PdfQuality.BALANCED),
+    MAXIMUM(PdfQuality.SMALL)
+}
+
+data class CompressionResult(
+    val outputFile: File,
+    val pageCount: Int,
+    val originalSizeBytes: Long,
+    val compressedSizeBytes: Long
+) {
+    val savingsPercentage: Int
+        get() = if (originalSizeBytes <= 0L) 0
+        else ((1.0 - compressedSizeBytes.toDouble() / originalSizeBytes) * 100).toInt().coerceAtLeast(0)
+}
+
+/**
+ * Shrinks a PDF by rendering every page to an image and rebuilding the document at the preset's
+ * image quality. The output is image-only, so any selectable text in the original is lost.
+ */
+object CompressPdfEngine {
+
+    suspend fun compressPdf(
+        context: Context,
+        inputUri: Uri,
+        preset: CompressionPreset,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): CompressionResult = withContext(Dispatchers.IO) {
+        val workDir = File(context.cacheDir, "compress_${UUID.randomUUID()}").apply { mkdirs() }
+        val outputFile = PdfToolsEngine.outputLocation(context, "compressed_${System.currentTimeMillis()}.pdf")
+        try {
+            val input = File(workDir, "input.pdf")
+            context.contentResolver.openInputStream(inputUri)?.use { stream ->
+                FileOutputStream(input).use { stream.copyTo(it) }
+            } ?: error("Unable to read PDF file from selected location")
+
+            val pages = mutableListOf<ScanPage>()
+            ParcelFileDescriptor.open(input, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                PdfRenderer(pfd).use { renderer ->
+                    require(renderer.pageCount > 0) { "The PDF document contains no pages" }
+                    for (i in 0 until renderer.pageCount) {
+                        ensureActive()
+                        onProgress(i + 1, renderer.pageCount, "Compressing page ${i + 1} of ${renderer.pageCount}…")
+                        renderer.openPage(i).use { page ->
+                            val maxDimension = preset.quality.maxImageDimension
+                            val scale = maxDimension.toFloat() / maxOf(page.width, page.height)
+                            val bitmap = createBitmap(
+                                (page.width * scale).toInt().coerceAtLeast(1),
+                                (page.height * scale).toInt().coerceAtLeast(1)
+                            )
+                            // PdfRenderer leaves transparent areas, which JPEG would turn black.
+                            bitmap.eraseColor(android.graphics.Color.WHITE)
+                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
+                            val image = File(workDir, "page_$i.jpg")
+                            FileOutputStream(image).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+                            bitmap.recycle()
+                            pages += ScanPage(
+                                id = "compress-$i",
+                                documentId = "compress",
+                                position = i,
+                                sourcePath = image.absolutePath,
+                                imagePath = image.absolutePath
+                            )
+                        }
+                    }
+                }
+            }
+
+            PdfExporter.export(
+                pages = pages,
+                destination = outputFile,
+                quality = preset.quality,
+                pageSize = PdfPageSize.AUTO,
+                searchable = false,
+                pageNumbers = false
+            )
+            CompressionResult(outputFile, pages.size, input.length(), outputFile.length())
+        } catch (error: Throwable) {
+            outputFile.delete()
+            throw error
+        } finally {
+            workDir.deleteRecursively()
+        }
+    }
+}
+
 object PdfToolsEngine {
+
+    /**
+     * Where tool results go: under cache/exports/, the only cache folder the FileProvider shares,
+     * and which DocumentRepository clears of anything older than a day.
+     */
+    fun outputLocation(context: Context, name: String): File =
+        File(File(context.cacheDir, "exports"), name).also { it.parentFile?.mkdirs() }
 
     suspend fun mergePdfs(
         context: Context,

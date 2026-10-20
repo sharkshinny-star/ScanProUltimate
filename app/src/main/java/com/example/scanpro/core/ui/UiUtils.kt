@@ -1,11 +1,14 @@
-package com.example.scanpro.ui
+package com.example.scanpro.core.ui
 
 import android.content.ActivityNotFoundException
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.PersistableBundle
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.example.scanpro.data.ScanDocument
@@ -106,9 +109,17 @@ fun openPdf(context: Context, document: ScanDocument) {
 
 fun copyText(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    clipboard.setPrimaryClip(ClipData.newPlainText("Recognized text", text))
+    val clip = ClipData.newPlainText("Recognized text", text).apply {
+        // Scans often hold IDs and account numbers; keep them out of the clipboard preview on Android 13+.
+        description.extras = PersistableBundle().apply {
+            putBoolean(if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true)
+        }
+    }
+    clipboard.setPrimaryClip(clip)
     Toast.makeText(context, "Text copied", Toast.LENGTH_SHORT).show()
 }
+
+fun pagesLabel(count: Int) = if (count == 1) "1 page" else "$count pages"
 
 fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
@@ -173,14 +184,15 @@ fun printPdf(context: Context, document: ScanDocument) {
     val file = File(document.pdfPath)
     manager.print(
         document.title,
-        PdfFilePrintAdapter(file, document.pageCount),
+        PdfFilePrintAdapter(file),
         android.print.PrintAttributes.Builder().build()
     )
 }
 
 fun copyFileToUri(context: Context, sourcePath: String, destination: Uri): Boolean = runCatching {
     val source = File(sourcePath)
-    context.contentResolver.openOutputStream(destination, "w").use { output ->
+    // "wt" truncates: plain "w" can leave the tail of a larger old file behind and corrupt the PDF.
+    context.contentResolver.openOutputStream(destination, "wt").use { output ->
         requireNotNull(output) { "Could not open export destination" }
         source.inputStream().use { input -> input.copyTo(output) }
     }
@@ -188,8 +200,7 @@ fun copyFileToUri(context: Context, sourcePath: String, destination: Uri): Boole
 }.getOrDefault(false)
 
 private class PdfFilePrintAdapter(
-    private val file: File,
-    private val pageCount: Int
+    private val file: File
 ) : android.print.PrintDocumentAdapter() {
     override fun onLayout(
         oldAttributes: android.print.PrintAttributes?,
@@ -205,7 +216,9 @@ private class PdfFilePrintAdapter(
         callback.onLayoutFinished(
             android.print.PrintDocumentInfo.Builder(file.name)
                 .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                .setPageCount(pageCount.coerceAtLeast(1))
+                // The print framework reads the real count from the PDF; the page list can be empty
+                // for a document built from the scanner's fallback PDF.
+                .setPageCount(android.print.PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
                 .build(),
             true
         )
@@ -225,14 +238,40 @@ private class PdfFilePrintAdapter(
             callback.onWriteCancelled()
             return
         }
-        runCatching {
-            java.io.FileOutputStream(destination.fileDescriptor).use { output ->
-                file.inputStream().use { input -> input.copyTo(output) }
+        // onWrite is called on the main thread; copy a large PDF in the background to avoid an ANR.
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        Thread {
+            val result = runCatching {
+                java.io.FileOutputStream(destination.fileDescriptor).use { output ->
+                    file.inputStream().use { input -> input.copyTo(output) }
+                }
             }
-        }.onSuccess {
-            callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
-        }.onFailure {
-            callback.onWriteFailed(it.message ?: "Could not print PDF")
+            mainHandler.post {
+                result.onSuccess { callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES)) }
+                    .onFailure { callback.onWriteFailed(it.message ?: "Could not print PDF") }
+            }
+        }.start()
+    }
+}
+
+/**
+ * The app's Play Store package, the release applicationId. Kept separate from the runtime package
+ * name because debug builds add a ".debug" suffix.
+ */
+const val PLAY_STORE_PACKAGE = "com.scanpro.app"
+
+/** Opens ScanPro's listing in the Play Store app, or on the Play website if the Store isn't installed. */
+fun openPlayStoreListing(context: Context) {
+    val storeApp = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$PLAY_STORE_PACKAGE"))
+        .setPackage("com.android.vending")
+    val website = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$PLAY_STORE_PACKAGE"))
+    try {
+        context.startActivity(storeApp)
+    } catch (_: ActivityNotFoundException) {
+        try {
+            context.startActivity(website)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(context, "Google Play isn't available on this device", Toast.LENGTH_SHORT).show()
         }
     }
 }
