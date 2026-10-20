@@ -24,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -146,7 +147,14 @@ fun SettingsScreen(
                     Text("Use recognized text to name new scans automatically.")
                 },
                 trailingContent = {
-                    Switch(checked = autoTitle, onCheckedChange = onAutoTitleChange)
+                    Switch(
+                        checked = autoTitle,
+                        onCheckedChange = onAutoTitleChange,
+                        colors = SwitchDefaults.colors(
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
                 }
             )
 
@@ -157,7 +165,14 @@ fun SettingsScreen(
                 },
                 leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingContent = {
-                    Switch(checked = appLock, onCheckedChange = onAppLockChange)
+                    Switch(
+                        checked = appLock,
+                        onCheckedChange = onAppLockChange,
+                        colors = SwitchDefaults.colors(
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
                 }
             )
 
