@@ -12,13 +12,18 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.scanpro.AppViewModel
+import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.core.ui.shareFile
+import com.example.scanpro.feature.rating.RatePromptSheet
 import com.example.scanpro.feature.lock.LockScreen
 import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.navigation.ScanProNavHost
@@ -41,6 +46,7 @@ fun ScanProApp(
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
     val externalPdfToView by viewModel.externalPdfToView.collectAsStateWithLifecycle()
+    val showRatingPrompt by viewModel.showRatingPrompt.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -103,6 +109,31 @@ fun ScanProApp(
             navController.navigate(ScanProDestinations.pdfViewer(it.uri, it.title))
             viewModel.clearExternalPdfToView()
         }
+    }
+
+    // The rating sheet waits until the user is back on Home or Files after their first document,
+    // and a moment longer so it doesn't land on top of the "Scan saved" message.
+    val route = navController.currentBackStackEntryAsState().value?.destination?.route
+    val onLibraryTab = route == ScanProDestinations.HOME || route == ScanProDestinations.FILES
+    var ratingSheetOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(showRatingPrompt, onLibraryTab) {
+        if (showRatingPrompt && onLibraryTab) {
+            kotlinx.coroutines.delay(1_500)
+            ratingSheetOpen = true
+        }
+    }
+    if (ratingSheetOpen) {
+        RatePromptSheet(
+            onRate = {
+                ratingSheetOpen = false
+                viewModel.onRatingPromptFinished()
+                openPlayStoreListing(context)
+            },
+            onDismiss = {
+                ratingSheetOpen = false
+                viewModel.onRatingPromptFinished()
+            }
+        )
     }
 
     ScanProNavHost(

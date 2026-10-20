@@ -253,3 +253,26 @@ private class PdfFilePrintAdapter(
         }.start()
     }
 }
+
+/**
+ * The app's Play Store package. Kept separate from the runtime package name because debug builds add
+ * a ".debug" suffix. Change this to the published application id before release: Play does not
+ * accept com.example.* ids.
+ */
+const val PLAY_STORE_PACKAGE = "com.example.scanpro"
+
+/** Opens ScanPro's listing in the Play Store app, or on the Play website if the Store isn't installed. */
+fun openPlayStoreListing(context: Context) {
+    val storeApp = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$PLAY_STORE_PACKAGE"))
+        .setPackage("com.android.vending")
+    val website = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$PLAY_STORE_PACKAGE"))
+    try {
+        context.startActivity(storeApp)
+    } catch (_: ActivityNotFoundException) {
+        try {
+            context.startActivity(website)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(context, "Google Play isn't available on this device", Toast.LENGTH_SHORT).show()
+        }
+    }
+}

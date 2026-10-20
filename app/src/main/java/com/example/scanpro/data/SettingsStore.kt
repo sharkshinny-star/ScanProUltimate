@@ -72,4 +72,15 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     suspend fun setThemeMode(value: ThemeMode) {
         context.scanProSettings.edit { it[keyThemeMode] = value.name }
     }
+
+    private val keyRatingPromptDone = booleanPreferencesKey("rating_prompt_done")
+
+    /** True once the "rate ScanPro" sheet has been answered or dismissed, so it is only shown once. */
+    val ratingPromptDone: Flow<Boolean> = preferences.map { preferences ->
+        preferences[keyRatingPromptDone] ?: false
+    }
+
+    suspend fun setRatingPromptDone() {
+        context.scanProSettings.edit { it[keyRatingPromptDone] = true }
+    }
 }

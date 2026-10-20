@@ -64,6 +64,17 @@ class AppViewModel @Inject constructor(
     val exportArtifact: StateFlow<ExportArtifact?> = operations.exportArtifact
     val openDocumentRequest: StateFlow<String?> = operations.openDocumentRequest
 
+    /**
+     * Ask for a Play rating once, after first real use: the library holds a document, nothing is
+     * still processing, and the prompt hasn't been answered before.
+     */
+    val showRatingPrompt: StateFlow<Boolean> = combine(
+        library.documents, operations.busy, settings.ratingPromptDone
+    ) { documents, busy, done -> documents.isNotEmpty() && !busy && !done }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun onRatingPromptFinished() { viewModelScope.launch { settings.setRatingPromptDone() } }
+
     private val _externalPdfToView = MutableStateFlow<ExternalPdf?>(null)
     /** A PDF opened from another app, copied locally; the shell shows it in the viewer. */
     val externalPdfToView: StateFlow<ExternalPdf?> = _externalPdfToView.asStateFlow()
