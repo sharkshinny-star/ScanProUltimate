@@ -19,7 +19,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -142,6 +144,7 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(20.dp))
             ListItem(
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 headlineContent = { Text("Smart OCR titles") },
                 supportingContent = {
                     Text("Use recognized text to name new scans automatically.")
@@ -159,6 +162,7 @@ fun SettingsScreen(
             )
 
             ListItem(
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 headlineContent = { Text("Biometric app lock") },
                 supportingContent = {
                     Text("Require a device biometric when the library is locked.")
@@ -178,6 +182,7 @@ fun SettingsScreen(
 
             val context = LocalContext.current
             ListItem(
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.clickable { openPlayStoreListing(context) },
                 headlineContent = { Text("Rate ScanPro") },
                 supportingContent = { Text("Enjoying the app? Leave a review on Google Play.") },
