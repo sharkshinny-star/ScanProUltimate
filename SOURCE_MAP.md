@@ -27,7 +27,6 @@
 - `imaging/OcrEngine.kt` — ML Kit OCR for five script families
 - `imaging/PdfExporter.kt` — multi-page/searchable PDF output and quality/page-size controls
 - `imaging/PdfSecurity.kt` — PDFBox password protection/unlock helpers
-- `imaging/PdfToolsEngine.kt` — standalone PDF tools (merge, split, compress, reorder, rotate, images ↔ PDF) for files outside the library
 - `imaging/SpecialExporters.kt` — ID-copy and long-image outputs
 - `imaging/SmartTitle.kt` — OCR-derived local titles
 
@@ -53,9 +52,7 @@
 ## Features (each: `*Route` + stateless `*Screen` + `*ViewModel`)
 
 - `feature/library/` — Home dashboard (recent documents), Files tab and the Search screen (`LibraryScreen.kt`, `DocumentCards.kt`)
-- `feature/document/` — document workspace (`DocumentScreen.kt`), crop editor, adjustments, signature pad with drag-to-place
-- `feature/tools/` — PDF Tools tab: merge, split, compress, organize/rotate/extract pages, images ↔ PDF, protect/unlock (`PdfToolsScreen.kt`, engine in `imaging/PdfToolsEngine.kt`)
-- `feature/viewer/` — in-app PDF viewer with zoom, page jump and text search; also opens PDFs sent from other apps
+- `feature/document/` — document workspace (`DocumentScreen.kt`), crop editor, adjustments, signature pad
 - `feature/trash/` — recycle bin with 7-day countdown
 - `feature/settings/` — defaults, theme, app lock, storage
 - `feature/lock/` — app lock screen

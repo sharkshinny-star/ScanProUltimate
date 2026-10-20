@@ -53,9 +53,6 @@ private val thumbnailCache = object : LruCache<String, Bitmap>(
     override fun sizeOf(key: String, value: Bitmap): Int = value.allocationByteCount
 }
 
-/** The full cache key last used for each thumbnail request, so a revisit can draw from the cache at once. */
-private val latestCacheKey = LruCache<String, String>(512)
-
 /** Decode size for small list/strip thumbnails. */
 const val THUMBNAIL_SMALL = 256
 /** Decode size for grid cards. */
@@ -75,20 +72,15 @@ fun PageThumbnail(
      */
     version: Any? = null
 ) {
-    // The file's timestamp is part of the cache key, but reading it is disk I/O, so it happens on the
-    // IO thread. Meanwhile the last bitmap shown for this request is drawn straight away, so coming
-    // back to a tab shows its thumbnails instantly instead of blank placeholders.
-    val requestKey = remember(path, version, maxDimension) { path?.let { "$it|${version.hashCode()}|$maxDimension" } }
-    val bitmap by produceState(initialValue = requestKey?.let { latestCacheKey[it] }?.let { thumbnailCache[it] }, key1 = requestKey) {
-        if (path == null || requestKey == null) {
+    val fileVersion = path?.let { runCatching { File(it).lastModified() }.getOrDefault(0L) } ?: 0L
+    val cacheKey = path?.let { "$it|$fileVersion|${version.hashCode()}|$maxDimension" }
+    val bitmap by produceState(initialValue = cacheKey?.let { thumbnailCache.get(it) }, key1 = cacheKey) {
+        if (path == null || cacheKey == null) {
             value = null
             return@produceState
         }
-        value = withContext(Dispatchers.IO) {
-            val cacheKey = "$requestKey|${File(path).lastModified()}"
-            (thumbnailCache.get(cacheKey) ?: ImageProcessor.decodeScaled(path, maxDimension)?.also {
-                thumbnailCache.put(cacheKey, it)
-            })?.also { latestCacheKey.put(requestKey, cacheKey) }
+        value = thumbnailCache.get(cacheKey) ?: withContext(Dispatchers.IO) {
+            ImageProcessor.decodeScaled(path, maxDimension)?.also { thumbnailCache.put(cacheKey, it) }
         }
     }
 

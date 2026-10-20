@@ -1,6 +1,5 @@
 package com.example.scanpro.scanner
 
-import com.example.scanpro.imaging.OpenCvRuntime
 import android.os.Handler
 import android.os.Looper
 import androidx.camera.core.ImageAnalysis
@@ -26,8 +25,6 @@ class OpenCvDocumentAnalyzer(
     var autoCaptureEnabled: Boolean = true
 
     override fun analyze(image: ImageProxy) {
-        // Analysis runs on the camera executor, so waiting here for a still-loading OpenCV never blocks the UI.
-        OpenCvRuntime.ensureLoaded()
         try {
             val gray = image.toRotatedGrayMat()
             try {

@@ -1,12 +1,7 @@
 package com.example.scanpro.navigation
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -18,10 +13,7 @@ import androidx.navigation.navArgument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.feature.document.DocumentRoute
 import com.example.scanpro.feature.library.LibraryRoute
-import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.settings.SettingsRoute
-import com.example.scanpro.feature.tools.PdfToolsScreen
-import com.example.scanpro.feature.viewer.PdfViewerScreen
 import com.example.scanpro.feature.trash.TrashRoute
 import com.example.scanpro.scanner.CameraScannerScreen
 
@@ -36,22 +28,9 @@ fun ScanProNavHost(
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
     val onTab: (String) -> Unit = { route -> navController.navigateToTopLevel(route) }
-    val onOpenPdfViewer: (android.net.Uri, String) -> Unit = { uri, title ->
-        navController.navigate(ScanProDestinations.pdfViewer(uri, title))
-    }
 
-    NavHost(
-        navController = navController,
-        startDestination = ScanProDestinations.HOME,
-        // Material "fade through". Navigation's default is a 700ms crossfade, which makes every tab
-        // switch feel like the app is hanging.
-        enterTransition = { fadeIn(tween(210, delayMillis = 60)) + scaleIn(tween(210, delayMillis = 60), initialScale = 0.96f) },
-        exitTransition = { fadeOut(tween(90)) },
-        popEnterTransition = { fadeIn(tween(210, delayMillis = 60)) + scaleIn(tween(210, delayMillis = 60), initialScale = 0.96f) },
-        popExitTransition = { fadeOut(tween(90)) }
-    ) {
+    NavHost(navController = navController, startDestination = ScanProDestinations.HOME) {
         // Search shares the library screen but is pushed on top of a tab rather than being one.
         listOf(ScanProDestinations.HOME, ScanProDestinations.FILES, ScanProDestinations.SEARCH).forEach { route ->
             composable(route) {
@@ -74,28 +53,6 @@ fun ScanProNavHost(
                 snackbarHostState = snackbarHostState,
                 onAppLockChange = onAppLockChange,
                 bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.SETTINGS, onTab = onTab) }
-            )
-        }
-        composable(ScanProDestinations.TOOLS) {
-            PdfToolsScreen(
-                onOpenPdfViewer = onOpenPdfViewer,
-                bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.TOOLS, onTab = onTab) }
-            )
-        }
-        composable(
-            route = ScanProDestinations.PDF_VIEWER,
-            arguments = listOf(
-                navArgument(ScanProDestinations.PDF_URI_ARG) { type = NavType.StringType },
-                navArgument(ScanProDestinations.PDF_TITLE_ARG) { type = NavType.StringType; defaultValue = "PDF Document" }
-            )
-        ) { entry ->
-            val pdfUri = android.net.Uri.parse(entry.arguments?.getString(ScanProDestinations.PDF_URI_ARG).orEmpty())
-            val title = entry.arguments?.getString(ScanProDestinations.PDF_TITLE_ARG) ?: "PDF Document"
-            PdfViewerScreen(
-                title = title,
-                pdfUri = pdfUri,
-                onBack = dropUnlessResumed { navController.popBackStack() },
-                onShare = { shareFile(context, pdfUri.path.orEmpty(), "application/pdf", title) }
             )
         }
         composable(ScanProDestinations.CAMERA) { entry ->
@@ -130,7 +87,6 @@ fun ScanProNavHost(
         ) {
             DocumentRoute(
                 snackbarHostState = snackbarHostState,
-                onOpenPdfViewer = onOpenPdfViewer,
                 onBack = dropUnlessResumed { navController.popBackStack() }
             )
         }
@@ -139,8 +95,6 @@ fun ScanProNavHost(
 
 /** Switches bottom-bar tabs the standard way: one copy of each tab, with its state saved and restored. */
 fun NavHostController.navigateToTopLevel(route: String) {
-    // Tapping the tab that's already open does nothing, instead of rebuilding the screen.
-    if (currentDestination?.route == route) return
     navigate(route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true

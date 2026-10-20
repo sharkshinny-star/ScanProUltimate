@@ -1,19 +1,9 @@
 package com.example.scanpro
 
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowCompat
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
-import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
-import android.view.View
-import android.view.ViewTreeObserver
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.DisposableEffect
-import com.example.scanpro.core.designsystem.ThemeTransition
-import com.example.scanpro.data.ThemeMode
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
@@ -86,8 +76,6 @@ class MainActivity : FragmentActivity() {
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
-        hideNavigationBar()
-        holdLaunchScreenUntilReady()
         publishScanShortcut()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -101,87 +89,38 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
-            // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
-            val mode = themeMode ?: return@setContent
-            val targetDark = when (mode) {
-                ThemeMode.LIGHT -> false
-                ThemeMode.DARK -> true
-                ThemeMode.SYSTEM -> isSystemInDarkTheme()
-            }
-            ThemeTransition(targetDark) { dark ->
-                // Status and navigation bar icons follow the app's theme, not the system's.
-                DisposableEffect(dark) {
-                    val style = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT) { dark }
-                    enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
-                    // enableEdgeToEdge turns the navigation bar's contrast scrim back on; keep it fully transparent.
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
-                    onDispose { }
-                }
-                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
-                    ScanProApp(
-                        viewModel = viewModel,
-                        sessionUnlocked = sessionUnlocked,
-                        onFallbackScanner = ::startCompatibilityScanner,
-                        onImportImages = {
-                            imageImportLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        },
-                        onUnlock = {
-                            authenticate(
-                                // The screen lock was removed after app lock was turned on. Only the device
-                                // owner can remove it, so let them in and switch app lock off rather than
-                                // locking them out of their documents for good.
-                                onNoScreenLock = {
-                                    viewModel.setAppLock(false)
-                                    viewModel.markUnlocked()
-                                    viewModel.showMessage("This device no longer has a screen lock, so app lock was turned off")
-                                }
-                            ) { viewModel.markUnlocked() }
-                        },
-                        onAppLockChange = { enabled ->
-                            // Turning the lock off needs authentication too, or anyone holding the phone could disable it.
-                            authenticate {
-                                viewModel.setAppLock(enabled)
+            ScanProTheme(themeMode = themeMode) {
+                ScanProApp(
+                    viewModel = viewModel,
+                    sessionUnlocked = sessionUnlocked,
+                    onFallbackScanner = ::startCompatibilityScanner,
+                    onImportImages = {
+                        imageImportLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onUnlock = {
+                        authenticate(
+                            // The screen lock was removed after app lock was turned on. Only the device
+                            // owner can remove it, so let them in and switch app lock off rather than
+                            // locking them out of their documents for good.
+                            onNoScreenLock = {
+                                viewModel.setAppLock(false)
                                 viewModel.markUnlocked()
+                                viewModel.showMessage("This device no longer has a screen lock, so app lock was turned off")
                             }
+                        ) { viewModel.markUnlocked() }
+                    },
+                    onAppLockChange = { enabled ->
+                        // Turning the lock off needs authentication too, or anyone holding the phone could disable it.
+                        authenticate {
+                            viewModel.setAppLock(enabled)
+                            viewModel.markUnlocked()
                         }
-                    )
-                }
+                    }
+                )
             }
         }
-    }
-
-    /**
-     * Keeps the launch screen (always light) up until the saved theme and app-lock setting have
-     * loaded, so the first frame is already in the right theme instead of flashing light, then dark.
-     */
-    private fun holdLaunchScreenUntilReady() {
-        val content = findViewById<View>(android.R.id.content)
-        val startedAt = SystemClock.uptimeMillis()
-        content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                // Settings normally load in a few milliseconds; never hold the launch screen for long.
-                val ready = (viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null) ||
-                    SystemClock.uptimeMillis() - startedAt > LAUNCH_SCREEN_MAX_HOLD_MS
-                if (ready) content.viewTreeObserver.removeOnPreDrawListener(this)
-                return ready
-            }
-        })
-    }
-
-    /** Full-screen: the navigation bar stays hidden and comes back briefly with a swipe from the edge. */
-    private fun hideNavigationBar() {
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.navigationBars())
-        }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        // Dialogs, the share sheet and other apps can bring the bar back; hide it again on return.
-        if (hasFocus) hideNavigationBar()
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -230,11 +169,7 @@ class MainActivity : FragmentActivity() {
                 val uri = intent.data
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
-                        // Opened PDFs are shown right away in the viewer, and also kept in the library.
-                        appViewModel.submitExternalImport {
-                            appViewModel.viewExternalPdf(uri)
-                            appViewModel.importPdf(uri)
-                        }
+                        appViewModel.submitExternalImport { appViewModel.importPdf(uri) }
                     } else if (type.startsWith("image/")) {
                         appViewModel.submitExternalImport { appViewModel.importImages(listOf(uri)) }
                     }
@@ -251,23 +186,15 @@ class MainActivity : FragmentActivity() {
         uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
 
     /** Launcher "Scan" shortcut. Published at runtime so it targets the right package in debug and release. */
-    /** Long-press launcher shortcuts. Built in code, so they follow the build's package name. */
     private fun publishScanShortcut() {
         runCatching {
-            fun shortcut(id: String, shortLabel: Int, longLabel: Int, rank: Int, action: String) =
-                ShortcutInfoCompat.Builder(this, id)
-                    .setShortLabel(getString(shortLabel))
-                    .setLongLabel(getString(longLabel))
-                    .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
-                    .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(action))
-                    .setRank(rank)
-                    .build()
-            // The two support shortcuts just open the app.
-            listOf(
-                shortcut("scan_now", R.string.shortcut_scan_short, R.string.shortcut_scan_long, 0, ACTION_SCAN_NOW),
-                shortcut("dont_remove_app", R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, 1, android.content.Intent.ACTION_MAIN),
-                shortcut("bugs_or_issues", R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, 2, android.content.Intent.ACTION_MAIN)
-            ).forEach { ShortcutManagerCompat.pushDynamicShortcut(this, it) }
+            val shortcut = ShortcutInfoCompat.Builder(this, "scan_now")
+                .setShortLabel(getString(R.string.shortcut_scan_short))
+                .setLongLabel(getString(R.string.shortcut_scan_long))
+                .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
+                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(ACTION_SCAN_NOW))
+                .build()
+            ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
         }
     }
 
@@ -347,7 +274,6 @@ class MainActivity : FragmentActivity() {
 
     private companion object {
         const val LOCK_TIMEOUT_MS = 30_000L
-        const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
     }
 }

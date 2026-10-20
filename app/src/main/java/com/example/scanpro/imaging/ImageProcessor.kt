@@ -31,8 +31,6 @@ import kotlin.math.max
 import kotlin.math.min
 
 object ImageProcessor {
-    init { OpenCvRuntime.ensureLoaded() }
-
     private const val MAX_DECODE_PIXELS = 24_000_000L
 
     fun renderPage(

@@ -47,7 +47,6 @@ import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewDay
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -140,7 +139,6 @@ import com.example.scanpro.data.ScanMode
 import com.example.scanpro.intelligence.DocumentInsights
 import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.TranslationEngine
-import java.io.File
 import java.text.DateFormat
 import java.util.Date
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -165,7 +163,6 @@ import com.example.scanpro.core.designsystem.TopBarWithProgress
 @Composable
 fun DocumentRoute(
     snackbarHostState: SnackbarHostState,
-    onOpenPdfViewer: (Uri, String) -> Unit,
     onBack: () -> Unit,
     viewModel: DocumentViewModel = hiltViewModel()
 ) {
@@ -197,7 +194,6 @@ fun DocumentRoute(
         busyLabel = busyLabel,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
-        onOpenPdfViewer = onOpenPdfViewer,
         onRename = viewModel::rename,
         onTags = viewModel::setTags,
         onFolder = viewModel::setFolder,
@@ -251,7 +247,6 @@ internal fun DocumentDetailScreen(
     busyLabel: String?,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
-    onOpenPdfViewer: (Uri, String) -> Unit,
     onRename: (String) -> Unit,
     onTags: (String) -> Unit,
     onFolder: (String) -> Unit,
@@ -271,8 +266,7 @@ internal fun DocumentDetailScreen(
     onExtractPage: (String) -> Unit,
     onSplitBook: (String) -> Unit,
     onDeletePage: (String) -> Unit,
-    /** Page id, signature, then its x, y, width and height as fractions of the page. */
-    onSign: (String, Bitmap, Float, Float, Float, Float) -> Unit,
+    onSign: (String, Bitmap) -> Unit,
     onTextAnnotation: (String, String) -> Unit,
     onHighlight: (String) -> Unit,
     onRedact: (String) -> Unit,
@@ -314,8 +308,6 @@ internal fun DocumentDetailScreen(
     var tagsOpen by remember { mutableStateOf(false) }
     var folderOpen by remember { mutableStateOf(false) }
     var signatureOpen by remember { mutableStateOf(false) }
-    // Plain remember: a bitmap can't go in saved state; losing it on rotation just cancels placement.
-    var pendingSignature by remember { mutableStateOf<Bitmap?>(null) }
     var watermarkOpen by remember { mutableStateOf(false) }
     var annotationTextOpen by remember { mutableStateOf(false) }
     var cropOpen by remember { mutableStateOf(false) }
@@ -558,9 +550,6 @@ internal fun DocumentDetailScreen(
                 DetailTab.EXPORT -> {
                     SubHeader("Share and save")
                     ToolGrid {
-                        ToolTile(Icons.Default.Visibility, "View PDF", !busy) {
-                            onWithFreshPdf({}) { onOpenPdfViewer(Uri.fromFile(File(it.pdfPath)), it.title) }
-                        }
                         ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy) { onWithFreshPdf({}) { openPdf(context, it) } }
                         ToolTile(Icons.Default.Save, "Save PDF", !busy) { savePdfLauncher.launch("${document.title}.pdf") }
                         ToolTile(Icons.Default.Print, "Print", !busy) { onWithFreshPdf({}) { printPdf(context, it) } }
@@ -771,22 +760,9 @@ internal fun DocumentDetailScreen(
 
     if (signatureOpen && currentPage != null) {
         SignaturePadDialog(onDismiss = { signatureOpen = false }) { bitmap ->
+            onSign(currentPage.id, bitmap)
             signatureOpen = false
-            pendingSignature = bitmap
         }
-    }
-
-    val signature = pendingSignature
-    if (signature != null && currentPage != null) {
-        SignaturePlacementDialog(
-            pageImagePath = currentPage.imagePath,
-            signatureBitmap = signature,
-            onDismiss = { pendingSignature = null },
-            onConfirmPlacement = { x, y, w, h ->
-                pendingSignature = null
-                onSign(currentPage.id, signature, x, y, w, h)
-            }
-        )
     }
 
     if (cropOpen && currentPage != null) {

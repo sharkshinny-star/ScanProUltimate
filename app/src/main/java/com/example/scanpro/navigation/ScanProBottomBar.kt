@@ -3,7 +3,6 @@ package com.example.scanpro.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -18,7 +17,6 @@ fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit) {
         listOf(
             Triple(ScanProDestinations.HOME, "Home", Icons.Default.Home),
             Triple(ScanProDestinations.FILES, "Files", Icons.Default.Description),
-            Triple(ScanProDestinations.TOOLS, "Tools", Icons.Default.PictureAsPdf),
             Triple(ScanProDestinations.SETTINGS, "Settings", Icons.Default.Settings)
         ).forEach { (route, label, icon) ->
             NavigationBarItem(
