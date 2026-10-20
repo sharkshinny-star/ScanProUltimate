@@ -510,9 +510,7 @@ fun CameraScannerScreen(
                 }
 
                 if (pages.isEmpty()) {
-                    IconButton(onClick = onFallbackScanner) {
-                        Icon(Icons.Default.DocumentScanner, contentDescription = "Google Scanner", tint = Color.White)
-                    }
+                    Spacer(Modifier.size(48.dp))
                 } else {
                     Button(
                         enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
