@@ -70,6 +70,9 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             ScanProTheme(themeMode = themeMode) {
