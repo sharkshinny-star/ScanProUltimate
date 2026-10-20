@@ -76,6 +76,8 @@ dependencies {
     androidTestImplementation(composeBom)
 
     implementation("androidx.core:core-ktx:1.19.1")
+    // Applies the libraries' bundled Compose baseline profiles on installs that bypass Play, so first runs aren't janky.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")

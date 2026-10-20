@@ -10,7 +10,10 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import java.io.IOException
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -63,13 +66,20 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
 
     private val keyThemeMode = stringPreferencesKey("theme_mode")
 
-    val themeMode: Flow<ThemeMode> = preferences.map { preferences ->
-        runCatching {
-            ThemeMode.valueOf(preferences[keyThemeMode] ?: ThemeMode.LIGHT.name)
-        }.getOrDefault(ThemeMode.LIGHT)
-    }
+    // The theme a tap just picked, applied before the write reaches disk so the switch feels instant.
+    private val pendingThemeMode = MutableStateFlow<ThemeMode?>(null)
+
+    val themeMode: Flow<ThemeMode> = combine(
+        preferences.map { preferences ->
+            runCatching {
+                ThemeMode.valueOf(preferences[keyThemeMode] ?: ThemeMode.LIGHT.name)
+            }.getOrDefault(ThemeMode.LIGHT)
+        },
+        pendingThemeMode
+    ) { stored, pending -> pending ?: stored }.distinctUntilChanged()
 
     suspend fun setThemeMode(value: ThemeMode) {
+        pendingThemeMode.value = value
         context.scanProSettings.edit { it[keyThemeMode] = value.name }
     }
 }

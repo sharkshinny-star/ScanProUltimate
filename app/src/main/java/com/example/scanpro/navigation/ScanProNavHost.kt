@@ -1,5 +1,9 @@
 package com.example.scanpro.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.Lifecycle
@@ -30,7 +34,16 @@ fun ScanProNavHost(
 ) {
     val onTab: (String) -> Unit = { route -> navController.navigateToTopLevel(route) }
 
-    NavHost(navController = navController, startDestination = ScanProDestinations.HOME) {
+    NavHost(
+        navController = navController,
+        startDestination = ScanProDestinations.HOME,
+        // Material "fade through". Navigation's default is a 700ms crossfade, which makes every tab
+        // switch feel like the app is hanging.
+        enterTransition = { fadeIn(tween(210, delayMillis = 60)) + scaleIn(tween(210, delayMillis = 60), initialScale = 0.96f) },
+        exitTransition = { fadeOut(tween(90)) },
+        popEnterTransition = { fadeIn(tween(210, delayMillis = 60)) + scaleIn(tween(210, delayMillis = 60), initialScale = 0.96f) },
+        popExitTransition = { fadeOut(tween(90)) }
+    ) {
         // Search shares the library screen but is pushed on top of a tab rather than being one.
         listOf(ScanProDestinations.HOME, ScanProDestinations.FILES, ScanProDestinations.SEARCH).forEach { route ->
             composable(route) {

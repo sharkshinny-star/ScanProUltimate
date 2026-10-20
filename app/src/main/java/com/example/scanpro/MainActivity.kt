@@ -3,7 +3,14 @@ package com.example.scanpro
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import android.view.View
+import android.view.ViewTreeObserver
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
+import com.example.scanpro.core.designsystem.ThemeTransition
+import com.example.scanpro.data.ThemeMode
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
@@ -76,6 +83,7 @@ class MainActivity : FragmentActivity() {
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
+        holdLaunchScreenUntilReady()
         publishScanShortcut()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -89,38 +97,71 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
-            ScanProTheme(themeMode = themeMode) {
-                ScanProApp(
-                    viewModel = viewModel,
-                    sessionUnlocked = sessionUnlocked,
-                    onFallbackScanner = ::startCompatibilityScanner,
-                    onImportImages = {
-                        imageImportLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    onUnlock = {
-                        authenticate(
-                            // The screen lock was removed after app lock was turned on. Only the device
-                            // owner can remove it, so let them in and switch app lock off rather than
-                            // locking them out of their documents for good.
-                            onNoScreenLock = {
-                                viewModel.setAppLock(false)
+            // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
+            val mode = themeMode ?: return@setContent
+            val targetDark = when (mode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+            }
+            ThemeTransition(targetDark) { dark ->
+                // Status and navigation bar icons follow the app's theme, not the system's.
+                DisposableEffect(dark) {
+                    val style = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT) { dark }
+                    enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                    onDispose { }
+                }
+                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
+                    ScanProApp(
+                        viewModel = viewModel,
+                        sessionUnlocked = sessionUnlocked,
+                        onFallbackScanner = ::startCompatibilityScanner,
+                        onImportImages = {
+                            imageImportLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        onUnlock = {
+                            authenticate(
+                                // The screen lock was removed after app lock was turned on. Only the device
+                                // owner can remove it, so let them in and switch app lock off rather than
+                                // locking them out of their documents for good.
+                                onNoScreenLock = {
+                                    viewModel.setAppLock(false)
+                                    viewModel.markUnlocked()
+                                    viewModel.showMessage("This device no longer has a screen lock, so app lock was turned off")
+                                }
+                            ) { viewModel.markUnlocked() }
+                        },
+                        onAppLockChange = { enabled ->
+                            // Turning the lock off needs authentication too, or anyone holding the phone could disable it.
+                            authenticate {
+                                viewModel.setAppLock(enabled)
                                 viewModel.markUnlocked()
-                                viewModel.showMessage("This device no longer has a screen lock, so app lock was turned off")
                             }
-                        ) { viewModel.markUnlocked() }
-                    },
-                    onAppLockChange = { enabled ->
-                        // Turning the lock off needs authentication too, or anyone holding the phone could disable it.
-                        authenticate {
-                            viewModel.setAppLock(enabled)
-                            viewModel.markUnlocked()
                         }
-                    }
-                )
+                    )
+                }
             }
         }
+    }
+
+    /**
+     * Keeps the launch screen (always light) up until the saved theme and app-lock setting have
+     * loaded, so the first frame is already in the right theme instead of flashing light, then dark.
+     */
+    private fun holdLaunchScreenUntilReady() {
+        val content = findViewById<View>(android.R.id.content)
+        val startedAt = SystemClock.uptimeMillis()
+        content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                // Settings normally load in a few milliseconds; never hold the launch screen for long.
+                val ready = (viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null) ||
+                    SystemClock.uptimeMillis() - startedAt > LAUNCH_SCREEN_MAX_HOLD_MS
+                if (ready) content.viewTreeObserver.removeOnPreDrawListener(this)
+                return ready
+            }
+        })
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -274,6 +315,7 @@ class MainActivity : FragmentActivity() {
 
     private companion object {
         const val LOCK_TIMEOUT_MS = 30_000L
+        const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
     }
 }

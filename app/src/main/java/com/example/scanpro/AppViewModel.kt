@@ -37,7 +37,10 @@ class AppViewModel @Inject constructor(
     private val operations: OperationRunner,
     library: DocumentLibrary
 ) : ViewModel() {
-    val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.LIGHT)
+    /** Null until the saved theme has loaded; the launch screen stays up until then, so it never flashes. */
+    val themeMode: StateFlow<ThemeMode?> = settings.themeMode
+        .map<ThemeMode, ThemeMode?> { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     /** Null until the setting has loaded, so the library is never shown before the lock decision. */
     val appLockEnabled: StateFlow<Boolean?> = settings.appLock
         .map<Boolean, Boolean?> { it }
