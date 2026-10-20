@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import com.example.scanpro.imaging.OpenCvRuntime
 import android.graphics.Bitmap
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
@@ -39,6 +40,8 @@ data class DocumentDetection(
  * is only used after the shutter is fired, keeping preview latency low.
  */
 object DocumentEdgeDetector {
+    init { OpenCvRuntime.ensureLoaded() }
+
     private const val ANALYSIS_LONG_SIDE = 900.0
     private const val MIN_DOCUMENT_AREA_RATIO = 0.12
 

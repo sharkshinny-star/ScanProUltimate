@@ -9,7 +9,7 @@ import androidx.work.WorkManager
 import com.example.scanpro.work.CleanupWorker
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import dagger.hilt.android.HiltAndroidApp
-import org.opencv.android.OpenCVLoader
+import com.example.scanpro.imaging.OpenCvRuntime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -26,8 +26,9 @@ class ScanProApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         PDFBoxResourceLoader.init(this)
-        // Maven OpenCV packages the native libraries in the app. initDebug loads them locally.
-        OpenCVLoader.initDebug()
+        // Maven OpenCV packages the native libraries in the app. Load them off the main thread so they
+        // don't hold up the first frame.
+        OpenCvRuntime.preloadInBackground()
         scheduleMaintenance()
     }
 
