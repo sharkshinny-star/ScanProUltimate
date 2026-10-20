@@ -10,7 +10,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.scanpro"
+        applicationId = "com.scanpro.app"
         minSdk = 24
         targetSdk = 36
         versionCode = 5
