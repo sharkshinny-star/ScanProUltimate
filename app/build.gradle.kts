@@ -13,8 +13,8 @@ android {
         applicationId = "com.scanpro.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "4.0.1"
+        versionCode = 6
+        versionName = "4.1.0"
 
         vectorDrawables { useSupportLibrary = true }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
