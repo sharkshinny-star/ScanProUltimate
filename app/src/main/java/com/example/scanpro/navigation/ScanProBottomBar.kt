@@ -25,7 +25,8 @@ fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit) {
                 selected = selectedRoute == route,
                 onClick = { onTab(route) },
                 icon = { Icon(icon, contentDescription = label) },
-                label = { Text(label) }
+                label = { Text(label) },
+                alwaysShowLabel = false
             )
         }
     }
