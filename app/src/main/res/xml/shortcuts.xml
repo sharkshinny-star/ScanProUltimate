@@ -51,20 +51,4 @@
         </intent>
     </shortcut>
 
-    <shortcut
-        android:shortcutId="support"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_support_short"
-        android:shortcutLongLabel="@string/shortcut_support_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="${applicationId}"
-            android:targetClass="com.example.scanpro.MainActivity">
-            <extra
-                android:name="action_support"
-                android:value="support" />
-        </intent>
-    </shortcut>
-
 </shortcuts>

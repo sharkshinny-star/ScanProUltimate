@@ -8,7 +8,4 @@
 
     <string name="shortcut_bugs_short">⚠️ Bugs or any issues?</string>
     <string name="shortcut_bugs_long">Let us know here!</string>
-
-    <string name="shortcut_support_short">❓ Support</string>
-    <string name="shortcut_support_long">Get help &amp; support</string>
 </resources>
