@@ -171,7 +171,16 @@ class AppViewModel @Inject constructor(
             return
         }
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Extracted text", text))
+        val clip = ClipData.newPlainText("Extracted text", text).apply {
+            // Scans often hold IDs and account numbers; keep them out of the clipboard preview on Android 13+.
+            description.extras = android.os.PersistableBundle().apply {
+                putBoolean(
+                    if (android.os.Build.VERSION.SDK_INT >= 33) android.content.ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE",
+                    true
+                )
+            }
+        }
+        clipboard.setPrimaryClip(clip)
         operations.showMessage("Text copied to clipboard")
     }
 }

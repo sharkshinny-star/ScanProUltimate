@@ -138,6 +138,8 @@ fun PdfViewerScreen(
 
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
+    // Copies made for viewing (including decrypted ones) are removed when the viewer closes.
+    val tempFiles = remember { mutableListOf<File>() }
     var needsPassword by remember { mutableStateOf(false) }
     var lockedFile by remember { mutableStateOf<File?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
@@ -184,6 +186,7 @@ fun PdfViewerScreen(
                 isImageMode = false
                 val local = pdfUri.path?.let { File(it) }?.takeIf { pdfUri.scheme == "file" && it.exists() }
                 val file = local ?: File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf").also { temp ->
+                    tempFiles += temp
                     context.contentResolver.openInputStream(pdfUri)?.use { input ->
                         FileOutputStream(temp).use { output -> input.copyTo(output) }
                     } ?: throw IllegalStateException("Could not open file")
@@ -201,6 +204,7 @@ fun PdfViewerScreen(
                         PdfProtection.RESTRICTED_ONLY -> {
                             // Opens without a password but with restrictions some renderers refuse.
                             val open = File(context.cacheDir, "view_unrestricted_${System.currentTimeMillis()}.pdf")
+                            tempFiles += open
                             PdfSecurity.unlock(file, open, "")
                             openRenderer(open)
                         }
@@ -224,6 +228,7 @@ fun PdfViewerScreen(
                 }
             }
             imageBitmap?.recycle()
+            tempFiles.forEach { it.delete() }
         }
     }
 
@@ -565,6 +570,7 @@ fun PdfViewerScreen(
                     scope.launch(Dispatchers.IO) {
                         try {
                             val unlocked = File(context.cacheDir, "view_unlocked_${System.currentTimeMillis()}.pdf")
+                            tempFiles += unlocked
                             PdfSecurity.unlock(source, unlocked, password)
                             openRenderer(unlocked)
                             passwordError = null

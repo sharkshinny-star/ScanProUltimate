@@ -30,6 +30,8 @@ class ScanProApplication : Application(), Configuration.Provider {
         // don't hold up the first frame.
         OpenCvRuntime.preloadInBackground()
         scheduleMaintenance()
+        // Off the main thread: clear temporary copies of documents that a crash may have left in the cache.
+        Thread { runCatching { com.example.scanpro.work.CacheCleaner.purge(this) } }.apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
     private fun scheduleMaintenance() {
