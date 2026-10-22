@@ -57,17 +57,17 @@ private val ScanProDark = darkColorScheme(
     tertiary = Color(0xFFFBBF24),
     tertiaryContainer = Color(0xFF78350F),
     onTertiaryContainer = Color(0xFFFEF3C7),
-    background = Color(0xFF0F172A),
+    background = Color(0xFF0B0F17),
     onBackground = Color(0xFFF8FAFC),
-    surface = Color(0xFF1E293B),
+    surface = Color(0xFF161F2E),
     onSurface = Color(0xFFF8FAFC),
-    surfaceVariant = Color(0xFF334155),
+    surfaceVariant = Color(0xFF243042),
     onSurfaceVariant = Color(0xFFCBD5E1),
-    surfaceContainer = Color(0xFF1E293B),
-    surfaceContainerHigh = Color(0xFF334155),
-    surfaceContainerLow = Color(0xFF172033),
+    surfaceContainer = Color(0xFF161F2E),
+    surfaceContainerHigh = Color(0xFF243042),
+    surfaceContainerLow = Color(0xFF0F172A),
     outline = Color(0xFF64748B),
-    outlineVariant = Color(0xFF475569)
+    outlineVariant = Color(0xFF334155)
 )
 
 private val ScanProShapes = Shapes(

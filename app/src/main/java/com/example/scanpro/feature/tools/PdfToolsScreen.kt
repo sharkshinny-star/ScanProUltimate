@@ -995,9 +995,7 @@ private fun PdfPageOrganizerSheet(
     val pages = remember { mutableStateListOf<ThumbnailPageModel>() }
     var isLoading by remember { mutableStateOf(true) }
 
-    androidx.compose.runtime.DisposableEffect(uri) {
-        onDispose { PdfToolsEngine.releasePreview(uri) }
-    }
+
 
     LaunchedEffect(uri) {
         withContext(Dispatchers.IO) {
