@@ -1,5 +1,11 @@
 <resources>
-    <string name="app_name">PDF Scanner - ScanPro</string>
+    <string name="app_name">PDF Scanner - Scan Pro</string>
     <string name="shortcut_scan_short">Scan now</string>
     <string name="shortcut_scan_long">Scan document now</string>
+
+    <string name="shortcut_dont_remove_short">🥺 Don’t remove our app!</string>
+    <string name="shortcut_dont_remove_long">Give us a second chance!</string>
+
+    <string name="shortcut_bugs_short">⚠️ Bugs or any issues?</string>
+    <string name="shortcut_bugs_long">Let us know here!</string>
 </resources>

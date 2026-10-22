@@ -253,3 +253,22 @@ private class PdfFilePrintAdapter(
         }.start()
     }
 }
+
+/** The app's Play Store package, the release applicationId (debug builds add a ".debug" suffix). */
+const val PLAY_STORE_PACKAGE = "com.scanpro.app"
+
+/** Opens ScanPro's listing in the Play Store app, or on the Play website if the Store isn't installed. */
+fun openPlayStoreListing(context: Context) {
+    val storeApp = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$PLAY_STORE_PACKAGE"))
+        .setPackage("com.android.vending")
+    val website = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$PLAY_STORE_PACKAGE"))
+    try {
+        context.startActivity(storeApp)
+    } catch (_: ActivityNotFoundException) {
+        try {
+            context.startActivity(website)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(context, "Google Play isn't available on this device", Toast.LENGTH_SHORT).show()
+        }
+    }
+}

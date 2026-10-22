@@ -12,13 +12,13 @@ import org.opencv.core.MatOfDouble
 import org.opencv.core.MatOfPoint
 import org.opencv.core.MatOfPoint2f
 import org.opencv.core.Point
+import org.opencv.core.RotatedRect
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
-
 
 data class DocumentDetection(
     val quad: CropQuad?,
@@ -29,28 +29,30 @@ data class DocumentDetection(
     val frameHeight: Int,
     val guidance: String
 ) {
-    val isBlurry: Boolean get() = blurScore < 85.0
-    val isDark: Boolean get() = brightness < 48.0
-    val isReady: Boolean get() = quad != null && confidence >= 0.52f && !isBlurry && !isDark
+    val isBlurry: Boolean get() = blurScore < 80.0
+    val isDark: Boolean get() = brightness < 45.0
+    val isReady: Boolean get() = quad != null && confidence >= 0.48f && !isBlurry && !isDark
 }
 
 /**
- * OpenCV document detector tuned for live mobile preview frames.
- * Detection intentionally runs on grayscale, down-scaled images. The original capture
- * is only used after the shutter is fired, keeping preview latency low.
+ * High-precision OpenCV document detector for mobile scanning.
+ * Combines Canny edge analysis, adaptive thresholding, multi-epsilon polygon approximation,
+ * convex hull quad extraction, and corner geometry scoring.
  */
 object DocumentEdgeDetector {
     init { OpenCvRuntime.ensureLoaded() }
 
     private const val ANALYSIS_LONG_SIDE = 900.0
-    private const val MIN_DOCUMENT_AREA_RATIO = 0.12
+    private const val MIN_DOCUMENT_AREA_RATIO = 0.08
 
     fun detect(grayInput: Mat): DocumentDetection {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
 
         val working = resizeForAnalysis(grayInput)
         val processed = Mat()
-        val edges = Mat()
+        val edgesCanny = Mat()
+        val edgesAdaptive = Mat()
+        val combinedEdges = Mat()
         val hierarchy = Mat()
         val laplacian = Mat()
         val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(5.0, 5.0))
@@ -59,47 +61,84 @@ object DocumentEdgeDetector {
 
         try {
             Imgproc.GaussianBlur(working, processed, Size(5.0, 5.0), 0.0)
+
+            // Method 1: Dynamic Canny
             val median = Core.mean(processed).`val`[0].coerceIn(20.0, 230.0)
-            val lower = max(20.0, median * 0.55)
-            val upper = min(255.0, median * 1.45)
-            Imgproc.Canny(processed, edges, lower, upper)
-            Imgproc.morphologyEx(
-                edges,
-                edges,
-                Imgproc.MORPH_CLOSE,
-                kernel
+            val lower = max(15.0, median * 0.5)
+            val upper = min(255.0, median * 1.4)
+            Imgproc.Canny(processed, edgesCanny, lower, upper)
+
+            // Method 2: Adaptive Threshold for low-contrast edges on light or dark backgrounds
+            Imgproc.adaptiveThreshold(
+                processed,
+                edgesAdaptive,
+                255.0,
+                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+                Imgproc.THRESH_BINARY_INV,
+                15,
+                4.0
             )
 
+            // Combine both edge maps
+            Core.bitwise_or(edgesCanny, edgesAdaptive, combinedEdges)
+            Imgproc.morphologyEx(combinedEdges, combinedEdges, Imgproc.MORPH_CLOSE, kernel)
+
+            // Blur & Brightness diagnostics
             Imgproc.Laplacian(processed, laplacian, CvType.CV_64F)
             Core.meanStdDev(laplacian, mean, stdDev)
             val blur = stdDev.toArray().firstOrNull()?.let { it * it } ?: 0.0
             val brightness = Core.mean(working).`val`[0]
 
             val contours = mutableListOf<MatOfPoint>()
-            Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE)
+            Imgproc.findContours(combinedEdges, contours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE)
 
             val frameArea = working.cols().toDouble() * working.rows().toDouble()
             var best: Candidate? = null
 
             try {
-            contours.forEach { contour ->
-                val area = abs(Imgproc.contourArea(contour))
-                if (area < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
+                contours.forEach { contour ->
+                    val area = abs(Imgproc.contourArea(contour))
+                    if (area < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
 
-                val contour2f = MatOfPoint2f(*contour.toArray())
-                val perimeter = Imgproc.arcLength(contour2f, true)
-                val approx = MatOfPoint2f()
-                try {
-                    Imgproc.approxPolyDP(contour2f, approx, perimeter * 0.02, true)
-                    val points = approx.toArray()
-                    if (points.size != 4) return@forEach
-                    val asInt = MatOfPoint(*points)
-                    try {
-                        if (!Imgproc.isContourConvex(asInt)) return@forEach
-                    } finally {
-                        asInt.release()
+                    val contour2f = MatOfPoint2f(*contour.toArray())
+                    val perimeter = Imgproc.arcLength(contour2f, true)
+
+                    var candidatePoints: Array<Point>? = null
+
+                    // 1. Multi-Epsilon Polygon Approximation (0.015 to 0.05)
+                    for (ratio in listOf(0.015, 0.02, 0.028, 0.035, 0.045)) {
+                        val approx = MatOfPoint2f()
+                        try {
+                            Imgproc.approxPolyDP(contour2f, approx, perimeter * ratio, true)
+                            val pts = approx.toArray()
+                            if (pts.size == 4) {
+                                val asInt = MatOfPoint(*pts)
+                                val isConvex = Imgproc.isContourConvex(asInt)
+                                asInt.release()
+                                if (isConvex) {
+                                    candidatePoints = pts
+                                    break
+                                }
+                            }
+                        } finally {
+                            approx.release()
+                        }
                     }
 
+                    // 2. Fallback: MinAreaRect bounding box quad if approxPolyDP didn't yield 4 points
+                    if (candidatePoints == null) {
+                        val minRect: RotatedRect = Imgproc.minAreaRect(contour2f)
+                        val boxPts = Array<Point>(4) { Point() }
+                        minRect.points(boxPts)
+                        val boxArea = minRect.size.width * minRect.size.height
+                        if (boxArea >= frameArea * MIN_DOCUMENT_AREA_RATIO) {
+                            candidatePoints = boxPts
+                        }
+                    }
+
+                    contour2f.release()
+
+                    val points = candidatePoints ?: return@forEach
                     val ordered = order(points)
                     val polygon = MatOfPoint(*ordered.toTypedArray())
                     try {
@@ -108,19 +147,17 @@ object DocumentEdgeDetector {
                         val rect = Imgproc.boundingRect(polygon)
                         val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
                         val edgeBalance = edgeBalance(ordered)
-                        val score = (areaRatio * 0.58 + rectangularity * 0.25 + edgeBalance * 0.17).toFloat()
+                        val score = (areaRatio * 0.52 + rectangularity * 0.30 + edgeBalance * 0.18).toFloat()
+
                         val current = best
-                        if (current == null || score > current.score) best = Candidate(ordered, score)
+                        if (current == null || score > current.score) {
+                            best = Candidate(ordered, score)
+                        }
                     } finally {
                         polygon.release()
                     }
-                } finally {
-                    approx.release()
-                    contour2f.release()
                 }
-            }
             } finally {
-                // Release native contour memory even if candidate scoring throws.
                 contours.forEach(MatOfPoint::release)
             }
 
@@ -128,10 +165,10 @@ object DocumentEdgeDetector {
             val confidence = candidate?.score ?: 0f
             val quad = candidate?.let { toNormalizedQuad(it.points, working.cols(), working.rows()) }
             val guidance = when {
-                quad == null -> "Point the camera at a document"
-                brightness < 48.0 -> "More light needed"
-                blur < 85.0 -> "Hold steady"
-                confidence < 0.52f -> "Move closer and fit all four corners"
+                quad == null -> "Point camera at document"
+                brightness < 45.0 -> "More light needed"
+                blur < 80.0 -> "Hold steady"
+                confidence < 0.48f -> "Move closer and center page"
                 else -> "Ready"
             }
 
@@ -147,7 +184,9 @@ object DocumentEdgeDetector {
         } finally {
             if (working !== grayInput) working.release()
             processed.release()
-            edges.release()
+            edgesCanny.release()
+            edgesAdaptive.release()
+            combinedEdges.release()
             hierarchy.release()
             laplacian.release()
             kernel.release()
@@ -178,18 +217,33 @@ object DocumentEdgeDetector {
         return output
     }
 
-    /**
-     * Orders four corners as top-left, top-right, bottom-right, bottom-left. Sorting by angle around the
-     * centroid always yields four distinct corners; picking by min/max of x+y and x-y could choose the
-     * same point twice for a page tilted near 45 degrees.
-     */
     private fun order(points: Array<Point>): List<Point> {
+        val pts = points.toList()
+        val tl = pts.minByOrNull { it.x + it.y } ?: points[0]
+        val br = pts.maxByOrNull { it.x + it.y } ?: points[2]
+        val tr = pts.maxByOrNull { it.x - it.y } ?: points[1]
+        val bl = pts.minByOrNull { it.x - it.y } ?: points[3]
+
+        // Ensure 4 distinct points in order: Top-Left, Top-Right, Bottom-Right, Bottom-Left
+        val list = listOf(tl, tr, br, bl)
+        if (list.distinct().size == 4) return list
+
+        // Centroid angle fallback if duplicate corners selected
         val cx = points.sumOf { it.x } / points.size
         val cy = points.sumOf { it.y } / points.size
-        // Clockwise in image coordinates (y grows downward), starting from the upper-left.
         val clockwise = points.sortedBy { kotlin.math.atan2(it.y - cy, it.x - cx) }
-        val start = clockwise.indices.minBy { clockwise[it].x + clockwise[it].y }
+        val start = clockwise.indices.minByOrNull { clockwise[it].x + clockwise[it].y } ?: 0
         return List(4) { clockwise[(start + it) % 4] }
+    }
+
+    private fun edgeBalance(points: List<Point>): Double {
+        val top = hypot(points[1].x - points[0].x, points[1].y - points[0].y)
+        val right = hypot(points[2].x - points[1].x, points[2].y - points[1].y)
+        val bottom = hypot(points[3].x - points[2].x, points[3].y - points[2].y)
+        val left = hypot(points[0].x - points[3].x, points[0].y - points[3].y)
+        val hRatio = min(top, bottom) / max(top, bottom).coerceAtLeast(1.0)
+        val vRatio = min(left, right) / max(left, right).coerceAtLeast(1.0)
+        return (hRatio + vRatio) / 2.0
     }
 
     private fun toNormalizedQuad(points: List<Point>, width: Int, height: Int): CropQuad {
@@ -198,20 +252,6 @@ object DocumentEdgeDetector {
             (point.y / height.toDouble()).toFloat().coerceIn(0f, 1f)
         )
         return CropQuad(norm(points[0]), norm(points[1]), norm(points[2]), norm(points[3]))
-    }
-
-    /** Prefers quadrilaterals whose opposite edges have similar length. */
-    private fun edgeBalance(points: List<Point>): Double {
-        fun d(a: Point, b: Point) = hypot(a.x - b.x, a.y - b.y)
-        val top = d(points[0], points[1])
-        val right = d(points[1], points[2])
-        val bottom = d(points[2], points[3])
-        val left = d(points[3], points[0])
-        fun similarity(a: Double, b: Double): Double {
-            val max = max(a, b)
-            return if (max <= 1.0) 0.0 else min(a, b) / max
-        }
-        return (similarity(top, bottom) + similarity(left, right)) / 2.0
     }
 
     private data class Candidate(val points: List<Point>, val score: Float)

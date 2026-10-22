@@ -1,5 +1,9 @@
 package com.example.scanpro.feature.settings
 
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.StarRate
+import androidx.compose.ui.platform.LocalContext
+import com.example.scanpro.core.ui.openPlayStoreListing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,11 +22,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -137,24 +144,48 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(20.dp))
             ListItem(
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 headlineContent = { Text("Smart OCR titles") },
                 supportingContent = {
                     Text("Use recognized text to name new scans automatically.")
                 },
                 trailingContent = {
-                    Switch(checked = autoTitle, onCheckedChange = onAutoTitleChange)
+                    Switch(
+                        checked = autoTitle,
+                        onCheckedChange = onAutoTitleChange,
+                        colors = SwitchDefaults.colors(
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
                 }
             )
 
             ListItem(
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 headlineContent = { Text("Biometric app lock") },
                 supportingContent = {
                     Text("Require a device biometric when the library is locked.")
                 },
                 leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingContent = {
-                    Switch(checked = appLock, onCheckedChange = onAppLockChange)
+                    Switch(
+                        checked = appLock,
+                        onCheckedChange = onAppLockChange,
+                        colors = SwitchDefaults.colors(
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
                 }
+            )
+
+            val context = LocalContext.current
+            ListItem(
+                modifier = Modifier.clickable { openPlayStoreListing(context) },
+                headlineContent = { Text("Rate ScanPro") },
+                supportingContent = { Text("Enjoying the app? Leave a review on Google Play.") },
+                leadingContent = { Icon(Icons.Default.StarRate, contentDescription = null) }
             )
 
             Spacer(Modifier.height(24.dp))
