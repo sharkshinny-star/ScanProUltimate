@@ -36,7 +36,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -133,6 +135,8 @@ fun CameraScannerScreen(
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             scaleType = PreviewView.ScaleType.FIT_CENTER
+            // The screen must not dim or lock while someone lines up a page.
+            keepScreenOn = true
         }
     }
 
@@ -517,7 +521,7 @@ fun CameraScannerScreen(
         }
 
             if (scanMode != ScanMode.ID_CARD) {
-                Box(Modifier.align(Alignment.TopCenter).padding(top = 18.dp)) {
+                Box(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp)) {
                     Row(
                         Modifier.clickable { detectMenuOpen = true }.padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -538,7 +542,7 @@ fun CameraScannerScreen(
                 }
             }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 18.dp, start = 12.dp, end = 12.dp),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(top = 8.dp, start = 12.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -582,6 +586,7 @@ fun CameraScannerScreen(
         Column(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                 .background(Color(0xFF0A0F18))
+                .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -682,7 +687,10 @@ fun CameraScannerScreen(
                 }
 
                 Surface(
-                    onClick = { capturePage() },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        capturePage()
+                    },
                     enabled = !capturing && pages.size < pageLimit,
                     shape = CircleShape,
                     color = Color.White,
