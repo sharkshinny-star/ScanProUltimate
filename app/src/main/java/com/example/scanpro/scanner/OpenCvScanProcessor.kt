@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import com.example.scanpro.data.CropQuad
 import com.example.scanpro.imaging.ImageProcessor
 import java.io.File
 
@@ -32,5 +33,18 @@ object OpenCvScanProcessor {
 
         if (!corrected) source.copyTo(destination, overwrite = true)
         return Result(destination, detection, corrected)
+    }
+}
+
+/** Turns the crop the user confirmed in the review step into the final page image. */
+fun OpenCvScanProcessor.finalizePage(source: File, destination: File, quad: CropQuad?) {
+    when {
+        quad == null -> correctCapturedPage(source, destination)
+        quad.isIdentity() -> {
+            destination.parentFile?.mkdirs()
+            source.copyTo(destination, overwrite = true)
+        }
+        else -> runCatching { ImageProcessor.cropSourceToNewFile(source, destination, quad) }
+            .getOrElse { source.copyTo(destination, overwrite = true) }
     }
 }

@@ -74,6 +74,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -168,6 +169,16 @@ fun CameraScannerScreen(
     val sessionId = rememberSaveable { UUID.randomUUID().toString() }
     val sessionDir = remember(sessionId) { File(File(context.cacheDir, SESSION_ROOT), sessionId) }
     var completed by remember { mutableStateOf(false) }
+    // The review step after capture: crop, rotate, reorder and add pages before saving.
+    var reviewing by rememberSaveable { mutableStateOf(false) }
+    var reviewIndex by rememberSaveable { mutableIntStateOf(0) }
+    var processing by remember { mutableStateOf(false) }
+    val quads = rememberSaveable(
+        saver = listSaver(
+            save = { map -> encodeQuads(map) },
+            restore = { saved -> mutableStateMapOf<String, CropQuad>().apply { saved.mapNotNull(::decodeQuad).forEach { (k, v) -> put(k, v) } } }
+        )
+    ) { mutableStateMapOf<String, CropQuad>() }
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
     var resumeCount by remember { mutableIntStateOf(0) }
     val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
@@ -219,13 +230,35 @@ fun CameraScannerScreen(
             onAutoCapture = { autoCaptureSignal++ }
         )
     }
-    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && pages.size < pageLimit }
+    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && !reviewing && pages.size < pageLimit }
 
+    /** Opens the review step on the newest page. */
     fun finishScan() {
-        // Ignore a second tap during the exit animation; it would import twice.
         if (!completed && pages.isNotEmpty()) {
+            reviewIndex = pages.lastIndex
+            reviewing = true
+        }
+    }
+
+    /** Applies each page's confirmed crop, then hands the finished images to the importer. */
+    fun saveReviewed() {
+        // Ignore a second tap during the exit animation; it would import twice.
+        if (completed || processing || pages.isEmpty()) return
+        processing = true
+        val inputs = pages.toList().map { it to quads[it.toString()] }
+        scope.launch {
+            val outputs = withContext(Dispatchers.Default) {
+                inputs.map { (uri, quad) ->
+                    val source = File(uri.path.orEmpty())
+                    val target = File(sessionDir, "scan_${UUID.randomUUID()}.jpg")
+                    runCatching { OpenCvScanProcessor.finalizePage(source, target, quad) }
+                        .onFailure { runCatching { source.copyTo(target, overwrite = true) } }
+                    Uri.fromFile(target)
+                }
+            }
             completed = true
-            onComplete(pages.toList(), scanMode)
+            processing = false
+            onComplete(outputs, scanMode)
         }
     }
 
@@ -238,7 +271,6 @@ fun CameraScannerScreen(
         sessionDir.mkdirs()
         val id = UUID.randomUUID().toString()
         val raw = File(sessionDir, "raw_$id.jpg")
-        val corrected = File(sessionDir, "scan_$id.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(raw).build()
 
         capture.takePicture(
@@ -252,30 +284,15 @@ fun CameraScannerScreen(
                         raw.delete()
                         return
                     }
-                    scope.launch {
-                        // Always release the shutter and clean up, even if processing fails.
-                        try {
-                            val result = withContext(Dispatchers.Default) {
-                                OpenCvScanProcessor.correctCapturedPage(raw, corrected)
-                            }
-                            pages.add(Uri.fromFile(result.output))
-                            if (!batch && scanMode != ScanMode.ID_CARD) finishScan()
-                            status = when {
-                                scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
-                                scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
-                                result.perspectiveCorrected -> "Page ${pages.size} captured"
-                                else -> "Page ${pages.size} captured · adjust crop if needed"
-                            }
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (error: Throwable) {
-                            // Throwable: a failed OpenCV native load throws UnsatisfiedLinkError, not an Exception.
-                            status = "Could not process page: ${error.message ?: "try again"}"
-                        } finally {
-                            raw.delete()
-                            capturing = false
-                        }
+                    // Keep the raw photo: cropping happens in the review step, from the full-size original.
+                    pages.add(Uri.fromFile(raw))
+                    capturing = false
+                    status = when {
+                        scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
+                        scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
+                        else -> "Page ${pages.size} captured"
                     }
+                    if (!batch && scanMode != ScanMode.ID_CARD) finishScan()
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -301,7 +318,7 @@ fun CameraScannerScreen(
     }
 
     LaunchedEffect(autoCaptureSignal) {
-        if (autoCaptureSignal > 0 && autoCapture && !capturing && pages.size < pageLimit) capturePage()
+        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && pages.size < pageLimit) capturePage()
     }
 
     LaunchedEffect(permissionGranted, lifecycleOwner) {
@@ -402,6 +419,21 @@ fun CameraScannerScreen(
             onRequest = { permissionLauncher.launch(Manifest.permission.CAMERA) },
             onFallback = onFallbackScanner,
             onClose = onClose
+        )
+        return
+    }
+
+    if (reviewing && pages.isNotEmpty()) {
+        ScanReviewScreen(
+            pages = pages,
+            quads = quads,
+            index = reviewIndex,
+            sessionDir = sessionDir,
+            processing = processing,
+            onIndexChange = { reviewIndex = it },
+            onAdd = { reviewing = false },
+            onBack = { reviewing = false },
+            onDone = ::saveReviewed
         )
         return
     }

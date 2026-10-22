@@ -1,0 +1,308 @@
+package com.example.scanpro.scanner
+
+import android.graphics.Bitmap
+import android.graphics.Matrix
+import android.net.Uri
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.RotateLeft
+import androidx.compose.material.icons.automirrored.filled.RotateRight
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CropFree
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.NormalizedPoint
+import com.example.scanpro.imaging.ImageProcessor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.UUID
+import kotlin.math.hypot
+
+private val Blue = Color(0xFF2F7BFF)
+
+/**
+ * Full-screen review shown after capturing: swipe through pages with the pager, drag the corners, rotate,
+ * add more pages or finish. Rotation is baked into a new image file so crop and rotation never disagree.
+ */
+@Composable
+fun ScanReviewScreen(
+    pages: SnapshotStateList<Uri>,
+    quads: SnapshotStateMap<String, CropQuad>,
+    index: Int,
+    sessionDir: File,
+    processing: Boolean,
+    onIndexChange: (Int) -> Unit,
+    onAdd: () -> Unit,
+    onBack: () -> Unit,
+    onDone: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val current = index.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
+    val uri = pages[current]
+    val key = uri.toString()
+    var working by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    val blocked = working || processing
+
+    BackHandler(enabled = !processing) { onBack() }
+
+    val bitmap by produceState<Bitmap?>(initialValue = null, key) {
+        value = null
+        value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 1800) }
+    }
+
+    // Pages that have not been outlined yet (imports, or captures not seen before) are detected on first view.
+    LaunchedEffect(bitmap) {
+        val image = bitmap ?: return@LaunchedEffect
+        if (quads[key] == null) {
+            quads[key] = withContext(Dispatchers.Default) { detectQuad(image) }
+        }
+    }
+
+    fun rotate(clockwise: Boolean) {
+        if (blocked) return
+        working = true
+        scope.launch {
+            val oldKey = key
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val source = ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 4200) ?: error("decode")
+                    val matrix = Matrix().apply { postRotate(if (clockwise) 90f else -90f) }
+                    val turned = Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+                    if (turned !== source) source.recycle()
+                    val target = File(sessionDir, "rot_${UUID.randomUUID()}.jpg")
+                    try { ImageProcessor.saveBitmapJpeg(turned, target, 98) } finally { turned.recycle() }
+                    target
+                }
+            }
+            result.onSuccess { file ->
+                val newUri = Uri.fromFile(file)
+                val quad = quads.remove(oldKey)?.let { rotateQuad(it, clockwise) }
+                // The page is only replaced once the rotated file exists, so a failure loses nothing.
+                val position = pages.indexOf(uri)
+                if (position >= 0) {
+                    pages[position] = newUri
+                    if (quad != null) quads[newUri.toString()] = quad
+                    File(uri.path.orEmpty()).delete()
+                }
+            }.onFailure { message = "Could not rotate this page" }
+            working = false
+        }
+    }
+
+    Column(Modifier.fillMaxSize().background(Color(0xFF0A0F18)).padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(enabled = !processing, onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to camera", tint = Color.White)
+            }
+            Box(Modifier.weight(1f))
+            IconButton(
+                enabled = !blocked,
+                onClick = {
+                    quads.remove(key)
+                    File(uri.path.orEmpty()).delete()
+                    pages.remove(uri)
+                    if (pages.isEmpty()) onBack() else onIndexChange(current.coerceAtMost(pages.lastIndex))
+                }
+            ) { Icon(Icons.Default.Delete, contentDescription = "Delete page", tint = Color.White) }
+        }
+
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val image = bitmap
+            val quad = quads[key]
+            if (image == null || quad == null) {
+                CircularProgressIndicator(color = Blue)
+            } else {
+                CropCanvas(image = image, crop = quad, enabled = !blocked, onCropChange = { quads[key] = it })
+            }
+        }
+
+        message?.let { Text(it, color = Color(0xFFFCA5A5), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 4.dp)) }
+
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                Modifier.background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(50)).padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(enabled = current > 0 && !blocked, onClick = { onIndexChange(current - 1) }) {
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous page", tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
+                }
+                Text("${current + 1}/${pages.size}", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                IconButton(enabled = current < pages.lastIndex && !blocked, onClick = { onIndexChange(current + 1) }) {
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Next page", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
+                }
+            }
+            OutlinedButton(enabled = !blocked, onClick = onAdd) {
+                Icon(Icons.Default.AddAPhoto, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Add")
+            }
+        }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            ReviewAction(Icons.Default.CropFree, "Auto crop", !blocked && bitmap != null) {
+                val image = bitmap ?: return@ReviewAction
+                scope.launch {
+                    quads[key] = withContext(Dispatchers.Default) { detectQuad(image) }
+                }
+            }
+            ReviewAction(Icons.Default.Fullscreen, "No crop", !blocked) { quads[key] = CropQuad.DEFAULT }
+            ReviewAction(Icons.AutoMirrored.Filled.RotateLeft, "Left", !blocked) { rotate(clockwise = false) }
+            ReviewAction(Icons.AutoMirrored.Filled.RotateRight, "Right", !blocked) { rotate(clockwise = true) }
+            Button(enabled = !blocked, onClick = onDone) {
+                if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color.White)
+                else Text("Done")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
+    val tint = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+    Column(
+        Modifier.clickable(enabled = enabled, onClick = onClick).padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, contentDescription = null, tint = tint)
+        Text(label, color = tint, style = MaterialTheme.typography.labelMedium)
+    }
+}
+
+/** The page with a draggable four-corner outline. Dragging moves whichever corner is nearest the touch. */
+@Composable
+private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropChange: (CropQuad) -> Unit) {
+    var active by remember { mutableStateOf(0) }
+    val latest by androidx.compose.runtime.rememberUpdatedState(crop)
+    val latestEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
+    Canvas(
+        Modifier
+            .aspectRatio(image.width.toFloat() / image.height.toFloat())
+            .pointerInput(image) {
+                detectDragGestures(
+                    onDragStart = { start ->
+                        val points = corners(latest).map { Offset(it.x * size.width, it.y * size.height) }
+                        active = points.indices.minByOrNull { hypot(points[it].x - start.x, points[it].y - start.y) } ?: 0
+                    },
+                    onDrag = { change, drag ->
+                        change.consume()
+                        if (!latestEnabled) return@detectDragGestures
+                        val list = corners(latest).toMutableList()
+                        val p = list[active]
+                        list[active] = NormalizedPoint(
+                            (p.x + drag.x / size.width).coerceIn(0f, 1f),
+                            (p.y + drag.y / size.height).coerceIn(0f, 1f)
+                        )
+                        onCropChange(CropQuad(list[0], list[1], list[2], list[3]))
+                    }
+                )
+            }
+    ) {
+        drawImage(image.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
+        val points = corners(crop).map { Offset(it.x * size.width, it.y * size.height) }
+        val path = Path().apply {
+            moveTo(points[0].x, points[0].y)
+            points.drop(1).forEach { lineTo(it.x, it.y) }
+            close()
+        }
+        drawPath(path, Blue, style = Stroke(width = 3.dp.toPx()))
+        points.forEach { drawCircle(Blue, radius = 11.dp.toPx(), center = it) }
+        // Mid-edge handles, as a visual cue only: dragging always moves a corner.
+        points.indices.forEach { i ->
+            val a = points[i]
+            val b = points[(i + 1) % 4]
+            drawCircle(Blue, radius = 8.dp.toPx(), center = Offset((a.x + b.x) / 2f, (a.y + b.y) / 2f))
+        }
+    }
+}
+
+private fun corners(crop: CropQuad) = listOf(crop.topLeft, crop.topRight, crop.bottomRight, crop.bottomLeft)
+
+/** Detected page outline, or the whole frame when nothing convincing is found. */
+private fun detectQuad(image: Bitmap): CropQuad {
+    val detection = runCatching { DocumentEdgeDetector.detect(image) }.getOrNull()
+    val quad = detection?.quad
+    return if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
+}
+
+/** Maps a crop outline onto the image after it is turned a quarter turn; corners keep their reading order. */
+internal fun rotateQuad(crop: CropQuad, clockwise: Boolean): CropQuad {
+    fun cw(p: NormalizedPoint) = NormalizedPoint(1f - p.y, p.x)
+    fun ccw(p: NormalizedPoint) = NormalizedPoint(p.y, 1f - p.x)
+    return if (clockwise) {
+        CropQuad(cw(crop.bottomLeft), cw(crop.topLeft), cw(crop.topRight), cw(crop.bottomRight))
+    } else {
+        CropQuad(ccw(crop.topRight), ccw(crop.bottomRight), ccw(crop.bottomLeft), ccw(crop.topLeft))
+    }
+}
+
+internal fun encodeQuads(map: Map<String, CropQuad>): List<String> = map.map { (key, q) ->
+    key + "|" + corners(q).joinToString(",") { "${it.x},${it.y}" }
+}
+
+internal fun decodeQuad(text: String): Pair<String, CropQuad>? = runCatching {
+    val (key, values) = text.split("|", limit = 2)
+    val n = values.split(",").map { it.toFloat() }
+    key to CropQuad(
+        NormalizedPoint(n[0], n[1]), NormalizedPoint(n[2], n[3]),
+        NormalizedPoint(n[4], n[5]), NormalizedPoint(n[6], n[7])
+    )
+}.getOrNull()
