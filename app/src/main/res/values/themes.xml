@@ -11,4 +11,12 @@
         <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">#FEF7FF</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
+
+    <!-- Shown by the system while the app starts, then swapped for Theme.ScanPro (see installSplashScreen). -->
+    <style name="Theme.ScanPro.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#F8FAFC</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_scanpro</item>
+        <item name="windowSplashScreenIconBackgroundColor">#0F172A</item>
+        <item name="postSplashScreenTheme">@style/Theme.ScanPro</item>
+    </style>
 </resources>

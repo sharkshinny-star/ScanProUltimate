@@ -76,6 +76,8 @@ dependencies {
     androidTestImplementation(composeBom)
 
     implementation("androidx.core:core-ktx:1.19.1")
+    // One launch-screen implementation for every Android version, with a dark variant and a custom exit animation.
+    implementation("androidx.core:core-splashscreen:1.2.0")
     // Applies the libraries' bundled Compose baseline profiles on installs that bypass Play, so first runs aren't janky.
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("androidx.activity:activity-compose:1.13.0")
