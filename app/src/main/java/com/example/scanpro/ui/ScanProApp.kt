@@ -31,7 +31,9 @@ import com.example.scanpro.AppViewModel
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
 import com.example.scanpro.navigation.ScanProDestinations
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.scanpro.navigation.ScanProNavHost
+import com.example.scanpro.navigation.navigateToTopLevel
 
 /** App shell: app lock gate, app-wide snackbar and share effects, and the navigation graph. */
 @Composable
@@ -134,13 +136,26 @@ fun ScanProApp(
         )
     }
 
-    ScanProNavHost(
-        navController = navController,
-        snackbarHostState = snackbarHostState,
-        onImportImages = onImportImages,
-        onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
-        onCameraScanComplete = viewModel::importCameraSession,
-        onFallbackScanner = onFallbackScanner,
-        onAppLockChange = onAppLockChange
-    )
+    // Wide windows keep navigation at the side of the content instead of along the bottom.
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    val showRail = com.example.scanpro.navigation.isWideWindow() && currentRoute in ScanProDestinations.topLevel
+    androidx.compose.foundation.layout.Row(Modifier.fillMaxSize()) {
+        if (showRail) {
+            com.example.scanpro.navigation.ScanProNavigationRail(
+                selectedRoute = currentRoute.orEmpty(),
+                onTab = { route -> navController.navigateToTopLevel(route) }
+            )
+        }
+        Box(Modifier.weight(1f).fillMaxSize()) {
+            ScanProNavHost(
+                navController = navController,
+                snackbarHostState = snackbarHostState,
+                onImportImages = onImportImages,
+                onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
+                onCameraScanComplete = viewModel::importCameraSession,
+                onFallbackScanner = onFallbackScanner,
+                onAppLockChange = onAppLockChange
+            )
+        }
+    }
 }

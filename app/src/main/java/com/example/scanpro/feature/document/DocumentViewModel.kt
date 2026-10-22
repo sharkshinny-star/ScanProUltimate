@@ -98,8 +98,8 @@ class DocumentViewModel @Inject constructor(
     fun extractPage(pageId: String) =
         run("Extracting page into a new document…", "Page extracted") { repository.extractPage(id, pageId) }
 
-    fun splitBookSpread(pageId: String) =
-        run("Splitting book spread into two pages…", "Book spread split") { repository.splitBookSpread(id, pageId) }
+    fun splitBookSpread(pageId: String, splitFraction: Float) =
+        run("Splitting book spread into two pages…", "Book spread split") { repository.splitBookSpread(id, pageId, splitFraction) }
 
     fun deletePage(pageId: String) =
         run("Removing page…", "Page removed") { repository.deletePage(id, pageId) }
@@ -118,6 +118,11 @@ class DocumentViewModel @Inject constructor(
 
     fun undoLastAnnotation(pageId: String) =
         run("Removing last annotation…", "Annotation removed") { repository.removeLastAnnotation(id, pageId) }
+
+    suspend fun markupBase(pageId: String) = repository.markupBase(id, pageId)
+
+    fun applyMarkup(pageId: String, annotations: List<com.example.scanpro.data.PageAnnotation>) =
+        run("Updating markup…", "Markup updated") { repository.replaceAnnotations(id, pageId, annotations) }
 
     fun addWatermark(text: String) =
         run("Adding watermark to all pages…", "Watermark added") { repository.addWatermark(id, text) }

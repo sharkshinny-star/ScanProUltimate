@@ -20,12 +20,30 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // The release key is never stored in the repository. Provide it per build, either as Gradle properties
+    // (for example in ~/.gradle/gradle.properties) or as environment variables:
+    //   SCANPRO_KEYSTORE (path), SCANPRO_KEYSTORE_PASSWORD, SCANPRO_KEY_ALIAS, SCANPRO_KEY_PASSWORD
+    // Without them the release build still succeeds but is unsigned, so it cannot be installed or uploaded.
+    fun signingValue(name: String): String? = providers.gradleProperty(name).orNull ?: System.getenv(name)
+    signingConfigs {
+        create("release") {
+            val keystore = signingValue("SCANPRO_KEYSTORE")
+            if (keystore != null) {
+                storeFile = file(keystore)
+                storePassword = signingValue("SCANPRO_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("SCANPRO_KEY_ALIAS")
+                keyPassword = signingValue("SCANPRO_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
         release {
+            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -78,6 +96,8 @@ dependencies {
     implementation("androidx.core:core-ktx:1.19.1")
     // One launch-screen implementation for every Android version, with a dark variant and a custom exit animation.
     implementation("androidx.core:core-splashscreen:1.2.0")
+    // Applies the libraries' bundled Compose baseline profiles on installs that bypass Play, so first runs are smoother.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     // Applies the libraries' bundled Compose baseline profiles on installs that bypass Play, so first runs aren't janky.
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("androidx.activity:activity-compose:1.13.0")

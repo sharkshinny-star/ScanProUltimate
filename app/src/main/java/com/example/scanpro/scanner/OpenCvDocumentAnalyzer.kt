@@ -19,8 +19,11 @@ class OpenCvDocumentAnalyzer(
     private var previousQuad: CropQuad? = null
     private var stableFrames = 0
     private var lastAutoCaptureAt = 0L
-    // Re-armed only after the document leaves the frame, so one held page is not captured repeatedly.
+    // Re-armed only when the page has really gone (lost for several frames) or a clearly different page
+    // is in view, so a held page is captured once even if one frame is blurry.
     private var armed = true
+    private var lostFrames = 0
+    private var capturedQuad: CropQuad? = null
 
     @Volatile
     var autoCaptureEnabled: Boolean = true
@@ -29,16 +32,27 @@ class OpenCvDocumentAnalyzer(
         // Analysis runs on the camera executor, so waiting here for a still-loading OpenCV never blocks the UI.
         OpenCvRuntime.ensureLoaded()
         try {
-            val gray = image.toRotatedGrayMat()
+            // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
+            // are found describe exactly the pixels the user sees and the capture keeps.
+            val gray = image.toRotatedGrayMat().croppedToViewport(image)
             try {
                 val result = DocumentEdgeDetector.detect(gray)
                 val stable = updateStability(result)
                 main.post { onDetection(result, stable) }
 
-                val now = System.currentTimeMillis()
-                if (!result.isReady) armed = true
+                // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
+                val now = android.os.SystemClock.elapsedRealtime()
+                lostFrames = if (result.isReady) 0 else lostFrames + 1
+                if (!armed) {
+                    val captured = capturedQuad
+                    val current = result.quad
+                    val differentPage = captured != null && current != null && result.isReady &&
+                        averageCornerMovement(captured, current) > 0.12f
+                    if (lostFrames >= 8 || differentPage) armed = true
+                }
                 if (autoCaptureEnabled && armed && stable && result.isReady && now - lastAutoCaptureAt > 2200L) {
                     armed = false
+                    capturedQuad = result.quad
                     lastAutoCaptureAt = now
                     stableFrames = 0
                     main.post(onAutoCapture)
@@ -79,6 +93,20 @@ class OpenCvDocumentAnalyzer(
             .div(pairs.size)
             .toFloat()
     }
+}
+
+private fun Mat.croppedToViewport(image: ImageProxy): Mat {
+    val rect = image.cropRect
+    val box = rotateBox(IntBox(rect.left, rect.top, rect.right, rect.bottom), image.width, image.height, image.imageInfo.rotationDegrees)
+    val width = box.right - box.left
+    val height = box.bottom - box.top
+    val coversFrame = box.left <= 0 && box.top <= 0 && width >= cols() && height >= rows()
+    if (coversFrame || width <= 0 || height <= 0 || box.left + width > cols() || box.top + height > rows()) return this
+    val view = Mat(this, org.opencv.core.Rect(box.left, box.top, width, height))
+    val copy = view.clone()
+    view.release()
+    release()
+    return copy
 }
 
 private fun ImageProxy.toRotatedGrayMat(): Mat {

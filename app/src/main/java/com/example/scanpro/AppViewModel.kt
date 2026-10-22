@@ -144,11 +144,11 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    fun importCameraSession(imageUris: List<Uri>, mode: ScanMode) {
+    fun importCameraSession(imageUris: List<Uri>, mode: ScanMode, crops: List<com.example.scanpro.data.CropQuad> = emptyList()) {
         if (imageUris.isEmpty()) return
         operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", if (mode == ScanMode.TEXT) null else "Scan saved") {
             try {
-                val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode)
+                val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops)
                 if (mode == ScanMode.TEXT) copyRecognizedText(newDocument)
                 operations.requestOpenDocument(newDocument.id)
             } finally {
@@ -171,7 +171,16 @@ class AppViewModel @Inject constructor(
             return
         }
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Extracted text", text))
+        val clip = ClipData.newPlainText("Extracted text", text).apply {
+            // Scans often hold IDs and account numbers; keep them out of the clipboard preview on Android 13+.
+            description.extras = android.os.PersistableBundle().apply {
+                putBoolean(
+                    if (android.os.Build.VERSION.SDK_INT >= 33) android.content.ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE",
+                    true
+                )
+            }
+        }
+        clipboard.setPrimaryClip(clip)
         operations.showMessage("Text copied to clipboard")
     }
 }

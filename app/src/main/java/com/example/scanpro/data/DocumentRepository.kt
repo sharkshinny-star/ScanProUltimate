@@ -12,6 +12,7 @@ import javax.inject.Singleton
 import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.OcrEngine
+import com.example.scanpro.imaging.OcrResult
 import com.example.scanpro.imaging.PdfExporter
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
@@ -71,9 +72,10 @@ class DocumentRepository @Inject constructor(
         quality: PdfQuality,
         autoTitle: Boolean,
         mode: ScanMode = ScanMode.DOCUMENT,
+        crops: List<CropQuad> = emptyList(),
     ): ScanDocument = withContext(Dispatchers.IO) {
         require(imageUris.isNotEmpty()) { "Choose at least one image" }
-        createDocument(null, imageUris, quality, autoTitle, mode)
+        createDocument(null, imageUris, quality, autoTitle, mode, crops)
     }
 
     suspend fun importPdf(
@@ -263,6 +265,24 @@ class DocumentRepository @Inject constructor(
     private suspend fun annotationsOf(documentId: String, pageId: String): List<PageAnnotation> =
         withContext(Dispatchers.IO) { requireDocument(documentId).pages.firstOrNull { it.id == pageId }?.annotations.orEmpty() }
 
+    /** The page as it looks without its markup, so the markup editor can show boxes over a clean image. */
+    suspend fun markupBase(documentId: String, pageId: String): File = withContext(Dispatchers.IO) {
+        val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val out = File(context.cacheDir, "markup_${page.id}.jpg")
+        ImageProcessor.renderPage(File(page.sourcePath), out, page.filter, page.rotationDegrees, page.crop, page.adjustments, emptyList())
+        out
+    }
+
+    /** Replaces a page's markup with an edited list (moved, resized or removed boxes). */
+    suspend fun replaceAnnotations(documentId: String, pageId: String, annotations: List<PageAnnotation>) {
+        val before = annotationsOf(documentId, pageId)
+        editSinglePage(documentId, pageId) { page ->
+            // A moved redaction covers different text, so recognition runs again whenever one is present.
+            renderAndOcr(page.copy(annotations = annotations), runOcr = annotations.any { it.type == AnnotationType.REDACT })
+        }
+        deleteSignatureAssets(before.filter { old -> annotations.none { it.id == old.id } })
+    }
+
     suspend fun addTextAnnotation(documentId: String, pageId: String, text: String) =
         addAnnotation(
             documentId,
@@ -349,7 +369,8 @@ class DocumentRepository @Inject constructor(
                 text = clean.take(80),
                 opacity = 0.35f
             )
-            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
+            // A redaction re-reads the flattened page: the text it covers must not stay in search, copy or text export.
+            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = annotation.type == AnnotationType.REDACT)
         }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
@@ -406,7 +427,8 @@ class DocumentRepository @Inject constructor(
         )
     }
 
-    suspend fun splitBookSpread(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
+    /** Splits a two-page spread at [splitFraction] of its width (0.5 is the centre; move it for off-centre books). */
+    suspend fun splitBookSpread(documentId: String, pageId: String, splitFraction: Float = 0.5f) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
@@ -419,8 +441,8 @@ class DocumentRepository @Inject constructor(
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
         val (left, right) = try {
-            makeHalf(bitmap, left = true, doc.id, index, sourceDir, renderedDir, doc.ocrScript) to
-                makeHalf(bitmap, left = false, doc.id, index, sourceDir, renderedDir, doc.ocrScript)
+            makeHalf(bitmap, left = true, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript) to
+                makeHalf(bitmap, left = false, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript)
         } finally {
             bitmap.recycle()
         }
@@ -625,7 +647,8 @@ class DocumentRepository @Inject constructor(
 
     suspend fun updatePageOcrText(documentId: String, pageId: String, text: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.map { page -> if (page.id == pageId) page.copy(ocrText = text.trim()) else page }
+        // Marked as hand-corrected so filters, crops and rotations afterwards do not read the page again and replace it.
+        val pages = doc.pages.map { page -> if (page.id == pageId) page.copy(ocrText = text.trim(), ocrEdited = true) else page }
         require(pages.any { it.id == pageId }) { "Page not found" }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
@@ -634,7 +657,10 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(id)
         val selected = script ?: doc.ocrScript
         val pages = doc.pages.map { page ->
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), selected) }.getOrDefault(page.ocrText))
+            // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
+            runCatching { ocr.recognizeDetailed(File(page.imagePath), selected) }
+                .map { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
+                .getOrDefault(page)
         }
         saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
     }
@@ -650,7 +676,8 @@ class DocumentRepository @Inject constructor(
         imageUris: List<Uri>,
         quality: PdfQuality,
         autoTitle: Boolean,
-        mode: ScanMode
+        mode: ScanMode,
+        crops: List<CropQuad> = emptyList()
     ): ScanDocument {
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -671,7 +698,9 @@ class DocumentRepository @Inject constructor(
                         documentId = id,
                         position = index,
                         sourcePath = source.absolutePath,
-                        imagePath = rendered.absolutePath
+                        imagePath = rendered.absolutePath,
+                        // The original stays untouched; the crop is an instruction that can be widened later.
+                        crop = crops.getOrNull(index) ?: CropQuad.DEFAULT
                     )
                 )
             }
@@ -766,9 +795,21 @@ class DocumentRepository @Inject constructor(
             adjustments = page.adjustments,
             annotations = page.annotations
         )
+        val hasRedaction = page.annotations.any { it.type == AnnotationType.REDACT }
+        // Corrected text is the user's work: keep it through edits. A redaction is the exception, because
+        // the corrected text may still contain what is now covered, so that page is read again.
+        val isRedacting = hasRedaction && runOcr
+        if (page.ocrEdited && !isRedacting) return page
         return if (runOcr) {
             val script = db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }.getOrDefault(page.ocrText))
+            // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
+            // must end up with no text rather than keep the old text that includes what was covered.
+            val read = runCatching { ocr.recognizeDetailed(File(page.imagePath), script) }.getOrNull()
+            when {
+                read != null -> page.copy(ocrEdited = false, ocrText = read.text, ocrWords = read.words)
+                hasRedaction -> page.copy(ocrEdited = false, ocrText = "", ocrWords = emptyList())
+                else -> page.copy(ocrEdited = false)
+            }
         } else page
     }
 
@@ -858,13 +899,14 @@ class DocumentRepository @Inject constructor(
     private suspend fun makeHalf(
         bitmap: Bitmap,
         left: Boolean,
+        splitFraction: Float,
         docId: String,
         index: Int,
         sourceDir: File,
         renderedDir: File,
         script: OcrScript
     ): ScanPage {
-        val halfWidth = bitmap.width / 2
+        val halfWidth = (bitmap.width * splitFraction).toInt().coerceIn(1, bitmap.width - 1)
         val x = if (left) 0 else halfWidth
         val width = if (left) halfWidth else bitmap.width - halfWidth
         val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)
@@ -877,13 +919,15 @@ class DocumentRepository @Inject constructor(
         } finally {
             if (half !== bitmap) half.recycle()
         }
+        val read = runCatching { ocr.recognizeDetailed(rendered, script) }.getOrNull() ?: OcrResult("", emptyList())
         return ScanPage(
             id = id,
             documentId = docId,
             position = index,
             sourcePath = source.absolutePath,
             imagePath = rendered.absolutePath,
-            ocrText = runCatching { ocr.recognize(rendered, script) }.getOrDefault("")
+            ocrText = read.text,
+            ocrWords = read.words
         )
     }
 

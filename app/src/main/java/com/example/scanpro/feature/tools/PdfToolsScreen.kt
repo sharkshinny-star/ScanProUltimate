@@ -327,7 +327,8 @@ fun PdfToolsScreen(
                                     pageCount = res.pageCount,
                                     originalSizeBytes = res.originalSizeBytes,
                                     outputSizeBytes = res.compressedSizeBytes,
-                                    message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})"
+                                    message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})" +
+                                        if (res.isSearchablePreserved) "" else ". Pages were converted to images, so the text is no longer selectable or searchable."
                                 )
                             } catch (e: Exception) {
                                 isProcessing = false
@@ -994,6 +995,10 @@ private fun PdfPageOrganizerSheet(
     val pages = remember { mutableStateListOf<ThumbnailPageModel>() }
     var isLoading by remember { mutableStateOf(true) }
 
+    androidx.compose.runtime.DisposableEffect(uri) {
+        onDispose { PdfToolsEngine.releasePreview(uri) }
+    }
+
     LaunchedEffect(uri) {
         withContext(Dispatchers.IO) {
             try {
@@ -1174,7 +1179,8 @@ private fun handleSinglePdfSelected(
                             pageCount = res.pageCount,
                             originalSizeBytes = res.originalSizeBytes,
                             outputSizeBytes = res.compressedSizeBytes,
-                            message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})"
+                            message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})" +
+                                        if (res.isSearchablePreserved) "" else ". Pages were converted to images, so the text is no longer selectable or searchable."
                         )
                     )
                 }

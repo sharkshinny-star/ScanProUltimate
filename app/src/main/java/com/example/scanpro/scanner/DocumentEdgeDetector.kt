@@ -83,82 +83,95 @@ object DocumentEdgeDetector {
             Core.bitwise_or(edgesCanny, edgesAdaptive, combinedEdges)
             Imgproc.morphologyEx(combinedEdges, combinedEdges, Imgproc.MORPH_CLOSE, kernel)
 
+            // Method 3: paper is usually the big bright (or big dark) region against its surroundings, so
+            // a global threshold finds it even where the page edge itself is faint or shadowed.
+            val brightMask = Mat()
+            val darkMask = Mat()
+            Imgproc.threshold(processed, brightMask, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
+            Core.bitwise_not(brightMask, darkMask)
+            val bigKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0))
+            Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_CLOSE, bigKernel)
+            Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_OPEN, bigKernel)
+
+            // Cleaner Canny map for the contour search: dilated so a small gap in the page outline closes.
+            val cannyClosed = Mat()
+            Imgproc.dilate(edgesCanny, cannyClosed, kernel)
+            Imgproc.morphologyEx(cannyClosed, cannyClosed, Imgproc.MORPH_CLOSE, bigKernel)
+
             // Blur & Brightness diagnostics
             Imgproc.Laplacian(processed, laplacian, CvType.CV_64F)
             Core.meanStdDev(laplacian, mean, stdDev)
             val blur = stdDev.toArray().firstOrNull()?.let { it * it } ?: 0.0
             val brightness = Core.mean(working).`val`[0]
 
-            val contours = mutableListOf<MatOfPoint>()
-            Imgproc.findContours(combinedEdges, contours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE)
-
             val frameArea = working.cols().toDouble() * working.rows().toDouble()
+            val frameWidth = working.cols().toDouble()
+            val frameHeight = working.rows().toDouble()
             var best: Candidate? = null
 
+            // Each source finds its own candidates; the best-scoring page outline overall wins. Weights
+            // favour the sources that are least likely to trace text or texture instead of the page.
+            // The thin Canny map keeps a page separate from a neighbouring object it nearly touches, which
+            // the heavily closed maps would fuse into one blob; it is searched with every contour, not just outer ones.
+            val thinEdges = Mat()
+            Imgproc.morphologyEx(edgesCanny, thinEdges, Imgproc.MORPH_CLOSE, kernel)
+            val sources = listOf(
+                Triple(cannyClosed, 1.0, Imgproc.RETR_EXTERNAL),
+                Triple(thinEdges, 0.98, Imgproc.RETR_LIST),
+                Triple(brightMask, 0.96, Imgproc.RETR_EXTERNAL),
+                Triple(combinedEdges, 0.85, Imgproc.RETR_EXTERNAL),
+                Triple(darkMask, 0.7, Imgproc.RETR_EXTERNAL)
+            )
             try {
-                contours.forEach { contour ->
-                    val area = abs(Imgproc.contourArea(contour))
-                    if (area < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
-
-                    val contour2f = MatOfPoint2f(*contour.toArray())
-                    val perimeter = Imgproc.arcLength(contour2f, true)
-
-                    var candidatePoints: Array<Point>? = null
-
-                    // 1. Multi-Epsilon Polygon Approximation (0.015 to 0.05)
-                    for (ratio in listOf(0.015, 0.02, 0.028, 0.035, 0.045)) {
-                        val approx = MatOfPoint2f()
-                        try {
-                            Imgproc.approxPolyDP(contour2f, approx, perimeter * ratio, true)
-                            val pts = approx.toArray()
-                            if (pts.size == 4) {
-                                val asInt = MatOfPoint(*pts)
-                                val isConvex = Imgproc.isContourConvex(asInt)
-                                asInt.release()
-                                if (isConvex) {
-                                    candidatePoints = pts
-                                    break
-                                }
-                            }
-                        } finally {
-                            approx.release()
-                        }
-                    }
-
-                    // 2. Fallback: MinAreaRect bounding box quad if approxPolyDP didn't yield 4 points
-                    if (candidatePoints == null) {
-                        val minRect: RotatedRect = Imgproc.minAreaRect(contour2f)
-                        val boxPts = Array<Point>(4) { Point() }
-                        minRect.points(boxPts)
-                        val boxArea = minRect.size.width * minRect.size.height
-                        if (boxArea >= frameArea * MIN_DOCUMENT_AREA_RATIO) {
-                            candidatePoints = boxPts
-                        }
-                    }
-
-                    contour2f.release()
-
-                    val points = candidatePoints ?: return@forEach
-                    val ordered = order(points)
-                    val polygon = MatOfPoint(*ordered.toTypedArray())
+                sources.forEach { (map, weight, retrieval) ->
+                    val contours = mutableListOf<MatOfPoint>()
+                    val sourceHierarchy = Mat()
                     try {
-                        val polygonArea = abs(Imgproc.contourArea(polygon))
-                        val areaRatio = (polygonArea / frameArea).coerceIn(0.0, 1.0)
-                        val rect = Imgproc.boundingRect(polygon)
-                        val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
-                        val edgeBalance = edgeBalance(ordered)
-                        val score = (areaRatio * 0.52 + rectangularity * 0.30 + edgeBalance * 0.18).toFloat()
+                        // External contours only: a page is the outer outline, and text inside it is noise.
+                        Imgproc.findContours(map, contours, sourceHierarchy, retrieval, Imgproc.CHAIN_APPROX_SIMPLE)
+                        contours.forEach { contour ->
+                            if (abs(Imgproc.contourArea(contour)) < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
+                            val (points, solidity) = pageCorners(contour, frameArea) ?: return@forEach
+                            val ordered = order(points)
+                            val geometry = ordered.map { QuadGeometry.P(it.x, it.y) }
+                            if (!QuadGeometry.isPlausiblePage(geometry)) return@forEach
 
-                        val current = best
-                        if (current == null || score > current.score) {
-                            best = Candidate(ordered, score)
+                            val polygon = MatOfPoint(*ordered.toTypedArray())
+                            try {
+                                val polygonArea = abs(Imgproc.contourArea(polygon))
+                                val areaRatio = (polygonArea / frameArea).coerceIn(0.0, 1.0)
+                                val rect = Imgproc.boundingRect(polygon)
+                                val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
+                                var score = areaRatio * 0.46 + rectangularity * 0.22 + edgeBalance(ordered) * 0.14 +
+                                    QuadGeometry.angleScore(geometry) * 0.18
+                                // An outline that is just the camera frame is the background, not a page.
+                                val margin = 0.012 * max(frameWidth, frameHeight)
+                                val onBorder = ordered.count {
+                                    it.x < margin || it.y < margin || it.x > frameWidth - margin || it.y > frameHeight - margin
+                                }
+                                if (areaRatio > 0.9 && onBorder >= 3) score *= 0.6
+                                // Several objects fused into one blob have a dented outline; a page is nearly solid.
+                                score *= weight * solidity * solidity * solidity
+
+                                val current = best
+                                if (current == null || score.toFloat() > current.score) {
+                                    best = Candidate(ordered, score.toFloat())
+                                }
+                            } finally {
+                                polygon.release()
+                            }
                         }
                     } finally {
-                        polygon.release()
+                        contours.forEach(MatOfPoint::release)
+                        sourceHierarchy.release()
                     }
                 }
             } finally {
-                contours.forEach(MatOfPoint::release)
+                brightMask.release()
+                darkMask.release()
+                bigKernel.release()
+                cannyClosed.release()
+                thinEdges.release()
             }
 
             val candidate = best
@@ -205,6 +218,46 @@ object DocumentEdgeDetector {
         } finally {
             rgba.release()
             gray.release()
+        }
+    }
+
+    /**
+     * Four corners for a contour, or null if it does not look like a page. Works on the convex hull, so a
+     * broken or notched outline (a thumb over the edge, a fold) still gives a clean quad.
+     */
+    private fun pageCorners(contour: MatOfPoint, frameArea: Double): Pair<Array<Point>, Double>? {
+        val hullIndices = org.opencv.core.MatOfInt()
+        Imgproc.convexHull(contour, hullIndices)
+        val all = contour.toArray()
+        val hull = hullIndices.toArray().map { all[it] }.toTypedArray()
+        hullIndices.release()
+        if (hull.size < 4) return null
+
+        val hull2f = MatOfPoint2f(*hull)
+        try {
+            val hullArea = abs(Imgproc.contourArea(hull2f))
+            val solidity = if (hullArea <= 0) 0.0 else (abs(Imgproc.contourArea(contour)) / hullArea).coerceIn(0.0, 1.0)
+            if (solidity < 0.8) return null
+            val perimeter = Imgproc.arcLength(hull2f, true)
+            for (ratio in listOf(0.015, 0.02, 0.028, 0.035, 0.045, 0.06)) {
+                val approx = MatOfPoint2f()
+                try {
+                    Imgproc.approxPolyDP(hull2f, approx, perimeter * ratio, true)
+                    val pts = approx.toArray()
+                    if (pts.size == 4) return pts to solidity
+                } finally {
+                    approx.release()
+                }
+            }
+            // No clean four-sided fit: use the tightest rectangle, but only if the outline really fills it.
+            val minRect: RotatedRect = Imgproc.minAreaRect(hull2f)
+            val boxArea = minRect.size.width * minRect.size.height
+            if (boxArea < frameArea * MIN_DOCUMENT_AREA_RATIO || hullArea / boxArea < 0.82) return null
+            val boxPts = Array(4) { Point() }
+            minRect.points(boxPts)
+            return boxPts to solidity
+        } finally {
+            hull2f.release()
         }
     }
 

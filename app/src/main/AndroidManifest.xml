@@ -7,6 +7,8 @@
         android:required="false" />
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Only for ML Kit Translate, which downloads each language pack once. Documents and OCR text are
+         never uploaded; translation itself runs on the device. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
@@ -15,6 +17,7 @@
     <application
         android:name=".ScanProApplication"
         android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:label="@string/app_name"
