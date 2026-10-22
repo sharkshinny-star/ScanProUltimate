@@ -1,6 +1,5 @@
 package com.example.scanpro
 
-import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,10 +14,8 @@ import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.scanner.SESSION_ROOT
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +25,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Activity-level state: theme, app lock, app-wide messages and exports, and the import entry
@@ -36,7 +32,6 @@ import kotlinx.coroutines.withContext
  */
 @HiltViewModel
 class AppViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val repository: DocumentRepository,
     private val settings: SettingsStore,
     private val operations: OperationRunner,
@@ -67,51 +62,10 @@ class AppViewModel @Inject constructor(
     val exportArtifact: StateFlow<ExportArtifact?> = operations.exportArtifact
     val openDocumentRequest: StateFlow<String?> = operations.openDocumentRequest
 
-    /**
-     * Ask for a Play rating once, after first real use: the library holds a document, nothing is
-     * still processing, and the prompt hasn't been answered before.
-     */
-    val showRatingPrompt: StateFlow<Boolean> = combine(
-        library.documents, operations.busy, settings.ratingPromptDone
-    ) { documents, busy, done -> documents.isNotEmpty() && !busy && !done }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
-    fun onRatingPromptFinished() { viewModelScope.launch { settings.setRatingPromptDone() } }
-
-    private val _externalPdfToView = MutableStateFlow<ExternalPdf?>(null)
-    /** A PDF opened from another app, copied locally; the shell shows it in the viewer. */
-    val externalPdfToView: StateFlow<ExternalPdf?> = _externalPdfToView.asStateFlow()
-
     fun showMessage(value: String) = operations.showMessage(value)
     fun clearMessage(shown: UiMessage) = operations.clearMessage(shown)
     fun clearExportArtifact() = operations.clearExportArtifact()
     fun clearOpenDocumentRequest() = operations.clearOpenDocumentRequest()
-    fun clearExternalPdfToView() { _externalPdfToView.value = null }
-
-    /**
-     * Copies a PDF from another app into cache/exports/ (so it stays readable after the grant ends,
-     * and can be shared from the viewer), then asks the shell to show it.
-     */
-    fun viewExternalPdf(uri: Uri) {
-        viewModelScope.launch {
-            val local = withContext(Dispatchers.IO) {
-                runCatching {
-                    val file = File(File(context.cacheDir, "exports"), "view_${System.currentTimeMillis()}.pdf")
-                    file.parentFile?.mkdirs()
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        file.outputStream().use { input.copyTo(it) }
-                    } ?: error("Unreadable PDF")
-                    file
-                }.getOrNull()
-            }
-            if (local == null) {
-                operations.showMessage("Could not open PDF")
-                return@launch
-            }
-            val title = uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() } ?: "PDF Document"
-            _externalPdfToView.value = ExternalPdf(Uri.fromFile(local), title)
-        }
-    }
 
     fun setAppLock(value: Boolean) { viewModelScope.launch { settings.setAppLock(value) } }
 
@@ -191,5 +145,3 @@ class AppViewModel @Inject constructor(
 }
 
 private const val MAX_IMPORT_IMAGES = 100
-
-data class ExternalPdf(val uri: Uri, val title: String)

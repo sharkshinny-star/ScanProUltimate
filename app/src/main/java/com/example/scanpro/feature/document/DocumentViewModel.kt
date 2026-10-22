@@ -104,10 +104,8 @@ class DocumentViewModel @Inject constructor(
     fun deletePage(pageId: String) =
         run("Removing page…", "Page removed") { repository.deletePage(id, pageId) }
 
-    fun stampSignature(pageId: String, signature: Bitmap, x: Float, y: Float, width: Float, height: Float) =
-        run("Adding signature overlay…", "Signature added") {
-            repository.stampSignature(id, pageId, signature, x, y, width, height)
-        }
+    fun stampSignature(pageId: String, signature: Bitmap) =
+        run("Adding signature overlay…", "Signature added") { repository.stampSignature(id, pageId, signature) }
 
     fun addTextAnnotation(pageId: String, text: String) =
         run("Adding text annotation…", "Text added") { repository.addTextAnnotation(id, pageId, text) }

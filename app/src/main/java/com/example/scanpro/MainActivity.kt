@@ -1,8 +1,5 @@
 package com.example.scanpro
 
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowCompat
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -86,7 +83,6 @@ class MainActivity : FragmentActivity() {
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
-        hideNavigationBar()
         holdLaunchScreenUntilReady()
         publishScanShortcut()
         lifecycleScope.launch {
@@ -113,8 +109,6 @@ class MainActivity : FragmentActivity() {
                 DisposableEffect(dark) {
                     val style = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT) { dark }
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
-                    // enableEdgeToEdge turns the navigation bar's contrast scrim back on; keep it fully transparent.
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
                     onDispose { }
                 }
                 ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
@@ -170,20 +164,6 @@ class MainActivity : FragmentActivity() {
         })
     }
 
-    /** Full-screen: the navigation bar stays hidden and comes back briefly with a swipe from the edge. */
-    private fun hideNavigationBar() {
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.navigationBars())
-        }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        // Dialogs, the share sheet and other apps can bring the bar back; hide it again on return.
-        if (hasFocus) hideNavigationBar()
-    }
-
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -230,11 +210,7 @@ class MainActivity : FragmentActivity() {
                 val uri = intent.data
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
-                        // Opened PDFs are shown right away in the viewer, and also kept in the library.
-                        appViewModel.submitExternalImport {
-                            appViewModel.viewExternalPdf(uri)
-                            appViewModel.importPdf(uri)
-                        }
+                        appViewModel.submitExternalImport { appViewModel.importPdf(uri) }
                     } else if (type.startsWith("image/")) {
                         appViewModel.submitExternalImport { appViewModel.importImages(listOf(uri)) }
                     }
@@ -251,23 +227,15 @@ class MainActivity : FragmentActivity() {
         uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
 
     /** Launcher "Scan" shortcut. Published at runtime so it targets the right package in debug and release. */
-    /** Long-press launcher shortcuts. Built in code, so they follow the build's package name. */
     private fun publishScanShortcut() {
         runCatching {
-            fun shortcut(id: String, shortLabel: Int, longLabel: Int, rank: Int, action: String) =
-                ShortcutInfoCompat.Builder(this, id)
-                    .setShortLabel(getString(shortLabel))
-                    .setLongLabel(getString(longLabel))
-                    .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
-                    .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(action))
-                    .setRank(rank)
-                    .build()
-            // The two support shortcuts just open the app.
-            listOf(
-                shortcut("scan_now", R.string.shortcut_scan_short, R.string.shortcut_scan_long, 0, ACTION_SCAN_NOW),
-                shortcut("dont_remove_app", R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, 1, android.content.Intent.ACTION_MAIN),
-                shortcut("bugs_or_issues", R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, 2, android.content.Intent.ACTION_MAIN)
-            ).forEach { ShortcutManagerCompat.pushDynamicShortcut(this, it) }
+            val shortcut = ShortcutInfoCompat.Builder(this, "scan_now")
+                .setShortLabel(getString(R.string.shortcut_scan_short))
+                .setLongLabel(getString(R.string.shortcut_scan_long))
+                .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
+                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(ACTION_SCAN_NOW))
+                .build()
+            ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
         }
     }
 

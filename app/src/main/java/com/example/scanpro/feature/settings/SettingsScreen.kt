@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -39,9 +38,6 @@ import com.example.scanpro.data.ThemeMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.core.ui.formatBytes
-import com.example.scanpro.core.ui.openPlayStoreListing
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun SettingsRoute(
@@ -182,7 +178,6 @@ fun SettingsScreen(
 
             val context = LocalContext.current
             ListItem(
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.clickable { openPlayStoreListing(context) },
                 headlineContent = { Text("Rate ScanPro") },
                 supportingContent = { Text("Enjoying the app? Leave a review on Google Play.") },
