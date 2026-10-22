@@ -219,6 +219,8 @@ fun DocumentRoute(
         onRedact = viewModel::addRedaction,
         onUndoAnnotation = viewModel::undoLastAnnotation,
         onWatermark = viewModel::addWatermark,
+        onLoadMarkupBase = viewModel::markupBase,
+        onApplyMarkup = viewModel::applyMarkup,
         onAppendImages = viewModel::appendImages,
         onMergeWith = viewModel::mergeWith,
         onReOcr = { viewModel.reOcr() },
@@ -272,6 +274,8 @@ internal fun DocumentDetailScreen(
     onRedact: (String) -> Unit,
     onUndoAnnotation: (String) -> Unit,
     onWatermark: (String) -> Unit,
+    onLoadMarkupBase: suspend (String) -> java.io.File,
+    onApplyMarkup: (String, List<com.example.scanpro.data.PageAnnotation>) -> Unit,
     onAppendImages: (List<Uri>) -> Unit,
     onMergeWith: (String) -> Unit,
     onReOcr: () -> Unit,
@@ -312,6 +316,7 @@ internal fun DocumentDetailScreen(
     var annotationTextOpen by remember { mutableStateOf(false) }
     var cropOpen by remember { mutableStateOf(false) }
     var bookSplitOpen by rememberSaveable { mutableStateOf(false) }
+    var markupOpen by rememberSaveable { mutableStateOf(false) }
     var adjustmentsOpen by remember { mutableStateOf(false) }
     var mergeOpen by remember { mutableStateOf(false) }
     var deletePageOpen by remember { mutableStateOf(false) }
@@ -544,6 +549,7 @@ internal fun DocumentDetailScreen(
                         ToolTile(Icons.Default.Highlight, "Highlight", !busy) { onHighlight(currentPage.id) }
                         ToolTile(Icons.Default.VisibilityOff, "Redact", !busy) { onRedact(currentPage.id) }
                         ToolTile(Icons.Default.BrandingWatermark, "Watermark", !busy) { watermarkOpen = true }
+                        ToolTile(Icons.Default.Edit, "Edit markup", !busy && currentPage.annotations.isNotEmpty()) { markupOpen = true }
                         ToolTile(Icons.AutoMirrored.Filled.Undo, "Undo", !busy && currentPage.annotations.isNotEmpty()) { onUndoAnnotation(currentPage.id) }
                     }
                 }
@@ -764,6 +770,18 @@ internal fun DocumentDetailScreen(
             onSign(currentPage.id, bitmap)
             signatureOpen = false
         }
+    }
+
+    if (markupOpen && currentPage != null) {
+        MarkupEditorDialog(
+            initial = currentPage.annotations,
+            loadBase = { onLoadMarkupBase(currentPage.id) },
+            onDismiss = { markupOpen = false },
+            onApply = { edited ->
+                markupOpen = false
+                onApplyMarkup(currentPage.id, edited)
+            }
+        )
     }
 
     if (bookSplitOpen && currentPage != null) {

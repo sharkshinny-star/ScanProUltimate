@@ -12,7 +12,7 @@ object CacheCleaner {
     private val TEMP_PREFIXES = listOf(
         "view_", "search_temp_", "pdf_import_", "pdf_unlocked_", "import_", "restore_", "merge_in_",
         "split_in", "extract_in", "rotate_in", "organize_in", "protect_in", "unlock_in", "count_",
-        "thumb_", "inspect_", "pdf2img_in", "img2pdf_", "raster_", "temp_in_"
+        "thumb_", "markup_", "inspect_", "pdf2img_in", "img2pdf_", "raster_", "temp_in_"
     )
     private const val TEMP_MAX_AGE_MS = 60L * 60 * 1000
     private const val EXPORT_MAX_AGE_MS = 24L * 60 * 60 * 1000

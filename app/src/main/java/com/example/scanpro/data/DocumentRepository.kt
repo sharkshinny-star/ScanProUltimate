@@ -265,6 +265,24 @@ class DocumentRepository @Inject constructor(
     private suspend fun annotationsOf(documentId: String, pageId: String): List<PageAnnotation> =
         withContext(Dispatchers.IO) { requireDocument(documentId).pages.firstOrNull { it.id == pageId }?.annotations.orEmpty() }
 
+    /** The page as it looks without its markup, so the markup editor can show boxes over a clean image. */
+    suspend fun markupBase(documentId: String, pageId: String): File = withContext(Dispatchers.IO) {
+        val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val out = File(context.cacheDir, "markup_${page.id}.jpg")
+        ImageProcessor.renderPage(File(page.sourcePath), out, page.filter, page.rotationDegrees, page.crop, page.adjustments, emptyList())
+        out
+    }
+
+    /** Replaces a page's markup with an edited list (moved, resized or removed boxes). */
+    suspend fun replaceAnnotations(documentId: String, pageId: String, annotations: List<PageAnnotation>) {
+        val before = annotationsOf(documentId, pageId)
+        editSinglePage(documentId, pageId) { page ->
+            // A moved redaction covers different text, so recognition runs again whenever one is present.
+            renderAndOcr(page.copy(annotations = annotations), runOcr = annotations.any { it.type == AnnotationType.REDACT })
+        }
+        deleteSignatureAssets(before.filter { old -> annotations.none { it.id == old.id } })
+    }
+
     suspend fun addTextAnnotation(documentId: String, pageId: String, text: String) =
         addAnnotation(
             documentId,
