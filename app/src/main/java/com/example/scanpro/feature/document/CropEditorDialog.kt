@@ -7,7 +7,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.CropFree
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -59,14 +76,18 @@ fun CropEditorDialog(
     val undoStack = remember(initial) { mutableStateListOf<CropQuad>() }
     val redoStack = remember(initial) { mutableStateListOf<CropQuad>() }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Adjust document corners") },
-        text = {
-            Column {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF0A0F18)) {
+            Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel", tint = Color.White) }
+                    Text("Adjust corners", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                }
+                Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.Center) {
                 Text(
                     "Drag each corner to the paper edge. The page is perspective-corrected when you apply the crop.",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.8f)
                 )
                 autoMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 6.dp)) }
                 bitmap?.let { image ->
@@ -159,57 +180,58 @@ fun CropEditorDialog(
                             drawLine(Color.White, Offset(center.x, center.y - 18.dp.toPx()), Offset(center.x, center.y + 18.dp.toPx()), strokeWidth = 2f)
                         }
                     }
-                } ?: Text("Loading page…", modifier = Modifier.padding(top = 16.dp))
-            }
-        },
-        confirmButton = {
-            TextButton(enabled = bitmap != null, onClick = { onConfirm(crop) }) { Text("Apply") }
-        },
-        dismissButton = {
-            TextButton(
-                enabled = undoStack.isNotEmpty(),
-                onClick = {
-                    if (undoStack.isNotEmpty()) {
+                } ?: Text("Loading page…", color = Color.White, modifier = Modifier.padding(top = 16.dp))
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    CropAction(Icons.Default.CropFree, "Auto crop", enabled = bitmap != null) {
+                        val image = bitmap ?: return@CropAction
+                        scope.launch {
+                            val detected = withContext(Dispatchers.Default) {
+                                runCatching { DocumentEdgeDetector.detect(image).quad }.getOrNull()
+                            }
+                            if (detected != null) {
+                                undoStack.add(crop)
+                                redoStack.clear()
+                                crop = detected
+                                autoMessage = null
+                            } else autoMessage = "No document edges found. Drag the corners instead."
+                        }
+                    }
+                    CropAction(Icons.Default.Fullscreen, "No crop") {
+                        undoStack.add(crop)
+                        redoStack.clear()
+                        crop = CropQuad.DEFAULT
+                        autoMessage = null
+                    }
+                    CropAction(Icons.AutoMirrored.Filled.Undo, "Undo", enabled = undoStack.isNotEmpty()) {
                         redoStack.add(crop)
                         crop = undoStack.removeAt(undoStack.lastIndex)
                     }
-                }
-            ) { Text("Undo") }
-            TextButton(
-                enabled = redoStack.isNotEmpty(),
-                onClick = {
-                    if (redoStack.isNotEmpty()) {
+                    CropAction(Icons.AutoMirrored.Filled.Redo, "Redo", enabled = redoStack.isNotEmpty()) {
                         undoStack.add(crop)
                         crop = redoStack.removeAt(redoStack.lastIndex)
                     }
+                    Button(enabled = bitmap != null, onClick = { onConfirm(crop) }) { Text("Done") }
                 }
-            ) { Text("Redo") }
-            TextButton(
-                enabled = bitmap != null,
-                onClick = {
-                    val image = bitmap ?: return@TextButton
-                    scope.launch {
-                        val detected = withContext(Dispatchers.Default) {
-                            runCatching { DocumentEdgeDetector.detect(image).quad }.getOrNull()
-                        }
-                        if (detected != null) {
-                            undoStack.add(crop)
-                            redoStack.clear()
-                            crop = detected
-                            autoMessage = null
-                        } else autoMessage = "No document edges found. Drag the corners instead."
-                    }
-                }
-            ) { Text("Auto crop") }
-            TextButton(onClick = {
-                undoStack.add(crop)
-                redoStack.clear()
-                crop = CropQuad.DEFAULT
-                autoMessage = null
-            }) { Text("No crop") }
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
         }
-    )
+    }
+}
+
+@Composable
+private fun CropAction(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
+    val tint = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+    Column(
+        Modifier.clickable(enabled = enabled, onClick = onClick).padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, contentDescription = null, tint = tint)
+        Text(label, color = tint, style = MaterialTheme.typography.labelSmall)
+    }
 }
 
 private fun cropPoints(crop: CropQuad, width: Float, height: Float): List<Offset> = listOf(
