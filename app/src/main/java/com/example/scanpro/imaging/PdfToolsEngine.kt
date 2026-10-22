@@ -475,14 +475,20 @@ object PdfToolsEngine {
     }
 
     suspend fun getPdfPageCount(context: Context, inputUri: Uri): Int = withContext(Dispatchers.IO) {
-        val tempFile = copyUriToTemp(context, inputUri, "count_${UUID.randomUUID()}.pdf")
         try {
-            loadPdf(tempFile).use { return@withContext it.numberOfPages }
+            loadPdf(previewCopy(context, inputUri)).use { return@withContext it.numberOfPages }
         } catch (e: Exception) {
             return@withContext 0
-        } finally {
-            tempFile.delete()
         }
+    }
+
+    // One local copy per PDF while its pages are being previewed, instead of one copy per thumbnail.
+    private val previewCopies = HashMap<String, File>()
+
+    private fun previewCopy(context: Context, inputUri: Uri): File = synchronized(previewCopies) {
+        previewCopies[inputUri.toString()]?.takeIf { it.exists() }
+            ?: copyUriToTemp(context, inputUri, "thumb_${inputUri.toString().hashCode().toUInt()}.pdf")
+                .also { previewCopies[inputUri.toString()] = it }
     }
 
     suspend fun renderPdfPageThumbnail(
@@ -491,27 +497,32 @@ object PdfToolsEngine {
         pageIndex: Int,
         targetWidth: Int = 400
     ): Bitmap? = withContext(Dispatchers.IO) {
-        val tempFile = copyUriToTemp(context, inputUri, "thumb_${UUID.randomUUID()}.pdf")
         try {
-            ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
-                PdfRenderer(pfd).use { renderer ->
-                    if (pageIndex !in 0 until renderer.pageCount) return@withContext null
-                    renderer.openPage(pageIndex).use { page ->
-                        val aspect = page.height.toFloat() / page.width.toFloat()
-                        val width = targetWidth
-                        val height = (targetWidth * aspect).toInt().coerceAtLeast(1)
-                        val bitmap = createBitmap(width, height)
-                        bitmap.eraseColor(Color.WHITE)
-                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        return@withContext bitmap
+            val file = previewCopy(context, inputUri)
+            // PdfRenderer allows one open page at a time, so renders of the same copy take turns.
+            synchronized(file) {
+                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                    PdfRenderer(pfd).use { renderer ->
+                        if (pageIndex !in 0 until renderer.pageCount) return@withContext null
+                        renderer.openPage(pageIndex).use { page ->
+                            val aspect = page.height.toFloat() / page.width.toFloat()
+                            val height = (targetWidth * aspect).toInt().coerceAtLeast(1)
+                            val bitmap = createBitmap(targetWidth, height)
+                            bitmap.eraseColor(Color.WHITE)
+                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            return@withContext bitmap
+                        }
                     }
                 }
             }
         } catch (e: Exception) {
             return@withContext null
-        } finally {
-            tempFile.delete()
         }
+    }
+
+    /** Drops the cached preview copy of a PDF once its pages are no longer being previewed. */
+    fun releasePreview(inputUri: Uri) {
+        synchronized(previewCopies) { previewCopies.remove(inputUri.toString())?.delete() }
     }
 
     /**

@@ -71,9 +71,10 @@ class DocumentRepository @Inject constructor(
         quality: PdfQuality,
         autoTitle: Boolean,
         mode: ScanMode = ScanMode.DOCUMENT,
+        crops: List<CropQuad> = emptyList(),
     ): ScanDocument = withContext(Dispatchers.IO) {
         require(imageUris.isNotEmpty()) { "Choose at least one image" }
-        createDocument(null, imageUris, quality, autoTitle, mode)
+        createDocument(null, imageUris, quality, autoTitle, mode, crops)
     }
 
     suspend fun importPdf(
@@ -349,7 +350,8 @@ class DocumentRepository @Inject constructor(
                 text = clean.take(80),
                 opacity = 0.35f
             )
-            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
+            // A redaction re-reads the flattened page: the text it covers must not stay in search, copy or text export.
+            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = annotation.type == AnnotationType.REDACT)
         }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
@@ -650,7 +652,8 @@ class DocumentRepository @Inject constructor(
         imageUris: List<Uri>,
         quality: PdfQuality,
         autoTitle: Boolean,
-        mode: ScanMode
+        mode: ScanMode,
+        crops: List<CropQuad> = emptyList()
     ): ScanDocument {
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -671,7 +674,9 @@ class DocumentRepository @Inject constructor(
                         documentId = id,
                         position = index,
                         sourcePath = source.absolutePath,
-                        imagePath = rendered.absolutePath
+                        imagePath = rendered.absolutePath,
+                        // The original stays untouched; the crop is an instruction that can be widened later.
+                        crop = crops.getOrNull(index) ?: CropQuad.DEFAULT
                     )
                 )
             }
@@ -766,9 +771,15 @@ class DocumentRepository @Inject constructor(
             adjustments = page.adjustments,
             annotations = page.annotations
         )
+        val hasRedaction = page.annotations.any { it.type == AnnotationType.REDACT }
         return if (runOcr) {
             val script = db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }.getOrDefault(page.ocrText))
+            // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
+            // must end up with no text rather than keep the old text that includes what was covered.
+            page.copy(
+                ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }
+                    .getOrDefault(if (hasRedaction) "" else page.ocrText)
+            )
         } else page
     }
 

@@ -122,7 +122,7 @@ private enum class DetectMode(val label: String) { AUTO("Auto"), MANUAL("Manual"
 @Composable
 fun CameraScannerScreen(
     onClose: () -> Unit,
-    onComplete: (List<Uri>, ScanMode) -> Unit,
+    onComplete: (List<Uri>, ScanMode, List<CropQuad>) -> Unit,
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
@@ -261,18 +261,16 @@ fun CameraScannerScreen(
         processing = true
         val inputs = pages.toList().map { it to quads[it.toString()] }
         scope.launch {
-            val outputs = withContext(Dispatchers.Default) {
+            // The untouched originals are kept and the confirmed crop travels beside them, so the border can
+            // still be widened later; nothing here cuts pixels out of the photo.
+            val crops = withContext(Dispatchers.Default) {
                 inputs.map { (uri, quad) ->
-                    val source = File(uri.path.orEmpty())
-                    val target = File(sessionDir, "scan_${UUID.randomUUID()}.jpg")
-                    runCatching { OpenCvScanProcessor.finalizePage(source, target, quad) }
-                        .onFailure { runCatching { source.copyTo(target, overwrite = true) } }
-                    Uri.fromFile(target)
+                    quad ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
                 }
             }
             completed = true
             processing = false
-            onComplete(outputs, scanMode)
+            onComplete(inputs.map { it.first }, scanMode, crops)
         }
     }
 

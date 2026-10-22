@@ -144,11 +144,11 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    fun importCameraSession(imageUris: List<Uri>, mode: ScanMode) {
+    fun importCameraSession(imageUris: List<Uri>, mode: ScanMode, crops: List<com.example.scanpro.data.CropQuad> = emptyList()) {
         if (imageUris.isEmpty()) return
         operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", if (mode == ScanMode.TEXT) null else "Scan saved") {
             try {
-                val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode)
+                val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops)
                 if (mode == ScanMode.TEXT) copyRecognizedText(newDocument)
                 operations.requestOpenDocument(newDocument.id)
             } finally {
