@@ -7,7 +7,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowLeft
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.AddAPhoto
@@ -146,6 +151,20 @@ fun ScanReviewScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to camera", tint = Color.White)
             }
             Box(Modifier.weight(1f))
+            fun move(delta: Int) {
+                val target = current + delta
+                if (target !in pages.indices) return
+                val moved = pages[current]
+                pages[current] = pages[target]
+                pages[target] = moved
+                onIndexChange(target)
+            }
+            IconButton(enabled = !blocked && current > 0, onClick = { move(-1) }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move page earlier", tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
+            }
+            IconButton(enabled = !blocked && current < pages.lastIndex, onClick = { move(1) }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page later", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
+            }
             IconButton(
                 enabled = !blocked,
                 onClick = {
@@ -157,7 +176,25 @@ fun ScanReviewScreen(
             ) { Icon(Icons.Default.Delete, contentDescription = "Delete page", tint = Color.White) }
         }
 
-        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        var swipe by remember { mutableStateOf(0f) }
+        Box(
+            Modifier.weight(1f).fillMaxWidth().pointerInput(current, blocked) {
+                // Only drags that start away from a corner reach here; corner drags are consumed by the outline.
+                detectHorizontalDragGestures(
+                    onDragStart = { swipe = 0f },
+                    onHorizontalDrag = { change, amount -> change.consume(); swipe += amount },
+                    onDragEnd = {
+                        if (!blocked) {
+                            if (swipe < -120f && current < pages.lastIndex) onIndexChange(current + 1)
+                            else if (swipe > 120f && current > 0) onIndexChange(current - 1)
+                        }
+                        swipe = 0f
+                    },
+                    onDragCancel = { swipe = 0f }
+                )
+            },
+            contentAlignment = Alignment.Center
+        ) {
             val image = bitmap
             val quad = quads[key]
             if (image == null || quad == null) {
@@ -238,26 +275,29 @@ private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropCh
         Modifier
             .aspectRatio(image.width.toFloat() / image.height.toFloat())
             .pointerInput(image) {
-                detectDragGestures(
-                    onDragStart = { start ->
-                        val points = corners(latest).map { Offset(it.x * size.width, it.y * size.height) }
-                        dragging = true
-                        active = points.indices.minByOrNull { hypot(points[it].x - start.x, points[it].y - start.y) } ?: 0
-                    },
-                    onDragEnd = { dragging = false },
-                    onDragCancel = { dragging = false },
-                    onDrag = { change, drag ->
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val points = corners(latest).map { Offset(it.x * size.width, it.y * size.height) }
+                    val nearest = points.indices.minByOrNull { hypot(points[it].x - down.position.x, points[it].y - down.position.y) } ?: 0
+                    val reach = 44.dp.toPx()
+                    val distance = hypot(points[nearest].x - down.position.x, points[nearest].y - down.position.y)
+                    // Away from every corner the touch is left alone, so the page can be swiped.
+                    if (distance > reach || !latestEnabled) return@awaitEachGesture
+                    active = nearest
+                    dragging = true
+                    drag(down.id) { change ->
                         change.consume()
-                        if (!latestEnabled) return@detectDragGestures
+                        val delta = change.position - change.previousPosition
                         val list = corners(latest).toMutableList()
                         val p = list[active]
                         list[active] = NormalizedPoint(
-                            (p.x + drag.x / size.width).coerceIn(0f, 1f),
-                            (p.y + drag.y / size.height).coerceIn(0f, 1f)
+                            (p.x + delta.x / size.width).coerceIn(0f, 1f),
+                            (p.y + delta.y / size.height).coerceIn(0f, 1f)
                         )
                         onCropChange(CropQuad(list[0], list[1], list[2], list[3]))
                     }
-                )
+                    dragging = false
+                }
             }
     ) {
         drawImage(image.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
