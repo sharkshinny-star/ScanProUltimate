@@ -264,7 +264,7 @@ internal fun DocumentDetailScreen(
     onMove: (String, Int) -> Unit,
     onDuplicatePage: (String) -> Unit,
     onExtractPage: (String) -> Unit,
-    onSplitBook: (String) -> Unit,
+    onSplitBook: (String, Float) -> Unit,
     onDeletePage: (String) -> Unit,
     onSign: (String, Bitmap) -> Unit,
     onTextAnnotation: (String, String) -> Unit,
@@ -311,6 +311,7 @@ internal fun DocumentDetailScreen(
     var watermarkOpen by remember { mutableStateOf(false) }
     var annotationTextOpen by remember { mutableStateOf(false) }
     var cropOpen by remember { mutableStateOf(false) }
+    var bookSplitOpen by rememberSaveable { mutableStateOf(false) }
     var adjustmentsOpen by remember { mutableStateOf(false) }
     var mergeOpen by remember { mutableStateOf(false) }
     var deletePageOpen by remember { mutableStateOf(false) }
@@ -531,7 +532,7 @@ internal fun DocumentDetailScreen(
                         ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Move right", !busy && currentIndex < pages.lastIndex) { onMove(currentPage.id, 1) }
                         ToolTile(Icons.Default.FileCopy, "Duplicate", !busy) { onDuplicatePage(currentPage.id) }
                         ToolTile(Icons.Default.Output, "Extract", !busy) { onExtractPage(currentPage.id) }
-                        ToolTile(Icons.AutoMirrored.Filled.MenuBook, "Split book", !busy) { onSplitBook(currentPage.id) }
+                        ToolTile(Icons.AutoMirrored.Filled.MenuBook, "Split book", !busy) { bookSplitOpen = true }
                         ToolTile(Icons.Default.Delete, "Delete page", !busy) { deletePageOpen = true }
                     }
                 }
@@ -763,6 +764,17 @@ internal fun DocumentDetailScreen(
             onSign(currentPage.id, bitmap)
             signatureOpen = false
         }
+    }
+
+    if (bookSplitOpen && currentPage != null) {
+        BookSplitDialog(
+            imagePath = currentPage.imagePath,
+            onDismiss = { bookSplitOpen = false },
+            onConfirm = { fraction ->
+                bookSplitOpen = false
+                onSplitBook(currentPage.id, fraction)
+            }
+        )
     }
 
     if (cropOpen && currentPage != null) {

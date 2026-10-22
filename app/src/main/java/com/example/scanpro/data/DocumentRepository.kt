@@ -409,7 +409,8 @@ class DocumentRepository @Inject constructor(
         )
     }
 
-    suspend fun splitBookSpread(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
+    /** Splits a two-page spread at [splitFraction] of its width (0.5 is the centre; move it for off-centre books). */
+    suspend fun splitBookSpread(documentId: String, pageId: String, splitFraction: Float = 0.5f) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
@@ -422,8 +423,8 @@ class DocumentRepository @Inject constructor(
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
         val (left, right) = try {
-            makeHalf(bitmap, left = true, doc.id, index, sourceDir, renderedDir, doc.ocrScript) to
-                makeHalf(bitmap, left = false, doc.id, index, sourceDir, renderedDir, doc.ocrScript)
+            makeHalf(bitmap, left = true, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript) to
+                makeHalf(bitmap, left = false, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript)
         } finally {
             bitmap.recycle()
         }
@@ -880,13 +881,14 @@ class DocumentRepository @Inject constructor(
     private suspend fun makeHalf(
         bitmap: Bitmap,
         left: Boolean,
+        splitFraction: Float,
         docId: String,
         index: Int,
         sourceDir: File,
         renderedDir: File,
         script: OcrScript
     ): ScanPage {
-        val halfWidth = bitmap.width / 2
+        val halfWidth = (bitmap.width * splitFraction).toInt().coerceIn(1, bitmap.width - 1)
         val x = if (left) 0 else halfWidth
         val width = if (left) halfWidth else bitmap.width - halfWidth
         val half = Bitmap.createBitmap(bitmap, x, 0, width, bitmap.height)

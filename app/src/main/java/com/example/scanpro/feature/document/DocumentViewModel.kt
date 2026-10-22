@@ -98,8 +98,8 @@ class DocumentViewModel @Inject constructor(
     fun extractPage(pageId: String) =
         run("Extracting page into a new document…", "Page extracted") { repository.extractPage(id, pageId) }
 
-    fun splitBookSpread(pageId: String) =
-        run("Splitting book spread into two pages…", "Book spread split") { repository.splitBookSpread(id, pageId) }
+    fun splitBookSpread(pageId: String, splitFraction: Float) =
+        run("Splitting book spread into two pages…", "Book spread split") { repository.splitBookSpread(id, pageId, splitFraction) }
 
     fun deletePage(pageId: String) =
         run("Removing page…", "Page removed") { repository.deletePage(id, pageId) }
