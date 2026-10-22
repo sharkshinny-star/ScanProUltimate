@@ -4,6 +4,23 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 object JsonCodec {
+    fun encodeWords(words: List<OcrWord>): String = JSONArray().apply {
+        words.forEach { w ->
+            put(JSONArray().put(w.text).put(w.left.toDouble()).put(w.top.toDouble()).put(w.right.toDouble()).put(w.bottom.toDouble()))
+        }
+    }.toString()
+
+    fun decodeWords(raw: String?): List<OcrWord> = runCatching {
+        if (raw.isNullOrBlank()) return@runCatching emptyList()
+        val array = JSONArray(raw)
+        buildList {
+            for (index in 0 until array.length()) {
+                val item = array.getJSONArray(index)
+                add(OcrWord(item.getString(0), item.getDouble(1).toFloat(), item.getDouble(2).toFloat(), item.getDouble(3).toFloat(), item.getDouble(4).toFloat()))
+            }
+        }
+    }.getOrDefault(emptyList())
+
     fun encodeStringList(items: List<String>): String = JSONArray().apply {
         items.forEach { put(it) }
     }.toString()

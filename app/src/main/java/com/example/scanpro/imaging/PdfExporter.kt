@@ -18,6 +18,7 @@ object PdfExporter {
     private const val LETTER_WIDTH = 612
     private const val LETTER_HEIGHT = 792
     private const val MARGIN = 18f
+    private const val MAX_WORDS_PER_PAGE = 6000
 
     fun export(
         pages: List<ScanPage>,
@@ -64,26 +65,41 @@ object PdfExporter {
                 bitmap.recycle()
 
                 if (searchable && pageModel.ocrText.isNotBlank()) {
-                    // Android PdfDocument records Canvas text as PDF text operators. Keeping this
-                    // tiny and nearly transparent adds a searchable/selectable OCR layer without
-                    // visibly changing the scan. A server-side OCR engine can later replace this
-                    // with word-level bounding boxes if exact selection alignment is required.
-                    val hiddenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.argb(2, 255, 255, 255)
-                        textSize = 1.4f
-                    }
-                    val lines = pageModel.ocrText
-                        .replace('\u0000', ' ')
-                        .lineSequence()
-                        .flatMap { chunkText(it.trim(), 100).asSequence() }
-                        .filter { it.isNotBlank() }
-                        .take(160)
-                        .toList()
-                    // Top to bottom, so viewers that order text by position copy it in reading order.
-                    var y = (pageHeight - 3f - 1.5f * (lines.size - 1)).coerceAtLeast(1f)
-                    lines.forEach { line ->
-                        canvas.drawText(line, 2f, y, hiddenPaint)
-                        y += 1.5f
+                    // Android PdfDocument records Canvas text as PDF text operators. The text is drawn in a colour
+                    // that is practically transparent, so the scan looks unchanged while search and copy work.
+                    val hiddenColor = Color.argb(2, 255, 255, 255)
+                    val words = pageModel.ocrWords
+                    if (words.isNotEmpty() && !pageModel.ocrEdited) {
+                        // Each recognised word is placed under the printed word, so selection and highlights line up.
+                        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = hiddenColor }
+                        words.asSequence().take(MAX_WORDS_PER_PAGE).forEach { word ->
+                            val placed = WordPlacementMath.place(word, left, top, drawWidth, drawHeight) ?: return@forEach
+                            val text = word.text.replace('\u0000', ' ')
+                            paint.textSize = placed.textSize
+                            paint.textScaleX = 1f
+                            val natural = paint.measureText(text)
+                            if (natural > 0f) paint.textScaleX = (placed.width / natural).coerceIn(0.2f, 5f)
+                            canvas.drawText(text, placed.x, placed.baseline, paint)
+                        }
+                    } else {
+                        // No word positions (older scans) or hand-corrected text: a small text strip along the page edge.
+                        val hiddenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = hiddenColor
+                            textSize = 1.4f
+                        }
+                        val lines = pageModel.ocrText
+                            .replace('\u0000', ' ')
+                            .lineSequence()
+                            .flatMap { chunkText(it.trim(), 100).asSequence() }
+                            .filter { it.isNotBlank() }
+                            .take(160)
+                            .toList()
+                        // Top to bottom, so viewers that order text by position copy it in reading order.
+                        var y = (pageHeight - 3f - 1.5f * (lines.size - 1)).coerceAtLeast(1f)
+                        lines.forEach { line ->
+                            canvas.drawText(line, 2f, y, hiddenPaint)
+                            y += 1.5f
+                        }
                     }
                 }
 

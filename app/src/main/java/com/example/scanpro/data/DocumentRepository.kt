@@ -12,6 +12,7 @@ import javax.inject.Singleton
 import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.OcrEngine
+import com.example.scanpro.imaging.OcrResult
 import com.example.scanpro.imaging.PdfExporter
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
@@ -638,8 +639,8 @@ class DocumentRepository @Inject constructor(
         val selected = script ?: doc.ocrScript
         val pages = doc.pages.map { page ->
             // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
-            runCatching { ocr.recognize(File(page.imagePath), selected) }
-                .map { page.copy(ocrText = it, ocrEdited = false) }
+            runCatching { ocr.recognizeDetailed(File(page.imagePath), selected) }
+                .map { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
                 .getOrDefault(page)
         }
         saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
@@ -784,11 +785,12 @@ class DocumentRepository @Inject constructor(
             val script = db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
             // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
             // must end up with no text rather than keep the old text that includes what was covered.
-            page.copy(
-                ocrEdited = false,
-                ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }
-                    .getOrDefault(if (hasRedaction) "" else page.ocrText)
-            )
+            val read = runCatching { ocr.recognizeDetailed(File(page.imagePath), script) }.getOrNull()
+            when {
+                read != null -> page.copy(ocrEdited = false, ocrText = read.text, ocrWords = read.words)
+                hasRedaction -> page.copy(ocrEdited = false, ocrText = "", ocrWords = emptyList())
+                else -> page.copy(ocrEdited = false)
+            }
         } else page
     }
 
@@ -897,13 +899,15 @@ class DocumentRepository @Inject constructor(
         } finally {
             if (half !== bitmap) half.recycle()
         }
+        val read = runCatching { ocr.recognizeDetailed(rendered, script) }.getOrNull() ?: OcrResult("", emptyList())
         return ScanPage(
             id = id,
             documentId = docId,
             position = index,
             sourcePath = source.absolutePath,
             imagePath = rendered.absolutePath,
-            ocrText = runCatching { ocr.recognize(rendered, script) }.getOrDefault("")
+            ocrText = read.text,
+            ocrWords = read.words
         )
     }
 

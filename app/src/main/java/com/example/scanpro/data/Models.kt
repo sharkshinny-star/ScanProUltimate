@@ -122,6 +122,9 @@ data class PageAnnotation(
     val opacity: Float = 1f
 )
 
+/** A recognised word and where it sits on the rendered page, as fractions of the page width and height. */
+data class OcrWord(val text: String, val left: Float, val top: Float, val right: Float, val bottom: Float)
+
 data class ScanPage(
     val id: String,
     val documentId: String,
@@ -131,6 +134,8 @@ data class ScanPage(
     val ocrText: String = "",
     /** True once the user has corrected [ocrText] by hand; later edits to the page must keep it. */
     val ocrEdited: Boolean = false,
+    /** Word positions for [ocrText] on the rendered page; empty when unknown, and stale once [ocrEdited]. */
+    val ocrWords: List<OcrWord> = emptyList(),
     val filter: PageFilter = PageFilter.ORIGINAL,
     val rotationDegrees: Int = 0,
     val crop: CropQuad = CropQuad.DEFAULT,
