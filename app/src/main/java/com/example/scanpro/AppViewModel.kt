@@ -1,5 +1,8 @@
 package com.example.scanpro
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,12 +11,14 @@ import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
+import com.example.scanpro.data.PdfPasswordRequiredException
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.scanner.SESSION_ROOT
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +37,7 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class AppViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val repository: DocumentRepository,
     private val settings: SettingsStore,
     private val operations: OperationRunner,
@@ -119,17 +125,31 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    fun importPdf(uri: Uri) {
-        operations.enqueue("Importing PDF pages and building OCR index…", "PDF imported") {
-            repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first())
+    /** A protected PDF waiting for its password; the shell shows a prompt for it. */
+    data class PdfPasswordRequest(val uri: Uri, val wrongPassword: Boolean)
+
+    private val _pdfPasswordRequest = MutableStateFlow<PdfPasswordRequest?>(null)
+    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = _pdfPasswordRequest.asStateFlow()
+    fun cancelPdfPassword() { _pdfPasswordRequest.value = null }
+
+    fun importPdf(uri: Uri, password: String? = null) {
+        _pdfPasswordRequest.value = null
+        operations.enqueue("Importing PDF pages and building OCR index…", null) {
+            try {
+                repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first(), password)
+                operations.showMessage("PDF imported")
+            } catch (needsPassword: PdfPasswordRequiredException) {
+                _pdfPasswordRequest.value = PdfPasswordRequest(uri, needsPassword.wrongPassword)
+            }
         }
     }
 
     fun importCameraSession(imageUris: List<Uri>, mode: ScanMode) {
         if (imageUris.isEmpty()) return
-        operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", "Scan saved") {
+        operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", if (mode == ScanMode.TEXT) null else "Scan saved") {
             try {
                 val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode)
+                if (mode == ScanMode.TEXT) copyRecognizedText(newDocument)
                 operations.requestOpenDocument(newDocument.id)
             } finally {
                 // The document now holds its own copies; drop the scanner session's temporary captures.
@@ -142,6 +162,19 @@ class AppViewModel @Inject constructor(
             }
         }
     }
+
+    /** "Extract text" scans put the recognized text on the clipboard so it can be pasted straight away. */
+    private fun copyRecognizedText(document: ScanDocument) {
+        val text = document.pages.sortedBy { it.position }.joinToString("\n\n") { it.ocrText.trim() }.trim()
+        if (text.isBlank()) {
+            operations.showMessage("No text found in this scan")
+            return
+        }
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("Extracted text", text))
+        operations.showMessage("Text copied to clipboard")
+    }
 }
 
 private const val MAX_IMPORT_IMAGES = 100
+

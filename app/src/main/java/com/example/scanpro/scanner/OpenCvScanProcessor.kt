@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import com.example.scanpro.data.CropQuad
 import com.example.scanpro.imaging.ImageProcessor
 import java.io.File
 
@@ -32,5 +33,30 @@ object OpenCvScanProcessor {
 
         if (!corrected) source.copyTo(destination, overwrite = true)
         return Result(destination, detection, corrected)
+    }
+}
+
+/** Turns the crop the user confirmed in the review step into the final page image. */
+fun OpenCvScanProcessor.finalizePage(source: File, destination: File, quad: CropQuad?) {
+    when {
+        quad == null -> correctCapturedPage(source, destination)
+        quad.isIdentity() -> {
+            destination.parentFile?.mkdirs()
+            source.copyTo(destination, overwrite = true)
+        }
+        else -> runCatching { ImageProcessor.cropSourceToNewFile(source, destination, quad) }
+            .getOrElse { source.copyTo(destination, overwrite = true) }
+    }
+}
+
+/** Outline of the page in a captured photo, or the whole frame when nothing convincing is found. */
+fun OpenCvScanProcessor.detectCrop(source: File): CropQuad {
+    val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT
+    return try {
+        val detection = DocumentEdgeDetector.detect(bitmap)
+        val quad = detection.quad
+        if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
+    } finally {
+        if (!bitmap.isRecycled) bitmap.recycle()
     }
 }

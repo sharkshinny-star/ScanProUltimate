@@ -36,7 +36,8 @@ enum class ScanMode(val label: String) {
     RECEIPT("Receipt"),
     WHITEBOARD("Whiteboard"),
     ID_CARD("ID card"),
-    BOOK("Book")
+    BOOK("Book"),
+    TEXT("Extract text")
 }
 
 enum class OcrScript(val label: String) {

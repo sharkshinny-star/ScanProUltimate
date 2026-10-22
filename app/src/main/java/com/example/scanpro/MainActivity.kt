@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -79,11 +80,12 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        showLaunchScreenUntilReady(splash)
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
-        holdLaunchScreenUntilReady()
         publishScanShortcut()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -150,18 +152,27 @@ class MainActivity : FragmentActivity() {
      * Keeps the launch screen (always light) up until the saved theme and app-lock setting have
      * loaded, so the first frame is already in the right theme instead of flashing light, then dark.
      */
-    private fun holdLaunchScreenUntilReady() {
-        val content = findViewById<View>(android.R.id.content)
+    /**
+     * Keeps the launch screen up until the saved theme and lock setting have loaded (normally a few
+     * milliseconds, never longer than [LAUNCH_SCREEN_MAX_HOLD_MS]), so nothing flashes in the wrong theme.
+     * It then fades and grows away instead of cutting to the app.
+     */
+    private fun showLaunchScreenUntilReady(splash: androidx.core.splashscreen.SplashScreen) {
         val startedAt = SystemClock.uptimeMillis()
-        content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                // Settings normally load in a few milliseconds; never hold the launch screen for long.
-                val ready = (viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null) ||
-                    SystemClock.uptimeMillis() - startedAt > LAUNCH_SCREEN_MAX_HOLD_MS
-                if (ready) content.viewTreeObserver.removeOnPreDrawListener(this)
-                return ready
-            }
-        })
+        splash.setKeepOnScreenCondition {
+            val ready = viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null
+            !ready && SystemClock.uptimeMillis() - startedAt < LAUNCH_SCREEN_MAX_HOLD_MS
+        }
+        splash.setOnExitAnimationListener { provider ->
+            provider.view.animate()
+                .alpha(0f)
+                .scaleX(1.12f)
+                .scaleY(1.12f)
+                .setDuration(260L)
+                .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                .withEndAction { provider.remove() }
+                .start()
+        }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {

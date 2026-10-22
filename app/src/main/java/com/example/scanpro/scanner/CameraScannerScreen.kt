@@ -24,15 +24,21 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -42,13 +48,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -67,6 +80,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,7 +92,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -100,6 +116,9 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** How the live preview helps: Auto captures by itself, Manual only outlines the page, No detect does neither. */
+private enum class DetectMode(val label: String) { AUTO("Auto"), MANUAL("Manual"), NO_DETECT("No detect") }
+
 @Composable
 fun CameraScannerScreen(
     onClose: () -> Unit,
@@ -109,12 +128,15 @@ fun CameraScannerScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
     val previewView = remember {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             scaleType = PreviewView.ScaleType.FIT_CENTER
+            // The screen must not dim or lock while someone lines up a page.
+            keepScreenOn = true
         }
     }
 
@@ -127,7 +149,17 @@ fun CameraScannerScreen(
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var torchEnabled by remember { mutableStateOf(false) }
-    var autoCapture by remember { mutableStateOf(true) }
+    val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
+    var detectMode by rememberSaveable {
+        mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.AUTO))
+    }
+    var detectMenuOpen by remember { mutableStateOf(false) }
+    var overflowOpen by remember { mutableStateOf(false) }
+    var showAdjustments by remember { mutableStateOf(false) }
+    val autoCapture = detectMode == DetectMode.AUTO
+    // Single finishes after one capture; Batch keeps the camera open for more pages.
+    var batch by rememberSaveable { mutableStateOf(prefs.getBoolean("batch", false)) }
+    var focusPoint by remember { mutableStateOf<Offset?>(null) }
     var zoom by remember { mutableFloatStateOf(0f) }
     var exposureIndex by remember { mutableIntStateOf(0) }
     var exposureMin by remember { mutableIntStateOf(0) }
@@ -151,9 +183,24 @@ fun CameraScannerScreen(
     val sessionId = rememberSaveable { UUID.randomUUID().toString() }
     val sessionDir = remember(sessionId) { File(File(context.cacheDir, SESSION_ROOT), sessionId) }
     var completed by remember { mutableStateOf(false) }
+    // The review step after capture: crop, rotate, reorder and add pages before saving.
+    var reviewing by rememberSaveable { mutableStateOf(false) }
+    var reviewIndex by rememberSaveable { mutableIntStateOf(0) }
+    var processing by remember { mutableStateOf(false) }
+    val quads = rememberSaveable(
+        saver = listSaver(
+            save = { map -> encodeQuads(map) },
+            restore = { saved -> mutableStateMapOf<String, CropQuad>().apply { saved.mapNotNull(::decodeQuad).forEach { (k, v) -> put(k, v) } } }
+        )
+    ) { mutableStateMapOf<String, CropQuad>() }
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
     var resumeCount by remember { mutableIntStateOf(0) }
     val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
+
+    var confirmQuit by remember { mutableStateOf(false) }
+    // Closing with captured pages would discard them, so ask first.
+    val requestClose = { if (pages.isNotEmpty() && !completed) confirmQuit = true else onClose() }
+    BackHandler(enabled = pages.isNotEmpty() && !completed) { confirmQuit = true }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permissionGranted = it
@@ -197,7 +244,37 @@ fun CameraScannerScreen(
             onAutoCapture = { autoCaptureSignal++ }
         )
     }
-    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && pages.size < pageLimit }
+    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && !reviewing && pages.size < pageLimit }
+
+    /** Opens the review step on the newest page. */
+    fun finishScan() {
+        if (!completed && pages.isNotEmpty()) {
+            reviewIndex = pages.lastIndex
+            reviewing = true
+        }
+    }
+
+    /** Applies each page's confirmed crop, then hands the finished images to the importer. */
+    fun saveReviewed() {
+        // Ignore a second tap during the exit animation; it would import twice.
+        if (completed || processing || pages.isEmpty()) return
+        processing = true
+        val inputs = pages.toList().map { it to quads[it.toString()] }
+        scope.launch {
+            val outputs = withContext(Dispatchers.Default) {
+                inputs.map { (uri, quad) ->
+                    val source = File(uri.path.orEmpty())
+                    val target = File(sessionDir, "scan_${UUID.randomUUID()}.jpg")
+                    runCatching { OpenCvScanProcessor.finalizePage(source, target, quad) }
+                        .onFailure { runCatching { source.copyTo(target, overwrite = true) } }
+                    Uri.fromFile(target)
+                }
+            }
+            completed = true
+            processing = false
+            onComplete(outputs, scanMode)
+        }
+    }
 
     fun capturePage() {
         val capture = imageCapture ?: return
@@ -208,7 +285,6 @@ fun CameraScannerScreen(
         sessionDir.mkdirs()
         val id = UUID.randomUUID().toString()
         val raw = File(sessionDir, "raw_$id.jpg")
-        val corrected = File(sessionDir, "scan_$id.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(raw).build()
 
         capture.takePicture(
@@ -222,29 +298,21 @@ fun CameraScannerScreen(
                         raw.delete()
                         return
                     }
+                    // Keep the raw photo: cropping happens in the review step, from the full-size original.
+                    val captured = Uri.fromFile(raw)
+                    pages.add(captured)
+                    capturing = false
+                    // Outline the page in the background so the review screen opens ready.
                     scope.launch {
-                        // Always release the shutter and clean up, even if processing fails.
-                        try {
-                            val result = withContext(Dispatchers.Default) {
-                                OpenCvScanProcessor.correctCapturedPage(raw, corrected)
-                            }
-                            pages.add(Uri.fromFile(result.output))
-                            status = when {
-                                scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
-                                scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
-                                result.perspectiveCorrected -> "Page ${pages.size} captured"
-                                else -> "Page ${pages.size} captured · adjust crop if needed"
-                            }
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (error: Throwable) {
-                            // Throwable: a failed OpenCV native load throws UnsatisfiedLinkError, not an Exception.
-                            status = "Could not process page: ${error.message ?: "try again"}"
-                        } finally {
-                            raw.delete()
-                            capturing = false
-                        }
+                        val quad = withContext(Dispatchers.Default) { runCatching { OpenCvScanProcessor.detectCrop(raw) }.getOrNull() }
+                        if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                     }
+                    status = when {
+                        scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
+                        scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
+                        else -> "Page ${pages.size} captured"
+                    }
+                    if (!batch && scanMode != ScanMode.ID_CARD) finishScan()
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -255,6 +323,13 @@ fun CameraScannerScreen(
         )
     }
 
+    LaunchedEffect(focusPoint) {
+        if (focusPoint != null) {
+            delay(1.seconds)
+            focusPoint = null
+        }
+    }
+
     LaunchedEffect(status) {
         if (status != null) {
             delay(3.seconds)
@@ -263,7 +338,10 @@ fun CameraScannerScreen(
     }
 
     LaunchedEffect(autoCaptureSignal) {
-        if (autoCaptureSignal > 0 && autoCapture && !capturing && pages.size < pageLimit) capturePage()
+        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && pages.size < pageLimit) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            capturePage()
+        }
     }
 
     LaunchedEffect(permissionGranted, lifecycleOwner) {
@@ -368,6 +446,21 @@ fun CameraScannerScreen(
         return
     }
 
+    if (reviewing && pages.isNotEmpty()) {
+        ScanReviewScreen(
+            pages = pages,
+            quads = quads,
+            index = reviewIndex,
+            sessionDir = sessionDir,
+            processing = processing,
+            onIndexChange = { reviewIndex = it },
+            onAdd = { reviewing = false },
+            onBack = { reviewing = false },
+            onDone = ::saveReviewed
+        )
+        return
+    }
+
     // Dark blue-grey scanner backdrop from the approved design (not pure black).
     Box(Modifier.fillMaxSize().background(Color(0xFF0E141D))) {
         AndroidView(
@@ -378,6 +471,7 @@ fun CameraScannerScreen(
                     if (event.action == android.view.MotionEvent.ACTION_UP) {
                         // Report the tap as a click for accessibility services.
                         view.performClick()
+                        focusPoint = Offset(event.x, event.y)
                         boundCamera?.let { camera ->
                             val point = view.meteringPointFactory.createPoint(event.x, event.y)
                             val action = FocusMeteringAction.Builder(point).build()
@@ -389,25 +483,101 @@ fun CameraScannerScreen(
             }
         )
 
-        DocumentBoundaryOverlay(detection = detection, stable = stable)
+        ThirdsGrid()
+        if (detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+            DocumentBoundaryOverlay(detection = detection, stable = stable)
+        }
+        if (scanMode == ScanMode.ID_CARD) {
+            IdCardFrame(label = if (scanBothSides && pages.size == 1) "Back" else "Front")
+        }
+        focusPoint?.let { point ->
+            Box(
+                Modifier
+                    .offset { IntOffset((point.x - 32.dp.toPx()).toInt(), (point.y - 32.dp.toPx()).toInt()) }
+                    .size(64.dp)
+                    .border(2.dp, Color(0xFF22D3EE), RoundedCornerShape(4.dp))
+            )
+        }
 
+        // Live guidance in the middle of the preview, where the eye already is.
+        if (status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+            Surface(
+                modifier = Modifier.align(Alignment.Center),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.Black.copy(alpha = 0.55f)
+            ) {
+                Text(liveGuidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+            }
+        }
+
+        if (confirmQuit) {
+            AlertDialog(
+                onDismissRequest = { confirmQuit = false },
+                title = { Text("Quit scanning?") },
+                text = { Text("If you quit now, the photos you took will be discarded.") },
+                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text("Discard", color = Color(0xFFEF4444)) } },
+                dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text("Cancel") } }
+            )
+        }
+
+            if (scanMode != ScanMode.ID_CARD) {
+                Box(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp)) {
+                    Row(
+                        Modifier.clickable { detectMenuOpen = true }.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(detectMode.label, color = Color.White, style = MaterialTheme.typography.titleMedium)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Detection mode", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    DropdownMenu(expanded = detectMenuOpen, onDismissRequest = { detectMenuOpen = false }) {
+                        DetectMode.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(option.label, color = if (option == detectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                },
+                                onClick = { detectMode = option; detectMenuOpen = false; prefs.edit().putString("detect", option.name).apply() }
+                            )
+                        }
+                    }
+                }
+            }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 18.dp, start = 12.dp, end = 12.dp),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(top = 8.dp, start = 12.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
-                IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
+                IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
-                    IconButton(onClick = { autoCapture = !autoCapture }) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = "Auto capture", tint = if (autoCapture) MaterialTheme.colorScheme.primary else Color.White)
-                    }
-                }
-                Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
                     IconButton(onClick = { torchEnabled = !torchEnabled }) {
                         Icon(if (torchEnabled) Icons.Default.Bolt else Icons.Default.FlashOff, contentDescription = "Flash", tint = Color.White)
+                    }
+                }
+                Box {
+                    Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
+                        IconButton(onClick = { overflowOpen = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
+                        }
+                    }
+                    DropdownMenu(expanded = overflowOpen, onDismissRequest = { overflowOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(if (showAdjustments) "Hide zoom & exposure" else "Zoom & exposure") },
+                            onClick = { showAdjustments = !showAdjustments; overflowOpen = false }
+                        )
+                        if (pages.isEmpty() && scanMode != ScanMode.ID_CARD && scanMode != ScanMode.TEXT) {
+                            listOf(ScanMode.DOCUMENT, ScanMode.RECEIPT, ScanMode.WHITEBOARD, ScanMode.BOOK).forEach { type ->
+                                DropdownMenuItem(
+                                    text = { Text(type.label, color = if (scanMode == type) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
+                                    onClick = { scanMode = type; overflowOpen = false }
+                                )
+                            }
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Compatibility scanner") },
+                            onClick = { overflowOpen = false; onFallbackScanner() }
+                        )
                     }
                 }
             }
@@ -415,77 +585,87 @@ fun CameraScannerScreen(
 
         Column(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .background(Color.Black.copy(alpha = 0.72f))
+                .background(Color(0xFF0A0F18))
+                .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
-                Text(status ?: liveGuidance, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
-            }
-
-            Spacer(Modifier.height(10.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(ScanMode.entries, key = { it.name }) { mode ->
-                    FilterChip(
-                        selected = scanMode == mode,
-                        onClick = { scanMode = mode; scanBothSides = false },
-                        enabled = pages.isEmpty(),
-                        label = { Text(mode.label) }
-                    )
+            if (status != null) {
+                Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
+                    Text(status.orEmpty(), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
                 }
+                Spacer(Modifier.height(8.dp))
             }
 
-            if (scanMode == ScanMode.ID_CARD) {
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = !scanBothSides,
-                        enabled = pages.isEmpty(),
-                        onClick = { scanBothSides = false },
-                        label = { Text("Front only") }
-                    )
-                    FilterChip(
-                        selected = scanBothSides,
-                        enabled = pages.isEmpty(),
-                        onClick = { scanBothSides = true },
-                        label = { Text("Front + back") }
-                    )
+            if (scanMode != ScanMode.ID_CARD) {
+                Row(
+                    Modifier.background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(3.dp)
+                ) {
+                    listOf(false to "Single", true to "Batch").forEach { (value, text) ->
+                        Surface(
+                            onClick = { batch = value; prefs.edit().putBoolean("batch", value).apply() },
+                            shape = RoundedCornerShape(50),
+                            color = if (batch == value) Color.White.copy(alpha = 0.28f) else Color.Transparent
+                        ) {
+                            Text(text, color = Color.White, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp))
+                        }
+                    }
                 }
-                Text(
-                    when {
-                        scanBothSides && pages.isEmpty() -> "Capture the front of your ID first"
-                        scanBothSides && pages.size == 1 -> "Front captured. Capture the back or undo to retake."
-                        scanBothSides -> "Both sides captured. Ready to save and share."
-                        pages.isEmpty() -> "Capture the front of your ID"
-                        else -> "Front captured. Ready to save and share."
-                    },
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("1×", color = Color.White, style = MaterialTheme.typography.labelSmall)
-                Slider(
-                    value = zoom,
-                    onValueChange = { zoom = it },
-                    modifier = Modifier.weight(1f).padding(horizontal = 10.dp)
-                )
-                Text("Zoom", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                Spacer(Modifier.height(10.dp))
             }
 
-            if (exposureMin < exposureMax) {
+            if (showAdjustments) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("EV", color = Color.White, style = MaterialTheme.typography.labelSmall)
-                    Slider(
-                        value = exposureIndex.toFloat(),
-                        onValueChange = { exposureIndex = it.toInt().coerceIn(exposureMin, exposureMax) },
-                        valueRange = exposureMin.toFloat()..exposureMax.toFloat(),
-                        steps = (exposureMax - exposureMin - 1).coerceAtLeast(0),
-                        modifier = Modifier.weight(1f).padding(horizontal = 10.dp)
-                    )
-                    val exposureLabel = if (exposureIndex > 0) "+$exposureIndex" else exposureIndex.toString()
-                    Text(exposureLabel, color = Color.White, style = MaterialTheme.typography.labelSmall)
+                    Text("1×", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                    Slider(value = zoom, onValueChange = { zoom = it }, modifier = Modifier.weight(1f).padding(horizontal = 10.dp))
+                    Text("Zoom", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                }
+                if (exposureMin < exposureMax) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("EV", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        Slider(
+                            value = exposureIndex.toFloat(),
+                            onValueChange = { exposureIndex = it.toInt().coerceIn(exposureMin, exposureMax) },
+                            valueRange = exposureMin.toFloat()..exposureMax.toFloat(),
+                            steps = (exposureMax - exposureMin - 1).coerceAtLeast(0),
+                            modifier = Modifier.weight(1f).padding(horizontal = 10.dp)
+                        )
+                        val exposureLabel = if (exposureIndex > 0) "+$exposureIndex" else exposureIndex.toString()
+                        Text(exposureLabel, color = Color.White, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+
+            // Mode tabs. Receipt, Whiteboard and Book live in the overflow menu under "Docs".
+            val blue = MaterialTheme.colorScheme.primary
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                if (scanMode == ScanMode.ID_CARD) {
+                    listOf(false to "Front only", true to "Both sides").forEach { (both, text) ->
+                        Text(
+                            text,
+                            color = if (scanBothSides == both) blue else Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable(enabled = pages.isEmpty()) { scanBothSides = both }.padding(8.dp)
+                        )
+                    }
+                } else {
+                    listOf(ScanMode.TEXT to "Extract text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
+                        val selected = if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
+                        Text(
+                            text,
+                            color = if (selected) blue else Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable(enabled = pages.isEmpty()) {
+                                scanMode = target ?: ScanMode.DOCUMENT
+                                scanBothSides = false
+                            }.padding(8.dp)
+                        )
+                    }
                 }
             }
 
@@ -494,56 +674,48 @@ fun CameraScannerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(
-                    onClick = {
-                        photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
+                    if (pages.isNotEmpty()) {
+                        Column(
+                            Modifier.clickable { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") File(uri.path.orEmpty()).delete() } }.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Remove last page", tint = Color.White)
+                            Text("Back", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        }
                     }
-                ) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = "Import photos", tint = Color.White)
                 }
 
                 Surface(
-                    onClick = { capturePage() },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        capturePage()
+                    },
                     enabled = !capturing && pages.size < pageLimit,
                     shape = CircleShape,
                     color = Color.White,
+                    border = androidx.compose.foundation.BorderStroke(5.dp, if (stable) blue else Color.White.copy(alpha = 0.5f)),
                     modifier = Modifier.size(78.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Surface(shape = CircleShape, color = if (stable) MaterialTheme.colorScheme.primary else Color.Black, modifier = Modifier.size(58.dp)) {}
-                    }
-                }
+                ) {}
 
-                if (pages.isEmpty()) {
-                    IconButton(onClick = onFallbackScanner) {
-                        Icon(Icons.Default.DocumentScanner, contentDescription = "Compatibility scanner", tint = Color.White)
-                    }
-                } else {
-                    Button(
-                        enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
-                        onClick = {
-                            // Ignore a second tap during the exit animation; it would import twice.
-                            if (!completed) {
-                                completed = true
-                                onComplete(pages.toList(), scanMode)
-                            }
+                Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
+                    if (pages.isEmpty()) {
+                        Column(
+                            Modifier.clickable { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = "Import photos", tint = Color.White)
+                            Text("Import images", color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
-                    ) {
-                        Icon(Icons.Default.TaskAlt, contentDescription = null)
-                        Spacer(Modifier.width(5.dp))
-                        Text("Done ${pages.size}")
-                    }
-                }
-            }
-
-            if (pages.isNotEmpty()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Collections, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("${pages.size} page${if (pages.size == 1) "" else "s"} in this scan", color = Color.White, style = MaterialTheme.typography.bodySmall)
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") File(uri.path.orEmpty()).delete() } }) {
-                        Text("Undo last")
+                    } else {
+                        Button(
+                            enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
+                            onClick = { finishScan() }
+                        ) {
+                            Icon(Icons.Default.TaskAlt, contentDescription = null)
+                            Spacer(Modifier.width(5.dp))
+                            Text("${pages.size}")
+                        }
                     }
                 }
             }
@@ -574,6 +746,45 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
                 OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text("Use compatibility scanner") }
                 TextButton(onClick = onClose) { Text("Cancel") }
             }
+        }
+    }
+}
+
+/** Credit-card shaped guide with corner brackets, plus a Front/Back label. */
+@Composable
+private fun IdCardFrame(label: String) {
+    Box(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize()) {
+            val width = size.width * 0.88f
+            val height = width * 0.63f
+            val left = (size.width - width) / 2f
+            val top = (size.height - height) / 2f - 40.dp.toPx()
+            val arm = 28.dp.toPx()
+            val stroke = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+            fun corner(x: Float, y: Float, dx: Float, dy: Float) {
+                drawLine(Color.White, Offset(x, y), Offset(x + dx * arm, y), strokeWidth = stroke.width, cap = StrokeCap.Round)
+                drawLine(Color.White, Offset(x, y), Offset(x, y + dy * arm), strokeWidth = stroke.width, cap = StrokeCap.Round)
+            }
+            corner(left, top, 1f, 1f)
+            corner(left + width, top, -1f, 1f)
+            corner(left, top + height, 1f, -1f)
+            corner(left + width, top + height, -1f, -1f)
+        }
+        Text("Fit it inside the borders", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter).padding(top = 110.dp))
+        Surface(modifier = Modifier.align(Alignment.Center).offset(y = (-40).dp), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.45f)) {
+            Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+        }
+    }
+}
+
+/** Faint rule-of-thirds lines that help keep the document square to the camera. */
+@Composable
+private fun ThirdsGrid() {
+    Canvas(Modifier.fillMaxSize()) {
+        val line = Color.White.copy(alpha = 0.28f)
+        for (i in 1..2) {
+            drawLine(line, Offset(size.width * i / 3f, 0f), Offset(size.width * i / 3f, size.height), strokeWidth = 1f)
+            drawLine(line, Offset(0f, size.height * i / 3f), Offset(size.width, size.height * i / 3f), strokeWidth = 1f)
         }
     }
 }

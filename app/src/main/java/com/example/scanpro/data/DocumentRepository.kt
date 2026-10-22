@@ -13,6 +13,7 @@ import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.PdfExporter
+import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.SmartTitle
 import com.example.scanpro.imaging.SpecialExporters
@@ -24,6 +25,10 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import androidx.core.graphics.createBitmap
+
+/** The PDF is password-protected; [wrongPassword] is true when a password was given and did not work. */
+class PdfPasswordRequiredException(val wrongPassword: Boolean) :
+    Exception(if (wrongPassword) "That password didn't work" else "This PDF is password-protected")
 
 @Singleton
 class DocumentRepository @Inject constructor(
@@ -75,6 +80,7 @@ class DocumentRepository @Inject constructor(
         pdfUri: Uri,
         quality: PdfQuality,
         autoTitle: Boolean,
+        password: String? = null,
     ): ScanDocument = withContext(Dispatchers.IO) {
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -82,11 +88,34 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
         val tempPdf = File(context.cacheDir, "pdf_import_${UUID.randomUUID()}.pdf")
+        val unlockedPdf = File(context.cacheDir, "pdf_unlocked_${UUID.randomUUID()}.pdf")
         try {
             copyUri(pdfUri, tempPdf)
+            // The system PDF renderer cannot open protected files, so decrypt a copy with the password first.
+            val readable = if (password != null) {
+                try {
+                    PdfSecurity.unlock(tempPdf, unlockedPdf, password)
+                } catch (error: Exception) {
+                    throw PdfPasswordRequiredException(wrongPassword = true)
+                }
+                unlockedPdf
+            } else when (runCatching { PdfSecurity.protection(tempPdf) }.getOrDefault(PdfProtection.NONE)) {
+                PdfProtection.PASSWORD_REQUIRED -> throw PdfPasswordRequiredException(wrongPassword = false)
+                PdfProtection.RESTRICTED_ONLY -> {
+                    // Opens freely but with restrictions the system renderer may refuse.
+                    PdfSecurity.unlock(tempPdf, unlockedPdf, "")
+                    unlockedPdf
+                }
+                PdfProtection.NONE -> tempPdf
+            }
             val pages = mutableListOf<ScanPage>()
-            ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
-                PdfRenderer(descriptor).use { renderer ->
+            ParcelFileDescriptor.open(readable, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+                val opened = try {
+                    PdfRenderer(descriptor)
+                } catch (error: SecurityException) {
+                    throw PdfPasswordRequiredException(wrongPassword = false)
+                }
+                opened.use { renderer ->
                     require(renderer.pageCount in (1..300)) { "PDF must contain between 1 and 300 pages" }
                     for (index in 0 until renderer.pageCount) {
                         renderer.openPage(index).use { page ->
@@ -137,6 +166,7 @@ class DocumentRepository @Inject constructor(
             throw error
         } finally {
             tempPdf.delete()
+            unlockedPdf.delete()
         }
     }
 
@@ -163,7 +193,7 @@ class DocumentRepository @Inject constructor(
         val target = newName.trim().take(80)
         require(source.isNotBlank()) { "Folder name is required" }
         require(target.isNotBlank()) { "New folder name is required" }
-        db.loadAll()
+        db.loadAll(includeTrashed = true)
             .filter { doc -> doc.folderName.equals(source, ignoreCase = true) }
             .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = target, updatedAt = now())) }
     }
@@ -213,7 +243,8 @@ class DocumentRepository @Inject constructor(
             renderAndOcr(page.copy(adjustments = adjustments.normalized()))
         }
 
-    suspend fun resetPage(documentId: String, pageId: String) =
+    suspend fun resetPage(documentId: String, pageId: String) {
+        val removed = annotationsOf(documentId, pageId)
         editSinglePage(documentId, pageId) { page ->
             renderAndOcr(
                 page.copy(
@@ -223,8 +254,14 @@ class DocumentRepository @Inject constructor(
                     adjustments = PageAdjustments.DEFAULT,
                     annotations = emptyList()
                 )
-            ).also { deleteSignatureAssets(page.annotations) }
+            )
         }
+        // Signature images go only after the page is saved without them.
+        deleteSignatureAssets(removed)
+    }
+
+    private suspend fun annotationsOf(documentId: String, pageId: String): List<PageAnnotation> =
+        withContext(Dispatchers.IO) { requireDocument(documentId).pages.firstOrNull { it.id == pageId }?.annotations.orEmpty() }
 
     suspend fun addTextAnnotation(documentId: String, pageId: String, text: String) =
         addAnnotation(
@@ -267,11 +304,13 @@ class DocumentRepository @Inject constructor(
             )
         )
 
-    suspend fun removeLastAnnotation(documentId: String, pageId: String) =
+    suspend fun removeLastAnnotation(documentId: String, pageId: String) {
+        val removed = annotationsOf(documentId, pageId).takeLast(1)
         editSinglePage(documentId, pageId) { page ->
-            val updated = page.copy(annotations = page.annotations.dropLast(1))
-            renderAndOcr(updated).also { deleteSignatureAssets(page.annotations.takeLast(1)) }
+            renderAndOcr(page.copy(annotations = page.annotations.dropLast(1)))
         }
+        deleteSignatureAssets(removed)
+    }
 
     suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
         editSinglePage(documentId, pageId) { page ->
@@ -385,13 +424,15 @@ class DocumentRepository @Inject constructor(
         } finally {
             bitmap.recycle()
         }
-        File(page.sourcePath).delete()
-        File(page.imagePath).delete()
-        deleteSignatureAssets(page.annotations)
         pages.removeAt(index)
         pages.add(index, right)
         pages.add(index, left)
-        saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        val saved = saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        // Delete the original spread only once both halves are saved.
+        File(page.sourcePath).delete()
+        File(page.imagePath).delete()
+        deleteSignatureAssets(page.annotations)
+        saved
     }
 
     suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
@@ -426,11 +467,13 @@ class DocumentRepository @Inject constructor(
             moveToTrash(documentId)
             return@withContext
         }
+        val pages = normalize(doc.pages.sortedBy { it.position }.filterNot { it.id == pageId })
+        val saved = saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        // Delete the files only after the page is gone from the database, so a failed save loses nothing.
         File(target.sourcePath).delete()
         File(target.imagePath).delete()
         deleteSignatureAssets(target.annotations)
-        val pages = normalize(doc.pages.filterNot { it.id == pageId })
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        saved
     }
 
     suspend fun moveToTrash(id: String) = mutateDocument(id) { doc ->
@@ -523,15 +566,34 @@ class DocumentRepository @Inject constructor(
                 val pageId = UUID.randomUUID().toString()
                 val sourceFile = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 val renderedFile = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")
-                restoredPage.file.copyTo(sourceFile, overwrite = true)
+                // Keep the original image and edit settings when the backup has them, so the restored page
+                // stays editable. Older backups only hold the rendered page, which becomes the source.
+                val original = restoredPage.sourceFile
+                (original ?: restoredPage.file).copyTo(sourceFile, overwrite = true)
                 restoredPage.file.copyTo(renderedFile, overwrite = true)
+                val editable = original != null
+                val annotations = if (editable) {
+                    restoredPage.annotations.map { annotation ->
+                        if (annotation.type != AnnotationType.SIGNATURE) annotation else {
+                            val signatureDir = File(folder, "signatures").apply { mkdirs() }
+                            val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
+                            File(annotation.assetPath).copyTo(asset, overwrite = true)
+                            annotation.copy(assetPath = asset.absolutePath)
+                        }
+                    }
+                } else emptyList()
                 ScanPage(
                     id = pageId,
                     documentId = id,
                     position = index,
                     sourcePath = sourceFile.absolutePath,
                     imagePath = renderedFile.absolutePath,
-                    ocrText = restoredPage.ocrText
+                    ocrText = restoredPage.ocrText,
+                    filter = if (editable) restoredPage.filter else PageFilter.ORIGINAL,
+                    rotationDegrees = if (editable) restoredPage.rotationDegrees else 0,
+                    crop = if (editable) restoredPage.crop else CropQuad.DEFAULT,
+                    adjustments = if (editable) restoredPage.adjustments else PageAdjustments.DEFAULT,
+                    annotations = annotations
                 )
             }
             val pdf = File(folder, "document.pdf")

@@ -13,22 +13,43 @@ object PdfSecurity {
     fun protect(source: File, destination: File, password: String) {
         require(password.length >= MIN_PASSWORD_LENGTH) { "Use a password with at least $MIN_PASSWORD_LENGTH characters" }
         destination.parentFile?.mkdirs()
-        PDDocument.load(source).use { document ->
-            val permissions = AccessPermission().apply {
-                setCanPrint(true)
-                setCanExtractContent(false)
-                setCanModify(false)
-                setCanModifyAnnotations(false)
-                setCanFillInForm(false)
+        // AES-256 first; a device whose crypto provider rejects it still gets AES-128 rather than a failure.
+        var failure: Exception? = null
+        for (keyLength in intArrayOf(256, 128)) {
+            try {
+                PDDocument.load(source).use { document ->
+                    val permissions = AccessPermission().apply {
+                        setCanPrint(true)
+                        setCanExtractContent(false)
+                        setCanModify(false)
+                        setCanModifyAnnotations(false)
+                        setCanFillInForm(false)
+                    }
+                    val ownerPassword = UUID.randomUUID().toString() + UUID.randomUUID().toString()
+                    val policy = StandardProtectionPolicy(ownerPassword, password, permissions).apply {
+                        encryptionKeyLength = keyLength
+                        isPreferAES = true
+                    }
+                    document.protect(policy)
+                    document.save(destination)
+                }
+                return
+            } catch (error: Exception) {
+                failure = error
+                destination.delete()
             }
-            val ownerPassword = UUID.randomUUID().toString() + UUID.randomUUID().toString()
-            val policy = StandardProtectionPolicy(ownerPassword, password, permissions).apply {
-                encryptionKeyLength = 256
-                isPreferAES = true
-            }
-            document.protect(policy)
-            document.save(destination)
         }
+        throw IllegalStateException("Could not protect this PDF: ${failure?.localizedMessage ?: "unsupported file"}", failure)
+    }
+
+    /**
+     * How a PDF is protected, found with PDFBox rather than the system renderer: the renderer's errors
+     * for protected files differ between Android versions, but this answer does not.
+     */
+    fun protection(file: File): PdfProtection = try {
+        PDDocument.load(file).use { if (it.isEncrypted) PdfProtection.RESTRICTED_ONLY else PdfProtection.NONE }
+    } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+        PdfProtection.PASSWORD_REQUIRED
     }
 
     fun unlock(source: File, destination: File, password: String) {

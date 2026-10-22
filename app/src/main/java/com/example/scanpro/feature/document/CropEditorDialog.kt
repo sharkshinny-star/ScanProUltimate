@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +42,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,6 +61,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.scanner.DocumentEdgeDetector
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.hypot
@@ -80,6 +85,7 @@ fun CropEditorDialog(
             value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(sourcePath, 2000) }
         }
         var crop by remember(initial) { mutableStateOf(initial) }
+        val scope = rememberCoroutineScope()
         val latestCrop by rememberUpdatedState(crop)
         var activeCorner by remember { mutableIntStateOf(0) }
         var draggingCorner by remember { mutableStateOf(false) }
@@ -96,7 +102,8 @@ fun CropEditorDialog(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 40.dp, start = 12.dp, end = 12.dp),
+                    .statusBarsPadding()
+                    .padding(top = 8.dp, start = 12.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onDismiss) {
@@ -108,7 +115,9 @@ fun CropEditorDialog(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 80.dp, bottom = 180.dp, start = 16.dp, end = 16.dp),
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(top = 56.dp, bottom = 180.dp, start = 16.dp, end = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let { image ->
@@ -235,6 +244,7 @@ fun CropEditorDialog(
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .background(Color(0xFF111827))
+                    .navigationBarsPadding()
                     .padding(vertical = 12.dp)
             ) {
                 // Page Navigation Bar (e.g. 1/1 + Add Page)
@@ -287,7 +297,18 @@ fun CropEditorDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    TextButton(onClick = { crop = CropQuad.DEFAULT }) {
+                    TextButton(
+                        enabled = bitmap != null,
+                        onClick = {
+                            val image = bitmap ?: return@TextButton
+                            // Outline the page with the edge detector; keep the current corners if none is found.
+                            scope.launch {
+                                val detection = withContext(Dispatchers.Default) { runCatching { DocumentEdgeDetector.detect(image) }.getOrNull() }
+                                val quad = detection?.quad
+                                if (quad != null && detection.confidence >= 0.34f) crop = quad
+                            }
+                        }
+                    ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Crop, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                             Text("Auto crop", color = Color.White, style = MaterialTheme.typography.labelSmall)

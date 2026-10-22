@@ -16,3 +16,8 @@
     <methods>;
 }
 -dontwarn org.opencv.**
+
+# PDFBox-Android resolves encryption handlers, filters and font data by name at runtime. Without this the
+# password-protect tool works in debug builds but fails once R8 has renamed or removed those classes.
+-keep class com.tom_roush.pdfbox.** { *; }
+-dontwarn com.tom_roush.pdfbox.**

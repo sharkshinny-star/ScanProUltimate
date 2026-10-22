@@ -717,7 +717,7 @@ internal fun DocumentDetailScreen(
                     }
                     SubHeader("Document mode")
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(ScanMode.entries, key = { it.name }) { mode ->
+                        items(ScanMode.entries.filter { it != ScanMode.TEXT }, key = { it.name }) { mode ->
                             FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(mode.label) })
                         }
                     }
