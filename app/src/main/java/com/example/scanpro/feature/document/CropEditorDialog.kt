@@ -11,6 +11,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.scanpro.scanner.DocumentEdgeDetector
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -51,6 +54,8 @@ fun CropEditorDialog(
     val latestCrop by rememberUpdatedState(crop)
     var activeCorner by remember { mutableIntStateOf(0) }
     var draggingCorner by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var autoMessage by remember { mutableStateOf<String?>(null) }
     val undoStack = remember(initial) { mutableStateListOf<CropQuad>() }
     val redoStack = remember(initial) { mutableStateListOf<CropQuad>() }
 
@@ -63,6 +68,7 @@ fun CropEditorDialog(
                     "Drag each corner to the paper edge. The page is perspective-corrected when you apply the crop.",
                     style = MaterialTheme.typography.bodySmall
                 )
+                autoMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 6.dp)) }
                 bitmap?.let { image ->
                     Canvas(
                         modifier = Modifier
@@ -178,11 +184,29 @@ fun CropEditorDialog(
                     }
                 }
             ) { Text("Redo") }
+            TextButton(
+                enabled = bitmap != null,
+                onClick = {
+                    val image = bitmap ?: return@TextButton
+                    scope.launch {
+                        val detected = withContext(Dispatchers.Default) {
+                            runCatching { DocumentEdgeDetector.detect(image).quad }.getOrNull()
+                        }
+                        if (detected != null) {
+                            undoStack.add(crop)
+                            redoStack.clear()
+                            crop = detected
+                            autoMessage = null
+                        } else autoMessage = "No document edges found. Drag the corners instead."
+                    }
+                }
+            ) { Text("Auto crop") }
             TextButton(onClick = {
                 undoStack.add(crop)
                 redoStack.clear()
                 crop = CropQuad.DEFAULT
-            }) { Text("Reset") }
+                autoMessage = null
+            }) { Text("No crop") }
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )

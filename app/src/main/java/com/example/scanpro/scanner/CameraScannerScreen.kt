@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -149,6 +151,11 @@ fun CameraScannerScreen(
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
     var resumeCount by remember { mutableIntStateOf(0) }
     val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
+
+    var confirmQuit by remember { mutableStateOf(false) }
+    // Closing with captured pages would discard them, so ask first.
+    val requestClose = { if (pages.isNotEmpty() && !completed) confirmQuit = true else onClose() }
+    BackHandler(enabled = pages.isNotEmpty() && !completed) { confirmQuit = true }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permissionGranted = it
@@ -384,7 +391,29 @@ fun CameraScannerScreen(
             }
         )
 
+        ThirdsGrid()
         DocumentBoundaryOverlay(detection = detection, stable = stable)
+
+        // Live guidance in the middle of the preview, where the eye already is.
+        if (status == null) {
+            Surface(
+                modifier = Modifier.align(Alignment.Center),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.Black.copy(alpha = 0.55f)
+            ) {
+                Text(liveGuidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+            }
+        }
+
+        if (confirmQuit) {
+            AlertDialog(
+                onDismissRequest = { confirmQuit = false },
+                title = { Text("Quit scanning?") },
+                text = { Text("If you quit now, the photos you took will be discarded.") },
+                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text("Discard", color = Color(0xFFEF4444)) } },
+                dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text("Cancel") } }
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 18.dp, start = 12.dp, end = 12.dp),
@@ -392,7 +421,7 @@ fun CameraScannerScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
-                IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
+                IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
@@ -415,7 +444,7 @@ fun CameraScannerScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
-                Text(status ?: liveGuidance, color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
+                Text(status ?: "${pages.size} page${if (pages.size == 1) "" else "s"} · ${scanMode.label}", color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
             }
 
             Spacer(Modifier.height(10.dp))
@@ -569,6 +598,18 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
                 OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text("Use compatibility scanner") }
                 TextButton(onClick = onClose) { Text("Cancel") }
             }
+        }
+    }
+}
+
+/** Faint rule-of-thirds lines that help keep the document square to the camera. */
+@Composable
+private fun ThirdsGrid() {
+    Canvas(Modifier.fillMaxSize()) {
+        val line = Color.White.copy(alpha = 0.28f)
+        for (i in 1..2) {
+            drawLine(line, Offset(size.width * i / 3f, 0f), Offset(size.width * i / 3f, size.height), strokeWidth = 1f)
+            drawLine(line, Offset(0f, size.height * i / 3f), Offset(size.width, size.height * i / 3f), strokeWidth = 1f)
         }
     }
 }
