@@ -11,6 +11,9 @@ import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanPage
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDPage
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -85,7 +88,7 @@ object PdfToolsEngine {
                 }
                 sources += doc
                 for (i in 0 until doc.numberOfPages) {
-                    mergedDoc.addPage(doc.getPage(i))
+                    mergedDoc.addImportedPage(doc.getPage(i))
                     totalPagesMerged++
                 }
             }
@@ -130,11 +133,11 @@ object PdfToolsEngine {
                         for (i in 0 until totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(i + 1, totalPages, "Splitting page ${i + 1} of $totalPages…")
-                            val singleDoc = PDDocument()
-                            singleDoc.addPage(doc.getPage(i))
                             val outFile = File(outputDir, "page_${i + 1}.pdf")
-                            singleDoc.save(outFile)
-                            singleDoc.close()
+                            PDDocument().use { singleDoc ->
+                                singleDoc.addImportedPage(doc.getPage(i))
+                                singleDoc.save(outFile)
+                            }
                             outputFiles.add(outFile)
                         }
                     }
@@ -146,13 +149,11 @@ object PdfToolsEngine {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             val end = (pageIndex + chunkSize).coerceAtMost(totalPages)
                             onProgress(chunkIndex, (totalPages + chunkSize - 1) / chunkSize, "Splitting chunk $chunkIndex…")
-                            val chunkDoc = PDDocument()
-                            for (i in pageIndex until end) {
-                                chunkDoc.addPage(doc.getPage(i))
-                            }
                             val outFile = File(outputDir, "part_${chunkIndex}_pages_${pageIndex + 1}_to_$end.pdf")
-                            chunkDoc.save(outFile)
-                            chunkDoc.close()
+                            PDDocument().use { chunkDoc ->
+                                for (i in pageIndex until end) chunkDoc.addImportedPage(doc.getPage(i))
+                                chunkDoc.save(outFile)
+                            }
                             outputFiles.add(outFile)
                             chunkIndex++
                             pageIndex = end
@@ -164,15 +165,13 @@ object PdfToolsEngine {
                         ranges.forEachIndexed { idx, range ->
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(idx + 1, ranges.size, "Extracting range ${idx + 1} of ${ranges.size}…")
-                            val rangeDoc = PDDocument()
-                            for (pageNum in range) {
-                                if (pageNum in 1..totalPages) {
-                                    rangeDoc.addPage(doc.getPage(pageNum - 1))
-                                }
-                            }
                             val outFile = File(outputDir, "range_${idx + 1}_pages_${range.first}_to_${range.last}.pdf")
-                            rangeDoc.save(outFile)
-                            rangeDoc.close()
+                            PDDocument().use { rangeDoc ->
+                                for (pageNum in range) {
+                                    if (pageNum in 1..totalPages) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
+                                }
+                                rangeDoc.save(outFile)
+                            }
                             outputFiles.add(outFile)
                         }
                     }
@@ -197,18 +196,16 @@ object PdfToolsEngine {
 
         try {
             val originalSize = tempFile.length()
-            val extractedDoc = PDDocument()
-            PDDocument.load(tempFile).use { doc ->
+            PDDocument().use { extractedDoc -> PDDocument.load(tempFile).use { doc ->
                 selectedPageIndices.forEachIndexed { index, pageIdx ->
                     if (!coroutineContext.isActive) throw InterruptedException("Extract operation cancelled")
                     onProgress(index + 1, selectedPageIndices.size, "Extracting page ${index + 1} of ${selectedPageIndices.size}…")
                     if (pageIdx in 0 until doc.numberOfPages) {
-                        extractedDoc.addPage(doc.getPage(pageIdx))
+                        extractedDoc.addImportedPage(doc.getPage(pageIdx))
                     }
                 }
                 extractedDoc.save(outputFile)
-            }
-            extractedDoc.close()
+            } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = selectedPageIndices.size,
@@ -272,8 +269,7 @@ object PdfToolsEngine {
 
         try {
             val originalSize = tempFile.length()
-            val newDoc = PDDocument()
-            PDDocument.load(tempFile).use { doc ->
+            PDDocument().use { newDoc -> PDDocument.load(tempFile).use { doc ->
                 pageSpecs.forEachIndexed { index, spec ->
                     if (!coroutineContext.isActive) throw InterruptedException("Organize operation cancelled")
                     onProgress(index + 1, pageSpecs.size, "Processing page ${index + 1} of ${pageSpecs.size}…")
@@ -282,12 +278,11 @@ object PdfToolsEngine {
                         if (spec.rotationDegrees != 0) {
                             page.rotation = Math.floorMod(page.rotation + spec.rotationDegrees, 360)
                         }
-                        newDoc.addPage(page)
+                        newDoc.addImportedPage(page)
                     }
                 }
                 newDoc.save(outputFile)
-            }
-            newDoc.close()
+            } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = pageSpecs.size,
@@ -322,6 +317,14 @@ object PdfToolsEngine {
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     FileOutputStream(imgFile).use { output -> input.copyTo(output) }
                 } ?: error("Could not read image file at position ${index + 1}")
+                // Gallery photos carry their rotation in EXIF, which the PDF writer ignores; bake it in.
+                val oriented = ImageProcessor.decodeOrientedScaled(imgFile.absolutePath, 4200)
+                    ?: error("Image ${index + 1} could not be decoded")
+                try {
+                    ImageProcessor.saveBitmapJpeg(oriented, imgFile, 95)
+                } finally {
+                    oriented.recycle()
+                }
 
                 pages.add(
                     ScanPage(
@@ -491,6 +494,33 @@ object PdfToolsEngine {
         } finally {
             tempFile.delete()
         }
+    }
+
+    /**
+     * Adds a page taken from another document. Resources, page size, crop box and rotation may be
+     * inherited from the source's page tree, which does not travel with the page, so they are copied
+     * onto the page itself first. Without this such pages come out blank or the wrong size.
+     */
+    private fun PDDocument.addImportedPage(page: PDPage) {
+        page.resources = page.resources
+        page.mediaBox = page.mediaBox
+        page.cropBox = page.cropBox
+        page.rotation = page.rotation
+        addPage(page)
+    }
+
+    /** One file is returned as it is; several are bundled into a single zip so they can be shared together. */
+    suspend fun bundleOutputs(context: Context, files: List<File>, name: String): File = withContext(Dispatchers.IO) {
+        if (files.size == 1) return@withContext files.first()
+        val zip = outputLocation(context, "$name.zip")
+        ZipOutputStream(FileOutputStream(zip).buffered()).use { out ->
+            files.forEach { file ->
+                out.putNextEntry(ZipEntry(file.name))
+                file.inputStream().use { it.copyTo(out) }
+                out.closeEntry()
+            }
+        }
+        zip
     }
 
     private fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {

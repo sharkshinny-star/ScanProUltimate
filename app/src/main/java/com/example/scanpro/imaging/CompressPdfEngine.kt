@@ -54,7 +54,8 @@ object CompressPdfEngine {
         context: Context,
         inputUri: Uri,
         preset: CompressionPreset,
-        outputDir: File = File(context.cacheDir, "compressed_pdfs").apply { mkdirs() }
+        // Under cache/exports, the only cache folder the FileProvider can share.
+        outputDir: File = File(context.cacheDir, "exports").apply { mkdirs() }
     ): CompressionResult = withContext(Dispatchers.IO) {
         val tempInput = File(outputDir, "temp_in_${UUID.randomUUID()}.pdf")
         val outputFile = File(outputDir, "compressed_${UUID.randomUUID()}.pdf")
@@ -65,6 +66,7 @@ object CompressPdfEngine {
             } ?: error("Could not open input PDF")
 
             val originalSize = tempInput.length()
+            val pageTotal = runCatching { PDDocument.load(tempInput).use { it.numberOfPages } }.getOrDefault(1)
             val hasSearchableText = checkSearchableText(tempInput)
 
             if (hasSearchableText) {
@@ -77,6 +79,7 @@ object CompressPdfEngine {
                 if (success && outputFile.exists() && outputFile.length() < originalSize) {
                     return@withContext CompressionResult(
                         outputFile = outputFile,
+                        pageCount = pageTotal,
                         originalSizeBytes = originalSize,
                         compressedSizeBytes = outputFile.length(),
                         isSearchablePreserved = true
@@ -87,9 +90,14 @@ object CompressPdfEngine {
             // Strategy B: Rasterize pages at downscaled target resolution & rebuild PDF
             rasterCompressPdf(context, tempInput, outputFile, preset)
 
+            // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.
+            if (outputFile.length() <= 0L || outputFile.length() >= originalSize) {
+                tempInput.copyTo(outputFile, overwrite = true)
+            }
             val finalSize = outputFile.length()
             return@withContext CompressionResult(
                 outputFile = outputFile,
+                pageCount = pageTotal,
                 originalSizeBytes = originalSize,
                 compressedSizeBytes = if (finalSize > 0) finalSize else originalSize,
                 isSearchablePreserved = false

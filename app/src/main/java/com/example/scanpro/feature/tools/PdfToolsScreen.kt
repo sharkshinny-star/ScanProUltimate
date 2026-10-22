@@ -181,6 +181,23 @@ fun PdfToolsScreen(
         }
     }
 
+    val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { destUri ->
+        saveSourceFile?.let { file ->
+            if (destUri != null) {
+                val ok = copyFileToUri(context, file.absolutePath, destUri)
+                Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { destUri ->
+        saveSourceFile?.let { file ->
+            if (destUri != null) {
+                val ok = copyFileToUri(context, file.absolutePath, destUri)
+                Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     // Pickers
     val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null && selectedTool != null) {
@@ -287,23 +304,23 @@ fun PdfToolsScreen(
                     onDismiss = { lastResult = null },
                     onView = {
                         val file = lastResult!!.outputFile
-                        val isImg = file.extension.lowercase() in listOf("jpg", "jpeg", "png")
                         lastResult = null
-                        onOpenPdfViewer(Uri.fromFile(file), file.name)
+                        // The built-in viewer only reads PDFs; images and zips open through the share sheet.
+                        if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
+                        else shareFile(context, file.absolutePath, mimeFor(file), file.name)
                     },
                     onShare = {
                         val file = lastResult!!.outputFile
-                        val ext = file.extension.lowercase()
-                        val mime = when (ext) {
-                            "png" -> "image/png"
-                            "jpg", "jpeg" -> "image/jpeg"
-                            else -> "application/pdf"
-                        }
-                        shareFile(context, file.absolutePath, mime, file.name)
+                        shareFile(context, file.absolutePath, mimeFor(file), file.name)
                     },
                     onSaveAs = {
                         saveSourceFile = lastResult!!.outputFile
-                        saveFileLauncher.launch(lastResult!!.outputFile.name)
+                        val name = lastResult!!.outputFile.name
+                        when (mimeFor(lastResult!!.outputFile)) {
+                            "application/zip" -> saveZipLauncher.launch(name)
+                            "application/pdf" -> saveFileLauncher.launch(name)
+                            else -> saveImageLauncher.launch(name)
+                        }
                     }
                 )
             }
@@ -355,7 +372,7 @@ fun PdfToolsScreen(
                                 isProcessing = false
                                 if (files.isNotEmpty()) {
                                     lastResult = PdfToolResult(
-                                        outputFile = files.first(),
+                                        outputFile = PdfToolsEngine.bundleOutputs(context, files, "pdf_pages_${System.currentTimeMillis()}"),
                                         pageCount = files.size,
                                         originalSizeBytes = 0,
                                         outputSizeBytes = files.sumOf { it.length() },
@@ -420,10 +437,10 @@ fun PdfToolsScreen(
                                 isProcessing = false
                                 if (files.isNotEmpty()) {
                                     lastResult = PdfToolResult(
-                                        outputFile = files.first(),
+                                        outputFile = PdfToolsEngine.bundleOutputs(context, files, "split_${System.currentTimeMillis()}"),
                                         pageCount = files.size,
                                         originalSizeBytes = 0,
-                                        outputSizeBytes = files.first().length(),
+                                        outputSizeBytes = files.sumOf { it.length() },
                                         message = "Split PDF into ${files.size} output files"
                                     )
                                 }
@@ -761,9 +778,10 @@ private fun ResultDialog(
     onShare: () -> Unit,
     onSaveAs: () -> Unit
 ) {
+    val isZip = result.outputFile.extension.equals("zip", ignoreCase = true)
     val isImage = result.outputFile.extension.lowercase() in listOf("jpg", "jpeg", "png")
-    val titleText = if (isImage) "Export Ready" else "PDF Ready"
-    val viewButtonText = if (isImage) "View Image" else "View PDF"
+    val titleText = if (isImage || isZip) "Export Ready" else "PDF Ready"
+    val viewButtonText = if (isZip) "Open with…" else if (isImage) "View Image" else "View PDF"
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1187,7 +1205,7 @@ private fun handleSinglePdfSelected(
                     if (files.isNotEmpty()) {
                         onComplete(
                             PdfToolResult(
-                                outputFile = files.first(),
+                                outputFile = PdfToolsEngine.bundleOutputs(context, files, "pdf_pages_${System.currentTimeMillis()}"),
                                 pageCount = files.size,
                                 originalSizeBytes = 0,
                                 outputSizeBytes = files.sumOf { it.length() },
@@ -1251,4 +1269,11 @@ private fun handleImagesToPdf(
             onError(e.localizedMessage ?: "Failed to convert images to PDF")
         }
     }
+}
+
+private fun mimeFor(file: File): String = when (file.extension.lowercase()) {
+    "png" -> "image/png"
+    "jpg", "jpeg" -> "image/jpeg"
+    "zip" -> "application/zip"
+    else -> "application/pdf"
 }
