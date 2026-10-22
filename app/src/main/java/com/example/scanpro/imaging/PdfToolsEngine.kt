@@ -46,7 +46,27 @@ enum class ImageExportFormat(val extension: String, val mimeType: String, val la
     PNG("png", "image/png", "PNG Image (.png)")
 }
 
+/** How a PDF is protected, as far as opening and editing it goes. */
+enum class PdfProtection { NONE, PASSWORD_REQUIRED, RESTRICTED_ONLY }
+
 object PdfToolsEngine {
+
+    /**
+     * Tells whether a PDF needs a password to open (PASSWORD_REQUIRED), opens freely but has editing or
+     * copying restrictions (RESTRICTED_ONLY), or has no protection at all (NONE).
+     */
+    suspend fun inspectProtection(context: Context, inputUri: Uri): PdfProtection = withContext(Dispatchers.IO) {
+        val tempFile = copyUriToTemp(context, inputUri, "inspect_${UUID.randomUUID()}.pdf")
+        try {
+            try {
+                PDDocument.load(tempFile).use { if (it.isEncrypted) PdfProtection.RESTRICTED_ONLY else PdfProtection.NONE }
+            } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+                PdfProtection.PASSWORD_REQUIRED
+            }
+        } finally {
+            tempFile.delete()
+        }
+    }
 
     /**
      * Where tool results go: under cache/exports/, the only cache folder the FileProvider shares,

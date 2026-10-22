@@ -166,6 +166,8 @@ fun PdfToolsScreen(
     var showPdfToImagesDialog by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showSplitDialog by remember { mutableStateOf(false) }
+    // Set when Unlock PDF is given a file that has no open password: nothing to unlock, so offer other things.
+    var unlockNotice by remember { mutableStateOf<com.example.scanpro.imaging.PdfProtection?>(null) }
     var showOrganizerSheet by remember { mutableStateOf(false) }
 
     // SAF Save Launcher
@@ -205,7 +207,20 @@ fun PdfToolsScreen(
             when (selectedTool) {
                 "compress" -> showCompressDialog = true
                 "pdf2img" -> showPdfToImagesDialog = true
-                "protect", "unlock" -> showPasswordDialog = true
+                "protect" -> showPasswordDialog = true
+                "unlock" -> scope.launch {
+                    try {
+                        isProcessing = true
+                        progressLabel = "Checking PDF protection…"
+                        val protection = PdfToolsEngine.inspectProtection(context, uri)
+                        isProcessing = false
+                        if (protection == com.example.scanpro.imaging.PdfProtection.PASSWORD_REQUIRED) showPasswordDialog = true
+                        else unlockNotice = protection
+                    } catch (e: Exception) {
+                        isProcessing = false
+                        snackbarHostState.showSnackbar(e.localizedMessage ?: "Could not read this PDF")
+                    }
+                }
                 "split" -> showSplitDialog = true
                 "organize", "extract", "rotate" -> showOrganizerSheet = true
                 "viewer" -> onOpenPdfViewer(uri, "PDF Document")
@@ -383,6 +398,55 @@ fun PdfToolsScreen(
                                 isProcessing = false
                                 snackbarHostState.showSnackbar(e.localizedMessage ?: "Export failed")
                             }
+                        }
+                    }
+                )
+            }
+
+            unlockNotice?.let { protection ->
+                val restricted = protection == com.example.scanpro.imaging.PdfProtection.RESTRICTED_ONLY
+                AlertDialog(
+                    onDismissRequest = { unlockNotice = null },
+                    icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    title = { Text(if (restricted) "No password to open" else "This PDF has no password") },
+                    text = {
+                        Text(
+                            if (restricted) "This PDF opens without a password, but it has editing or copying restrictions. You can remove those, or just view it."
+                            else "There is nothing to unlock. You can view it, or protect it with a password instead."
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val uri = pendingUri
+                            unlockNotice = null
+                            if (uri == null) return@TextButton
+                            if (restricted) {
+                                scope.launch {
+                                    try {
+                                        isProcessing = true
+                                        progressLabel = "Removing restrictions…"
+                                        val outFile = PdfToolsEngine.outputLocation(context, "unlocked_${System.currentTimeMillis()}.pdf")
+                                        lastResult = PdfToolsEngine.unlockPdf(context, uri, "", outFile)
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar(e.localizedMessage ?: "Operation failed")
+                                    } finally {
+                                        isProcessing = false
+                                    }
+                                }
+                            } else {
+                                selectedTool = "protect"
+                                showPasswordDialog = true
+                            }
+                        }) { Text(if (restricted) "Remove restrictions" else "Set password") }
+                    },
+                    dismissButton = {
+                        Row {
+                            TextButton(onClick = {
+                                val uri = pendingUri
+                                unlockNotice = null
+                                if (uri != null) onOpenPdfViewer(uri, "PDF Document")
+                            }) { Text("View PDF") }
+                            TextButton(onClick = { unlockNotice = null }) { Text("Cancel") }
                         }
                     }
                 )
