@@ -10,7 +10,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -204,6 +214,24 @@ fun ScanReviewScreen(
             }
         }
 
+        if (pages.size > 1) {
+            ThumbnailStrip(
+                pages = pages,
+                selected = current,
+                enabled = !blocked,
+                onSelect = onIndexChange,
+                onMoved = { from, to ->
+                    // Keep the same page selected after the order changes.
+                    onIndexChange(
+                        when (current) {
+                            from -> to
+                            else -> if (from < to && current in (from + 1)..to) current - 1 else if (from > to && current in to until from) current + 1 else current
+                        }
+                    )
+                }
+            )
+        }
+
         message?.let { Text(it, color = Color(0xFFFCA5A5), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 4.dp)) }
 
         Row(
@@ -341,4 +369,90 @@ private fun detectQuad(image: Bitmap): CropQuad {
     val detection = runCatching { DocumentEdgeDetector.detect(image) }.getOrNull()
     val quad = detection?.quad
     return if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
+}
+
+/**
+ * Page thumbnails: tap to jump, press and hold then drag sideways to reorder. A page moves one slot each
+ * time it is dragged a full thumbnail width past its neighbour.
+ */
+@Composable
+private fun ThumbnailStrip(
+    pages: SnapshotStateList<Uri>,
+    selected: Int,
+    enabled: Boolean,
+    onSelect: (Int) -> Unit,
+    onMoved: (from: Int, to: Int) -> Unit
+) {
+    val itemWidth = 56.dp
+    val gap = 8.dp
+    var draggingKey by remember { mutableStateOf<String?>(null) }
+    var dragOffset by remember { mutableStateOf(0f) }
+    LazyRow(
+        modifier = Modifier.fillMaxWidth().height(80.dp).padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(gap)
+    ) {
+        itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+            val key = uri.toString()
+            val thumb by produceState<Bitmap?>(initialValue = null, key) {
+                value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 220) }
+            }
+            val isDragging = draggingKey == key
+            Box(
+                Modifier
+                    .size(itemWidth, 72.dp)
+                    .zIndex(if (isDragging) 1f else 0f)
+                    .graphicsLayer {
+                        translationX = if (isDragging) dragOffset else 0f
+                        alpha = if (isDragging) 0.85f else 1f
+                        scaleX = if (isDragging) 1.08f else 1f
+                        scaleY = if (isDragging) 1.08f else 1f
+                    }
+                    .border(if (index == selected) 2.dp else 1.dp, if (index == selected) Blue else Color.White.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                    .clickable(enabled = enabled) { onSelect(pages.indexOf(uri)) }
+                    .pointerInput(key, enabled) {
+                        if (!enabled) return@pointerInput
+                        val step = (itemWidth + gap).toPx()
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { draggingKey = key; dragOffset = 0f },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffset += amount.x
+                                val from = pages.indexOf(uri)
+                                val to = when {
+                                    dragOffset > step / 2 && from < pages.lastIndex -> from + 1
+                                    dragOffset < -step / 2 && from > 0 -> from - 1
+                                    else -> from
+                                }
+                                if (to != from) {
+                                    val other = pages[to]
+                                    pages[to] = uri
+                                    pages[from] = other
+                                    // The item now sits one slot over, so the finger offset is measured from there.
+                                    dragOffset -= (to - from) * step
+                                    onMoved(from, to)
+                                }
+                            },
+                            onDragEnd = { draggingKey = null; dragOffset = 0f },
+                            onDragCancel = { draggingKey = null; dragOffset = 0f }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                thumb?.let {
+                    Image(
+                        it.asImageBitmap(),
+                        contentDescription = "Page ${index + 1}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().padding(2.dp)
+                    )
+                }
+                Text(
+                    "${index + 1}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(topStart = 6.dp)).padding(horizontal = 4.dp)
+                )
+            }
+        }
+    }
 }
