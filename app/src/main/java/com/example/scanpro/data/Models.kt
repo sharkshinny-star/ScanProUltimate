@@ -129,6 +129,8 @@ data class ScanPage(
     val sourcePath: String,
     val imagePath: String,
     val ocrText: String = "",
+    /** True once the user has corrected [ocrText] by hand; later edits to the page must keep it. */
+    val ocrEdited: Boolean = false,
     val filter: PageFilter = PageFilter.ORIGINAL,
     val rotationDegrees: Int = 0,
     val crop: CropQuad = CropQuad.DEFAULT,

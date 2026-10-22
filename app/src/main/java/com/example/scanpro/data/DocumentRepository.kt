@@ -627,7 +627,8 @@ class DocumentRepository @Inject constructor(
 
     suspend fun updatePageOcrText(documentId: String, pageId: String, text: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val pages = doc.pages.map { page -> if (page.id == pageId) page.copy(ocrText = text.trim()) else page }
+        // Marked as hand-corrected so filters, crops and rotations afterwards do not read the page again and replace it.
+        val pages = doc.pages.map { page -> if (page.id == pageId) page.copy(ocrText = text.trim(), ocrEdited = true) else page }
         require(pages.any { it.id == pageId }) { "Page not found" }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
@@ -636,7 +637,10 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(id)
         val selected = script ?: doc.ocrScript
         val pages = doc.pages.map { page ->
-            page.copy(ocrText = runCatching { ocr.recognize(File(page.imagePath), selected) }.getOrDefault(page.ocrText))
+            // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
+            runCatching { ocr.recognize(File(page.imagePath), selected) }
+                .map { page.copy(ocrText = it, ocrEdited = false) }
+                .getOrDefault(page)
         }
         saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
     }
@@ -772,11 +776,16 @@ class DocumentRepository @Inject constructor(
             annotations = page.annotations
         )
         val hasRedaction = page.annotations.any { it.type == AnnotationType.REDACT }
+        // Corrected text is the user's work: keep it through edits. A redaction is the exception, because
+        // the corrected text may still contain what is now covered, so that page is read again.
+        val isRedacting = hasRedaction && runOcr
+        if (page.ocrEdited && !isRedacting) return page
         return if (runOcr) {
             val script = db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
             // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
             // must end up with no text rather than keep the old text that includes what was covered.
             page.copy(
+                ocrEdited = false,
                 ocrText = runCatching { ocr.recognize(File(page.imagePath), script) }
                     .getOrDefault(if (hasRedaction) "" else page.ocrText)
             )

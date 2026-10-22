@@ -1,6 +1,7 @@
 package com.example.scanpro.data
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -60,6 +61,7 @@ data class PageEntity(
     @ColumnInfo(name = "source_path") val sourcePath: String,
     @ColumnInfo(name = "image_path") val imagePath: String,
     @ColumnInfo(name = "ocr_text") val ocrText: String,
+    @ColumnInfo(name = "ocr_edited", defaultValue = "0") val ocrEdited: Boolean = false,
     val filter: String,
     @ColumnInfo(name = "rotation_degrees") val rotationDegrees: Int,
     @ColumnInfo(name = "crop_json") val cropJson: String,
@@ -166,8 +168,9 @@ internal interface ScanDao {
 
 @Database(
     entities = [DocumentEntity::class, PageEntity::class, PageFtsEntity::class],
-    version = 1,
-    exportSchema = true
+    version = 2,
+    exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)]
 )
 internal abstract class ScanRoomDatabase : RoomDatabase() {
     abstract fun scanDao(): ScanDao
@@ -344,6 +347,7 @@ private fun ScanPage.toEntity() = PageEntity(
     sourcePath = sourcePath,
     imagePath = imagePath,
     ocrText = ocrText,
+    ocrEdited = ocrEdited,
     filter = filter.name,
     rotationDegrees = rotationDegrees,
     cropJson = JsonCodec.encodeCrop(crop),
@@ -358,6 +362,7 @@ private fun PageEntity.toModel() = ScanPage(
     sourcePath = sourcePath,
     imagePath = imagePath,
     ocrText = ocrText,
+    ocrEdited = ocrEdited,
     filter = enumValueOrDefault(filter, PageFilter.ORIGINAL),
     rotationDegrees = rotationDegrees,
     crop = JsonCodec.decodeCrop(cropJson),
