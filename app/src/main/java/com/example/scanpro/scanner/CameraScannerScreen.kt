@@ -20,9 +20,13 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +42,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.DocumentScanner
@@ -46,6 +51,8 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -97,6 +104,9 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** How the live preview helps: Auto captures by itself, Manual only outlines the page, No detect does neither. */
+private enum class DetectMode(val label: String) { AUTO("Auto"), MANUAL("Manual"), NO_DETECT("No detect") }
+
 @Composable
 fun CameraScannerScreen(
     onClose: () -> Unit,
@@ -124,7 +134,12 @@ fun CameraScannerScreen(
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var torchEnabled by remember { mutableStateOf(false) }
-    var autoCapture by remember { mutableStateOf(true) }
+    var detectMode by rememberSaveable { mutableStateOf(DetectMode.AUTO) }
+    var detectMenuOpen by remember { mutableStateOf(false) }
+    val autoCapture = detectMode == DetectMode.AUTO
+    // Single finishes after one capture; Batch keeps the camera open for more pages.
+    var batch by rememberSaveable { mutableStateOf(false) }
+    var focusPoint by remember { mutableStateOf<Offset?>(null) }
     var zoom by remember { mutableFloatStateOf(0f) }
     var exposureIndex by remember { mutableIntStateOf(0) }
     var exposureMin by remember { mutableIntStateOf(0) }
@@ -201,6 +216,14 @@ fun CameraScannerScreen(
     }
     SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && pages.size < pageLimit }
 
+    fun finishScan() {
+        // Ignore a second tap during the exit animation; it would import twice.
+        if (!completed && pages.isNotEmpty()) {
+            completed = true
+            onComplete(pages.toList(), scanMode)
+        }
+    }
+
     fun capturePage() {
         val capture = imageCapture ?: return
         if (capturing || pages.size >= pageLimit) return
@@ -231,6 +254,7 @@ fun CameraScannerScreen(
                                 OpenCvScanProcessor.correctCapturedPage(raw, corrected)
                             }
                             pages.add(Uri.fromFile(result.output))
+                            if (!batch && scanMode != ScanMode.ID_CARD) finishScan()
                             status = when {
                                 scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
                                 scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
@@ -255,6 +279,13 @@ fun CameraScannerScreen(
                 }
             }
         )
+    }
+
+    LaunchedEffect(focusPoint) {
+        if (focusPoint != null) {
+            delay(1.seconds)
+            focusPoint = null
+        }
     }
 
     LaunchedEffect(status) {
@@ -380,6 +411,7 @@ fun CameraScannerScreen(
                     if (event.action == android.view.MotionEvent.ACTION_UP) {
                         // Report the tap as a click for accessibility services.
                         view.performClick()
+                        focusPoint = Offset(event.x, event.y)
                         boundCamera?.let { camera ->
                             val point = view.meteringPointFactory.createPoint(event.x, event.y)
                             val action = FocusMeteringAction.Builder(point).build()
@@ -392,10 +424,23 @@ fun CameraScannerScreen(
         )
 
         ThirdsGrid()
-        DocumentBoundaryOverlay(detection = detection, stable = stable)
+        if (detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+            DocumentBoundaryOverlay(detection = detection, stable = stable)
+        }
+        if (scanMode == ScanMode.ID_CARD) {
+            IdCardFrame(label = if (scanBothSides && pages.size == 1) "Back" else if (scanBothSides) "Front" else "Front")
+        }
+        focusPoint?.let { point ->
+            Box(
+                Modifier
+                    .offset { IntOffset((point.x - 32.dp.toPx()).toInt(), (point.y - 32.dp.toPx()).toInt()) }
+                    .size(64.dp)
+                    .border(2.dp, Color(0xFF22D3EE), RoundedCornerShape(4.dp))
+            )
+        }
 
         // Live guidance in the middle of the preview, where the eye already is.
-        if (status == null) {
+        if (status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             Surface(
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),
@@ -423,15 +468,48 @@ fun CameraScannerScreen(
             Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
-                    IconButton(onClick = { autoCapture = !autoCapture }) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = "Auto capture", tint = if (autoCapture) MaterialTheme.colorScheme.primary else Color.White)
+            if (scanMode != ScanMode.ID_CARD) {
+                Box {
+                    Row(
+                        Modifier.clickable { detectMenuOpen = true }.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(detectMode.label, color = Color.White, style = MaterialTheme.typography.titleMedium)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Detection mode", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    DropdownMenu(expanded = detectMenuOpen, onDismissRequest = { detectMenuOpen = false }) {
+                        DetectMode.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(option.label, color = if (option == detectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                },
+                                onClick = { detectMode = option; detectMenuOpen = false }
+                            )
+                        }
                     }
                 }
+            } else Spacer(Modifier.width(1.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
                     IconButton(onClick = { torchEnabled = !torchEnabled }) {
                         Icon(if (torchEnabled) Icons.Default.Bolt else Icons.Default.FlashOff, contentDescription = "Flash", tint = Color.White)
+                    }
+                }
+            }
+        }
+
+        if (scanMode != ScanMode.ID_CARD) {
+            Row(
+                Modifier.align(Alignment.BottomCenter).padding(bottom = 250.dp)
+                    .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(50)).padding(4.dp)
+            ) {
+                listOf(false to "Single", true to "Batch").forEach { (value, text) ->
+                    Surface(
+                        onClick = { batch = value },
+                        shape = RoundedCornerShape(50),
+                        color = if (batch == value) Color.White.copy(alpha = 0.3f) else Color.Transparent
+                    ) {
+                        Text(text, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
                     }
                 }
             }
@@ -518,12 +596,12 @@ fun CameraScannerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(
-                    onClick = {
-                        photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    }
+                Column(
+                    Modifier.clickable { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }.padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(Icons.Default.PhotoLibrary, contentDescription = "Import photos", tint = Color.White)
+                    Text("Import images", color = Color.White, style = MaterialTheme.typography.labelSmall)
                 }
 
                 Surface(
@@ -545,13 +623,7 @@ fun CameraScannerScreen(
                 } else {
                     Button(
                         enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
-                        onClick = {
-                            // Ignore a second tap during the exit animation; it would import twice.
-                            if (!completed) {
-                                completed = true
-                                onComplete(pages.toList(), scanMode)
-                            }
-                        }
+                        onClick = { finishScan() }
                     ) {
                         Icon(Icons.Default.TaskAlt, contentDescription = null)
                         Spacer(Modifier.width(5.dp))
@@ -598,6 +670,33 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
                 OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text("Use compatibility scanner") }
                 TextButton(onClick = onClose) { Text("Cancel") }
             }
+        }
+    }
+}
+
+/** Credit-card shaped guide with corner brackets, plus a Front/Back label. */
+@Composable
+private fun IdCardFrame(label: String) {
+    Box(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize()) {
+            val width = size.width * 0.88f
+            val height = width * 0.63f
+            val left = (size.width - width) / 2f
+            val top = (size.height - height) / 2f - 40.dp.toPx()
+            val arm = 28.dp.toPx()
+            val stroke = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+            fun corner(x: Float, y: Float, dx: Float, dy: Float) {
+                drawLine(Color.White, Offset(x, y), Offset(x + dx * arm, y), strokeWidth = stroke.width, cap = StrokeCap.Round)
+                drawLine(Color.White, Offset(x, y), Offset(x, y + dy * arm), strokeWidth = stroke.width, cap = StrokeCap.Round)
+            }
+            corner(left, top, 1f, 1f)
+            corner(left + width, top, -1f, 1f)
+            corner(left, top + height, 1f, -1f)
+            corner(left + width, top + height, -1f, -1f)
+        }
+        Text("Fit it inside the borders", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter).padding(top = 110.dp))
+        Surface(modifier = Modifier.align(Alignment.Center).offset(y = (-40).dp), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.45f)) {
+            Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
         }
     }
 }
