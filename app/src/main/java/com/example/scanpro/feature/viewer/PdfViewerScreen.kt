@@ -88,6 +88,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.core.ui.shareFile
 import java.io.File
@@ -189,10 +190,22 @@ fun PdfViewerScreen(
                 }
                 try {
                     openRenderer(file)
-                } catch (_: SecurityException) {
-                    // PdfRenderer refuses password-protected files; ask for the password instead of failing.
-                    lockedFile = file
-                    needsPassword = true
+                } catch (first: Exception) {
+                    // The renderer's error for a protected file differs between Android versions, so ask
+                    // PDFBox what is wrong instead of relying on the exception type.
+                    when (runCatching { PdfSecurity.protection(file) }.getOrNull()) {
+                        PdfProtection.PASSWORD_REQUIRED -> {
+                            lockedFile = file
+                            needsPassword = true
+                        }
+                        PdfProtection.RESTRICTED_ONLY -> {
+                            // Opens without a password but with restrictions some renderers refuse.
+                            val open = File(context.cacheDir, "view_unrestricted_${System.currentTimeMillis()}.pdf")
+                            PdfSecurity.unlock(file, open, "")
+                            openRenderer(open)
+                        }
+                        else -> throw first
+                    }
                 }
             } catch (e: Exception) {
                 errorMessage = e.localizedMessage ?: "Failed to load document"

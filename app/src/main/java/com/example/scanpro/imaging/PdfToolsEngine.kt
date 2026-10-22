@@ -58,11 +58,7 @@ object PdfToolsEngine {
     suspend fun inspectProtection(context: Context, inputUri: Uri): PdfProtection = withContext(Dispatchers.IO) {
         val tempFile = copyUriToTemp(context, inputUri, "inspect_${UUID.randomUUID()}.pdf")
         try {
-            try {
-                PDDocument.load(tempFile).use { if (it.isEncrypted) PdfProtection.RESTRICTED_ONLY else PdfProtection.NONE }
-            } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
-                PdfProtection.PASSWORD_REQUIRED
-            }
+            PdfSecurity.protection(tempFile)
         } finally {
             tempFile.delete()
         }

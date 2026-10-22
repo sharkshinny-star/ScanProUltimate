@@ -13,6 +13,7 @@ import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.PdfExporter
+import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.SmartTitle
 import com.example.scanpro.imaging.SpecialExporters
@@ -98,7 +99,15 @@ class DocumentRepository @Inject constructor(
                     throw PdfPasswordRequiredException(wrongPassword = true)
                 }
                 unlockedPdf
-            } else tempPdf
+            } else when (runCatching { PdfSecurity.protection(tempPdf) }.getOrDefault(PdfProtection.NONE)) {
+                PdfProtection.PASSWORD_REQUIRED -> throw PdfPasswordRequiredException(wrongPassword = false)
+                PdfProtection.RESTRICTED_ONLY -> {
+                    // Opens freely but with restrictions the system renderer may refuse.
+                    PdfSecurity.unlock(tempPdf, unlockedPdf, "")
+                    unlockedPdf
+                }
+                PdfProtection.NONE -> tempPdf
+            }
             val pages = mutableListOf<ScanPage>()
             ParcelFileDescriptor.open(readable, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
                 val opened = try {

@@ -42,6 +42,16 @@ object PdfSecurity {
         throw IllegalStateException("Could not protect this PDF: ${failure?.localizedMessage ?: "unsupported file"}", failure)
     }
 
+    /**
+     * How a PDF is protected, found with PDFBox rather than the system renderer: the renderer's errors
+     * for protected files differ between Android versions, but this answer does not.
+     */
+    fun protection(file: File): PdfProtection = try {
+        PDDocument.load(file).use { if (it.isEncrypted) PdfProtection.RESTRICTED_ONLY else PdfProtection.NONE }
+    } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+        PdfProtection.PASSWORD_REQUIRED
+    }
+
     fun unlock(source: File, destination: File, password: String) {
         destination.parentFile?.mkdirs()
         PDDocument.load(source, password).use { document ->
