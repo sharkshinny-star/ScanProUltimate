@@ -4,6 +4,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
@@ -40,6 +49,7 @@ fun ScanProApp(
     val openDocumentRequest by viewModel.openDocumentRequest.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
+    val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -94,6 +104,33 @@ fun ScanProApp(
             navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
             viewModel.clearOpenDocumentRequest()
         }
+    }
+
+    pdfPasswordRequest?.let { request ->
+        var password by remember(request) { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = viewModel::cancelPdfPassword,
+            title = { Text("Password required") },
+            text = {
+                Column {
+                    Text("This PDF is protected. Enter its password to import it.")
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        singleLine = true,
+                        isError = request.wrongPassword,
+                        label = { Text("Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                    if (request.wrongPassword) {
+                        Text("That password didn't work", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            },
+            confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { viewModel.importPdf(request.uri, password) }) { Text("Import") } },
+            dismissButton = { TextButton(onClick = viewModel::cancelPdfPassword) { Text("Cancel") } }
+        )
     }
 
     ScanProNavHost(

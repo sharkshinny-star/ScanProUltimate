@@ -82,7 +82,9 @@ object PdfToolsEngine {
                 tempFiles += tempFile
                 originalSizeSum += tempFile.length()
                 val doc = try {
-                    PDDocument.load(tempFile)
+                    loadPdf(tempFile)
+                } catch (error: IllegalArgumentException) {
+                    throw IllegalArgumentException("File ${index + 1}: ${error.message}", error)
                 } catch (error: Exception) {
                     throw IllegalArgumentException("File ${index + 1} could not be read as a PDF (it may be damaged or password protected)", error)
                 }
@@ -124,7 +126,7 @@ object PdfToolsEngine {
         val outputFiles = mutableListOf<File>()
 
         try {
-            PDDocument.load(tempFile).use { doc ->
+            loadPdf(tempFile).use { doc ->
                 val totalPages = doc.numberOfPages
                 require(totalPages > 0) { "The PDF document contains no pages" }
 
@@ -196,7 +198,7 @@ object PdfToolsEngine {
 
         try {
             val originalSize = tempFile.length()
-            PDDocument().use { extractedDoc -> PDDocument.load(tempFile).use { doc ->
+            PDDocument().use { extractedDoc -> loadPdf(tempFile).use { doc ->
                 selectedPageIndices.forEachIndexed { index, pageIdx ->
                     if (!coroutineContext.isActive) throw InterruptedException("Extract operation cancelled")
                     onProgress(index + 1, selectedPageIndices.size, "Extracting page ${index + 1} of ${selectedPageIndices.size}…")
@@ -231,7 +233,7 @@ object PdfToolsEngine {
         try {
             val originalSize = tempFile.length()
             var totalPages = 0
-            PDDocument.load(tempFile).use { doc ->
+            loadPdf(tempFile).use { doc ->
                 totalPages = doc.numberOfPages
                 for (i in 0 until totalPages) {
                     if (!coroutineContext.isActive) throw InterruptedException("Rotation operation cancelled")
@@ -269,7 +271,7 @@ object PdfToolsEngine {
 
         try {
             val originalSize = tempFile.length()
-            PDDocument().use { newDoc -> PDDocument.load(tempFile).use { doc ->
+            PDDocument().use { newDoc -> loadPdf(tempFile).use { doc ->
                 pageSpecs.forEachIndexed { index, spec ->
                     if (!coroutineContext.isActive) throw InterruptedException("Organize operation cancelled")
                     onProgress(index + 1, pageSpecs.size, "Processing page ${index + 1} of ${pageSpecs.size}…")
@@ -459,7 +461,7 @@ object PdfToolsEngine {
     suspend fun getPdfPageCount(context: Context, inputUri: Uri): Int = withContext(Dispatchers.IO) {
         val tempFile = copyUriToTemp(context, inputUri, "count_${UUID.randomUUID()}.pdf")
         try {
-            PDDocument.load(tempFile).use { return@withContext it.numberOfPages }
+            loadPdf(tempFile).use { return@withContext it.numberOfPages }
         } catch (e: Exception) {
             return@withContext 0
         } finally {
@@ -521,6 +523,13 @@ object PdfToolsEngine {
             }
         }
         zip
+    }
+
+    /** Opens a PDF, turning "wrong password" on a protected file into a message that says what to do. */
+    private fun loadPdf(file: File): PDDocument = try {
+        PDDocument.load(file)
+    } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+        throw IllegalArgumentException("This PDF is password-protected. Unlock it first with the Unlock PDF tool.", error)
     }
 
     private fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {

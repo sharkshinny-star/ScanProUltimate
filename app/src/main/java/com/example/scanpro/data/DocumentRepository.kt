@@ -25,6 +25,10 @@ import java.util.Locale
 import java.util.UUID
 import androidx.core.graphics.createBitmap
 
+/** The PDF is password-protected; [wrongPassword] is true when a password was given and did not work. */
+class PdfPasswordRequiredException(val wrongPassword: Boolean) :
+    Exception(if (wrongPassword) "That password didn't work" else "This PDF is password-protected")
+
 @Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -75,6 +79,7 @@ class DocumentRepository @Inject constructor(
         pdfUri: Uri,
         quality: PdfQuality,
         autoTitle: Boolean,
+        password: String? = null,
     ): ScanDocument = withContext(Dispatchers.IO) {
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -82,11 +87,26 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
         val tempPdf = File(context.cacheDir, "pdf_import_${UUID.randomUUID()}.pdf")
+        val unlockedPdf = File(context.cacheDir, "pdf_unlocked_${UUID.randomUUID()}.pdf")
         try {
             copyUri(pdfUri, tempPdf)
+            // The system PDF renderer cannot open protected files, so decrypt a copy with the password first.
+            val readable = if (password != null) {
+                try {
+                    PdfSecurity.unlock(tempPdf, unlockedPdf, password)
+                } catch (error: Exception) {
+                    throw PdfPasswordRequiredException(wrongPassword = true)
+                }
+                unlockedPdf
+            } else tempPdf
             val pages = mutableListOf<ScanPage>()
-            ParcelFileDescriptor.open(tempPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
-                PdfRenderer(descriptor).use { renderer ->
+            ParcelFileDescriptor.open(readable, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+                val opened = try {
+                    PdfRenderer(descriptor)
+                } catch (error: SecurityException) {
+                    throw PdfPasswordRequiredException(wrongPassword = false)
+                }
+                opened.use { renderer ->
                     require(renderer.pageCount in (1..300)) { "PDF must contain between 1 and 300 pages" }
                     for (index in 0 until renderer.pageCount) {
                         renderer.openPage(index).use { page ->
@@ -137,6 +157,7 @@ class DocumentRepository @Inject constructor(
             throw error
         } finally {
             tempPdf.delete()
+            unlockedPdf.delete()
         }
     }
 

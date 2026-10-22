@@ -11,6 +11,7 @@ import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
+import com.example.scanpro.data.PdfPasswordRequiredException
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
@@ -124,9 +125,22 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    fun importPdf(uri: Uri) {
-        operations.enqueue("Importing PDF pages and building OCR index…", "PDF imported") {
-            repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first())
+    /** A protected PDF waiting for its password; the shell shows a prompt for it. */
+    data class PdfPasswordRequest(val uri: Uri, val wrongPassword: Boolean)
+
+    private val _pdfPasswordRequest = MutableStateFlow<PdfPasswordRequest?>(null)
+    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = _pdfPasswordRequest.asStateFlow()
+    fun cancelPdfPassword() { _pdfPasswordRequest.value = null }
+
+    fun importPdf(uri: Uri, password: String? = null) {
+        _pdfPasswordRequest.value = null
+        operations.enqueue("Importing PDF pages and building OCR index…", null) {
+            try {
+                repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first(), password)
+                operations.showMessage("PDF imported")
+            } catch (needsPassword: PdfPasswordRequiredException) {
+                _pdfPasswordRequest.value = PdfPasswordRequest(uri, needsPassword.wrongPassword)
+            }
         }
     }
 
