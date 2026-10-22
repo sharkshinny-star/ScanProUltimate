@@ -20,6 +20,9 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
@@ -351,25 +354,36 @@ fun CameraScannerScreen(
             runCatching {
                 val provider = future.get()
                 cameraProvider = provider
-                val preview = Preview.Builder().build().also { it.surfaceProvider = previewView.surfaceProvider }
+                // The same 4:3 field of view for preview, capture and analysis, so what the overlay outlines is what is saved.
+                val selector = ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                    .build()
+                val preview = Preview.Builder().setResolutionSelector(selector).build().also { it.surfaceProvider = previewView.surfaceProvider }
                 val capture = ImageCapture.Builder()
+                    .setResolutionSelector(selector)
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                     .setJpegQuality(98)
                     .build()
                 val analysis = ImageAnalysis.Builder()
+                    .setResolutionSelector(selector)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .build()
                     .also { it.setAnalyzer(analysisExecutor, analyzer) }
 
                 provider.unbindAll()
-                val camera = provider.bindToLifecycle(
-                    lifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    capture,
-                    analysis
-                )
+                // A shared view port crops all three streams to one region, so analysis coordinates line up with
+                // the preview and the saved photo. It can be unavailable before the first layout; bind without it then.
+                val viewPort = previewView.viewPort
+                val camera = if (viewPort != null) {
+                    provider.bindToLifecycle(
+                        lifecycleOwner,
+                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(preview).addUseCase(capture).addUseCase(analysis).build()
+                    )
+                } else {
+                    provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture, analysis)
+                }
                 imageCapture = capture
                 boundCamera = camera
                 camera.cameraInfo.zoomState.value?.let { zoom = it.linearZoom }

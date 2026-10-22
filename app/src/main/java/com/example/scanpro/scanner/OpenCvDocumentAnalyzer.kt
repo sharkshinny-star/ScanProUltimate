@@ -32,7 +32,9 @@ class OpenCvDocumentAnalyzer(
         // Analysis runs on the camera executor, so waiting here for a still-loading OpenCV never blocks the UI.
         OpenCvRuntime.ensureLoaded()
         try {
-            val gray = image.toRotatedGrayMat()
+            // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
+            // are found describe exactly the pixels the user sees and the capture keeps.
+            val gray = image.toRotatedGrayMat().croppedToViewport(image)
             try {
                 val result = DocumentEdgeDetector.detect(gray)
                 val stable = updateStability(result)
@@ -91,6 +93,20 @@ class OpenCvDocumentAnalyzer(
             .div(pairs.size)
             .toFloat()
     }
+}
+
+private fun Mat.croppedToViewport(image: ImageProxy): Mat {
+    val rect = image.cropRect
+    val box = rotateBox(IntBox(rect.left, rect.top, rect.right, rect.bottom), image.width, image.height, image.imageInfo.rotationDegrees)
+    val width = box.right - box.left
+    val height = box.bottom - box.top
+    val coversFrame = box.left <= 0 && box.top <= 0 && width >= cols() && height >= rows()
+    if (coversFrame || width <= 0 || height <= 0 || box.left + width > cols() || box.top + height > rows()) return this
+    val view = Mat(this, org.opencv.core.Rect(box.left, box.top, width, height))
+    val copy = view.clone()
+    view.release()
+    release()
+    return copy
 }
 
 private fun ImageProxy.toRotatedGrayMat(): Mat {
