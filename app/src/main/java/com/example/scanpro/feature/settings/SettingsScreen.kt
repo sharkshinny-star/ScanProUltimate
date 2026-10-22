@@ -176,14 +176,6 @@ fun SettingsScreen(
                 }
             )
 
-            val context = LocalContext.current
-            ListItem(
-                modifier = Modifier.clickable { openPlayStoreListing(context) },
-                headlineContent = { Text("Rate ScanPro") },
-                supportingContent = { Text("Enjoying the app? Leave a review on Google Play.") },
-                leadingContent = { Icon(Icons.Default.StarRate, contentDescription = null) }
-            )
-
             Spacer(Modifier.height(24.dp))
             Text("Storage", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
