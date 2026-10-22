@@ -86,7 +86,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -120,6 +122,7 @@ fun CameraScannerScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
     val previewView = remember {
@@ -138,13 +141,16 @@ fun CameraScannerScreen(
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var torchEnabled by remember { mutableStateOf(false) }
-    var detectMode by rememberSaveable { mutableStateOf(DetectMode.AUTO) }
+    val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
+    var detectMode by rememberSaveable {
+        mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.AUTO))
+    }
     var detectMenuOpen by remember { mutableStateOf(false) }
     var overflowOpen by remember { mutableStateOf(false) }
     var showAdjustments by remember { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
     // Single finishes after one capture; Batch keeps the camera open for more pages.
-    var batch by rememberSaveable { mutableStateOf(false) }
+    var batch by rememberSaveable { mutableStateOf(prefs.getBoolean("batch", false)) }
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
     var zoom by remember { mutableFloatStateOf(0f) }
     var exposureIndex by remember { mutableIntStateOf(0) }
@@ -285,8 +291,14 @@ fun CameraScannerScreen(
                         return
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
-                    pages.add(Uri.fromFile(raw))
+                    val captured = Uri.fromFile(raw)
+                    pages.add(captured)
                     capturing = false
+                    // Outline the page in the background so the review screen opens ready.
+                    scope.launch {
+                        val quad = withContext(Dispatchers.Default) { runCatching { OpenCvScanProcessor.detectCrop(raw) }.getOrNull() }
+                        if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
+                    }
                     status = when {
                         scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
                         scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
@@ -318,7 +330,10 @@ fun CameraScannerScreen(
     }
 
     LaunchedEffect(autoCaptureSignal) {
-        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && pages.size < pageLimit) capturePage()
+        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && pages.size < pageLimit) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            capturePage()
+        }
     }
 
     LaunchedEffect(permissionGranted, lifecycleOwner) {
@@ -497,16 +512,8 @@ fun CameraScannerScreen(
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 18.dp, start = 12.dp, end = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
-                IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
-            }
             if (scanMode != ScanMode.ID_CARD) {
-                Box {
+                Box(Modifier.align(Alignment.TopCenter).padding(top = 18.dp)) {
                     Row(
                         Modifier.clickable { detectMenuOpen = true }.padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -520,12 +527,20 @@ fun CameraScannerScreen(
                                 text = {
                                     Text(option.label, color = if (option == detectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                                 },
-                                onClick = { detectMode = option; detectMenuOpen = false }
+                                onClick = { detectMode = option; detectMenuOpen = false; prefs.edit().putString("detect", option.name).apply() }
                             )
                         }
                     }
                 }
-            } else Spacer(Modifier.width(1.dp))
+            }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 18.dp, start = 12.dp, end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
+                IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
                     IconButton(onClick = { torchEnabled = !torchEnabled }) {
@@ -579,7 +594,7 @@ fun CameraScannerScreen(
                 ) {
                     listOf(false to "Single", true to "Batch").forEach { (value, text) ->
                         Surface(
-                            onClick = { batch = value },
+                            onClick = { batch = value; prefs.edit().putBoolean("batch", value).apply() },
                             shape = RoundedCornerShape(50),
                             color = if (batch == value) Color.White.copy(alpha = 0.28f) else Color.Transparent
                         ) {

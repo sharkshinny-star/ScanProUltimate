@@ -29,7 +29,8 @@ object SpecialExporters {
                 RectF(62f, 430f, 533f, 680f)
             )
             selected.forEachIndexed { index, model ->
-                val bitmap = ImageProcessor.decodeScaled(model.imagePath, quality.maxImageDimension) ?: return@forEachIndexed
+                val bitmap = ImageProcessor.decodeScaled(model.imagePath, quality.maxImageDimension)
+                    ?: error("Could not read page ${index + 1}")
                 drawFit(page.canvas, bitmap, slots[index])
                 bitmap.recycle()
             }

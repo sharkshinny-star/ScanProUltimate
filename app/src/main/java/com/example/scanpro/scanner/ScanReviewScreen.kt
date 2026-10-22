@@ -231,6 +231,7 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, onC
 @Composable
 private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropChange: (CropQuad) -> Unit) {
     var active by remember { mutableStateOf(0) }
+    var dragging by remember { mutableStateOf(false) }
     val latest by androidx.compose.runtime.rememberUpdatedState(crop)
     val latestEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
     Canvas(
@@ -240,8 +241,11 @@ private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropCh
                 detectDragGestures(
                     onDragStart = { start ->
                         val points = corners(latest).map { Offset(it.x * size.width, it.y * size.height) }
+                        dragging = true
                         active = points.indices.minByOrNull { hypot(points[it].x - start.x, points[it].y - start.y) } ?: 0
                     },
+                    onDragEnd = { dragging = false },
+                    onDragCancel = { dragging = false },
                     onDrag = { change, drag ->
                         change.consume()
                         if (!latestEnabled) return@detectDragGestures
@@ -265,11 +269,27 @@ private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropCh
         }
         drawPath(path, Blue, style = Stroke(width = 3.dp.toPx()))
         points.forEach { drawCircle(Blue, radius = 11.dp.toPx(), center = it) }
-        // Mid-edge handles, as a visual cue only: dragging always moves a corner.
-        points.indices.forEach { i ->
-            val a = points[i]
-            val b = points[(i + 1) % 4]
-            drawCircle(Blue, radius = 8.dp.toPx(), center = Offset((a.x + b.x) / 2f, (a.y + b.y) / 2f))
+        if (dragging) {
+            val corner = corners(crop)[active]
+            val sample = 96
+            val sx = (corner.x * image.width).toInt().coerceIn(0, image.width - 1)
+            val sy = (corner.y * image.height).toInt().coerceIn(0, image.height - 1)
+            val left = (sx - sample / 2).coerceIn(0, (image.width - sample).coerceAtLeast(0))
+            val top = (sy - sample / 2).coerceIn(0, (image.height - sample).coerceAtLeast(0))
+            val loupe = 120.dp.toPx()
+            val dstLeft = if (corner.x < 0.5f) size.width - loupe - 8.dp.toPx() else 8.dp.toPx()
+            val dstTop = 8.dp.toPx()
+            drawRect(Color.Black.copy(alpha = 0.8f), Offset(dstLeft - 4.dp.toPx(), dstTop - 4.dp.toPx()), androidx.compose.ui.geometry.Size(loupe + 8.dp.toPx(), loupe + 8.dp.toPx()))
+            drawImage(
+                image.asImageBitmap(),
+                srcOffset = IntOffset(left, top),
+                srcSize = IntSize(sample.coerceAtMost(image.width - left), sample.coerceAtMost(image.height - top)),
+                dstOffset = IntOffset(dstLeft.toInt(), dstTop.toInt()),
+                dstSize = IntSize(loupe.toInt(), loupe.toInt())
+            )
+            val c = Offset(dstLeft + loupe / 2f, dstTop + loupe / 2f)
+            drawLine(Color.White, Offset(c.x - 14.dp.toPx(), c.y), Offset(c.x + 14.dp.toPx(), c.y), strokeWidth = 2f)
+            drawLine(Color.White, Offset(c.x, c.y - 14.dp.toPx()), Offset(c.x, c.y + 14.dp.toPx()), strokeWidth = 2f)
         }
     }
 }
@@ -282,27 +302,3 @@ private fun detectQuad(image: Bitmap): CropQuad {
     val quad = detection?.quad
     return if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
 }
-
-/** Maps a crop outline onto the image after it is turned a quarter turn; corners keep their reading order. */
-internal fun rotateQuad(crop: CropQuad, clockwise: Boolean): CropQuad {
-    fun cw(p: NormalizedPoint) = NormalizedPoint(1f - p.y, p.x)
-    fun ccw(p: NormalizedPoint) = NormalizedPoint(p.y, 1f - p.x)
-    return if (clockwise) {
-        CropQuad(cw(crop.bottomLeft), cw(crop.topLeft), cw(crop.topRight), cw(crop.bottomRight))
-    } else {
-        CropQuad(ccw(crop.topRight), ccw(crop.bottomRight), ccw(crop.bottomLeft), ccw(crop.topLeft))
-    }
-}
-
-internal fun encodeQuads(map: Map<String, CropQuad>): List<String> = map.map { (key, q) ->
-    key + "|" + corners(q).joinToString(",") { "${it.x},${it.y}" }
-}
-
-internal fun decodeQuad(text: String): Pair<String, CropQuad>? = runCatching {
-    val (key, values) = text.split("|", limit = 2)
-    val n = values.split(",").map { it.toFloat() }
-    key to CropQuad(
-        NormalizedPoint(n[0], n[1]), NormalizedPoint(n[2], n[3]),
-        NormalizedPoint(n[4], n[5]), NormalizedPoint(n[6], n[7])
-    )
-}.getOrNull()

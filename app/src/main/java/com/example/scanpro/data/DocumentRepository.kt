@@ -213,7 +213,8 @@ class DocumentRepository @Inject constructor(
             renderAndOcr(page.copy(adjustments = adjustments.normalized()))
         }
 
-    suspend fun resetPage(documentId: String, pageId: String) =
+    suspend fun resetPage(documentId: String, pageId: String) {
+        val removed = annotationsOf(documentId, pageId)
         editSinglePage(documentId, pageId) { page ->
             renderAndOcr(
                 page.copy(
@@ -223,8 +224,14 @@ class DocumentRepository @Inject constructor(
                     adjustments = PageAdjustments.DEFAULT,
                     annotations = emptyList()
                 )
-            ).also { deleteSignatureAssets(page.annotations) }
+            )
         }
+        // Signature images go only after the page is saved without them.
+        deleteSignatureAssets(removed)
+    }
+
+    private suspend fun annotationsOf(documentId: String, pageId: String): List<PageAnnotation> =
+        withContext(Dispatchers.IO) { requireDocument(documentId).pages.firstOrNull { it.id == pageId }?.annotations.orEmpty() }
 
     suspend fun addTextAnnotation(documentId: String, pageId: String, text: String) =
         addAnnotation(
@@ -267,11 +274,13 @@ class DocumentRepository @Inject constructor(
             )
         )
 
-    suspend fun removeLastAnnotation(documentId: String, pageId: String) =
+    suspend fun removeLastAnnotation(documentId: String, pageId: String) {
+        val removed = annotationsOf(documentId, pageId).takeLast(1)
         editSinglePage(documentId, pageId) { page ->
-            val updated = page.copy(annotations = page.annotations.dropLast(1))
-            renderAndOcr(updated).also { deleteSignatureAssets(page.annotations.takeLast(1)) }
+            renderAndOcr(page.copy(annotations = page.annotations.dropLast(1)))
         }
+        deleteSignatureAssets(removed)
+    }
 
     suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
         editSinglePage(documentId, pageId) { page ->
