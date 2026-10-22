@@ -878,7 +878,7 @@ private fun PasswordDialog(
         text = {
             Column {
                 Text(
-                    if (isProtect) "Enter a password (at least 4 characters) to encrypt this PDF:"
+                    if (isProtect) "Enter a password (at least ${com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH} characters) to encrypt this PDF:"
                     else "Enter password to remove protection from this PDF:",
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -913,8 +913,10 @@ private fun PasswordDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (password.length < 4) {
-                        errorText = "Password must be at least 4 characters"
+                    // Unlocking must accept whatever password the file already has, however short.
+                    val minimum = if (isProtect) com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH else 1
+                    if (password.length < minimum) {
+                        errorText = if (isProtect) "Password must be at least $minimum characters" else "Enter the PDF's password"
                     } else {
                         onConfirm(password)
                     }

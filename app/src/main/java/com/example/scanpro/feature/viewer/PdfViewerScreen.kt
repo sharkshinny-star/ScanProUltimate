@@ -84,7 +84,11 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.core.ui.shareFile
 import java.io.File
 import java.io.FileOutputStream
@@ -131,8 +135,27 @@ fun PdfViewerScreen(
         }
     }
 
+    // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
+    val renderLock = remember { Mutex() }
+    var needsPassword by remember { mutableStateOf(false) }
+    var lockedFile by remember { mutableStateOf<File?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+
+    fun openRenderer(file: File) {
+        val descriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        try {
+            val renderer = PdfRenderer(descriptor)
+            pfd = descriptor
+            pdfRenderer = renderer
+            pageCount = renderer.pageCount
+        } catch (error: Throwable) {
+            runCatching { descriptor.close() }
+            throw error
+        }
+    }
+
     DisposableEffect(pdfUri) {
-        scope.launch(Dispatchers.IO) {
+        val job = scope.launch(Dispatchers.IO) {
             try {
                 isLoading = true
                 errorMessage = null
@@ -153,46 +176,40 @@ fun PdfViewerScreen(
                     if (bmp != null) {
                         imageBitmap = bmp
                         pageCount = 1
-                        isLoading = false
                         return@launch
                     }
                 }
 
-                // PDF rendering mode
                 isImageMode = false
-                val tempFile = File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf")
-                if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                    val srcFile = File(pdfUri.path!!)
-                    if (srcFile.exists()) {
-                        val descriptor = ParcelFileDescriptor.open(srcFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                        val renderer = PdfRenderer(descriptor)
-                        pfd = descriptor
-                        pdfRenderer = renderer
-                        pageCount = renderer.pageCount
-                        isLoading = false
-                        return@launch
-                    }
+                val local = pdfUri.path?.let { File(it) }?.takeIf { pdfUri.scheme == "file" && it.exists() }
+                val file = local ?: File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf").also { temp ->
+                    context.contentResolver.openInputStream(pdfUri)?.use { input ->
+                        FileOutputStream(temp).use { output -> input.copyTo(output) }
+                    } ?: throw IllegalStateException("Could not open file")
                 }
-
-                context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                    FileOutputStream(tempFile).use { output -> input.copyTo(output) }
-                } ?: throw Exception("Could not open file")
-
-                val descriptor = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                val renderer = PdfRenderer(descriptor)
-                pfd = descriptor
-                pdfRenderer = renderer
-                pageCount = renderer.pageCount
-                isLoading = false
+                try {
+                    openRenderer(file)
+                } catch (_: SecurityException) {
+                    // PdfRenderer refuses password-protected files; ask for the password instead of failing.
+                    lockedFile = file
+                    needsPassword = true
+                }
             } catch (e: Exception) {
                 errorMessage = e.localizedMessage ?: "Failed to load document"
+            } finally {
                 isLoading = false
             }
         }
 
         onDispose {
-            pdfRenderer?.close()
-            pfd?.close()
+            job.cancel()
+            runBlocking {
+                renderLock.withLock {
+                    runCatching { pdfRenderer?.close() }
+                    runCatching { pfd?.close() }
+                    pdfRenderer = null
+                }
+            }
             imageBitmap?.recycle()
         }
     }
@@ -496,6 +513,7 @@ fun PdfViewerScreen(
                             items(pageCount) { index ->
                                 PdfPageItem(
                                     renderer = pdfRenderer!!,
+                                    renderLock = renderLock,
                                     pageIndex = index,
                                     pageCount = pageCount
                                 )
@@ -525,6 +543,27 @@ fun PdfViewerScreen(
             }
         }
 
+        if (needsPassword) {
+            PdfPasswordDialog(
+                error = passwordError,
+                onCancel = onBack,
+                onSubmit = { password ->
+                    val source = lockedFile ?: return@PdfPasswordDialog
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val unlocked = File(context.cacheDir, "view_unlocked_${System.currentTimeMillis()}.pdf")
+                            PdfSecurity.unlock(source, unlocked, password)
+                            openRenderer(unlocked)
+                            passwordError = null
+                            needsPassword = false
+                        } catch (e: Exception) {
+                            passwordError = "That password didn't work"
+                        }
+                    }
+                }
+            )
+        }
+
         if (showJumpDialog) {
             JumpToPageDialog(
                 pageCount = pageCount,
@@ -544,6 +583,7 @@ fun PdfViewerScreen(
 @Composable
 private fun PdfPageItem(
     renderer: PdfRenderer,
+    renderLock: Mutex,
     pageIndex: Int,
     pageCount: Int
 ) {
@@ -555,15 +595,18 @@ private fun PdfPageItem(
         withContext(Dispatchers.IO) {
             try {
                 isPageLoading = true
-                renderer.openPage(pageIndex).use { page ->
-                    aspectRatio = page.width.toFloat() / page.height.toFloat()
-                    val targetW = 2160
-                    val targetH = (targetW / aspectRatio).toInt().coerceAtLeast(1)
-                    val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
-                    val canvas = android.graphics.Canvas(bmp)
-                    canvas.drawColor(android.graphics.Color.WHITE)
-                    page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    bitmap = bmp
+                // One page at a time: PdfRenderer throws if a second page is opened before the first is closed,
+                // which is what left most pages blank when several were on screen.
+                renderLock.withLock {
+                    renderer.openPage(pageIndex).use { page ->
+                        aspectRatio = page.width.toFloat() / page.height.toFloat()
+                        val targetW = 1440
+                        val targetH = (targetW / aspectRatio).toInt().coerceAtLeast(1)
+                        val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+                        bmp.eraseColor(android.graphics.Color.WHITE)
+                        page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        bitmap = bmp
+                    }
                 }
             } catch (e: Exception) {
                 bitmap = null
@@ -655,5 +698,33 @@ private fun JumpToPageDialog(
                 Text("Cancel")
             }
         }
+    )
+}
+
+@Composable
+private fun PdfPasswordDialog(error: String?, onCancel: () -> Unit, onSubmit: (String) -> Unit) {
+    var password by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text("Password required") },
+        text = {
+            Column {
+                Text("This PDF is protected. Enter its password to open it.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    singleLine = true,
+                    isError = error != null,
+                    label = { Text("Password") },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                )
+                if (error != null) {
+                    Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+        },
+        confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { onSubmit(password) }) { Text("Open") } },
+        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } }
     )
 }
