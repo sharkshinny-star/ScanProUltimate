@@ -163,7 +163,7 @@ class DocumentRepository @Inject constructor(
         val target = newName.trim().take(80)
         require(source.isNotBlank()) { "Folder name is required" }
         require(target.isNotBlank()) { "New folder name is required" }
-        db.loadAll()
+        db.loadAll(includeTrashed = true)
             .filter { doc -> doc.folderName.equals(source, ignoreCase = true) }
             .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = target, updatedAt = now())) }
     }
@@ -385,13 +385,15 @@ class DocumentRepository @Inject constructor(
         } finally {
             bitmap.recycle()
         }
-        File(page.sourcePath).delete()
-        File(page.imagePath).delete()
-        deleteSignatureAssets(page.annotations)
         pages.removeAt(index)
         pages.add(index, right)
         pages.add(index, left)
-        saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        val saved = saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        // Delete the original spread only once both halves are saved.
+        File(page.sourcePath).delete()
+        File(page.imagePath).delete()
+        deleteSignatureAssets(page.annotations)
+        saved
     }
 
     suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
@@ -426,11 +428,13 @@ class DocumentRepository @Inject constructor(
             moveToTrash(documentId)
             return@withContext
         }
+        val pages = normalize(doc.pages.sortedBy { it.position }.filterNot { it.id == pageId })
+        val saved = saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        // Delete the files only after the page is gone from the database, so a failed save loses nothing.
         File(target.sourcePath).delete()
         File(target.imagePath).delete()
         deleteSignatureAssets(target.annotations)
-        val pages = normalize(doc.pages.filterNot { it.id == pageId })
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        saved
     }
 
     suspend fun moveToTrash(id: String) = mutateDocument(id) { doc ->
@@ -523,15 +527,34 @@ class DocumentRepository @Inject constructor(
                 val pageId = UUID.randomUUID().toString()
                 val sourceFile = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 val renderedFile = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")
-                restoredPage.file.copyTo(sourceFile, overwrite = true)
+                // Keep the original image and edit settings when the backup has them, so the restored page
+                // stays editable. Older backups only hold the rendered page, which becomes the source.
+                val original = restoredPage.sourceFile
+                (original ?: restoredPage.file).copyTo(sourceFile, overwrite = true)
                 restoredPage.file.copyTo(renderedFile, overwrite = true)
+                val editable = original != null
+                val annotations = if (editable) {
+                    restoredPage.annotations.map { annotation ->
+                        if (annotation.type != AnnotationType.SIGNATURE) annotation else {
+                            val signatureDir = File(folder, "signatures").apply { mkdirs() }
+                            val asset = File(signatureDir, "sig_${UUID.randomUUID()}.png")
+                            File(annotation.assetPath).copyTo(asset, overwrite = true)
+                            annotation.copy(assetPath = asset.absolutePath)
+                        }
+                    }
+                } else emptyList()
                 ScanPage(
                     id = pageId,
                     documentId = id,
                     position = index,
                     sourcePath = sourceFile.absolutePath,
                     imagePath = renderedFile.absolutePath,
-                    ocrText = restoredPage.ocrText
+                    ocrText = restoredPage.ocrText,
+                    filter = if (editable) restoredPage.filter else PageFilter.ORIGINAL,
+                    rotationDegrees = if (editable) restoredPage.rotationDegrees else 0,
+                    crop = if (editable) restoredPage.crop else CropQuad.DEFAULT,
+                    adjustments = if (editable) restoredPage.adjustments else PageAdjustments.DEFAULT,
+                    annotations = annotations
                 )
             }
             val pdf = File(folder, "document.pdf")
