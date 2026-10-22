@@ -80,13 +80,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.data.ScanDocument
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.core.ui.sharePdfs
 import com.example.scanpro.navigation.ScanProBottomBar
 import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.core.designsystem.TitleWithStatus
 import com.example.scanpro.core.designsystem.TopBarWithProgress
+
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 private enum class LibrarySort(val label: String) {
     UPDATED("Recent"), NAME("Name"), SIZE("Size")
