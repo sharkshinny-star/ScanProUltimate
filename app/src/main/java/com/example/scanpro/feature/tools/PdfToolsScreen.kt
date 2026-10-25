@@ -1118,7 +1118,8 @@ private fun PdfPageOrganizerSheet(
                             val rotations = pages.associate { it.index to it.rotation }
                             onApply(specs, extracted, rotations)
                         },
-                        enabled = !isLoading && pages.isNotEmpty()
+                        // Extracting nothing would only end in an error message, so the button waits for a selection.
+                        enabled = !isLoading && pages.isNotEmpty() && (mode != "extract" || pages.any { it.selected })
                     ) {
                         Text(if (mode == "extract") "Extract (${pages.count { it.selected }})" else "Save PDF")
                     }
