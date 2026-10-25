@@ -56,19 +56,9 @@ object SmartTitle {
         return shorten(title).ifBlank { fallback }
     }
 
-    /**
-     * The first line that reads like a name (a shop, company or person): mostly letters, and not a heading
-     * such as "Tax Invoice", a date, an amount, an address line or contact details.
-     */
-    private fun nameLine(lines: List<String>, kind: String?): String? = lines.take(10).firstOrNull { line ->
-        val l = line.lowercase()
-        val letters = line.count { it.isLetter() }
-        val digits = line.count { it.isDigit() }
-        letters >= 3 && digits * 3 <= letters &&
-            '@' !in line && "www." !in l && "http" !in l &&
-            (kind == null || kind.lowercase() !in l) &&
-            GENERIC_HEADINGS.none { l == it || l.startsWith("$it ") || l.startsWith("$it:") }
-    }
+    /** The issuer line, looked for only in the lines that survived the filters above. */
+    private fun nameLine(lines: List<String>, kind: String?): String? =
+        DocumentIntelligenceEngine.issuer(lines.joinToString("\n"), kind)
 
     private fun tidy(value: String) = value.trim().trim(':', '-', '–', '|', '.', ',').trim()
 
@@ -78,10 +68,4 @@ object SmartTitle {
         val space = cut.lastIndexOf(' ')
         return (if (space > MAX_LENGTH / 2) cut.take(space) else cut).trim().trimEnd('–', '-').trim()
     }
-
-    private val GENERIC_HEADINGS = listOf(
-        "tax invoice", "invoice", "receipt", "cash receipt", "bill", "bill to", "ship to", "sold to", "original",
-        "duplicate", "customer copy", "merchant copy", "welcome", "thank you", "date", "time", "total", "subtotal",
-        "dear", "to", "from", "agreement", "contract", "notes", "agenda", "minutes", "statement", "page"
-    )
 }

@@ -78,6 +78,11 @@ class PdfToolsViewModel @Inject constructor(
     private val _passwordNeeded = MutableStateFlow<Uri?>(null)
     val passwordNeeded: StateFlow<Uri?> = _passwordNeeded.asStateFlow()
 
+    /** True when the last unlock attempt used the wrong password; the reopened dialog says so. */
+    private val _wrongPassword = MutableStateFlow(false)
+    val wrongPassword: StateFlow<Boolean> = _wrongPassword.asStateFlow()
+    fun clearWrongPassword() { _wrongPassword.value = false }
+
     private var job: Job? = null
 
     fun clearResult() { _result.value = null }
@@ -156,7 +161,14 @@ class PdfToolsViewModel @Inject constructor(
     }
 
     fun unlock(uri: Uri, password: String) = launchTool("Unlocking PDF…", "Could not unlock the PDF") {
-        PdfToolsEngine.unlockPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "unlocked_${System.currentTimeMillis()}.pdf"))
+        try {
+            PdfToolsEngine.unlockPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "unlocked_${System.currentTimeMillis()}.pdf"))
+        } catch (wrong: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+            // Ask again for the same file, with the error in the dialog (a snackbar would sit behind it).
+            _wrongPassword.value = true
+            _passwordNeeded.value = uri
+            null
+        }
     }
 
     /** Checks how a PDF is protected before asking for a password it may not have. */

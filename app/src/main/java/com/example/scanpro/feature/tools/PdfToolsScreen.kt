@@ -170,6 +170,7 @@ fun PdfToolsScreen(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val unlockNotice by viewModel.unlockNotice.collectAsStateWithLifecycle()
     val passwordNeeded by viewModel.passwordNeeded.collectAsStateWithLifecycle()
+    val wrongPassword by viewModel.wrongPassword.collectAsStateWithLifecycle()
     val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
 
     // Saveable, so an open dialog and the chosen file survive rotation, window resizing and folding.
@@ -181,11 +182,12 @@ fun PdfToolsScreen(
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
 
+    // Show first, clear after: clearing first changes this effect's key, which cancelled the snackbar the moment
+    // it appeared, so no tool message (errors, "wrong password", "cancelled") was ever visible.
     LaunchedEffect(message) {
-        message?.let {
-            viewModel.clearMessage()
-            snackbarHostState.showSnackbar(it)
-        }
+        val text = message ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(text)
+        viewModel.clearMessage()
     }
     LaunchedEffect(passwordNeeded) {
         passwordNeeded?.let {
@@ -255,9 +257,9 @@ fun PdfToolsScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             LazyVerticalGrid(
-                // Cards keep a readable size: more columns on wider windows, and the grid stops growing past
-                // a comfortable width on tablets instead of stretching cards across the whole screen.
-                columns = GridCells.Adaptive(minSize = 160.dp),
+                // Cards keep a readable size: two columns on a 360 dp phone, more on wider windows, and the grid
+                // stops growing past a comfortable width on tablets instead of stretching cards across the screen.
+                columns = GridCells.Adaptive(minSize = 148.dp),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -384,9 +386,11 @@ fun PdfToolsScreen(
                 val isProtect = selectedTool == "protect"
                 PasswordDialog(
                     isProtect = isProtect,
-                    onDismiss = { showPasswordDialog = false },
+                    initialError = if (!isProtect && wrongPassword) "That password didn't work. Try again." else null,
+                    onDismiss = { showPasswordDialog = false; viewModel.clearWrongPassword() },
                     onConfirm = { pwd ->
                         showPasswordDialog = false
+                        viewModel.clearWrongPassword()
                         if (isProtect) viewModel.protect(uri, pwd) else viewModel.unlock(uri, pwd)
                     }
                 )
@@ -936,12 +940,13 @@ fun SmartShareSheet(
 @Composable
 private fun PasswordDialog(
     isProtect: Boolean,
+    initialError: String? = null,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var errorText by remember { mutableStateOf<String?>(null) }
+    var errorText by remember(initialError) { mutableStateOf(initialError) }
 
     AlertDialog(
         onDismissRequest = onDismiss,

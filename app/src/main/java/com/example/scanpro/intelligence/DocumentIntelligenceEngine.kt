@@ -58,7 +58,7 @@ object DocumentIntelligenceEngine {
         val phones = phoneRegex.findAll(text).map { it.value.trim() }.filter { it.count(Char::isDigit) in 8..15 }.distinct().take(8).toList()
         val refs = referenceRegex.findAll(text).mapNotNull { it.groups[1]?.value?.trim() }.distinct().take(8).toList()
         val actionItems = extractActionItems(text)
-        val summary = extractiveSummary(text, kind, amounts, dates)
+        val summary = structuredSummary(text, kind, amounts, dates) ?: extractiveSummary(text, kind, amounts, dates)
         val tags = buildList {
             add(kind.label.lowercase(Locale.ROOT))
             if (amounts.isNotEmpty()) add("financial")
@@ -114,6 +114,43 @@ object DocumentIntelligenceEngine {
         return scores.maxByOrNull { it.value }?.takeIf { it.value > 0 }?.key ?: DocumentKind.GENERAL
     }
 
+    /**
+     * The business or person a document comes from: the first line near the top that reads like a name (mostly
+     * letters), skipping headings such as "Tax Invoice", the kind word itself, and contact details.
+     */
+    fun issuer(text: String, kindLabel: String? = null): String? = text.lineSequence()
+        .map { it.replace(Regex("\\s+"), " ").trim() }
+        .filter { it.length in 3..80 }
+        .take(10)
+        .firstOrNull { line ->
+            val l = line.lowercase(Locale.ROOT)
+            val letters = line.count { it.isLetter() }
+            val digits = line.count { it.isDigit() }
+            letters >= 3 && digits * 3 <= letters &&
+                '@' !in line && "www." !in l && "http" !in l &&
+                (kindLabel == null || kindLabel.lowercase(Locale.ROOT) !in l) &&
+                GENERIC_HEADINGS.none { l == it || l.startsWith("$it ") || l.startsWith("$it:") }
+        }
+        ?.trim()?.trim(':', '-', '–', '|', '.', ',')?.trim()
+
+    /** "Receipt from Blue Bottle Coffee · Total $8.37 · 03/10/2026" for receipts and invoices; null otherwise. */
+    private fun structuredSummary(text: String, kind: DocumentKind, amounts: List<String>, dates: List<String>): String? {
+        if (kind != DocumentKind.RECEIPT && kind != DocumentKind.INVOICE) return null
+        val from = issuer(text, kind.label)
+        // The amount on the "Total" / "Amount due" line, not a subtotal or a single item.
+        val total = text.lineSequence()
+            .filter { Regex("(?i)\\b(?:grand\\s+)?total\\b|\\bamount\\s+due\\b|\\bbalance\\s+due\\b").containsMatchIn(it) }
+            .filterNot { Regex("(?i)\\bsub\\s*-?\\s*total\\b").containsMatchIn(it) }
+            .mapNotNull { line -> amountRegex.find(line)?.value?.trim() ?: Regex("\\d[\\d,]*\\.\\d{2}\\b").find(line)?.value }
+            .lastOrNull()
+        if (from == null && total == null) return null
+        return listOfNotNull(
+            if (from != null) "${kind.label} from $from" else kind.label,
+            total?.let { "Total $it" },
+            dates.firstOrNull()
+        ).joinToString(" · ")
+    }
+
     private fun extractActionItems(text: String): List<String> {
         val markers = listOf(
             "please ", "must ", "need to ", "needs to ", "required to ", "action:",
@@ -154,6 +191,12 @@ object DocumentIntelligenceEngine {
     private fun tokens(value: String) = value.lowercase(Locale.ROOT)
         .split(Regex("[^\\p{L}\\p{N}]+"))
         .filter { it.isNotBlank() }
+
+    private val GENERIC_HEADINGS = listOf(
+        "tax invoice", "invoice", "receipt", "cash receipt", "bill", "bill to", "ship to", "sold to", "original",
+        "duplicate", "customer copy", "merchant copy", "welcome", "thank you", "date", "time", "total", "subtotal",
+        "dear", "to", "from", "agreement", "contract", "notes", "agenda", "minutes", "statement", "page"
+    )
 
     private val STOPWORDS = setOf(
         "the", "and", "for", "are", "was", "were", "what", "when", "where", "which", "who", "whom", "why",
