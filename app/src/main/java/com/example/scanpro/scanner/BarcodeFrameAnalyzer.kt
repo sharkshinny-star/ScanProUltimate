@@ -5,6 +5,7 @@ import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.example.scanpro.BuildConfig
 import com.google.android.gms.common.moduleinstall.ModuleInstall
 import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
 import com.google.mlkit.common.MlKitException
@@ -38,7 +39,7 @@ class BarcodeFrameAnalyzer(
             image.close()
             return
         }
-        if (!requestedDownload) {
+        if (!requestedDownload && !BuildConfig.BUNDLED_ML) {
             // Normally fetched at install time; asking again is harmless and covers installs where it wasn't.
             requestedDownload = true
             runCatching { ModuleInstall.getClient(context).installModules(ModuleInstallRequest.newBuilder().addApi(scanner).build()) }

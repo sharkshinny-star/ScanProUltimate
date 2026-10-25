@@ -18,6 +18,8 @@ android {
         versionName = "4.1.0"
 
         vectorDrawables { useSupportLibrary = true }
+        // True when the ML Kit models ship inside the APK (-Pscanpro.bundledMl=true): no Play-services download checks.
+        buildConfigField("boolean", "BUNDLED_ML", (providers.gradleProperty("scanpro.bundledMl").orNull == "true").toString())
         // 32-bit x86 is only used by old emulators; leaving it out removes ~70 MB of native code from universal APKs.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

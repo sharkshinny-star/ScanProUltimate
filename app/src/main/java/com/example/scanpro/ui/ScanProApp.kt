@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
@@ -140,8 +141,14 @@ fun ScanProApp(
     // Wide windows keep navigation at the side of the content instead of along the bottom.
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showRail = com.example.scanpro.navigation.isWideWindow() && currentRoute in ScanProDestinations.topLevel
+    val welcomeShowing = welcomeSeen == false
     Box(Modifier.fillMaxSize()) {
-        androidx.compose.foundation.layout.Row(Modifier.fillMaxSize()) {
+        // While the welcome covers the app, screen readers must not reach the controls underneath.
+        androidx.compose.foundation.layout.Row(
+            Modifier
+                .fillMaxSize()
+                .then(if (welcomeShowing) Modifier.clearAndSetSemantics { } else Modifier)
+        ) {
             if (showRail) {
                 com.example.scanpro.navigation.ScanProNavigationRail(
                     selectedRoute = currentRoute.orEmpty(),
@@ -162,7 +169,7 @@ fun ScanProApp(
         }
 
         // First launch only, drawn over the app so the library is already there underneath when it closes.
-        if (welcomeSeen == false) {
+        if (welcomeShowing) {
             androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
             WelcomeScreen(
                 onStartScanning = {

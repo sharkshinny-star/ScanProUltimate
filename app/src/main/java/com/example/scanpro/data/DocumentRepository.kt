@@ -19,6 +19,8 @@ import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.SmartTitle
 import com.example.scanpro.imaging.SpecialExporters
+import com.example.scanpro.scanner.detectCrop
+import com.example.scanpro.scanner.OpenCvScanProcessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -79,7 +81,8 @@ class DocumentRepository @Inject constructor(
         crops: List<CropQuad> = emptyList(),
     ): ScanDocument = withContext(Dispatchers.IO) {
         require(imageUris.isNotEmpty()) { "Choose at least one image" }
-        createDocument(null, imageUris, quality, autoTitle, mode, crops)
+        // Camera scans arrive with the outline the user confirmed; gallery and shared photos are outlined here.
+        createDocument(null, imageUris, quality, autoTitle, mode, crops, detectCrops = crops.isEmpty())
     }
 
     suspend fun importPdf(
@@ -735,7 +738,9 @@ class DocumentRepository @Inject constructor(
         quality: PdfQuality,
         autoTitle: Boolean,
         mode: ScanMode,
-        crops: List<CropQuad> = emptyList()
+        crops: List<CropQuad> = emptyList(),
+        /** Find the page in each photo, as the camera does, when no outline was given. */
+        detectCrops: Boolean = false
     ): ScanDocument {
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -750,6 +755,9 @@ class DocumentRepository @Inject constructor(
                 val source = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId")
                 val rendered = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 copyUri(uri, source)
+                val crop = crops.getOrNull(index)
+                    ?: if (detectCrops) runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
+                    else CropQuad.DEFAULT
                 renderAndOcr(
                     ScanPage(
                         id = pageId,
@@ -758,7 +766,7 @@ class DocumentRepository @Inject constructor(
                         sourcePath = source.absolutePath,
                         imagePath = rendered.absolutePath,
                         // The original stays untouched; the crop is an instruction that can be widened later.
-                        crop = crops.getOrNull(index) ?: CropQuad.DEFAULT
+                        crop = crop
                     )
                 )
             }

@@ -1,6 +1,8 @@
 package com.example.scanpro.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -98,6 +100,8 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            // Taps on empty parts of the welcome must not reach the app drawn underneath it.
+            .pointerInput(Unit) { detectTapGestures { } }
             .statusBarsPadding()
             .navigationBarsPadding(),
         contentAlignment = Alignment.TopCenter

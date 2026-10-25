@@ -21,3 +21,8 @@
 # password-protect tool works in debug builds but fails once R8 has renamed or removed those classes.
 -keep class com.tom_roush.pdfbox.** { *; }
 -dontwarn com.tom_roush.pdfbox.**
+
+# ML Kit creates its components (text recognition, barcode, translate, language ID, common) by reflection
+# through each registrar's no-argument constructor. R8 removes those constructors, ML Kit then starts with
+# no components and every OCR, translation and QR call fails in release builds while debug builds work.
+-keep class * implements com.google.firebase.components.ComponentRegistrar { <init>(); }

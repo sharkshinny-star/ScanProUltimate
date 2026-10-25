@@ -2,6 +2,8 @@ package com.example.scanpro.imaging
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import com.example.scanpro.BuildConfig
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.OcrWord
 import com.google.mlkit.vision.common.InputImage
@@ -54,7 +56,8 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
      * missing model never stalls every page.
      */
     private suspend fun ensureModel(script: OcrScript, recognizer: TextRecognizer, waitForDownload: Boolean) {
-        if (script in readyScripts) return
+        // Models inside the APK are always there, and without Play services the check itself reports them missing.
+        if (BuildConfig.BUNDLED_ML || script in readyScripts) return
         val modules = ModuleInstall.getClient(context)
         val available = runCatching { modules.areModulesAvailable(recognizer).await().areModulesAvailable() }.getOrDefault(true)
         if (!available) {
@@ -87,7 +90,20 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
     suspend fun recognize(file: File, script: OcrScript = OcrScript.LATIN): String = recognizeDetailed(file, script).text
 
     /** Recognised text plus the position of every word, so a PDF text layer can sit under the printed words. */
-    suspend fun recognizeDetailed(file: File, script: OcrScript = OcrScript.LATIN): OcrResult {
+    /**
+     * Callers keep going without text when recognition fails (a page is still saved), so the reason is logged
+     * here; otherwise a broken model or library would only show up as pages with no text.
+     */
+    suspend fun recognizeDetailed(file: File, script: OcrScript = OcrScript.LATIN): OcrResult = try {
+        recognizeOrThrow(file, script)
+    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+        throw cancelled
+    } catch (error: Throwable) {
+        Log.w(TAG, "Text recognition failed (${script.label}) for ${file.name}", error)
+        throw error
+    }
+
+    private suspend fun recognizeOrThrow(file: File, script: OcrScript): OcrResult {
         // Rendered pages are already upright. Decoding at a bounded size keeps body text well above
         // ML Kit's minimum glyph height while avoiding a full 3400px decode per page.
         val bitmap = ImageProcessor.decodeScaled(file.absolutePath, OCR_MAX_DIMENSION)
@@ -130,6 +146,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
     }
 
     private companion object {
+        const val TAG = "ScanProOcr"
         const val OCR_MAX_DIMENSION = 2400
         const val MODEL_WAIT_MS = 60_000L
     }
