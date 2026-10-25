@@ -1,0 +1,167 @@
+package com.example.scanpro.feature.tools
+
+import android.content.Context
+import android.net.Uri
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.imaging.CompressPdfEngine
+import com.example.scanpro.imaging.CompressionPreset
+import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.PageSpec
+import com.example.scanpro.imaging.PdfProtection
+import com.example.scanpro.imaging.PdfToolResult
+import com.example.scanpro.imaging.PdfToolsEngine
+import com.example.scanpro.imaging.SplitMode
+import com.example.scanpro.data.PdfPageSize
+import com.example.scanpro.data.PdfQuality
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/** What the Tools screen shows while and after a tool runs. */
+data class ToolProgress(val label: String, val current: Int = 0, val total: Int = 0)
+
+/**
+ * Runs the PDF tools outside the screen, so rotating the device, resizing a split-screen window or unfolding a
+ * foldable never kills a running job or loses its result, and Cancel really stops the work.
+ */
+@HiltViewModel
+class PdfToolsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context
+) : ViewModel() {
+    private val _progress = MutableStateFlow<ToolProgress?>(null)
+    val progress: StateFlow<ToolProgress?> = _progress.asStateFlow()
+
+    private val _result = MutableStateFlow<PdfToolResult?>(null)
+    val result: StateFlow<PdfToolResult?> = _result.asStateFlow()
+
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message.asStateFlow()
+
+    /** Set when Unlock PDF is given a file with no open password: there is nothing to unlock. */
+    private val _unlockNotice = MutableStateFlow<Pair<Uri, PdfProtection>?>(null)
+    val unlockNotice: StateFlow<Pair<Uri, PdfProtection>?> = _unlockNotice.asStateFlow()
+
+    /** Set when Unlock PDF is given a file that needs its password; the screen asks for it. */
+    private val _passwordNeeded = MutableStateFlow<Uri?>(null)
+    val passwordNeeded: StateFlow<Uri?> = _passwordNeeded.asStateFlow()
+
+    private var job: Job? = null
+
+    fun clearResult() { _result.value = null }
+    fun clearMessage() { _message.value = null }
+    fun clearUnlockNotice() { _unlockNotice.value = null }
+    fun clearPasswordNeeded() { _passwordNeeded.value = null }
+
+    fun cancel() {
+        job?.cancel()
+    }
+
+    private fun report(current: Int, total: Int, label: String) {
+        _progress.update { ToolProgress(label, current, total) }
+    }
+
+    /** One job at a time; a second request while one runs is refused with a message rather than queued silently. */
+    private fun launchTool(label: String, failure: String, work: suspend () -> PdfToolResult?) {
+        if (job?.isActive == true) {
+            _message.value = "Still working on the previous task"
+            return
+        }
+        _result.value = null
+        _progress.value = ToolProgress(label)
+        job = viewModelScope.launch {
+            try {
+                _result.value = work()
+            } catch (cancelled: CancellationException) {
+                _message.value = "Operation cancelled"
+                throw cancelled
+            } catch (error: Exception) {
+                // The engines stop with an InterruptedException when cancelled mid-way; report that as a cancel.
+                _message.value = if (error is InterruptedException) "Operation cancelled" else error.localizedMessage ?: failure
+            } finally {
+                _progress.value = null
+            }
+        }
+    }
+
+    private fun bundled(files: List<java.io.File>, prefix: String, message: String): suspend () -> PdfToolResult? = {
+        if (files.isEmpty()) null
+        else PdfToolResult(
+            outputFile = PdfToolsEngine.bundleOutputs(context, files, "${prefix}_${System.currentTimeMillis()}"),
+            pageCount = files.size,
+            originalSizeBytes = 0,
+            outputSizeBytes = files.sumOf { it.length() },
+            message = message.format(files.size)
+        )
+    }
+
+    fun compress(uri: Uri, preset: CompressionPreset) = launchTool("Compressing PDF…", "Compression failed") {
+        val res = CompressPdfEngine.compressPdf(context, uri, preset)
+        PdfToolResult(
+            outputFile = res.outputFile,
+            pageCount = res.pageCount,
+            originalSizeBytes = res.originalSizeBytes,
+            outputSizeBytes = res.compressedSizeBytes,
+            message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})" +
+                if (res.isSearchablePreserved) "" else ". Pages were converted to images, so the text is no longer selectable or searchable."
+        )
+    }
+
+    fun pdfToImages(uri: Uri, format: ImageExportFormat) = launchTool("Exporting pages…", "Export failed") {
+        val dir = PdfToolsEngine.outputLocation(context, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
+        val files = PdfToolsEngine.pdfToImages(context, uri, format, dir, ::report)
+        bundled(files, "pdf_pages", "Exported %d page images")()
+    }
+
+    fun split(uri: Uri, mode: SplitMode, ranges: String, everyN: Int) = launchTool("Splitting PDF…", "Split failed") {
+        val dir = PdfToolsEngine.outputLocation(context, "split_${System.currentTimeMillis()}").apply { mkdirs() }
+        val files = PdfToolsEngine.splitPdf(context, uri, mode, ranges, everyN, dir, ::report)
+        bundled(files, "split", "Split PDF into %d files")()
+    }
+
+    fun protect(uri: Uri, password: String) = launchTool("Encrypting PDF…", "Could not protect the PDF") {
+        PdfToolsEngine.protectPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "protected_${System.currentTimeMillis()}.pdf"))
+    }
+
+    fun unlock(uri: Uri, password: String) = launchTool("Unlocking PDF…", "Could not unlock the PDF") {
+        PdfToolsEngine.unlockPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "unlocked_${System.currentTimeMillis()}.pdf"))
+    }
+
+    /** Checks how a PDF is protected before asking for a password it may not have. */
+    fun inspectForUnlock(uri: Uri) = launchTool("Checking PDF protection…", "Could not read this PDF") {
+        when (val protection = PdfToolsEngine.inspectProtection(context, uri)) {
+            PdfProtection.PASSWORD_REQUIRED -> _passwordNeeded.value = uri
+            else -> _unlockNotice.value = uri to protection
+        }
+        null
+    }
+
+    fun organize(tool: String, uri: Uri, specs: List<PageSpec>, extracted: List<Int>, rotations: Map<Int, Int>) =
+        launchTool("Saving PDF pages…", "Page operation failed") {
+            val out = PdfToolsEngine.outputLocation(context, "${tool}_${System.currentTimeMillis()}.pdf")
+            when (tool) {
+                "extract" -> PdfToolsEngine.extractPages(context, uri, extracted, out, ::report)
+                "rotate" -> PdfToolsEngine.rotatePages(context, uri, rotations, out, ::report)
+                else -> PdfToolsEngine.organizePages(context, uri, specs, out, ::report)
+            }
+        }
+
+    fun merge(uris: List<Uri>) = launchTool("Merging ${uris.size} PDFs…", "Failed to merge PDFs") {
+        PdfToolsEngine.mergePdfs(context, uris, PdfToolsEngine.outputLocation(context, "merged_${System.currentTimeMillis()}.pdf"), ::report)
+    }
+
+    fun imagesToPdf(uris: List<Uri>) = launchTool("Converting ${uris.size} images…", "Failed to convert images") {
+        PdfToolsEngine.imagesToPdf(
+            context, uris, PdfPageSize.AUTO, PdfQuality.BALANCED,
+            PdfToolsEngine.outputLocation(context, "images_${System.currentTimeMillis()}.pdf"), ::report
+        )
+    }
+}

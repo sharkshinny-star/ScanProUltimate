@@ -474,57 +474,6 @@ object PdfToolsEngine {
         }
     }
 
-    suspend fun getPdfPageCount(context: Context, inputUri: Uri): Int = withContext(Dispatchers.IO) {
-        try {
-            loadPdf(previewCopy(context, inputUri)).use { return@withContext it.numberOfPages }
-        } catch (e: Exception) {
-            return@withContext 0
-        }
-    }
-
-    // One local copy per PDF while its pages are being previewed, instead of one copy per thumbnail.
-    private val previewCopies = HashMap<String, File>()
-
-    private fun previewCopy(context: Context, inputUri: Uri): File = synchronized(previewCopies) {
-        previewCopies[inputUri.toString()]?.takeIf { it.exists() }
-            ?: copyUriToTemp(context, inputUri, "thumb_${inputUri.toString().hashCode().toUInt()}.pdf")
-                .also { previewCopies[inputUri.toString()] = it }
-    }
-
-    suspend fun renderPdfPageThumbnail(
-        context: Context,
-        inputUri: Uri,
-        pageIndex: Int,
-        targetWidth: Int = 400
-    ): Bitmap? = withContext(Dispatchers.IO) {
-        try {
-            val file = previewCopy(context, inputUri)
-            // PdfRenderer allows one open page at a time, so renders of the same copy take turns.
-            synchronized(file) {
-                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
-                    PdfRenderer(pfd).use { renderer ->
-                        if (pageIndex !in 0 until renderer.pageCount) return@withContext null
-                        renderer.openPage(pageIndex).use { page ->
-                            val aspect = page.height.toFloat() / page.width.toFloat()
-                            val height = (targetWidth * aspect).toInt().coerceAtLeast(1)
-                            val bitmap = createBitmap(targetWidth, height)
-                            bitmap.eraseColor(Color.WHITE)
-                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                            return@withContext bitmap
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            return@withContext null
-        }
-    }
-
-    /** Drops the cached preview copy of a PDF once its pages are no longer being previewed. */
-    fun releasePreview(inputUri: Uri) {
-        synchronized(previewCopies) { previewCopies.remove(inputUri.toString())?.delete() }
-    }
-
     /**
      * Adds a page taken from another document. Resources, page size, crop box and rotation may be
      * inherited from the source's page tree, which does not travel with the page, so they are copied

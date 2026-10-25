@@ -77,6 +77,9 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -113,7 +116,6 @@ import com.example.scanpro.imaging.PdfToolResult
 import com.example.scanpro.imaging.PdfToolsEngine
 import com.example.scanpro.imaging.SplitMode
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -143,124 +145,80 @@ private val PDF_TOOLS = listOf(
 private data class ThumbnailPageModel(
     val index: Int,
     val rotation: Int = 0,
-    val selected: Boolean = true,
-    val bitmap: Bitmap? = null
+    val selected: Boolean = true
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfToolsScreen(
     onOpenPdfViewer: (Uri, String) -> Unit,
-    bottomBar: @Composable () -> Unit = {}
+    bottomBar: @Composable () -> Unit = {},
+    viewModel: PdfToolsViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var selectedTool by remember { mutableStateOf<String?>(null) }
-    var activeJob by remember { mutableStateOf<Job?>(null) }
-    var isProcessing by remember { mutableStateOf(false) }
-    var progressCurrent by remember { mutableIntStateOf(0) }
-    var progressTotal by remember { mutableIntStateOf(0) }
-    var progressLabel by remember { mutableStateOf("") }
-    var lastResult by remember { mutableStateOf<PdfToolResult?>(null) }
+    val progress by viewModel.progress.collectAsStateWithLifecycle()
+    val lastResult by viewModel.result.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val unlockNotice by viewModel.unlockNotice.collectAsStateWithLifecycle()
+    val passwordNeeded by viewModel.passwordNeeded.collectAsStateWithLifecycle()
 
-    // Dialog state
-    var pendingUri by remember { mutableStateOf<Uri?>(null) }
-    var showCompressDialog by remember { mutableStateOf(false) }
-    var showPdfToImagesDialog by remember { mutableStateOf(false) }
-    var showPasswordDialog by remember { mutableStateOf(false) }
-    var showSplitDialog by remember { mutableStateOf(false) }
-    // Set when Unlock PDF is given a file that has no open password: nothing to unlock, so offer other things.
-    var unlockNotice by remember { mutableStateOf<com.example.scanpro.imaging.PdfProtection?>(null) }
-    var showOrganizerSheet by remember { mutableStateOf(false) }
+    // Saveable, so an open dialog and the chosen file survive rotation, window resizing and folding.
+    var selectedTool by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var showCompressDialog by rememberSaveable { mutableStateOf(false) }
+    var showPdfToImagesDialog by rememberSaveable { mutableStateOf(false) }
+    var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
+    var showSplitDialog by rememberSaveable { mutableStateOf(false) }
+    var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
 
-    // SAF Save Launcher
+    LaunchedEffect(message) {
+        message?.let {
+            viewModel.clearMessage()
+            snackbarHostState.showSnackbar(it)
+        }
+    }
+    LaunchedEffect(passwordNeeded) {
+        passwordNeeded?.let {
+            pendingUri = it
+            selectedTool = "unlock"
+            showPasswordDialog = true
+            viewModel.clearPasswordNeeded()
+        }
+    }
+
+    // SAF save: one launcher per output type, so the system picker suggests the right extension.
     var saveSourceFile by remember { mutableStateOf<File?>(null) }
-    val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { destUri ->
-        if (destUri != null && saveSourceFile != null) {
-            val ok = copyFileToUri(context, saveSourceFile!!.absolutePath, destUri)
-            if (ok) {
-                Toast.makeText(context, "Saved to requested location", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "Could not save file", Toast.LENGTH_SHORT).show()
-            }
-        }
+    fun saveTo(destUri: Uri?) {
+        val file = saveSourceFile ?: return
+        if (destUri == null) return
+        val ok = copyFileToUri(context, file.absolutePath, destUri)
+        Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
     }
+    val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { saveTo(it) }
+    val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { saveTo(it) }
+    val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
 
-    val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { destUri ->
-        saveSourceFile?.let { file ->
-            if (destUri != null) {
-                val ok = copyFileToUri(context, file.absolutePath, destUri)
-                Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-    val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { destUri ->
-        saveSourceFile?.let { file ->
-            if (destUri != null) {
-                val ok = copyFileToUri(context, file.absolutePath, destUri)
-                Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    // Pickers
     val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null && selectedTool != null) {
-            pendingUri = uri
-            when (selectedTool) {
-                "compress" -> showCompressDialog = true
-                "pdf2img" -> showPdfToImagesDialog = true
-                "protect" -> showPasswordDialog = true
-                "unlock" -> scope.launch {
-                    try {
-                        isProcessing = true
-                        progressLabel = "Checking PDF protection…"
-                        val protection = PdfToolsEngine.inspectProtection(context, uri)
-                        isProcessing = false
-                        if (protection == com.example.scanpro.imaging.PdfProtection.PASSWORD_REQUIRED) showPasswordDialog = true
-                        else unlockNotice = protection
-                    } catch (e: Exception) {
-                        isProcessing = false
-                        snackbarHostState.showSnackbar(e.localizedMessage ?: "Could not read this PDF")
-                    }
-                }
-                "split" -> showSplitDialog = true
-                "organize", "extract", "rotate" -> showOrganizerSheet = true
-                "viewer" -> onOpenPdfViewer(uri, "PDF Document")
-                else -> {
-                    handleSinglePdfSelected(context, selectedTool!!, uri,
-                        onStart = { label -> isProcessing = true; progressLabel = label; lastResult = null },
-                        onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl },
-                        onComplete = { res -> isProcessing = false; lastResult = res },
-                        onError = { err -> isProcessing = false; scope.launch { snackbarHostState.showSnackbar(err) } }
-                    )
-                }
-            }
+        val tool = selectedTool
+        if (uri == null || tool == null) return@rememberLauncherForActivityResult
+        pendingUri = uri
+        when (tool) {
+            "compress" -> showCompressDialog = true
+            "pdf2img" -> showPdfToImagesDialog = true
+            "protect" -> showPasswordDialog = true
+            "unlock" -> viewModel.inspectForUnlock(uri)
+            "split" -> showSplitDialog = true
+            "organize", "extract", "rotate" -> showOrganizerSheet = true
+            "viewer" -> onOpenPdfViewer(uri, "PDF Document")
         }
     }
-
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        if (uris.isNotEmpty() && selectedTool == "merge") {
-            handleMergePdfs(context, uris,
-                onStart = { label -> isProcessing = true; progressLabel = label; lastResult = null },
-                onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl },
-                onComplete = { res -> isProcessing = false; lastResult = res },
-                onError = { err -> isProcessing = false; scope.launch { snackbarHostState.showSnackbar(err) } }
-            )
-        }
+        if (uris.isNotEmpty() && selectedTool == "merge") viewModel.merge(uris)
     }
-
     val imagesPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
-        if (uris.isNotEmpty() && selectedTool == "img2pdf") {
-            handleImagesToPdf(context, uris,
-                onStart = { label -> isProcessing = true; progressLabel = label; lastResult = null },
-                onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl },
-                onComplete = { res -> isProcessing = false; lastResult = res },
-                onError = { err -> isProcessing = false; scope.launch { snackbarHostState.showSnackbar(err) } }
-            )
-        }
+        if (uris.isNotEmpty() && selectedTool == "img2pdf") viewModel.imagesToPdf(uris)
     }
 
     Scaffold(
@@ -281,16 +239,19 @@ fun PdfToolsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 140.dp),
+                // Cards keep a readable size: more columns on wider windows, and the grid stops growing past
+                // a comfortable width on tablets instead of stretching cards across the whole screen.
+                columns = GridCells.Adaptive(minSize = 160.dp),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().widthIn(max = 1100.dp)
             ) {
-                items(PDF_TOOLS) { tool ->
+                items(PDF_TOOLS, key = { it.id }) { tool ->
                     ToolCardItem(
                         tool = tool,
                         onClick = {
@@ -305,38 +266,31 @@ fun PdfToolsScreen(
                 }
             }
 
-            if (isProcessing) {
+            progress?.let { running ->
                 ProcessingOverlay(
-                    current = progressCurrent,
-                    total = progressTotal,
-                    label = progressLabel,
-                    onCancel = {
-                        activeJob?.cancel()
-                        isProcessing = false
-                        scope.launch { snackbarHostState.showSnackbar("Operation cancelled") }
-                    }
+                    current = running.current,
+                    total = running.total,
+                    label = running.label,
+                    onCancel = viewModel::cancel
                 )
             }
 
-            if (lastResult != null) {
+            lastResult?.let { result ->
                 ResultDialog(
-                    result = lastResult!!,
-                    onDismiss = { lastResult = null },
+                    result = result,
+                    onDismiss = viewModel::clearResult,
                     onView = {
-                        val file = lastResult!!.outputFile
-                        lastResult = null
+                        val file = result.outputFile
+                        viewModel.clearResult()
                         // The built-in viewer only reads PDFs; images and zips open through the share sheet.
                         if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
                         else shareFile(context, file.absolutePath, mimeFor(file), file.name)
                     },
-                    onShare = {
-                        val file = lastResult!!.outputFile
-                        shareFile(context, file.absolutePath, mimeFor(file), file.name)
-                    },
+                    onShare = { shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name) },
                     onSaveAs = {
-                        saveSourceFile = lastResult!!.outputFile
-                        val name = lastResult!!.outputFile.name
-                        when (mimeFor(lastResult!!.outputFile)) {
+                        saveSourceFile = result.outputFile
+                        val name = result.outputFile.name
+                        when (mimeFor(result.outputFile)) {
                             "application/zip" -> saveZipLauncher.launch(name)
                             "application/pdf" -> saveFileLauncher.launch(name)
                             else -> saveImageLauncher.launch(name)
@@ -345,74 +299,33 @@ fun PdfToolsScreen(
                 )
             }
 
-            if (showCompressDialog && pendingUri != null) {
+            val uri = pendingUri
+            if (showCompressDialog && uri != null) {
                 CompressPdfDialog(
                     context = context,
-                    uri = pendingUri!!,
+                    uri = uri,
                     onDismiss = { showCompressDialog = false },
                     onConfirm = { preset ->
                         showCompressDialog = false
-                        val uri = pendingUri!!
-                        scope.launch {
-                            try {
-                                isProcessing = true
-                                progressLabel = "Compressing PDF with selected target…"
-                                val res = com.example.scanpro.imaging.CompressPdfEngine.compressPdf(context, uri, preset)
-                                isProcessing = false
-                                lastResult = PdfToolResult(
-                                    outputFile = res.outputFile,
-                                    pageCount = res.pageCount,
-                                    originalSizeBytes = res.originalSizeBytes,
-                                    outputSizeBytes = res.compressedSizeBytes,
-                                    message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})" +
-                                        if (res.isSearchablePreserved) "" else ". Pages were converted to images, so the text is no longer selectable or searchable."
-                                )
-                            } catch (e: Exception) {
-                                isProcessing = false
-                                snackbarHostState.showSnackbar(e.localizedMessage ?: "Compression failed")
-                            }
-                        }
+                        viewModel.compress(uri, preset)
                     }
                 )
             }
 
-            if (showPdfToImagesDialog && pendingUri != null) {
+            if (showPdfToImagesDialog && uri != null) {
                 PdfToImagesDialog(
                     onDismiss = { showPdfToImagesDialog = false },
                     onConfirm = { format ->
                         showPdfToImagesDialog = false
-                        val uri = pendingUri!!
-                        scope.launch {
-                            try {
-                                isProcessing = true
-                                progressLabel = "Exporting PDF pages to ${format.extension.uppercase()}…"
-                                val outputDir = PdfToolsEngine.outputLocation(context, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
-                                val files = PdfToolsEngine.pdfToImages(context, uri, format, outputDir,
-                                    onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl }
-                                )
-                                isProcessing = false
-                                if (files.isNotEmpty()) {
-                                    lastResult = PdfToolResult(
-                                        outputFile = PdfToolsEngine.bundleOutputs(context, files, "pdf_pages_${System.currentTimeMillis()}"),
-                                        pageCount = files.size,
-                                        originalSizeBytes = 0,
-                                        outputSizeBytes = files.sumOf { it.length() },
-                                        message = "Exported ${files.size} page images successfully"
-                                    )
-                                }
-                            } catch (e: Exception) {
-                                isProcessing = false
-                                snackbarHostState.showSnackbar(e.localizedMessage ?: "Export failed")
-                            }
-                        }
+                        viewModel.pdfToImages(uri, format)
                     }
                 )
             }
 
-            unlockNotice?.let { protection ->
+            unlockNotice?.let { (noticeUri, protection) ->
                 val restricted = protection == com.example.scanpro.imaging.PdfProtection.RESTRICTED_ONLY
                 AlertDialog(
-                    onDismissRequest = { unlockNotice = null },
+                    onDismissRequest = viewModel::clearUnlockNotice,
                     icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     title = { Text(if (restricted) "No password to open" else "This PDF has no password") },
                     text = {
@@ -423,23 +336,11 @@ fun PdfToolsScreen(
                     },
                     confirmButton = {
                         TextButton(onClick = {
-                            val uri = pendingUri
-                            unlockNotice = null
-                            if (uri == null) return@TextButton
+                            viewModel.clearUnlockNotice()
                             if (restricted) {
-                                scope.launch {
-                                    try {
-                                        isProcessing = true
-                                        progressLabel = "Removing restrictions…"
-                                        val outFile = PdfToolsEngine.outputLocation(context, "unlocked_${System.currentTimeMillis()}.pdf")
-                                        lastResult = PdfToolsEngine.unlockPdf(context, uri, "", outFile)
-                                    } catch (e: Exception) {
-                                        snackbarHostState.showSnackbar(e.localizedMessage ?: "Operation failed")
-                                    } finally {
-                                        isProcessing = false
-                                    }
-                                }
+                                viewModel.unlock(noticeUri, "")
                             } else {
+                                pendingUri = noticeUri
                                 selectedTool = "protect"
                                 showPasswordDialog = true
                             }
@@ -448,110 +349,46 @@ fun PdfToolsScreen(
                     dismissButton = {
                         Row {
                             TextButton(onClick = {
-                                val uri = pendingUri
-                                unlockNotice = null
-                                if (uri != null) onOpenPdfViewer(uri, "PDF Document")
+                                viewModel.clearUnlockNotice()
+                                onOpenPdfViewer(noticeUri, "PDF Document")
                             }) { Text("View PDF") }
-                            TextButton(onClick = { unlockNotice = null }) { Text("Cancel") }
+                            TextButton(onClick = viewModel::clearUnlockNotice) { Text("Cancel") }
                         }
                     }
                 )
             }
 
-            if (showPasswordDialog && pendingUri != null && selectedTool != null) {
+            if (showPasswordDialog && uri != null && selectedTool != null) {
                 val isProtect = selectedTool == "protect"
                 PasswordDialog(
                     isProtect = isProtect,
                     onDismiss = { showPasswordDialog = false },
                     onConfirm = { pwd ->
                         showPasswordDialog = false
-                        val uri = pendingUri!!
-                        scope.launch {
-                            try {
-                                isProcessing = true
-                                progressLabel = if (isProtect) "Encrypting PDF with password…" else "Unlocking PDF…"
-                                val outFile = PdfToolsEngine.outputLocation(context, "${if (isProtect) "protected" else "unlocked"}_${System.currentTimeMillis()}.pdf")
-                                val res = if (isProtect) PdfToolsEngine.protectPdf(context, uri, pwd, outFile)
-                                else PdfToolsEngine.unlockPdf(context, uri, pwd, outFile)
-                                isProcessing = false
-                                lastResult = res
-                            } catch (e: Exception) {
-                                isProcessing = false
-                                snackbarHostState.showSnackbar(e.localizedMessage ?: "Operation failed")
-                            }
-                        }
+                        if (isProtect) viewModel.protect(uri, pwd) else viewModel.unlock(uri, pwd)
                     }
                 )
             }
 
-            if (showSplitDialog && pendingUri != null) {
+            if (showSplitDialog && uri != null) {
                 SplitDialog(
                     onDismiss = { showSplitDialog = false },
                     onConfirm = { mode, rangesText, everyN ->
                         showSplitDialog = false
-                        val uri = pendingUri!!
-                        scope.launch {
-                            try {
-                                isProcessing = true
-                                progressLabel = "Splitting PDF document…"
-                                val outputDir = PdfToolsEngine.outputLocation(context, "split_${System.currentTimeMillis()}").apply { mkdirs() }
-                                val files = PdfToolsEngine.splitPdf(
-                                    context = context,
-                                    inputUri = uri,
-                                    mode = mode,
-                                    customRangesText = rangesText,
-                                    everyNPages = everyN,
-                                    outputDir = outputDir,
-                                    onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl }
-                                )
-                                isProcessing = false
-                                if (files.isNotEmpty()) {
-                                    lastResult = PdfToolResult(
-                                        outputFile = PdfToolsEngine.bundleOutputs(context, files, "split_${System.currentTimeMillis()}"),
-                                        pageCount = files.size,
-                                        originalSizeBytes = 0,
-                                        outputSizeBytes = files.sumOf { it.length() },
-                                        message = "Split PDF into ${files.size} output files"
-                                    )
-                                }
-                            } catch (e: Exception) {
-                                isProcessing = false
-                                snackbarHostState.showSnackbar(e.localizedMessage ?: "Split failed")
-                            }
-                        }
+                        viewModel.split(uri, mode, rangesText, everyN)
                     }
                 )
             }
 
-            if (showOrganizerSheet && pendingUri != null && selectedTool != null) {
+            val tool = selectedTool
+            if (showOrganizerSheet && uri != null && tool != null) {
                 PdfPageOrganizerSheet(
-                    uri = pendingUri!!,
-                    mode = selectedTool!!,
+                    uri = uri,
+                    mode = tool,
                     onClose = { showOrganizerSheet = false },
                     onApply = { pageSpecs, extractedIndices, rotationsMap ->
                         showOrganizerSheet = false
-                        val uri = pendingUri!!
-                        val tool = selectedTool!!
-                        scope.launch {
-                            try {
-                                isProcessing = true
-                                progressLabel = "Saving PDF pages…"
-                                val outFile = PdfToolsEngine.outputLocation(context, "organized_${System.currentTimeMillis()}.pdf")
-                                val res = when (tool) {
-                                    "extract" -> PdfToolsEngine.extractPages(context, uri, extractedIndices, outFile,
-                                        onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl })
-                                    "rotate" -> PdfToolsEngine.rotatePages(context, uri, rotationsMap, outFile,
-                                        onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl })
-                                    else -> PdfToolsEngine.organizePages(context, uri, pageSpecs, outFile,
-                                        onProgress = { cur, tot, lbl -> progressCurrent = cur; progressTotal = tot; progressLabel = lbl })
-                                }
-                                isProcessing = false
-                                lastResult = res
-                            } catch (e: Exception) {
-                                isProcessing = false
-                                snackbarHostState.showSnackbar(e.localizedMessage ?: "Page operation failed")
-                            }
-                        }
+                        viewModel.organize(tool, uri, pageSpecs, extractedIndices, rotationsMap)
                     }
                 )
             }
@@ -1161,35 +998,58 @@ private fun PdfPageOrganizerSheet(
     onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit
 ) {
     val context = LocalContext.current
-    val pages = remember { mutableStateListOf<ThumbnailPageModel>() }
-    var isLoading by remember { mutableStateOf(true) }
+    // Extract starts with nothing chosen; Organize starts with every page kept (untick to delete one).
+    val defaultSelected = mode != "extract"
+    // Page order, rotations and selections survive rotation and window changes; thumbnails are re-rendered on demand.
+    val pages = rememberSaveable(
+        uri, mode,
+        saver = androidx.compose.runtime.saveable.listSaver(
+            save = { list -> list.flatMap { listOf(it.index, it.rotation, if (it.selected) 1 else 0) } },
+            restore = { flat -> mutableStateListOf<ThumbnailPageModel>().apply { flat.chunked(3).forEach { (i, r, sel) -> add(ThumbnailPageModel(i, r, sel == 1)) } } }
+        )
+    ) { mutableStateListOf<ThumbnailPageModel>() }
+    val scope = rememberCoroutineScope()
+    var session by remember { mutableStateOf<com.example.scanpro.imaging.PdfPreviewSession?>(null) }
+    var loadError by remember { mutableStateOf<String?>(null) }
 
     androidx.compose.runtime.DisposableEffect(uri) {
-        onDispose { PdfToolsEngine.releasePreview(uri) }
-    }
-
-    LaunchedEffect(uri) {
-        withContext(Dispatchers.IO) {
+        var opened: com.example.scanpro.imaging.PdfPreviewSession? = null
+        val job = scope.launch {
             try {
-                isLoading = true
-                val pageCount = PdfToolsEngine.getPdfPageCount(context, uri)
-                val list = mutableListOf<ThumbnailPageModel>()
-                for (i in 0 until pageCount) {
-                    val bmp = PdfToolsEngine.renderPdfPageThumbnail(context, uri, i, targetWidth = 300)
-                    list.add(ThumbnailPageModel(index = i, bitmap = bmp))
-                }
-                pages.clear()
-                pages.addAll(list)
-            } finally {
-                isLoading = false
+                val preview = com.example.scanpro.imaging.PdfPreviewSession.open(context, uri)
+                opened = preview
+                session = preview
+                if (pages.isEmpty()) pages.addAll((0 until preview.pageCount).map { ThumbnailPageModel(it, selected = defaultSelected) })
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: SecurityException) {
+                loadError = "This PDF is password-protected. Unlock it first with the Unlock PDF tool."
+            } catch (error: Exception) {
+                loadError = error.localizedMessage ?: "Could not open this PDF"
             }
         }
+        onDispose {
+            job.cancel()
+            opened?.close()
+            session = null
+        }
     }
+
+    val isLoading = session == null && loadError == null
+    val keptCount = pages.count { it.selected }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (mode == "extract") "Select Pages to Extract" else "Organize Pages") },
+                title = {
+                    Text(
+                        when (mode) {
+                            "extract" -> "Select pages to extract"
+                            "rotate" -> "Rotate pages"
+                            else -> "Organize pages"
+                        }
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
@@ -1198,15 +1058,22 @@ private fun PdfPageOrganizerSheet(
                 actions = {
                     Button(
                         onClick = {
-                            val specs = pages.map { PageSpec(it.index, it.rotation) }
+                            // Organize drops the pages that were unticked; Rotate keeps every page.
+                            val specs = pages.filter { mode == "rotate" || it.selected }.map { PageSpec(it.index, it.rotation) }
                             val extracted = pages.filter { it.selected }.map { it.index }
                             val rotations = pages.associate { it.index to it.rotation }
                             onApply(specs, extracted, rotations)
                         },
-                        // Extracting nothing would only end in an error message, so the button waits for a selection.
-                        enabled = !isLoading && pages.isNotEmpty() && (mode != "extract" || pages.any { it.selected })
+                        // Nothing to extract or keep would only end in an error message.
+                        enabled = !isLoading && pages.isNotEmpty() && (mode == "rotate" || keptCount > 0)
                     ) {
-                        Text(if (mode == "extract") "Extract (${pages.count { it.selected }})" else "Save PDF")
+                        Text(
+                            when (mode) {
+                                "extract" -> "Extract ($keptCount)"
+                                "organize" -> "Save ($keptCount)"
+                                else -> "Save PDF"
+                            }
+                        )
                     }
                 }
             )
@@ -1215,109 +1082,49 @@ private fun PdfPageOrganizerSheet(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            if (isLoading) {
-                Column(
+            when {
+                loadError != null -> Text(loadError!!, modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error)
+                isLoading -> Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Loading PDF page thumbnails…")
+                    Text("Opening PDF…")
                 }
-            } else {
-                LazyVerticalGrid(
+                else -> LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 140.dp),
                     modifier = Modifier
                         .fillMaxSize()
+                        .widthIn(max = 1200.dp)
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(pages) { index, item ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    pages[index] = item.copy(selected = !item.selected)
-                                },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (item.selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                else MaterialTheme.colorScheme.surfaceContainerHigh
-                            )
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Checkbox(
-                                        checked = item.selected,
-                                        onCheckedChange = { checked ->
-                                            pages[index] = item.copy(selected = checked)
-                                        }
-                                    )
-                                    Text("Page ${item.index + 1}", style = MaterialTheme.typography.labelMedium)
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(150.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (item.bitmap != null) {
-                                        Image(
-                                            bitmap = item.bitmap.asImageBitmap(),
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .graphicsLayer(rotationZ = item.rotation.toFloat())
-                                        )
-                                    }
-                                }
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceAround
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            val newRot = (item.rotation + 90) % 360
-                                            pages[index] = item.copy(rotation = newRot)
-                                        }
-                                    ) {
-                                        Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = "Rotate")
-                                    }
-                                    if (index > 0) {
-                                        IconButton(
-                                            onClick = {
-                                                val prev = pages[index - 1]
-                                                pages[index - 1] = item
-                                                pages[index] = prev
-                                            }
-                                        ) {
-                                            Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move left")
-                                        }
-                                    }
-                                    if (index < pages.lastIndex) {
-                                        IconButton(
-                                            onClick = {
-                                                val next = pages[index + 1]
-                                                pages[index + 1] = item
-                                                pages[index] = next
-                                            }
-                                        ) {
-                                            Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move right")
-                                        }
-                                    }
-                                }
+                    itemsIndexed(pages, key = { _, item -> item.index }) { index, item ->
+                        OrganizerPageCard(
+                            item = item,
+                            session = session,
+                            showCheckbox = mode != "rotate",
+                            canMoveLeft = mode == "organize" && index > 0,
+                            canMoveRight = mode == "organize" && index < pages.lastIndex,
+                            onToggle = { pages[index] = item.copy(selected = !item.selected) },
+                            onRotate = { pages[index] = item.copy(rotation = (item.rotation + 90) % 360) },
+                            onMoveLeft = {
+                                val prev = pages[index - 1]
+                                pages[index - 1] = item
+                                pages[index] = prev
+                            },
+                            onMoveRight = {
+                                val next = pages[index + 1]
+                                pages[index + 1] = item
+                                pages[index] = next
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -1325,106 +1132,79 @@ private fun PdfPageOrganizerSheet(
     }
 }
 
-private fun handleSinglePdfSelected(
-    context: android.content.Context,
-    toolId: String,
-    uri: Uri,
-    onStart: (String) -> Unit,
-    onProgress: (Int, Int, String) -> Unit,
-    onComplete: (PdfToolResult) -> Unit,
-    onError: (String) -> Unit
+/** One page in the organizer. Its thumbnail is rendered only while the card is on screen. */
+@Composable
+private fun OrganizerPageCard(
+    item: ThumbnailPageModel,
+    session: com.example.scanpro.imaging.PdfPreviewSession?,
+    showCheckbox: Boolean,
+    canMoveLeft: Boolean,
+    canMoveRight: Boolean,
+    onToggle: () -> Unit,
+    onRotate: () -> Unit,
+    onMoveLeft: () -> Unit,
+    onMoveRight: () -> Unit
 ) {
-    val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
-    scope.launch {
-        try {
-            when (toolId) {
-                "compress" -> {
-                    onStart("Compressing PDF document…")
-                    val res = com.example.scanpro.imaging.CompressPdfEngine.compressPdf(
-                        context, uri, CompressionPreset.BALANCED
+    val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
+        val preview = session ?: return@produceState
+        value = withContext(Dispatchers.IO) { preview.render(item.index, 300) }
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = showCheckbox, onClick = onToggle),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (showCheckbox && item.selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            else MaterialTheme.colorScheme.surfaceContainerHigh
+        )
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = { onToggle() })
+                Text("Page ${item.index + 1}", style = MaterialTheme.typography.labelMedium)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val bitmap = thumbnail
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Page ${item.index + 1}",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(rotationZ = item.rotation.toFloat())
                     )
-                    onComplete(
-                        PdfToolResult(
-                            outputFile = res.outputFile,
-                            pageCount = res.pageCount,
-                            originalSizeBytes = res.originalSizeBytes,
-                            outputSizeBytes = res.compressedSizeBytes,
-                            message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})" +
-                                        if (res.isSearchablePreserved) "" else ". Pages were converted to images, so the text is no longer selectable or searchable."
-                        )
-                    )
-                }
-                "pdf2img" -> {
-                    onStart("Exporting PDF pages to JPEG images…")
-                    val outputDir = PdfToolsEngine.outputLocation(context, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
-                    val files = PdfToolsEngine.pdfToImages(
-                        context, uri, ImageExportFormat.JPEG, outputDir, onProgress
-                    )
-                    if (files.isNotEmpty()) {
-                        onComplete(
-                            PdfToolResult(
-                                outputFile = PdfToolsEngine.bundleOutputs(context, files, "pdf_pages_${System.currentTimeMillis()}"),
-                                pageCount = files.size,
-                                originalSizeBytes = 0,
-                                outputSizeBytes = files.sumOf { it.length() },
-                                message = "Exported ${files.size} page images successfully"
-                            )
-                        )
-                    } else {
-                        onError("Failed to export PDF pages as images")
-                    }
-                }
-                else -> {
-                    onStart("Processing PDF document…")
-                    val outFile = PdfToolsEngine.outputLocation(context, "processed_${System.currentTimeMillis()}.pdf")
-                    val res = PdfToolsEngine.extractPages(context, uri, listOf(0), outFile, onProgress)
-                    onComplete(res)
+                } else {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 }
             }
-        } catch (e: Exception) {
-            onError(e.localizedMessage ?: "Operation failed")
-        }
-    }
-}
-
-private fun handleMergePdfs(
-    context: android.content.Context,
-    uris: List<Uri>,
-    onStart: (String) -> Unit,
-    onProgress: (Int, Int, String) -> Unit,
-    onComplete: (PdfToolResult) -> Unit,
-    onError: (String) -> Unit
-) {
-    val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
-    scope.launch {
-        try {
-            onStart("Merging ${uris.size} PDF files…")
-            val outFile = PdfToolsEngine.outputLocation(context, "merged_${System.currentTimeMillis()}.pdf")
-            val res = PdfToolsEngine.mergePdfs(context, uris, outFile, onProgress)
-            onComplete(res)
-        } catch (e: Exception) {
-            onError(e.localizedMessage ?: "Failed to merge PDFs")
-        }
-    }
-}
-
-private fun handleImagesToPdf(
-    context: android.content.Context,
-    uris: List<Uri>,
-    onStart: (String) -> Unit,
-    onProgress: (Int, Int, String) -> Unit,
-    onComplete: (PdfToolResult) -> Unit,
-    onError: (String) -> Unit
-) {
-    val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
-    scope.launch {
-        try {
-            onStart("Converting ${uris.size} images to PDF…")
-            val outFile = PdfToolsEngine.outputLocation(context, "images_${System.currentTimeMillis()}.pdf")
-            val res = PdfToolsEngine.imagesToPdf(context, uris, PdfPageSize.AUTO, PdfQuality.BALANCED, outFile, onProgress)
-            onComplete(res)
-        } catch (e: Exception) {
-            onError(e.localizedMessage ?: "Failed to convert images to PDF")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                IconButton(onClick = onRotate) {
+                    Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = "Rotate page ${item.index + 1}")
+                }
+                if (canMoveLeft) {
+                    IconButton(onClick = onMoveLeft) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move page ${item.index + 1} earlier")
+                    }
+                }
+                if (canMoveRight) {
+                    IconButton(onClick = onMoveRight) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page ${item.index + 1} later")
+                    }
+                }
+            }
         }
     }
 }
