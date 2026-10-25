@@ -60,6 +60,15 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.scanProSettings.edit { it[keyAutoTitle] = value }
     }
 
+    private val keyWelcomeSeen = booleanPreferencesKey("welcome_seen")
+
+    /** False until the first-run welcome has been shown and closed. */
+    val welcomeSeen: Flow<Boolean> = preferences.map { it[keyWelcomeSeen] ?: false }
+
+    suspend fun setWelcomeSeen() {
+        context.scanProSettings.edit { it[keyWelcomeSeen] = true }
+    }
+
     suspend fun setAppLock(value: Boolean) {
         context.scanProSettings.edit { it[keyAppLock] = value }
     }

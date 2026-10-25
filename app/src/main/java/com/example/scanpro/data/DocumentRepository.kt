@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import com.example.scanpro.backup.EncryptedDocumentPackage
+import com.example.scanpro.imaging.AnnotationRemap
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.OcrResult
@@ -242,7 +243,14 @@ class DocumentRepository @Inject constructor(
         }
 
     suspend fun applyCrop(documentId: String, pageId: String, crop: CropQuad) =
-        editSinglePage(documentId, pageId) { page -> renderAndOcr(page.copy(crop = crop)) }
+        editSinglePage(documentId, pageId) { page ->
+            // Mark-up is placed on the cropped page, so move it with its content; otherwise a redaction would
+            // slide off the text it hides when the crop changes.
+            val annotations = ImageProcessor.orientedAspect(page.sourcePath)?.let { aspect ->
+                AnnotationRemap.remap(page.annotations, page.crop, crop, page.rotationDegrees, aspect)
+            } ?: page.annotations
+            renderAndOcr(page.copy(crop = crop, annotations = annotations))
+        }
 
     suspend fun applyAdjustments(documentId: String, pageId: String, adjustments: PageAdjustments) =
         editSinglePage(documentId, pageId) { page ->

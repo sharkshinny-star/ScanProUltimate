@@ -8,6 +8,11 @@ object ScanProDestinations {
     const val SEARCH = "search"
     const val SETTINGS = "settings"
     const val CAMERA = "camera"
+    /** Camera opened straight into one mode: a [com.example.scanpro.data.ScanMode] name, or [CAMERA_QR]. */
+    const val CAMERA_MODE_ARG = "mode"
+    const val CAMERA_ROUTE = "camera?$CAMERA_MODE_ARG={$CAMERA_MODE_ARG}"
+    const val CAMERA_QR = "QR"
+    fun camera(mode: String) = "camera?$CAMERA_MODE_ARG=$mode"
     const val TRASH = "trash"
 
     const val DOCUMENT_ID_ARG = "documentId"

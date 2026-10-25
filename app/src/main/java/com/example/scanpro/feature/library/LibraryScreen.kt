@@ -1,5 +1,21 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Build
+import com.example.scanpro.data.ScanMode
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -105,6 +121,8 @@ fun LibraryRoute(
     onSearch: () -> Unit,
     onBack: () -> Unit,
     onTab: (String) -> Unit,
+    onQuickScan: (String) -> Unit = {},
+    onOpenTools: () -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -132,7 +150,9 @@ fun LibraryRoute(
         onBulkDelete = viewModel::moveManyToTrash,
         onShareSelected = { ids -> viewModel.withFreshPdfs(ids) { docs -> sharePdfs(context, docs) } },
         onRenameFolder = viewModel::renameFolder,
-        onTab = onTab
+        onTab = onTab,
+        onQuickScan = onQuickScan,
+        onOpenTools = onOpenTools
     )
 }
 
@@ -157,7 +177,9 @@ internal fun LibraryScreen(
     onBulkDelete: (Set<String>) -> Unit,
     onShareSelected: (Set<String>) -> Unit,
     onRenameFolder: (String, String) -> Unit,
-    onTab: (String) -> Unit
+    onTab: (String) -> Unit,
+    onQuickScan: (String) -> Unit = {},
+    onOpenTools: () -> Unit = {}
 ) {
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
@@ -340,6 +362,8 @@ internal fun LibraryScreen(
                     onStartScan = onStartScan,
                     onImportImages = onImportImages,
                     onImportPdf = onImportPdf,
+                    onQuickScan = onQuickScan,
+                    onOpenTools = onOpenTools,
                     onSeeAll = { onTab(ScanProDestinations.FILES) },
                     onOpenDocument = onOpenDocument,
                     onToggleSelection = ::toggleSelection
@@ -418,9 +442,25 @@ internal fun LibraryScreen(
                             )
                             if (query.isBlank() && !favoritesOnly && folder.isBlank()) {
                                 Text(
-                                    "Tap Scan to capture your first document.",
+                                    "Scan a page, or bring in photos or a PDF you already have.",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp)
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                                    Button(onClick = onStartScan, enabled = !busy) { Text("Scan") }
+                                    FilledTonalButton(onClick = onImportImages, enabled = !busy) { Text("Photos") }
+                                    FilledTonalButton(onClick = onImportPdf, enabled = !busy) { Text("PDF") }
+                                }
+                                PrivacyLine(Modifier.padding(top = 16.dp))
+                            } else if (query.isNotBlank()) {
+                                Text(
+                                    "Search looks through titles, tags and every word recognised in your scans.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp)
                                 )
                             }
                         }
@@ -493,6 +533,8 @@ private fun HomeDashboard(
     onStartScan: () -> Unit,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
+    onQuickScan: (String) -> Unit,
+    onOpenTools: () -> Unit,
     onSeeAll: () -> Unit,
     onOpenDocument: (String) -> Unit,
     onToggleSelection: (String) -> Unit
@@ -519,18 +561,19 @@ private fun HomeDashboard(
         }
         item { ScanHeroCard(onStartScan = onStartScan, enabled = !busy) }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = onImportImages, enabled = !busy) {
-                    Icon(Icons.Default.Image, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Photos")
-                }
-                FilledTonalButton(onClick = onImportPdf, enabled = !busy) {
-                    Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
-                    Text("PDF")
-                }
-            }
+            QuickActions(
+                enabled = !busy,
+                actions = listOf(
+                    QuickAction(Icons.Default.Badge, "ID card") { onQuickScan(ScanMode.ID_CARD.name) },
+                    QuickAction(Icons.AutoMirrored.Filled.MenuBook, "Book") { onQuickScan(ScanMode.BOOK.name) },
+                    QuickAction(Icons.Default.TextFields, "Extract text") { onQuickScan(ScanMode.TEXT.name) },
+                    QuickAction(Icons.Default.QrCodeScanner, "QR code") { onQuickScan(ScanProDestinations.CAMERA_QR) },
+                    QuickAction(Icons.Default.ReceiptLong, "Receipt") { onQuickScan(ScanMode.RECEIPT.name) },
+                    QuickAction(Icons.Default.Image, "Photos") { onImportImages() },
+                    QuickAction(Icons.Default.PictureAsPdf, "Import PDF") { onImportPdf() },
+                    QuickAction(Icons.Default.Build, "PDF tools") { onOpenTools() }
+                )
+            )
         }
         if (recent.isNotEmpty()) {
             item {
@@ -548,7 +591,42 @@ private fun HomeDashboard(
                 )
             }
         }
+        if (recent.isEmpty()) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("Your scans will appear here", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Each one becomes a searchable PDF you can share, sign or export to Word.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+        item { PrivacyLine(Modifier.fillMaxWidth().padding(top = 4.dp)) }
         item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+/** The app's promise, kept visible: everything is done and kept on this phone. */
+@Composable
+private fun PrivacyLine(modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            "Private by design: no account, nothing uploaded",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -594,6 +672,42 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Start scanning")
+            }
+        }
+    }
+}
+
+private class QuickAction(val icon: ImageVector, val label: String, val onClick: () -> Unit)
+
+/** One-tap shortcuts for the jobs people do most, each opening the right mode or tool directly. */
+@Composable
+private fun QuickActions(enabled: Boolean, actions: List<QuickAction>) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        items(actions, key = { it.label }) { action ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(76.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
+                    .padding(vertical = 6.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(action.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    action.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
+                )
             }
         }
     }

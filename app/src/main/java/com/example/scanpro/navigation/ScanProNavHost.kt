@@ -61,6 +61,8 @@ fun ScanProNavHost(
                     snackbarHostState = snackbarHostState,
                     onOpenDocument = { navController.navigate(ScanProDestinations.document(it)) },
                     onStartScan = { navController.navigate(ScanProDestinations.CAMERA) },
+                    onQuickScan = { mode -> navController.navigate(ScanProDestinations.camera(mode)) },
+                    onOpenTools = { onTab(ScanProDestinations.TOOLS) },
                     onImportImages = onImportImages,
                     onImportPdf = onImportPdf,
                     onTrash = { navController.navigate(ScanProDestinations.TRASH) },
@@ -103,11 +105,15 @@ fun ScanProNavHost(
                 }
             )
         }
-        composable(ScanProDestinations.CAMERA) { entry ->
+        composable(
+            route = ScanProDestinations.CAMERA_ROUTE,
+            arguments = listOf(navArgument(ScanProDestinations.CAMERA_MODE_ARG) { type = NavType.StringType; defaultValue = "" })
+        ) { entry ->
             // Act only while this screen is resumed, so a double tap during the exit animation can't
             // import twice or pop Home and leave an empty screen.
             fun resumed() = entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             CameraScannerScreen(
+                initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty(),
                 onClose = dropUnlessResumed { navController.popBackStack() },
                 onComplete = { uris, mode, crops ->
                     if (resumed()) {

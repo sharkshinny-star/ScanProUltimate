@@ -153,6 +153,15 @@ object ImageProcessor {
     }
 
 
+    /** Width divided by height of the photo as shown (after its EXIF rotation), read without decoding pixels. */
+    fun orientedAspect(path: String): Float? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val turned = runCatching { ExifInterface(path).rotationDegrees }.getOrDefault(0) % 180 != 0
+        return if (turned) bounds.outHeight.toFloat() / bounds.outWidth else bounds.outWidth.toFloat() / bounds.outHeight
+    }
+
     fun decodeOrientedScaled(path: String, maxDimension: Int): Bitmap? {
         var bitmap = decodeScaled(path, maxDimension) ?: return null
         val exifRotation = runCatching { ExifInterface(path).rotationDegrees }.getOrDefault(0)

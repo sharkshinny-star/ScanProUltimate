@@ -53,6 +53,7 @@ fun ScanProApp(
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
     val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
+    val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val navController = rememberNavController()
     val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -139,22 +140,36 @@ fun ScanProApp(
     // Wide windows keep navigation at the side of the content instead of along the bottom.
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showRail = com.example.scanpro.navigation.isWideWindow() && currentRoute in ScanProDestinations.topLevel
-    androidx.compose.foundation.layout.Row(Modifier.fillMaxSize()) {
-        if (showRail) {
-            com.example.scanpro.navigation.ScanProNavigationRail(
-                selectedRoute = currentRoute.orEmpty(),
-                onTab = { route -> navController.navigateToTopLevel(route) }
-            )
+    Box(Modifier.fillMaxSize()) {
+        androidx.compose.foundation.layout.Row(Modifier.fillMaxSize()) {
+            if (showRail) {
+                com.example.scanpro.navigation.ScanProNavigationRail(
+                    selectedRoute = currentRoute.orEmpty(),
+                    onTab = { route -> navController.navigateToTopLevel(route) }
+                )
+            }
+            Box(Modifier.weight(1f).fillMaxSize()) {
+                ScanProNavHost(
+                    navController = navController,
+                    snackbarHostState = snackbarHostState,
+                    onImportImages = onImportImages,
+                    onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
+                    onCameraScanComplete = viewModel::importCameraSession,
+                    onFallbackScanner = onFallbackScanner,
+                    onAppLockChange = onAppLockChange
+                )
+            }
         }
-        Box(Modifier.weight(1f).fillMaxSize()) {
-            ScanProNavHost(
-                navController = navController,
-                snackbarHostState = snackbarHostState,
-                onImportImages = onImportImages,
-                onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
-                onCameraScanComplete = viewModel::importCameraSession,
-                onFallbackScanner = onFallbackScanner,
-                onAppLockChange = onAppLockChange
+
+        // First launch only, drawn over the app so the library is already there underneath when it closes.
+        if (welcomeSeen == false) {
+            androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
+            WelcomeScreen(
+                onStartScanning = {
+                    viewModel.markWelcomeSeen()
+                    navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true }
+                },
+                onExplore = viewModel::markWelcomeSeen
             )
         }
     }

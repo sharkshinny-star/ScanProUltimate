@@ -44,6 +44,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -124,6 +125,8 @@ private enum class DetectMode(val label: String) { AUTO("Auto"), MANUAL("Manual"
 
 @Composable
 fun CameraScannerScreen(
+    /** Mode to open in: a [ScanMode] name, "QR", or empty for the usual document mode. */
+    initialMode: String = "",
     onClose: () -> Unit,
     onComplete: (List<Uri>, ScanMode, List<CropQuad>) -> Unit,
     onFallbackScanner: () -> Unit
@@ -157,6 +160,8 @@ fun CameraScannerScreen(
         mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.AUTO))
     }
     var detectMenuOpen by remember { mutableStateOf(false) }
+    // A few tips the first time the camera opens; "Got it" hides them for good.
+    var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_seen", false)) }
     var overflowOpen by remember { mutableStateOf(false) }
     var showAdjustments by remember { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
@@ -176,7 +181,7 @@ fun CameraScannerScreen(
     var autoCaptureSignal by remember { mutableIntStateOf(0) }
     // Saveable, so captured pages survive rotation and process death instead of being lost (and
     // their files orphaned) when the activity is recreated.
-    var scanMode by rememberSaveable { mutableStateOf(ScanMode.DOCUMENT) }
+    var scanMode by rememberSaveable { mutableStateOf(ScanMode.entries.firstOrNull { it.name == initialMode } ?: ScanMode.DOCUMENT) }
     var scanBothSides by rememberSaveable { mutableStateOf(false) }
     val pages = rememberSaveable(
         saver = listSaver(save = { list -> list.map(Uri::toString) }, restore = { saved -> mutableStateListOf(*saved.map(Uri::parse).toTypedArray()) })
@@ -248,7 +253,7 @@ fun CameraScannerScreen(
         )
     }
     // QR mode reads codes from the same camera frames instead of looking for a page.
-    var barcodeMode by rememberSaveable { mutableStateOf(false) }
+    var barcodeMode by rememberSaveable { mutableStateOf(initialMode == "QR") }
     var foundCode by remember { mutableStateOf<com.google.mlkit.vision.barcode.common.Barcode?>(null) }
     val barcodeAnalyzer = remember {
         BarcodeFrameAnalyzer { code ->
@@ -526,6 +531,33 @@ fun CameraScannerScreen(
         }
 
         // Live guidance in the middle of the preview, where the eye already is.
+        if (showTips && !barcodeMode && pages.isEmpty()) {
+            Surface(
+                modifier = Modifier.align(Alignment.Center).padding(24.dp).widthIn(max = 420.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Black.copy(alpha = 0.78f)
+            ) {
+                Column(Modifier.padding(18.dp)) {
+                    Text("Quick tips", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    listOf(
+                        "Hold the phone steady over the page. Once it is outlined and still, ScanPro captures it for you.",
+                        "Tap anywhere to focus. Tap \"Auto\" at the top to capture by hand instead.",
+                        "Scanning several pages? Choose Batch above the shutter, then tap the page count to finish.",
+                        "Afterwards, Clean up removes shadows and fingers, and Curve flattens book pages."
+                    ).forEach { tip ->
+                        Text("• $tip", color = Color.White.copy(alpha = 0.92f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                    }
+                    TextButton(
+                        onClick = {
+                            showTips = false
+                            prefs.edit().putBoolean("tips_seen", true).apply()
+                        },
+                        modifier = Modifier.align(Alignment.End)
+                    ) { Text("Got it") }
+                }
+            }
+        }
+
         if (barcodeMode && foundCode == null) {
             Surface(
                 modifier = Modifier.align(Alignment.Center),
@@ -543,7 +575,7 @@ fun CameraScannerScreen(
             BarcodeResultSheet(code, onScanAgain = scanAgain, onDismiss = scanAgain)
         }
 
-        if (!barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+        if (!showTips && !barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             Surface(
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),

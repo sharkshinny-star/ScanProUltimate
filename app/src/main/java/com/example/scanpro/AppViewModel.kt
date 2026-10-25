@@ -52,6 +52,13 @@ class AppViewModel @Inject constructor(
         .map<Boolean, Boolean?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** Null until known; false shows the first-run welcome once. */
+    val welcomeSeen: StateFlow<Boolean?> = settings.welcomeSeen
+        .map<Boolean, Boolean?> { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun markWelcomeSeen() { viewModelScope.launch { settings.setWelcomeSeen() } }
+
     // Lives in the ViewModel so rotating the screen doesn't lock the app again.
     private val _sessionUnlocked = MutableStateFlow(false)
     val sessionUnlocked: StateFlow<Boolean> = _sessionUnlocked.asStateFlow()
