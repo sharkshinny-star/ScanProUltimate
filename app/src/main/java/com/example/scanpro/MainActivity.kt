@@ -83,9 +83,11 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splash = installSplashScreen()
+        // The splash library needs its own Theme.SplashScreen on Android 11 and older and crashes without it;
+        // the activity uses the app theme, so there the first frame is held back instead (same effect).
+        val splash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) installSplashScreen() else null
         super.onCreate(savedInstanceState)
-        showLaunchScreenUntilReady(splash)
+        if (splash != null) showLaunchScreenUntilReady(splash) else holdFirstFrameUntilReady()
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
@@ -177,6 +179,20 @@ class MainActivity : FragmentActivity() {
                 .withEndAction { provider.remove() }
                 .start()
         }
+    }
+
+    /** Android 11 and older: don't draw until the saved theme and lock setting are known (or the hold times out). */
+    private fun holdFirstFrameUntilReady() {
+        val startedAt = SystemClock.uptimeMillis()
+        val content = findViewById<android.view.View>(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                val ready = (viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null) ||
+                    SystemClock.uptimeMillis() - startedAt >= LAUNCH_SCREEN_MAX_HOLD_MS
+                if (ready) content.viewTreeObserver.removeOnPreDrawListener(this)
+                return ready
+            }
+        })
     }
 
     private fun hideNavigationBar() {
