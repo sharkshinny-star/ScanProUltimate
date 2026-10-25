@@ -48,6 +48,18 @@ class BusinessCardParserTest {
     }
 
     @Test
+    fun `names and titles starting with label letters keep their first letter`() {
+        val card = BusinessCardParser.parse("Mark Taylor\nMarketing Manager\nTata Consultancy Services\nM: +44 20 7946 0958\nE: mark@tcs.com")
+        assertEquals("Mark Taylor", card.name)
+        assertEquals("Marketing Manager", card.jobTitle)
+        assertEquals("Tata Consultancy Services", card.company)
+        assertEquals(listOf("+44 20 7946 0958"), card.phones)
+        val other = BusinessCardParser.parse("Emma Watson\nPhilip Wong\nTel 080 4123 4567")
+        assertEquals("Emma Watson", other.name)
+        assertEquals(listOf("080 4123 4567"), other.phones)
+    }
+
+    @Test
     fun `text with no contact details is not useful`() {
         assertFalse(BusinessCardParser.parse("meeting notes\nbuy milk").isUseful)
     }

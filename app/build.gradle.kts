@@ -146,12 +146,23 @@ dependencies {
     // Text recognition and barcode scanning run in Google Play services, so their engines and models (about
     // 16 MB per CPU type for OCR alone) are not shipped inside the app. Latin OCR and barcodes are fetched at
     // install time (see AndroidManifest); the other scripts download the first time they are used.
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.1")
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.1")
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition-japanese:16.0.1")
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.1")
-    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    // -Pscanpro.bundledMl=true ships the models inside the APK instead (about 16 MB larger per CPU type), for
+    // phones and test devices without a usable Google Play services. The code is the same either way.
+    if (providers.gradleProperty("scanpro.bundledMl").orNull == "true") {
+        implementation("com.google.mlkit:text-recognition:16.0.1")
+        implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
+        implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
+        implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
+        implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+        implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    } else {
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.1")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.1")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-japanese:16.0.1")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.1")
+        implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    }
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("com.google.mlkit:language-id:17.0.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")

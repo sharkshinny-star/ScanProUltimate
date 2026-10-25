@@ -264,10 +264,15 @@ class DocumentRepository @Inject constructor(
     suspend fun applyAdjustmentsToAll(documentId: String, pageId: String, adjustments: PageAdjustments) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val clean = adjustments.normalized()
-        val pages = doc.pages.map { page ->
-            val updated = if (page.id == pageId) clean
-            else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
-            if (updated == page.adjustments) page else renderAndOcr(page.copy(adjustments = updated))
+        val pages = allOrNothing { touched ->
+            doc.pages.map { page ->
+                val updated = if (page.id == pageId) clean
+                else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
+                if (updated == page.adjustments) page else {
+                    touched += page
+                    renderAndOcr(page.copy(adjustments = updated))
+                }
+            }
         }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
@@ -392,7 +397,8 @@ class DocumentRepository @Inject constructor(
             WatermarkPosition.CENTER -> (0.5f - height / 2f) to 0f
             WatermarkPosition.BOTTOM -> (0.95f - height) to 0f
         }
-        val pages = doc.pages.map { page ->
+        val pages = allOrNothing { touched -> doc.pages.map { page ->
+            touched += page
             val annotation = PageAnnotation(
                 type = AnnotationType.TEXT,
                 x = 0.12f,
@@ -406,7 +412,7 @@ class DocumentRepository @Inject constructor(
             )
             // The watermark is drawn over the page; the text underneath stays readable, so OCR is kept.
             renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
-        }
+        } }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
@@ -843,20 +849,43 @@ class DocumentRepository @Inject constructor(
         }
         try {
             // Only pages whose look differs are drawn again; text, corrections and order come back as they were.
-            val restored = target.map { page ->
+            val restored = allOrNothing { touched -> target.map { page ->
                 val now = current.getValue(page.id)
                 if (!sameRendering(now, page)) {
+                    touched += now
                     ImageProcessor.renderPage(
                         File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
                         page.crop, page.adjustments, page.annotations
                     )
                 }
                 page
-            }
+            } }
             saveWithStalePdf(doc.copy(pages = restored, updatedAt = now()))
             true
         } catch (error: Throwable) {
             history.rollback(documentId, back, target)
+            throw error
+        }
+    }
+
+    /**
+     * Runs a change that redraws several pages before one save. Each page is added to `touched` before it is
+     * drawn; if any step fails, those pages are drawn again as they are saved, so no image is left showing an
+     * edit the database never recorded.
+     */
+    private suspend fun <T> allOrNothing(block: suspend (touched: MutableList<ScanPage>) -> T): T {
+        val touched = mutableListOf<ScanPage>()
+        try {
+            return block(touched)
+        } catch (error: Throwable) {
+            touched.forEach { page ->
+                runCatching {
+                    ImageProcessor.renderPage(
+                        File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
+                        page.crop, page.adjustments, page.annotations
+                    )
+                }
+            }
             throw error
         }
     }

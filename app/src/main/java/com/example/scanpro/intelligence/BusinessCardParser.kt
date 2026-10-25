@@ -23,7 +23,11 @@ object BusinessCardParser {
     private val emailRegex = Regex("[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", RegexOption.IGNORE_CASE)
     private val phoneRegex = Regex("(?<![\\d])\\+?\\(?\\d[\\d ()./-]{6,}\\d(?![\\d])")
     private val webRegex = Regex("(?i)\\b(?:https?://)?(?:www\\.)?[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:com|in|net|org|io|co|biz|info|ai|app|dev|uk|us|de|ae|sg|au|ca)(?:/[^\\s]*)?\\b")
-    private val labelRegex = Regex("(?i)^(?:tel|ph|phone|mob|mobile|cell|fax|off|office|m|t|e|email|e-mail|w|web|website)\\s*[.:]?\\s*")
+    // A label is a whole word followed by ":" or "." ("Mob:", "Tel.") or by a space and then a number; a single
+    // letter only counts with ":" or "." ("M: …"). Otherwise "Mark Taylor" would lose its "M".
+    private val labelRegex = Regex(
+        "(?i)^(?:(?:tel|ph|phone|mob|mobile|cell|fax|off|office|email|e-mail|web|website)\\b\\s*(?:[.:]\\s*|(?=[+(\\d]))|[mtewpf]\\s*[.:]\\s*)"
+    )
 
     private val titleWords = listOf(
         "director", "manager", "ceo", "cto", "cfo", "coo", "founder", "co-founder", "engineer", "consultant", "president",

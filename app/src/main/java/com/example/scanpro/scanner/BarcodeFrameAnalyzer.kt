@@ -1,9 +1,13 @@
 package com.example.scanpro.scanner
 
+import android.content.Context
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.google.android.gms.common.moduleinstall.ModuleInstall
+import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
+import com.google.mlkit.common.MlKitException
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
@@ -11,12 +15,19 @@ import java.io.Closeable
 
 /**
  * Reads QR codes and barcodes from camera frames with ML Kit, on the device. After a hit it pauses until
- * [resume], so the result sheet isn't replaced while the user reads it.
+ * [resume], so the result sheet isn't replaced while the user reads it. If the reader can't run (its model
+ * hasn't been downloaded by Play services yet), [onUnavailable] is called once instead of failing silently.
  */
-class BarcodeFrameAnalyzer(private val onFound: (Barcode) -> Unit) : ImageAnalysis.Analyzer, Closeable {
+class BarcodeFrameAnalyzer(
+    private val context: Context,
+    private val onFound: (Barcode) -> Unit,
+    private val onUnavailable: () -> Unit = {}
+) : ImageAnalysis.Analyzer, Closeable {
     private val scanner = BarcodeScanning.getClient()
     @Volatile private var paused = false
     @Volatile private var closed = false
+    @Volatile private var reportedUnavailable = false
+    @Volatile private var requestedDownload = false
 
     fun resume() { paused = false }
 
@@ -27,6 +38,11 @@ class BarcodeFrameAnalyzer(private val onFound: (Barcode) -> Unit) : ImageAnalys
             image.close()
             return
         }
+        if (!requestedDownload) {
+            // Normally fetched at install time; asking again is harmless and covers installs where it wasn't.
+            requestedDownload = true
+            runCatching { ModuleInstall.getClient(context).installModules(ModuleInstallRequest.newBuilder().addApi(scanner).build()) }
+        }
         val input = InputImage.fromMediaImage(media, image.imageInfo.rotationDegrees)
         scanner.process(input)
             .addOnSuccessListener { codes ->
@@ -34,6 +50,13 @@ class BarcodeFrameAnalyzer(private val onFound: (Barcode) -> Unit) : ImageAnalys
                 if (code != null && !paused && !closed) {
                     paused = true
                     onFound(code)
+                }
+            }
+            .addOnFailureListener { error ->
+                val unavailable = (error as? MlKitException)?.errorCode == MlKitException.UNAVAILABLE
+                if (unavailable && !reportedUnavailable && !closed) {
+                    reportedUnavailable = true
+                    onUnavailable()
                 }
             }
             // The frame must stay open until ML Kit has finished reading it.

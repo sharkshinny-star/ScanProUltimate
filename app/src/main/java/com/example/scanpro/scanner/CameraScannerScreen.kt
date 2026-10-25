@@ -162,6 +162,10 @@ fun CameraScannerScreen(
     var detectMenuOpen by remember { mutableStateOf(false) }
     // A few tips the first time the camera opens; "Got it" hides them for good.
     var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_seen", false)) }
+    fun dismissTips() {
+        showTips = false
+        prefs.edit().putBoolean("tips_seen", true).apply()
+    }
     var overflowOpen by remember { mutableStateOf(false) }
     var showAdjustments by remember { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
@@ -252,19 +256,28 @@ fun CameraScannerScreen(
             onAutoCapture = { autoCaptureSignal++ }
         )
     }
+    // Taking a page by hand while the tips show means they have done their job.
+    LaunchedEffect(pages.size) { if (showTips && pages.isNotEmpty()) dismissTips() }
+
     // QR mode reads codes from the same camera frames instead of looking for a page.
     var barcodeMode by rememberSaveable { mutableStateOf(initialMode == "QR") }
     var foundCode by remember { mutableStateOf<com.google.mlkit.vision.barcode.common.Barcode?>(null) }
+    var barcodeUnavailable by remember { mutableStateOf(false) }
     val barcodeAnalyzer = remember {
-        BarcodeFrameAnalyzer { code ->
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            foundCode = code
-        }
+        BarcodeFrameAnalyzer(
+            context = context.applicationContext,
+            onFound = { code ->
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                foundCode = code
+            },
+            onUnavailable = { barcodeUnavailable = true }
+        )
     }
     val frameAnalyzer = remember { SwitchingAnalyzer(analyzer, barcodeAnalyzer) }
     SideEffect {
         frameAnalyzer.barcodeMode = barcodeMode
-        analyzer.autoCaptureEnabled = autoCapture && !barcodeMode && !capturing && !reviewing && pages.size < pageLimit
+        // No auto-capture while the first-time tips are being read.
+        analyzer.autoCaptureEnabled = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing && pages.size < pageLimit
     }
 
     /** Opens the review step on the newest page. */
@@ -548,10 +561,7 @@ fun CameraScannerScreen(
                         Text("• $tip", color = Color.White.copy(alpha = 0.92f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
                     }
                     TextButton(
-                        onClick = {
-                            showTips = false
-                            prefs.edit().putBoolean("tips_seen", true).apply()
-                        },
+                        onClick = ::dismissTips,
                         modifier = Modifier.align(Alignment.End)
                     ) { Text("Got it") }
                 }
@@ -564,7 +574,10 @@ fun CameraScannerScreen(
                 shape = RoundedCornerShape(12.dp),
                 color = Color.Black.copy(alpha = 0.55f)
             ) {
-                Text("Point at a QR code or barcode", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+                Text(
+                    if (barcodeUnavailable) "The QR reader is still downloading. Connect to the internet, then try again."
+                    else "Point at a QR code or barcode",
+                    color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
             }
         }
         foundCode?.let { code ->

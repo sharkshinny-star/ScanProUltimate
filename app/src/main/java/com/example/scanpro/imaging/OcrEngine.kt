@@ -44,15 +44,27 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
     /** Scripts whose model Play services has confirmed is on the device; checked once per run. */
     private val readyScripts = ConcurrentHashMap.newKeySet<OcrScript>()
 
+    /** Scripts whose download was already requested this run, so it is asked for only once. */
+    private val requestedScripts = ConcurrentHashMap.newKeySet<OcrScript>()
+
     /**
      * The recognition models live in Google Play services. Latin is fetched at install time; the other scripts
-     * are requested here the first time they are needed, and recognition waits (up to a minute) for them.
+     * are requested the first time they are needed. Only an explicit request ([waitForDownload], used by
+     * "Run OCR again") waits up to a minute for the download; ordinary page edits fail at once instead, so a
+     * missing model never stalls every page.
      */
-    private suspend fun ensureModel(script: OcrScript, recognizer: TextRecognizer) {
+    private suspend fun ensureModel(script: OcrScript, recognizer: TextRecognizer, waitForDownload: Boolean) {
         if (script in readyScripts) return
         val modules = ModuleInstall.getClient(context)
         val available = runCatching { modules.areModulesAvailable(recognizer).await().areModulesAvailable() }.getOrDefault(true)
         if (!available) {
+            if (!waitForDownload) {
+                if (requestedScripts.add(script)) {
+                    runCatching { modules.installModules(ModuleInstallRequest.newBuilder().addApi(recognizer).build()) }
+                }
+                throw IllegalStateException("The ${script.label} text model is still downloading.")
+            }
+            requestedScripts += script
             runCatching { modules.installModules(ModuleInstallRequest.newBuilder().addApi(recognizer).build()).await() }
             val ready = withTimeoutOrNull(MODEL_WAIT_MS) {
                 while (!runCatching { modules.areModulesAvailable(recognizer).await().areModulesAvailable() }.getOrDefault(false)) {
@@ -70,7 +82,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
     }
 
     /** Makes sure [script]'s model is on the device, downloading it if needed; throws a readable error otherwise. */
-    suspend fun prepare(script: OcrScript) = ensureModel(script, recognizerFor(script))
+    suspend fun prepare(script: OcrScript) = ensureModel(script, recognizerFor(script), waitForDownload = true)
 
     suspend fun recognize(file: File, script: OcrScript = OcrScript.LATIN): String = recognizeDetailed(file, script).text
 
@@ -83,7 +95,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
             ?: InputImage.fromFilePath(context, Uri.fromFile(file))
         val recognizer = recognizerFor(script)
         try {
-            ensureModel(script, recognizer)
+            ensureModel(script, recognizer, waitForDownload = false)
         } catch (error: Throwable) {
             bitmap?.recycle()
             throw error
