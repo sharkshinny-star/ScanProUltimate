@@ -56,6 +56,14 @@ class DocumentViewModel @Inject constructor(
 
     fun dismissScanSaved() = operations.clearScanSaved(id)
 
+    /** Whether this document has edits to undo or redo in this session. */
+    val undoState: StateFlow<com.example.scanpro.data.UndoState> = repository.undoState
+        .map { it[id] ?: com.example.scanpro.data.UndoState() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), repository.undoState.value[id] ?: com.example.scanpro.data.UndoState())
+
+    fun undo() = run("Undoing…", null) { repository.undo(id) }
+    fun redo() = run("Redoing…", null) { repository.redo(id) }
+
     val busy: StateFlow<Boolean> = operations.busy
     val busyLabel: StateFlow<String?> = operations.busyLabel
 
@@ -248,6 +256,8 @@ class DocumentViewModel @Inject constructor(
     override fun onCleared() {
         // Leaving without closing the "Scan saved" sheet: don't offer it again next time this document opens.
         operations.clearScanSaved(id)
+        // Signatures removed while editing were kept for Undo; drop the ones no step can bring back.
+        operations.enqueueQuiet { repository.cleanUnusedSignatures(id) }
         // Leaving the editor: bring the PDF up to date in the background so it's ready next time.
         library.buildPdfInBackground(id)
     }

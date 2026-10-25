@@ -40,6 +40,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Output
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.AddToDrive
@@ -181,6 +183,7 @@ fun DocumentRoute(
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
     val scanSaved by viewModel.scanSaved.collectAsStateWithLifecycle()
     val savedSignatures by viewModel.savedSignatures.collectAsStateWithLifecycle()
+    val undoState by viewModel.undoState.collectAsStateWithLifecycle()
 
     // If the open document disappears (trashed or deleted elsewhere), leave instead of stranding the
     // user on an "unavailable" screen with no way back.
@@ -249,6 +252,9 @@ fun DocumentRoute(
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
         onWithFreshPdf = { onFailed, onReady -> viewModel.withFreshPdf(onFailed, onReady) },
         scanSaved = scanSaved,
+        undoState = undoState,
+        onUndo = viewModel::undo,
+        onRedo = viewModel::redo,
         onDismissScanSaved = viewModel::dismissScanSaved,
         onDeleteDocument = {
             viewModel.moveToTrash()
@@ -312,6 +318,9 @@ internal fun DocumentDetailScreen(
     onWithFreshPdf: (onFailed: () -> Unit, onReady: (ScanDocument) -> Unit) -> Unit,
     /** True right after this document was scanned: offer share, save and rename straight away. */
     scanSaved: Boolean = false,
+    undoState: com.example.scanpro.data.UndoState = com.example.scanpro.data.UndoState(),
+    onUndo: () -> Unit = {},
+    onRedo: () -> Unit = {},
     onDismissScanSaved: () -> Unit = {},
     onDeleteDocument: () -> Unit
 ) {
@@ -440,6 +449,15 @@ internal fun DocumentDetailScreen(
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
+                    // Undo and redo cover page edits made in this session (filters, crop, clean-up, mark-up, text, order).
+                    IconButton(onClick = onUndo, enabled = !busy && undoState.canUndo) {
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
+                    }
+                    if (undoState.canRedo) {
+                        IconButton(onClick = onRedo, enabled = !busy) {
+                            Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = "Redo")
+                        }
+                    }
                     IconButton(onClick = onToggleFavorite, enabled = !busy) {
                         Icon(if (document.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorite")
                     }
@@ -629,7 +647,7 @@ internal fun DocumentDetailScreen(
                         ToolTile(Icons.Default.VisibilityOff, "Redact", !busy) { onRedact(currentPage.id) }
                         ToolTile(Icons.Default.BrandingWatermark, "Watermark", !busy) { watermarkOpen = true }
                         ToolTile(Icons.Default.Edit, "Edit markup", !busy && currentPage.annotations.isNotEmpty()) { markupOpen = true }
-                        ToolTile(Icons.AutoMirrored.Filled.Undo, "Undo", !busy && currentPage.annotations.isNotEmpty()) { onUndoAnnotation(currentPage.id) }
+                        ToolTile(Icons.Default.RemoveCircleOutline, "Remove last", !busy && currentPage.annotations.isNotEmpty()) { onUndoAnnotation(currentPage.id) }
                     }
                 }
 

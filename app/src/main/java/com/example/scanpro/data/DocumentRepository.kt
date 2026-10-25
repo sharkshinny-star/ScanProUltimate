@@ -46,6 +46,9 @@ class DocumentRepository @Inject constructor(
      * older than the pages, and a long rebuild of one document doesn't block edits to another.
      */
     private val pdfLocks = java.util.concurrent.ConcurrentHashMap<String, Any>()
+    private val history = EditHistory()
+    /** Undo and redo steps available per document, for this session. */
+    val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
     suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
@@ -266,7 +269,7 @@ class DocumentRepository @Inject constructor(
             else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
             if (updated == page.adjustments) page else renderAndOcr(page.copy(adjustments = updated))
         }
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
     suspend fun resetPage(documentId: String, pageId: String) {
@@ -283,8 +286,7 @@ class DocumentRepository @Inject constructor(
                 redactionChanged = removed.any { it.type == AnnotationType.REDACT }
             )
         }
-        // Signature images go only after the page is saved without them.
-        deleteSignatureAssets(removed)
+        // Signature images stay until the document is closed, so Undo can bring the signature back.
     }
 
     private suspend fun annotationsOf(documentId: String, pageId: String): List<PageAnnotation> =
@@ -306,7 +308,6 @@ class DocumentRepository @Inject constructor(
             val changed = redactions(before) != redactions(annotations)
             renderAndOcr(page.copy(annotations = annotations), runOcr = changed, redactionChanged = changed)
         }
-        deleteSignatureAssets(before.filter { old -> annotations.none { it.id == old.id } })
     }
 
     suspend fun addTextAnnotation(documentId: String, pageId: String, text: String) =
@@ -357,7 +358,6 @@ class DocumentRepository @Inject constructor(
             // Removing a highlight, text or signature leaves the page's words as they were; a redaction uncovers some.
             renderAndOcr(page.copy(annotations = page.annotations.dropLast(1)), runOcr = redaction, redactionChanged = redaction)
         }
-        deleteSignatureAssets(removed)
     }
 
     suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
@@ -407,7 +407,7 @@ class DocumentRepository @Inject constructor(
             // The watermark is drawn over the page; the text underneath stays readable, so OCR is kept.
             renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
         }
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = withContext(Dispatchers.IO) {
@@ -419,7 +419,7 @@ class DocumentRepository @Inject constructor(
         if (to == from) return@withContext
         val moved = pages.removeAt(from)
         pages.add(to, moved)
-        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
     suspend fun duplicatePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
@@ -430,7 +430,7 @@ class DocumentRepository @Inject constructor(
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val copy = copyFlattenedPage(pages[index], doc.id, folder, index + 1)
         pages.add(index + 1, copy)
-        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now())).also { history.clear(doc.id) }
     }
 
     suspend fun extractPage(documentId: String, pageId: String): ScanDocument = withContext(Dispatchers.IO) {
@@ -485,6 +485,8 @@ class DocumentRepository @Inject constructor(
         pages.add(index, right)
         pages.add(index, left)
         val saved = saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        // Steps from before the split refer to a page that no longer exists.
+        history.clear(doc.id)
         // Delete the original spread only once both halves are saved.
         File(page.sourcePath).delete()
         File(page.imagePath).delete()
@@ -514,7 +516,7 @@ class DocumentRepository @Inject constructor(
             )
             renderAndOcr(page)
         }
-        saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
     }
 
     suspend fun deletePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
@@ -526,6 +528,8 @@ class DocumentRepository @Inject constructor(
         }
         val pages = normalize(doc.pages.sortedBy { it.position }.filterNot { it.id == pageId })
         val saved = saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        // The deleted page's files are about to go, so earlier steps could not be restored.
+        history.clear(doc.id)
         // Delete the files only after the page is gone from the database, so a failed save loses nothing.
         File(target.sourcePath).delete()
         File(target.imagePath).delete()
@@ -694,7 +698,7 @@ class DocumentRepository @Inject constructor(
         // Marked as hand-corrected so filters, crops and rotations afterwards do not read the page again and replace it.
         val pages = doc.pages.map { page -> if (page.id == pageId) page.copy(ocrText = text.trim(), ocrEdited = true) else page }
         require(pages.any { it.id == pageId }) { "Page not found" }
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
     suspend fun reOcrDocument(id: String, script: OcrScript? = null) = withContext(Dispatchers.IO) {
@@ -708,7 +712,7 @@ class DocumentRepository @Inject constructor(
                 .map { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
                 .getOrDefault(page)
         }
-        saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
     private suspend fun addAnnotation(documentId: String, pageId: String, annotation: PageAnnotation) =
@@ -821,6 +825,60 @@ class DocumentRepository @Inject constructor(
         }
     }
 
+    /** Goes back one edit; false when there is nothing to undo. */
+    suspend fun undo(documentId: String): Boolean = step(documentId, back = true)
+
+    /** Re-applies an undone edit; false when there is nothing to redo. */
+    suspend fun redo(documentId: String): Boolean = step(documentId, back = false)
+
+    private suspend fun step(documentId: String, back: Boolean): Boolean = withContext(Dispatchers.IO) {
+        val doc = requireDocument(documentId)
+        val target = (if (back) history.undo(documentId, doc.pages) else history.redo(documentId, doc.pages))
+            ?: return@withContext false
+        val current = doc.pages.associateBy { it.id }
+        if (target.size != doc.pages.size || target.any { it.id !in current }) {
+            // Pages were added or removed outside the history; its steps no longer fit this document.
+            history.clear(documentId)
+            error("This change can no longer be undone")
+        }
+        try {
+            // Only pages whose look differs are drawn again; text, corrections and order come back as they were.
+            val restored = target.map { page ->
+                val now = current.getValue(page.id)
+                if (!sameRendering(now, page)) {
+                    ImageProcessor.renderPage(
+                        File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
+                        page.crop, page.adjustments, page.annotations
+                    )
+                }
+                page
+            }
+            saveWithStalePdf(doc.copy(pages = restored, updatedAt = now()))
+            true
+        } catch (error: Throwable) {
+            history.rollback(documentId, back, target)
+            throw error
+        }
+    }
+
+    private fun sameRendering(a: ScanPage, b: ScanPage) =
+        a.sourcePath == b.sourcePath && a.filter == b.filter && a.rotationDegrees == b.rotationDegrees &&
+            a.crop == b.crop && a.adjustments == b.adjustments && a.annotations == b.annotations
+
+    /**
+     * Deletes signature images that neither the document nor any undo step uses. Removing a signature keeps its
+     * image so Undo can bring it back; this runs when the document is closed.
+     */
+    suspend fun cleanUnusedSignatures(documentId: String) = withContext(Dispatchers.IO) {
+        val doc = db.loadDocument(documentId) ?: return@withContext
+        val folder = File(doc.pdfPath).parentFile ?: return@withContext
+        val inUse = (doc.pages + history.retained(documentId))
+            .flatMap { it.annotations }
+            .mapNotNull { it.assetPath.takeIf(String::isNotBlank)?.let { path -> File(path).canonicalPath } }
+            .toSet()
+        File(folder, "signatures").listFiles()?.filter { it.isFile && it.canonicalPath !in inUse }?.forEach { it.delete() }
+    }
+
     private suspend fun editSinglePage(
         documentId: String,
         pageId: String,
@@ -830,7 +888,7 @@ class DocumentRepository @Inject constructor(
         val target = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
         val updatedPage = block(target)
         val pages = doc.pages.map { if (it.id == pageId) updatedPage else it }
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
     /**

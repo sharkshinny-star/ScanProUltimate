@@ -93,6 +93,14 @@ class OperationRunner @Inject constructor(
     fun enqueue(label: String?, successMessage: String?, action: suspend () -> Unit) =
         start(label, successMessage, action)
 
+    /**
+     * Background housekeeping that must not overlap an edit (it waits its turn like any operation) but shows no
+     * progress, message or library refresh. Failures are ignored.
+     */
+    fun enqueueQuiet(action: suspend () -> Unit) {
+        scope.launch { mutex.withLock { runCatching { action() } } }
+    }
+
     private fun start(label: String?, successMessage: String?, action: suspend () -> Unit) {
         synchronized(stateLock) {
             pending++
