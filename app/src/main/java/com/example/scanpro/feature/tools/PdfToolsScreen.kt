@@ -72,6 +72,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -835,6 +840,7 @@ private fun ProcessingOverlay(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ResultDialog(
     result: PdfToolResult,
@@ -843,22 +849,23 @@ private fun ResultDialog(
     onShare: () -> Unit,
     onSaveAs: () -> Unit
 ) {
-    val isZip = result.outputFile.extension.equals("zip", ignoreCase = true)
-    val isImage = result.outputFile.extension.lowercase() in listOf("jpg", "jpeg", "png")
-    val titleText = if (isImage || isZip) "Export Ready" else "PDF Ready"
-    val viewButtonText = if (isZip) "Open with…" else if (isImage) "View Image" else "View PDF"
+    val context = LocalContext.current
+    var showShareSheet by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = {
-            Icon(
-                Icons.Default.CheckCircle,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(36.dp)
-            )
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(result.outputFile.nameWithoutExtension, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close")
+                }
+            }
         },
-        title = { Text(titleText, textAlign = TextAlign.Center) },
         text = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -866,65 +873,143 @@ private fun ResultDialog(
             ) {
                 Text(
                     text = result.message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Primary Action Buttons: Preview PDF
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(if (isImage) "Output Image:" else "Output File:", style = MaterialTheme.typography.labelMedium)
-                            Text(result.outputFile.name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(if (isImage) "Image Count:" else "Page Count:", style = MaterialTheme.typography.labelMedium)
-                            Text("${result.pageCount} ${if (isImage) "images" else "pages"}", style = MaterialTheme.typography.bodySmall)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("File Size:", style = MaterialTheme.typography.labelMedium)
-                            Text(formatBytes(result.outputSizeBytes), style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(
+                        onClick = onView,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(if (result.outputFile.extension.equals("pdf", ignoreCase = true)) "Preview PDF" else "Open")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Direct Quick Action Cards: Share & Save PDF to Local
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Card(
+                        onClick = { showShareSheet = true },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                        shape = CircleShape,
+                        modifier = Modifier.size(64.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(Icons.Default.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                     }
+
+                    Card(
+                        onClick = onSaveAs,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                        shape = CircleShape,
+                        modifier = Modifier.size(64.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(Icons.Default.Download, contentDescription = "Save PDF to local", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Text("Share", style = MaterialTheme.typography.labelSmall)
+                    Text("Save to Local", style = MaterialTheme.typography.labelSmall)
                 }
             }
         },
         confirmButton = {
-            Button(onClick = onView) {
-                Text(viewButtonText)
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onSaveAs) {
-                    Text("Save As…")
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                OutlinedButton(onClick = onShare) {
-                    Text("Share")
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                TextButton(onClick = onDismiss) {
-                    Text("Done")
-                }
-            }
+            Button(onClick = onDismiss) { Text("Done") }
         }
     )
+
+    if (showShareSheet) {
+        SmartShareSheet(
+            file = result.outputFile,
+            onDismiss = { showShareSheet = false },
+            onSaveToLocal = {
+                showShareSheet = false
+                onSaveAs()
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SmartShareSheet(
+    file: File,
+    onDismiss: () -> Unit,
+    onSaveToLocal: () -> Unit
+) {
+    val context = LocalContext.current
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(file.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            val kind = when (mimeFor(file)) {
+                "application/zip" -> "ZIP"
+                "image/png" -> "PNG"
+                "image/jpeg" -> "JPG"
+                else -> "PDF"
+            }
+            Text("Share as $kind via", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // One share action with the file's real type. Offering "Share as JPG" for a PDF sent PDF bytes labelled
+            // as an image, which receiving apps could not open.
+            ListItem(
+                modifier = Modifier.clickable {
+                    onDismiss()
+                    shareFile(context, file.absolutePath, mimeFor(file), file.name)
+                },
+                headlineContent = { Text("Share as $kind") },
+                leadingContent = { Icon(if (kind == "PDF") Icons.Default.PictureAsPdf else Icons.Default.Image, contentDescription = null) }
+            )
+
+            ListItem(
+                modifier = Modifier.clickable {
+                    onDismiss()
+                    onSaveToLocal()
+                },
+                headlineContent = { Text("Save to device") },
+                leadingContent = { Icon(Icons.Default.Download, contentDescription = null) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
 }
 
 @Composable
