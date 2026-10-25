@@ -33,13 +33,29 @@ class CurvedPageTest {
     fun straightEdgesGiveAPlainRectangleMap() {
         val top = CurvedPage.evenlySpaced(Pt(10f, 20f), Pt(60f, 20f), Pt(110f, 20f), 101)
         val bottom = CurvedPage.evenlySpaced(Pt(10f, 220f), Pt(60f, 220f), Pt(110f, 220f), 101)
-        val (w, h) = CurvedPage.outputSize(top, bottom, 100f, 100f)
-        assertEquals(100, w)
-        assertEquals(200, h)
+        val left = CurvedPage.evenlySpaced(Pt(10f, 20f), Pt(10f, 120f), Pt(10f, 220f), 201)
+        val right = CurvedPage.evenlySpaced(Pt(110f, 20f), Pt(110f, 120f), Pt(110f, 220f), 201)
+        assertEquals(200, CurvedPage.outputHeight(top, bottom, 200f, 200f))
         val mapX = FloatArray(101 * 3); val mapY = FloatArray(101 * 3)
-        CurvedPage.fillRows(top, bottom, 0, 3, 201, mapX, mapY)
+        CurvedPage.fillRows(top, bottom, left, right, 0, 3, mapX, mapY)
         assertEquals(10f, mapX[0], 1e-3f); assertEquals(20f, mapY[0], 1e-3f)
         assertEquals(60f, mapX[2 * 101 + 50], 0.01f); assertEquals(22f, mapY[2 * 101 + 50], 0.01f)
+    }
+
+    @Test
+    fun aBentSideIsFollowedWhileTheCornersStayPut() {
+        // Left side bulges 30 px outwards at its middle; the rest is a 100 x 200 rectangle.
+        val tl = Pt(0f, 0f); val tr = Pt(100f, 0f); val bl = Pt(0f, 200f); val br = Pt(100f, 200f)
+        val top = CurvedPage.evenlySpaced(tl, (tl + tr) * 0.5f, tr, 101)
+        val bottom = CurvedPage.evenlySpaced(bl, (bl + br) * 0.5f, br, 101)
+        val left = CurvedPage.evenlySpaced(tl, CurvedPage.control(tl, Pt(-30f, 100f), bl), bl, 201)
+        val right = CurvedPage.evenlySpaced(tr, (tr + br) * 0.5f, br, 201)
+        val mapX = FloatArray(101); val mapY = FloatArray(101)
+        CurvedPage.fillRows(top, bottom, left, right, 100, 1, mapX, mapY)
+        assertEquals(-30f, mapX[0], 0.5f)      // the middle row starts on the bulging edge
+        assertEquals(100f, mapX[100], 0.5f)    // and ends on the straight right side
+        CurvedPage.fillRows(top, bottom, left, right, 0, 1, mapX, mapY)
+        assertEquals(0f, mapX[0], 1e-3f); assertEquals(0f, mapY[0], 1e-3f)
     }
 
     /** A bright page on a dark table whose top edge sags into the page by [sag] px at its middle. */

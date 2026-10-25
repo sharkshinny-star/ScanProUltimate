@@ -227,12 +227,18 @@ object ImageProcessor {
         }
         val topControl = bowed(tl, tr, crop.topBow)
         val bottomControl = bowed(bl, br, crop.bottomBow)
+        val leftControl = bowed(tl, bl, crop.leftBow)
+        val rightControl = bowed(tr, br, crop.rightBow)
         val topLength = CurvedPage.length(tl, topControl, tr)
         val bottomLength = CurvedPage.length(bl, bottomControl, br)
         val columns = max(topLength, bottomLength).toInt().coerceIn(64, 5000)
         val top = CurvedPage.evenlySpaced(tl, topControl, tr, columns)
         val bottom = CurvedPage.evenlySpaced(bl, bottomControl, br, columns)
-        val rows = CurvedPage.outputSize(top, bottom, topLength, bottomLength).second.coerceIn(64, 7000)
+        val rows = CurvedPage.outputHeight(
+            top, bottom, CurvedPage.length(tl, leftControl, bl), CurvedPage.length(tr, rightControl, br)
+        ).coerceIn(64, 7000)
+        val left = CurvedPage.evenlySpaced(tl, leftControl, bl, rows)
+        val right = CurvedPage.evenlySpaced(tr, rightControl, br, rows)
 
         val sourceMat = Mat()
         val outputMat = Mat(rows, columns, org.opencv.core.CvType.CV_8UC4)
@@ -246,7 +252,7 @@ object ImageProcessor {
             var first = 0
             while (first < rows) {
                 val count = min(stripRows, rows - first)
-                CurvedPage.fillRows(top, bottom, first, count, rows, xs, ys)
+                CurvedPage.fillRows(top, bottom, left, right, first, count, xs, ys)
                 val stripX = mapX.rowRange(0, count)
                 val stripY = mapY.rowRange(0, count)
                 stripX.put(0, 0, xs.copyOf(count * columns))
@@ -305,9 +311,19 @@ object ImageProcessor {
             val pageHeight = (bottomMid - topMid).length()
             val search = pageHeight * 0.12f
             fun toBow(p: CurvedPage.Pt?) = p?.let { com.example.scanpro.data.NormalizedPoint(it.x / sw, it.y / sh) }
+            val leftMid = (tl + bl) * 0.5f
+            val rightMid = (tr + br) * 0.5f
+            val sideSearch = (rightMid - leftMid).length() * 0.12f
             val topBow = CurvedPage.estimateBow(tl, tr, bottomMid - topMid, search, intensity)
             val bottomBow = CurvedPage.estimateBow(bl, br, topMid - bottomMid, search, intensity)
-            return crop.copy(topBow = toBow(topBow) ?: crop.topBow, bottomBow = toBow(bottomBow) ?: crop.bottomBow)
+            val leftBow = CurvedPage.estimateBow(tl, bl, rightMid - leftMid, sideSearch, intensity)
+            val rightBow = CurvedPage.estimateBow(tr, br, leftMid - rightMid, sideSearch, intensity)
+            return crop.copy(
+                topBow = toBow(topBow) ?: crop.topBow,
+                bottomBow = toBow(bottomBow) ?: crop.bottomBow,
+                leftBow = toBow(leftBow) ?: crop.leftBow,
+                rightBow = toBow(rightBow) ?: crop.rightBow
+            )
         } finally {
             if (small !== image) small.recycle()
         }

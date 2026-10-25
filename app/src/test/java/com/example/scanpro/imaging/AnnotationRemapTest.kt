@@ -70,6 +70,19 @@ class AnnotationRemapTest {
     }
 
     @Test
+    fun curvedSidesRoundTrip() {
+        val crop = rect(0.1f, 0.1f, 0.9f, 0.9f).copy(leftBow = NormalizedPoint(-0.05f, 0f), rightBow = NormalizedPoint(0.03f, 0f))
+        val mapping = CropMapping(crop, 1.33f)
+        assertEquals(0.05f, mapping.toSource(0f, 0.5f)!!.first, 2e-3f)
+        for ((u, v) in listOf(0.1f to 0.5f, 0.5f to 0.2f, 0.9f to 0.8f)) {
+            val (x, y) = mapping.toSource(u, v)!!
+            val back = mapping.fromSource(x, y)!!
+            assertEquals(u, back.first, 1e-3f)
+            assertEquals(v, back.second, 1e-3f)
+        }
+    }
+
+    @Test
     fun unchangedCropKeepsAnnotationsAsTheyAre() {
         val items = listOf(box(0.1f, 0.2f, 0.3f, 0.1f))
         assertEquals(items, AnnotationRemap.remap(items, CropQuad.DEFAULT, CropQuad.DEFAULT, 0, 1f))

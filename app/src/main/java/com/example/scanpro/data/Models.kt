@@ -74,11 +74,17 @@ data class CropQuad(
      */
     val topBow: NormalizedPoint? = null,
     /** The same for the bottom edge. */
-    val bottomBow: NormalizedPoint? = null
+    val bottomBow: NormalizedPoint? = null,
+    /** The same for the left and right edges, for a page photographed sideways. */
+    val leftBow: NormalizedPoint? = null,
+    val rightBow: NormalizedPoint? = null
 ) {
-    /** True when the top or bottom edge is bent enough to be flattened rather than just straightened. */
+    /** True when any edge is bent enough to be flattened rather than just straightened. */
     val isCurved: Boolean
-        get() = listOfNotNull(topBow, bottomBow).any { kotlin.math.abs(it.x) > 0.002f || kotlin.math.abs(it.y) > 0.002f }
+        get() = listOfNotNull(topBow, bottomBow, leftBow, rightBow).any { kotlin.math.abs(it.x) > 0.002f || kotlin.math.abs(it.y) > 0.002f }
+
+    /** The same outline with every edge straight. */
+    fun straightened() = copy(topBow = null, bottomBow = null, leftBow = null, rightBow = null)
 
     fun isIdentity(epsilon: Float = 0.002f): Boolean {
         val d = DEFAULT

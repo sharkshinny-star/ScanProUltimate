@@ -90,7 +90,7 @@ fun CropEditorDialog(
         val latestCrop by rememberUpdatedState(crop)
         var activeCorner by remember { mutableIntStateOf(0) }
         var draggingCorner by remember { mutableStateOf(false) }
-        // Curve mode: the top and bottom middle handles bend those edges instead of moving them.
+        // Curve mode: the middle handles bend their edges instead of moving them.
         var curveMode by remember(initial) { mutableStateOf(initial.isCurved) }
         val latestCurveMode by rememberUpdatedState(curveMode)
 
@@ -149,16 +149,19 @@ fun CropEditorDialog(
                                             latestCrop.bottomLeft
                                         ).toMutableList()
 
-                                        val bend = latestCurveMode && (activeCorner == 4 || activeCorner == 6)
-                                        if (bend) {
+                                        if (latestCurveMode && activeCorner >= 4) {
                                             val dx = dragAmount.x / size.width
                                             val dy = dragAmount.y / size.height
                                             fun moved(bow: NormalizedPoint?) = NormalizedPoint(
                                                 ((bow?.x ?: 0f) + dx).coerceIn(-0.3f, 0.3f),
                                                 ((bow?.y ?: 0f) + dy).coerceIn(-0.3f, 0.3f)
                                             )
-                                            crop = if (activeCorner == 4) latestCrop.copy(topBow = moved(latestCrop.topBow))
-                                            else latestCrop.copy(bottomBow = moved(latestCrop.bottomBow))
+                                            crop = when (activeCorner) {
+                                                4 -> latestCrop.copy(topBow = moved(latestCrop.topBow))
+                                                5 -> latestCrop.copy(rightBow = moved(latestCrop.rightBow))
+                                                6 -> latestCrop.copy(bottomBow = moved(latestCrop.bottomBow))
+                                                else -> latestCrop.copy(leftBow = moved(latestCrop.leftBow))
+                                            }
                                             return@detectDragGestures
                                         }
                                         if (activeCorner < 4) {
@@ -205,14 +208,17 @@ fun CropEditorDialog(
                         val handles = handlesForCrop(crop, size.width, size.height)
                         val corners = handles.take(4)
 
-                        // Top and bottom are drawn as the curves the page will be flattened along.
+                        // Every edge is drawn as the curve the page will be flattened along.
                         val topControl = curveControl(corners[0], corners[1], handles[4])
-                        val bottomControl = curveControl(corners[3], corners[2], handles[6])
+                        val rightControl = curveControl(corners[1], corners[2], handles[5])
+                        val bottomControl = curveControl(corners[2], corners[3], handles[6])
+                        val leftControl = curveControl(corners[3], corners[0], handles[7])
                         val path = Path().apply {
                             moveTo(corners[0].x, corners[0].y)
                             quadraticTo(topControl.x, topControl.y, corners[1].x, corners[1].y)
-                            lineTo(corners[2].x, corners[2].y)
+                            quadraticTo(rightControl.x, rightControl.y, corners[2].x, corners[2].y)
                             quadraticTo(bottomControl.x, bottomControl.y, corners[3].x, corners[3].y)
+                            quadraticTo(leftControl.x, leftControl.y, corners[0].x, corners[0].y)
                             close()
                         }
                         drawPath(path, boundaryColor, style = Stroke(width = 6f))
@@ -220,7 +226,7 @@ fun CropEditorDialog(
                         // Draw 8 Handles (4 Corners + 4 Midpoints)
                         handles.forEachIndexed { index, point ->
                             val radius = if (index < 4) 18f else 14f
-                            val bendHandle = curveMode && (index == 4 || index == 6)
+                            val bendHandle = curveMode && index >= 4
                             drawCircle(if (bendHandle) Color(0xFFF59E0B) else handleColor, radius = radius, center = point)
                             drawCircle(Color.White, radius = radius * 0.45f, center = point)
                         }
@@ -346,7 +352,7 @@ fun CropEditorDialog(
                             val image = bitmap ?: return@TextButton
                             if (curveMode) {
                                 curveMode = false
-                                crop = crop.copy(topBow = null, bottomBow = null)
+                                crop = crop.straightened()
                             } else {
                                 curveMode = true
                                 // Start from the page's own edges; the orange handles then fine-tune the bend.
@@ -420,11 +426,11 @@ private fun handlesForCrop(crop: CropQuad, width: Float, height: Float): List<Of
     val br = Offset(crop.bottomRight.x * width, crop.bottomRight.y * height)
     val bl = Offset(crop.bottomLeft.x * width, crop.bottomLeft.y * height)
 
-    // Midpoints; the top and bottom ones sit on the bent edge when the page is curved.
+    // Midpoints, sitting on the bent edge when the page is curved.
     val tm = Offset((tl.x + tr.x) / 2f + (crop.topBow?.x ?: 0f) * width, (tl.y + tr.y) / 2f + (crop.topBow?.y ?: 0f) * height)
-    val rm = Offset((tr.x + br.x) / 2f, (tr.y + br.y) / 2f)
+    val rm = Offset((tr.x + br.x) / 2f + (crop.rightBow?.x ?: 0f) * width, (tr.y + br.y) / 2f + (crop.rightBow?.y ?: 0f) * height)
     val bm = Offset((br.x + bl.x) / 2f + (crop.bottomBow?.x ?: 0f) * width, (br.y + bl.y) / 2f + (crop.bottomBow?.y ?: 0f) * height)
-    val lm = Offset((bl.x + tl.x) / 2f, (bl.y + tl.y) / 2f)
+    val lm = Offset((bl.x + tl.x) / 2f + (crop.leftBow?.x ?: 0f) * width, (bl.y + tl.y) / 2f + (crop.leftBow?.y ?: 0f) * height)
 
     return listOf(tl, tr, br, bl, tm, rm, bm, lm)
 }

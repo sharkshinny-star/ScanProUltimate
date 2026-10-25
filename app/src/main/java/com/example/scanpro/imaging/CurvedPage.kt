@@ -6,10 +6,10 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Geometry for flattening a curved page (a thick book, a bent receipt): the top and bottom edges are quadratic
- * curves through the corners and a bent midpoint, the sides are straight, and every row of the flattened page
- * is a straight blend of the two curves. Points along each curve are spaced by length rather than by curve
- * parameter, so letters keep their width across the bend.
+ * Geometry for flattening a curved page (a thick book, a bent receipt): each edge is a quadratic curve through
+ * its two corners and a bent midpoint, and the inside is filled by blending the four edges (a Coons patch).
+ * With straight sides this is simply a blend of the top and bottom curves. Points along each curve are spaced
+ * by length rather than by curve parameter, so letters keep their width across the bend.
  */
 object CurvedPage {
     data class Pt(val x: Float, val y: Float) {
@@ -61,31 +61,50 @@ object CurvedPage {
         }
     }
 
-    /** Width and height of the flattened page: the longer curve, and the longest distance between them. */
-    fun outputSize(top: Array<Pt>, bottom: Array<Pt>, topLength: Float, bottomLength: Float): Pair<Int, Int> {
-        val width = max(topLength, bottomLength)
-        var height = 0f
+    /**
+     * Height of the flattened page: the longer side, or the widest gap between the top and bottom curves when
+     * those bulge apart more than the sides are long.
+     */
+    fun outputHeight(top: Array<Pt>, bottom: Array<Pt>, leftLength: Float, rightLength: Float): Int {
+        var height = max(leftLength, rightLength)
         val stride = max(1, top.size / 32)
         for (i in top.indices step stride) height = max(height, (bottom[i] - top[i]).length())
-        height = max(height, (bottom.last() - top.last()).length())
-        return width.roundToInt() to height.roundToInt()
+        return height.roundToInt()
+    }
+
+    /** The point of the page at (u, v), blended from the four edges sampled at those fractions. */
+    fun coons(t: Pt, b: Pt, l: Pt, r: Pt, tl: Pt, tr: Pt, bl: Pt, br: Pt, u: Float, v: Float): Pt {
+        val iu = 1f - u
+        val iv = 1f - v
+        val x = iv * t.x + v * b.x + iu * l.x + u * r.x - (iu * iv * tl.x + u * iv * tr.x + iu * v * bl.x + u * v * br.x)
+        val y = iv * t.y + v * b.y + iu * l.y + u * r.y - (iu * iv * tl.y + u * iv * tr.y + iu * v * bl.y + u * v * br.y)
+        return Pt(x, y)
     }
 
     /**
      * Fills [mapX]/[mapY] (row-major, [rows] × top.size) with the source position of each output pixel in rows
-     * [firstRow] until firstRow + rows of a flattened page [height] pixels tall.
+     * [firstRow] until firstRow + rows. [top]/[bottom] are sampled once per output column and [left]/[right]
+     * (top to bottom) once per output row.
      */
-    fun fillRows(top: Array<Pt>, bottom: Array<Pt>, firstRow: Int, rows: Int, height: Int, mapX: FloatArray, mapY: FloatArray) {
+    fun fillRows(
+        top: Array<Pt>, bottom: Array<Pt>, left: Array<Pt>, right: Array<Pt>,
+        firstRow: Int, rows: Int, mapX: FloatArray, mapY: FloatArray
+    ) {
         val width = top.size
-        val denominator = max(1, height - 1).toFloat()
+        val height = left.size
+        val tl = top.first(); val tr = top.last(); val bl = bottom.first(); val br = bottom.last()
+        val uDenominator = max(1, width - 1).toFloat()
+        val vDenominator = max(1, height - 1).toFloat()
         for (r in 0 until rows) {
-            val v = (firstRow + r) / denominator
+            val row = firstRow + r
+            val v = row / vDenominator
+            val l = left[row]
+            val rr = right[row]
             val offset = r * width
             for (x in 0 until width) {
-                val t = top[x]
-                val b = bottom[x]
-                mapX[offset + x] = t.x + v * (b.x - t.x)
-                mapY[offset + x] = t.y + v * (b.y - t.y)
+                val p = coons(top[x], bottom[x], l, rr, tl, tr, bl, br, x / uDenominator, v)
+                mapX[offset + x] = p.x
+                mapY[offset + x] = p.y
             }
         }
     }

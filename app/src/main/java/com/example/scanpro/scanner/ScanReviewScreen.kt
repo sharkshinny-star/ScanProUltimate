@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -85,6 +86,7 @@ import java.util.UUID
 import kotlin.math.hypot
 
 private val Blue = Color(0xFF2F7BFF)
+private val Amber = Color(0xFFF59E0B)
 
 /**
  * Full-screen review shown after capturing: swipe through pages with the pager, drag the corners, rotate,
@@ -107,6 +109,8 @@ fun ScanReviewScreen(
     val uri = pages[current]
     val key = uri.toString()
     var working by remember { mutableStateOf(false) }
+    // Curve mode shows a handle in the middle of each edge that bends it, for book pages and curled paper.
+    var curveMode by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     val blocked = working || processing
 
@@ -213,7 +217,7 @@ fun ScanReviewScreen(
             if (image == null || quad == null) {
                 CircularProgressIndicator(color = Blue)
             } else {
-                CropCanvas(image = image, crop = quad, enabled = !blocked, onCropChange = { quads[key] = it })
+                CropCanvas(image = image, crop = quad, curveMode = curveMode, enabled = !blocked, onCropChange = { quads[key] = it })
             }
         }
 
@@ -273,6 +277,23 @@ fun ScanReviewScreen(
                 }
             }
             ReviewAction(Icons.Default.Fullscreen, "No crop", !blocked) { quads[key] = CropQuad.DEFAULT }
+            ReviewAction(Icons.Default.Gesture, if (curveMode) "Curve on" else "Curve", !blocked && bitmap != null, highlighted = curveMode) {
+                val image = bitmap ?: return@ReviewAction
+                val start = quads[key] ?: return@ReviewAction
+                if (curveMode) {
+                    curveMode = false
+                    quads[key] = start.straightened()
+                } else {
+                    curveMode = true
+                    // Start from the page's own edges; the orange handles then fine-tune each bend.
+                    scope.launch {
+                        val estimated = withContext(Dispatchers.Default) {
+                            runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
+                        }
+                        if (curveMode && quads[key] == start) quads[key] = estimated
+                    }
+                }
+            }
             ReviewAction(Icons.AutoMirrored.Filled.RotateLeft, "Left", !blocked) { rotate(clockwise = false) }
             ReviewAction(Icons.AutoMirrored.Filled.RotateRight, "Right", !blocked) { rotate(clockwise = true) }
             Button(enabled = !blocked, onClick = onDone) {
@@ -284,10 +305,14 @@ fun ScanReviewScreen(
 }
 
 @Composable
-private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
-    val tint = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, highlighted: Boolean = false, onClick: () -> Unit) {
+    val tint = when {
+        !enabled -> Color.White.copy(alpha = 0.35f)
+        highlighted -> Amber
+        else -> Color.White
+    }
     Column(
-        Modifier.clickable(enabled = enabled, onClick = onClick).padding(horizontal = 8.dp, vertical = 6.dp),
+        Modifier.clickable(enabled = enabled, onClick = onClick).padding(horizontal = 6.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(icon, contentDescription = null, tint = tint)
@@ -295,20 +320,24 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, onC
     }
 }
 
-/** The page with a draggable four-corner outline. Dragging moves whichever corner is nearest the touch. */
+/**
+ * The page with a draggable four-corner outline. Dragging moves whichever corner is nearest the touch; in
+ * [curveMode] the handle in the middle of each edge bends that edge.
+ */
 @Composable
-private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropChange: (CropQuad) -> Unit) {
+private fun CropCanvas(image: Bitmap, crop: CropQuad, curveMode: Boolean, enabled: Boolean, onCropChange: (CropQuad) -> Unit) {
     var active by remember { mutableStateOf(0) }
     var dragging by remember { mutableStateOf(false) }
     val latest by androidx.compose.runtime.rememberUpdatedState(crop)
     val latestEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
+    val latestCurveMode by androidx.compose.runtime.rememberUpdatedState(curveMode)
     Canvas(
         Modifier
             .aspectRatio(image.width.toFloat() / image.height.toFloat())
             .pointerInput(image) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
-                    val points = corners(latest).map { Offset(it.x * size.width, it.y * size.height) }
+                    val points = handles(latest, latestCurveMode).map { Offset(it.x * size.width, it.y * size.height) }
                     val nearest = points.indices.minByOrNull { hypot(points[it].x - down.position.x, points[it].y - down.position.y) } ?: 0
                     val reach = 44.dp.toPx()
                     val distance = hypot(points[nearest].x - down.position.x, points[nearest].y - down.position.y)
@@ -319,28 +348,42 @@ private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropCh
                     drag(down.id) { change ->
                         change.consume()
                         val delta = change.position - change.previousPosition
+                        if (active >= 4) {
+                            onCropChange(bend(latest, active - 4, delta.x / size.width, delta.y / size.height))
+                            return@drag
+                        }
                         val list = corners(latest).toMutableList()
                         val p = list[active]
                         list[active] = NormalizedPoint(
                             (p.x + delta.x / size.width).coerceIn(0f, 1f),
                             (p.y + delta.y / size.height).coerceIn(0f, 1f)
                         )
-                        onCropChange(CropQuad(list[0], list[1], list[2], list[3]))
+                        // copy() keeps any bends: they are stored relative to the corners, so they follow them.
+                        onCropChange(latest.copy(topLeft = list[0], topRight = list[1], bottomRight = list[2], bottomLeft = list[3]))
                     }
                     dragging = false
                 }
             }
     ) {
         drawImage(image.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
-        val points = corners(crop).map { Offset(it.x * size.width, it.y * size.height) }
+        val all = handles(crop, curveMode = true).map { Offset(it.x * size.width, it.y * size.height) }
+        val points = all.take(4)
+        // Each edge as the curve it will be flattened along (a straight edge's midpoint gives a straight line).
+        fun control(a: Offset, b: Offset, mid: Offset) = Offset(2f * mid.x - (a.x + b.x) / 2f, 2f * mid.y - (a.y + b.y) / 2f)
         val path = Path().apply {
             moveTo(points[0].x, points[0].y)
-            points.drop(1).forEach { lineTo(it.x, it.y) }
+            for (edge in 0 until 4) {
+                val a = points[edge]
+                val b = points[(edge + 1) % 4]
+                val c = control(a, b, all[4 + edge])
+                quadraticTo(c.x, c.y, b.x, b.y)
+            }
             close()
         }
         drawPath(path, Blue, style = Stroke(width = 3.dp.toPx()))
         points.forEach { drawCircle(Blue, radius = 11.dp.toPx(), center = it) }
-        if (dragging) {
+        if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
+        if (dragging && active < 4) {
             val corner = corners(crop)[active]
             val sample = 96
             val sx = (corner.x * image.width).toInt().coerceIn(0, image.width - 1)
@@ -366,6 +409,29 @@ private fun CropCanvas(image: Bitmap, crop: CropQuad, enabled: Boolean, onCropCh
 }
 
 private fun corners(crop: CropQuad) = listOf(crop.topLeft, crop.topRight, crop.bottomRight, crop.bottomLeft)
+
+/** The corners, then (in curve mode) the middle of the top, right, bottom and left edges, bends included. */
+private fun handles(crop: CropQuad, curveMode: Boolean): List<NormalizedPoint> {
+    val c = corners(crop)
+    if (!curveMode) return c
+    fun mid(a: NormalizedPoint, b: NormalizedPoint, bow: NormalizedPoint?) =
+        NormalizedPoint((a.x + b.x) / 2f + (bow?.x ?: 0f), (a.y + b.y) / 2f + (bow?.y ?: 0f))
+    return c + listOf(
+        mid(c[0], c[1], crop.topBow), mid(c[1], c[2], crop.rightBow),
+        mid(c[2], c[3], crop.bottomBow), mid(c[3], c[0], crop.leftBow)
+    )
+}
+
+/** Bends edge [edge] (0 top, 1 right, 2 bottom, 3 left) by a drag of (dx, dy), within sensible limits. */
+private fun bend(crop: CropQuad, edge: Int, dx: Float, dy: Float): CropQuad {
+    fun moved(bow: NormalizedPoint?) = NormalizedPoint(((bow?.x ?: 0f) + dx).coerceIn(-0.3f, 0.3f), ((bow?.y ?: 0f) + dy).coerceIn(-0.3f, 0.3f))
+    return when (edge) {
+        0 -> crop.copy(topBow = moved(crop.topBow))
+        1 -> crop.copy(rightBow = moved(crop.rightBow))
+        2 -> crop.copy(bottomBow = moved(crop.bottomBow))
+        else -> crop.copy(leftBow = moved(crop.leftBow))
+    }
+}
 
 /** Detected page outline, or the whole frame when nothing convincing is found. */
 private fun detectQuad(image: Bitmap): CropQuad {

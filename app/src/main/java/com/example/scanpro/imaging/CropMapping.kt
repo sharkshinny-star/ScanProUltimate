@@ -19,38 +19,42 @@ class CropMapping(private val crop: CropQuad, private val aspect: Float) {
     )
     private val inverseStraight = straight?.let(Homography::invert)
 
-    // Curved crops: both edges sampled evenly by length, in photo coordinates scaled to the true aspect.
+    // Curved crops: all four edges sampled evenly by length, in photo coordinates scaled to the true aspect.
     private val top: Array<CurvedPage.Pt>?
     private val bottom: Array<CurvedPage.Pt>?
+    private val left: Array<CurvedPage.Pt>?
+    private val right: Array<CurvedPage.Pt>?
 
     init {
         if (crop.isCurved) {
-            fun pt(x: Float, y: Float) = CurvedPage.Pt(x * aspect, y)
-            fun edge(a: CurvedPage.Pt, b: CurvedPage.Pt, bowX: Float, bowY: Float): Array<CurvedPage.Pt> {
-                val mid = CurvedPage.Pt((a.x + b.x) / 2f + bowX * aspect, (a.y + b.y) / 2f + bowY)
+            fun pt(p: com.example.scanpro.data.NormalizedPoint) = CurvedPage.Pt(p.x * aspect, p.y)
+            fun edge(a: CurvedPage.Pt, b: CurvedPage.Pt, bow: com.example.scanpro.data.NormalizedPoint?): Array<CurvedPage.Pt> {
+                val mid = CurvedPage.Pt((a.x + b.x) / 2f + (bow?.x ?: 0f) * aspect, (a.y + b.y) / 2f + (bow?.y ?: 0f))
                 return CurvedPage.evenlySpaced(a, CurvedPage.control(a, mid, b), b, SAMPLES)
             }
-            top = edge(pt(crop.topLeft.x, crop.topLeft.y), pt(crop.topRight.x, crop.topRight.y), crop.topBow?.x ?: 0f, crop.topBow?.y ?: 0f)
-            bottom = edge(pt(crop.bottomLeft.x, crop.bottomLeft.y), pt(crop.bottomRight.x, crop.bottomRight.y), crop.bottomBow?.x ?: 0f, crop.bottomBow?.y ?: 0f)
+            val tl = pt(crop.topLeft); val tr = pt(crop.topRight); val br = pt(crop.bottomRight); val bl = pt(crop.bottomLeft)
+            top = edge(tl, tr, crop.topBow)
+            bottom = edge(bl, br, crop.bottomBow)
+            left = edge(tl, bl, crop.leftBow)
+            right = edge(tr, br, crop.rightBow)
         } else {
-            top = null
-            bottom = null
+            top = null; bottom = null; left = null; right = null
         }
+    }
+
+    private fun Array<CurvedPage.Pt>.at(fraction: Float): CurvedPage.Pt {
+        val position = fraction.coerceIn(0f, 1f) * (SAMPLES - 1)
+        val i = min(position.toInt(), SAMPLES - 2)
+        val f = position - i
+        return CurvedPage.Pt(this[i].x + (this[i + 1].x - this[i].x) * f, this[i].y + (this[i + 1].y - this[i].y) * f)
     }
 
     /** The photo point shown at (u, v) of the cropped page. */
     fun toSource(u: Float, v: Float): Pair<Float, Float>? {
-        val t = top
-        val b = bottom
-        if (t == null || b == null) return straight?.let { Homography.apply(it, u, v) }
-        val position = u.coerceIn(0f, 1f) * (SAMPLES - 1)
-        val i = min(position.toInt(), SAMPLES - 2)
-        val f = position - i
-        val tx = t[i].x + (t[i + 1].x - t[i].x) * f
-        val ty = t[i].y + (t[i + 1].y - t[i].y) * f
-        val bx = b[i].x + (b[i + 1].x - b[i].x) * f
-        val by = b[i].y + (b[i + 1].y - b[i].y) * f
-        return ((tx + v * (bx - tx)) / aspect) to (ty + v * (by - ty))
+        val t = top; val b = bottom; val l = left; val r = right
+        if (t == null || b == null || l == null || r == null) return straight?.let { Homography.apply(it, u, v) }
+        val p = CurvedPage.coons(t.at(u), b.at(u), l.at(v), r.at(v), t.first(), t.last(), b.first(), b.last(), u, v)
+        return (p.x / aspect) to p.y
     }
 
     /** Where the photo point (x, y) lands on the cropped page, or null if it can't be placed. */

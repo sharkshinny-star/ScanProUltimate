@@ -1,0 +1,47 @@
+# ScanPro's own startup and hot paths. Android compiles these ahead of time when the app is installed (from Play
+# or through androidx.profileinstaller), so the first launch, the camera and the document screen don't start
+# out interpreted. Wildcards are expanded against the app's classes before R8, so the rules survive renaming.
+#
+# A measured profile can be added on top: run the :baselineprofile generator on a device
+# (./gradlew :app:generateReleaseBaselineProfile); its output is merged with these rules.
+#
+# HSP = hot, run at startup, run after startup.  L = load the class early.
+
+# Process start, dependency injection (Hilt/Dagger generated code) and the activity.
+HSPLcom/example/scanpro/ScanProApplication**;->**(**)**
+HSPLcom/example/scanpro/Hilt_**;->**(**)**
+HSPLcom/example/scanpro/Dagger**;->**(**)**
+HSPLcom/example/scanpro/**_Factory;->**(**)**
+HSPLcom/example/scanpro/**_HiltModules**;->**(**)**
+HSPLcom/example/scanpro/**_MembersInjector;->**(**)**
+HSPLcom/example/scanpro/MainActivity**;->**(**)**
+HSPLcom/example/scanpro/AppViewModel**;->**(**)**
+Lcom/example/scanpro/ScanProApplication;
+Lcom/example/scanpro/MainActivity;
+Lcom/example/scanpro/AppViewModel;
+
+# App shell: theme, navigation, bottom bar or rail, welcome and lock screens.
+HSPLcom/example/scanpro/ui/**;->**(**)**
+HSPLcom/example/scanpro/navigation/**;->**(**)**
+HSPLcom/example/scanpro/core/**;->**(**)**
+HSPLcom/example/scanpro/feature/lock/**;->**(**)**
+Lcom/example/scanpro/ui/**;
+Lcom/example/scanpro/navigation/**;
+
+# Home and Documents: the library, its database and settings.
+HSPLcom/example/scanpro/feature/library/**;->**(**)**
+HSPLcom/example/scanpro/data/**;->**(**)**
+Lcom/example/scanpro/feature/library/**;
+Lcom/example/scanpro/data/**;
+
+# Camera: preview, page detection, QR mode and the review step.
+HSPLcom/example/scanpro/scanner/**;->**(**)**
+Lcom/example/scanpro/scanner/**;
+
+# Opening a document, its insights and the PDF tools tab.
+HSPLcom/example/scanpro/feature/document/**;->**(**)**
+HSPLcom/example/scanpro/feature/tools/**;->**(**)**
+HSPLcom/example/scanpro/intelligence/**;->**(**)**
+HSPLcom/example/scanpro/imaging/ImageProcessor**;->**(**)**
+HSPLcom/example/scanpro/imaging/OcrEngine**;->**(**)**
+HSPLcom/example/scanpro/imaging/PdfExporter**;->**(**)**

@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ScanProUltimate"
 include(":app")
+include(":baselineprofile")

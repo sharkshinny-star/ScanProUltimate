@@ -42,6 +42,8 @@ object JsonCodec {
         put("bl", point(crop.bottomLeft))
         crop.topBow?.let { put("topBow", vector(it)) }
         crop.bottomBow?.let { put("bottomBow", vector(it)) }
+        crop.leftBow?.let { put("leftBow", vector(it)) }
+        crop.rightBow?.let { put("rightBow", vector(it)) }
     }.toString()
 
     fun decodeCrop(raw: String?): CropQuad = runCatching {
@@ -53,7 +55,9 @@ object JsonCodec {
             bottomRight = decodePoint(json.getJSONObject("br")),
             bottomLeft = decodePoint(json.getJSONObject("bl")),
             topBow = json.optJSONObject("topBow")?.let(::decodeVector),
-            bottomBow = json.optJSONObject("bottomBow")?.let(::decodeVector)
+            bottomBow = json.optJSONObject("bottomBow")?.let(::decodeVector),
+            leftBow = json.optJSONObject("leftBow")?.let(::decodeVector),
+            rightBow = json.optJSONObject("rightBow")?.let(::decodeVector)
         )
     }.getOrDefault(CropQuad.DEFAULT)
 
