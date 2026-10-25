@@ -277,8 +277,9 @@ class DocumentRepository @Inject constructor(
     suspend fun replaceAnnotations(documentId: String, pageId: String, annotations: List<PageAnnotation>) {
         val before = annotationsOf(documentId, pageId)
         editSinglePage(documentId, pageId) { page ->
-            // A moved redaction covers different text, so recognition runs again whenever one is present.
-            renderAndOcr(page.copy(annotations = annotations), runOcr = annotations.any { it.type == AnnotationType.REDACT })
+            // A moved, added or removed redaction changes which text is visible, so the page is read again.
+            val redactionInvolved = (annotations + before).any { it.type == AnnotationType.REDACT }
+            renderAndOcr(page.copy(annotations = annotations), runOcr = redactionInvolved)
         }
         deleteSignatureAssets(before.filter { old -> annotations.none { it.id == old.id } })
     }
@@ -945,7 +946,10 @@ class DocumentRepository @Inject constructor(
             position = position,
             sourcePath = newSource.absolutePath,
             imagePath = newRendered.absolutePath,
-            ocrText = source.ocrText
+            // The copy is the same image, so its text, word positions and "corrected by hand" mark still apply.
+            ocrText = source.ocrText,
+            ocrEdited = source.ocrEdited,
+            ocrWords = source.ocrWords
         )
     }
 

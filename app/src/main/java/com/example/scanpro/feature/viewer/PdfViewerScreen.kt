@@ -141,6 +141,8 @@ fun PdfViewerScreen(
     // Copies made for viewing (including decrypted ones) are removed when the viewer closes.
     val tempFiles = remember { mutableListOf<File>() }
     var needsPassword by remember { mutableStateOf(false) }
+    // The file actually on screen: an unlocked or unrestricted copy when the original is protected.
+    var openedFile by remember { mutableStateOf<File?>(null) }
     var lockedFile by remember { mutableStateOf<File?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
@@ -151,6 +153,7 @@ fun PdfViewerScreen(
             pfd = descriptor
             pdfRenderer = renderer
             pageCount = renderer.pageCount
+            openedFile = file
         } catch (error: Throwable) {
             runCatching { descriptor.close() }
             throw error
@@ -232,7 +235,7 @@ fun PdfViewerScreen(
         }
     }
 
-    LaunchedEffect(searchQuery) {
+    LaunchedEffect(searchQuery, openedFile) {
         if (searchQuery.isBlank() || isImageMode) {
             matchingPageIndices = emptyList()
             currentMatchIdx = 0
@@ -245,7 +248,8 @@ fun PdfViewerScreen(
                 isSearchingText = true
                 val matches = mutableListOf<Int>()
                 val tempPdf = File(context.cacheDir, "search_temp_${System.currentTimeMillis()}.pdf")
-                val stream = if (pdfUri.scheme == "file" && pdfUri.path != null) {
+                // Search the file being shown; for a protected PDF that is the unlocked copy, not the original.
+                val stream = openedFile ?: if (pdfUri.scheme == "file" && pdfUri.path != null) {
                     File(pdfUri.path!!)
                 } else {
                     context.contentResolver.openInputStream(pdfUri)?.use { input ->
@@ -276,6 +280,8 @@ fun PdfViewerScreen(
                 matchingPageIndices = emptyList()
             } finally {
                 isSearchingText = false
+                // Each search may copy the document; never leave those copies behind.
+                cacheSearchCleanup(context)
             }
         }
     }
@@ -746,4 +752,8 @@ private fun PdfPasswordDialog(error: String?, onCancel: () -> Unit, onSubmit: (S
         confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { onSubmit(password) }) { Text("Open") } },
         dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } }
     )
+}
+
+private fun cacheSearchCleanup(context: android.content.Context) {
+    context.cacheDir.listFiles { file -> file.name.startsWith("search_temp_") }?.forEach { it.delete() }
 }
