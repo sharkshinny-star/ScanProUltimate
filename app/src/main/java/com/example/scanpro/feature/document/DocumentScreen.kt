@@ -40,6 +40,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Output
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.AddToDrive
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
@@ -233,6 +235,7 @@ fun DocumentRoute(
         onExportIdCopy = viewModel::exportIdCopy,
         onExportLongImage = viewModel::exportLongImage,
         onExportOcrTextFile = viewModel::exportOcrTextFile,
+        onExportWord = viewModel::exportWordFile,
         onSplitDocument = viewModel::splitDocument,
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
@@ -267,7 +270,7 @@ internal fun DocumentDetailScreen(
     onApplyFilter: (String, PageFilter) -> Unit,
     onRotate: (String) -> Unit,
     onCrop: (String, CropQuad) -> Unit,
-    onAdjustments: (String, PageAdjustments) -> Unit,
+    onAdjustments: (String, PageAdjustments, Boolean) -> Unit,
     onResetPage: (String) -> Unit,
     onMove: (String, Int) -> Unit,
     onDuplicatePage: (String) -> Unit,
@@ -290,6 +293,7 @@ internal fun DocumentDetailScreen(
     onExportIdCopy: () -> Unit,
     onExportLongImage: () -> Unit,
     onExportOcrTextFile: () -> Unit,
+    onExportWord: () -> Unit = {},
     onSplitDocument: () -> Unit,
     onExportProtectedPdf: (String) -> Unit,
     onExportEncryptedBackup: (String) -> Unit,
@@ -563,6 +567,7 @@ internal fun DocumentDetailScreen(
                     Spacer(Modifier.height(8.dp))
                     ToolGrid {
                         ToolTile(Icons.Default.Crop, "Crop", !busy) { cropOpen = true }
+                        ToolTile(Icons.Default.AutoFixHigh, "Clean up", !busy) { adjustmentsOpen = true }
                         ToolTile(Icons.Default.Tune, "Fine tune", !busy) { adjustmentsOpen = true }
                         ToolTile(Icons.AutoMirrored.Filled.RotateRight, "Rotate", !busy) { onRotate(currentPage.id) }
                         ToolTile(Icons.Default.RestartAlt, "Reset", !busy) { onResetPage(currentPage.id) }
@@ -593,6 +598,7 @@ internal fun DocumentDetailScreen(
                         ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy) { onWithFreshPdf({}) { openPdf(context, it) } }
                         ToolTile(Icons.Default.Save, "Save PDF", !busy) { savePdfLauncher.launch("${document.title}.pdf") }
                         ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy) { saveToDrive(document.title) }
+                        ToolTile(Icons.Default.Description, "Word (.docx)", !busy && document.ocrText.isNotBlank()) { onExportWord() }
                         ToolTile(Icons.Default.Print, "Print", !busy) { onWithFreshPdf({}) { printPdf(context, it) } }
                         ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
                         ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
@@ -638,9 +644,11 @@ internal fun DocumentDetailScreen(
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // Wraps on narrow phones instead of squeezing four buttons into one line.
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         TextButton(onClick = { shareOcrText(context, document) }) { Text("Share text") }
                         TextButton(onClick = onExportOcrTextFile, enabled = !busy && document.ocrText.isNotBlank()) { Text("TXT file") }
+                        TextButton(onClick = onExportWord, enabled = !busy && document.ocrText.isNotBlank()) { Text("Word file") }
                         TextButton(onClick = onReOcr, enabled = !busy) { Text("Re-run OCR") }
                     }
 
@@ -844,9 +852,10 @@ internal fun DocumentDetailScreen(
     if (adjustmentsOpen && currentPage != null) {
         AdjustmentsDialog(
             page = currentPage,
+            pageCount = pages.size,
             onDismiss = { adjustmentsOpen = false },
-            onConfirm = { value ->
-                onAdjustments(currentPage.id, value)
+            onConfirm = { value, allPages ->
+                onAdjustments(currentPage.id, value, allPages)
                 adjustmentsOpen = false
             }
         )

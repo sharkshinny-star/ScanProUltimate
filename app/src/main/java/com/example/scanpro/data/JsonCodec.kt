@@ -40,6 +40,8 @@ object JsonCodec {
         put("tr", point(crop.topRight))
         put("br", point(crop.bottomRight))
         put("bl", point(crop.bottomLeft))
+        crop.topBow?.let { put("topBow", vector(it)) }
+        crop.bottomBow?.let { put("bottomBow", vector(it)) }
     }.toString()
 
     fun decodeCrop(raw: String?): CropQuad = runCatching {
@@ -49,7 +51,9 @@ object JsonCodec {
             topLeft = decodePoint(json.getJSONObject("tl")),
             topRight = decodePoint(json.getJSONObject("tr")),
             bottomRight = decodePoint(json.getJSONObject("br")),
-            bottomLeft = decodePoint(json.getJSONObject("bl"))
+            bottomLeft = decodePoint(json.getJSONObject("bl")),
+            topBow = json.optJSONObject("topBow")?.let(::decodeVector),
+            bottomBow = json.optJSONObject("bottomBow")?.let(::decodeVector)
         )
     }.getOrDefault(CropQuad.DEFAULT)
 
@@ -57,6 +61,8 @@ object JsonCodec {
         put("brightness", value.brightness.toDouble())
         put("contrast", value.contrast.toDouble())
         put("saturation", value.saturation.toDouble())
+        put("shadows", value.removeShadows)
+        put("fingers", value.removeFingers)
     }.toString()
 
     fun decodeAdjustments(raw: String?): PageAdjustments = runCatching {
@@ -65,7 +71,9 @@ object JsonCodec {
         PageAdjustments(
             brightness = json.optDouble("brightness", 0.0).toFloat(),
             contrast = json.optDouble("contrast", 1.0).toFloat(),
-            saturation = json.optDouble("saturation", 1.0).toFloat()
+            saturation = json.optDouble("saturation", 1.0).toFloat(),
+            removeShadows = json.optBoolean("shadows", false),
+            removeFingers = json.optBoolean("fingers", false)
         ).normalized()
     }.getOrDefault(PageAdjustments.DEFAULT)
 
@@ -116,6 +124,14 @@ object JsonCodec {
         put("x", point.x.toDouble())
         put("y", point.y.toDouble())
     }
+
+    // Bows are offsets, not positions, so unlike points they may be negative; they are only kept within reason.
+    private fun vector(point: NormalizedPoint) = point(point)
+
+    private fun decodeVector(json: JSONObject) = NormalizedPoint(
+        x = json.optDouble("x", 0.0).toFloat().coerceIn(-0.5f, 0.5f),
+        y = json.optDouble("y", 0.0).toFloat().coerceIn(-0.5f, 0.5f)
+    )
 
     private fun decodePoint(json: JSONObject) = NormalizedPoint(
         x = json.optDouble("x", 0.0).toFloat(),

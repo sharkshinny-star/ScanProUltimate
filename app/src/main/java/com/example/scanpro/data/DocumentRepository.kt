@@ -249,6 +249,18 @@ class DocumentRepository @Inject constructor(
             renderAndOcr(page.copy(adjustments = adjustments.normalized()))
         }
 
+    /** [adjustments] on [pageId]; every other page gets only its shadow and finger clean-up switches. */
+    suspend fun applyAdjustmentsToAll(documentId: String, pageId: String, adjustments: PageAdjustments) = withContext(Dispatchers.IO) {
+        val doc = requireDocument(documentId)
+        val clean = adjustments.normalized()
+        val pages = doc.pages.map { page ->
+            val updated = if (page.id == pageId) clean
+            else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
+            if (updated == page.adjustments) page else renderAndOcr(page.copy(adjustments = updated))
+        }
+        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+    }
+
     suspend fun resetPage(documentId: String, pageId: String) {
         val removed = annotationsOf(documentId, pageId)
         editSinglePage(documentId, pageId) { page ->
@@ -556,6 +568,15 @@ class DocumentRepository @Inject constructor(
         require(doc.ocrText.isNotBlank()) { "No recognized text to export" }
         val file = freshExportFile(safeName(doc.title), "txt")
         file.writeText(doc.ocrText, Charsets.UTF_8)
+        file
+    }
+
+    /** The recognised text as an editable Word document, one Word page per scanned page. */
+    suspend fun exportWord(id: String): File = withContext(Dispatchers.IO) {
+        val doc = requireDocument(id)
+        require(doc.ocrText.isNotBlank()) { "No recognized text to export" }
+        val file = freshExportFile(safeName(doc.title), "docx")
+        com.example.scanpro.imaging.DocxExporter.export(doc.title, doc.pages.sortedBy { it.position }.map { it.ocrText }, file)
         file
     }
 

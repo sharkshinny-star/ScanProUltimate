@@ -67,11 +67,22 @@ data class CropQuad(
     val topLeft: NormalizedPoint = NormalizedPoint(0f, 0f),
     val topRight: NormalizedPoint = NormalizedPoint(1f, 0f),
     val bottomRight: NormalizedPoint = NormalizedPoint(1f, 1f),
-    val bottomLeft: NormalizedPoint = NormalizedPoint(0f, 1f)
+    val bottomLeft: NormalizedPoint = NormalizedPoint(0f, 1f),
+    /**
+     * For a curved page: how far the middle of the top edge bends away from the straight line between the top
+     * corners, as a fraction of the image width (x) and height (y). Null for a straight edge.
+     */
+    val topBow: NormalizedPoint? = null,
+    /** The same for the bottom edge. */
+    val bottomBow: NormalizedPoint? = null
 ) {
+    /** True when the top or bottom edge is bent enough to be flattened rather than just straightened. */
+    val isCurved: Boolean
+        get() = listOfNotNull(topBow, bottomBow).any { kotlin.math.abs(it.x) > 0.002f || kotlin.math.abs(it.y) > 0.002f }
+
     fun isIdentity(epsilon: Float = 0.002f): Boolean {
         val d = DEFAULT
-        return kotlin.math.abs(topLeft.x - d.topLeft.x) < epsilon &&
+        return !isCurved && kotlin.math.abs(topLeft.x - d.topLeft.x) < epsilon &&
             kotlin.math.abs(topLeft.y - d.topLeft.y) < epsilon &&
             kotlin.math.abs(topRight.x - d.topRight.x) < epsilon &&
             kotlin.math.abs(topRight.y - d.topRight.y) < epsilon &&
@@ -92,18 +103,25 @@ data class PageAdjustments(
     /** 0.6 .. 1.6, with 1.0 neutral. */
     val contrast: Float = 1f,
     /** 0.0 .. 2.0, with 1.0 neutral. */
-    val saturation: Float = 1f
+    val saturation: Float = 1f,
+    /** Evens out shadows and uneven lighting on the paper. */
+    val removeShadows: Boolean = false,
+    /** Paints over fingers holding the page at its edges. */
+    val removeFingers: Boolean = false
 ) {
-    fun normalized() = PageAdjustments(
+    fun normalized() = copy(
         brightness = brightness.coerceIn(-1f, 1f),
         contrast = contrast.coerceIn(0.6f, 1.6f),
         saturation = saturation.coerceIn(0f, 2f)
     )
 
-    fun isNeutral(epsilon: Float = 0.001f): Boolean =
+    /** True when brightness, contrast and saturation are untouched (the clean-up switches are separate). */
+    fun isTonallyNeutral(epsilon: Float = 0.001f): Boolean =
         kotlin.math.abs(brightness) < epsilon &&
             kotlin.math.abs(contrast - 1f) < epsilon &&
             kotlin.math.abs(saturation - 1f) < epsilon
+
+    fun isNeutral(epsilon: Float = 0.001f): Boolean = isTonallyNeutral(epsilon) && !removeShadows && !removeFingers
 
     companion object {
         val DEFAULT = PageAdjustments()

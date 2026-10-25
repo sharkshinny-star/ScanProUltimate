@@ -90,8 +90,9 @@ class DocumentViewModel @Inject constructor(
     fun applyCrop(pageId: String, crop: CropQuad) =
         run("Perspective-correcting page…", "Crop applied") { repository.applyCrop(id, pageId, crop) }
 
-    fun applyAdjustments(pageId: String, adjustments: PageAdjustments) =
-        run("Applying image adjustments…", "Adjustments applied") { repository.applyAdjustments(id, pageId, adjustments) }
+    fun applyAdjustments(pageId: String, adjustments: PageAdjustments, allPages: Boolean = false) =
+        if (allPages) run("Cleaning up every page…", "Clean-up applied to all pages") { repository.applyAdjustmentsToAll(id, pageId, adjustments) }
+        else run("Applying image adjustments…", "Adjustments applied") { repository.applyAdjustments(id, pageId, adjustments) }
 
     fun resetPage(pageId: String) =
         run("Restoring original page…", "Page reset") { repository.resetPage(id, pageId) }
@@ -170,6 +171,11 @@ class DocumentViewModel @Inject constructor(
         operations.publishExport(ExportArtifact(file.absolutePath, "text/plain", "Share OCR text file"))
     }
 
+    fun exportWordFile() = run("Creating Word document…", null) {
+        val file = repository.exportWord(id)
+        operations.publishExport(ExportArtifact(file.absolutePath, DOCX_MIME, "Share Word document"))
+    }
+
     fun exportPasswordProtectedPdf(password: String) = run("Encrypting PDF…", null) {
         val file = repository.exportPasswordProtectedPdf(id, password)
         operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", "Share protected PDF"))
@@ -223,3 +229,5 @@ class DocumentViewModel @Inject constructor(
         library.buildPdfInBackground(id)
     }
 }
+
+private const val DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

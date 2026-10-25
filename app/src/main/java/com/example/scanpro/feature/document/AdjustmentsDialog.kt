@@ -11,6 +11,14 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,13 +45,18 @@ import kotlin.math.roundToInt
 @Composable
 fun AdjustmentsDialog(
     page: ScanPage,
+    pageCount: Int = 1,
     onDismiss: () -> Unit,
-    onConfirm: (PageAdjustments) -> Unit
+    /** The new settings, and whether the shadow and finger clean-up should go to every page. */
+    onConfirm: (PageAdjustments, Boolean) -> Unit
 ) {
+    var allPages by remember(page.id) { mutableStateOf(false) }
     var brightness by remember(page.id, page.adjustments) { mutableFloatStateOf(page.adjustments.brightness) }
     var contrast by remember(page.id, page.adjustments) { mutableFloatStateOf(page.adjustments.contrast) }
     var saturation by remember(page.id, page.adjustments) { mutableFloatStateOf(page.adjustments.saturation) }
-    val adjustments = PageAdjustments(brightness, contrast, saturation).normalized()
+    var removeShadows by remember(page.id, page.adjustments) { mutableStateOf(page.adjustments.removeShadows) }
+    var removeFingers by remember(page.id, page.adjustments) { mutableStateOf(page.adjustments.removeFingers) }
+    val adjustments = PageAdjustments(brightness, contrast, saturation, removeShadows, removeFingers).normalized()
 
     val preview by produceState<Bitmap?>(
         initialValue = null,
@@ -73,9 +86,9 @@ fun AdjustmentsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Fine tune page") },
+        title = { Text("Clean up & fine tune") },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 preview?.let { bitmap ->
                     Image(
                         bitmap = bitmap.asImageBitmap(),
@@ -87,24 +100,48 @@ fun AdjustmentsDialog(
                     )
                 } ?: Text("Preparing preview…", style = MaterialTheme.typography.bodySmall)
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
+                CleanupSwitch("Remove shadows", "Evens out shadows and uneven light on the paper", removeShadows) { removeShadows = it }
+                CleanupSwitch("Remove fingers", "Paints over fingers holding the page edges", removeFingers) { removeFingers = it }
+                if (pageCount > 1) {
+                    CleanupSwitch("Clean up all $pageCount pages", "Apply the two switches above to every page", allPages) { allPages = it }
+                }
                 AdjustmentSlider("Brightness", brightness, -1f..1f) { brightness = it }
                 AdjustmentSlider("Contrast", contrast, 0.6f..1.6f) { contrast = it }
                 AdjustmentSlider("Saturation", saturation, 0f..2f) { saturation = it }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(adjustments) }) { Text("Apply") }
+            TextButton(onClick = { onConfirm(adjustments, allPages) }) { Text("Apply") }
         },
         dismissButton = {
             TextButton(onClick = {
                 brightness = 0f
                 contrast = 1f
                 saturation = 1f
+                removeShadows = false
+                removeFingers = false
             }) { Text("Reset") }
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+@Composable
+private fun CleanupSwitch(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.labelLarge)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = null)
+    }
 }
 
 @Composable

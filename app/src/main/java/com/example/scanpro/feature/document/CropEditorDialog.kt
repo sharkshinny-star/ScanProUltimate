@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -89,6 +90,9 @@ fun CropEditorDialog(
         val latestCrop by rememberUpdatedState(crop)
         var activeCorner by remember { mutableIntStateOf(0) }
         var draggingCorner by remember { mutableStateOf(false) }
+        // Curve mode: the top and bottom middle handles bend those edges instead of moving them.
+        var curveMode by remember(initial) { mutableStateOf(initial.isCurved) }
+        val latestCurveMode by rememberUpdatedState(curveMode)
 
         val handleColor = Color(0xFF2563EB) // High-visibility primary blue handle
         val boundaryColor = Color(0xFF3B82F6)
@@ -145,6 +149,18 @@ fun CropEditorDialog(
                                             latestCrop.bottomLeft
                                         ).toMutableList()
 
+                                        val bend = latestCurveMode && (activeCorner == 4 || activeCorner == 6)
+                                        if (bend) {
+                                            val dx = dragAmount.x / size.width
+                                            val dy = dragAmount.y / size.height
+                                            fun moved(bow: NormalizedPoint?) = NormalizedPoint(
+                                                ((bow?.x ?: 0f) + dx).coerceIn(-0.3f, 0.3f),
+                                                ((bow?.y ?: 0f) + dy).coerceIn(-0.3f, 0.3f)
+                                            )
+                                            crop = if (activeCorner == 4) latestCrop.copy(topBow = moved(latestCrop.topBow))
+                                            else latestCrop.copy(bottomBow = moved(latestCrop.bottomBow))
+                                            return@detectDragGestures
+                                        }
                                         if (activeCorner < 4) {
                                             // Corner handle
                                             val current = points[activeCorner]
@@ -175,7 +191,8 @@ fun CropEditorDialog(
                                                 }
                                             }
                                         }
-                                        crop = CropQuad(points[0], points[1], points[2], points[3])
+                                        // copy() keeps any bend: it is stored relative to the corners, so it follows them.
+                                        crop = latestCrop.copy(topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3])
                                     }
                                 )
                             }
@@ -188,11 +205,14 @@ fun CropEditorDialog(
                         val handles = handlesForCrop(crop, size.width, size.height)
                         val corners = handles.take(4)
 
+                        // Top and bottom are drawn as the curves the page will be flattened along.
+                        val topControl = curveControl(corners[0], corners[1], handles[4])
+                        val bottomControl = curveControl(corners[3], corners[2], handles[6])
                         val path = Path().apply {
                             moveTo(corners[0].x, corners[0].y)
-                            lineTo(corners[1].x, corners[1].y)
+                            quadraticTo(topControl.x, topControl.y, corners[1].x, corners[1].y)
                             lineTo(corners[2].x, corners[2].y)
-                            lineTo(corners[3].x, corners[3].y)
+                            quadraticTo(bottomControl.x, bottomControl.y, corners[3].x, corners[3].y)
                             close()
                         }
                         drawPath(path, boundaryColor, style = Stroke(width = 6f))
@@ -200,7 +220,8 @@ fun CropEditorDialog(
                         // Draw 8 Handles (4 Corners + 4 Midpoints)
                         handles.forEachIndexed { index, point ->
                             val radius = if (index < 4) 18f else 14f
-                            drawCircle(handleColor, radius = radius, center = point)
+                            val bendHandle = curveMode && (index == 4 || index == 6)
+                            drawCircle(if (bendHandle) Color(0xFFF59E0B) else handleColor, radius = radius, center = point)
                             drawCircle(Color.White, radius = radius * 0.45f, center = point)
                         }
 
@@ -305,7 +326,11 @@ fun CropEditorDialog(
                             scope.launch {
                                 val detection = withContext(Dispatchers.Default) { runCatching { DocumentEdgeDetector.detect(image) }.getOrNull() }
                                 val quad = detection?.quad
-                                if (quad != null && detection.confidence >= 0.34f) crop = quad
+                                if (quad != null && detection.confidence >= 0.34f) {
+                                    crop = if (curveMode) withContext(Dispatchers.Default) {
+                                        runCatching { ImageProcessor.estimateCurves(image, quad) }.getOrDefault(quad)
+                                    } else quad
+                                }
                             }
                         }
                     ) {
@@ -315,7 +340,41 @@ fun CropEditorDialog(
                         }
                     }
 
-                    TextButton(onClick = { crop = CropQuad(NormalizedPoint(0f, 0f), NormalizedPoint(1f, 0f), NormalizedPoint(1f, 1f), NormalizedPoint(0f, 1f)) }) {
+                    TextButton(
+                        enabled = bitmap != null,
+                        onClick = {
+                            val image = bitmap ?: return@TextButton
+                            if (curveMode) {
+                                curveMode = false
+                                crop = crop.copy(topBow = null, bottomBow = null)
+                            } else {
+                                curveMode = true
+                                // Start from the page's own edges; the orange handles then fine-tune the bend.
+                                scope.launch {
+                                    val start = crop
+                                    val estimated = withContext(Dispatchers.Default) {
+                                        runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
+                                    }
+                                    if (curveMode && crop == start) crop = estimated
+                                }
+                            }
+                        }
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.Gesture,
+                                contentDescription = null,
+                                tint = if (curveMode) Color(0xFFF59E0B) else Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Text(if (curveMode) "Curve on" else "Curve", color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+
+                    TextButton(onClick = {
+                        curveMode = false
+                        crop = CropQuad(NormalizedPoint(0f, 0f), NormalizedPoint(1f, 0f), NormalizedPoint(1f, 1f), NormalizedPoint(0f, 1f))
+                    }) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Fullscreen, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                             Text("No crop", color = Color.White, style = MaterialTheme.typography.labelSmall)
@@ -361,11 +420,14 @@ private fun handlesForCrop(crop: CropQuad, width: Float, height: Float): List<Of
     val br = Offset(crop.bottomRight.x * width, crop.bottomRight.y * height)
     val bl = Offset(crop.bottomLeft.x * width, crop.bottomLeft.y * height)
 
-    // Midpoints
-    val tm = Offset((tl.x + tr.x) / 2f, (tl.y + tr.y) / 2f)
+    // Midpoints; the top and bottom ones sit on the bent edge when the page is curved.
+    val tm = Offset((tl.x + tr.x) / 2f + (crop.topBow?.x ?: 0f) * width, (tl.y + tr.y) / 2f + (crop.topBow?.y ?: 0f) * height)
     val rm = Offset((tr.x + br.x) / 2f, (tr.y + br.y) / 2f)
-    val bm = Offset((br.x + bl.x) / 2f, (br.y + bl.y) / 2f)
+    val bm = Offset((br.x + bl.x) / 2f + (crop.bottomBow?.x ?: 0f) * width, (br.y + bl.y) / 2f + (crop.bottomBow?.y ?: 0f) * height)
     val lm = Offset((bl.x + tl.x) / 2f, (bl.y + tl.y) / 2f)
 
     return listOf(tl, tr, br, bl, tm, rm, bm, lm)
 }
+
+/** Control point of the quadratic curve from [a] to [b] that passes through [mid]. */
+private fun curveControl(a: Offset, b: Offset, mid: Offset) = Offset(2f * mid.x - (a.x + b.x) / 2f, 2f * mid.y - (a.y + b.y) / 2f)

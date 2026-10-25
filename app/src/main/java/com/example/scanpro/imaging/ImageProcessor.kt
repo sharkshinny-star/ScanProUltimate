@@ -53,13 +53,15 @@ object ImageProcessor {
         }.getOrDefault(0)
 
         if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
-        if (!crop.isIdentity()) bitmap = bitmap.then { perspectiveCrop(it, crop) }
+        if (!crop.isIdentity()) bitmap = bitmap.then { cropPage(it, crop) }
 
         val totalRotation = ((manualRotationDegrees % 360) + 360) % 360
         if (totalRotation != 0) bitmap = bitmap.then { rotate(it, totalRotation) }
 
+        if (adjustments.removeFingers) bitmap = bitmap.then { removeFingers(it) }
+        if (adjustments.removeShadows) bitmap = bitmap.then { removeShadows(it) }
         bitmap = bitmap.then { applyNamedFilter(it, filter) }
-        if (!adjustments.isNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
+        if (!adjustments.isTonallyNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
         if (annotations.isNotEmpty()) bitmap = bitmap.then { applyAnnotations(it, annotations) }
         try {
             saveJpeg(bitmap, destination, 96)
@@ -85,11 +87,13 @@ object ImageProcessor {
             ?: error("Unable to decode ${source.name}")
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
         if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
-        if (!crop.isIdentity()) bitmap = bitmap.then { perspectiveCrop(it, crop) }
+        if (!crop.isIdentity()) bitmap = bitmap.then { cropPage(it, crop) }
         val totalRotation = ((manualRotationDegrees % 360) + 360) % 360
         if (totalRotation != 0) bitmap = bitmap.then { rotate(it, totalRotation) }
+        if (adjustments.removeFingers) bitmap = bitmap.then { removeFingers(it) }
+        if (adjustments.removeShadows) bitmap = bitmap.then { removeShadows(it) }
         bitmap = bitmap.then { applyNamedFilter(it, filter) }
-        if (!adjustments.isNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
+        if (!adjustments.isTonallyNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
         if (annotations.isNotEmpty()) bitmap = bitmap.then { applyAnnotations(it, annotations) }
         return bitmap
     }
@@ -140,7 +144,7 @@ object ImageProcessor {
         var bitmap = decodeScaled(source.absolutePath, 4200) ?: error("Unable to decode source")
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
         if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
-        val cropped = bitmap.then { perspectiveCrop(it, quad) }
+        val cropped = bitmap.then { cropPage(it, quad) }
         try {
             saveJpeg(cropped, destination, 98)
         } finally {
@@ -191,6 +195,113 @@ object ImageProcessor {
     private fun rotate(source: Bitmap, degrees: Int): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+    }
+
+    /** Straightens the outlined page: a curved outline is flattened, a straight one gets a perspective fix. */
+    private fun cropPage(source: Bitmap, crop: CropQuad): Bitmap =
+        if (crop.isCurved) curvedCrop(source, crop) else perspectiveCrop(source, crop)
+
+    /**
+     * Flattens a curved page: each row of the output follows a straight blend between the bent top and bottom
+     * edges, sampled with OpenCV in strips so the remap tables stay small however large the page is.
+     */
+    private fun curvedCrop(source: Bitmap, crop: CropQuad): Bitmap {
+        val w = source.width.toFloat()
+        val h = source.height.toFloat()
+        fun pt(p: com.example.scanpro.data.NormalizedPoint) = CurvedPage.Pt(p.x.coerceIn(0f, 1f) * w, p.y.coerceIn(0f, 1f) * h)
+        val tl = pt(crop.topLeft); val tr = pt(crop.topRight); val br = pt(crop.bottomRight); val bl = pt(crop.bottomLeft)
+        val corners = floatArrayOf(tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y)
+        if (!isUsableQuad(corners, w * h)) return source
+        fun bowed(a: CurvedPage.Pt, b: CurvedPage.Pt, bow: com.example.scanpro.data.NormalizedPoint?): CurvedPage.Pt {
+            val mid = CurvedPage.Pt((a.x + b.x) / 2f + (bow?.x ?: 0f) * w, (a.y + b.y) / 2f + (bow?.y ?: 0f) * h)
+            return CurvedPage.control(a, mid, b)
+        }
+        val topControl = bowed(tl, tr, crop.topBow)
+        val bottomControl = bowed(bl, br, crop.bottomBow)
+        val topLength = CurvedPage.length(tl, topControl, tr)
+        val bottomLength = CurvedPage.length(bl, bottomControl, br)
+        val columns = max(topLength, bottomLength).toInt().coerceIn(64, 5000)
+        val top = CurvedPage.evenlySpaced(tl, topControl, tr, columns)
+        val bottom = CurvedPage.evenlySpaced(bl, bottomControl, br, columns)
+        val rows = CurvedPage.outputSize(top, bottom, topLength, bottomLength).second.coerceIn(64, 7000)
+
+        val sourceMat = Mat()
+        val outputMat = Mat(rows, columns, org.opencv.core.CvType.CV_8UC4)
+        val stripRows = 128
+        val mapX = Mat(stripRows, columns, org.opencv.core.CvType.CV_32FC1)
+        val mapY = Mat(stripRows, columns, org.opencv.core.CvType.CV_32FC1)
+        val xs = FloatArray(stripRows * columns)
+        val ys = FloatArray(stripRows * columns)
+        try {
+            Utils.bitmapToMat(source, sourceMat)
+            var first = 0
+            while (first < rows) {
+                val count = min(stripRows, rows - first)
+                CurvedPage.fillRows(top, bottom, first, count, rows, xs, ys)
+                val stripX = mapX.rowRange(0, count)
+                val stripY = mapY.rowRange(0, count)
+                stripX.put(0, 0, xs.copyOf(count * columns))
+                stripY.put(0, 0, ys.copyOf(count * columns))
+                val target = outputMat.rowRange(first, first + count)
+                Imgproc.remap(sourceMat, target, stripX, stripY, Imgproc.INTER_LINEAR, Core.BORDER_REPLICATE)
+                stripX.release(); stripY.release(); target.release()
+                first += count
+            }
+            val output = createBitmap(columns, rows)
+            Utils.matToBitmap(outputMat, output)
+            return output
+        } finally {
+            sourceMat.release(); outputMat.release(); mapX.release(); mapY.release()
+        }
+    }
+
+    /**
+     * Estimates how the top and bottom edges of the page outlined by [crop] bend, from the page's own edges in
+     * [image]. Edges that can't be found reliably stay straight.
+     */
+    fun estimateCurves(image: Bitmap, crop: CropQuad): CropQuad {
+        val scale = min(1f, 900f / max(image.width, image.height))
+        val small = if (scale < 1f) image.scale((image.width * scale).toInt().coerceAtLeast(1), (image.height * scale).toInt().coerceAtLeast(1)) else image
+        try {
+            val sw = small.width; val sh = small.height
+            val pixels = IntArray(sw * sh)
+            small.getPixels(pixels, 0, sw, 0, 0, sw, sh)
+            val gray = FloatArray(pixels.size) { i ->
+                val c = pixels[i]
+                0.299f * Color.red(c) + 0.587f * Color.green(c) + 0.114f * Color.blue(c)
+            }
+            // Light 3x3 box blur so paper texture and text near the edge don't look like the edge itself.
+            val smooth = FloatArray(gray.size)
+            for (y in 0 until sh) for (x in 0 until sw) {
+                var sum = 0f; var n = 0
+                for (dy in -1..1) for (dx in -1..1) {
+                    val yy = y + dy; val xx = x + dx
+                    if (yy in 0 until sh && xx in 0 until sw) { sum += gray[yy * sw + xx]; n++ }
+                }
+                smooth[y * sw + x] = sum / n
+            }
+            val intensity: (Float, Float) -> Float = { fx, fy ->
+                val x = fx.coerceIn(0f, sw - 1f); val y = fy.coerceIn(0f, sh - 1f)
+                val x0 = x.toInt(); val y0 = y.toInt()
+                val x1 = min(x0 + 1, sw - 1); val y1 = min(y0 + 1, sh - 1)
+                val ax = x - x0; val ay = y - y0
+                val top = smooth[y0 * sw + x0] * (1 - ax) + smooth[y0 * sw + x1] * ax
+                val bottom = smooth[y1 * sw + x0] * (1 - ax) + smooth[y1 * sw + x1] * ax
+                top * (1 - ay) + bottom * ay
+            }
+            fun pt(p: com.example.scanpro.data.NormalizedPoint) = CurvedPage.Pt(p.x * sw, p.y * sh)
+            val tl = pt(crop.topLeft); val tr = pt(crop.topRight); val br = pt(crop.bottomRight); val bl = pt(crop.bottomLeft)
+            val topMid = (tl + tr) * 0.5f
+            val bottomMid = (bl + br) * 0.5f
+            val pageHeight = (bottomMid - topMid).length()
+            val search = pageHeight * 0.12f
+            fun toBow(p: CurvedPage.Pt?) = p?.let { com.example.scanpro.data.NormalizedPoint(it.x / sw, it.y / sh) }
+            val topBow = CurvedPage.estimateBow(tl, tr, bottomMid - topMid, search, intensity)
+            val bottomBow = CurvedPage.estimateBow(bl, br, topMid - bottomMid, search, intensity)
+            return crop.copy(topBow = toBow(topBow) ?: crop.topBow, bottomBow = toBow(bottomBow) ?: crop.bottomBow)
+        } finally {
+            if (small !== image) small.recycle()
+        }
     }
 
     private fun perspectiveCrop(source: Bitmap, crop: CropQuad): Bitmap {
@@ -411,6 +522,113 @@ object ImageProcessor {
         }
     }
 
+    /**
+     * Evens out shadows and lighting: every colour channel is divided by an estimate of the bare paper under it.
+     * The estimate is made at low resolution from text-free (dilated), low-saturation pixels only, so coloured
+     * blocks such as logos and photos keep their colour instead of being washed out to white.
+     */
+    private fun removeShadows(source: Bitmap): Bitmap {
+        val rgba = Mat(); val rgb = Mat(); val small = Mat(); val dilated = Mat(); val paper = Mat(); val hsv = Mat()
+        val saturation = Mat(); val mask = Mat(); val maskF = Mat(); val paperF = Mat(); val masked = Mat()
+        val den = Mat(); val den3 = Mat(); val bgF = Mat(); val fallback = Mat(); val fallbackF = Mat()
+        val sparse = Mat(); val background = Mat(); val full = Mat(); val out = Mat(); val outRgba = Mat()
+        val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(7.0, 7.0))
+        try {
+            Utils.bitmapToMat(source, rgba)
+            Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
+            val scale = min(1.0, SHADOW_ESTIMATE_SIZE / max(source.width, source.height).toDouble())
+            Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
+            // Dilating keeps the brightest nearby value, which wipes dark text strokes out of the paper estimate.
+            Imgproc.dilate(small, dilated, kernel)
+            Imgproc.medianBlur(dilated, paper, 9)
+            Imgproc.cvtColor(paper, hsv, Imgproc.COLOR_RGB2HSV)
+            Core.extractChannel(hsv, saturation, 1)
+            Imgproc.threshold(saturation, mask, PAPER_MAX_SATURATION, 1.0, Imgproc.THRESH_BINARY_INV)
+            mask.convertTo(maskF, org.opencv.core.CvType.CV_32F)
+            paper.convertTo(paperF, org.opencv.core.CvType.CV_32FC3)
+            Core.merge(listOf(maskF, maskF, maskF), den3)
+            Core.multiply(paperF, den3, masked)
+            // Normalised convolution: the average paper colour nearby, ignoring coloured (masked-out) pixels.
+            Imgproc.GaussianBlur(masked, masked, Size(0.0, 0.0), SHADOW_SIGMA)
+            Imgproc.GaussianBlur(maskF, den, Size(0.0, 0.0), SHADOW_SIGMA)
+            Core.max(den, org.opencv.core.Scalar(1e-3), den)
+            Core.merge(listOf(den, den, den), den3)
+            Core.divide(masked, den3, bgF)
+            // Large coloured areas with no paper nearby fall back to a plain local median.
+            Imgproc.medianBlur(paper, fallback, 21)
+            fallback.convertTo(fallbackF, org.opencv.core.CvType.CV_32FC3)
+            Core.compare(den, org.opencv.core.Scalar(0.02), sparse, Core.CMP_LE)
+            fallbackF.copyTo(bgF, sparse)
+            bgF.convertTo(background, org.opencv.core.CvType.CV_8UC3)
+            Core.max(background, org.opencv.core.Scalar(1.0, 1.0, 1.0), background)
+            Imgproc.resize(background, full, rgb.size(), 0.0, 0.0, Imgproc.INTER_LINEAR)
+            Core.divide(rgb, full, out, 255.0)
+            Imgproc.cvtColor(out, outRgba, Imgproc.COLOR_RGB2RGBA)
+            val output = createBitmap(source.width, source.height)
+            Utils.matToBitmap(outRgba, output)
+            return output
+        } finally {
+            listOf(rgba, rgb, small, dilated, paper, hsv, saturation, mask, maskF, paperF, masked, den, den3, bgF,
+                fallback, fallbackF, sparse, background, full, out, outRgba, kernel).forEach(Mat::release)
+        }
+    }
+
+    /**
+     * Paints over fingers holding the page: skin-coloured patches that touch the image border and stay near it
+     * are filled from the surrounding paper. Patches deep inside the page (a photo of a face, say) are left alone.
+     */
+    private fun removeFingers(source: Bitmap): Bitmap {
+        val rgba = Mat(); val rgb = Mat(); val small = Mat(); val ycc = Mat(); val skin = Mat()
+        val labels = Mat(); val stats = Mat(); val centroids = Mat(); val keep = Mat(); val part = Mat()
+        val filled = Mat(); val filledFull = Mat(); val maskFull = Mat(); val outRgba = Mat()
+        val open = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, Size(5.0, 5.0))
+        val close = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, Size(9.0, 9.0))
+        try {
+            Utils.bitmapToMat(source, rgba)
+            Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
+            val scale = min(1.0, FINGER_ESTIMATE_SIZE / max(source.width, source.height).toDouble())
+            Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
+            Imgproc.cvtColor(small, ycc, Imgproc.COLOR_RGB2YCrCb)
+            Core.inRange(ycc, org.opencv.core.Scalar(0.0, 138.0, 77.0), org.opencv.core.Scalar(255.0, 178.0, 127.0), skin)
+            Imgproc.morphologyEx(skin, skin, Imgproc.MORPH_OPEN, open)
+            Imgproc.morphologyEx(skin, skin, Imgproc.MORPH_CLOSE, close)
+
+            val w = small.cols(); val h = small.rows()
+            val count = Imgproc.connectedComponentsWithStats(skin, labels, stats, centroids)
+            keep.create(skin.size(), org.opencv.core.CvType.CV_8UC1)
+            keep.setTo(org.opencv.core.Scalar(0.0))
+            var found = false
+            for (label in 1 until count) {
+                val x = stats.get(label, Imgproc.CC_STAT_LEFT)[0].toInt()
+                val y = stats.get(label, Imgproc.CC_STAT_TOP)[0].toInt()
+                val cw = stats.get(label, Imgproc.CC_STAT_WIDTH)[0].toInt()
+                val ch = stats.get(label, Imgproc.CC_STAT_HEIGHT)[0].toInt()
+                val area = stats.get(label, Imgproc.CC_STAT_AREA)[0]
+                val touchesBorder = x == 0 || y == 0 || x + cw == w || y + ch == h
+                val fingerSized = area > 0.001 * w * h && area < 0.12 * w * h && cw < 0.4 * w && ch < 0.4 * h
+                if (touchesBorder && fingerSized) {
+                    Core.compare(labels, org.opencv.core.Scalar(label.toDouble()), part, Core.CMP_EQ)
+                    Core.bitwise_or(keep, part, keep)
+                    found = true
+                }
+            }
+            if (!found) return source
+            // Grow the mask to cover the finger's soft edge and shadow, then fill it from the paper around it.
+            Imgproc.dilate(keep, keep, close)
+            org.opencv.photo.Photo.inpaint(small, keep, filled, 7.0, org.opencv.photo.Photo.INPAINT_TELEA)
+            Imgproc.resize(filled, filledFull, rgb.size(), 0.0, 0.0, Imgproc.INTER_LINEAR)
+            Imgproc.resize(keep, maskFull, rgb.size(), 0.0, 0.0, Imgproc.INTER_NEAREST)
+            filledFull.copyTo(rgb, maskFull)
+            Imgproc.cvtColor(rgb, outRgba, Imgproc.COLOR_RGB2RGBA)
+            val output = createBitmap(source.width, source.height)
+            Utils.matToBitmap(outRgba, output)
+            return output
+        } finally {
+            listOf(rgba, rgb, small, ycc, skin, labels, stats, centroids, keep, part, filled, filledFull,
+                maskFull, outRgba, open, close).forEach(Mat::release)
+        }
+    }
+
     private fun enhancedGrayscale(source: Bitmap): Bitmap {
         val rgba = Mat()
         val gray = Mat()
@@ -550,3 +768,7 @@ object ImageProcessor {
 }
 
 private const val MIN_TEXT_SIZE = 22f
+private const val SHADOW_ESTIMATE_SIZE = 600.0
+private const val SHADOW_SIGMA = 30.0
+private const val PAPER_MAX_SATURATION = 59.0
+private const val FINGER_ESTIMATE_SIZE = 800.0
