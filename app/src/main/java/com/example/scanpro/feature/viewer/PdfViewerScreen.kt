@@ -83,6 +83,7 @@ import androidx.core.graphics.createBitmap
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -146,10 +147,29 @@ fun PdfViewerScreen(
     var lockedFile by remember { mutableStateOf<File?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
+    // Set when the viewer closes; a renderer that finishes opening after that is closed at once instead of leaking.
+    val viewerClosed = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+    var unlocking by remember { mutableStateOf(false) }
+
     fun openRenderer(file: File) {
         val descriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         try {
             val renderer = PdfRenderer(descriptor)
+            val stale = runBlocking {
+                renderLock.withLock {
+                    if (viewerClosed.get()) true else {
+                        // Replace (and close) any renderer already open, e.g. after a second password attempt.
+                        runCatching { pdfRenderer?.close() }
+                        runCatching { pfd?.close() }
+                        false
+                    }
+                }
+            }
+            if (stale) {
+                renderer.close()
+                descriptor.close()
+                return
+            }
             pfd = descriptor
             pdfRenderer = renderer
             pageCount = renderer.pageCount
@@ -222,6 +242,7 @@ fun PdfViewerScreen(
         }
 
         onDispose {
+            viewerClosed.set(true)
             job.cancel()
             runBlocking {
                 renderLock.withLock {
@@ -243,46 +264,51 @@ fun PdfViewerScreen(
             return@LaunchedEffect
         }
 
-        withContext(Dispatchers.IO) {
-            try {
-                isSearchingText = true
-                val matches = mutableListOf<Int>()
+        // Wait until typing pauses; a new keystroke cancels this effect before any work starts.
+        kotlinx.coroutines.delay(350)
+        isSearchingText = true
+        try {
+            val query = searchQuery
+            val matches = withContext(Dispatchers.IO) {
+                val found = mutableListOf<Int>()
                 val tempPdf = File(context.cacheDir, "search_temp_${System.currentTimeMillis()}.pdf")
-                // Search the file being shown; for a protected PDF that is the unlocked copy, not the original.
-                val stream = openedFile ?: if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                    File(pdfUri.path!!)
-                } else {
-                    context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                        FileOutputStream(tempPdf).use { output -> input.copyTo(output) }
+                try {
+                    // Search the file being shown; for a protected PDF that is the unlocked copy, not the original.
+                    val stream = openedFile ?: if (pdfUri.scheme == "file" && pdfUri.path != null) {
+                        File(pdfUri.path!!)
+                    } else {
+                        context.contentResolver.openInputStream(pdfUri)?.use { input ->
+                            FileOutputStream(tempPdf).use { output -> input.copyTo(output) }
+                        }
+                        tempPdf
                     }
-                    tempPdf
-                }
-
-                if (stream.exists()) {
-                    PDDocument.load(stream).use { pdDoc ->
-                        val stripper = PDFTextStripper()
-                        for (i in 0 until pdDoc.numberOfPages) {
-                            stripper.startPage = i + 1
-                            stripper.endPage = i + 1
-                            val pageText = stripper.getText(pdDoc)
-                            if (pageText.contains(searchQuery, ignoreCase = true)) {
-                                matches.add(i)
+                    if (stream.exists()) {
+                        PDDocument.load(stream).use { pdDoc ->
+                            val stripper = PDFTextStripper()
+                            for (i in 0 until pdDoc.numberOfPages) {
+                                // Stop as soon as a newer query replaces this one.
+                                ensureActive()
+                                stripper.startPage = i + 1
+                                stripper.endPage = i + 1
+                                if (stripper.getText(pdDoc).contains(query, ignoreCase = true)) found.add(i)
                             }
                         }
                     }
+                } finally {
+                    // Each search may copy the document; never leave those copies behind.
+                    tempPdf.delete()
                 }
-                matchingPageIndices = matches
-                currentMatchIdx = 0
-                if (matches.isNotEmpty()) {
-                    listState.scrollToItem(matches.first())
-                }
-            } catch (_: Exception) {
-                matchingPageIndices = emptyList()
-            } finally {
-                isSearchingText = false
-                // Each search may copy the document; never leave those copies behind.
-                cacheSearchCleanup(context)
+                found
             }
+            matchingPageIndices = matches
+            currentMatchIdx = 0
+            if (matches.isNotEmpty()) listState.scrollToItem(matches.first())
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            matchingPageIndices = emptyList()
+        } finally {
+            isSearchingText = false
         }
     }
 
@@ -573,6 +599,9 @@ fun PdfViewerScreen(
                 onCancel = onBack,
                 onSubmit = { password ->
                     val source = lockedFile ?: return@PdfPasswordDialog
+                    // A second tap while the first attempt runs would open a second renderer.
+                    if (unlocking) return@PdfPasswordDialog
+                    unlocking = true
                     scope.launch(Dispatchers.IO) {
                         try {
                             val unlocked = File(context.cacheDir, "view_unlocked_${System.currentTimeMillis()}.pdf")
@@ -583,6 +612,8 @@ fun PdfViewerScreen(
                             needsPassword = false
                         } catch (e: Exception) {
                             passwordError = "That password didn't work"
+                        } finally {
+                            unlocking = false
                         }
                     }
                 }
@@ -754,6 +785,3 @@ private fun PdfPasswordDialog(error: String?, onCancel: () -> Unit, onSubmit: (S
     )
 }
 
-private fun cacheSearchCleanup(context: android.content.Context) {
-    context.cacheDir.listFiles { file -> file.name.startsWith("search_temp_") }?.forEach { it.delete() }
-}

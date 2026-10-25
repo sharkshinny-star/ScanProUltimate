@@ -138,7 +138,7 @@ object PdfToolsEngine {
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): List<File> = withContext(Dispatchers.IO) {
         outputDir.mkdirs()
-        val tempFile = copyUriToTemp(context, inputUri, "split_in.pdf")
+        val tempFile = copyUriToTemp(context, inputUri, "split_in_${UUID.randomUUID()}.pdf")
         val outputFiles = mutableListOf<File>()
 
         try {
@@ -210,7 +210,7 @@ object PdfToolsEngine {
     ): PdfToolResult = withContext(Dispatchers.IO) {
         require(selectedPageIndices.isNotEmpty()) { "Select at least one page to extract" }
         outputFile.parentFile?.mkdirs()
-        val tempFile = copyUriToTemp(context, inputUri, "extract_in.pdf")
+        val tempFile = copyUriToTemp(context, inputUri, "extract_in_${UUID.randomUUID()}.pdf")
 
         try {
             val originalSize = tempFile.length()
@@ -244,7 +244,7 @@ object PdfToolsEngine {
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): PdfToolResult = withContext(Dispatchers.IO) {
         outputFile.parentFile?.mkdirs()
-        val tempFile = copyUriToTemp(context, inputUri, "rotate_in.pdf")
+        val tempFile = copyUriToTemp(context, inputUri, "rotate_in_${UUID.randomUUID()}.pdf")
 
         try {
             val originalSize = tempFile.length()
@@ -283,7 +283,7 @@ object PdfToolsEngine {
     ): PdfToolResult = withContext(Dispatchers.IO) {
         require(pageSpecs.isNotEmpty()) { "At least one page must remain in the PDF" }
         outputFile.parentFile?.mkdirs()
-        val tempFile = copyUriToTemp(context, inputUri, "organize_in.pdf")
+        val tempFile = copyUriToTemp(context, inputUri, "organize_in_${UUID.randomUUID()}.pdf")
 
         try {
             val originalSize = tempFile.length()
@@ -385,7 +385,7 @@ object PdfToolsEngine {
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): List<File> = withContext(Dispatchers.IO) {
         outputDir.mkdirs()
-        val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in.pdf")
+        val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in_${UUID.randomUUID()}.pdf")
         val imageFiles = mutableListOf<File>()
 
         try {
@@ -432,7 +432,7 @@ object PdfToolsEngine {
         password: String,
         outputFile: File
     ): PdfToolResult = withContext(Dispatchers.IO) {
-        val tempFile = copyUriToTemp(context, inputUri, "protect_in.pdf")
+        val tempFile = copyUriToTemp(context, inputUri, "protect_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
             PdfSecurity.protect(tempFile, outputFile, password)
@@ -456,7 +456,7 @@ object PdfToolsEngine {
         password: String,
         outputFile: File
     ): PdfToolResult = withContext(Dispatchers.IO) {
-        val tempFile = copyUriToTemp(context, inputUri, "unlock_in.pdf")
+        val tempFile = copyUriToTemp(context, inputUri, "unlock_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
             PdfSecurity.unlock(tempFile, outputFile, password)

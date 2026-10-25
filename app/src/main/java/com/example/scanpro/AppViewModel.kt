@@ -146,20 +146,30 @@ class AppViewModel @Inject constructor(
 
     fun importCameraSession(imageUris: List<Uri>, mode: ScanMode, crops: List<com.example.scanpro.data.CropQuad> = emptyList()) {
         if (imageUris.isEmpty()) return
-        operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", if (mode == ScanMode.TEXT) null else "Scan saved") {
-            try {
-                val newDocument = repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops)
-                if (mode == ScanMode.TEXT) copyRecognizedText(newDocument)
-                operations.requestOpenDocument(newDocument.id)
-            } finally {
-                // The document now holds its own copies; drop the scanner session's temporary captures.
-                imageUris.asSequence()
-                    .filter { it.scheme == "file" }
-                    .mapNotNull { uri -> uri.path?.let { File(it).parentFile } }
-                    .filter { it.parentFile?.name == SESSION_ROOT }
-                    .distinct()
-                    .forEach { it.deleteRecursively() }
+        operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", null) {
+            val newDocument = try {
+                repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                // Keep the photos: they exist nowhere else. The scanner's own clean-up removes abandoned sessions
+                // after a day, so offering Retry here costs nothing if the user ignores it.
+                operations.showMessage(
+                    UiMessage("Could not save the scan: ${error.message ?: "unknown error"}", actionLabel = "Retry") {
+                        importCameraSession(imageUris, mode, crops)
+                    }
+                )
+                return@enqueue
             }
+            if (mode == ScanMode.TEXT) copyRecognizedText(newDocument) else operations.showMessage("Scan saved")
+            operations.requestOpenDocument(newDocument.id)
+            // The document now holds its own copies; drop the scanner session's temporary captures.
+            imageUris.asSequence()
+                .filter { it.scheme == "file" }
+                .mapNotNull { uri -> uri.path?.let { File(it).parentFile } }
+                .filter { it.parentFile?.name == SESSION_ROOT }
+                .distinct()
+                .forEach { it.deleteRecursively() }
         }
     }
 

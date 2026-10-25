@@ -110,7 +110,9 @@ fun ScanReviewScreen(
     var message by remember { mutableStateOf<String?>(null) }
     val blocked = working || processing
 
-    BackHandler(enabled = !processing) { onBack() }
+    // While a rotation or the save is running, Back is swallowed: leaving then would strand a half-written file.
+    BackHandler(enabled = blocked) { }
+    BackHandler(enabled = !blocked) { onBack() }
 
     val bitmap by produceState<Bitmap?>(initialValue = null, key) {
         value = null
@@ -158,7 +160,7 @@ fun ScanReviewScreen(
 
     Column(Modifier.fillMaxSize().background(Color(0xFF0A0F18)).systemBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(enabled = !processing, onClick = onBack) {
+            IconButton(enabled = !blocked, onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to camera", tint = Color.White)
             }
             Box(Modifier.weight(1f))
@@ -386,6 +388,9 @@ private fun ThumbnailStrip(
 ) {
     val itemWidth = 56.dp
     val gap = 8.dp
+    // Gesture handlers outlive recompositions, so they read the newest callbacks (and the selection inside them).
+    val latestOnMoved by androidx.compose.runtime.rememberUpdatedState(onMoved)
+    val latestOnSelect by androidx.compose.runtime.rememberUpdatedState(onSelect)
     var draggingKey by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
     LazyRow(
@@ -409,7 +414,7 @@ private fun ThumbnailStrip(
                         scaleY = if (isDragging) 1.08f else 1f
                     }
                     .border(if (index == selected) 2.dp else 1.dp, if (index == selected) Blue else Color.White.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
-                    .clickable(enabled = enabled) { onSelect(pages.indexOf(uri)) }
+                    .clickable(enabled = enabled) { latestOnSelect(pages.indexOf(uri)) }
                     .pointerInput(key, enabled) {
                         if (!enabled) return@pointerInput
                         val step = (itemWidth + gap).toPx()
@@ -430,7 +435,7 @@ private fun ThumbnailStrip(
                                     pages[from] = other
                                     // The item now sits one slot over, so the finger offset is measured from there.
                                     dragOffset -= (to - from) * step
-                                    onMoved(from, to)
+                                    latestOnMoved(from, to)
                                 }
                             },
                             onDragEnd = { draggingKey = null; dragOffset = 0f },

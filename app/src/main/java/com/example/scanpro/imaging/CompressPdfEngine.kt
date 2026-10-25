@@ -121,17 +121,30 @@ object CompressPdfEngine {
         preset: CompressionPreset
     ) {
         PDDocument.load(inputPdf).use { pdDoc ->
+            // Pages often share one resource dictionary or one image (a logo, a background). Each original image is
+            // recompressed once and reused; without this a shared image was shrunk again on every page.
+            val replaced = HashMap<com.tom_roush.pdfbox.cos.COSBase, PDImageXObject>()
+            val produced = HashSet<com.tom_roush.pdfbox.cos.COSBase>()
             for (page in pdDoc.pages) {
                 val resources = page.resources ?: continue
                 for (xObjectName in resources.xObjectNames) {
                     val xObject = resources.getXObject(xObjectName)
                     if (xObject is PDImageXObject) {
+                        val original = xObject.cosObject
+                        if (original in produced) continue
+                        val already = replaced[original]
+                        if (already != null) {
+                            resources.put(xObjectName, already)
+                            continue
+                        }
                         val bitmap = xObject.image ?: continue
                         val scaledW = (bitmap.width * preset.targetScale).toInt().coerceAtLeast(1)
                         val scaledH = (bitmap.height * preset.targetScale).toInt().coerceAtLeast(1)
                         val scaledBitmap = bitmap.scale(scaledW, scaledH, true)
                         try {
                             val recompressedImage = JPEGFactory.createFromImage(pdDoc, scaledBitmap, preset.jpegQuality / 100f)
+                            replaced[original] = recompressedImage
+                            produced += recompressedImage.cosObject
                             resources.put(xObjectName, recompressedImage)
                         } finally {
                             if (scaledBitmap !== bitmap && !scaledBitmap.isRecycled) scaledBitmap.recycle()

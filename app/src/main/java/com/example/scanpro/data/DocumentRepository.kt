@@ -233,7 +233,11 @@ class DocumentRepository @Inject constructor(
 
     suspend fun rotatePage(documentId: String, pageId: String) =
         editSinglePage(documentId, pageId) { page ->
-            val updated = page.copy(rotationDegrees = (page.rotationDegrees + 90) % 360)
+            // Markup is placed on the finished page, so it turns with it; otherwise a redaction would slide off its text.
+            val updated = page.copy(
+                rotationDegrees = (page.rotationDegrees + 90) % 360,
+                annotations = page.annotations.map { it.rotatedClockwise() }
+            )
             renderAndOcr(updated)
         }
 
@@ -255,7 +259,8 @@ class DocumentRepository @Inject constructor(
                     crop = CropQuad.DEFAULT,
                     adjustments = PageAdjustments.DEFAULT,
                     annotations = emptyList()
-                )
+                ),
+                redactionChanged = removed.any { it.type == AnnotationType.REDACT }
             )
         }
         // Signature images go only after the page is saved without them.
@@ -277,9 +282,9 @@ class DocumentRepository @Inject constructor(
     suspend fun replaceAnnotations(documentId: String, pageId: String, annotations: List<PageAnnotation>) {
         val before = annotationsOf(documentId, pageId)
         editSinglePage(documentId, pageId) { page ->
-            // A moved, added or removed redaction changes which text is visible, so the page is read again.
-            val redactionInvolved = (annotations + before).any { it.type == AnnotationType.REDACT }
-            renderAndOcr(page.copy(annotations = annotations), runOcr = redactionInvolved)
+            // Only a redaction that was added, moved, resized or removed changes which text is visible.
+            val changed = redactions(before) != redactions(annotations)
+            renderAndOcr(page.copy(annotations = annotations), runOcr = changed, redactionChanged = changed)
         }
         deleteSignatureAssets(before.filter { old -> annotations.none { it.id == old.id } })
     }
@@ -327,8 +332,10 @@ class DocumentRepository @Inject constructor(
 
     suspend fun removeLastAnnotation(documentId: String, pageId: String) {
         val removed = annotationsOf(documentId, pageId).takeLast(1)
+        val redaction = removed.any { it.type == AnnotationType.REDACT }
         editSinglePage(documentId, pageId) { page ->
-            renderAndOcr(page.copy(annotations = page.annotations.dropLast(1)))
+            // Removing a highlight, text or signature leaves the page's words as they were; a redaction uncovers some.
+            renderAndOcr(page.copy(annotations = page.annotations.dropLast(1)), runOcr = redaction, redactionChanged = redaction)
         }
         deleteSignatureAssets(removed)
     }
@@ -371,7 +378,7 @@ class DocumentRepository @Inject constructor(
                 opacity = 0.35f
             )
             // A redaction re-reads the flattened page: the text it covers must not stay in search, copy or text export.
-            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = annotation.type == AnnotationType.REDACT)
+            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
         }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
@@ -669,7 +676,9 @@ class DocumentRepository @Inject constructor(
     private suspend fun addAnnotation(documentId: String, pageId: String, annotation: PageAnnotation) =
         editSinglePage(documentId, pageId) { page ->
             require(annotation.type != AnnotationType.TEXT || annotation.text.isNotBlank()) { "Text cannot be blank" }
-            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
+            // A redaction re-reads the flattened page: the text it covers must not stay in search, copy or text export.
+            val redacting = annotation.type == AnnotationType.REDACT
+            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = redacting, redactionChanged = redacting)
         }
 
     private suspend fun createDocument(
@@ -786,7 +795,12 @@ class DocumentRepository @Inject constructor(
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
     }
 
-    private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true): ScanPage {
+    /**
+     * Renders the page and, when [runOcr], reads its text again. [redactionChanged] means a redaction was added,
+     * moved or removed: the page is then always read again, even over hand-corrected text, because the old text
+     * may include words that are now covered.
+     */
+    private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false): ScanPage {
         ImageProcessor.renderPage(
             source = File(page.sourcePath),
             destination = File(page.imagePath),
@@ -797,11 +811,9 @@ class DocumentRepository @Inject constructor(
             annotations = page.annotations
         )
         val hasRedaction = page.annotations.any { it.type == AnnotationType.REDACT }
-        // Corrected text is the user's work: keep it through edits. A redaction is the exception, because
-        // the corrected text may still contain what is now covered, so that page is read again.
-        val isRedacting = hasRedaction && runOcr
-        if (page.ocrEdited && !isRedacting) return page
-        return if (runOcr) {
+        // Corrected text is the user's work: keep it through edits, unless a redaction changed.
+        if (page.ocrEdited && !redactionChanged) return page
+        return if (runOcr || redactionChanged) {
             val script = db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
             // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
             // must end up with no text rather than keep the old text that includes what was covered.
@@ -952,6 +964,12 @@ class DocumentRepository @Inject constructor(
             ocrWords = source.ocrWords
         )
     }
+
+    private fun redactions(list: List<PageAnnotation>) =
+        list.filter { it.type == AnnotationType.REDACT }.map { listOf(it.id, it.x, it.y, it.width, it.height, it.rotationDegrees) }
+
+    /** The same box after the page turns a quarter clockwise (coordinates are fractions of the page). */
+    private fun PageAnnotation.rotatedClockwise() = copy(x = 1f - (y + height), y = x, width = height, height = width)
 
     private fun normalize(pages: List<ScanPage>) = pages.mapIndexed { index, page -> page.copy(position = index) }
 

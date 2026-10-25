@@ -42,7 +42,8 @@ class OpenCvDocumentAnalyzer(
 
                 // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
                 val now = android.os.SystemClock.elapsedRealtime()
-                lostFrames = if (result.isReady) 0 else lostFrames + 1
+                // Only frames with no page at all count as "the page left"; a blurry or dark frame of the same page doesn't.
+                lostFrames = if (result.quad != null) 0 else lostFrames + 1
                 if (!armed) {
                     val captured = capturedQuad
                     val current = result.quad
