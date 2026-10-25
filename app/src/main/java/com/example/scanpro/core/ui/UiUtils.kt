@@ -179,6 +179,50 @@ fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: St
     context.startActivity(Intent.createChooser(intent, chooserTitle))
 }
 
+/** Shares a content link ScanPro can read, such as a PDF picked from another app, passing on read access. */
+fun shareUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = ClipData.newRawUri(chooserTitle, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    try {
+        context.startActivity(Intent.createChooser(intent, chooserTitle))
+    } catch (_: ActivityNotFoundException) {
+        Toast.makeText(context, "No app can share this file", Toast.LENGTH_SHORT).show()
+    }
+}
+
+/**
+ * Hands the file straight to the Google Drive app's "Save to Drive" screen. Returns false when Drive isn't
+ * installed, so the caller can fall back to the system file picker (which also lists Drive, Dropbox, OneDrive…).
+ * Nothing leaves the device unless the user confirms the upload in Drive.
+ */
+fun saveToGoogleDrive(context: Context, path: String, mimeType: String, title: String = File(path).name): Boolean {
+    val file = File(path)
+    if (!file.isFile) {
+        Toast.makeText(context, "Export file is missing", Toast.LENGTH_SHORT).show()
+        return true
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        setPackage(GOOGLE_DRIVE_PACKAGE)
+        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_TITLE, title)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return try {
+        context.startActivity(intent)
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
+    }
+}
+
+private const val GOOGLE_DRIVE_PACKAGE = "com.google.android.apps.docs"
+
 fun printPdf(context: Context, document: ScanDocument) {
     val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
     val file = File(document.pdfPath)

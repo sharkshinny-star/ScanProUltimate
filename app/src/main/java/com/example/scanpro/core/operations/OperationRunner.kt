@@ -51,6 +51,10 @@ class OperationRunner @Inject constructor(
     /** Id of a newly created document the UI should open once it appears in the library. */
     val openDocumentRequest: StateFlow<String?> = _openDocumentRequest.asStateFlow()
 
+    private val _scanSaved = MutableStateFlow<String?>(null)
+    /** Id of a just-scanned document whose screen should offer the "Scan saved" share and save sheet. */
+    val scanSaved: StateFlow<String?> = _scanSaved.asStateFlow()
+
     fun showMessage(value: String) { _message.value = UiMessage(value) }
     fun showMessage(value: UiMessage) { _message.value = value }
     /** Clears [shown] only if it is still the current message, so a newer one isn't lost unseen. */
@@ -59,6 +63,8 @@ class OperationRunner @Inject constructor(
     fun clearExportArtifact() { _exportArtifact.value = null }
     fun requestOpenDocument(id: String) { _openDocumentRequest.value = id }
     fun clearOpenDocumentRequest() { _openDocumentRequest.value = null }
+    fun offerScanSaved(id: String) { _scanSaved.value = id }
+    fun clearScanSaved(id: String) { _scanSaved.compareAndSet(id, null) }
 
     private val mutex = Mutex()
     // Guards the pending count together with the busy flags: start() runs on Main and the finish runs

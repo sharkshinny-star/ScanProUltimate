@@ -15,10 +15,13 @@ import com.example.scanpro.imaging.PdfToolsEngine
 import com.example.scanpro.imaging.SplitMode
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
+import com.example.scanpro.data.RecentPdf
+import com.example.scanpro.data.RecentPdfStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,8 +38,29 @@ data class ToolProgress(val label: String, val current: Int = 0, val total: Int 
  */
 @HiltViewModel
 class PdfToolsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val recents: RecentPdfStore
 ) : ViewModel() {
+    /** PDFs picked from the device or a cloud app, newest first, to reopen with one tap. */
+    val recentPdfs: StateFlow<List<RecentPdf>> = recents.items
+
+    init {
+        // A recent file may have been deleted, or its access revoked, since it was opened.
+        viewModelScope.launch(Dispatchers.IO) { recents.prune() }
+    }
+
+    fun rememberPdfs(uris: List<Uri>) {
+        viewModelScope.launch(Dispatchers.IO) { uris.asReversed().forEach { recents.add(it) } }
+    }
+
+    fun forgetPdf(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) { recents.remove(uri) }
+    }
+
+    fun clearRecentPdfs() {
+        viewModelScope.launch(Dispatchers.IO) { recents.clear() }
+    }
+
     private val _progress = MutableStateFlow<ToolProgress?>(null)
     val progress: StateFlow<ToolProgress?> = _progress.asStateFlow()
 

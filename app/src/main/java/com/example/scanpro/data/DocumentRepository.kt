@@ -362,22 +362,29 @@ class DocumentRepository @Inject constructor(
             }
         }
 
-    suspend fun addWatermark(documentId: String, watermark: String) = withContext(Dispatchers.IO) {
-        val clean = watermark.trim()
+    suspend fun addWatermark(documentId: String, style: WatermarkStyle) = withContext(Dispatchers.IO) {
+        val clean = style.text.trim()
         require(clean.isNotBlank()) { "Watermark cannot be blank" }
         val doc = requireDocument(documentId)
+        val height = style.size.height
+        val (y, rotation) = when (style.position) {
+            WatermarkPosition.DIAGONAL -> (0.5f - height / 2f) to -28f
+            WatermarkPosition.CENTER -> (0.5f - height / 2f) to 0f
+            WatermarkPosition.BOTTOM -> (0.95f - height) to 0f
+        }
         val pages = doc.pages.map { page ->
             val annotation = PageAnnotation(
                 type = AnnotationType.TEXT,
-                x = 0.16f,
-                y = 0.45f,
-                width = 0.68f,
-                height = 0.12f,
-                rotationDegrees = -28f,
+                x = 0.12f,
+                y = y,
+                width = 0.76f,
+                height = height,
+                rotationDegrees = rotation,
                 text = clean.take(80),
-                opacity = 0.35f
+                opacity = style.opacity.coerceIn(0.1f, 1f),
+                color = style.color
             )
-            // A redaction re-reads the flattened page: the text it covers must not stay in search, copy or text export.
+            // The watermark is drawn over the page; the text underneath stays readable, so OCR is kept.
             renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
         }
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))

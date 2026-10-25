@@ -272,10 +272,14 @@ object ImageProcessor {
                 })
                 AnnotationType.TEXT -> {
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.argb((255 * item.opacity.coerceIn(0.05f, 1f)).toInt(), 20, 20, 20)
+                        color = Color.argb(
+                            (255 * item.opacity.coerceIn(0.05f, 1f)).toInt(),
+                            Color.red(item.color), Color.green(item.color), Color.blue(item.color)
+                        )
                         textSize = max(22f, rect.height() * 0.52f)
                         isFakeBoldText = false
                     }
+                    fitTextToBox(item.text.take(400), rect, paint)
                     drawWrappedText(canvas, item.text.take(400), rect, paint)
                 }
                 AnnotationType.SIGNATURE -> {
@@ -307,6 +311,33 @@ object ImageProcessor {
             }
         }
         return output
+    }
+
+    /** Shrinks [paint] until every word fits the box's width and the wrapped lines fit its height. */
+    private fun fitTextToBox(text: String, rect: RectF, paint: Paint) {
+        val words = text.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (words.isEmpty()) return
+        val widest = words.maxOf { paint.measureText(it) }
+        if (widest > rect.width()) paint.textSize = max(MIN_TEXT_SIZE, paint.textSize * rect.width() / widest)
+        repeat(12) {
+            if (paint.textSize <= MIN_TEXT_SIZE || wrappedLineCount(words, rect.width(), paint) * paint.fontSpacing <= rect.height()) return
+            paint.textSize = max(MIN_TEXT_SIZE, paint.textSize * 0.88f)
+        }
+    }
+
+    private fun wrappedLineCount(words: List<String>, width: Float, paint: Paint): Int {
+        val space = paint.measureText(" ")
+        var lines = 1
+        var x = 0f
+        for (word in words) {
+            val measured = paint.measureText(word)
+            if (x > 0f && x + measured > width) {
+                lines++
+                x = 0f
+            }
+            x += measured + space
+        }
+        return lines
     }
 
     private fun drawWrappedText(canvas: Canvas, text: String, rect: RectF, paint: Paint) {
@@ -517,3 +548,5 @@ object ImageProcessor {
         }
     }
 }
+
+private const val MIN_TEXT_SIZE = 22f

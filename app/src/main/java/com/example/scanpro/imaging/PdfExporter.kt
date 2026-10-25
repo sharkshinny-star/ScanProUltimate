@@ -17,6 +17,8 @@ object PdfExporter {
     private const val A4_HEIGHT = 842
     private const val LETTER_WIDTH = 612
     private const val LETTER_HEIGHT = 792
+    private const val LEGAL_WIDTH = 612
+    private const val LEGAL_HEIGHT = 1008
     private const val MARGIN = 18f
     private const val MAX_WORDS_PER_PAGE = 6000
 
@@ -142,6 +144,7 @@ object PdfExporter {
         return when (pageSize) {
             PdfPageSize.A4 -> if (imageWidth > imageHeight) A4_HEIGHT to A4_WIDTH else A4_WIDTH to A4_HEIGHT
             PdfPageSize.LETTER -> if (imageWidth > imageHeight) LETTER_HEIGHT to LETTER_WIDTH else LETTER_WIDTH to LETTER_HEIGHT
+            PdfPageSize.LEGAL -> if (imageWidth > imageHeight) LEGAL_HEIGHT to LEGAL_WIDTH else LEGAL_WIDTH to LEGAL_HEIGHT
             PdfPageSize.AUTO -> {
                 val longSide = 842
                 val aspect = imageWidth.toFloat() / imageHeight.toFloat()

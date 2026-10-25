@@ -19,6 +19,7 @@ import com.example.scanpro.data.ScanMode
 import com.example.scanpro.feature.document.DocumentRoute
 import com.example.scanpro.feature.library.LibraryRoute
 import com.example.scanpro.core.ui.shareFile
+import com.example.scanpro.core.ui.shareUri
 import com.example.scanpro.feature.settings.SettingsRoute
 import com.example.scanpro.feature.tools.PdfToolsScreen
 import com.example.scanpro.feature.viewer.PdfViewerScreen
@@ -95,7 +96,11 @@ fun ScanProNavHost(
                 title = title,
                 pdfUri = pdfUri,
                 onBack = dropUnlessResumed { navController.popBackStack() },
-                onShare = { shareFile(context, pdfUri.path.orEmpty(), "application/pdf", title) }
+                onShare = {
+                    // Files ScanPro made are shared through its FileProvider; picked files are passed on as they are.
+                    if (pdfUri.scheme == "file") shareFile(context, pdfUri.path.orEmpty(), "application/pdf", title)
+                    else shareUri(context, pdfUri, "application/pdf", title)
+                }
             )
         }
         composable(ScanProDestinations.CAMERA) { entry ->

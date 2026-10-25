@@ -30,6 +30,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import com.example.scanpro.data.RecentPdf
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
@@ -74,6 +79,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.AddToDrive
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
@@ -107,6 +113,7 @@ import androidx.compose.ui.unit.dp
 import com.example.scanpro.core.ui.copyFileToUri
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
+import com.example.scanpro.core.ui.saveToGoogleDrive
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.imaging.CompressionPreset
@@ -163,6 +170,7 @@ fun PdfToolsScreen(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val unlockNotice by viewModel.unlockNotice.collectAsStateWithLifecycle()
     val passwordNeeded by viewModel.passwordNeeded.collectAsStateWithLifecycle()
+    val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
 
     // Saveable, so an open dialog and the chosen file survive rotation, window resizing and folding.
     var selectedTool by rememberSaveable { mutableStateOf<String?>(null) }
@@ -203,6 +211,7 @@ fun PdfToolsScreen(
     val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val tool = selectedTool
         if (uri == null || tool == null) return@rememberLauncherForActivityResult
+        viewModel.rememberPdfs(listOf(uri))
         pendingUri = uri
         when (tool) {
             "compress" -> showCompressDialog = true
@@ -215,7 +224,10 @@ fun PdfToolsScreen(
         }
     }
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        if (uris.isNotEmpty() && selectedTool == "merge") viewModel.merge(uris)
+        if (uris.isNotEmpty() && selectedTool == "merge") {
+            viewModel.rememberPdfs(uris)
+            viewModel.merge(uris)
+        }
     }
     val imagesPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         if (uris.isNotEmpty() && selectedTool == "img2pdf") viewModel.imagesToPdf(uris)
@@ -251,6 +263,16 @@ fun PdfToolsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize().widthIn(max = 1100.dp)
             ) {
+                if (recentPdfs.isNotEmpty()) {
+                    item(key = "recent", span = { GridItemSpan(maxLineSpan) }) {
+                        RecentPdfsRow(
+                            items = recentPdfs,
+                            onOpen = { onOpenPdfViewer(it.uri, it.name) },
+                            onRemove = { viewModel.forgetPdf(it.uri) },
+                            onClear = viewModel::clearRecentPdfs
+                        )
+                    }
+                }
                 items(PDF_TOOLS, key = { it.id }) { tool ->
                     ToolCardItem(
                         tool = tool,
@@ -564,6 +586,56 @@ private fun PdfToImagesDialog(
     )
 }
 
+/** PDFs opened before, newest first: tap to read, long-press to remove from the list. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun RecentPdfsRow(
+    items: List<RecentPdf>,
+    onOpen: (RecentPdf) -> Unit,
+    onRemove: (RecentPdf) -> Unit,
+    onClear: () -> Unit
+) {
+    var removing by remember { mutableStateOf<RecentPdf?>(null) }
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Recent PDFs", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            TextButton(onClick = onClear) { Text("Clear") }
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(items, key = { it.uri.toString() }) { pdf ->
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier
+                        .width(150.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .combinedClickable(
+                            onClickLabel = "Open",
+                            onLongClickLabel = "Remove from recent",
+                            onLongClick = { removing = pdf },
+                            onClick = { onOpen(pdf) }
+                        )
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(28.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(pdf.name, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        }
+    }
+    removing?.let { pdf ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text("Remove from recent?") },
+            text = { Text("\"${pdf.name}\" stays on your device; it is only removed from this list.") },
+            confirmButton = { TextButton(onClick = { onRemove(pdf); removing = null }) { Text("Remove") } },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } }
+        )
+    }
+}
+
 @Composable
 private fun ToolCardItem(
     tool: PdfToolCard,
@@ -838,9 +910,21 @@ fun SmartShareSheet(
             ListItem(
                 modifier = Modifier.clickable {
                     onDismiss()
+                    // Without the Drive app, the system picker still lists Drive, Dropbox, OneDrive and folders.
+                    if (!saveToGoogleDrive(context, file.absolutePath, mimeFor(file))) onSaveToLocal()
+                },
+                headlineContent = { Text("Save to Google Drive") },
+                supportingContent = { Text("Or pick Dropbox, OneDrive or another cloud app") },
+                leadingContent = { Icon(Icons.Default.AddToDrive, contentDescription = null) }
+            )
+
+            ListItem(
+                modifier = Modifier.clickable {
+                    onDismiss()
                     onSaveToLocal()
                 },
                 headlineContent = { Text("Save to device") },
+                supportingContent = { Text("Choose a folder such as Downloads") },
                 leadingContent = { Icon(Icons.Default.Download, contentDescription = null) }
             )
 

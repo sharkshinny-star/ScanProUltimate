@@ -82,6 +82,7 @@ object JsonCodec {
                 put("text", annotation.text)
                 put("asset", annotation.assetPath)
                 put("opacity", annotation.opacity.toDouble())
+                put("color", annotation.color)
             })
         }
     }.toString()
@@ -104,7 +105,8 @@ object JsonCodec {
                     rotationDegrees = item.optDouble("rotation", 0.0).toFloat(),
                     text = item.optString("text"),
                     assetPath = item.optString("asset"),
-                    opacity = item.optDouble("opacity", 1.0).toFloat()
+                    opacity = item.optDouble("opacity", 1.0).toFloat(),
+                    color = item.optInt("color", PageAnnotation.DEFAULT_TEXT_COLOR)
                 )
             }.getOrNull()
         }

@@ -22,7 +22,8 @@ enum class PdfQuality(val label: String, val maxImageDimension: Int) {
 enum class PdfPageSize(val label: String) {
     AUTO("Auto"),
     A4("A4"),
-    LETTER("Letter")
+    LETTER("Letter"),
+    LEGAL("Legal")
 }
 
 enum class ThemeMode(val label: String) {
@@ -119,7 +120,34 @@ data class PageAnnotation(
     val rotationDegrees: Float = 0f,
     val text: String = "",
     val assetPath: String = "",
-    val opacity: Float = 1f
+    val opacity: Float = 1f,
+    /** ARGB colour of a TEXT annotation; the alpha comes from [opacity]. */
+    val color: Int = DEFAULT_TEXT_COLOR
+) {
+    companion object {
+        const val DEFAULT_TEXT_COLOR: Int = 0xFF141414.toInt()
+    }
+}
+
+enum class WatermarkSize(val label: String, val height: Float) {
+    SMALL("Small", 0.07f),
+    MEDIUM("Medium", 0.12f),
+    LARGE("Large", 0.18f)
+}
+
+enum class WatermarkPosition(val label: String) {
+    DIAGONAL("Diagonal"),
+    CENTER("Centre"),
+    BOTTOM("Bottom")
+}
+
+/** How "Watermark all pages" stamps its text. */
+data class WatermarkStyle(
+    val text: String,
+    val size: WatermarkSize = WatermarkSize.MEDIUM,
+    val position: WatermarkPosition = WatermarkPosition.DIAGONAL,
+    val color: Int = PageAnnotation.DEFAULT_TEXT_COLOR,
+    val opacity: Float = 0.35f
 )
 
 /** A recognised word and where it sits on the rendered page, as fractions of the page width and height. */

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Output
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.AddToDrive
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Tag
@@ -127,6 +128,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.data.WatermarkStyle
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.data.OcrScript
@@ -156,6 +158,7 @@ import com.example.scanpro.core.ui.printPdf
 import com.example.scanpro.core.ui.shareImages
 import com.example.scanpro.core.ui.shareOcrText
 import com.example.scanpro.core.ui.sharePdf
+import com.example.scanpro.core.ui.saveToGoogleDrive
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.designsystem.TitleWithStatus
 import com.example.scanpro.core.designsystem.TopBarWithProgress
@@ -170,6 +173,7 @@ fun DocumentRoute(
     val otherDocuments by viewModel.otherDocuments.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
+    val scanSaved by viewModel.scanSaved.collectAsStateWithLifecycle()
 
     // If the open document disappears (trashed or deleted elsewhere), leave instead of stranding the
     // user on an "unavailable" screen with no way back.
@@ -233,6 +237,8 @@ fun DocumentRoute(
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
         onWithFreshPdf = { onFailed, onReady -> viewModel.withFreshPdf(onFailed, onReady) },
+        scanSaved = scanSaved,
+        onDismissScanSaved = viewModel::dismissScanSaved,
         onDeleteDocument = {
             viewModel.moveToTrash()
             onBack()
@@ -273,7 +279,7 @@ internal fun DocumentDetailScreen(
     onHighlight: (String) -> Unit,
     onRedact: (String) -> Unit,
     onUndoAnnotation: (String) -> Unit,
-    onWatermark: (String) -> Unit,
+    onWatermark: (WatermarkStyle) -> Unit,
     onLoadMarkupBase: suspend (String) -> java.io.File,
     onApplyMarkup: (String, List<com.example.scanpro.data.PageAnnotation>) -> Unit,
     onAppendImages: (List<Uri>) -> Unit,
@@ -289,6 +295,9 @@ internal fun DocumentDetailScreen(
     onExportEncryptedBackup: (String) -> Unit,
     /** Runs onReady with a current PDF (page edits rebuild it lazily), or onFailed if that isn't possible. */
     onWithFreshPdf: (onFailed: () -> Unit, onReady: (ScanDocument) -> Unit) -> Unit,
+    /** True right after this document was scanned: offer share, save and rename straight away. */
+    scanSaved: Boolean = false,
+    onDismissScanSaved: () -> Unit = {},
     onDeleteDocument: () -> Unit
 ) {
     val context = LocalContext.current
@@ -348,6 +357,30 @@ internal fun DocumentDetailScreen(
                 }
             }
         }
+    }
+
+    /** Google Drive's own "Save to Drive" screen; without Drive, the system picker, which lists other cloud apps too. */
+    val saveToDrive: (String) -> Unit = { title ->
+        onWithFreshPdf({}) { fresh ->
+            if (!saveToGoogleDrive(context, fresh.pdfPath, "application/pdf", "$title.pdf")) {
+                android.widget.Toast.makeText(context, "Google Drive isn't installed. Choose where to save.", android.widget.Toast.LENGTH_SHORT).show()
+                savePdfLauncher.launch("$title.pdf")
+            }
+        }
+    }
+
+    if (scanSaved) {
+        ScanSavedSheet(
+            document = document,
+            busy = busy,
+            onRename = onRename,
+            onSharePdf = { title -> onWithFreshPdf({}) { sharePdf(context, it.copy(title = title)) } },
+            onShareJpg = { shareImages(context, document) },
+            onSaveToDevice = { title -> savePdfLauncher.launch("$title.pdf") },
+            onSaveToDrive = saveToDrive,
+            onPrint = { title -> onWithFreshPdf({}) { printPdf(context, it.copy(title = title)) } },
+            onDismiss = onDismissScanSaved
+        )
     }
 
     // When the selected page disappears (deleted, or split into two new pages), stay at the same
@@ -559,6 +592,7 @@ internal fun DocumentDetailScreen(
                     ToolGrid {
                         ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy) { onWithFreshPdf({}) { openPdf(context, it) } }
                         ToolTile(Icons.Default.Save, "Save PDF", !busy) { savePdfLauncher.launch("${document.title}.pdf") }
+                        ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy) { saveToDrive(document.title) }
                         ToolTile(Icons.Default.Print, "Print", !busy) { onWithFreshPdf({}) { printPdf(context, it) } }
                         ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
                         ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
@@ -740,7 +774,7 @@ internal fun DocumentDetailScreen(
     if (renameOpen) TextInputDialog("Rename document", document.title, "Name", onDismiss = { renameOpen = false }) { onRename(it); renameOpen = false }
     if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
     if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
-    if (watermarkOpen) TextInputDialog("Watermark all pages", label = "Watermark text", confirmLabel = "Apply", onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }
+    if (watermarkOpen) WatermarkDialog(onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }
     if (passwordOpen) PasswordInputDialog(
         title = "Protect PDF copy",
         message = "Create a password-protected PDF for sharing.",

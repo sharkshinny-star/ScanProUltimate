@@ -46,6 +46,13 @@ class DocumentViewModel @Inject constructor(
         .map { all -> all.filterNot { it.id == id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.filterNot { it.id == id })
 
+    /** True right after this document was scanned: its screen offers share, save and rename at once. */
+    val scanSaved: StateFlow<Boolean> = operations.scanSaved
+        .map { it == id }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), operations.scanSaved.value == id)
+
+    fun dismissScanSaved() = operations.clearScanSaved(id)
+
     val busy: StateFlow<Boolean> = operations.busy
     val busyLabel: StateFlow<String?> = operations.busyLabel
 
@@ -124,8 +131,8 @@ class DocumentViewModel @Inject constructor(
     fun applyMarkup(pageId: String, annotations: List<com.example.scanpro.data.PageAnnotation>) =
         run("Updating markup…", "Markup updated") { repository.replaceAnnotations(id, pageId, annotations) }
 
-    fun addWatermark(text: String) =
-        run("Adding watermark to all pages…", "Watermark added") { repository.addWatermark(id, text) }
+    fun addWatermark(style: com.example.scanpro.data.WatermarkStyle) =
+        run("Adding watermark to all pages…", "Watermark added") { repository.addWatermark(id, style) }
 
     fun appendImages(imageUris: List<Uri>) {
         if (imageUris.isEmpty()) return
@@ -210,6 +217,8 @@ class DocumentViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        // Leaving without closing the "Scan saved" sheet: don't offer it again next time this document opens.
+        operations.clearScanSaved(id)
         // Leaving the editor: bring the PDF up to date in the background so it's ready next time.
         library.buildPdfInBackground(id)
     }

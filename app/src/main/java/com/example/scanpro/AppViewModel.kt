@@ -109,8 +109,10 @@ class AppViewModel @Inject constructor(
     }
 
     fun importScan(pdfUri: Uri?, imageUris: List<Uri>) {
-        operations.enqueue("Enhancing pages, generating OCR, and building searchable PDF…", "Scan saved") {
-            repository.importScan(pdfUri, imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
+        operations.enqueue("Enhancing pages, generating OCR, and building searchable PDF…", null) {
+            val document = repository.importScan(pdfUri, imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
+            operations.offerScanSaved(document.id)
+            operations.requestOpenDocument(document.id)
         }
     }
 
@@ -161,7 +163,8 @@ class AppViewModel @Inject constructor(
                 )
                 return@enqueue
             }
-            if (mode == ScanMode.TEXT) copyRecognizedText(newDocument) else operations.showMessage("Scan saved")
+            // Text scans copy their text instead; every other scan offers share/save straight away.
+            if (mode == ScanMode.TEXT) copyRecognizedText(newDocument) else operations.offerScanSaved(newDocument.id)
             operations.requestOpenDocument(newDocument.id)
             // The document now holds its own copies; drop the scanner session's temporary captures.
             imageUris.asSequence()
