@@ -28,6 +28,13 @@
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="33">
 
+        <!-- Google Play services downloads these ML Kit models when the app is installed, so Latin text
+             recognition and QR/barcode scanning work offline from the first scan. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr,barcode" />
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

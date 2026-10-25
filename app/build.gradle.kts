@@ -17,6 +17,8 @@ android {
         versionName = "4.1.0"
 
         vectorDrawables { useSupportLibrary = true }
+        // 32-bit x86 is only used by old emulators; leaving it out removes ~70 MB of native code from universal APKs.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -50,6 +52,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    // Shared APKs: one small APK per CPU type plus a universal one. Play Store bundles split by CPU on their own.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = true
         }
     }
 
@@ -98,8 +110,6 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.2.0")
     // Applies the libraries' bundled Compose baseline profiles on installs that bypass Play, so first runs are smoother.
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
-    // Applies the libraries' bundled Compose baseline profiles on installs that bypass Play, so first runs aren't janky.
-    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
@@ -130,11 +140,15 @@ dependencies {
 
     // Google scanner remains as a compatibility fallback.
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
-    implementation("com.google.mlkit:text-recognition:16.0.1")
-    implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
-    implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
-    implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
-    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+    // Text recognition and barcode scanning run in Google Play services, so their engines and models (about
+    // 16 MB per CPU type for OCR alone) are not shipped inside the app. Latin OCR and barcodes are fetched at
+    // install time (see AndroidManifest); the other scripts download the first time they are used.
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition-japanese:16.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.1")
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("com.google.mlkit:language-id:17.0.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")

@@ -692,6 +692,8 @@ class DocumentRepository @Inject constructor(
     suspend fun reOcrDocument(id: String, script: OcrScript? = null) = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
         val selected = script ?: doc.ocrScript
+        // Fails with a clear message when the script's model can't be fetched, instead of silently blanking every page.
+        ocr.prepare(selected)
         val pages = doc.pages.map { page ->
             // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
             runCatching { ocr.recognizeDetailed(File(page.imagePath), selected) }

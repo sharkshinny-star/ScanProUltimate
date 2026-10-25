@@ -247,7 +247,20 @@ fun CameraScannerScreen(
             onAutoCapture = { autoCaptureSignal++ }
         )
     }
-    SideEffect { analyzer.autoCaptureEnabled = autoCapture && !capturing && !reviewing && pages.size < pageLimit }
+    // QR mode reads codes from the same camera frames instead of looking for a page.
+    var barcodeMode by rememberSaveable { mutableStateOf(false) }
+    var foundCode by remember { mutableStateOf<com.google.mlkit.vision.barcode.common.Barcode?>(null) }
+    val barcodeAnalyzer = remember {
+        BarcodeFrameAnalyzer { code ->
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            foundCode = code
+        }
+    }
+    val frameAnalyzer = remember { SwitchingAnalyzer(analyzer, barcodeAnalyzer) }
+    SideEffect {
+        frameAnalyzer.barcodeMode = barcodeMode
+        analyzer.autoCaptureEnabled = autoCapture && !barcodeMode && !capturing && !reviewing && pages.size < pageLimit
+    }
 
     /** Opens the review step on the newest page. */
     fun finishScan() {
@@ -369,7 +382,7 @@ fun CameraScannerScreen(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .build()
-                    .also { it.setAnalyzer(analysisExecutor, analyzer) }
+                    .also { it.setAnalyzer(analysisExecutor, frameAnalyzer) }
 
                 provider.unbindAll()
                 // A shared view port crops all three streams to one region, so analysis coordinates line up with
@@ -408,6 +421,7 @@ fun CameraScannerScreen(
             disposed.set(true)
             cameraProvider?.unbindAll()
             analysisExecutor.shutdown()
+            barcodeAnalyzer.close()
             // Leaving without Done discards the session's captures. A rotation recreates the screen
             // with the same saved pages, so keep the files then.
             val changingConfigurations = (context as? android.app.Activity)?.isChangingConfigurations == true
@@ -496,7 +510,7 @@ fun CameraScannerScreen(
         )
 
         ThirdsGrid()
-        if (detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+        if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             DocumentBoundaryOverlay(detection = detection, stable = stable)
         }
         if (scanMode == ScanMode.ID_CARD) {
@@ -512,7 +526,24 @@ fun CameraScannerScreen(
         }
 
         // Live guidance in the middle of the preview, where the eye already is.
-        if (status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+        if (barcodeMode && foundCode == null) {
+            Surface(
+                modifier = Modifier.align(Alignment.Center),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.Black.copy(alpha = 0.55f)
+            ) {
+                Text("Point at a QR code or barcode", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+            }
+        }
+        foundCode?.let { code ->
+            val scanAgain = {
+                foundCode = null
+                barcodeAnalyzer.resume()
+            }
+            BarcodeResultSheet(code, onScanAgain = scanAgain, onDismiss = scanAgain)
+        }
+
+        if (!barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             Surface(
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),
@@ -532,7 +563,7 @@ fun CameraScannerScreen(
             )
         }
 
-            if (scanMode != ScanMode.ID_CARD) {
+            if (scanMode != ScanMode.ID_CARD && !barcodeMode) {
                 Box(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp)) {
                     Row(
                         Modifier.clickable { detectMenuOpen = true }.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -665,19 +696,32 @@ fun CameraScannerScreen(
                         )
                     }
                 } else {
-                    listOf(ScanMode.TEXT to "Extract text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
-                        val selected = if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
+                    listOf(ScanMode.TEXT to "Text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
+                        val selected = !barcodeMode &&
+                            if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
                         Text(
                             text,
                             color = if (selected) blue else Color.White,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable(enabled = pages.isEmpty()) {
+                                barcodeMode = false
                                 scanMode = target ?: ScanMode.DOCUMENT
                                 scanBothSides = false
                             }.padding(8.dp)
                         )
                     }
+                    Text(
+                        "QR code",
+                        color = if (barcodeMode) blue else Color.White,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable(enabled = pages.isEmpty()) {
+                            barcodeMode = true
+                            scanMode = ScanMode.DOCUMENT
+                            scanBothSides = false
+                        }.padding(8.dp)
+                    )
                 }
             }
 
@@ -703,15 +747,16 @@ fun CameraScannerScreen(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         capturePage()
                     },
-                    enabled = !capturing && pages.size < pageLimit,
+                    enabled = !barcodeMode && !capturing && pages.size < pageLimit,
                     shape = CircleShape,
-                    color = Color.White,
+                    // Dimmed in QR mode: codes are read live, there is nothing to capture.
+                    color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
                     border = androidx.compose.foundation.BorderStroke(5.dp, if (stable) blue else Color.White.copy(alpha = 0.5f)),
                     modifier = Modifier.size(78.dp)
                 ) {}
 
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
-                    if (pages.isEmpty()) {
+                    if (pages.isEmpty() && !barcodeMode) {
                         Column(
                             Modifier.clickable { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }.padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally

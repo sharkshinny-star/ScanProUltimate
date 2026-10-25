@@ -13,7 +13,11 @@ import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.google.android.gms.common.moduleinstall.ModuleInstall
+import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -37,6 +41,37 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
         }
     }
 
+    /** Scripts whose model Play services has confirmed is on the device; checked once per run. */
+    private val readyScripts = ConcurrentHashMap.newKeySet<OcrScript>()
+
+    /**
+     * The recognition models live in Google Play services. Latin is fetched at install time; the other scripts
+     * are requested here the first time they are needed, and recognition waits (up to a minute) for them.
+     */
+    private suspend fun ensureModel(script: OcrScript, recognizer: TextRecognizer) {
+        if (script in readyScripts) return
+        val modules = ModuleInstall.getClient(context)
+        val available = runCatching { modules.areModulesAvailable(recognizer).await().areModulesAvailable() }.getOrDefault(true)
+        if (!available) {
+            runCatching { modules.installModules(ModuleInstallRequest.newBuilder().addApi(recognizer).build()).await() }
+            val ready = withTimeoutOrNull(MODEL_WAIT_MS) {
+                while (!runCatching { modules.areModulesAvailable(recognizer).await().areModulesAvailable() }.getOrDefault(false)) {
+                    delay(1_000)
+                }
+                true
+            } ?: false
+            if (!ready) {
+                throw IllegalStateException(
+                    "The ${script.label} text model is still downloading. Connect to the internet, then run OCR again."
+                )
+            }
+        }
+        readyScripts += script
+    }
+
+    /** Makes sure [script]'s model is on the device, downloading it if needed; throws a readable error otherwise. */
+    suspend fun prepare(script: OcrScript) = ensureModel(script, recognizerFor(script))
+
     suspend fun recognize(file: File, script: OcrScript = OcrScript.LATIN): String = recognizeDetailed(file, script).text
 
     /** Recognised text plus the position of every word, so a PDF text layer can sit under the printed words. */
@@ -46,7 +81,14 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
         val bitmap = ImageProcessor.decodeScaled(file.absolutePath, OCR_MAX_DIMENSION)
         val image = bitmap?.let { InputImage.fromBitmap(it, 0) }
             ?: InputImage.fromFilePath(context, Uri.fromFile(file))
-        val task = recognizerFor(script).process(image)
+        val recognizer = recognizerFor(script)
+        try {
+            ensureModel(script, recognizer)
+        } catch (error: Throwable) {
+            bitmap?.recycle()
+            throw error
+        }
+        val task = recognizer.process(image)
         // Recycle when ML Kit is done, not when this coroutine ends: a cancelled await would otherwise
         // free the pixels while recognition is still reading them.
         if (bitmap != null) task.addOnCompleteListener { bitmap.recycle() }
@@ -77,5 +119,6 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
 
     private companion object {
         const val OCR_MAX_DIMENSION = 2400
+        const val MODEL_WAIT_MS = 60_000L
     }
 }

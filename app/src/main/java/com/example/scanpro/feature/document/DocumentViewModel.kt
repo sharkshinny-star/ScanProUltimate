@@ -20,6 +20,8 @@ import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.hasCurrentPdf
 import com.example.scanpro.navigation.ScanProDestinations
+import com.example.scanpro.imaging.ImageProcessor
+import kotlinx.coroutines.launch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +36,8 @@ class DocumentViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
-    private val library: DocumentLibrary
+    private val library: DocumentLibrary,
+    private val signatures: com.example.scanpro.data.SignatureLibrary
 ) : ViewModel() {
     private val id: String = checkNotNull(savedStateHandle[ScanProDestinations.DOCUMENT_ID_ARG])
 
@@ -112,8 +115,28 @@ class DocumentViewModel @Inject constructor(
     fun deletePage(pageId: String) =
         run("Removing page…", "Page removed") { repository.deletePage(id, pageId) }
 
-    fun stampSignature(pageId: String, signature: Bitmap) =
-        run("Adding signature overlay…", "Signature added") { repository.stampSignature(id, pageId, signature) }
+    /** Saved signatures, newest first, offered in the signature dialog. */
+    val savedSignatures: StateFlow<List<java.io.File>> = signatures.items
+
+    fun stampSignature(pageId: String, signature: Bitmap, keep: Boolean = false) =
+        run("Adding signature overlay…", "Signature added") {
+            if (keep) runCatching { signatures.save(signature) }
+            repository.stampSignature(id, pageId, signature)
+        }
+
+    fun stampSavedSignature(pageId: String, file: java.io.File) =
+        run("Adding signature overlay…", "Signature added") {
+            val bitmap = ImageProcessor.decodeScaled(file.absolutePath, 1600) ?: error("Saved signature could not be read")
+            try {
+                repository.stampSignature(id, pageId, bitmap)
+            } finally {
+                bitmap.recycle()
+            }
+        }
+
+    fun deleteSavedSignature(file: java.io.File) {
+        viewModelScope.launch(Dispatchers.IO) { signatures.delete(file) }
+    }
 
     fun addTextAnnotation(pageId: String, text: String) =
         run("Adding text annotation…", "Text added") { repository.addTextAnnotation(id, pageId, text) }

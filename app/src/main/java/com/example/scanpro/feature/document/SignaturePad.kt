@@ -6,6 +6,36 @@ import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint as AndroidPaint
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.example.scanpro.imaging.ImageProcessor
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Column
@@ -31,21 +61,46 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
+private val InkColors = listOf("Black" to Color(0xFF111111), "Blue" to Color(0xFF1A3FB8))
+
+/**
+ * Draw a signature, or tap one saved earlier. New signatures are kept for next time unless unticked;
+ * long-press a saved one to delete it.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SignaturePadDialog(
+    saved: List<File> = emptyList(),
+    onUseSaved: (File) -> Unit = {},
+    onDeleteSaved: (File) -> Unit = {},
     onDismiss: () -> Unit,
-    onConfirm: (Bitmap) -> Unit
+    onConfirm: (signature: Bitmap, keep: Boolean) -> Unit
 ) {
     var strokes by remember { mutableStateOf<List<List<Offset>>>(emptyList()) }
     var padSize by remember { mutableStateOf(IntSize.Zero) }
+    var ink by remember { mutableStateOf(InkColors.first().second) }
+    var keep by remember { mutableStateOf(true) }
+    var deleting by remember { mutableStateOf<File?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add signature") },
         text = {
             Column {
+                if (saved.isNotEmpty()) {
+                    Text("Saved signatures", style = MaterialTheme.typography.labelLarge)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
+                    ) {
+                        items(saved, key = { it.absolutePath }) { file ->
+                            SavedSignature(file, onClick = { onUseSaved(file) }, onLongClick = { deleting = file })
+                        }
+                    }
+                }
                 Text(
-                    "Sign below. The signature will be flattened onto the current page.",
+                    if (saved.isEmpty()) "Sign below. The signature will be flattened onto the current page."
+                    else "Or draw a new one below.",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Canvas(
@@ -73,7 +128,7 @@ fun SignaturePadDialog(
                     strokes.forEach { stroke ->
                         for (i in 1 until stroke.size) {
                             drawLine(
-                                color = Color.Black,
+                                color = ink,
                                 start = stroke[i - 1],
                                 end = stroke[i],
                                 strokeWidth = 4.dp.toPx(),
@@ -82,13 +137,38 @@ fun SignaturePadDialog(
                         }
                     }
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    InkColors.forEach { (name, color) ->
+                        val chosen = ink == color
+                        Box(
+                            Modifier
+                                .padding(end = 8.dp)
+                                .size(28.dp)
+                                .background(color, CircleShape)
+                                .border(if (chosen) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                .clickable { ink = color }
+                                .semantics { contentDescription = "$name ink"; selected = chosen }
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Row(
+                        Modifier.toggleable(value = keep, role = Role.Checkbox, onValueChange = { keep = it }),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(checked = keep, onCheckedChange = null)
+                        Text("Save for next time", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp))
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(
                 enabled = strokes.any { it.size > 1 } && padSize.width > 0,
                 onClick = {
-                    onConfirm(signatureBitmap(strokes, padSize))
+                    onConfirm(signatureBitmap(strokes, padSize, ink.toArgb()), keep)
                 }
             ) { Text("Place signature") }
         },
@@ -100,16 +180,48 @@ fun SignaturePadDialog(
             }
         }
     )
+
+    deleting?.let { file ->
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text("Delete saved signature?") },
+            text = { Text("Pages already signed keep their signature.") },
+            confirmButton = { TextButton(onClick = { onDeleteSaved(file); deleting = null }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancel") } }
+        )
+    }
 }
 
-private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize): Bitmap {
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SavedSignature(file: File, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val image by produceState<Bitmap?>(null, file) {
+        value = withContext(Dispatchers.IO) { ImageProcessor.decodeScaled(file.absolutePath, 400) }
+    }
+    Box(
+        modifier = Modifier
+            .size(width = 110.dp, height = 56.dp)
+            .background(Color.White, RoundedCornerShape(10.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(10.dp))
+            .combinedClickable(onClickLabel = "Place this signature", onLongClickLabel = "Delete", onClick = onClick, onLongClick = onLongClick)
+            .padding(6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        image?.let {
+            Image(it.asImageBitmap(), contentDescription = "Saved signature", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+        }
+    }
+}
+
+private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize, inkColor: Int): Bitmap {
     val width = size.width.coerceAtLeast(1)
     val height = size.height.coerceAtLeast(1)
     val bitmap = createBitmap(width, height)
     val canvas = AndroidCanvas(bitmap)
     canvas.drawColor(AndroidColor.TRANSPARENT)
     val paint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
-        color = AndroidColor.BLACK
+        color = inkColor
         style = AndroidPaint.Style.STROKE
         strokeCap = AndroidPaint.Cap.ROUND
         strokeJoin = AndroidPaint.Join.ROUND

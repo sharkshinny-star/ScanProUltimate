@@ -160,6 +160,10 @@ import com.example.scanpro.core.ui.printPdf
 import com.example.scanpro.core.ui.shareImages
 import com.example.scanpro.core.ui.shareOcrText
 import com.example.scanpro.core.ui.sharePdf
+import com.example.scanpro.core.ui.ContactDraft
+import com.example.scanpro.core.ui.openNewContactForm
+import com.example.scanpro.intelligence.BusinessCard
+import com.example.scanpro.intelligence.BusinessCardParser
 import com.example.scanpro.core.ui.saveToGoogleDrive
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.designsystem.TitleWithStatus
@@ -176,6 +180,7 @@ fun DocumentRoute(
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
     val scanSaved by viewModel.scanSaved.collectAsStateWithLifecycle()
+    val savedSignatures by viewModel.savedSignatures.collectAsStateWithLifecycle()
 
     // If the open document disappears (trashed or deleted elsewhere), leave instead of stranding the
     // user on an "unavailable" screen with no way back.
@@ -220,6 +225,9 @@ fun DocumentRoute(
         onSplitBook = viewModel::splitBookSpread,
         onDeletePage = viewModel::deletePage,
         onSign = viewModel::stampSignature,
+        savedSignatures = savedSignatures,
+        onSignSaved = viewModel::stampSavedSignature,
+        onDeleteSignature = viewModel::deleteSavedSignature,
         onTextAnnotation = viewModel::addTextAnnotation,
         onHighlight = viewModel::addHighlight,
         onRedact = viewModel::addRedaction,
@@ -277,7 +285,10 @@ internal fun DocumentDetailScreen(
     onExtractPage: (String) -> Unit,
     onSplitBook: (String, Float) -> Unit,
     onDeletePage: (String) -> Unit,
-    onSign: (String, Bitmap) -> Unit,
+    onSign: (String, Bitmap, Boolean) -> Unit,
+    savedSignatures: List<java.io.File> = emptyList(),
+    onSignSaved: (String, java.io.File) -> Unit = { _, _ -> },
+    onDeleteSignature: (java.io.File) -> Unit = {},
     onTextAnnotation: (String, String) -> Unit,
     onHighlight: (String) -> Unit,
     onRedact: (String) -> Unit,
@@ -312,6 +323,26 @@ internal fun DocumentDetailScreen(
     // ~40 regex passes over the whole OCR text; off the main thread so long documents don't jank.
     val insights: DocumentInsights by produceState(initialValue = remember { DocumentIntelligenceEngine.analyze("") }, document.ocrText) {
         value = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.analyze(document.ocrText) }
+    }
+    // Only read as a business card when the text has contact details; parsing runs off the main thread.
+    val businessCard: BusinessCard? by produceState<BusinessCard?>(initialValue = null, document.ocrText) {
+        value = withContext(Dispatchers.Default) {
+            BusinessCardParser.parse(document.ocrText).takeIf { it.isUseful }
+        }
+    }
+    val addContact: (BusinessCard) -> Unit = { card ->
+        openNewContactForm(
+            context,
+            ContactDraft(
+                name = card.name,
+                company = card.company,
+                jobTitle = card.jobTitle,
+                phones = card.phones,
+                emails = card.emails,
+                website = card.website,
+                address = card.address
+            )
+        )
     }
     var assistantQuestion by rememberSaveable(document.id) { mutableStateOf("") }
     var assistantAnswer by rememberSaveable(document.id) { mutableStateOf("") }
@@ -493,6 +524,16 @@ internal fun DocumentDetailScreen(
                     )
                 }
                 Spacer(Modifier.height(12.dp))
+                if (document.ocrText.isNotBlank()) {
+                    SummaryCard(
+                        documentId = document.id,
+                        insights = insights,
+                        card = businessCard,
+                        onAddContact = addContact,
+                        onMore = { tabName = DetailTab.INSIGHTS.name }
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
                 PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE, version = currentPage)
                 Spacer(Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -714,6 +755,12 @@ internal fun DocumentDetailScreen(
                     if (insights.amounts.isNotEmpty()) Text("Amounts: ${insights.amounts.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
                     if (insights.dates.isNotEmpty()) Text("Dates: ${insights.dates.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
                     if (insights.references.isNotEmpty()) Text("References: ${insights.references.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                    businessCard?.let { card ->
+                        SubHeader("Contact details")
+                        listOfNotNull(card.name, card.jobTitle, card.company).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        (card.phones + card.emails + listOfNotNull(card.website, card.address)).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        FilledTonalButton(onClick = { addContact(card) }, modifier = Modifier.padding(top = 4.dp)) { Text("Add to contacts") }
+                    }
                     if (insights.actionItems.isNotEmpty()) {
                         SubHeader("Potential action items")
                         insights.actionItems.forEach { item ->
@@ -808,8 +855,16 @@ internal fun DocumentDetailScreen(
     ) { text -> onUpdateOcrText(currentPage.id, text); ocrEditOpen = false }
 
     if (signatureOpen && currentPage != null) {
-        SignaturePadDialog(onDismiss = { signatureOpen = false }) { bitmap ->
-            onSign(currentPage.id, bitmap)
+        SignaturePadDialog(
+            saved = savedSignatures,
+            onUseSaved = { file ->
+                onSignSaved(currentPage.id, file)
+                signatureOpen = false
+            },
+            onDeleteSaved = onDeleteSignature,
+            onDismiss = { signatureOpen = false }
+        ) { bitmap, keep ->
+            onSign(currentPage.id, bitmap, keep)
             signatureOpen = false
         }
     }
