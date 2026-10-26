@@ -65,6 +65,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -277,7 +279,8 @@ fun ScanReviewScreen(
                 }
             }
             ReviewAction(Icons.Default.Fullscreen, "No crop", !blocked) { quads[key] = CropQuad.DEFAULT }
-            ReviewAction(Icons.Default.Gesture, if (curveMode) "Curve on" else "Curve", !blocked && bitmap != null, highlighted = curveMode) {
+            // Same label on or off (the colour shows the state): a longer label squeezed "Done" onto four lines.
+            ReviewAction(Icons.Default.Gesture, "Curve", !blocked && bitmap != null, highlighted = curveMode) {
                 val image = bitmap ?: return@ReviewAction
                 val start = quads[key] ?: return@ReviewAction
                 if (curveMode) {
@@ -298,7 +301,7 @@ fun ScanReviewScreen(
             ReviewAction(Icons.AutoMirrored.Filled.RotateRight, "Right", !blocked) { rotate(clockwise = true) }
             Button(enabled = !blocked, onClick = onDone) {
                 if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color.White)
-                else Text("Done")
+                else Text("Done", maxLines = 1, softWrap = false)
             }
         }
     }
@@ -312,7 +315,10 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
         else -> Color.White
     }
     Column(
-        Modifier.clickable(enabled = enabled, onClick = onClick).padding(horizontal = 6.dp, vertical = 6.dp),
+        Modifier
+            .clickable(enabled = enabled, onClick = onClick)
+            .semantics { if (highlighted) stateDescription = "On" }
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(icon, contentDescription = null, tint = tint)

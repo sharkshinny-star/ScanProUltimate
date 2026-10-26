@@ -45,6 +45,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -545,20 +550,28 @@ fun CameraScannerScreen(
 
         // Live guidance in the middle of the preview, where the eye already is.
         if (showTips && !barcodeMode && pages.isEmpty()) {
+            // Kept clear of the controls at the bottom; on short screens the tips scroll and "Got it" stays visible.
             Surface(
-                modifier = Modifier.align(Alignment.Center).padding(24.dp).widthIn(max = 420.dp),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 64.dp, start = 20.dp, end = 20.dp)
+                    .widthIn(max = 420.dp)
+                    .heightIn(max = 320.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = Color.Black.copy(alpha = 0.78f)
+                color = Color.Black.copy(alpha = 0.8f)
             ) {
-                Column(Modifier.padding(18.dp)) {
+                Column(Modifier.padding(16.dp)) {
                     Text("Quick tips", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    listOf(
-                        "Hold the phone steady over the page. Once it is outlined and still, ScanPro captures it for you.",
-                        "Tap anywhere to focus. Tap \"Auto\" at the top to capture by hand instead.",
-                        "Scanning several pages? Choose Batch above the shutter, then tap the page count to finish.",
-                        "Afterwards, Clean up removes shadows and fingers, and Curve flattens book pages."
-                    ).forEach { tip ->
-                        Text("• $tip", color = Color.White.copy(alpha = 0.92f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                    Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                        listOf(
+                            "Hold steady over the page. Once it is outlined and still, it is captured for you.",
+                            "Tap to focus. Tap \"Auto\" at the top to capture by hand.",
+                            "Many pages? Choose Batch above the shutter, then tap the page count to finish.",
+                            "Later, Clean up removes shadows and fingers; Curve flattens book pages."
+                        ).forEach { tip ->
+                            Text("• $tip", color = Color.White.copy(alpha = 0.92f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                        }
                     }
                     TextButton(
                         onClick = ::dismissTips,
@@ -797,7 +810,8 @@ fun CameraScannerScreen(
                     // Dimmed in QR mode: codes are read live, there is nothing to capture.
                     color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
                     border = androidx.compose.foundation.BorderStroke(5.dp, if (stable) blue else Color.White.copy(alpha = 0.5f)),
-                    modifier = Modifier.size(78.dp)
+                    // The shutter has no visible label, so screen readers need one.
+                    modifier = Modifier.size(78.dp).semantics { contentDescription = "Take photo" }
                 ) {}
 
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {

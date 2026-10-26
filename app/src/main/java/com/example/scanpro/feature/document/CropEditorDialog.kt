@@ -373,7 +373,7 @@ fun CropEditorDialog(
                                 tint = if (curveMode) Color(0xFFF59E0B) else Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
-                            Text(if (curveMode) "Curve on" else "Curve", color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text("Curve", color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -412,7 +412,7 @@ fun CropEditorDialog(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.height(42.dp)
                     ) {
-                        Text("Done")
+                        Text("Done", maxLines = 1, softWrap = false)
                     }
                 }
             }
