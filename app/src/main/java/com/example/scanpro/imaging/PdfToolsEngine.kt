@@ -502,17 +502,23 @@ object PdfToolsEngine {
     }
 
     /** Opens a PDF, turning "wrong password" on a protected file into a message that says what to do. */
-    private fun loadPdf(file: File): PDDocument = try {
+    internal fun loadPdf(file: File): PDDocument = try {
         PDDocument.load(file)
     } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
         throw IllegalArgumentException("This PDF is password-protected. Unlock it first with the Unlock PDF tool.", error)
     }
 
-    private fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {
+    internal fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {
         val tempFile = File(context.cacheDir, fileName)
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(tempFile).use { output -> input.copyTo(output) }
-        } ?: error("Unable to read PDF file from selected location")
+        try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+            } ?: error("Unable to read PDF file from selected location")
+        } catch (error: Throwable) {
+            // A copy that failed half way must not leave part of the user's file behind in the cache.
+            tempFile.delete()
+            throw error
+        }
         return tempFile
     }
 

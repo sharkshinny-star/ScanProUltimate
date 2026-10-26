@@ -42,6 +42,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Compress
@@ -136,6 +138,8 @@ data class PdfToolCard(
 )
 
 private val PDF_TOOLS = listOf(
+    PdfToolCard("fill", "Fill Form", "Type into a PDF form's fields, tick boxes and save", Icons.Default.EditNote, badge = "New"),
+    PdfToolCard("ocr", "Make Searchable", "Add selectable, searchable text to scanned PDFs", Icons.Default.FindInPage, badge = "New"),
     PdfToolCard("compress", "Compress PDF", "Reduce PDF size with quality preset options", Icons.Default.Compress),
     PdfToolCard("merge", "Merge PDFs", "Combine multiple PDFs into a single document", Icons.Default.Merge),
     PdfToolCard("split", "Split PDF", "Divide PDF by pages, ranges, or fixed chunks", Icons.Default.CallSplit),
@@ -172,6 +176,8 @@ fun PdfToolsScreen(
     val passwordNeeded by viewModel.passwordNeeded.collectAsStateWithLifecycle()
     val wrongPassword by viewModel.wrongPassword.collectAsStateWithLifecycle()
     val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
+    val formSession by viewModel.form.collectAsStateWithLifecycle()
+    var showOcrDialog by rememberSaveable { mutableStateOf(false) }
 
     // Saveable, so an open dialog and the chosen file survive rotation, window resizing and folding.
     var selectedTool by rememberSaveable { mutableStateOf<String?>(null) }
@@ -223,6 +229,8 @@ fun PdfToolsScreen(
             "split" -> showSplitDialog = true
             "organize", "extract", "rotate" -> showOrganizerSheet = true
             "viewer" -> onOpenPdfViewer(uri, "PDF Document")
+            "fill" -> viewModel.openForm(uri)
+            "ocr" -> showOcrDialog = true
         }
     }
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -393,6 +401,25 @@ fun PdfToolsScreen(
                         viewModel.clearWrongPassword()
                         if (isProtect) viewModel.protect(uri, pwd) else viewModel.unlock(uri, pwd)
                     }
+                )
+            }
+
+            if (showOcrDialog && uri != null) {
+                OcrScriptDialog(
+                    onDismiss = { showOcrDialog = false },
+                    onConfirm = { script ->
+                        showOcrDialog = false
+                        viewModel.makeSearchable(uri, script)
+                    }
+                )
+            }
+
+            formSession?.let { session ->
+                FormFillDialog(
+                    session = session,
+                    onValueChange = viewModel::updateFormValue,
+                    onSave = viewModel::saveForm,
+                    onClose = viewModel::closeForm
                 )
             }
 

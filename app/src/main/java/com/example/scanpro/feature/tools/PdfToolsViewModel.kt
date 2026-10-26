@@ -7,7 +7,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.imaging.CompressPdfEngine
 import com.example.scanpro.imaging.CompressionPreset
+import com.example.scanpro.imaging.FormField
+import com.example.scanpro.imaging.FormFieldRules
 import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.OcrEngine
+import com.example.scanpro.imaging.PdfFormEngine
+import com.example.scanpro.imaging.PdfOcrEngine
+import com.example.scanpro.data.OcrScript
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfToolResult
@@ -29,6 +35,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** A form being filled in: its fields as read from the file, and what the user has typed or picked so far. */
+data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Map<String, String>) {
+    val changes: Map<String, String> get() = FormFieldRules.changes(fields, values)
+}
+
 /** What the Tools screen shows while and after a tool runs. */
 data class ToolProgress(val label: String, val current: Int = 0, val total: Int = 0)
 
@@ -39,7 +50,8 @@ data class ToolProgress(val label: String, val current: Int = 0, val total: Int 
 @HiltViewModel
 class PdfToolsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val recents: RecentPdfStore
+    private val recents: RecentPdfStore,
+    private val ocr: OcrEngine
 ) : ViewModel() {
     /** PDFs picked from the device or a cloud app, newest first, to reopen with one tap. */
     val recentPdfs: StateFlow<List<RecentPdf>> = recents.items
@@ -192,6 +204,67 @@ class PdfToolsViewModel @Inject constructor(
 
     fun merge(uris: List<Uri>) = launchTool("Merging ${uris.size} PDFs…", "Failed to merge PDFs") {
         PdfToolsEngine.mergePdfs(context, uris, PdfToolsEngine.outputLocation(context, "merged_${System.currentTimeMillis()}.pdf"), ::report)
+    }
+
+    private val _form = MutableStateFlow<FormSession?>(null)
+    val form: StateFlow<FormSession?> = _form.asStateFlow()
+
+    fun openForm(uri: Uri) = launchTool("Reading form fields…", "Could not read this PDF's form") {
+        val fields = PdfFormEngine.readFields(context, uri)
+        if (fields.isEmpty()) {
+            _message.value = "This PDF has no fillable fields. Import it into your documents and use Add text to type on it."
+        } else {
+            _form.value = FormSession(uri, fields, fields.associate { it.name to it.value })
+        }
+        null
+    }
+
+    fun updateFormValue(name: String, value: String) {
+        _form.update { session -> session?.copy(values = session.values + (name to value)) }
+    }
+
+    fun closeForm() { _form.value = null }
+
+    fun saveForm(flatten: Boolean) {
+        val session = _form.value ?: return
+        launchTool("Filling form…", "Could not save the filled form") {
+            val result = PdfFormEngine.fill(
+                context, session.uri, session.changes, flatten,
+                PdfToolsEngine.outputLocation(context, "filled_${System.currentTimeMillis()}.pdf")
+            )
+            // Closed only once saved, so a failure leaves the user's entries in place to try again.
+            _form.value = null
+            result
+        }
+    }
+
+    fun makeSearchable(uri: Uri, script: OcrScript) = launchTool("Making PDF searchable…", "Could not make the PDF searchable") {
+        val outcome = PdfOcrEngine.makeSearchable(
+            context, uri, script, ocr,
+            PdfToolsEngine.outputLocation(context, "searchable_${System.currentTimeMillis()}.pdf"), ::report
+        )
+        val output = outcome.outputFile
+        if (output == null) {
+            _message.value = if (outcome.alreadyHadText == outcome.pageCount) {
+                "This PDF is already searchable: every page has text"
+            } else {
+                "No readable text was found on the pages without text"
+            }
+            null
+        } else {
+            val noun = if (outcome.madeSearchable == 1) "page" else "pages"
+            val extras = listOfNotNull(
+                outcome.alreadyHadText.takeIf { it > 0 }?.let { "$it already had text" },
+                outcome.noTextFound.takeIf { it > 0 }?.let { "$it had no readable text" }
+            )
+            PdfToolResult(
+                outputFile = output,
+                pageCount = outcome.pageCount,
+                originalSizeBytes = outcome.originalSizeBytes,
+                outputSizeBytes = output.length(),
+                message = "Made ${outcome.madeSearchable} $noun searchable" + if (extras.isEmpty()) "" else " (${extras.joinToString(", ")})"
+            )
+        }
     }
 
     fun imagesToPdf(uris: List<Uri>) = launchTool("Converting ${uris.size} images…", "Failed to convert images") {
