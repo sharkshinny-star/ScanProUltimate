@@ -95,6 +95,16 @@ object JsonCodec {
                 put("asset", annotation.assetPath)
                 put("opacity", annotation.opacity.toDouble())
                 put("color", annotation.color)
+                annotation.background?.let { put("bg", it) }
+                if (annotation.strokes.isNotEmpty()) {
+                    // Each stroke as a flat [x, y, x, y, …] array: an eraser stroke can have hundreds of points.
+                    put("strokes", JSONArray().apply {
+                        annotation.strokes.forEach { stroke ->
+                            put(JSONArray().apply { stroke.forEach { put(it.x.toDouble()); put(it.y.toDouble()) } })
+                        }
+                    })
+                    put("brush", annotation.brushSize.toDouble())
+                }
             })
         }
     }.toString()
@@ -118,9 +128,22 @@ object JsonCodec {
                     text = item.optString("text"),
                     assetPath = item.optString("asset"),
                     opacity = item.optDouble("opacity", 1.0).toFloat(),
-                    color = item.optInt("color", PageAnnotation.DEFAULT_TEXT_COLOR)
+                    color = item.optInt("color", PageAnnotation.DEFAULT_TEXT_COLOR),
+                    background = if (item.has("bg")) item.optInt("bg") else null,
+                    strokes = decodeStrokes(item.optJSONArray("strokes")),
+                    brushSize = item.optDouble("brush", 0.0).toFloat().coerceIn(0f, 0.2f)
                 )
             }.getOrNull()
+        }
+    }
+
+    private fun decodeStrokes(array: JSONArray?): List<List<NormalizedPoint>> {
+        if (array == null) return emptyList()
+        return (0 until array.length()).mapNotNull { index ->
+            val flat = array.optJSONArray(index) ?: return@mapNotNull null
+            (0 until flat.length() / 2).map { i ->
+                NormalizedPoint(flat.optDouble(2 * i, 0.0).toFloat(), flat.optDouble(2 * i + 1, 0.0).toFloat()).clamped()
+            }.takeIf { it.isNotEmpty() }
         }
     }
 

@@ -12,6 +12,9 @@ import javax.inject.Singleton
 import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.AnnotationRemap
 import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.imaging.PaperColors
+import com.example.scanpro.imaging.XlsxExporter
+import com.example.scanpro.intelligence.OcrLayout
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.OcrResult
 import com.example.scanpro.imaging.PdfExporter
@@ -292,7 +295,7 @@ class DocumentRepository @Inject constructor(
                     adjustments = PageAdjustments.DEFAULT,
                     annotations = emptyList()
                 ),
-                redactionChanged = removed.any { it.type == AnnotationType.REDACT }
+                redactionChanged = removed.any { it.hidesContent }
             )
         }
         // Signature images stay until the document is closed, so Undo can bring the signature back.
@@ -362,11 +365,85 @@ class DocumentRepository @Inject constructor(
 
     suspend fun removeLastAnnotation(documentId: String, pageId: String) {
         val removed = annotationsOf(documentId, pageId).takeLast(1)
-        val redaction = removed.any { it.type == AnnotationType.REDACT }
+        val redaction = removed.any { it.hidesContent }
         editSinglePage(documentId, pageId) { page ->
             // Removing a highlight, text or signature leaves the page's words as they were; a redaction uncovers some.
             renderAndOcr(page.copy(annotations = page.annotations.dropLast(1)), runOcr = redaction, redactionChanged = redaction)
         }
+    }
+
+    /**
+     * Replaces a line of printed words: the box ([left]..[bottom], fractions of the page) is painted in the paper
+     * colour sampled around it and [text] is written there in the ink colour of the original words. Blank text
+     * just removes the words.
+     */
+    suspend fun replaceText(documentId: String, pageId: String, left: Float, top: Float, right: Float, bottom: Float, text: String) {
+        val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val colours = withContext(Dispatchers.IO) { sampleColours(File(page.imagePath), left, top, right, bottom) }
+        val padX = (bottom - top) * 0.15f
+        addAnnotation(
+            documentId,
+            pageId,
+            PageAnnotation(
+                type = AnnotationType.TEXT,
+                x = (left - padX).coerceIn(0f, 1f),
+                y = top.coerceIn(0f, 1f),
+                width = (right - left + 2 * padX).coerceIn(0.01f, 1f),
+                height = (bottom - top).coerceIn(0.005f, 1f),
+                text = text.trim().take(400),
+                color = colours.ink,
+                background = colours.paper
+            )
+        )
+    }
+
+    /** Paper and ink colours of a box on the rendered page, read from a reduced copy of it. */
+    private fun sampleColours(image: File, left: Float, top: Float, right: Float, bottom: Float): PaperColors.Estimate {
+        val bitmap = ImageProcessor.decodeOrientedScaled(image.absolutePath, 1600) ?: return PaperColors.estimate(IntArray(0))
+        try {
+            val margin = (bottom - top) * 0.2f
+            val x0 = ((left - margin) * bitmap.width).toInt().coerceIn(0, bitmap.width - 1)
+            val y0 = ((top - margin) * bitmap.height).toInt().coerceIn(0, bitmap.height - 1)
+            val x1 = ((right + margin) * bitmap.width).toInt().coerceIn(x0 + 1, bitmap.width)
+            val y1 = ((bottom + margin) * bitmap.height).toInt().coerceIn(y0 + 1, bitmap.height)
+            val pixels = IntArray((x1 - x0) * (y1 - y0))
+            bitmap.getPixels(pixels, 0, x1 - x0, x0, y0, x1 - x0, y1 - y0)
+            return PaperColors.estimate(pixels)
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    /**
+     * Erases brush strokes (points as fractions of the page), grouped by brush size (a fraction of the page
+     * width): the marks under them are filled in from the surrounding paper. One undo step for all of them.
+     */
+    suspend fun erase(documentId: String, pageId: String, strokesByBrush: Map<Float, List<List<NormalizedPoint>>>) {
+        val erasers = strokesByBrush.entries.sortedBy { it.key }.mapNotNull { (size, strokes) -> eraser(strokes.filter { it.isNotEmpty() }, size) }
+        require(erasers.isNotEmpty()) { "Brush over what you want to erase" }
+        editSinglePage(documentId, pageId) { page ->
+            renderAndOcr(page.copy(annotations = page.annotations + erasers), runOcr = true, redactionChanged = true)
+        }
+    }
+
+    private fun eraser(strokes: List<List<NormalizedPoint>>, brushSize: Float): PageAnnotation? {
+        val points = strokes.flatten()
+        if (points.isEmpty()) return null
+        val brush = brushSize.coerceIn(0.005f, 0.2f)
+        val left = (points.minOf { it.x } - brush).coerceIn(0f, 1f)
+        val top = (points.minOf { it.y } - brush).coerceIn(0f, 1f)
+        val width = ((points.maxOf { it.x } + brush).coerceIn(0f, 1f) - left).coerceAtLeast(0.001f)
+        val height = ((points.maxOf { it.y } + brush).coerceIn(0f, 1f) - top).coerceAtLeast(0.001f)
+        return PageAnnotation(
+            type = AnnotationType.ERASE,
+            x = left,
+            y = top,
+            width = width,
+            height = height,
+            // Stored relative to the box, so moving or resizing it in the markup editor carries the strokes.
+            strokes = strokes.map { stroke -> stroke.map { NormalizedPoint((it.x - left) / width, (it.y - top) / height).clamped() } },
+            brushSize = brush
+        )
     }
 
     suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
@@ -602,6 +679,23 @@ class DocumentRepository @Inject constructor(
         file
     }
 
+    /**
+     * Tables in the scan as an Excel workbook, one sheet per page. Columns are rebuilt from where each word sits
+     * on the page; pages whose text was corrected by hand use that text, one row per line.
+     */
+    suspend fun exportExcel(id: String): File = withContext(Dispatchers.IO) {
+        val doc = requireDocument(id)
+        require(doc.ocrText.isNotBlank()) { "No recognized text to export" }
+        val sheets = doc.pages.sortedBy { it.position }.mapIndexed { index, page ->
+            val rows = if (!page.ocrEdited && page.ocrWords.isNotEmpty()) OcrLayout.table(page.ocrWords)
+            else page.ocrText.lines().filter { it.isNotBlank() }.map { listOf(it.trim()) }
+            XlsxExporter.Sheet("Page ${index + 1}", rows)
+        }
+        val file = freshExportFile(safeName(doc.title), "xlsx")
+        XlsxExporter.export(sheets, file)
+        file
+    }
+
     suspend fun splitIntoPageDocuments(id: String): Int = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
         doc.pages.sortedBy { it.position }.forEachIndexed { index, page ->
@@ -727,9 +821,10 @@ class DocumentRepository @Inject constructor(
 
     private suspend fun addAnnotation(documentId: String, pageId: String, annotation: PageAnnotation) =
         editSinglePage(documentId, pageId) { page ->
-            require(annotation.type != AnnotationType.TEXT || annotation.text.isNotBlank()) { "Text cannot be blank" }
+            // Replaced words may be blank (the words are just removed); added text may not.
+            require(annotation.type != AnnotationType.TEXT || annotation.text.isNotBlank() || annotation.background != null) { "Text cannot be blank" }
             // A redaction re-reads the flattened page: the text it covers must not stay in search, copy or text export.
-            val redacting = annotation.type == AnnotationType.REDACT
+            val redacting = annotation.hidesContent
             renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = redacting, redactionChanged = redacting)
         }
 
@@ -947,7 +1042,7 @@ class DocumentRepository @Inject constructor(
             adjustments = page.adjustments,
             annotations = page.annotations
         )
-        val hasRedaction = page.annotations.any { it.type == AnnotationType.REDACT }
+        val hasRedaction = page.annotations.any { it.hidesContent }
         // Corrected text is the user's work: keep it through edits, unless a redaction changed.
         if (page.ocrEdited && !redactionChanged) return page
         return if (runOcr || redactionChanged) {
@@ -1103,10 +1198,14 @@ class DocumentRepository @Inject constructor(
     }
 
     private fun redactions(list: List<PageAnnotation>) =
-        list.filter { it.type == AnnotationType.REDACT }.map { listOf(it.id, it.x, it.y, it.width, it.height, it.rotationDegrees) }
+        list.filter { it.hidesContent }.map { listOf(it.id, it.x, it.y, it.width, it.height, it.rotationDegrees) }
 
     /** The same box after the page turns a quarter clockwise (coordinates are fractions of the page). */
-    private fun PageAnnotation.rotatedClockwise() = copy(x = 1f - (y + height), y = x, width = height, height = width)
+    private fun PageAnnotation.rotatedClockwise() = copy(
+        x = 1f - (y + height), y = x, width = height, height = width,
+        // Eraser strokes are fractions of the box, so they turn with it.
+        strokes = strokes.map { stroke -> stroke.map { NormalizedPoint(1f - it.y, it.x) } }
+    )
 
     private fun normalize(pages: List<ScanPage>) = pages.mapIndexed { index, page -> page.copy(position = index) }
 

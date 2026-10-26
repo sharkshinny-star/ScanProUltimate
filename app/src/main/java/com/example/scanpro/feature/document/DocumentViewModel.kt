@@ -207,6 +207,19 @@ class DocumentViewModel @Inject constructor(
         operations.publishExport(ExportArtifact(file.absolutePath, DOCX_MIME, "Share Word document"))
     }
 
+    fun exportExcelFile() = run("Creating Excel workbook…", null) {
+        val file = repository.exportExcel(id)
+        operations.publishExport(ExportArtifact(file.absolutePath, XLSX_MIME, "Share Excel workbook"))
+    }
+
+    fun replaceText(pageId: String, edit: TextEdit) =
+        run("Replacing text…", if (edit.text.isBlank()) "Text removed" else "Text replaced") {
+            repository.replaceText(id, pageId, edit.left, edit.top, edit.right, edit.bottom, edit.text)
+        }
+
+    fun erase(pageId: String, strokesByBrush: Map<Float, List<List<com.example.scanpro.data.NormalizedPoint>>>) =
+        run("Erasing…", "Erased") { repository.erase(id, pageId, strokesByBrush) }
+
     fun exportPasswordProtectedPdf(password: String) = run("Encrypting PDF…", null) {
         val file = repository.exportPasswordProtectedPdf(id, password)
         operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", "Share protected PDF"))
@@ -263,4 +276,5 @@ class DocumentViewModel @Inject constructor(
     }
 }
 
+private const val XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 private const val DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

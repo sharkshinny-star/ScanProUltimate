@@ -91,6 +91,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.AutoFixOff
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -255,6 +258,9 @@ fun DocumentRoute(
         onExportLongImage = viewModel::exportLongImage,
         onExportOcrTextFile = viewModel::exportOcrTextFile,
         onExportWord = viewModel::exportWordFile,
+        onExportExcel = viewModel::exportExcelFile,
+        onReplaceText = viewModel::replaceText,
+        onErase = viewModel::erase,
         onSplitDocument = viewModel::splitDocument,
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
@@ -319,6 +325,9 @@ internal fun DocumentDetailScreen(
     onExportLongImage: () -> Unit,
     onExportOcrTextFile: () -> Unit,
     onExportWord: () -> Unit = {},
+    onExportExcel: () -> Unit = {},
+    onReplaceText: (String, TextEdit) -> Unit = { _, _ -> },
+    onErase: (String, Map<Float, List<List<com.example.scanpro.data.NormalizedPoint>>>) -> Unit = { _, _ -> },
     onSplitDocument: () -> Unit,
     onExportProtectedPdf: (String) -> Unit,
     onExportEncryptedBackup: (String) -> Unit,
@@ -378,6 +387,8 @@ internal fun DocumentDetailScreen(
     var cropOpen by remember { mutableStateOf(false) }
     var bookSplitOpen by rememberSaveable { mutableStateOf(false) }
     var markupOpen by rememberSaveable { mutableStateOf(false) }
+    var editTextOpen by rememberSaveable { mutableStateOf(false) }
+    var eraserOpen by rememberSaveable { mutableStateOf(false) }
     var adjustmentsOpen by remember { mutableStateOf(false) }
     var mergeOpen by remember { mutableStateOf(false) }
     var deletePageOpen by remember { mutableStateOf(false) }
@@ -666,6 +677,7 @@ internal fun DocumentDetailScreen(
                         TextButton(onClick = { shareOcrText(context, document) }) { Text("Share text") }
                         TextButton(onClick = onExportOcrTextFile, enabled = !busy && document.ocrText.isNotBlank()) { Text("TXT file") }
                         TextButton(onClick = onExportWord, enabled = !busy && document.ocrText.isNotBlank()) { Text("Word file") }
+                        TextButton(onClick = onExportExcel, enabled = !busy && document.ocrText.isNotBlank()) { Text("Excel file") }
                         TextButton(onClick = onReOcr, enabled = !busy) { Text("Re-run OCR") }
                     }
 
@@ -831,6 +843,8 @@ internal fun DocumentDetailScreen(
                     }
                     SubHeader("Mark up")
                     ToolGrid {
+                        ToolTile(Icons.Default.EditNote, "Edit text", !busy, run { editTextOpen = true })
+                        ToolTile(Icons.Default.AutoFixOff, "Eraser", !busy, run { eraserOpen = true })
                         ToolTile(Icons.Default.TextFields, "Add text", !busy, run { annotationTextOpen = true })
                         ToolTile(Icons.Default.Highlight, "Highlight", !busy, run { onHighlight(page.id) })
                         ToolTile(Icons.Default.VisibilityOff, "Redact", !busy, run { onRedact(page.id) })
@@ -846,6 +860,7 @@ internal fun DocumentDetailScreen(
                     ToolTile(Icons.Default.Save, "Save PDF", !busy, run { savePdfLauncher.launch("${document.title}.pdf") })
                     ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy, run { saveToDrive(document.title) })
                     ToolTile(Icons.Default.Description, "Word (.docx)", !busy && document.ocrText.isNotBlank(), run { onExportWord() })
+                    ToolTile(Icons.Default.TableChart, "Excel (.xlsx)", !busy && document.ocrText.isNotBlank(), run { onExportExcel() })
                     ToolTile(Icons.Default.Print, "Print", !busy, run { onWithFreshPdf({}) { printPdf(context, it) } })
                     ToolTile(Icons.Default.Lock, "Protect PDF", !busy, run { passwordOpen = true })
                     ToolTile(Icons.Default.Badge, "ID copy", !busy, run { onExportIdCopy() })
@@ -912,6 +927,30 @@ internal fun DocumentDetailScreen(
             onApply = { edited ->
                 markupOpen = false
                 onApplyMarkup(currentPage.id, edited)
+            }
+        )
+    }
+
+    if (editTextOpen && currentPage != null) {
+        EditTextDialog(
+            imagePath = currentPage.imagePath,
+            // Positions from hand-corrected text no longer match the words, so there are none to tap then.
+            words = if (currentPage.ocrEdited) emptyList() else currentPage.ocrWords,
+            onDismiss = { editTextOpen = false },
+            onApply = { edit ->
+                editTextOpen = false
+                onReplaceText(currentPage.id, edit)
+            }
+        )
+    }
+
+    if (eraserOpen && currentPage != null) {
+        EraserDialog(
+            imagePath = currentPage.imagePath,
+            onDismiss = { eraserOpen = false },
+            onApply = { strokes ->
+                eraserOpen = false
+                onErase(currentPage.id, strokes)
             }
         )
     }

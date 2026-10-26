@@ -62,7 +62,9 @@ enum class AnnotationType {
     TEXT,
     HIGHLIGHT,
     REDACT,
-    SIGNATURE
+    SIGNATURE,
+    /** Brush strokes painted out and filled in from the paper around them (stains, pen marks, handwriting). */
+    ERASE
 }
 
 data class NormalizedPoint(
@@ -155,8 +157,24 @@ data class PageAnnotation(
     val assetPath: String = "",
     val opacity: Float = 1f,
     /** ARGB colour of a TEXT annotation; the alpha comes from [opacity]. */
-    val color: Int = DEFAULT_TEXT_COLOR
+    val color: Int = DEFAULT_TEXT_COLOR,
+    /**
+     * For a TEXT annotation that replaces words on the page: the paper colour painted over the box before the new
+     * text is drawn. Null draws the text straight onto the page.
+     */
+    val background: Int? = null,
+    /**
+     * For ERASE: the brush strokes, each a list of points given as fractions of this annotation's box, so moving
+     * or resizing the box carries them along.
+     */
+    val strokes: List<List<NormalizedPoint>> = emptyList(),
+    /** For ERASE: the brush diameter as a fraction of the page width. */
+    val brushSize: Float = 0f
 ) {
+    /** True when this hides what was printed underneath, so the page's text has to be read again. */
+    val hidesContent: Boolean
+        get() = type == AnnotationType.REDACT || type == AnnotationType.ERASE || (type == AnnotationType.TEXT && background != null)
+
     companion object {
         const val DEFAULT_TEXT_COLOR: Int = 0xFF141414.toInt()
     }

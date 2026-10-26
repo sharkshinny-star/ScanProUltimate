@@ -56,7 +56,7 @@ fun FilterStrip(
             val isSelected = filter == selected
             Column(
                 Modifier
-                    .width(64.dp)
+                    .width(74.dp)
                     .alpha(if (enabled) 1f else 0.5f)
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(enabled = enabled, role = Role.Tab) { onSelect(filter) }
@@ -65,7 +65,7 @@ fun FilterStrip(
             ) {
                 Box(
                     Modifier
-                        .size(width = 60.dp, height = 76.dp)
+                        .size(width = 62.dp, height = 78.dp)
                         .border(if (isSelected) 2.5.dp else 1.dp, if (isSelected) accent else frame, RoundedCornerShape(8.dp))
                         .padding(3.dp)
                         .clip(RoundedCornerShape(5.dp))
