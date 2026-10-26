@@ -446,7 +446,7 @@ object ImageProcessor {
                 })
                 AnnotationType.ERASE -> Unit
                 AnnotationType.TEXT -> if (item.background != null) {
-                    drawReplacementText(canvas, item, rect)
+                    drawReplacementText(output, canvas, item, rect)
                 } else {
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = Color.argb(
@@ -491,28 +491,46 @@ object ImageProcessor {
     }
 
     /**
-     * Replaced words: the box is painted in the paper colour, then the new text is drawn on one line at the
-     * height of the words it replaces, narrowed only if it would run past the box.
+     * Replaced words: the old words are filled in from the paper around them (as the eraser does), then the new
+     * text is drawn on one line at the height of the words it replaces, narrowed only if it would run past the
+     * box. The box carries a margin of 15% of its height on each side (see DocumentRepository.replaceText).
      */
-    private fun drawReplacementText(canvas: Canvas, item: PageAnnotation, rect: RectF) {
-        val pad = rect.height() * 0.08f
-        canvas.drawRect(RectF(rect.left - pad, rect.top - pad, rect.right + pad, rect.bottom + pad), Paint().apply { color = item.background ?: Color.WHITE })
+    private fun drawReplacementText(output: Bitmap, canvas: Canvas, item: PageAnnotation, rect: RectF) {
+        val pad = rect.height() * 0.12f
+        val cover = RectF(rect.left, rect.top - pad, rect.right, rect.bottom + pad)
+        val filled = runCatching {
+            inpaintPatch(output, cover, maskFor = { mask, scale, origin ->
+                Imgproc.rectangle(
+                    mask,
+                    org.opencv.core.Point(((cover.left - origin.x) * scale).toDouble(), ((cover.top - origin.y) * scale).toDouble()),
+                    org.opencv.core.Point(((cover.right - origin.x) * scale).toDouble(), ((cover.bottom - origin.y) * scale).toDouble()),
+                    org.opencv.core.Scalar(255.0), -1
+                )
+            }) { target, paint -> target.drawRect(cover, paint.apply { style = Paint.Style.FILL }) }
+        }.isSuccess
+        if (!filled) canvas.drawRect(cover, Paint().apply { color = item.background ?: Color.WHITE })
+
         val text = item.text.take(400).replace(Regex("\\s+"), " ").trim()
         if (text.isEmpty()) return
+        val margin = rect.height() * 0.15f
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.rgb(Color.red(item.color), Color.green(item.color), Color.blue(item.color))
-            textSize = rect.height() * 0.8f
+            textSize = 100f
         }
+        // OCR boxes run from the tallest letter to the lowest tail, so size "Hgy" to the box: the new words then
+        // stand as tall as the ones they replace.
+        val reference = android.graphics.Rect().also { paint.getTextBounds("Hgy", 0, 3, it) }
+        paint.textSize = 100f * rect.height() / reference.height().coerceAtLeast(1)
+        val width = rect.width() - 2 * margin
         val measured = paint.measureText(text)
-        if (measured > rect.width()) paint.textSize = max(6f, paint.textSize * rect.width() / measured)
-        val baseline = rect.centerY() - (paint.ascent() + paint.descent()) / 2f
-        canvas.drawText(text, rect.left, baseline, paint)
+        if (measured > width && width > 0) paint.textSize = max(6f, paint.textSize * width / measured)
+        val tail = android.graphics.Rect().also { paint.getTextBounds("Hgy", 0, 3, it) }.bottom
+        canvas.drawText(text, rect.left + margin, rect.bottom - tail, paint)
     }
 
     /**
      * Paints out an eraser annotation's strokes in place: the area under the brush is filled in from the paper
-     * around it (OpenCV inpainting), so stains, pen marks and handwriting disappear without leaving a patch.
-     * Large areas are filled at a reduced size, then only the brushed pixels are copied back.
+     * around it, so stains, pen marks and handwriting disappear without leaving a patch.
      */
     private fun eraseStrokes(output: Bitmap, item: PageAnnotation) {
         val w = output.width
@@ -523,11 +541,53 @@ object ImageProcessor {
         }.filter { it.isNotEmpty() }
         if (strokes.isEmpty()) return
         val all = strokes.flatten()
-        val pad = brush * 2f
-        val left = (all.minOf { it.x } - pad).toInt().coerceIn(0, w - 1)
-        val top = (all.minOf { it.y } - pad).toInt().coerceIn(0, h - 1)
-        val right = (all.maxOf { it.x } + pad).toInt().coerceIn(left + 1, w)
-        val bottom = (all.maxOf { it.y } + pad).toInt().coerceIn(top + 1, h)
+        val area = RectF(all.minOf { it.x } - brush, all.minOf { it.y } - brush, all.maxOf { it.x } + brush, all.maxOf { it.y } + brush)
+        inpaintPatch(output, area, maskFor = { mask, scale, origin ->
+            // A little wider than the brush so the fill starts from clean paper at the edges.
+            val thickness = max(1, (brush * scale * 1.2f).toInt())
+            strokes.forEach { stroke ->
+                val points = stroke.map { org.opencv.core.Point(((it.x - origin.x) * scale).toDouble(), ((it.y - origin.y) * scale).toDouble()) }
+                if (points.size == 1) Imgproc.circle(mask, points[0], max(1, thickness / 2), org.opencv.core.Scalar(255.0), -1)
+                else points.zipWithNext { a, b -> Imgproc.line(mask, a, b, org.opencv.core.Scalar(255.0), thickness) }
+            }
+        }) { canvas, paint ->
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = brush
+            paint.strokeCap = Paint.Cap.ROUND
+            paint.strokeJoin = Paint.Join.ROUND
+            strokes.forEach { stroke ->
+                if (stroke.size == 1) {
+                    canvas.drawPoint(stroke[0].x, stroke[0].y, paint)
+                } else {
+                    val path = android.graphics.Path().apply {
+                        moveTo(stroke[0].x, stroke[0].y)
+                        stroke.drop(1).forEach { lineTo(it.x, it.y) }
+                    }
+                    canvas.drawPath(path, paint)
+                }
+            }
+        }
+    }
+
+    /**
+     * Fills in the pixels [maskFor] marks inside [area] from their surroundings (OpenCV inpainting), then hands
+     * [copyBack] a paint holding the filled image so it can copy back just the marked shape with soft edges.
+     * Large areas are worked on at a reduced size. The mask is drawn in patch pixels: page point p lands at
+     * (p - origin) * scale.
+     */
+    private fun inpaintPatch(
+        output: Bitmap,
+        area: RectF,
+        maskFor: (mask: Mat, scale: Float, origin: android.graphics.PointF) -> Unit,
+        copyBack: (Canvas, Paint) -> Unit
+    ) {
+        val w = output.width
+        val h = output.height
+        val margin = max(8f, min(area.width(), area.height()) * 0.5f)
+        val left = (area.left - margin).toInt().coerceIn(0, w - 1)
+        val top = (area.top - margin).toInt().coerceIn(0, h - 1)
+        val right = (area.right + margin).toInt().coerceIn(left + 1, w)
+        val bottom = (area.bottom + margin).toInt().coerceIn(top + 1, h)
         val roiW = right - left
         val roiH = bottom - top
         if (roiW < 2 || roiH < 2) return
@@ -547,41 +607,17 @@ object ImageProcessor {
         try {
             Utils.bitmapToMat(small, rgba)
             Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
-            // The mask is a little wider than the brush so the fill starts from clean paper at the edges.
-            val thickness = max(1, (brush * scale * 1.2f).toInt())
-            strokes.forEach { stroke ->
-                val points = stroke.map { org.opencv.core.Point(((it.x - left) * scale).toDouble(), ((it.y - top) * scale).toDouble()) }
-                if (points.size == 1) {
-                    Imgproc.circle(mask, points[0], max(1, thickness / 2), org.opencv.core.Scalar(255.0), -1)
-                } else {
-                    points.zipWithNext { a, b -> Imgproc.line(mask, a, b, org.opencv.core.Scalar(255.0), thickness) }
-                }
-            }
-            org.opencv.photo.Photo.inpaint(rgb, mask, filled, max(3.0, brush * scale / 2.0), org.opencv.photo.Photo.INPAINT_TELEA)
+            maskFor(mask, scale, android.graphics.PointF(left.toFloat(), top.toFloat()))
+            val radius = max(3.0, min(area.width(), area.height()) * scale / 4.0)
+            org.opencv.photo.Photo.inpaint(rgb, mask, filled, radius, org.opencv.photo.Photo.INPAINT_TELEA)
             Imgproc.cvtColor(filled, filledRgba, Imgproc.COLOR_RGB2RGBA)
             patch = createBitmap(sw, sh).also { Utils.matToBitmap(filledRgba, it) }
             patchFull = if (scale < 1f) Bitmap.createScaledBitmap(patch, roiW, roiH, true) else patch
-            // Copy back only along the strokes, with soft edges, by painting them with the filled image.
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 shader = android.graphics.BitmapShader(patchFull, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP)
                     .apply { setLocalMatrix(Matrix().apply { setTranslate(left.toFloat(), top.toFloat()) }) }
-                style = Paint.Style.STROKE
-                strokeWidth = brush
-                strokeCap = Paint.Cap.ROUND
-                strokeJoin = Paint.Join.ROUND
             }
-            val canvas = Canvas(output)
-            strokes.forEach { stroke ->
-                if (stroke.size == 1) {
-                    canvas.drawPoint(stroke[0].x, stroke[0].y, paint)
-                } else {
-                    val path = android.graphics.Path().apply {
-                        moveTo(stroke[0].x, stroke[0].y)
-                        stroke.drop(1).forEach { lineTo(it.x, it.y) }
-                    }
-                    canvas.drawPath(path, paint)
-                }
-            }
+            copyBack(Canvas(output), paint)
         } finally {
             rgba.release(); rgb.release(); mask.release(); filled.release(); filledRgba.release()
             if (patchFull != null && patchFull !== patch) patchFull.recycle()
