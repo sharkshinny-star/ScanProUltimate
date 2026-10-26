@@ -98,6 +98,42 @@ object ImageProcessor {
         return bitmap
     }
 
+    /**
+     * Small previews of the cropped page under every filter, for the filter strips. [source] (already upright
+     * for its EXIF tag) is left as it is; the page is cut out, turned and cleaned up once at preview size, and
+     * each filter runs on its own copy of that.
+     */
+    fun filterPreviews(
+        source: Bitmap,
+        crop: CropQuad,
+        rotationDegrees: Int = 0,
+        adjustments: PageAdjustments = PageAdjustments.DEFAULT,
+        maxDimension: Int = 360
+    ): Map<PageFilter, Bitmap> {
+        val scale = min(1f, maxDimension * 2f / max(source.width, source.height))
+        var page = if (scale < 1f) {
+            Bitmap.createScaledBitmap(source, (source.width * scale).toInt().coerceAtLeast(1), (source.height * scale).toInt().coerceAtLeast(1), true)
+        } else {
+            source.copy(Bitmap.Config.ARGB_8888, false)
+        }
+        if (!crop.isIdentity()) page = page.then { cropPage(it, crop) }
+        val fit = min(1f, maxDimension.toFloat() / max(page.width, page.height))
+        if (fit < 1f) page = page.then { Bitmap.createScaledBitmap(it, (it.width * fit).toInt().coerceAtLeast(1), (it.height * fit).toInt().coerceAtLeast(1), true) }
+        val turn = ((rotationDegrees % 360) + 360) % 360
+        if (turn != 0) page = page.then { rotate(it, turn) }
+        if (adjustments.removeFingers) page = page.then { removeFingers(it) }
+        if (adjustments.removeShadows) page = page.then { removeShadows(it) }
+        return try {
+            PageFilter.entries.associateWith { filter ->
+                var copy = page.copy(Bitmap.Config.ARGB_8888, false).then { applyNamedFilter(it, filter) }
+                if (!adjustments.isTonallyNeutral()) copy = copy.then { applyUserAdjustments(it, adjustments.normalized()) }
+                copy
+            }
+        } finally {
+            page.recycle()
+        }
+    }
+
     private fun applyNamedFilter(source: Bitmap, filter: PageFilter): Bitmap = when (filter) {
         PageFilter.ORIGINAL -> source
         PageFilter.AUTO -> autoDocumentEnhance(source, colorBoost = false)

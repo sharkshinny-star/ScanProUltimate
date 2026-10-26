@@ -79,10 +79,11 @@ class DocumentRepository @Inject constructor(
         autoTitle: Boolean,
         mode: ScanMode = ScanMode.DOCUMENT,
         crops: List<CropQuad> = emptyList(),
+        filters: List<PageFilter> = emptyList(),
     ): ScanDocument = withContext(Dispatchers.IO) {
         require(imageUris.isNotEmpty()) { "Choose at least one image" }
         // Camera scans arrive with the outline the user confirmed; gallery and shared photos are outlined here.
-        createDocument(null, imageUris, quality, autoTitle, mode, crops, detectCrops = crops.isEmpty())
+        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, detectCrops = crops.isEmpty())
     }
 
     suspend fun importPdf(
@@ -739,6 +740,8 @@ class DocumentRepository @Inject constructor(
         autoTitle: Boolean,
         mode: ScanMode,
         crops: List<CropQuad> = emptyList(),
+        /** The look chosen for each page on the review screen; pages without one stay as photographed. */
+        filters: List<PageFilter> = emptyList(),
         /** Find the page in each photo, as the camera does, when no outline was given. */
         detectCrops: Boolean = false
     ): ScanDocument {
@@ -766,7 +769,8 @@ class DocumentRepository @Inject constructor(
                         sourcePath = source.absolutePath,
                         imagePath = rendered.absolutePath,
                         // The original stays untouched; the crop is an instruction that can be widened later.
-                        crop = crop
+                        crop = crop,
+                        filter = filters.getOrNull(index) ?: PageFilter.ORIGINAL
                     )
                 )
             }

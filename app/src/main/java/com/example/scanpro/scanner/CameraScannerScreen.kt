@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -98,6 +99,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import com.example.scanpro.imaging.ImageProcessor
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -114,6 +127,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.ScanMode
+import com.example.scanpro.data.PageFilter
+import com.example.scanpro.data.defaultFilter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -133,7 +148,7 @@ fun CameraScannerScreen(
     /** Mode to open in: a [ScanMode] name, "QR", or empty for the usual document mode. */
     initialMode: String = "",
     onClose: () -> Unit,
-    onComplete: (List<Uri>, ScanMode, List<CropQuad>) -> Unit,
+    onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>) -> Unit,
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
@@ -210,6 +225,22 @@ fun CameraScannerScreen(
             restore = { saved -> mutableStateMapOf<String, CropQuad>().apply { saved.mapNotNull(::decodeQuad).forEach { (k, v) -> put(k, v) } } }
         )
     ) { mutableStateMapOf<String, CropQuad>() }
+    // The look picked for each page on the review screen; pages without a choice use [sessionFilter].
+    val filters = rememberSaveable(
+        saver = listSaver(
+            save = { map -> map.map { (k, v) -> "${v.name}|$k" } },
+            restore = { saved ->
+                mutableStateMapOf<String, PageFilter>().apply {
+                    saved.forEach { entry ->
+                        val filter = runCatching { PageFilter.valueOf(entry.substringBefore('|')) }.getOrNull()
+                        if (filter != null) put(entry.substringAfter('|'), filter)
+                    }
+                }
+            }
+        )
+    ) { mutableStateMapOf<String, PageFilter>() }
+    // Starts from the mode's usual look; the last filter picked becomes the default for the rest of the session.
+    var sessionFilter by rememberSaveable { mutableStateOf<PageFilter?>(null) }
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
     var resumeCount by remember { mutableIntStateOf(0) }
     val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
@@ -299,6 +330,7 @@ fun CameraScannerScreen(
         if (completed || processing || pages.isEmpty()) return
         processing = true
         val inputs = pages.toList().map { it to quads[it.toString()] }
+        val chosen = pages.map { filters[it.toString()] ?: sessionFilter ?: scanMode.defaultFilter }
         scope.launch {
             // The untouched originals are kept and the confirmed crop travels beside them, so the border can
             // still be widened later; nothing here cuts pixels out of the photo.
@@ -309,7 +341,29 @@ fun CameraScannerScreen(
             }
             completed = true
             processing = false
-            onComplete(inputs.map { it.first }, scanMode, crops)
+            onComplete(inputs.map { it.first }, scanMode, crops, chosen)
+        }
+    }
+
+    // Capture feedback: a quick white flash, then the photo shrinks into the page counter, which gives a bounce.
+    val flash = remember { Animatable(0f) }
+    val flight = remember { Animatable(0f) }
+    val counterPulse = remember { Animatable(1f) }
+    var flyingPage by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var screenOrigin by remember { mutableStateOf(Offset.Zero) }
+    var screenSize by remember { mutableStateOf(IntSize.Zero) }
+    var counterCenter by remember { mutableStateOf<Offset?>(null) }
+
+    fun flyIntoCounter(photo: File) {
+        scope.launch {
+            val thumb = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeOrientedScaled(photo.absolutePath, 480) }.getOrNull() }
+                ?: return@launch
+            flyingPage = thumb
+            flight.snapTo(0f)
+            flight.animateTo(1f, tween(durationMillis = 480, delayMillis = 120, easing = FastOutSlowInEasing))
+            flyingPage = null
+            counterPulse.snapTo(1.25f)
+            counterPulse.animateTo(1f, spring(dampingRatio = 0.4f))
         }
     }
 
@@ -318,6 +372,10 @@ fun CameraScannerScreen(
         if (capturing || pages.size >= pageLimit) return
         capturing = true
         status = "Capturing…"
+        scope.launch {
+            flash.snapTo(0.8f)
+            flash.animateTo(0f, tween(280))
+        }
 
         sessionDir.mkdirs()
         val id = UUID.randomUUID().toString()
@@ -349,7 +407,7 @@ fun CameraScannerScreen(
                         scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
                         else -> "Page ${pages.size} captured"
                     }
-                    if (!batch && scanMode != ScanMode.ID_CARD) finishScan()
+                    if (!batch && scanMode != ScanMode.ID_CARD) finishScan() else flyIntoCounter(raw)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -499,6 +557,9 @@ fun CameraScannerScreen(
         ScanReviewScreen(
             pages = pages,
             quads = quads,
+            filters = filters,
+            defaultFilter = sessionFilter ?: scanMode.defaultFilter,
+            onDefaultFilterChange = { sessionFilter = it },
             index = reviewIndex,
             sessionDir = sessionDir,
             processing = processing,
@@ -511,7 +572,12 @@ fun CameraScannerScreen(
     }
 
     // Dark blue-grey scanner backdrop from the approved design (not pure black).
-    Box(Modifier.fillMaxSize().background(Color(0xFF0E141D))) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0E141D))
+            .onGloballyPositioned { screenOrigin = it.positionInRoot(); screenSize = it.size }
+    ) {
         AndroidView(
             factory = { previewView },
             modifier = Modifier.fillMaxSize(),
@@ -826,7 +892,10 @@ fun CameraScannerScreen(
                     } else {
                         Button(
                             enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
-                            onClick = { finishScan() }
+                            onClick = { finishScan() },
+                            modifier = Modifier
+                                .onGloballyPositioned { counterCenter = it.boundsInRoot().center }
+                                .graphicsLayer { scaleX = counterPulse.value; scaleY = counterPulse.value }
                         ) {
                             Icon(Icons.Default.TaskAlt, contentDescription = null)
                             Spacer(Modifier.width(5.dp))
@@ -835,6 +904,31 @@ fun CameraScannerScreen(
                     }
                 }
             }
+        }
+
+        // Drawn last so it sits above the controls; neither layer takes touches.
+        Box(Modifier.fillMaxSize().graphicsLayer { alpha = flash.value }.background(Color.White))
+        flyingPage?.let { photo ->
+            val start = Offset(screenSize.width / 2f, screenSize.height / 2f)
+            val end = counterCenter?.minus(screenOrigin) ?: Offset(screenSize.width * 0.85f, screenSize.height * 0.9f)
+            Image(
+                photo.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(0.6f)
+                    .aspectRatio(photo.width.toFloat() / photo.height.toFloat())
+                    .graphicsLayer {
+                        val t = flight.value
+                        translationX = (end.x - start.x) * t
+                        translationY = (end.y - start.y) * t
+                        val scale = 1f - 0.88f * t
+                        scaleX = scale
+                        scaleY = scale
+                        alpha = 1f - 0.3f * t
+                    }
+                    .border(3.dp, Color.White)
+            )
         }
     }
 }

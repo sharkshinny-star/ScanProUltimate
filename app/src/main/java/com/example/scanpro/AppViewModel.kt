@@ -153,11 +153,16 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    fun importCameraSession(imageUris: List<Uri>, mode: ScanMode, crops: List<com.example.scanpro.data.CropQuad> = emptyList()) {
+    fun importCameraSession(
+        imageUris: List<Uri>,
+        mode: ScanMode,
+        crops: List<com.example.scanpro.data.CropQuad> = emptyList(),
+        filters: List<com.example.scanpro.data.PageFilter> = emptyList()
+    ) {
         if (imageUris.isEmpty()) return
         operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", null) {
             val newDocument = try {
-                repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops)
+                repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters)
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -165,7 +170,7 @@ class AppViewModel @Inject constructor(
                 // after a day, so offering Retry here costs nothing if the user ignores it.
                 operations.showMessage(
                     UiMessage("Could not save the scan: ${error.message ?: "unknown error"}", actionLabel = "Retry") {
-                        importCameraSession(imageUris, mode, crops)
+                        importCameraSession(imageUris, mode, crops, filters)
                     }
                 )
                 return@enqueue

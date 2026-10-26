@@ -79,8 +79,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
+import com.example.scanpro.data.PageFilter
+import com.example.scanpro.core.ui.FilterStrip
 import com.example.scanpro.imaging.ImageProcessor
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -92,12 +95,15 @@ private val Amber = Color(0xFFF59E0B)
 
 /**
  * Full-screen review shown after capturing: swipe through pages with the pager, drag the corners, rotate,
- * add more pages or finish. Rotation is baked into a new image file so crop and rotation never disagree.
+ * add more pages or finish. Under the page, a strip previews each filter on the cropped page. Rotation is baked into a new image file so crop and rotation never disagree.
  */
 @Composable
 fun ScanReviewScreen(
     pages: SnapshotStateList<Uri>,
     quads: SnapshotStateMap<String, CropQuad>,
+    filters: SnapshotStateMap<String, PageFilter>,
+    defaultFilter: PageFilter,
+    onDefaultFilterChange: (PageFilter) -> Unit,
     index: Int,
     sessionDir: File,
     processing: Boolean,
@@ -124,6 +130,19 @@ fun ScanReviewScreen(
         value = null
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 1800) }
     }
+
+    // Filter previews follow the outline, a moment after the last drag so dragging stays smooth. The previous
+    // previews stay up meanwhile.
+    var previews by remember(key) { mutableStateOf<Map<PageFilter, Bitmap>>(emptyMap()) }
+    val previewQuad = quads[key]
+    LaunchedEffect(bitmap, previewQuad) {
+        val image = bitmap ?: return@LaunchedEffect
+        val quad = previewQuad ?: return@LaunchedEffect
+        delay(350)
+        withContext(Dispatchers.Default) { runCatching { ImageProcessor.filterPreviews(image, quad) }.getOrNull() }
+            ?.let { previews = it }
+    }
+    val pageFilter = filters[key] ?: defaultFilter
 
     // Pages that have not been outlined yet (imports, or captures not seen before) are detected on first view.
     LaunchedEffect(bitmap) {
@@ -152,11 +171,13 @@ fun ScanReviewScreen(
             result.onSuccess { file ->
                 val newUri = Uri.fromFile(file)
                 val quad = quads.remove(oldKey)?.let { rotateQuad(it, clockwise) }
+                val filter = filters.remove(oldKey)
                 // The page is only replaced once the rotated file exists, so a failure loses nothing.
                 val position = pages.indexOf(uri)
                 if (position >= 0) {
                     pages[position] = newUri
                     if (quad != null) quads[newUri.toString()] = quad
+                    if (filter != null) filters[newUri.toString()] = filter
                     File(uri.path.orEmpty()).delete()
                 }
             }.onFailure { message = "Could not rotate this page" }
@@ -188,6 +209,7 @@ fun ScanReviewScreen(
                 enabled = !blocked,
                 onClick = {
                     quads.remove(key)
+                    filters.remove(key)
                     File(uri.path.orEmpty()).delete()
                     pages.remove(uri)
                     if (pages.isEmpty()) onBack() else onIndexChange(current.coerceAtMost(pages.lastIndex))
@@ -238,6 +260,29 @@ fun ScanReviewScreen(
                         }
                     )
                 }
+            )
+        }
+
+        FilterStrip(
+            previews = previews,
+            selected = pageFilter,
+            enabled = !blocked,
+            onDark = true,
+            onSelect = { filter ->
+                filters[key] = filter
+                // Pages not set by hand follow the newest choice, so a batch is styled with one tap.
+                onDefaultFilterChange(filter)
+            },
+            modifier = Modifier.padding(top = 10.dp)
+        )
+        if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
+            Text(
+                "Use ${pageFilter.label} on all pages",
+                color = Blue,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier
+                    .clickable(enabled = !blocked) { pages.forEach { filters[it.toString()] = pageFilter } }
+                    .padding(vertical = 6.dp)
             )
         }
 

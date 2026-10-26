@@ -682,32 +682,39 @@ private class QuickAction(val icon: ImageVector, val label: String, val onClick:
 /** One-tap shortcuts for the jobs people do most, each opening the right mode or tool directly. */
 @Composable
 private fun QuickActions(enabled: Boolean, actions: List<QuickAction>) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        items(actions, key = { it.label }) { action ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .width(76.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
-                    .padding(vertical = 6.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(action.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+    // Two rows of four, all on screen: a sideways-scrolling row hid half the shortcuts with no hint they were there.
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        actions.chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                row.forEach { action ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
+                            .padding(vertical = 6.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(action.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            action.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2
+                        )
                     }
                 }
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    action.label,
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2
-                )
+                // A short last row keeps its cells the same width as the rows above.
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

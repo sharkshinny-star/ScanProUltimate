@@ -2,6 +2,14 @@
 
 package com.example.scanpro.feature.document
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ModalBottomSheet
+import com.example.scanpro.core.ui.FilterStrip
+import com.example.scanpro.imaging.ImageProcessor
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.MoreHoriz
 import android.graphics.Bitmap
 import kotlinx.coroutines.CancellationException
 import androidx.compose.runtime.produceState
@@ -379,8 +387,10 @@ internal fun DocumentDetailScreen(
     var ocrEditOpen by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var detailsOpen by remember { mutableStateOf(false) }
-    var tabName by rememberSaveable { mutableStateOf(DetailTab.EDIT.name) }
-    val tab = runCatching { DetailTab.valueOf(tabName) }.getOrDefault(DetailTab.EDIT)
+    var tabName by rememberSaveable { mutableStateOf(DetailTab.TEXT.name) }
+    val tab = runCatching { DetailTab.valueOf(tabName) }.getOrDefault(DetailTab.TEXT)
+    // Everything that isn't on the bottom toolbar lives in the "More" sheet.
+    var moreOpen by rememberSaveable { mutableStateOf(false) }
 
     val appendLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
         if (uris.isNotEmpty()) onAppendImages(uris)
@@ -476,33 +486,21 @@ internal fun DocumentDetailScreen(
             ) }
         },
         bottomBar = {
-            // Export lives in a fixed bottom bar, as in the approved viewer design.
+            // The most-used tools sit in a fixed bottom toolbar; the rest are one tap away under More.
             if (currentPage != null) {
                 Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            .padding(horizontal = 4.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        FilledTonalButton(
-                            onClick = { shareImages(context, document) },
-                            enabled = !busy,
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = "Share JPG")
-                        }
-                        Button(
-                            onClick = { onWithFreshPdf({}) { sharePdf(context, it) } },
-                            enabled = !busy,
-                            modifier = Modifier.weight(1f).height(52.dp)
-                        ) {
-                            Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Export PDF")
-                        }
+                        BarAction(Icons.Default.Crop, "Crop", !busy) { cropOpen = true }
+                        BarAction(Icons.Default.AutoFixHigh, "Clean up", !busy) { adjustmentsOpen = true }
+                        BarAction(Icons.Default.Draw, "Sign", !busy) { signatureOpen = true }
+                        BarAction(Icons.Default.Share, "Share PDF", !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
+                        BarAction(Icons.Default.MoreHoriz, "More", true) { moreOpen = true }
                     }
                 }
             }
@@ -601,6 +599,28 @@ internal fun DocumentDetailScreen(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(Modifier.height(12.dp))
+                // Each filter previewed on this page, made from the original photo so every look can be compared.
+                val previews by produceState<Map<PageFilter, android.graphics.Bitmap>>(
+                    emptyMap(), currentPage.id, currentPage.sourcePath, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments
+                ) {
+                    value = withContext(Dispatchers.Default) {
+                        runCatching {
+                            val photo = ImageProcessor.decodeOrientedScaled(currentPage.sourcePath, 900) ?: return@runCatching emptyMap()
+                            try {
+                                ImageProcessor.filterPreviews(photo, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments)
+                            } finally {
+                                photo.recycle()
+                            }
+                        }.getOrDefault(emptyMap())
+                    }
+                }
+                FilterStrip(
+                    previews = previews,
+                    selected = currentPage.filter,
+                    enabled = !busy,
+                    onSelect = { filter -> if (filter != currentPage.filter) onApplyFilter(currentPage.id, filter) }
+                )
             }
 
             Spacer(Modifier.height(8.dp))
@@ -612,68 +632,6 @@ internal fun DocumentDetailScreen(
             Spacer(Modifier.height(12.dp))
 
             when (tab) {
-                DetailTab.EDIT -> if (currentPage == null) EmptyHint("No page selected.") else {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(PageFilter.entries, key = { it.name }) { filter ->
-                            FilterChip(
-                                selected = currentPage.filter == filter,
-                                enabled = !busy,
-                                onClick = { onApplyFilter(currentPage.id, filter) },
-                                label = { Text(filter.label) }
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    ToolGrid {
-                        ToolTile(Icons.Default.Crop, "Crop", !busy) { cropOpen = true }
-                        ToolTile(Icons.Default.AutoFixHigh, "Clean up", !busy) { adjustmentsOpen = true }
-                        ToolTile(Icons.Default.Tune, "Fine tune", !busy) { adjustmentsOpen = true }
-                        ToolTile(Icons.AutoMirrored.Filled.RotateRight, "Rotate", !busy) { onRotate(currentPage.id) }
-                        ToolTile(Icons.Default.RestartAlt, "Reset", !busy) { onResetPage(currentPage.id) }
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Move left", !busy && currentIndex > 0) { onMove(currentPage.id, -1) }
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Move right", !busy && currentIndex < pages.lastIndex) { onMove(currentPage.id, 1) }
-                        ToolTile(Icons.Default.FileCopy, "Duplicate", !busy) { onDuplicatePage(currentPage.id) }
-                        ToolTile(Icons.Default.Output, "Extract", !busy) { onExtractPage(currentPage.id) }
-                        ToolTile(Icons.AutoMirrored.Filled.MenuBook, "Split book", !busy) { bookSplitOpen = true }
-                        ToolTile(Icons.Default.Delete, "Delete page", !busy) { deletePageOpen = true }
-                    }
-                }
-
-                DetailTab.MARKUP -> if (currentPage == null) EmptyHint("No page selected.") else {
-                    ToolGrid {
-                        ToolTile(Icons.Default.Draw, "Signature", !busy) { signatureOpen = true }
-                        ToolTile(Icons.Default.TextFields, "Add text", !busy) { annotationTextOpen = true }
-                        ToolTile(Icons.Default.Highlight, "Highlight", !busy) { onHighlight(currentPage.id) }
-                        ToolTile(Icons.Default.VisibilityOff, "Redact", !busy) { onRedact(currentPage.id) }
-                        ToolTile(Icons.Default.BrandingWatermark, "Watermark", !busy) { watermarkOpen = true }
-                        ToolTile(Icons.Default.Edit, "Edit markup", !busy && currentPage.annotations.isNotEmpty()) { markupOpen = true }
-                        ToolTile(Icons.Default.RemoveCircleOutline, "Remove last", !busy && currentPage.annotations.isNotEmpty()) { onUndoAnnotation(currentPage.id) }
-                    }
-                }
-
-                DetailTab.EXPORT -> {
-                    SubHeader("Share and save")
-                    ToolGrid {
-                        ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy) { onWithFreshPdf({}) { openPdf(context, it) } }
-                        ToolTile(Icons.Default.Save, "Save PDF", !busy) { savePdfLauncher.launch("${document.title}.pdf") }
-                        ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy) { saveToDrive(document.title) }
-                        ToolTile(Icons.Default.Description, "Word (.docx)", !busy && document.ocrText.isNotBlank()) { onExportWord() }
-                        ToolTile(Icons.Default.Print, "Print", !busy) { onWithFreshPdf({}) { printPdf(context, it) } }
-                        ToolTile(Icons.Default.Lock, "Protect PDF", !busy) { passwordOpen = true }
-                        ToolTile(Icons.Default.Badge, "ID copy", !busy) { onExportIdCopy() }
-                        ToolTile(Icons.Default.ViewDay, "Long image", !busy) { onExportLongImage() }
-                        ToolTile(Icons.Default.Backup, "Encrypted backup", !busy) { backupPasswordOpen = true }
-                    }
-                    SubHeader("Organize")
-                    ToolGrid {
-                        ToolTile(Icons.Default.AddPhotoAlternate, "Add pages", !busy) {
-                            appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        }
-                        ToolTile(Icons.Default.Layers, "Merge", !busy && otherDocuments.isNotEmpty()) { mergeOpen = true }
-                        ToolTile(Icons.Default.ContentCut, "Split all", !busy && document.pageCount > 1) { onSplitDocument() }
-                    }
-                }
-
                 DetailTab.TEXT -> {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -847,6 +805,65 @@ internal fun DocumentDetailScreen(
     if (renameOpen) TextInputDialog("Rename document", document.title, "Name", onDismiss = { renameOpen = false }) { onRename(it); renameOpen = false }
     if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
     if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
+    if (moreOpen) {
+        ModalBottomSheet(onDismissRequest = { moreOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            // Each tool closes the sheet first, so its dialog or result isn't hidden behind it.
+            fun run(action: () -> Unit): () -> Unit = { moreOpen = false; action() }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
+            ) {
+                val page = currentPage
+                if (page != null) {
+                    SubHeader("This page")
+                    ToolGrid {
+                        ToolTile(Icons.AutoMirrored.Filled.RotateRight, "Rotate", !busy, run { onRotate(page.id) })
+                        ToolTile(Icons.Default.Tune, "Fine tune", !busy, run { adjustmentsOpen = true })
+                        ToolTile(Icons.Default.RestartAlt, "Reset", !busy, run { onResetPage(page.id) })
+                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Move left", !busy && currentIndex > 0, run { onMove(page.id, -1) })
+                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Move right", !busy && currentIndex < pages.lastIndex, run { onMove(page.id, 1) })
+                        ToolTile(Icons.Default.FileCopy, "Duplicate", !busy, run { onDuplicatePage(page.id) })
+                        ToolTile(Icons.Default.Output, "Extract", !busy, run { onExtractPage(page.id) })
+                        ToolTile(Icons.AutoMirrored.Filled.MenuBook, "Split book", !busy, run { bookSplitOpen = true })
+                        ToolTile(Icons.Default.Delete, "Delete page", !busy, run { deletePageOpen = true })
+                    }
+                    SubHeader("Mark up")
+                    ToolGrid {
+                        ToolTile(Icons.Default.TextFields, "Add text", !busy, run { annotationTextOpen = true })
+                        ToolTile(Icons.Default.Highlight, "Highlight", !busy, run { onHighlight(page.id) })
+                        ToolTile(Icons.Default.VisibilityOff, "Redact", !busy, run { onRedact(page.id) })
+                        ToolTile(Icons.Default.BrandingWatermark, "Watermark", !busy, run { watermarkOpen = true })
+                        ToolTile(Icons.Default.Edit, "Edit markup", !busy && page.annotations.isNotEmpty(), run { markupOpen = true })
+                        ToolTile(Icons.Default.RemoveCircleOutline, "Remove last", !busy && page.annotations.isNotEmpty(), run { onUndoAnnotation(page.id) })
+                    }
+                }
+                SubHeader("Share and save")
+                ToolGrid {
+                    ToolTile(Icons.Default.Image, "Share JPG", !busy, run { shareImages(context, document) })
+                    ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy, run { onWithFreshPdf({}) { openPdf(context, it) } })
+                    ToolTile(Icons.Default.Save, "Save PDF", !busy, run { savePdfLauncher.launch("${document.title}.pdf") })
+                    ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy, run { saveToDrive(document.title) })
+                    ToolTile(Icons.Default.Description, "Word (.docx)", !busy && document.ocrText.isNotBlank(), run { onExportWord() })
+                    ToolTile(Icons.Default.Print, "Print", !busy, run { onWithFreshPdf({}) { printPdf(context, it) } })
+                    ToolTile(Icons.Default.Lock, "Protect PDF", !busy, run { passwordOpen = true })
+                    ToolTile(Icons.Default.Badge, "ID copy", !busy, run { onExportIdCopy() })
+                    ToolTile(Icons.Default.ViewDay, "Long image", !busy, run { onExportLongImage() })
+                    ToolTile(Icons.Default.Backup, "Encrypted backup", !busy, run { backupPasswordOpen = true })
+                }
+                SubHeader("Organise")
+                ToolGrid {
+                    ToolTile(Icons.Default.AddPhotoAlternate, "Add pages", !busy, run {
+                        appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    })
+                    ToolTile(Icons.Default.Layers, "Merge", !busy && otherDocuments.isNotEmpty(), run { mergeOpen = true })
+                    ToolTile(Icons.Default.ContentCut, "Split all", !busy && document.pageCount > 1, run { onSplitDocument() })
+                }
+            }
+        }
+    }
+
     if (watermarkOpen) WatermarkDialog(onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }
     if (passwordOpen) PasswordInputDialog(
         title = "Protect PDF copy",
@@ -998,7 +1015,33 @@ internal fun DocumentDetailScreen(
 }
 
 private enum class DetailTab(val label: String) {
-    EDIT("Edit"), MARKUP("Markup"), EXPORT("Export"), TEXT("Text"), INSIGHTS("Insights"), PDF("PDF settings")
+    TEXT("Text"), INSIGHTS("Insights"), PDF("PDF settings")
+}
+
+/** One button on the bottom toolbar: an icon over a short label, sharing the width equally. */
+@Composable
+private fun RowScope.BarAction(icon: ImageVector, label: String, enabled: Boolean, primary: Boolean = false, onClick: () -> Unit) {
+    val tint = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .alpha(if (enabled) 1f else 0.38f)
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, contentDescription = null, tint = tint)
+        Spacer(Modifier.height(2.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = tint,
+            fontWeight = if (primary) FontWeight.SemiBold else null,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
 }
 
 @Composable

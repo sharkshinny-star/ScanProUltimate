@@ -41,6 +41,15 @@ enum class ScanMode(val label: String) {
     TEXT("Extract text")
 }
 
+/** The look a new scan starts with in each mode; the review screen's filter strip can change it per page. */
+val ScanMode.defaultFilter: PageFilter
+    get() = when (this) {
+        ScanMode.WHITEBOARD -> PageFilter.WHITEBOARD
+        // ID cards keep their real colours: they are often checked against the original.
+        ScanMode.ID_CARD -> PageFilter.ORIGINAL
+        else -> PageFilter.AUTO
+    }
+
 enum class OcrScript(val label: String) {
     LATIN("Latin"),
     DEVANAGARI("Devanagari"),

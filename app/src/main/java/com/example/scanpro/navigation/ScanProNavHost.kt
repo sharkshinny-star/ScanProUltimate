@@ -33,7 +33,7 @@ fun ScanProNavHost(
     snackbarHostState: SnackbarHostState,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
-    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<com.example.scanpro.data.CropQuad>) -> Unit,
+    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<com.example.scanpro.data.CropQuad>, List<com.example.scanpro.data.PageFilter>) -> Unit,
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit
 ) {
@@ -115,9 +115,9 @@ fun ScanProNavHost(
             CameraScannerScreen(
                 initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty(),
                 onClose = dropUnlessResumed { navController.popBackStack() },
-                onComplete = { uris, mode, crops ->
+                onComplete = { uris, mode, crops, filters ->
                     if (resumed()) {
-                        onCameraScanComplete(uris, mode, crops)
+                        onCameraScanComplete(uris, mode, crops, filters)
                         navController.popBackStack()
                     }
                 },
