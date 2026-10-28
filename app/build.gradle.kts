@@ -87,8 +87,11 @@ android {
                 "META-INF/LICENSE.txt",
                 "META-INF/NOTICE",
                 "META-INF/NOTICE.txt",
-                "**/sike*",
-                "**/picnic*"
+                // PDFBox brings BouncyCastle for PDF encryption; its post-quantum lookup tables (about 8 MB) are
+                // never used. The patterns name the folders' contents: a bare "**/sike*" would only match a
+                // path segment, not the files inside it, and shipped every table.
+                "org/bouncycastle/pqc/crypto/sike/**",
+                "org/bouncycastle/pqc/crypto/picnic/**"
             )
         }
     }

@@ -12,6 +12,7 @@ import javax.inject.Singleton
 import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.AnnotationRemap
 import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.imaging.ThumbnailStore
 import com.example.scanpro.imaging.PaperColors
 import com.example.scanpro.imaging.XlsxExporter
 import com.example.scanpro.intelligence.OcrLayout
@@ -647,8 +648,7 @@ class DocumentRepository @Inject constructor(
         // The deleted page's files are about to go, so earlier steps could not be restored.
         history.clear(doc.id)
         // Delete the files only after the page is gone from the database, so a failed save loses nothing.
-        File(target.sourcePath).delete()
-        File(target.imagePath).delete()
+        deletePageFiles(target)
         deleteSignatureAssets(target.annotations)
         saved
     }
@@ -1240,6 +1240,7 @@ class DocumentRepository @Inject constructor(
     private fun deletePageFiles(page: ScanPage) {
         File(page.sourcePath).delete()
         File(page.imagePath).delete()
+        ThumbnailStore.forget(context, page.imagePath)
     }
 
     /** Deletes the image files behind signature annotations that are being removed. */
@@ -1252,6 +1253,7 @@ class DocumentRepository @Inject constructor(
 
     private fun deleteDocumentFilesAndRecord(doc: ScanDocument) {
         File(doc.pdfPath).parentFile?.deleteRecursively()
+        doc.pages.forEach { ThumbnailStore.forget(context, it.imagePath) }
         db.deleteDocument(doc.id)
     }
 

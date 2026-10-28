@@ -36,11 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.imaging.ThumbnailStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -79,6 +80,7 @@ fun PageThumbnail(
     // IO thread. Meanwhile the last bitmap shown for this request is drawn straight away, so coming
     // back to a tab shows its thumbnails instantly instead of blank placeholders.
     val requestKey = remember(path, version, maxDimension) { path?.let { "$it|${version.hashCode()}|$maxDimension" } }
+    val appContext = LocalContext.current.applicationContext
     val bitmap by produceState(initialValue = requestKey?.let { latestCacheKey[it] }?.let { thumbnailCache[it] }, key1 = requestKey) {
         if (path == null || requestKey == null) {
             value = null
@@ -86,7 +88,8 @@ fun PageThumbnail(
         }
         value = withContext(Dispatchers.IO) {
             val cacheKey = "$requestKey|${File(path).lastModified()}"
-            (thumbnailCache.get(cacheKey) ?: ImageProcessor.decodeScaled(path, maxDimension)?.also {
+            // Misses fall through to the on-disk previews before the full-size page is decoded.
+            (thumbnailCache.get(cacheKey) ?: ThumbnailStore.load(appContext, path, maxDimension)?.also {
                 thumbnailCache.put(cacheKey, it)
             })?.also { latestCacheKey.put(requestKey, cacheKey) }
         }

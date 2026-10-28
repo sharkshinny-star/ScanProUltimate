@@ -1,6 +1,7 @@
 package com.example.scanpro.work
 
 import android.content.Context
+import com.example.scanpro.imaging.ThumbnailStore
 import java.io.File
 
 /**
@@ -28,5 +29,6 @@ object CacheCleaner {
             val isTemp = file.name.startsWith("temp_in_")
             if (now - file.lastModified() > (if (isTemp) TEMP_MAX_AGE_MS else EXPORT_MAX_AGE_MS)) file.deleteRecursively()
         }
+        ThumbnailStore.trim(context)
     }
 }

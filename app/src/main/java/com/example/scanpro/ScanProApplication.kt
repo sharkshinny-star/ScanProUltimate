@@ -1,6 +1,7 @@
 package com.example.scanpro
 
 import android.app.Application
+import android.os.StrictMode
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -25,6 +26,7 @@ class ScanProApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) enableStrictMode()
         PDFBoxResourceLoader.init(this)
         // Maven OpenCV packages the native libraries in the app. Load them off the main thread so they
         // don't hold up the first frame.
@@ -32,6 +34,30 @@ class ScanProApplication : Application(), Configuration.Provider {
         scheduleMaintenance()
         // Off the main thread: clear temporary copies of documents that a crash may have left in the cache.
         Thread { runCatching { com.example.scanpro.work.CacheCleaner.purge(this) } }.apply { priority = Thread.MIN_PRIORITY }.start()
+    }
+
+    /**
+     * Debug builds log disk and network work on the main thread, and leaked files, cursors and activities,
+     * to logcat under the "StrictMode" tag. Nothing is thrown, so a violation never stops a debug session.
+     */
+    private fun enableStrictMode() {
+        StrictMode.setThreadPolicy(
+            StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()
+                .detectCustomSlowCalls()
+                .penaltyLog()
+                .build()
+        )
+        StrictMode.setVmPolicy(
+            StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects()
+                .detectActivityLeaks()
+                .penaltyLog()
+                .build()
+        )
     }
 
     private fun scheduleMaintenance() {
