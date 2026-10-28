@@ -148,7 +148,10 @@ fun ScanReviewScreen(
     LaunchedEffect(bitmap) {
         val image = bitmap ?: return@LaunchedEffect
         if (quads[key] == null) {
-            quads[key] = withContext(Dispatchers.Default) { detectQuad(image) }
+            val detected = withContext(Dispatchers.Default) { detectQuad(image) }
+            // Checked again after detecting: the capture's own detection, or a corner the user has already
+            // dragged, must not be replaced.
+            if (quads[key] == null) quads[key] = detected
         }
     }
 

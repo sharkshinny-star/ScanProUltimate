@@ -29,9 +29,10 @@ class OpenCvDocumentAnalyzer(
     var autoCaptureEnabled: Boolean = true
 
     override fun analyze(image: ImageProxy) {
-        // Analysis runs on the camera executor, so waiting here for a still-loading OpenCV never blocks the UI.
-        OpenCvRuntime.ensureLoaded()
         try {
+            // Analysis runs on the camera executor, so waiting here for a still-loading OpenCV never blocks the UI.
+            // Inside the try: a frame that is never closed would stop the analyzer receiving any more.
+            OpenCvRuntime.ensureLoaded()
             // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
             // are found describe exactly the pixels the user sees and the capture keeps.
             val gray = image.toRotatedGrayMat().croppedToViewport(image)

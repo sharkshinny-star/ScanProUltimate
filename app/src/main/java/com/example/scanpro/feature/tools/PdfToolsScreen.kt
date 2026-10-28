@@ -206,15 +206,26 @@ fun PdfToolsScreen(
 
     // SAF save: one launcher per output type, so the system picker suggests the right extension.
     var saveSourceFile by remember { mutableStateOf<File?>(null) }
+    val saveScope = rememberCoroutineScope()
     fun saveTo(destUri: Uri?) {
         val file = saveSourceFile ?: return
         if (destUri == null) return
-        val ok = copyFileToUri(context, file.absolutePath, destUri)
-        Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
+        // Off the main thread: a large file going to a cloud provider takes long enough to freeze the screen.
+        saveScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                copyFileToUri(context, file.absolutePath, destUri).also { copied ->
+                    // The picker already created the destination; don't leave an empty file behind.
+                    if (!copied) runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, destUri) }
+                }
+            }
+            Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
+        }
     }
     val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { saveTo(it) }
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { saveTo(it) }
     val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
+    // Declared with its own type: a PNG saved through the JPEG launcher is renamed "page.png.jpg" by some providers.
+    val savePngLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { saveTo(it) }
 
     val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val tool = selectedTool
@@ -325,6 +336,7 @@ fun PdfToolsScreen(
                         when (mimeFor(result.outputFile)) {
                             "application/zip" -> saveZipLauncher.launch(name)
                             "application/pdf" -> saveFileLauncher.launch(name)
+                            "image/png" -> savePngLauncher.launch(name)
                             else -> saveImageLauncher.launch(name)
                         }
                     }

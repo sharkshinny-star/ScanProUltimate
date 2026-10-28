@@ -58,10 +58,6 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
 
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
-
         </activity>
 
         <!-- Custom Hilt WorkerFactory configuration requires WorkManager's default

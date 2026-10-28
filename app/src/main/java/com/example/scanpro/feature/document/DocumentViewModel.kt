@@ -230,7 +230,9 @@ class DocumentViewModel @Inject constructor(
         operations.publishExport(ExportArtifact(file.absolutePath, "application/octet-stream", "Share encrypted ScanPro backup"))
     }
 
-    fun moveToTrash() = run(null, null) {
+    // Queued, not rejected while busy: the screen closes as soon as this is tapped, so a dropped request would
+    // leave the document in the library with nothing but a "still working" message to show for it.
+    fun moveToTrash() = operations.enqueue(null, null) {
         repository.moveToTrash(id)
         operations.showMessage(
             UiMessage("Moved to recycle bin", actionLabel = "Undo") {

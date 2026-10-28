@@ -223,11 +223,17 @@ fun saveToGoogleDrive(context: Context, path: String, mimeType: String, title: S
 
 private const val GOOGLE_DRIVE_PACKAGE = "com.google.android.apps.docs"
 
-fun printPdf(context: Context, document: ScanDocument) {
+fun printPdf(context: Context, document: ScanDocument) = printPdfFile(context, File(document.pdfPath), document.title)
+
+/** Hands a PDF on disk to the system print dialog, which also offers "Save as PDF". */
+fun printPdfFile(context: Context, file: File, title: String) {
+    if (!file.exists()) {
+        Toast.makeText(context, "The PDF could not be found", Toast.LENGTH_SHORT).show()
+        return
+    }
     val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-    val file = File(document.pdfPath)
     manager.print(
-        document.title,
+        title,
         PdfFilePrintAdapter(file),
         android.print.PrintAttributes.Builder().build()
     )

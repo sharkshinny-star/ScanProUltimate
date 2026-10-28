@@ -180,6 +180,22 @@ data class PageAnnotation(
     }
 }
 
+/**
+ * The same mark-up after the page turns a quarter clockwise (coordinates are fractions of the page). The box
+ * moves with the page, and the content inside it turns too, so text, watermarks and signatures stay aligned
+ * with what is printed instead of staying upright inside a box that is now on its side.
+ */
+fun PageAnnotation.rotatedClockwise(
+    /** Width divided by height of the page before the turn, so an eraser brush (a fraction of the width) keeps its size. */
+    pageAspect: Float = 1f
+) = copy(
+    x = 1f - (y + height), y = x, width = height, height = width,
+    rotationDegrees = ((rotationDegrees + 90f) % 360f + 360f) % 360f,
+    brushSize = brushSize * pageAspect,
+    // Eraser strokes are fractions of the box, so they turn with it.
+    strokes = strokes.map { stroke -> stroke.map { NormalizedPoint(1f - it.y, it.x) } }
+)
+
 enum class WatermarkSize(val label: String, val height: Float) {
     SMALL("Small", 0.07f),
     MEDIUM("Medium", 0.12f),

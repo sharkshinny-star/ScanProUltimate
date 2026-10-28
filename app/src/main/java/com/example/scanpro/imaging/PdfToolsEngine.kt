@@ -503,10 +503,18 @@ object PdfToolsEngine {
 
     /** Opens a PDF, turning "wrong password" on a protected file into a message that says what to do. */
     internal fun loadPdf(file: File): PDDocument = try {
-        PDDocument.load(file)
+        PDDocument.load(file).editable()
     } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
         throw IllegalArgumentException("This PDF is password-protected. Unlock it first with the Unlock PDF tool.", error)
     }
+
+    /**
+     * A PDF that opens without a password can still carry an owner-password encryption dictionary (print or copy
+     * restrictions). PDFBox refuses to save such a document as it is, so every tool that edits one in place
+     * (rotate, fill form, make searchable, compress) would fail at the very end. Dropping the dictionary writes
+     * the file unrestricted, as the Unlock tool does.
+     */
+    internal fun PDDocument.editable(): PDDocument = apply { if (isEncrypted) isAllSecurityToBeRemoved = true }
 
     internal fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {
         val tempFile = File(context.cacheDir, fileName)

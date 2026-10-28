@@ -91,16 +91,16 @@ object CompressPdfEngine {
             rasterCompressPdf(context, tempInput, outputFile, preset)
 
             // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.
-            if (outputFile.length() <= 0L || outputFile.length() >= originalSize) {
-                tempInput.copyTo(outputFile, overwrite = true)
-            }
+            val keptOriginal = outputFile.length() <= 0L || outputFile.length() >= originalSize
+            if (keptOriginal) tempInput.copyTo(outputFile, overwrite = true)
             val finalSize = outputFile.length()
             return@withContext CompressionResult(
                 outputFile = outputFile,
                 pageCount = pageTotal,
                 originalSizeBytes = originalSize,
                 compressedSizeBytes = if (finalSize > 0) finalSize else originalSize,
-                isSearchablePreserved = false
+                // The untouched original still has whatever text it had; only a rebuilt file lost it.
+                isSearchablePreserved = keptOriginal && hasSearchableText
             )
         } finally {
             tempInput.delete()
@@ -120,7 +120,7 @@ object CompressPdfEngine {
         outputPdf: File,
         preset: CompressionPreset
     ) {
-        PDDocument.load(inputPdf).use { pdDoc ->
+        with(PdfToolsEngine) { PDDocument.load(inputPdf).editable() }.use { pdDoc ->
             // Pages often share one resource dictionary or one image (a logo, a background). Each original image is
             // recompressed once and reused; without this a shared image was shrunk again on every page.
             val replaced = HashMap<com.tom_roush.pdfbox.cos.COSBase, PDImageXObject>()
@@ -129,7 +129,9 @@ object CompressPdfEngine {
                 val resources = page.resources ?: continue
                 for (xObjectName in resources.xObjectNames) {
                     val xObject = resources.getXObject(xObjectName)
-                    if (xObject is PDImageXObject) {
+                    // Stencil masks (1-bit text layers of scanner PDFs, painted in the fill colour) are already tiny
+                    // and cannot be expressed as a JPEG: re-encoding one paints an opaque picture over the page.
+                    if (xObject is PDImageXObject && !xObject.isStencil) {
                         val original = xObject.cosObject
                         if (original in produced) continue
                         val already = replaced[original]

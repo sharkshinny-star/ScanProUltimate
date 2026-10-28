@@ -139,6 +139,7 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
 
 /** How the live preview helps: Auto captures by itself, Manual only outlines the page, No detect does neither. */
 private enum class DetectMode(val label: String) { AUTO("Auto"), MANUAL("Manual"), NO_DETECT("No detect") }
@@ -282,12 +283,19 @@ fun CameraScannerScreen(
         }
     }
 
+    // QR mode reads codes from the same camera frames instead of looking for a page.
+    var barcodeMode by rememberSaveable { mutableStateOf(initialMode == "QR") }
+    // Auto-capture is live only when it is switched on, nothing is in the way (tips, a capture in progress, the
+    // review step, a full page list) and the mode shows the outline it fires on: ID cards are lined up in the
+    // bracket by hand, with no outline or guidance, so firing the shutter there would come as a surprise.
+    val autoCaptureActive = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing &&
+        pages.size < pageLimit && scanMode != ScanMode.ID_CARD
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
             onDetection = { result, isStable ->
                 detection = result
                 stable = isStable
-                liveGuidance = if (isStable && result.isReady) "Hold… capturing" else result.guidance
+                liveGuidance = result.guidance
             },
             onAutoCapture = { autoCaptureSignal++ }
         )
@@ -295,8 +303,6 @@ fun CameraScannerScreen(
     // Taking a page by hand while the tips show means they have done their job.
     LaunchedEffect(pages.size) { if (showTips && pages.isNotEmpty()) dismissTips() }
 
-    // QR mode reads codes from the same camera frames instead of looking for a page.
-    var barcodeMode by rememberSaveable { mutableStateOf(initialMode == "QR") }
     var foundCode by remember { mutableStateOf<com.google.mlkit.vision.barcode.common.Barcode?>(null) }
     var barcodeUnavailable by remember { mutableStateOf(false) }
     val barcodeAnalyzer = remember {
@@ -312,8 +318,7 @@ fun CameraScannerScreen(
     val frameAnalyzer = remember { SwitchingAnalyzer(analyzer, barcodeAnalyzer) }
     SideEffect {
         frameAnalyzer.barcodeMode = barcodeMode
-        // No auto-capture while the first-time tips are being read.
-        analyzer.autoCaptureEnabled = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing && pages.size < pageLimit
+        analyzer.autoCaptureEnabled = autoCaptureActive
     }
 
     /** Opens the review step on the newest page. */
@@ -673,7 +678,9 @@ fun CameraScannerScreen(
                 shape = RoundedCornerShape(12.dp),
                 color = Color.Black.copy(alpha = 0.55f)
             ) {
-                Text(liveGuidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+                // "Capturing" only when the shutter really is about to fire on its own; in Manual mode the page is just outlined.
+                val guidance = if (stable && detection?.isReady == true && autoCaptureActive) "Hold… capturing" else liveGuidance
+                Text(guidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
             }
         }
 
@@ -792,7 +799,8 @@ fun CameraScannerScreen(
                         Text("EV", color = Color.White, style = MaterialTheme.typography.labelSmall)
                         Slider(
                             value = exposureIndex.toFloat(),
-                            onValueChange = { exposureIndex = it.toInt().coerceIn(exposureMin, exposureMax) },
+                            // Slider ticks are not exact in float (2.9999998), so round rather than truncate.
+                            onValueChange = { exposureIndex = it.roundToInt().coerceIn(exposureMin, exposureMax) },
                             valueRange = exposureMin.toFloat()..exposureMax.toFloat(),
                             steps = (exposureMax - exposureMin - 1).coerceAtLeast(0),
                             modifier = Modifier.weight(1f).padding(horizontal = 10.dp)
@@ -805,11 +813,12 @@ fun CameraScannerScreen(
 
             // Mode tabs. Receipt, Whiteboard and Book live in the overflow menu under "Docs".
             val blue = MaterialTheme.colorScheme.primary
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                if (scanMode == ScanMode.ID_CARD) {
+            // ID cards add a Front only / Both sides row; the mode tabs stay, so a wrong tap is undone with another tap.
+            if (scanMode == ScanMode.ID_CARD) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
                     listOf(false to "Front only", true to "Both sides").forEach { (both, text) ->
                         Text(
                             text,
@@ -819,34 +828,38 @@ fun CameraScannerScreen(
                             modifier = Modifier.clickable(enabled = pages.isEmpty()) { scanBothSides = both }.padding(8.dp)
                         )
                     }
-                } else {
-                    listOf(ScanMode.TEXT to "Text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
-                        val selected = !barcodeMode &&
-                            if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
-                        Text(
-                            text,
-                            color = if (selected) blue else Color.White,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable(enabled = pages.isEmpty()) {
-                                barcodeMode = false
-                                scanMode = target ?: ScanMode.DOCUMENT
-                                scanBothSides = false
-                            }.padding(8.dp)
-                        )
-                    }
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                listOf(ScanMode.TEXT to "Text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
+                    val selected = !barcodeMode &&
+                        if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
                     Text(
-                        "QR code",
-                        color = if (barcodeMode) blue else Color.White,
+                        text,
+                        color = if (selected) blue else Color.White,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable(enabled = pages.isEmpty()) {
-                            barcodeMode = true
-                            scanMode = ScanMode.DOCUMENT
+                            barcodeMode = false
+                            scanMode = target ?: ScanMode.DOCUMENT
                             scanBothSides = false
                         }.padding(8.dp)
                     )
                 }
+                Text(
+                    "QR code",
+                    color = if (barcodeMode) blue else Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable(enabled = pages.isEmpty()) {
+                        barcodeMode = true
+                        scanMode = ScanMode.DOCUMENT
+                        scanBothSides = false
+                    }.padding(8.dp)
+                )
             }
 
             Row(
@@ -889,7 +902,7 @@ fun CameraScannerScreen(
                             Icon(Icons.Default.PhotoLibrary, contentDescription = "Import photos", tint = Color.White)
                             Text("Import images", color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
-                    } else {
+                    } else if (pages.isNotEmpty()) {
                         Button(
                             enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
                             onClick = { finishScan() },

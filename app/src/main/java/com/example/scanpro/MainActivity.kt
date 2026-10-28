@@ -227,6 +227,8 @@ class MainActivity : FragmentActivity() {
 
         when {
             action == ACTION_SCAN_NOW -> viewModel.requestScan()
+            // "Don't remove our app" / "Bugs or issues?" launcher shortcuts: both lead to the Play listing.
+            action == ACTION_SUPPORT -> com.example.scanpro.core.ui.openPlayStoreListing(this)
             action == android.content.Intent.ACTION_SEND -> {
                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM, Uri::class.java)
@@ -273,16 +275,26 @@ class MainActivity : FragmentActivity() {
     private fun isAllowedExternalUri(uri: Uri): Boolean =
         uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
 
-    /** Launcher "Scan" shortcut. Published at runtime so it targets the right package in debug and release. */
+    /**
+     * Launcher long-press shortcuts. Published at runtime rather than from res/xml: a static shortcut can't name
+     * the package per build type (debug adds ".debug"), and a manifest shortcut's id can't be replaced by code.
+     */
     private fun publishScanShortcut() {
         runCatching {
-            val shortcut = ShortcutInfoCompat.Builder(this, "scan_now")
-                .setShortLabel(getString(R.string.shortcut_scan_short))
-                .setLongLabel(getString(R.string.shortcut_scan_long))
+            fun shortcut(id: String, short: Int, long: Int, action: String) = ShortcutInfoCompat.Builder(this, id)
+                .setShortLabel(getString(short))
+                .setLongLabel(getString(long))
                 .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
-                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(ACTION_SCAN_NOW))
+                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(action))
                 .build()
-            ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
+            ShortcutManagerCompat.setDynamicShortcuts(
+                this,
+                listOf(
+                    shortcut("scan_now", R.string.shortcut_scan_short, R.string.shortcut_scan_long, ACTION_SCAN_NOW),
+                    shortcut("bugs_or_issues", R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, ACTION_SUPPORT),
+                    shortcut("dont_remove_app", R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, ACTION_SUPPORT)
+                )
+            )
         }
     }
 
@@ -364,5 +376,6 @@ class MainActivity : FragmentActivity() {
         const val LOCK_TIMEOUT_MS = 30_000L
         const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+        const val ACTION_SUPPORT = "com.example.scanpro.action.SUPPORT"
     }
 }

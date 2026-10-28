@@ -91,6 +91,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
+import com.example.scanpro.core.ui.printPdfFile
 import com.example.scanpro.core.ui.shareFile
 import java.io.File
 import java.io.FileOutputStream
@@ -450,7 +451,9 @@ fun PdfViewerScreen(
                                 }
                                 DropdownMenuItem(
                                     text = { Text("Print / Save as PDF") },
-                                    onClick = { showMenu = false; shareFile(context, pdfUri.path ?: "", "application/pdf", title) },
+                                    // The file on screen: a picked (content://) PDF has no path of its own, and a
+                                    // protected one is shown from its unlocked copy. Before it is open, share instead.
+                                    onClick = { showMenu = false; openedFile?.let { printPdfFile(context, it, title) } ?: onShare() },
                                     leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) }
                                 )
                             }

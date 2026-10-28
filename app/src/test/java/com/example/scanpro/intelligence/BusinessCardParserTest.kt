@@ -33,6 +33,13 @@ class BusinessCardParserTest {
     }
 
     @Test
+    fun `company falls back to the website host without its scheme`() {
+        val card = BusinessCardParser.parse("John Carter\nFounder\nhttps://www.acme.com\n+1 415 555 0134")
+        assertEquals("https://www.acme.com", card.website)
+        assertEquals("Acme", card.company)
+    }
+
+    @Test
     fun `company falls back to the email domain`() {
         val card = BusinessCardParser.parse("John Carter\nFounder\njohn@acmecorp.com\n+1 415 555 0134")
         assertEquals("John Carter", card.name)

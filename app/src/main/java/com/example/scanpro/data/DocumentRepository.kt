@@ -245,9 +245,11 @@ class DocumentRepository @Inject constructor(
     suspend fun rotatePage(documentId: String, pageId: String) =
         editSinglePage(documentId, pageId) { page ->
             // Markup is placed on the finished page, so it turns with it; otherwise a redaction would slide off its text.
+            // The eraser brush is a fraction of the page width, which changes with the turn.
+            val aspect = ImageProcessor.imageAspect(page.imagePath) ?: 1f
             val updated = page.copy(
                 rotationDegrees = (page.rotationDegrees + 90) % 360,
-                annotations = page.annotations.map { it.rotatedClockwise() }
+                annotations = page.annotations.map { it.rotatedClockwise(pageAspect = aspect) }
             )
             renderAndOcr(updated)
         }
@@ -271,8 +273,8 @@ class DocumentRepository @Inject constructor(
     suspend fun applyAdjustmentsToAll(documentId: String, pageId: String, adjustments: PageAdjustments) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val clean = adjustments.normalized()
-        val pages = allOrNothing { touched ->
-            doc.pages.map { page ->
+        allOrNothing { touched ->
+            val pages = doc.pages.map { page ->
                 val updated = if (page.id == pageId) clean
                 else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
                 if (updated == page.adjustments) page else {
@@ -280,8 +282,8 @@ class DocumentRepository @Inject constructor(
                     renderAndOcr(page.copy(adjustments = updated))
                 }
             }
-        }
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
+            saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        }.also { history.record(doc.id, doc.pages) }
     }
 
     suspend fun resetPage(documentId: String, pageId: String) {
@@ -478,23 +480,25 @@ class DocumentRepository @Inject constructor(
             WatermarkPosition.CENTER -> (0.5f - height / 2f) to 0f
             WatermarkPosition.BOTTOM -> (0.95f - height) to 0f
         }
-        val pages = allOrNothing { touched -> doc.pages.map { page ->
-            touched += page
-            val annotation = PageAnnotation(
-                type = AnnotationType.TEXT,
-                x = 0.12f,
-                y = y,
-                width = 0.76f,
-                height = height,
-                rotationDegrees = rotation,
-                text = clean.take(80),
-                opacity = style.opacity.coerceIn(0.1f, 1f),
-                color = style.color
-            )
-            // The watermark is drawn over the page; the text underneath stays readable, so OCR is kept.
-            renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
-        } }
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
+        allOrNothing { touched ->
+            val pages = doc.pages.map { page ->
+                touched += page
+                val annotation = PageAnnotation(
+                    type = AnnotationType.TEXT,
+                    x = 0.12f,
+                    y = y,
+                    width = 0.76f,
+                    height = height,
+                    rotationDegrees = rotation,
+                    text = clean.take(80),
+                    opacity = style.opacity.coerceIn(0.1f, 1f),
+                    color = style.color
+                )
+                // The watermark is drawn over the page; the text underneath stays readable, so OCR is kept.
+                renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = false)
+            }
+            saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        }.also { history.record(doc.id, doc.pages) }
     }
 
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = withContext(Dispatchers.IO) {
@@ -517,7 +521,13 @@ class DocumentRepository @Inject constructor(
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val copy = copyFlattenedPage(pages[index], doc.id, folder, index + 1)
         pages.add(index + 1, copy)
-        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now())).also { history.clear(doc.id) }
+        try {
+            saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now())).also { history.clear(doc.id) }
+        } catch (error: Throwable) {
+            // The copy was never recorded, so its files would stay behind unused.
+            deletePageFiles(copy)
+            throw error
+        }
     }
 
     suspend fun extractPage(documentId: String, pageId: String): ScanDocument = withContext(Dispatchers.IO) {
@@ -562,16 +572,26 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
 
-        val (left, right) = try {
-            makeHalf(bitmap, left = true, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript) to
-                makeHalf(bitmap, left = false, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript)
-        } finally {
-            bitmap.recycle()
+        // Kept outside the try so halves written before a failure can be removed again.
+        var left: ScanPage? = null
+        var right: ScanPage? = null
+        val saved = try {
+            val (leftHalf, rightHalf) = try {
+                makeHalf(bitmap, left = true, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript).also { left = it } to
+                    makeHalf(bitmap, left = false, splitFraction, doc.id, index, sourceDir, renderedDir, doc.ocrScript).also { right = it }
+            } finally {
+                bitmap.recycle()
+            }
+            pages.removeAt(index)
+            pages.add(index, rightHalf)
+            pages.add(index, leftHalf)
+            saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
+        } catch (error: Throwable) {
+            // Halves that were never recorded would stay behind unused.
+            left?.let(::deletePageFiles)
+            right?.let(::deletePageFiles)
+            throw error
         }
-        pages.removeAt(index)
-        pages.add(index, right)
-        pages.add(index, left)
-        val saved = saveWithStalePdf(doc.copy(pages = normalize(pages), scanMode = ScanMode.BOOK, updatedAt = now()))
         // Steps from before the split refer to a page that no longer exists.
         history.clear(doc.id)
         // Delete the original spread only once both halves are saved.
@@ -588,22 +608,31 @@ class DocumentRepository @Inject constructor(
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
         val start = doc.pages.size
-        val newPages = imageUris.mapIndexed { offset, uri ->
-            val position = start + offset
-            val pageId = UUID.randomUUID().toString()
-            val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$pageId")
-            val rendered = File(renderedDir, "page_${position.toString().padStart(3, '0')}_$pageId.jpg")
-            copyUri(uri, source)
-            val page = ScanPage(
-                id = pageId,
-                documentId = doc.id,
-                position = position,
-                sourcePath = source.absolutePath,
-                imagePath = rendered.absolutePath
-            )
-            renderAndOcr(page)
+        val newPages = mutableListOf<ScanPage>()
+        try {
+            imageUris.forEachIndexed { offset, uri ->
+                val position = start + offset
+                val pageId = UUID.randomUUID().toString()
+                val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$pageId")
+                val rendered = File(renderedDir, "page_${position.toString().padStart(3, '0')}_$pageId.jpg")
+                val page = ScanPage(
+                    id = pageId,
+                    documentId = doc.id,
+                    position = position,
+                    sourcePath = source.absolutePath,
+                    imagePath = rendered.absolutePath
+                )
+                // Listed before copying, so a photo that fails half-way is cleaned up with the rest.
+                newPages += page
+                copyUri(uri, source)
+                newPages[newPages.lastIndex] = renderAndOcr(page)
+            }
+            saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
+        } catch (error: Throwable) {
+            // One photo that can't be read must not leave the others' files behind, recorded nowhere.
+            newPages.forEach(::deletePageFiles)
+            throw error
         }
-        saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
     }
 
     suspend fun deletePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
@@ -956,18 +985,20 @@ class DocumentRepository @Inject constructor(
         }
         try {
             // Only pages whose look differs are drawn again; text, corrections and order come back as they were.
-            val restored = allOrNothing { touched -> target.map { page ->
-                val now = current.getValue(page.id)
-                if (!sameRendering(now, page)) {
-                    touched += now
-                    ImageProcessor.renderPage(
-                        File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
-                        page.crop, page.adjustments, page.annotations
-                    )
+            allOrNothing { touched ->
+                val restored = target.map { page ->
+                    val now = current.getValue(page.id)
+                    if (!sameRendering(now, page)) {
+                        touched += now
+                        ImageProcessor.renderPage(
+                            File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
+                            page.crop, page.adjustments, page.annotations
+                        )
+                    }
+                    page
                 }
-                page
-            } }
-            saveWithStalePdf(doc.copy(pages = restored, updatedAt = now()))
+                saveWithStalePdf(doc.copy(pages = restored, updatedAt = now()))
+            }
             true
         } catch (error: Throwable) {
             history.rollback(documentId, back, target)
@@ -976,9 +1007,9 @@ class DocumentRepository @Inject constructor(
     }
 
     /**
-     * Runs a change that redraws several pages before one save. Each page is added to `touched` before it is
-     * drawn; if any step fails, those pages are drawn again as they are saved, so no image is left showing an
-     * edit the database never recorded.
+     * Runs a change that redraws pages and then saves them. Each page is added to `touched` before it is drawn;
+     * if any step fails, the save included, those pages are drawn again as they are saved, so no image is left
+     * showing an edit the database never recorded.
      */
     private suspend fun <T> allOrNothing(block: suspend (touched: MutableList<ScanPage>) -> T): T {
         val touched = mutableListOf<ScanPage>()
@@ -1022,9 +1053,12 @@ class DocumentRepository @Inject constructor(
     ) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val target = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
-        val updatedPage = block(target)
-        val pages = doc.pages.map { if (it.id == pageId) updatedPage else it }
-        saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
+        allOrNothing { touched ->
+            touched += target
+            val updatedPage = block(target)
+            val pages = doc.pages.map { if (it.id == pageId) updatedPage else it }
+            saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
+        }.also { history.record(doc.id, doc.pages) }
     }
 
     /**
@@ -1200,14 +1234,13 @@ class DocumentRepository @Inject constructor(
     private fun redactions(list: List<PageAnnotation>) =
         list.filter { it.hidesContent }.map { listOf(it.id, it.x, it.y, it.width, it.height, it.rotationDegrees) }
 
-    /** The same box after the page turns a quarter clockwise (coordinates are fractions of the page). */
-    private fun PageAnnotation.rotatedClockwise() = copy(
-        x = 1f - (y + height), y = x, width = height, height = width,
-        // Eraser strokes are fractions of the box, so they turn with it.
-        strokes = strokes.map { stroke -> stroke.map { NormalizedPoint(1f - it.y, it.x) } }
-    )
-
     private fun normalize(pages: List<ScanPage>) = pages.mapIndexed { index, page -> page.copy(position = index) }
+
+    /** Deletes a page's own image files (not its signature assets, which may be shared with history). */
+    private fun deletePageFiles(page: ScanPage) {
+        File(page.sourcePath).delete()
+        File(page.imagePath).delete()
+    }
 
     /** Deletes the image files behind signature annotations that are being removed. */
     private fun deleteSignatureAssets(annotations: List<PageAnnotation>) {
@@ -1246,6 +1279,8 @@ class DocumentRepository @Inject constructor(
     }
 
     private fun freshExportFile(base: String, extension: String): File {
+        // "Clear cache" or the system can remove the folder while the app runs; the text export writes straight into it.
+        exportDir.mkdirs()
         exportDir.listFiles()?.filter { it.lastModified() < now() - 24 * 60 * 60 * 1000L }?.forEach { it.delete() }
         return File(exportDir, "${base}_${now()}.$extension")
     }

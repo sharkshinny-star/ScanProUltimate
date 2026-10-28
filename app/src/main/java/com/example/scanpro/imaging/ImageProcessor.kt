@@ -198,6 +198,14 @@ object ImageProcessor {
         return if (turned) bounds.outHeight.toFloat() / bounds.outWidth else bounds.outWidth.toFloat() / bounds.outHeight
     }
 
+    /** Width divided by height of an image as stored (rendered pages are already upright), read without decoding pixels. */
+    fun imageAspect(path: String): Float? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        return bounds.outWidth.toFloat() / bounds.outHeight
+    }
+
     fun decodeOrientedScaled(path: String, maxDimension: Int): Bitmap? {
         var bitmap = decodeScaled(path, maxDimension) ?: return null
         val exifRotation = runCatching { ExifInterface(path).rotationDegrees }.getOrDefault(0)
@@ -437,8 +445,15 @@ object ImageProcessor {
             val top = item.y.coerceIn(0f, 1f) * output.height
             val width = item.width.coerceIn(0.01f, 1f) * output.width
             val height = item.height.coerceIn(0.01f, 1f) * output.height
-            val rect = RectF(left, top, (left + width).coerceAtMost(output.width.toFloat()), (top + height).coerceAtMost(output.height.toFloat()))
-            canvas.withRotation(item.rotationDegrees, rect.centerX(), rect.centerY()) {
+            // The box is the mark-up's footprint on the page. Content that was turned a quarter (the page was
+            // rotated after it was added) is laid out in the box turned back, then rotated into place.
+            val box = RectF(left, top, (left + width).coerceAtMost(output.width.toFloat()), (top + height).coerceAtMost(output.height.toFloat()))
+            val turned = quarterTurned(item.rotationDegrees)
+            val rect = if (turned) RectF(
+                box.centerX() - box.height() / 2f, box.centerY() - box.width() / 2f,
+                box.centerX() + box.height() / 2f, box.centerY() + box.width() / 2f
+            ) else box
+            canvas.withRotation(item.rotationDegrees, box.centerX(), box.centerY()) {
             when (item.type) {
                 AnnotationType.REDACT -> canvas.drawRect(rect, Paint().apply { color = Color.BLACK })
                 AnnotationType.HIGHLIGHT -> canvas.drawRect(rect, Paint().apply {
@@ -446,7 +461,7 @@ object ImageProcessor {
                 })
                 AnnotationType.ERASE -> Unit
                 AnnotationType.TEXT -> if (item.background != null) {
-                    drawReplacementText(output, canvas, item, rect)
+                    drawReplacementText(output, canvas, item, rect, box, turned)
                 } else {
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = Color.argb(
@@ -495,9 +510,12 @@ object ImageProcessor {
      * text is drawn on one line at the height of the words it replaces, narrowed only if it would run past the
      * box. The box carries a margin of 15% of its height on each side (see DocumentRepository.replaceText).
      */
-    private fun drawReplacementText(output: Bitmap, canvas: Canvas, item: PageAnnotation, rect: RectF) {
+    private fun drawReplacementText(output: Bitmap, canvas: Canvas, item: PageAnnotation, rect: RectF, box: RectF, turned: Boolean) {
         val pad = rect.height() * 0.12f
-        val cover = RectF(rect.left, rect.top - pad, rect.right, rect.bottom + pad)
+        // The paper is filled in on the page itself (not through the rotated canvas), so the covered area is the
+        // box's footprint, padded above and below the words: sideways when the words run down the page.
+        val cover = if (turned) RectF(box.left - pad, box.top, box.right + pad, box.bottom)
+        else RectF(box.left, box.top - pad, box.right, box.bottom + pad)
         val filled = runCatching {
             inpaintPatch(output, cover, maskFor = { mask, scale, origin ->
                 Imgproc.rectangle(
@@ -508,7 +526,7 @@ object ImageProcessor {
                 )
             }) { target, paint -> target.drawRect(cover, paint.apply { style = Paint.Style.FILL }) }
         }.isSuccess
-        if (!filled) canvas.drawRect(cover, Paint().apply { color = item.background ?: Color.WHITE })
+        if (!filled) Canvas(output).drawRect(cover, Paint().apply { color = item.background ?: Color.WHITE })
 
         val text = item.text.take(400).replace(Regex("\\s+"), " ").trim()
         if (text.isEmpty()) return
@@ -625,6 +643,12 @@ object ImageProcessor {
             if (small !== region) small.recycle()
             if (region !== output) region.recycle()
         }
+    }
+
+    /** True when [degrees] is nearer a quarter turn than upright or upside down. */
+    private fun quarterTurned(degrees: Float): Boolean {
+        val turn = ((degrees % 180f) + 180f) % 180f
+        return turn in 45f..135f
     }
 
     /** Shrinks [paint] until every word fits the box's width and the wrapped lines fit its height. */

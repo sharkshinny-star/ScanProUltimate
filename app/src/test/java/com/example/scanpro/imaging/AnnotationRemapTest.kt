@@ -4,6 +4,7 @@ import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.PageAnnotation
+import com.example.scanpro.data.rotatedClockwise
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,7 +35,7 @@ class AnnotationRemapTest {
     fun rotationIsUndoneAndRedone() {
         // Page turned a quarter turn: a box near the photo's top-left corner sits near the page's top-right.
         val photoBox = box(0.1f, 0.1f, 0.1f, 0.1f)
-        val turned = PageAnnotationTurns.clockwise(photoBox)
+        val turned = photoBox.rotatedClockwise()
         val moved = AnnotationRemap.remap(listOf(turned), CropQuad.DEFAULT, rect(0f, 0f, 0.5f, 0.5f), 90, 1f)
         // In the new crop the photo box is at 0.2..0.4 both ways; turned clockwise that is x 0.6..0.8, y 0.2..0.4.
         assertEquals(0.6f, moved[0].x, 1e-3f)
@@ -83,13 +84,28 @@ class AnnotationRemapTest {
     }
 
     @Test
+    fun quarterTurnMovesTheBoxAndTurnsItsContent() {
+        val text = PageAnnotation(type = AnnotationType.TEXT, x = 0.1f, y = 0.2f, width = 0.6f, height = 0.1f, rotationDegrees = -28f, text = "DRAFT")
+        val turned = text.rotatedClockwise()
+        // A box near the top-left, wide: after a clockwise turn it stands near the top-right, tall.
+        assertEquals(0.7f, turned.x, 1e-4f)
+        assertEquals(0.1f, turned.y, 1e-4f)
+        assertEquals(0.1f, turned.width, 1e-4f)
+        assertEquals(0.6f, turned.height, 1e-4f)
+        // The text turns with the page: -28° on the upright page is 62° once the page lies on its side.
+        assertEquals(62f, turned.rotationDegrees, 1e-4f)
+        // Four quarter turns bring everything back.
+        val around = turned.rotatedClockwise().rotatedClockwise().rotatedClockwise()
+        assertEquals(text.x, around.x, 1e-4f)
+        assertEquals(text.y, around.y, 1e-4f)
+        assertEquals(text.width, around.width, 1e-4f)
+        assertEquals(text.height, around.height, 1e-4f)
+        assertEquals(332f, around.rotationDegrees, 1e-3f)
+    }
+
+    @Test
     fun unchangedCropKeepsAnnotationsAsTheyAre() {
         val items = listOf(box(0.1f, 0.2f, 0.3f, 0.1f))
         assertEquals(items, AnnotationRemap.remap(items, CropQuad.DEFAULT, CropQuad.DEFAULT, 0, 1f))
     }
-}
-
-/** The same quarter turn the app applies to mark-up when a page is rotated. */
-private object PageAnnotationTurns {
-    fun clockwise(a: PageAnnotation) = a.copy(x = 1f - (a.y + a.height), y = a.x, width = a.height, height = a.width)
 }
