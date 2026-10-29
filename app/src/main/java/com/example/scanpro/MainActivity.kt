@@ -91,8 +91,8 @@ class MainActivity : FragmentActivity() {
         // bars themselves stay available (hiding them took three-button navigation away from people).
         WindowCompat.setDecorFitsSystemWindows(window, false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // No translucent scrim behind the gesture bar; the status bar never had one on these versions.
             window.isNavigationBarContrastEnforced = false
-            window.isStatusBarContrastEnforced = false
         }
         publishScanShortcut()
         lifecycleScope.launch {

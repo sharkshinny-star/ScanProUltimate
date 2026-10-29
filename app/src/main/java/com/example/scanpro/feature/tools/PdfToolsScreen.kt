@@ -44,7 +44,7 @@ import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FindInPage
-import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Description
@@ -144,7 +144,7 @@ private val PDF_TOOLS = listOf(
     PdfToolCard("ocr", "Make searchable", "Add selectable, searchable text to scanned PDFs", Icons.Default.FindInPage, badge = "New", tone = com.example.scanpro.core.designsystem.TileTone.Teal),
     PdfToolCard("compress", "Compress", "Reduce PDF size with quality presets", Icons.Default.Compress, tone = com.example.scanpro.core.designsystem.TileTone.Amber),
     PdfToolCard("merge", "Merge", "Combine several PDFs into one document", Icons.Default.Merge, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
-    PdfToolCard("split", "Split", "Divide a PDF by pages, ranges or fixed chunks", Icons.Default.CallSplit, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
+    PdfToolCard("split", "Split", "Divide a PDF by pages, ranges or fixed chunks", Icons.AutoMirrored.Filled.CallSplit, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
     PdfToolCard("extract", "Extract pages", "Pick specific pages and save them as a new PDF", Icons.AutoMirrored.Filled.DriveFileMove, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
     PdfToolCard("rotate", "Rotate pages", "Turn pages by 90°, 180° or 270°", Icons.AutoMirrored.Filled.RotateRight, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
     PdfToolCard("organize", "Organise pages", "Reorder, delete and manage pages", Icons.Default.Description, tone = com.example.scanpro.core.designsystem.TileTone.Sky),

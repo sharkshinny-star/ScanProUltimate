@@ -47,7 +47,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.QrCodeScanner
-import androidx.compose.material.icons.rounded.ReceiptLong
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
@@ -686,7 +686,7 @@ private fun HomeDashboard(
                         QuickAction(Icons.AutoMirrored.Rounded.MenuBook, "Book", TileTone.Amber) { onQuickScan(ScanMode.BOOK.name) },
                         QuickAction(Icons.Rounded.TextFields, "Extract text", TileTone.Teal) { onQuickScan(ScanMode.TEXT.name) },
                         QuickAction(Icons.Rounded.QrCodeScanner, "QR code", TileTone.Violet) { onQuickScan(ScanProDestinations.CAMERA_QR) },
-                        QuickAction(Icons.Rounded.ReceiptLong, "Receipt", TileTone.Rose) { onQuickScan(ScanMode.RECEIPT.name) },
+                        QuickAction(Icons.AutoMirrored.Rounded.ReceiptLong, "Receipt", TileTone.Rose) { onQuickScan(ScanMode.RECEIPT.name) },
                         QuickAction(Icons.Rounded.Image, "Photos", TileTone.Sky) { onImportImages() },
                         QuickAction(Icons.Rounded.PictureAsPdf, "Import PDF", TileTone.Coral) { onImportPdf() },
                         QuickAction(Icons.Rounded.Handyman, "PDF tools", TileTone.Slate) { onOpenTools() }
