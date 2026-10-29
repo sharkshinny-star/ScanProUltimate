@@ -30,3 +30,11 @@ A ground-up pass over the app shell so the first minute with ScanPro feels like 
 
 ## Lock screen
 - Branded gate that opens the system prompt on its own and keeps the privacy promise in view.
+
+## Polish
+- Document editor and PDF viewer share the new chrome; the editor's primary action sits in a filled pill.
+- Haptics on the scan button, the editor toolbar and selection toggles.
+- Home uses the full width on tablets: one row of eight quick actions.
+- Decorative animations (aurora backdrop, scan beam) stay still when system animations are turned off.
+- Grid thumbnails decode at a smaller size, cutting memory on long libraries with no visible loss.
+- Predictive back (Android 14+) is on through `enableOnBackInvokedCallback`; the nav host's slide transitions play with the gesture.

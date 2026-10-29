@@ -59,7 +59,9 @@ private val latestCacheKey = LruCache<String, String>(512)
 
 /** Decode size for small list/strip thumbnails. */
 const val THUMBNAIL_SMALL = 256
-/** Decode size for grid cards. */
+/** Decode size for grid cards: sharp in a 150dp cell on dense screens, a quarter of the memory of the page preview. */
+const val THUMBNAIL_GRID = 420
+/** Decode size for medium previews. */
 const val THUMBNAIL_MEDIUM = 640
 /** Decode size for the full-width page preview. */
 const val THUMBNAIL_LARGE = 1600

@@ -47,7 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.core.designsystem.PageThumbnail
-import com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM
+import com.example.scanpro.core.designsystem.THUMBNAIL_GRID
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.pagesLabel
@@ -232,7 +232,7 @@ internal fun DocumentGridCard(
                     .fillMaxSize(0.78f)
                     .padding(top = 6.dp)
                     .aspectRatio(0.72f, matchHeightConstraintsFirst = true),
-                THUMBNAIL_MEDIUM
+                THUMBNAIL_GRID
             )
             if (document.isFavorite && !selected) FavoriteBadge(Modifier.align(Alignment.TopEnd).padding(6.dp))
             SelectionBadge(selected, Modifier.align(Alignment.TopEnd).padding(6.dp))

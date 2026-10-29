@@ -162,11 +162,25 @@ fun BrandLockup(modifier: Modifier = Modifier, markSize: Dp = 28.dp, color: Colo
 }
 
 /**
+ * False when the person has turned animations off in developer or accessibility settings (animator
+ * scale 0), so decorative loops can stay still instead of fighting that choice and burning battery.
+ */
+@Composable
+fun rememberMotionEnabled(): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return androidx.compose.runtime.remember(context) {
+        runCatching {
+            android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+        }.getOrDefault(true)
+    }
+}
+
+/**
  * The ambient backdrop behind the welcome and lock screens: the theme background with two soft colour
  * fields that drift slowly. Drawn behind the system bars so the colour runs edge to edge.
  */
 @Composable
-fun AuroraBackground(modifier: Modifier = Modifier, animated: Boolean = true, content: @Composable () -> Unit = {}) {
+fun AuroraBackground(modifier: Modifier = Modifier, animated: Boolean = rememberMotionEnabled(), content: @Composable () -> Unit = {}) {
     val brand = ScanProTheme.colors
     val background = MaterialTheme.colorScheme.background
     val dark = MaterialTheme.colorScheme.onBackground.luminanceApprox() > 0.5f

@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
@@ -463,8 +464,10 @@ internal fun DocumentDetailScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopBarWithProgress(busy) { TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { TitleWithStatus(document.title, if (busy) busyLabel else null) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
@@ -499,12 +502,12 @@ internal fun DocumentDetailScreen(
         bottomBar = {
             // The most-used tools sit in a fixed bottom toolbar; the rest are one tap away under More.
             if (currentPage != null) {
-                Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
+                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         BarAction(Icons.Default.Crop, "Crop", !busy) { cropOpen = true }
@@ -1060,18 +1063,29 @@ private enum class DetailTab(val label: String) {
 /** One button on the bottom toolbar: an icon over a short label, sharing the width equally. */
 @Composable
 private fun RowScope.BarAction(icon: ImageVector, label: String, enabled: Boolean, primary: Boolean = false, onClick: () -> Unit) {
-    val tint = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val tint = if (primary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Column(
         modifier = Modifier
             .weight(1f)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(enabled = enabled, role = Role.Button) {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ContextClick)
+                onClick()
+            }
             .alpha(if (enabled) 1f else 0.38f)
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, contentDescription = null, tint = tint)
-        Spacer(Modifier.height(2.dp))
+        // The primary action sits in a filled pill so it reads as the default at a glance.
+        androidx.compose.foundation.layout.Box(
+            Modifier
+                .size(width = 48.dp, height = 30.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(if (primary) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent),
+            contentAlignment = Alignment.Center
+        ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
+        Spacer(Modifier.height(3.dp))
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,

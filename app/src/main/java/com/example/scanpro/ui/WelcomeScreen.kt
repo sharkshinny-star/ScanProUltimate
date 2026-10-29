@@ -335,6 +335,9 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         animationSpec = infiniteRepeatable(tween(1_800, easing = LinearEasing), RepeatMode.Reverse),
         label = "glow"
     )
+    val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+    val beamPosition = if (motion) beam else 0.5f
+    val haloScale = if (motion) glow else 1f
     val badgeContainer = tone.container()
     val badgeContent = tone.content()
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
@@ -344,7 +347,7 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         Box(
             Modifier
                 .size(sheetWidth * 1.9f)
-                .graphicsLayer { scaleX = glow; scaleY = glow }
+                .graphicsLayer { scaleX = haloScale; scaleY = haloScale }
                 .background(
                     Brush.radialGradient(listOf(brand.gradientEnd.copy(alpha = 0.22f), Color.Transparent)),
                     CircleShape
@@ -357,7 +360,7 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         Box(contentAlignment = Alignment.Center) {
             Sheet(sheetWidth, sheetHeight, rotation = 0f, offsetX = 0.dp, offsetY = 0.dp, alpha = 1f, lines = true)
             Canvas(Modifier.size(sheetWidth + 36.dp, sheetHeight)) {
-                val y = size.height * (0.12f + 0.76f * beam)
+                val y = size.height * (0.12f + 0.76f * beamPosition)
                 // Wake of the beam: a faint band fading upwards.
                 drawRect(
                     brush = Brush.verticalGradient(

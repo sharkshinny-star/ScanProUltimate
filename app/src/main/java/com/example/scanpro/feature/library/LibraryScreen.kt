@@ -239,7 +239,9 @@ internal fun LibraryScreen(
         selected.removeAll { it !in visibleIds }
     }
 
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     fun toggleSelection(id: String) {
+        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
         if (id in selected) selected.remove(id) else selected.add(id)
     }
 
@@ -642,7 +644,7 @@ private fun HomeDashboard(
     val recent = remember(documents) { documents.sortedByDescending { it.updatedAt }.take(RECENT_LIMIT) }
     val favorites = remember(documents) { documents.count { it.isFavorite } }
     LazyColumn(
-        modifier = Modifier.fillMaxSize().widthIn(max = 720.dp),
+        modifier = Modifier.fillMaxSize().widthIn(max = if (com.example.scanpro.navigation.isWideWindow()) 1100.dp else 720.dp),
         contentPadding = PaddingValues(top = 4.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
@@ -869,9 +871,11 @@ private class QuickAction(val icon: ImageVector, val label: String, val tone: Ti
 /** One-tap shortcuts for the jobs people do most, each opening the right mode or tool directly. */
 @Composable
 private fun QuickActions(enabled: Boolean, actions: List<QuickAction>) {
-    // Two rows of four, all on screen: a sideways-scrolling row hid half the shortcuts with no hint they were there.
+    // Two rows of four on phones, all on screen: a sideways-scrolling row hid half the shortcuts with no
+    // hint they were there. Wide windows have room for a single row.
+    val perRow = if (com.example.scanpro.navigation.isWideWindow()) 8 else 4
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        actions.chunked(4).forEach { row ->
+        actions.chunked(perRow).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { action ->
                     Column(
@@ -897,7 +901,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>) {
                     }
                 }
                 // A short last row keeps its cells the same width as the rows above.
-                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

@@ -166,6 +166,7 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
 fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = ScanButtonSize) {
     val brand = ScanProTheme.colors
     val interaction = remember { MutableInteractionSource() }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         modifier
             .size(size)
@@ -177,7 +178,10 @@ fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: android
                 role = Role.Button,
                 interactionSource = interaction,
                 indication = ripple(bounded = true, color = Color.White),
-                onClick = onClick
+                onClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
+                    onClick()
+                }
             )
             .semantics { contentDescription = "Scan" },
         contentAlignment = Alignment.Center
