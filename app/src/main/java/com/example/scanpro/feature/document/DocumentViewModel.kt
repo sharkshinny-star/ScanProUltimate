@@ -254,7 +254,8 @@ class DocumentViewModel @Inject constructor(
         operations.publishExport(ExportArtifact(file.absolutePath, "application/octet-stream", "Share encrypted ScanPro backup"))
     }
 
-    fun moveToTrash() = run(null, null) {
+    /** False when the app was busy and the document stayed where it is. */
+    fun moveToTrash(): Boolean = run(null, null) {
         repository.moveToTrash(id)
         operations.showMessage(
             UiMessage("Moved to recycle bin", actionLabel = "Undo") {

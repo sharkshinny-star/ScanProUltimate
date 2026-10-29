@@ -150,7 +150,7 @@ fun ScanSavedSheet(
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Button(onClick = then { }) { Text("Done") }
+                Button(onClick = then { }, enabled = !busy) { Text("Done") }
             }
             Spacer(Modifier.height(16.dp))
         }

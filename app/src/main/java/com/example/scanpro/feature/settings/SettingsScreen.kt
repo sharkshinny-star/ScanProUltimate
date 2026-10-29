@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Delete
@@ -50,6 +51,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
@@ -114,6 +116,7 @@ fun SettingsRoute(
         onAppLockChange = onAppLockChange,
         onThemeModeChange = viewModel::setThemeMode,
         onDynamicColorChange = viewModel::setDynamicColor,
+        onRestoreBackup = viewModel::restoreBackup,
         bottomBar = bottomBar
     )
 }
@@ -135,10 +138,28 @@ fun SettingsScreen(
     onAppLockChange: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit = {},
+    onRestoreBackup: (android.net.Uri, String) -> Unit = { _, _ -> },
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
     var privacyOpen by rememberSaveable { mutableStateOf(false) }
+    // Restore: pick the package, then ask for its password.
+    var backupToRestore by remember { mutableStateOf<android.net.Uri?>(null) }
+    val backupPicker = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) backupToRestore = uri
+    }
+    backupToRestore?.let { uri ->
+        com.example.scanpro.core.designsystem.PasswordInputDialog(
+            title = "Restore encrypted backup",
+            message = "Enter the password the backup was created with. The document is added to your library.",
+            minimumLength = 6,
+            confirmLabel = "Restore",
+            onDismiss = { backupToRestore = null }
+        ) { password ->
+            backupToRestore = null
+            onRestoreBackup(uri, password)
+        }
+    }
     val scope = rememberCoroutineScope()
     val contact: (SupportTopic) -> Unit = { topic ->
         val delivery = contactSupport(context, topic)
@@ -175,6 +196,17 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
                 StorageCard(documentCount, trashCount, storageBytes)
+
+                SettingsSection("Backup") {
+                    SettingsRow(
+                        icon = Icons.Rounded.Restore,
+                        tone = TileTone.Teal,
+                        title = "Restore encrypted backup",
+                        subtitle = "Bring back a document from a ScanPro backup package",
+                        trailing = { Chevron() },
+                        onClick = { backupPicker.launch(arrayOf("*/*")) }
+                    )
+                }
 
                 SettingsSection("Appearance") {
                     SettingsRow(

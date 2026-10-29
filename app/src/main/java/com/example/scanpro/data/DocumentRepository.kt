@@ -197,8 +197,13 @@ class DocumentRepository @Inject constructor(
         doc.copy(tags = tags, updatedAt = now())
     }
 
-    suspend fun setFolder(id: String, folder: String) = mutateDocument(id) { doc ->
-        doc.copy(folderName = folder.trim().take(80), updatedAt = now())
+    suspend fun setFolder(id: String, folder: String) = withContext(Dispatchers.IO) {
+        val wanted = folder.trim().take(80)
+        // "bills" joins an existing "Bills" rather than starting a second folder that differs only in case.
+        val existing = if (wanted.isBlank()) "" else db.loadAll(includeTrashed = true)
+            .map { it.folderName }
+            .firstOrNull { it.isNotBlank() && it.equals(wanted, ignoreCase = true) } ?: wanted
+        mutateDocument(id) { doc -> doc.copy(folderName = existing, updatedAt = now()) }
     }
 
     suspend fun renameFolder(oldName: String, newName: String) = withContext(Dispatchers.IO) {
@@ -530,7 +535,8 @@ class DocumentRepository @Inject constructor(
             pageSize = doc.pdfPageSize,
             searchable = doc.searchablePdf,
             pageNumbers = false,
-            mode = doc.scanMode
+            mode = doc.scanMode,
+            like = doc
         )
     }
 
@@ -545,7 +551,8 @@ class DocumentRepository @Inject constructor(
             pageSize = first.pdfPageSize,
             searchable = first.searchablePdf,
             pageNumbers = first.pageNumbers,
-            mode = first.scanMode
+            mode = first.scanMode,
+            like = first
         )
     }
 
@@ -712,7 +719,8 @@ class DocumentRepository @Inject constructor(
             pageSize = doc.pdfPageSize,
             searchable = doc.searchablePdf,
             pageNumbers = doc.pageNumbers,
-            mode = doc.scanMode
+            mode = doc.scanMode,
+            like = doc
         )
     }
 
@@ -817,7 +825,8 @@ class DocumentRepository @Inject constructor(
                 pageSize = doc.pdfPageSize,
                 searchable = doc.searchablePdf,
                 pageNumbers = false,
-                mode = doc.scanMode
+                mode = doc.scanMode,
+                like = doc
             )
         }
         doc.pages.size
@@ -1019,7 +1028,9 @@ class DocumentRepository @Inject constructor(
         pageSize: PdfPageSize,
         searchable: Boolean,
         pageNumbers: Boolean,
-        mode: ScanMode
+        mode: ScanMode,
+        /** The document the pages come from: its folder, tags, favourite mark and OCR script carry over. */
+        like: ScanDocument? = null
     ): ScanDocument {
         require(sourcePages.isNotEmpty()) { "No pages" }
         val created = now()
@@ -1040,7 +1051,11 @@ class DocumentRepository @Inject constructor(
                 pdfPageSize = pageSize,
                 searchablePdf = searchable,
                 pageNumbers = pageNumbers,
-                scanMode = mode
+                scanMode = mode,
+                folderName = like?.folderName.orEmpty(),
+                tags = like?.tags.orEmpty(),
+                isFavorite = like?.isFavorite ?: false,
+                ocrScript = like?.ocrScript ?: OcrScript.LATIN
             )
             return regenerateAndSave(doc)
         } catch (error: Throwable) {
@@ -1358,13 +1373,26 @@ class DocumentRepository @Inject constructor(
 
     private fun freshExportFile(base: String, extension: String): File {
         exportDir.listFiles()?.filter { it.lastModified() < now() - 24 * 60 * 60 * 1000L }?.forEach { it.delete() }
-        return File(exportDir, "${base}_${now()}.$extension")
+        val plain = File(exportDir, "$base.$extension")
+        if (!plain.exists()) return plain
+        var n = 2
+        while (File(exportDir, "$base ($n).$extension").exists()) n++
+        return File(exportDir, "$base ($n).$extension")
     }
 
     private companion object {
         const val MAX_IMPORT_BYTES = 300L * 1024 * 1024
     }
 
-    private fun safeName(value: String): String = value.replace(Regex("[^A-Za-z0-9._-]+"), "_").take(60)
+    private fun safeName(value: String): String = fileSafeName(value)
     private fun now() = System.currentTimeMillis()
+}
+
+/**
+ * A title as a file name: only the characters file systems and share targets reject are replaced, so
+ * titles in any script survive the trip.
+ */
+fun fileSafeName(value: String): String {
+    val cleaned = value.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]+"), "_").trim().trim('.').take(80)
+    return cleaned.ifBlank { "Document" }
 }

@@ -58,10 +58,11 @@ class LibraryViewModel @Inject constructor(
 
     fun setQuery(value: String) { _query.value = value }
 
-    fun moveManyToTrash(ids: Set<String>) {
-        if (ids.isEmpty()) return
+    /** False when the app was busy and nothing was done, so the caller keeps its selection. */
+    fun moveManyToTrash(ids: Set<String>): Boolean {
+        if (ids.isEmpty()) return false
         val label = if (ids.size == 1) "Moved to recycle bin" else "${ids.size} documents moved to recycle bin"
-        operations.run("Moving ${ids.size} documents to recycle bin…", null) {
+        return operations.run("Moving ${ids.size} documents to recycle bin…", null) {
             ids.forEach { repository.moveToTrash(it) }
             operations.showMessage(UiMessage(label, actionLabel = "Undo") { restore(ids) })
         }
@@ -75,11 +76,18 @@ class LibraryViewModel @Inject constructor(
     /** Hands [onReady] the selected documents with current PDFs, rebuilding stale ones first. */
     fun withFreshPdfs(ids: Set<String>, onReady: (List<ScanDocument>) -> Unit) {
         operations.run("Preparing PDFs…", null) {
-            val fresh = library.withFreshPdfs(ids)
-            withContext(Dispatchers.Main) { onReady(fresh) }
+            val fresh = library.freshPdfs(ids)
+            if (fresh.failed > 0) {
+                operations.showMessage(
+                    if (fresh.documents.isEmpty()) "The PDF could not be prepared"
+                    else "${fresh.failed} of ${ids.size} documents could not be prepared and were left out"
+                )
+            }
+            if (fresh.documents.isNotEmpty()) withContext(Dispatchers.Main) { onReady(fresh.documents) }
         }
     }
 
-    fun renameFolder(oldName: String, newName: String) =
+    /** False when the app was busy and the folder was not renamed. */
+    fun renameFolder(oldName: String, newName: String): Boolean =
         operations.run("Renaming folder…", "Folder renamed") { repository.renameFolder(oldName, newName) }
 }

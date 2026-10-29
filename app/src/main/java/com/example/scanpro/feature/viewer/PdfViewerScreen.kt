@@ -458,7 +458,7 @@ fun PdfViewerScreen(
                                 }
                                 DropdownMenuItem(
                                     text = { Text("Print / Save as PDF") },
-                                    onClick = { showMenu = false; shareFile(context, pdfUri.path ?: "", "application/pdf", title) },
+                                    onClick = { showMenu = false; com.example.scanpro.core.ui.printPdfUri(context, pdfUri, title) },
                                     leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) }
                                 )
                             }

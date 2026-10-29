@@ -187,9 +187,9 @@ internal fun LibraryScreen(
     onTrash: () -> Unit,
     onSearch: () -> Unit,
     onBack: () -> Unit,
-    onBulkDelete: (Set<String>) -> Unit,
+    onBulkDelete: (Set<String>) -> Boolean,
     onShareSelected: (Set<String>) -> Unit,
-    onRenameFolder: (String, String) -> Unit,
+    onRenameFolder: (String, String) -> Boolean,
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {}
@@ -205,7 +205,8 @@ internal fun LibraryScreen(
     var moreMenuOpen by remember { mutableStateOf(false) }
     val selected = remember { mutableStateListOf<String>() }
     val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
-    val folders = remember(documents) { documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted() }
+    // One chip per folder whatever the case of its name; the first spelling seen is the one shown.
+    val folders = remember(documents) { documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() } }
 
     // A folder filter whose folder no longer exists (renamed, or its documents trashed) would hide
     // everything with no chip left to clear it.
@@ -300,8 +301,8 @@ internal fun LibraryScreen(
                                 Icon(Icons.Rounded.Share, contentDescription = "Share selected")
                             }
                             IconButton(onClick = {
-                                onBulkDelete(selected.toSet())
-                                selected.clear()
+                                // The selection stays if the app was busy and nothing moved.
+                                if (onBulkDelete(selected.toSet())) selected.clear()
                             }) {
                                 Icon(Icons.Rounded.Delete, contentDescription = "Move selected to trash")
                             }
@@ -424,8 +425,8 @@ internal fun LibraryScreen(
                             }
                             folders.forEach { name ->
                                 item(key = "folder_$name") {
-                                    LibraryChip(selected = folder == name, label = name, icon = Icons.Rounded.Folder) {
-                                        folder = if (folder == name) "" else name
+                                    LibraryChip(selected = folder.equals(name, ignoreCase = true), label = name, icon = Icons.Rounded.Folder) {
+                                        folder = if (folder.equals(name, ignoreCase = true)) "" else name
                                     }
                                 }
                             }
@@ -486,8 +487,7 @@ internal fun LibraryScreen(
             confirmLabel = "Rename",
             onDismiss = { renameFolderSource = null }
         ) { target ->
-            onRenameFolder(source, target)
-            folder = target.trim()
+            if (onRenameFolder(source, target)) folder = target.trim()
             renameFolderSource = null
         }
     }

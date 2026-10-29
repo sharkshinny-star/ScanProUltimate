@@ -14,43 +14,75 @@ import androidx.core.content.FileProvider
 import com.example.scanpro.data.ScanDocument
 import java.io.File
 import java.util.Locale
+import kotlinx.coroutines.launch
 
-fun sharePdf(context: Context, document: ScanDocument) {
-    val file = File(document.pdfPath)
-    if (!file.isFile) {
-        Toast.makeText(context, "PDF is not available yet", Toast.LENGTH_SHORT).show()
-        return
+/**
+ * Every document's PDF is stored as "document.pdf", and the receiving app names the attachment after the
+ * file. So a copy named after the title is made in the shareable export cache first, off the main thread.
+ */
+private fun namedPdfCopies(context: Context, documents: List<ScanDocument>): List<File> {
+    val exports = File(context.cacheDir, "exports").apply { mkdirs() }
+    val used = HashSet<String>()
+    return documents.mapNotNull { document ->
+        val source = File(document.pdfPath)
+        if (!source.isFile) return@mapNotNull null
+        var name = "${com.example.scanpro.data.fileSafeName(document.title)}.pdf"
+        var n = 2
+        while (!used.add(name.lowercase())) { name = "${com.example.scanpro.data.fileSafeName(document.title)} ($n).pdf"; n++ }
+        val copy = File(exports, name)
+        if (!copy.isFile || copy.length() != source.length() || copy.lastModified() < source.lastModified()) {
+            source.copyTo(copy, overwrite = true)
+        }
+        copy
     }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "application/pdf"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_TITLE, "${document.title}.pdf")
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(intent, "Share PDF"))
 }
 
+fun sharePdf(context: Context, document: ScanDocument) = sharePdfs(context, listOf(document))
+
 fun sharePdfs(context: Context, documents: List<ScanDocument>) {
-    val valid = documents.mapNotNull { document ->
-        val file = File(document.pdfPath)
-        if (!file.exists()) null else FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate).launch {
+        val files = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { namedPdfCopies(context, documents) }.getOrDefault(emptyList()) }
+        if (files.isEmpty()) {
+            Toast.makeText(context, if (documents.size == 1) "PDF is not available yet" else "No PDF files are available to share", Toast.LENGTH_SHORT).show()
+            return@launch
+        }
+        val uris = files.map { FileProvider.getUriForFile(context, "${context.packageName}.files", it) }
+        val intent = if (uris.size == 1) {
+            Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uris.single())
+                putExtra(Intent.EXTRA_TITLE, files.single().name)
+            }
+        } else {
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = "application/pdf"
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            }
+        }
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        context.startActivity(Intent.createChooser(intent, if (uris.size == 1) "Share PDF" else "Share PDFs"))
     }
-    if (valid.isEmpty()) {
-        Toast.makeText(context, "No PDF files are available to share", Toast.LENGTH_SHORT).show()
-        return
+}
+
+/** Prints a PDF given as any readable link; a content link is copied to the cache first, off the main thread. */
+fun printPdfUri(context: Context, uri: Uri, title: String) {
+    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate).launch {
+        val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                if (uri.scheme == "file") File(uri.path.orEmpty()).takeIf { it.isFile }
+                else File(context.cacheDir, "view_print_${System.currentTimeMillis()}.pdf").also { copy ->
+                    context.contentResolver.openInputStream(uri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
+                        ?: error("unreadable")
+                }
+            }.getOrNull()
+        }
+        if (file == null) {
+            Toast.makeText(context, "This PDF could not be read for printing", Toast.LENGTH_SHORT).show()
+            return@launch
+        }
+        val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
+        manager.print(title, PdfFilePrintAdapter(file), android.print.PrintAttributes.Builder().build())
     }
-    if (valid.size == 1) {
-        val document = documents.firstOrNull { File(it.pdfPath).exists() } ?: return
-        sharePdf(context, document)
-        return
-    }
-    val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-        type = "application/pdf"
-        putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(valid))
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(intent, "Share PDFs"))
 }
 
 fun shareImages(context: Context, document: ScanDocument) {

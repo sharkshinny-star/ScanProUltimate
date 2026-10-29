@@ -82,12 +82,13 @@ class OperationRunner @Inject constructor(
      * is running the request is rejected with a message, because it was made against state that is
      * about to change.
      */
-    fun run(label: String?, successMessage: String?, action: suspend () -> Unit) {
+    fun run(label: String?, successMessage: String?, action: suspend () -> Unit): Boolean {
         if (_busy.value) {
             _message.value = UiMessage("Still working on the previous task. Try again in a moment.")
-            return
+            return false
         }
         start(label, successMessage, action)
+        return true
     }
 
     /**

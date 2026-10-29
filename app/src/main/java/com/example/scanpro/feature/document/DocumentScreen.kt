@@ -128,6 +128,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.example.scanpro.data.hasCurrentPdf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -280,8 +281,8 @@ fun DocumentRoute(
         onRedo = viewModel::redo,
         onDismissScanSaved = viewModel::dismissScanSaved,
         onDeleteDocument = {
-            viewModel.moveToTrash()
-            onBack()
+            // Leave only if the document really moved; a busy app keeps it and says so.
+            if (viewModel.moveToTrash()) onBack()
         }
     )
 }
@@ -555,11 +556,15 @@ internal fun DocumentDetailScreen(
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                             Spacer(Modifier.width(4.dp))
-                            Text("Ready to export", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Text(
+                                if (document.hasCurrentPdf()) "Ready to export" else "PDF updates on export",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
                         }
                     }
                     Text(
-                        "${document.pages.size} ${if (document.pages.size == 1) "page" else "pages"} · searchable",
+                        "${document.pages.size} ${if (document.pages.size == 1) "page" else "pages"}" + if (document.searchablePdf) " · searchable" else "",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1037,19 +1042,37 @@ internal fun DocumentDetailScreen(
     }
 
     if (mergeOpen) {
+        var mergeQuery by remember { mutableStateOf("") }
+        val candidates = remember(otherDocuments, mergeQuery) {
+            otherDocuments.filter { mergeQuery.isBlank() || it.title.contains(mergeQuery, ignoreCase = true) }
+                .sortedByDescending { it.updatedAt }
+        }
         AlertDialog(
             onDismissRequest = { mergeOpen = false },
             title = { Text("Merge with another document") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    otherDocuments.take(12).forEach { other ->
-                        TextButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                onMergeWith(other.id)
-                                mergeOpen = false
-                            }
-                        ) { Text(other.title, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                Column {
+                    OutlinedTextField(
+                        value = mergeQuery,
+                        onValueChange = { mergeQuery = it },
+                        label = { Text("Search documents") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (candidates.isEmpty()) {
+                        Text("No documents match", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                        items(candidates, key = { it.id }) { other ->
+                            TextButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    onMergeWith(other.id)
+                                    mergeOpen = false
+                                }
+                            ) { Text(other.title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth()) }
+                        }
                     }
                 }
             },

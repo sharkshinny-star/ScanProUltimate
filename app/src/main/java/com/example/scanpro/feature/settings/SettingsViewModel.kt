@@ -17,8 +17,20 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsStore,
-    library: DocumentLibrary
+    library: DocumentLibrary,
+    private val repository: com.example.scanpro.data.DocumentRepository,
+    private val operations: com.example.scanpro.core.operations.OperationRunner
 ) : ViewModel() {
+    /** Brings a ScanPro encrypted backup package back as a document. */
+    fun restoreBackup(uri: android.net.Uri, password: String) {
+        operations.enqueue("Restoring encrypted backup…", null) {
+            val document = repository.importEncryptedBackup(uri, password)
+            operations.showMessage(com.example.scanpro.core.operations.UiMessage("Restored \"${document.title}\"", actionLabel = "Open") {
+                operations.requestOpenDocument(document.id)
+            })
+        }
+    }
+
     val pdfQuality = settings.pdfQuality.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PdfQuality.BALANCED)
     val autoTitle = settings.autoTitle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val appLock = settings.appLock.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
