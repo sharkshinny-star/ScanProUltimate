@@ -47,6 +47,9 @@ class AppViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode?> = settings.themeMode
         .map<ThemeMode, ThemeMode?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    /** Wallpaper-derived colours (Android 12+); applied as soon as it is known, false until then. */
+    val dynamicColor: StateFlow<Boolean> = settings.dynamicColor
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     /** Null until the setting has loaded, so the library is never shown before the lock decision. */
     val appLockEnabled: StateFlow<Boolean?> = settings.appLock
         .map<Boolean, Boolean?> { it }

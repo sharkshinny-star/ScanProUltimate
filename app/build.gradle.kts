@@ -14,8 +14,8 @@ android {
         applicationId = "com.scanpro.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "4.1.0"
+        versionCode = 7
+        versionName = "4.2.0"
 
         vectorDrawables { useSupportLibrary = true }
         // True when the ML Kit models ship inside the APK (-Pscanpro.bundledMl=true): no Play-services download checks.

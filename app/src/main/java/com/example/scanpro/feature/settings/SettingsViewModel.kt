@@ -23,6 +23,7 @@ class SettingsViewModel @Inject constructor(
     val autoTitle = settings.autoTitle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val appLock = settings.appLock.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.LIGHT)
+    val dynamicColor = settings.dynamicColor.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
     val documentCount: StateFlow<Int> = library.documents.map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.size)
     val trashCount: StateFlow<Int> = library.trash.map { it.size }
@@ -32,4 +33,5 @@ class SettingsViewModel @Inject constructor(
     fun setPdfQuality(value: PdfQuality) { viewModelScope.launch { settings.setPdfQuality(value) } }
     fun setAutoTitle(value: Boolean) { viewModelScope.launch { settings.setAutoTitle(value) } }
     fun setThemeMode(value: ThemeMode) { viewModelScope.launch { settings.setThemeMode(value) } }
+    fun setDynamicColor(value: Boolean) { viewModelScope.launch { settings.setDynamicColor(value) } }
 }

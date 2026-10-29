@@ -168,8 +168,14 @@ fun ScanProApp(
             }
         }
 
-        // First launch only, drawn over the app so the library is already there underneath when it closes.
-        if (welcomeShowing) {
+        // First launch only, drawn over the app so the library is already there underneath when it
+        // closes; it fades and grows away rather than cutting to the home screen.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = welcomeShowing,
+            enter = androidx.compose.animation.EnterTransition.None,
+            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(320)) +
+                androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(320), targetScale = 1.06f)
+        ) {
             androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
             WelcomeScreen(
                 onStartScanning = {

@@ -14,6 +14,7 @@ This file is an engineering checklist, not a substitute for legal review. Before
 | Google ML Kit | OCR, translation, language identification, scanner fallback | Google SDK terms apply; review current terms before release |
 | Google Play services ML Kit document scanner | Compatibility scanner fallback | Google Play services / SDK terms apply |
 | PDFBox Android 2.0.27.0 | PDF merge/split/security operations | Apache-2.0 |
+| Manrope (variable font, `app/src/main/res/font/manrope.ttf`) | App typeface | SIL Open Font License 1.1; copyright 2018 The Manrope Project Authors |
 
 ## Product/IP rule
 

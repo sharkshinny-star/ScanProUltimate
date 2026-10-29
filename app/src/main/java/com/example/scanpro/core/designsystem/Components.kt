@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
@@ -73,7 +74,11 @@ fun PageThumbnail(
      * overwrite the same file, and with unchanged arguments this call would be skipped and keep showing
      * the old cached bitmap.
      */
-    version: Any? = null
+    version: Any? = null,
+    /** Corner shape of the placeholder; the image itself is clipped to it as well. */
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(12.dp),
+    /** Placeholder colour shown while the thumbnail loads, or when the page has no image. */
+    background: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
 ) {
     // The file's timestamp is part of the cache key, but reading it is disk I/O, so it happens on the
     // IO thread. Meanwhile the last bitmap shown for this request is drawn straight away, so coming
@@ -92,11 +97,11 @@ fun PageThumbnail(
         }
     }
 
+    val placeholder = if (background == androidx.compose.ui.graphics.Color.Unspecified) MaterialTheme.colorScheme.surfaceContainerHigh else background
     Box(
-        modifier = modifier.background(
-            MaterialTheme.colorScheme.surfaceVariant,
-            RoundedCornerShape(12.dp)
-        ),
+        modifier = modifier
+            .clip(shape)
+            .background(placeholder, shape),
         contentAlignment = Alignment.Center
     ) {
         val image = bitmap

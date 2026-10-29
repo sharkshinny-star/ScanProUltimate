@@ -6,8 +6,6 @@ import android.os.SystemClock
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import android.view.View
-import android.view.ViewTreeObserver
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import com.example.scanpro.core.designsystem.ThemeTransition
@@ -26,8 +24,6 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -91,7 +87,13 @@ class MainActivity : FragmentActivity() {
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
-        hideNavigationBar()
+        // The app draws behind both system bars; screens pad their own content with the insets. The
+        // bars themselves stay available (hiding them took three-button navigation away from people).
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+            window.isStatusBarContrastEnforced = false
+        }
         publishScanShortcut()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -104,6 +106,7 @@ class MainActivity : FragmentActivity() {
         }
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
             // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
             val mode = themeMode ?: return@setContent
@@ -119,7 +122,7 @@ class MainActivity : FragmentActivity() {
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                     onDispose { }
                 }
-                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
+                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = dynamicColor) {
                     ScanProApp(
                         viewModel = viewModel,
                         sessionUnlocked = sessionUnlocked,
@@ -193,22 +196,6 @@ class MainActivity : FragmentActivity() {
                 return ready
             }
         })
-    }
-
-    private fun hideNavigationBar() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.navigationBars())
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-        }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideNavigationBar()
     }
 
     override fun onNewIntent(intent: android.content.Intent) {

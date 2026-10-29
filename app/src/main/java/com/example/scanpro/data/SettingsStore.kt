@@ -91,4 +91,13 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         pendingThemeMode.value = value
         context.scanProSettings.edit { it[keyThemeMode] = value.name }
     }
+
+    private val keyDynamicColor = booleanPreferencesKey("dynamic_color")
+
+    /** Android 12+ wallpaper colours instead of the brand palette. Off by default so the brand shows first. */
+    val dynamicColor: Flow<Boolean> = preferences.map { it[keyDynamicColor] ?: false }
+
+    suspend fun setDynamicColor(value: Boolean) {
+        context.scanProSettings.edit { it[keyDynamicColor] = value }
+    }
 }
