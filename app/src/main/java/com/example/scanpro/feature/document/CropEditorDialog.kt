@@ -3,6 +3,8 @@ package com.example.scanpro.feature.document
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +50,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -82,7 +85,11 @@ fun CropEditorDialog(
     onConfirm: (CropQuad) -> Unit,
     onRotateLeft: (() -> Unit)? = null,
     onRotateRight: (() -> Unit)? = null,
-    onAddPage: (() -> Unit)? = null
+    onAddPage: (() -> Unit)? = null,
+    pageIndex: Int = 0,
+    pageCount: Int = 1,
+    /** Moves to the page [delta] away, with the crop of the page being left; the editor stays open. */
+    onPage: ((delta: Int, crop: CropQuad) -> Unit)? = null
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -304,9 +311,21 @@ fun CropEditorDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = "Previous", tint = DarkChrome.disabledText, modifier = Modifier.size(20.dp))
-                            Text("1 of 1", color = DarkChrome.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
-                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = "Next", tint = DarkChrome.disabledText, modifier = Modifier.size(20.dp))
+                            val hasPrevious = onPage != null && pageIndex > 0
+                            val hasNext = onPage != null && pageIndex < pageCount - 1
+                            Icon(
+                                Icons.AutoMirrored.Filled.NavigateBefore,
+                                contentDescription = "Previous page",
+                                tint = if (hasPrevious) DarkChrome.text else DarkChrome.disabledText,
+                                modifier = Modifier.size(28.dp).clip(CircleShape).clickable(enabled = hasPrevious) { onPage?.invoke(-1, crop) }.padding(4.dp)
+                            )
+                            Text("${pageIndex + 1} of $pageCount", color = DarkChrome.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
+                            Icon(
+                                Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = "Next page",
+                                tint = if (hasNext) DarkChrome.text else DarkChrome.disabledText,
+                                modifier = Modifier.size(28.dp).clip(CircleShape).clickable(enabled = hasNext) { onPage?.invoke(1, crop) }.padding(4.dp)
+                            )
                         }
                     }
 

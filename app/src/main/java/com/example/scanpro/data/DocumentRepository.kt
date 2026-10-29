@@ -606,22 +606,92 @@ class DocumentRepository @Inject constructor(
         saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
     }
 
+    /** A page removed from a document whose files are still on disk, so the removal can be undone. */
+    private class RemovedPage(val documentId: String, val page: ScanPage, val index: Int)
+
+    // At most one removed page per document is kept; removing another page, or the "Page removed"
+    // message going away, purges the earlier one.
+    private val removedPages = java.util.concurrent.ConcurrentHashMap<String, RemovedPage>()
+
+    /**
+     * Removes a page but keeps its files until [purgeRemovedPage] (or the next removal) drops them, so
+     * [restoreRemovedPage] can put it back. A document's last page sends the whole document to the
+     * recycle bin instead, which has its own restore.
+     */
     suspend fun deletePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val target = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val sorted = doc.pages.sortedBy { it.position }
+        val index = sorted.indexOfFirst { it.id == pageId }
+        if (index == -1) error("Page not found")
         if (doc.pages.size == 1) {
             moveToTrash(documentId)
             return@withContext
         }
-        val pages = normalize(doc.pages.sortedBy { it.position }.filterNot { it.id == pageId })
+        val pages = normalize(sorted.filterNot { it.id == pageId })
         val saved = saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
-        // The deleted page's files are about to go, so earlier steps could not be restored.
+        // The document's page set changed, so earlier steps no longer fit it.
         history.clear(doc.id)
-        // Delete the files only after the page is gone from the database, so a failed save loses nothing.
-        File(target.sourcePath).delete()
-        File(target.imagePath).delete()
-        deleteSignatureAssets(target.annotations)
+        purgeRemovedPage(documentId)
+        removedPages[documentId] = RemovedPage(documentId, sorted[index], index)
         saved
+    }
+
+    /** Puts the most recently removed page back where it was; false when there is nothing to restore. */
+    suspend fun restoreRemovedPage(documentId: String): Boolean = withContext(Dispatchers.IO) {
+        val removed = removedPages.remove(documentId) ?: return@withContext false
+        if (!File(removed.page.imagePath).isFile) return@withContext false
+        val doc = requireDocument(documentId)
+        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        pages.add(removed.index.coerceIn(0, pages.size), removed.page)
+        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now()))
+        history.clear(doc.id)
+        true
+    }
+
+    /**
+     * Deletes the files of a removed page once it can no longer be restored. With [pageId], only that
+     * page is purged, so a message going away late cannot drop a page removed after it.
+     */
+    fun purgeRemovedPage(documentId: String, pageId: String? = null) {
+        val current = removedPages[documentId] ?: return
+        if (pageId != null && current.page.id != pageId) return
+        val removed = removedPages.remove(documentId) ?: return
+        File(removed.page.sourcePath).delete()
+        File(removed.page.imagePath).delete()
+        deleteSignatureAssets(removed.page.annotations)
+    }
+
+    /** A new document with copies of every page, for editing one version while keeping the other. */
+    suspend fun duplicateDocument(documentId: String): ScanDocument = withContext(Dispatchers.IO) {
+        val doc = requireDocument(documentId)
+        createFromPages(
+            sourcePages = doc.pages.sortedBy { it.position },
+            title = "${doc.title} copy".take(120),
+            quality = doc.pdfQuality,
+            pageSize = doc.pdfPageSize,
+            searchable = doc.searchablePdf,
+            pageNumbers = doc.pageNumbers,
+            mode = doc.scanMode
+        )
+    }
+
+    /** Every page as a lossless PNG, for apps and forms that reject JPG. */
+    suspend fun exportPng(id: String): List<File> = withContext(Dispatchers.IO) {
+        val doc = requireDocument(id)
+        val pages = doc.pages.sortedBy { it.position }
+        val base = safeName(doc.title)
+        pages.mapIndexed { index, page ->
+            val bitmap = ImageProcessor.decodeScaled(page.imagePath, 4000) ?: error("Page ${index + 1} could not be read")
+            try {
+                val file = freshExportFile(if (pages.size == 1) base else "${base}_p${(index + 1).toString().padStart(2, '0')}", "png")
+                file.outputStream().buffered().use { out ->
+                    check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)) { "PNG could not be written" }
+                }
+                file
+            } finally {
+                bitmap.recycle()
+            }
+        }
     }
 
     suspend fun moveToTrash(id: String) = mutateDocument(id) { doc ->

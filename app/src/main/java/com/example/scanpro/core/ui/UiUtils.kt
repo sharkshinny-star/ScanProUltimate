@@ -163,19 +163,26 @@ fun formatTrashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis
     return Pair(text, isUrgent)
 }
 
-fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String) {
-    val file = File(path)
-    if (!file.exists()) {
+fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String, extraPaths: List<String> = emptyList()) {
+    val files = (listOf(path) + extraPaths).map(::File).filter { it.isFile }
+    if (files.isEmpty()) {
         Toast.makeText(context, "Export file is missing", Toast.LENGTH_SHORT).show()
         return
     }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_TITLE, file.name)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    val uris = files.map { FileProvider.getUriForFile(context, "${context.packageName}.files", it) }
+    val intent = if (uris.size == 1) {
+        Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uris.single())
+            putExtra(Intent.EXTRA_TITLE, files.single().name)
+        }
+    } else {
+        Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = mimeType
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+        }
     }
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     context.startActivity(Intent.createChooser(intent, chooserTitle))
 }
 
@@ -302,6 +309,20 @@ private class PdfFilePrintAdapter(
 const val PLAY_STORE_PACKAGE = "com.scanpro.app"
 
 /** Opens ScanPro's listing in the Play Store app, or on the Play website if the Store isn't installed. */
+/** Hands the Play listing link to the share sheet, for recommending the app. */
+fun sharePlayStoreListing(context: Context) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, "ScanPro")
+        putExtra(Intent.EXTRA_TEXT, "Scan documents to PDF with ScanPro: https://play.google.com/store/apps/details?id=$PLAY_STORE_PACKAGE")
+    }
+    try {
+        context.startActivity(Intent.createChooser(intent, "Share ScanPro"))
+    } catch (_: ActivityNotFoundException) {
+        openPlayStoreListing(context)
+    }
+}
+
 fun openPlayStoreListing(context: Context) {
     val storeApp = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$PLAY_STORE_PACKAGE"))
         .setPackage("com.android.vending")

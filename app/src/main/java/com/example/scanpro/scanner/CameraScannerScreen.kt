@@ -218,6 +218,8 @@ fun CameraScannerScreen(
     // The review step after capture: crop, rotate, reorder and add pages before saving.
     var reviewing by rememberSaveable { mutableStateOf(false) }
     var reviewIndex by rememberSaveable { mutableIntStateOf(0) }
+    // Page the next capture replaces, when the review step asked to retake one; -1 otherwise.
+    var retakeIndex by rememberSaveable { mutableIntStateOf(-1) }
     var processing by remember { mutableStateOf(false) }
     val quads = rememberSaveable(
         saver = listSaver(
@@ -247,8 +249,15 @@ fun CameraScannerScreen(
 
     var confirmQuit by remember { mutableStateOf(false) }
     // Closing with captured pages would discard them, so ask first.
-    val requestClose = { if (pages.isNotEmpty() && !completed) confirmQuit = true else onClose() }
-    BackHandler(enabled = pages.isNotEmpty() && !completed) { confirmQuit = true }
+    val retaking = retakeIndex in pages.indices
+    val requestClose = {
+        when {
+            retaking -> { retakeIndex = -1; reviewing = true }
+            pages.isNotEmpty() && !completed -> confirmQuit = true
+            else -> onClose()
+        }
+    }
+    BackHandler(enabled = pages.isNotEmpty() && !completed) { requestClose() }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permissionGranted = it
@@ -313,7 +322,7 @@ fun CameraScannerScreen(
     SideEffect {
         frameAnalyzer.barcodeMode = barcodeMode
         // No auto-capture while the first-time tips are being read.
-        analyzer.autoCaptureEnabled = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing && pages.size < pageLimit
+        analyzer.autoCaptureEnabled = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing && (retaking || pages.size < pageLimit)
     }
 
     /** Opens the review step on the newest page. */
@@ -395,7 +404,16 @@ fun CameraScannerScreen(
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
                     val captured = Uri.fromFile(raw)
-                    pages.add(captured)
+                    val replacing = retakeIndex in pages.indices
+                    if (replacing) {
+                        val old = pages[retakeIndex]
+                        pages[retakeIndex] = captured
+                        quads.remove(old.toString())
+                        filters.remove(old.toString())
+                        if (old.scheme == "file") File(old.path.orEmpty()).delete()
+                    } else {
+                        pages.add(captured)
+                    }
                     capturing = false
                     // Outline the page in the background so the review screen opens ready.
                     scope.launch {
@@ -403,11 +421,17 @@ fun CameraScannerScreen(
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                     }
                     status = when {
+                        replacing -> "Page ${retakeIndex + 1} retaken"
                         scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
                         scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
                         else -> "Page ${pages.size} captured"
                     }
-                    if (!batch && scanMode != ScanMode.ID_CARD) finishScan() else flyIntoCounter(raw)
+                    if (replacing) {
+                        // Straight back to the page that was retaken, so it can be checked at once.
+                        reviewIndex = retakeIndex
+                        retakeIndex = -1
+                        reviewing = true
+                    } else if (!batch && scanMode != ScanMode.ID_CARD) finishScan() else flyIntoCounter(raw)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -433,7 +457,7 @@ fun CameraScannerScreen(
     }
 
     LaunchedEffect(autoCaptureSignal) {
-        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && pages.size < pageLimit) {
+        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && (retaking || pages.size < pageLimit)) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             capturePage()
         }
@@ -564,9 +588,14 @@ fun CameraScannerScreen(
             sessionDir = sessionDir,
             processing = processing,
             onIndexChange = { reviewIndex = it },
-            onAdd = { reviewing = false },
-            onBack = { reviewing = false },
-            onDone = ::saveReviewed
+            onAdd = { retakeIndex = -1; reviewing = false },
+            onBack = { retakeIndex = -1; reviewing = false },
+            onDone = ::saveReviewed,
+            onRetake = {
+                retakeIndex = reviewIndex.coerceIn(0, pages.lastIndex)
+                status = "Retaking page ${retakeIndex + 1} · the next shot replaces it"
+                reviewing = false
+            }
         )
         return
     }
@@ -861,7 +890,7 @@ fun CameraScannerScreen(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             capturePage()
                         },
-                        enabled = !barcodeMode && !capturing && pages.size < pageLimit,
+                        enabled = !barcodeMode && !capturing && (retaking || pages.size < pageLimit),
                         shape = CircleShape,
                         // Dimmed in QR mode: codes are read live, there is nothing to capture.
                         color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,

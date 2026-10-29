@@ -16,14 +16,18 @@ import kotlinx.coroutines.sync.withLock
 data class UiMessage(
     val text: String,
     val actionLabel: String? = null,
-    val onAction: (() -> Unit)? = null
+    val onAction: (() -> Unit)? = null,
+    /** Runs when the message goes away without its action being taken, e.g. to purge what Undo would have restored. */
+    val onDismiss: (() -> Unit)? = null
 )
 
 /** A file produced by an export that the UI should hand to the share sheet. */
 data class ExportArtifact(
     val path: String,
     val mimeType: String,
-    val title: String
+    val title: String,
+    /** Further files of the same type shared together with [path], such as the other pages of a PNG export. */
+    val extraPaths: List<String> = emptyList()
 )
 
 /**

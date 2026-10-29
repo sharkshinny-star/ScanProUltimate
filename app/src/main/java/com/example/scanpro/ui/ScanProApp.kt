@@ -72,12 +72,12 @@ fun ScanProApp(
             // Clear before running the action, so a message the action posts (e.g. "Document restored")
             // isn't wiped by this clear.
             viewModel.clearMessage(current)
-            if (result == SnackbarResult.ActionPerformed) current.onAction?.invoke()
+            if (result == SnackbarResult.ActionPerformed) current.onAction?.invoke() else current.onDismiss?.invoke()
         }
     }
     LaunchedEffect(exportArtifact) {
         exportArtifact?.let {
-            shareFile(context, it.path, it.mimeType, it.title)
+            shareFile(context, it.path, it.mimeType, it.title, it.extraPaths)
             viewModel.clearExportArtifact()
         }
     }

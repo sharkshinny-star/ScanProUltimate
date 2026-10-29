@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -112,7 +113,9 @@ fun ScanReviewScreen(
     onIndexChange: (Int) -> Unit,
     onAdd: () -> Unit,
     onBack: () -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    /** Returns to the camera to shoot this page again; the next capture replaces it in place. */
+    onRetake: (() -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
     val current = index.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
@@ -206,6 +209,11 @@ fun ScanReviewScreen(
             }
             IconButton(enabled = !blocked && current < pages.lastIndex, onClick = { move(1) }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page later", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
+            }
+            if (onRetake != null) {
+                IconButton(enabled = !blocked, onClick = onRetake) {
+                    Icon(Icons.Default.Replay, contentDescription = "Retake page", tint = Color.White)
+                }
             }
             IconButton(
                 enabled = !blocked,

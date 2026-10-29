@@ -259,6 +259,8 @@ fun DocumentRoute(
         onOcrScript = { script -> viewModel.reOcr(script) },
         onExportIdCopy = viewModel::exportIdCopy,
         onExportLongImage = viewModel::exportLongImage,
+        onExportPng = viewModel::exportPng,
+        onDuplicateDocument = viewModel::duplicateDocument,
         onExportOcrTextFile = viewModel::exportOcrTextFile,
         onExportWord = viewModel::exportWordFile,
         onExportExcel = viewModel::exportExcelFile,
@@ -308,6 +310,8 @@ internal fun DocumentDetailScreen(
     onExtractPage: (String) -> Unit,
     onSplitBook: (String, Float) -> Unit,
     onDeletePage: (String) -> Unit,
+    onExportPng: () -> Unit = {},
+    onDuplicateDocument: () -> Unit = {},
     onSign: (String, Bitmap, Boolean) -> Unit,
     savedSignatures: List<java.io.File> = emptyList(),
     onSignSaved: (String, java.io.File) -> Unit = { _, _ -> },
@@ -866,7 +870,7 @@ internal fun DocumentDetailScreen(
                         ToolTile(Icons.Default.FileCopy, "Duplicate", !busy, run { onDuplicatePage(page.id) })
                         ToolTile(Icons.Default.Output, "Extract", !busy, run { onExtractPage(page.id) })
                         ToolTile(Icons.AutoMirrored.Filled.MenuBook, "Split book", !busy, run { bookSplitOpen = true })
-                        ToolTile(Icons.Default.Delete, "Delete page", !busy, run { deletePageOpen = true })
+                        ToolTile(Icons.Default.Delete, "Delete page", !busy, run { if (pages.size == 1) deletePageOpen = true else onDeletePage(page.id) })
                     }
                     SubHeader("Mark up")
                     ToolGrid {
@@ -883,6 +887,7 @@ internal fun DocumentDetailScreen(
                 SubHeader("Share and save")
                 ToolGrid {
                     ToolTile(Icons.Default.Image, "Share JPG", !busy, run { shareImages(context, document) })
+                    ToolTile(Icons.Default.Image, "Share PNG", !busy, run { onExportPng() })
                     ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy, run { onWithFreshPdf({}) { openPdf(context, it) } })
                     ToolTile(Icons.Default.Save, "Save PDF", !busy, run { savePdfLauncher.launch("${document.title}.pdf") })
                     ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy, run { saveToDrive(document.title) })
@@ -900,6 +905,7 @@ internal fun DocumentDetailScreen(
                         appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                     })
                     ToolTile(Icons.Default.Layers, "Merge", !busy && otherDocuments.isNotEmpty(), run { mergeOpen = true })
+                    ToolTile(Icons.Default.FileCopy, "Duplicate doc", !busy, run { onDuplicateDocument() })
                     ToolTile(Icons.Default.ContentCut, "Split all", !busy && document.pageCount > 1, run { onSplitDocument() })
                 }
             }
@@ -1001,6 +1007,13 @@ internal fun DocumentDetailScreen(
             onConfirm = {
                 onCrop(currentPage.id, it)
                 cropOpen = false
+            },
+            pageIndex = currentIndex,
+            pageCount = pages.size,
+            // Moving to another page keeps the editor open; a changed crop on the page being left is applied first.
+            onPage = { delta, crop ->
+                if (crop != currentPage.crop) onCrop(currentPage.id, crop)
+                pages.getOrNull(currentIndex + delta)?.let { selectedPageId = it.id }
             }
         )
     }

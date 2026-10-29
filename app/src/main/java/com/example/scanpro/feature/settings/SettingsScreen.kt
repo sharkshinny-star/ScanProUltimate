@@ -19,7 +19,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Comment
+import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
@@ -48,6 +50,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,7 +73,12 @@ import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.InsetDivider
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.SupportLinks
+import com.example.scanpro.core.ui.SupportTopic
+import com.example.scanpro.core.ui.contactSupport
+import com.example.scanpro.core.ui.openLink
 import com.example.scanpro.core.ui.openPlayStoreListing
+import com.example.scanpro.core.ui.sharePlayStoreListing
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ThemeMode
 
@@ -124,6 +136,8 @@ fun SettingsScreen(
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
+    var privacyOpen by rememberSaveable { mutableStateOf(false) }
+    if (privacyOpen) PrivacyDialog(onDismiss = { privacyOpen = false })
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
@@ -232,37 +246,67 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Rounded.PrivacyTip,
                         tone = TileTone.Slate,
-                        title = "Privacy policy",
+                        title = "Privacy",
                         subtitle = "No account, nothing uploaded",
                         trailing = { Chevron() },
-                        onClick = { }
+                        onClick = { privacyOpen = true }
                     )
-                    InsetDivider()
-                    SettingsRow(
-                        icon = Icons.Rounded.Description,
-                        tone = TileTone.Slate,
-                        title = "Terms of use",
-                        trailing = { Chevron() },
-                        onClick = { }
-                    )
+                    if (SupportLinks.PRIVACY_POLICY_URL.isNotBlank()) {
+                        InsetDivider()
+                        SettingsRow(
+                            icon = Icons.Rounded.PrivacyTip,
+                            tone = TileTone.Slate,
+                            title = "Privacy policy",
+                            trailing = { Chevron() },
+                            onClick = { openLink(context, SupportLinks.PRIVACY_POLICY_URL) }
+                        )
+                    }
+                    if (SupportLinks.TERMS_OF_USE_URL.isNotBlank()) {
+                        InsetDivider()
+                        SettingsRow(
+                            icon = Icons.Rounded.Description,
+                            tone = TileTone.Slate,
+                            title = "Terms of use",
+                            trailing = { Chevron() },
+                            onClick = { openLink(context, SupportLinks.TERMS_OF_USE_URL) }
+                        )
+                    }
                 }
 
-                SettingsSection("Support") {
+                SettingsSection("Feedback & support") {
                     SettingsRow(
-                        icon = Icons.Rounded.Feedback,
+                        icon = Icons.Rounded.Star,
                         tone = TileTone.Amber,
-                        title = "Send feedback",
-                        subtitle = "Tell us what works and what doesn't",
+                        title = "Rate ScanPro",
+                        subtitle = "Leave a rating on Google Play",
                         trailing = { Chevron() },
                         onClick = { openPlayStoreListing(context) }
                     )
                     InsetDivider()
                     SettingsRow(
-                        icon = Icons.AutoMirrored.Rounded.Comment,
-                        tone = TileTone.Rose,
-                        title = "Request a feature",
+                        icon = Icons.Rounded.Feedback,
+                        tone = TileTone.Teal,
+                        title = "Give feedback",
+                        subtitle = "Tell us what works and what doesn't",
                         trailing = { Chevron() },
-                        onClick = { openPlayStoreListing(context) }
+                        onClick = { contactSupport(context, SupportTopic.FEEDBACK) }
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.BugReport,
+                        tone = TileTone.Rose,
+                        title = "Report an issue",
+                        subtitle = "App and device details are filled in for you",
+                        trailing = { Chevron() },
+                        onClick = { contactSupport(context, SupportTopic.ISSUE) }
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.Lightbulb,
+                        tone = TileTone.Violet,
+                        title = "Suggest a feature",
+                        trailing = { Chevron() },
+                        onClick = { contactSupport(context, SupportTopic.FEATURE) }
                     )
                     InsetDivider()
                     SettingsRow(
@@ -271,7 +315,7 @@ fun SettingsScreen(
                         title = "Share ScanPro",
                         subtitle = "Send the Play Store link to a friend",
                         trailing = { Chevron() },
-                        onClick = { openPlayStoreListing(context) }
+                        onClick = { sharePlayStoreListing(context) }
                     )
                 }
 
@@ -403,4 +447,22 @@ private fun AboutFooter() {
             )
         }
     }
+}
+
+/** The app's privacy facts, in plain words, for the Privacy row. */
+@Composable
+private fun PrivacyDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Your scans stay on this phone") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("ScanPro needs no account and sends nothing to a server. Documents, text recognition and PDF tools all run on the device.")
+                Text("Files are kept in the app's private storage. Other apps only see a document when you share, print or save it yourself.")
+                Text("Translation needs language packs; they are downloaded from Google only when you choose a language and are the one thing that uses the network.")
+                Text("Camera access is used for scanning only. No photo library permission is requested; pictures you import come through the system picker.")
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Got it") } }
+    )
 }

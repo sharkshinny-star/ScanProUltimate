@@ -120,8 +120,32 @@ class DocumentViewModel @Inject constructor(
     fun splitBookSpread(pageId: String, splitFraction: Float) =
         run("Splitting book spread into two pages…", "Book spread split") { repository.splitBookSpread(id, pageId, splitFraction) }
 
-    fun deletePage(pageId: String) =
-        run("Removing page…", "Page removed") { repository.deletePage(id, pageId) }
+    /** Removes the page and offers Undo; the page's files go only once the message is gone. */
+    fun deletePage(pageId: String) = run("Removing page…", null) {
+        repository.deletePage(id, pageId)
+        operations.showMessage(
+            UiMessage(
+                "Page removed",
+                actionLabel = "Undo",
+                onAction = { undoDeletePage() },
+                onDismiss = { repository.purgeRemovedPage(id, pageId) }
+            )
+        )
+    }
+
+    private fun undoDeletePage() = operations.enqueue("Restoring page…", null) {
+        if (!repository.restoreRemovedPage(id)) operations.showMessage("The page could not be restored")
+    }
+
+    fun duplicateDocument() = run("Duplicating document…", null) {
+        val copy = repository.duplicateDocument(id)
+        operations.showMessage(UiMessage("Copy saved as \"${copy.title}\"", actionLabel = "Open") { operations.requestOpenDocument(copy.id) })
+    }
+
+    fun exportPng() = run("Converting pages to PNG…", null) {
+        val files = repository.exportPng(id)
+        operations.publishExport(ExportArtifact(files.first().absolutePath, "image/png", "Share PNG", files.drop(1).map { it.absolutePath }))
+    }
 
     /** Saved signatures, newest first, offered in the signature dialog. */
     val savedSignatures: StateFlow<List<java.io.File>> = signatures.items
