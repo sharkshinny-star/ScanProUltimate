@@ -116,6 +116,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -124,7 +126,9 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import com.example.scanpro.R
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.PageFilter
@@ -142,7 +146,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
 /** How the live preview helps: Auto captures by itself, Manual only outlines the page, No detect does neither. */
-private enum class DetectMode(val label: String) { AUTO("Auto"), MANUAL("Manual"), NO_DETECT("No detect") }
+private enum class DetectMode(@StringRes val label: Int) { AUTO(R.string.scan_detect_auto), MANUAL(R.string.scan_detect_manual), NO_DETECT(R.string.scan_detect_no_detect) }
 
 @Composable
 fun CameraScannerScreen(
@@ -153,6 +157,7 @@ fun CameraScannerScreen(
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
@@ -201,7 +206,7 @@ fun CameraScannerScreen(
     // `status` holds short-lived feedback (captured, errors); live detection guidance is kept separately
     // so the per-frame analyzer callback cannot overwrite it.
     var status by remember { mutableStateOf<String?>(null) }
-    var liveGuidance by remember { mutableStateOf("Point the camera at a document") }
+    var liveGuidance by remember { mutableStateOf(resources.getString(R.string.scan_guidance_point_at_document)) }
     val disposed = remember { AtomicBoolean(false) }
     var autoCaptureSignal by remember { mutableIntStateOf(0) }
     // Saveable, so captured pages survive rotation and process death instead of being lost (and
@@ -275,9 +280,9 @@ fun CameraScannerScreen(
                 }
                 pages.addAll(copied)
                 status = when {
-                    scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front ready · capture the back"
-                    pages.isNotEmpty() -> "${pages.size} page(s) ready"
-                    else -> "Select a document to scan"
+                    scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> resources.getString(R.string.scan_status_front_ready)
+                    pages.isNotEmpty() -> resources.getString(R.string.scan_status_pages_ready, pages.size)
+                    else -> resources.getString(R.string.scan_status_select_document)
                 }
             }
         }
@@ -376,7 +381,7 @@ fun CameraScannerScreen(
         val capture = imageCapture ?: return
         if (capturing || pages.size >= pageLimit) return
         capturing = true
-        status = "Capturing…"
+        status = resources.getString(R.string.scan_status_capturing)
         scope.launch {
             flash.snapTo(0.8f)
             flash.animateTo(0f, tween(280))
@@ -408,16 +413,16 @@ fun CameraScannerScreen(
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                     }
                     status = when {
-                        scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> "Front saved · now capture the back"
-                        scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> "ID capture ready · tap Done"
-                        else -> "Page ${pages.size} captured"
+                        scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> resources.getString(R.string.scan_status_front_saved)
+                        scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> resources.getString(R.string.scan_status_id_ready)
+                        else -> resources.getString(R.string.scan_status_page_captured, pages.size)
                     }
                     if (!batch && scanMode != ScanMode.ID_CARD) finishScan() else flyIntoCounter(raw)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     capturing = false
-                    status = exception.message ?: "Could not capture page"
+                    status = exception.message ?: resources.getString(R.string.scan_error_capture)
                 }
             }
         )
@@ -497,7 +502,7 @@ fun CameraScannerScreen(
                     exposureIndex = 0
                 }
             }.onFailure {
-                liveGuidance = "Camera unavailable. Use compatibility scanner."
+                liveGuidance = resources.getString(R.string.scan_guidance_camera_unavailable)
             }
         }, mainExecutor)
     }
@@ -608,7 +613,7 @@ fun CameraScannerScreen(
             DocumentBoundaryOverlay(detection = detection, stable = stable)
         }
         if (scanMode == ScanMode.ID_CARD) {
-            IdCardFrame(label = if (scanBothSides && pages.size == 1) "Back" else "Front")
+            IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
         }
         focusPoint?.let { point ->
             Box(
@@ -633,21 +638,21 @@ fun CameraScannerScreen(
                 color = Color.Black.copy(alpha = 0.8f)
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Quick tips", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.scan_tips_title), color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                         listOf(
-                            "Hold steady over the page. Once it is outlined and still, it is captured for you.",
-                            "Tap to focus. Tap \"Auto\" at the top to capture by hand.",
-                            "Many pages? Choose Batch above the shutter, then tap the page count to finish.",
-                            "Later, Clean up removes shadows and fingers; Curve flattens book pages."
+                            R.string.scan_tip_hold_steady,
+                            R.string.scan_tip_tap_focus,
+                            R.string.scan_tip_batch,
+                            R.string.scan_tip_cleanup
                         ).forEach { tip ->
-                            Text("• $tip", color = Color.White.copy(alpha = 0.92f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                            Text("• ${stringResource(tip)}", color = Color.White.copy(alpha = 0.92f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
                         }
                     }
                     TextButton(
                         onClick = ::dismissTips,
                         modifier = Modifier.align(Alignment.End)
-                    ) { Text("Got it") }
+                    ) { Text(stringResource(R.string.scan_tips_got_it)) }
                 }
             }
         }
@@ -659,8 +664,8 @@ fun CameraScannerScreen(
                 color = Color.Black.copy(alpha = 0.55f)
             ) {
                 Text(
-                    if (barcodeUnavailable) "The QR reader is still downloading. Connect to the internet, then try again."
-                    else "Point at a QR code or barcode",
+                    if (barcodeUnavailable) stringResource(R.string.scan_qr_downloading)
+                    else stringResource(R.string.scan_qr_point),
                     color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
             }
         }
@@ -679,7 +684,7 @@ fun CameraScannerScreen(
                 color = Color.Black.copy(alpha = 0.55f)
             ) {
                 // "Capturing" only when the shutter really is about to fire on its own; in Manual mode the page is just outlined.
-                val guidance = if (stable && detection?.isReady == true && autoCaptureActive) "Hold… capturing" else liveGuidance
+                val guidance = if (stable && detection?.isReady == true && autoCaptureActive) stringResource(R.string.scan_guidance_hold_capturing) else liveGuidance
                 Text(guidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
             }
         }
@@ -687,10 +692,10 @@ fun CameraScannerScreen(
         if (confirmQuit) {
             AlertDialog(
                 onDismissRequest = { confirmQuit = false },
-                title = { Text("Quit scanning?") },
-                text = { Text("If you quit now, the photos you took will be discarded.") },
-                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text("Discard", color = Color(0xFFEF4444)) } },
-                dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text("Cancel") } }
+                title = { Text(stringResource(R.string.scan_quit_title)) },
+                text = { Text(stringResource(R.string.scan_quit_body)) },
+                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = Color(0xFFEF4444)) } },
+                dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.common_cancel)) } }
             )
         }
 
@@ -700,14 +705,14 @@ fun CameraScannerScreen(
                         Modifier.clickable { detectMenuOpen = true }.padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(detectMode.label, color = Color.White, style = MaterialTheme.typography.titleMedium)
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Detection mode", tint = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(detectMode.label), color = Color.White, style = MaterialTheme.typography.titleMedium)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = stringResource(R.string.scan_detection_mode), tint = MaterialTheme.colorScheme.primary)
                     }
                     DropdownMenu(expanded = detectMenuOpen, onDismissRequest = { detectMenuOpen = false }) {
                         DetectMode.entries.forEach { option ->
                             DropdownMenuItem(
                                 text = {
-                                    Text(option.label, color = if (option == detectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                    Text(stringResource(option.label), color = if (option == detectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                                 },
                                 onClick = { detectMode = option; detectMenuOpen = false; prefs.edit().putString("detect", option.name).apply() }
                             )
@@ -721,23 +726,23 @@ fun CameraScannerScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
-                IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
+                IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
                     IconButton(onClick = { torchEnabled = !torchEnabled }) {
-                        Icon(if (torchEnabled) Icons.Default.Bolt else Icons.Default.FlashOff, contentDescription = "Flash", tint = Color.White)
+                        Icon(if (torchEnabled) Icons.Default.Bolt else Icons.Default.FlashOff, contentDescription = stringResource(R.string.scan_flash), tint = Color.White)
                     }
                 }
                 Box {
                     Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
                         IconButton(onClick = { overflowOpen = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.scan_more_options), tint = Color.White)
                         }
                     }
                     DropdownMenu(expanded = overflowOpen, onDismissRequest = { overflowOpen = false }) {
                         DropdownMenuItem(
-                            text = { Text(if (showAdjustments) "Hide zoom & exposure" else "Zoom & exposure") },
+                            text = { Text(stringResource(if (showAdjustments) R.string.scan_hide_zoom_exposure else R.string.scan_zoom_exposure)) },
                             onClick = { showAdjustments = !showAdjustments; overflowOpen = false }
                         )
                         if (pages.isEmpty() && scanMode != ScanMode.ID_CARD && scanMode != ScanMode.TEXT) {
@@ -749,7 +754,7 @@ fun CameraScannerScreen(
                             }
                         }
                         DropdownMenuItem(
-                            text = { Text("Compatibility scanner") },
+                            text = { Text(stringResource(R.string.scan_compat_scanner)) },
                             onClick = { overflowOpen = false; onFallbackScanner() }
                         )
                     }
@@ -775,13 +780,13 @@ fun CameraScannerScreen(
                 Row(
                     Modifier.background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(3.dp)
                 ) {
-                    listOf(false to "Single", true to "Batch").forEach { (value, text) ->
+                    listOf(false to R.string.scan_mode_single, true to R.string.scan_mode_batch).forEach { (value, text) ->
                         Surface(
                             onClick = { batch = value; prefs.edit().putBoolean("batch", value).apply() },
                             shape = RoundedCornerShape(50),
                             color = if (batch == value) Color.White.copy(alpha = 0.28f) else Color.Transparent
                         ) {
-                            Text(text, color = Color.White, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp))
+                            Text(stringResource(text), color = Color.White, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp))
                         }
                     }
                 }
@@ -790,13 +795,13 @@ fun CameraScannerScreen(
 
             if (showAdjustments) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("1×", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.scan_zoom_min), color = Color.White, style = MaterialTheme.typography.labelSmall)
                     Slider(value = zoom, onValueChange = { zoom = it }, modifier = Modifier.weight(1f).padding(horizontal = 10.dp))
-                    Text("Zoom", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.scan_zoom), color = Color.White, style = MaterialTheme.typography.labelSmall)
                 }
                 if (exposureMin < exposureMax) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("EV", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.scan_ev), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         Slider(
                             value = exposureIndex.toFloat(),
                             // Slider ticks are not exact in float (2.9999998), so round rather than truncate.
@@ -819,9 +824,9 @@ fun CameraScannerScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf(false to "Front only", true to "Both sides").forEach { (both, text) ->
+                    listOf(false to R.string.scan_id_front_only, true to R.string.scan_id_both_sides).forEach { (both, text) ->
                         Text(
-                            text,
+                            stringResource(text),
                             color = if (scanBothSides == both) blue else Color.White,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
@@ -834,11 +839,11 @@ fun CameraScannerScreen(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                listOf(ScanMode.TEXT to "Text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
+                listOf(ScanMode.TEXT to R.string.scan_tab_text, null to R.string.scan_tab_docs, ScanMode.ID_CARD to R.string.scan_tab_id_cards).forEach { (target, text) ->
                     val selected = !barcodeMode &&
                         if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
                     Text(
-                        text,
+                        stringResource(text),
                         color = if (selected) blue else Color.White,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
@@ -850,7 +855,7 @@ fun CameraScannerScreen(
                     )
                 }
                 Text(
-                    "QR code",
+                    stringResource(R.string.scan_qr_code),
                     color = if (barcodeMode) blue else Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
@@ -862,6 +867,7 @@ fun CameraScannerScreen(
                 )
             }
 
+            val takePhotoDescription = stringResource(R.string.scan_take_photo)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -873,8 +879,8 @@ fun CameraScannerScreen(
                             Modifier.clickable { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") File(uri.path.orEmpty()).delete() } }.padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Remove last page", tint = Color.White)
-                            Text("Back", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.scan_remove_last_page), tint = Color.White)
+                            Text(stringResource(R.string.common_back), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -890,7 +896,7 @@ fun CameraScannerScreen(
                     color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
                     border = androidx.compose.foundation.BorderStroke(5.dp, if (stable) blue else Color.White.copy(alpha = 0.5f)),
                     // The shutter has no visible label, so screen readers need one.
-                    modifier = Modifier.size(78.dp).semantics { contentDescription = "Take photo" }
+                    modifier = Modifier.size(78.dp).semantics { contentDescription = takePhotoDescription }
                 ) {}
 
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
@@ -899,8 +905,8 @@ fun CameraScannerScreen(
                             Modifier.clickable { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }.padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(Icons.Default.PhotoLibrary, contentDescription = "Import photos", tint = Color.White)
-                            Text("Import images", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.scan_import_photos), tint = Color.White)
+                            Text(stringResource(R.string.scan_import_images), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     } else if (pages.isNotEmpty()) {
                         Button(
@@ -954,20 +960,20 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
             Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(44.dp))
                 Spacer(Modifier.height(12.dp))
-                Text("Camera permission", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.scan_permission_title), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
-                Text("The Pro scanner needs camera access only while you scan. Your documents stay on this device by default.")
+                Text(stringResource(R.string.scan_permission_body))
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = onRequest) { Text("Allow camera") }
+                Button(onClick = onRequest) { Text(stringResource(R.string.scan_permission_allow)) }
                 // After "Don't ask again" the system dialog no longer appears; settings is the only way back.
                 TextButton(onClick = {
                     context.startActivity(
                         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     )
-                }) { Text("Open app settings") }
-                OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text("Use compatibility scanner") }
-                TextButton(onClick = onClose) { Text("Cancel") }
+                }) { Text(stringResource(R.string.scan_permission_open_settings)) }
+                OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text(stringResource(R.string.scan_permission_use_compat)) }
+                TextButton(onClick = onClose) { Text(stringResource(R.string.common_cancel)) }
             }
         }
     }
@@ -993,7 +999,7 @@ private fun IdCardFrame(label: String) {
             corner(left, top + height, 1f, -1f)
             corner(left + width, top + height, -1f, -1f)
         }
-        Text("Fit it inside the borders", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter).padding(top = 110.dp))
+        Text(stringResource(R.string.scan_id_fit_inside), color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter).padding(top = 110.dp))
         Surface(modifier = Modifier.align(Alignment.Center).offset(y = (-40).dp), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.45f)) {
             Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
         }

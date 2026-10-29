@@ -6,6 +6,14 @@ plugins {
     id("androidx.baselineprofile")
 }
 
+// Two ways to build:
+//  * Default (Google Play): an app bundle, with translation as an on-demand module that Play installs the
+//    first time someone translates. `./gradlew :app:bundleRelease`
+//  * -Pscanpro.sideload=true: standalone APKs to share directly, one per CPU type plus a universal one,
+//    with translation compiled into the app. `./gradlew :app:assembleRelease -Pscanpro.sideload=true`
+// Android does not allow on-demand modules together with per-CPU APK splits, hence the switch.
+val sideload = providers.gradleProperty("scanpro.sideload").orNull == "true"
+
 android {
     namespace = "com.example.scanpro"
     compileSdk = 37
@@ -58,10 +66,11 @@ android {
         }
     }
 
-    // Shared APKs: one small APK per CPU type plus a universal one. Play Store bundles split by CPU on their own.
+    // Shared APKs (sideload builds only): one small APK per CPU type plus a universal one. Play Store
+    // bundles split by CPU on their own.
     splits {
         abi {
-            isEnable = true
+            isEnable = sideload
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86_64")
             isUniversalApk = true
@@ -78,7 +87,17 @@ android {
         buildConfig = true
     }
 
+    if (sideload) {
+        // No Play to deliver modules: the translation code is built into the app instead.
+        sourceSets.getByName("main").java.srcDir("../translate/src/main/java")
+    } else {
+        // Delivered by Google Play when first used; see TranslationFeature and translate/build.gradle.kts.
+        dynamicFeatures += setOf(":translate")
+    }
+
     packaging {
+        // The C++ runtime ships with the :opencv module (from the NDK); Google libraries bundle a copy too.
+        jniLibs { pickFirsts += "**/libc++_shared.so" }
         resources {
             excludes += setOf(
                 "/META-INF/{AL2.0,LGPL2.1}",
@@ -142,9 +161,9 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraX")
     implementation("androidx.camera:camera-view:$cameraX")
 
-    // OpenCV 4.x is deliberately used instead of the newer 5.x major line for
-    // a more conservative production baseline.
-    implementation("org.opencv:opencv:4.14.0")
+    // OpenCV 4.14 trimmed to core, imgproc and photo: a fifth of the Maven artifact's native code.
+    // Built from unmodified sources by scripts/opencv/build-opencv-android.sh (see scripts/opencv/README.md).
+    implementation(project(":opencv"))
 
     // Google scanner remains as a compatibility fallback.
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
@@ -168,8 +187,13 @@ dependencies {
         implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.1")
         implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
     }
-    implementation("com.google.mlkit:translate:17.0.3")
-    implementation("com.google.mlkit:language-id:17.0.6")
+    // ML Kit Translate and language identification live in the on-demand :translate module, or in the app
+    // itself for sideload builds.
+    implementation("com.google.android.play:feature-delivery:2.1.0")
+    if (sideload) {
+        implementation("com.google.mlkit:translate:17.0.3")
+        implementation("com.google.mlkit:language-id:17.0.6")
+    }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
     // Room + Hilt + WorkManager.

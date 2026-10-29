@@ -29,12 +29,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.intelligence.BusinessCard
 import com.example.scanpro.intelligence.DocumentInsights
 import com.example.scanpro.intelligence.DocumentKind
@@ -60,7 +63,7 @@ fun SummaryCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Summary", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.doc_summary), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 Text(insights.kind.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.width(4.dp))
@@ -71,12 +74,15 @@ fun SummaryCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .padding(top = 6.dp)
-                    .clickable(role = Role.Button, onClickLabel = if (expanded) "Show less" else "Show all") { expanded = !expanded }
+                    .clickable(role = Role.Button, onClickLabel = if (expanded) stringResource(R.string.doc_show_less) else stringResource(R.string.doc_show_all)) { expanded = !expanded }
             )
+            val amount = insights.amounts.firstOrNull()
+            val date = insights.dates.firstOrNull()
+            val actionItemCount = insights.actionItems.size
             val facts = listOfNotNull(
-                insights.amounts.firstOrNull()?.let { "Amount $it" },
-                insights.dates.firstOrNull()?.let { "Date $it" },
-                insights.actionItems.size.takeIf { it > 0 }?.let { if (it == 1) "1 action item" else "$it action items" }
+                if (amount != null) stringResource(R.string.doc_fact_amount, amount) else null,
+                if (date != null) stringResource(R.string.doc_fact_date, date) else null,
+                if (actionItemCount > 0) pluralStringResource(R.plurals.doc_action_items, actionItemCount, actionItemCount) else null
             )
             if (facts.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp)) {
@@ -90,11 +96,12 @@ fun SummaryCard(
                     FilledTonalButton(onClick = { onAddContact(card) }) {
                         Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Add to contacts")
+                        Text(stringResource(R.string.doc_add_to_contacts))
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onMore, modifier = Modifier.semantics { onClick(label = "Open insights") { onMore(); true } }) { Text("Details") }
+                val openInsights = stringResource(R.string.doc_open_insights)
+                TextButton(onClick = onMore, modifier = Modifier.semantics { onClick(label = openInsights) { onMore(); true } }) { Text(stringResource(R.string.doc_details)) }
             }
         }
     }

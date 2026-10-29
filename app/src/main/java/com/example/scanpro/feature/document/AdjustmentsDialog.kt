@@ -30,7 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.ScanPage
 import com.example.scanpro.imaging.ImageProcessor
@@ -86,33 +88,33 @@ fun AdjustmentsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Clean up & fine tune") },
+        title = { Text(stringResource(R.string.doc_adjustments_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 preview?.let { bitmap ->
                     Image(
                         bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Adjustment preview",
+                        contentDescription = stringResource(R.string.doc_adjustment_preview),
                         modifier = Modifier
                             .fillMaxWidth()
                             .sizeIn(maxHeight = 300.dp),
                         contentScale = ContentScale.Fit
                     )
-                } ?: Text("Preparing preview…", style = MaterialTheme.typography.bodySmall)
+                } ?: Text(stringResource(R.string.doc_preparing_preview), style = MaterialTheme.typography.bodySmall)
 
                 Spacer(Modifier.height(8.dp))
-                CleanupSwitch("Remove shadows", "Evens out shadows and uneven light on the paper", removeShadows) { removeShadows = it }
-                CleanupSwitch("Remove fingers", "Paints over fingers holding the page edges", removeFingers) { removeFingers = it }
+                CleanupSwitch(stringResource(R.string.doc_remove_shadows), stringResource(R.string.doc_remove_shadows_hint), removeShadows) { removeShadows = it }
+                CleanupSwitch(stringResource(R.string.doc_remove_fingers), stringResource(R.string.doc_remove_fingers_hint), removeFingers) { removeFingers = it }
                 if (pageCount > 1) {
-                    CleanupSwitch("Clean up all $pageCount pages", "Apply the two switches above to every page", allPages) { allPages = it }
+                    CleanupSwitch(stringResource(R.string.doc_clean_up_all_pages, pageCount), stringResource(R.string.doc_clean_up_all_pages_hint), allPages) { allPages = it }
                 }
-                AdjustmentSlider("Brightness", brightness, -1f..1f) { brightness = it }
-                AdjustmentSlider("Contrast", contrast, 0.6f..1.6f) { contrast = it }
-                AdjustmentSlider("Saturation", saturation, 0f..2f) { saturation = it }
+                AdjustmentSlider(stringResource(R.string.doc_brightness), false, brightness, -1f..1f) { brightness = it }
+                AdjustmentSlider(stringResource(R.string.doc_contrast), true, contrast, 0.6f..1.6f) { contrast = it }
+                AdjustmentSlider(stringResource(R.string.doc_saturation), true, saturation, 0f..2f) { saturation = it }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(adjustments, allPages) }) { Text("Apply") }
+            TextButton(onClick = { onConfirm(adjustments, allPages) }) { Text(stringResource(R.string.common_apply)) }
         },
         dismissButton = {
             TextButton(onClick = {
@@ -121,8 +123,8 @@ fun AdjustmentsDialog(
                 saturation = 1f
                 removeShadows = false
                 removeFingers = false
-            }) { Text("Reset") }
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            }) { Text(stringResource(R.string.common_reset)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -147,14 +149,13 @@ private fun CleanupSwitch(title: String, subtitle: String, checked: Boolean, onC
 @Composable
 private fun AdjustmentSlider(
     label: String,
+    /** Show the value as a percentage; brightness is a plain offset. */
+    percent: Boolean,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
     onValueChange: (Float) -> Unit
 ) {
-    val display = when (label) {
-        "Brightness" -> "${(value * 100).roundToInt()}"
-        else -> "${(value * 100).roundToInt()}%"
-    }
-    Text("$label  $display", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 6.dp))
+    val display = if (percent) stringResource(R.string.doc_percent_value, (value * 100).roundToInt()) else "${(value * 100).roundToInt()}"
+    Text(stringResource(R.string.doc_slider_label, label, display), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 6.dp))
     Slider(value = value, onValueChange = onValueChange, valueRange = range)
 }

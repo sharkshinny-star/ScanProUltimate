@@ -54,11 +54,13 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.scanpro.R
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.imaging.ImageProcessor
@@ -111,7 +113,7 @@ fun CropEditorDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White)
                 }
             }
 
@@ -262,7 +264,7 @@ fun CropEditorDialog(
                             drawLine(Color.White, Offset(center.x, center.y - 16.dp.toPx()), Offset(center.x, center.y + 16.dp.toPx()), strokeWidth = 2f)
                         }
                     }
-                } ?: Text("Loading page…", color = Color.White)
+                } ?: Text(stringResource(R.string.doc_loading_page), color = Color.White)
             }
 
             // Bottom Floating Controls + Toolbar
@@ -290,9 +292,9 @@ fun CropEditorDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = stringResource(R.string.doc_previous), tint = Color.White, modifier = Modifier.size(20.dp))
                             Text("1 / 1", color = Color.White, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
-                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.doc_next), tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
 
@@ -308,7 +310,7 @@ fun CropEditorDialog(
                             ) {
                                 Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Add", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.doc_add), color = Color.White, style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
@@ -342,7 +344,7 @@ fun CropEditorDialog(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Crop, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                            Text("Auto crop", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.doc_auto_crop), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -373,7 +375,7 @@ fun CropEditorDialog(
                                 tint = if (curveMode) Color(0xFFF59E0B) else Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
-                            Text("Curve", color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.doc_curve), color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -383,7 +385,7 @@ fun CropEditorDialog(
                     }) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Fullscreen, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                            Text("No crop", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.doc_no_crop), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -391,7 +393,7 @@ fun CropEditorDialog(
                         TextButton(onClick = onRotateLeft) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.AutoMirrored.Filled.RotateLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                Text("Left", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.doc_rotate_left), color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -400,7 +402,7 @@ fun CropEditorDialog(
                         TextButton(onClick = onRotateRight) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                Text("Right", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(R.string.doc_rotate_right), color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -412,7 +414,7 @@ fun CropEditorDialog(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.height(42.dp)
                     ) {
-                        Text("Done", maxLines = 1, softWrap = false)
+                        Text(stringResource(R.string.common_done), maxLines = 1, softWrap = false)
                     }
                 }
             }

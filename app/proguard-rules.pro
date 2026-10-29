@@ -26,3 +26,6 @@
 # through each registrar's no-argument constructor. R8 removes those constructors, ML Kit then starts with
 # no components and every OCR, translation and QR call fails in release builds while debug builds work.
 -keep class * implements com.google.firebase.components.ComponentRegistrar { <init>(); }
+
+# The on-demand translate module's entry point is created by name from TranslationFeature.
+-keep class com.example.scanpro.translate.MlKitTranslator { <init>(); }

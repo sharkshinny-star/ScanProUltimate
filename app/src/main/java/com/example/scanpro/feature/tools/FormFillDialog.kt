@@ -44,10 +44,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.scanpro.R
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.imaging.FormField
 import com.example.scanpro.imaging.FormFieldKind
@@ -77,8 +80,8 @@ internal fun FormFillDialog(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Fill form") },
-                    navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = "Close") } }
+                    title = { Text(stringResource(R.string.tools_form_fill_form)) },
+                    navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close)) } }
                 )
             },
             bottomBar = {
@@ -92,9 +95,9 @@ internal fun FormFillDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text("Flatten", style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(R.string.tools_form_flatten), style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    "Turns the answers into part of the page, so they can't be changed later",
+                                    stringResource(R.string.tools_form_flatten_hint),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -103,7 +106,7 @@ internal fun FormFillDialog(
                             Switch(checked = flatten, onCheckedChange = null)
                         }
                         Button(onClick = { onSave(flatten) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                            Text(if (changed == 0) "Save" else "Save ($changed ${if (changed == 1) "change" else "changes"})")
+                            Text(if (changed == 0) stringResource(R.string.common_save) else pluralStringResource(R.plurals.tools_form_save_changes, changed, changed))
                         }
                     }
                 }
@@ -116,7 +119,7 @@ internal fun FormFillDialog(
             ) {
                 item {
                     Text(
-                        "${session.fields.size} ${if (session.fields.size == 1) "field" else "fields"} in this form",
+                        pluralStringResource(R.plurals.tools_form_field_count, session.fields.size, session.fields.size),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -131,10 +134,10 @@ internal fun FormFillDialog(
     if (confirmDiscard) {
         AlertDialog(
             onDismissRequest = { confirmDiscard = false },
-            title = { Text("Discard your entries?") },
-            text = { Text("The form hasn't been saved. What you entered will be lost.") },
-            confirmButton = { TextButton(onClick = { confirmDiscard = false; onClose() }) { Text("Discard") } },
-            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text("Keep editing") } }
+            title = { Text(stringResource(R.string.tools_form_discard_title)) },
+            text = { Text(stringResource(R.string.tools_form_discard_body)) },
+            confirmButton = { TextButton(onClick = { confirmDiscard = false; onClose() }) { Text(stringResource(R.string.tools_form_discard)) } },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.tools_form_keep_editing)) } }
         )
     }
 }
@@ -143,7 +146,7 @@ internal fun FormFillDialog(
 @Composable
 private fun FieldInput(field: FormField, value: String, onChange: (String) -> Unit) {
     val enabled = !field.readOnly
-    val label = if (field.readOnly) "${field.label} (read-only)" else field.label
+    val label = if (field.readOnly) stringResource(R.string.tools_form_read_only_label, field.label) else field.label
     when (field.kind) {
         FormFieldKind.TEXT -> OutlinedTextField(
             value = value,
@@ -153,7 +156,7 @@ private fun FieldInput(field: FormField, value: String, onChange: (String) -> Un
             singleLine = !field.multiline,
             minLines = if (field.multiline) 3 else 1,
             supportingText = if (field.maxLength > 0) {
-                { Text("${value.length} / ${field.maxLength}") }
+                { Text(stringResource(R.string.tools_form_char_count, value.length, field.maxLength)) }
             } else null,
             modifier = Modifier.fillMaxWidth()
         )
@@ -191,7 +194,7 @@ private fun FieldInput(field: FormField, value: String, onChange: (String) -> Un
                 }
             }
             if (value.isNotEmpty() && enabled) {
-                TextButton(onClick = { onChange("") }) { Text("Clear choice") }
+                TextButton(onClick = { onChange("") }) { Text(stringResource(R.string.tools_form_clear_choice)) }
             }
             HorizontalDivider(Modifier.padding(top = 4.dp))
         }
@@ -213,7 +216,7 @@ private fun FieldInput(field: FormField, value: String, onChange: (String) -> Un
                         .menuAnchor(if (field.editable) ExposedDropdownMenuAnchorType.PrimaryEditable else ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
                 )
                 ExposedDropdownMenu(expanded = expanded && enabled, onDismissRequest = { expanded = false }) {
-                    DropdownMenuItem(text = { Text("None") }, onClick = { onChange(""); expanded = false })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.tools_form_none)) }, onClick = { onChange(""); expanded = false })
                     field.options.forEach { option ->
                         DropdownMenuItem(text = { Text(option.label) }, onClick = { onChange(option.value); expanded = false })
                     }
@@ -252,15 +255,15 @@ internal fun OcrScriptDialog(onDismiss: () -> Unit, onConfirm: (OcrScript) -> Un
     var script by rememberSaveable { mutableStateOf(OcrScript.LATIN) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Make searchable") },
+        title = { Text(stringResource(R.string.tools_ocr_title)) },
         text = {
             Column {
                 Text(
-                    "Pages without text are read on this phone and given an invisible text layer, so you can search, select and copy. Pages that already have text are left as they are.",
+                    stringResource(R.string.tools_ocr_body),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.padding(top = 12.dp))
-                Text("Language of the text", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.tools_ocr_language), style = MaterialTheme.typography.titleSmall)
                 OcrScript.entries.forEach { option ->
                     Row(
                         Modifier
@@ -270,12 +273,12 @@ internal fun OcrScriptDialog(onDismiss: () -> Unit, onConfirm: (OcrScript) -> Un
                     ) {
                         RadioButton(selected = script == option, onClick = null)
                         Spacer(Modifier.width(8.dp))
-                        Text(if (option == OcrScript.LATIN) "Latin (English, Spanish, French…)" else option.label)
+                        Text(if (option == OcrScript.LATIN) stringResource(R.string.tools_ocr_latin_label) else option.label)
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(script) }) { Text("Start") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(onClick = { onConfirm(script) }) { Text(stringResource(R.string.tools_ocr_start)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }

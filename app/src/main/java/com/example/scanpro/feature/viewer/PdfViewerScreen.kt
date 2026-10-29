@@ -76,10 +76,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
+import com.example.scanpro.R
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
@@ -107,6 +110,7 @@ fun PdfViewerScreen(
     onCompress: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     var pageCount by remember { mutableStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
@@ -213,7 +217,7 @@ fun PdfViewerScreen(
                     tempFiles += temp
                     context.contentResolver.openInputStream(pdfUri)?.use { input ->
                         FileOutputStream(temp).use { output -> input.copyTo(output) }
-                    } ?: throw IllegalStateException("Could not open file")
+                    } ?: throw IllegalStateException(resources.getString(R.string.viewer_could_not_open_file))
                 }
                 try {
                     openRenderer(file)
@@ -236,7 +240,7 @@ fun PdfViewerScreen(
                     }
                 }
             } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: "Failed to load document"
+                errorMessage = e.localizedMessage ?: resources.getString(R.string.viewer_load_failed)
             } finally {
                 isLoading = false
             }
@@ -321,7 +325,7 @@ fun PdfViewerScreen(
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search keyword in PDF…") },
+                            placeholder = { Text(stringResource(R.string.viewer_search_placeholder)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             trailingIcon = {
@@ -329,7 +333,7 @@ fun PdfViewerScreen(
                                     CircularProgressIndicator(modifier = Modifier.size(20.dp))
                                 } else if (searchQuery.isNotBlank()) {
                                     IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.viewer_clear))
                                     }
                                 }
                             }
@@ -345,7 +349,7 @@ fun PdfViewerScreen(
                             )
                             if (pageCount > 0) {
                                 Text(
-                                    text = if (isImageMode) "Image Preview" else "Page $currentPage of $pageCount",
+                                    text = if (isImageMode) stringResource(R.string.viewer_image_preview) else stringResource(R.string.viewer_page_of, currentPage, pageCount),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1
@@ -356,14 +360,14 @@ fun PdfViewerScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (isSearchActive) {
                         if (matchingPageIndices.isNotEmpty()) {
                             Text(
-                                "${currentMatchIdx + 1}/${matchingPageIndices.size}",
+                                stringResource(R.string.viewer_match_position, currentMatchIdx + 1, matchingPageIndices.size),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -376,7 +380,7 @@ fun PdfViewerScreen(
                                     }
                                 }
                             ) {
-                                Icon(Icons.Default.ArrowUpward, contentDescription = "Previous match")
+                                Icon(Icons.Default.ArrowUpward, contentDescription = stringResource(R.string.viewer_previous_match))
                             }
                             IconButton(
                                 onClick = {
@@ -386,31 +390,31 @@ fun PdfViewerScreen(
                                     }
                                 }
                             ) {
-                                Icon(Icons.Default.ArrowDownward, contentDescription = "Next match")
+                                Icon(Icons.Default.ArrowDownward, contentDescription = stringResource(R.string.viewer_next_match))
                             }
                         } else if (searchQuery.isNotBlank() && !isSearchingText) {
                             Text(
-                                "0 matches",
+                                stringResource(R.string.viewer_no_matches),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(horizontal = 4.dp)
                             )
                         }
                         IconButton(onClick = { isSearchActive = false; searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Close search")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.viewer_close_search))
                         }
                     } else {
                         if (!isImageMode) {
                             IconButton(onClick = { isSearchActive = true }) {
-                                Icon(Icons.Default.Search, contentDescription = "Search PDF")
+                                Icon(Icons.Default.Search, contentDescription = stringResource(R.string.viewer_search_pdf))
                             }
                         }
                         IconButton(onClick = onShare) {
-                            Icon(Icons.Default.Share, contentDescription = "Share")
+                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.common_share))
                         }
                         if (!isImageMode) {
                             IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More")
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more))
                             }
                             DropdownMenu(
                                 expanded = showMenu,
@@ -418,13 +422,13 @@ fun PdfViewerScreen(
                             ) {
                                 if (pageCount > 1) {
                                     DropdownMenuItem(
-                                        text = { Text("Go to Page") },
+                                        text = { Text(stringResource(R.string.viewer_go_to_page)) },
                                         onClick = { showMenu = false; showJumpDialog = true },
                                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
                                     )
                                 }
                                 DropdownMenuItem(
-                                    text = { Text(if (scale > 1f) "Reset Zoom" else "Zoom In") },
+                                    text = { Text(stringResource(if (scale > 1f) R.string.viewer_reset_zoom else R.string.viewer_zoom_in)) },
                                     onClick = {
                                         showMenu = false
                                         scale = if (scale > 1f) 1f else 1.8f
@@ -437,20 +441,20 @@ fun PdfViewerScreen(
                                 )
                                 if (onCompress != null) {
                                     DropdownMenuItem(
-                                        text = { Text("Compress PDF") },
+                                        text = { Text(stringResource(R.string.viewer_compress_pdf)) },
                                         onClick = { showMenu = false; onCompress() },
                                         leadingIcon = { Icon(Icons.Default.Compress, contentDescription = null) }
                                     )
                                 }
                                 if (onProtect != null) {
                                     DropdownMenuItem(
-                                        text = { Text("Protect with Password") },
+                                        text = { Text(stringResource(R.string.viewer_protect_with_password)) },
                                         onClick = { showMenu = false; onProtect() },
                                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
                                     )
                                 }
                                 DropdownMenuItem(
-                                    text = { Text("Print / Save as PDF") },
+                                    text = { Text(stringResource(R.string.viewer_print_save_as_pdf)) },
                                     // The file on screen: a picked (content://) PDF has no path of its own, and a
                                     // protected one is shown from its unlocked copy. Before it is open, share instead.
                                     onClick = { showMenu = false; openedFile?.let { printPdfFile(context, it, title) } ?: onShare() },
@@ -478,7 +482,7 @@ fun PdfViewerScreen(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Loading document…", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.viewer_loading_document), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
                 errorMessage != null -> {
@@ -490,14 +494,14 @@ fun PdfViewerScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Error Loading File",
+                            text = stringResource(R.string.viewer_error_loading_file),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = errorMessage ?: "Unknown error",
+                            text = errorMessage ?: stringResource(R.string.viewer_unknown_error),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -584,7 +588,7 @@ fun PdfViewerScreen(
                             shadowElevation = 4.dp
                         ) {
                             Text(
-                                text = "$currentPage / $pageCount",
+                                text = stringResource(R.string.viewer_page_counter, currentPage, pageCount),
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
@@ -614,7 +618,7 @@ fun PdfViewerScreen(
                             passwordError = null
                             needsPassword = false
                         } catch (e: Exception) {
-                            passwordError = "That password didn't work"
+                            passwordError = resources.getString(R.string.viewer_wrong_password)
                         } finally {
                             unlocking = false
                         }
@@ -690,7 +694,7 @@ private fun PdfPageItem(
             if (bitmap != null) {
                 Image(
                     bitmap = bitmap!!.asImageBitmap(),
-                    contentDescription = "Page ${pageIndex + 1}",
+                    contentDescription = stringResource(R.string.viewer_page_number, pageIndex + 1),
                     modifier = Modifier.fillMaxSize(),
                     filterQuality = FilterQuality.High
                 )
@@ -713,10 +717,10 @@ private fun JumpToPageDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Go to Page") },
+        title = { Text(stringResource(R.string.viewer_go_to_page)) },
         text = {
             Column {
-                Text("Enter page number (1 to $pageCount):", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.viewer_enter_page_number, pageCount), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = textValue,
@@ -726,11 +730,11 @@ private fun JumpToPageDialog(
                     },
                     isError = isError,
                     singleLine = true,
-                    label = { Text("Page Number") }
+                    label = { Text(stringResource(R.string.viewer_page_number_label)) }
                 )
                 if (isError) {
                     Text(
-                        "Please enter a number between 1 and $pageCount",
+                        stringResource(R.string.viewer_page_number_error, pageCount),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 4.dp)
@@ -749,12 +753,12 @@ private fun JumpToPageDialog(
                     }
                 }
             ) {
-                Text("Jump")
+                Text(stringResource(R.string.viewer_jump))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -765,17 +769,17 @@ private fun PdfPasswordDialog(error: String?, onCancel: () -> Unit, onSubmit: (S
     var password by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text("Password required") },
+        title = { Text(stringResource(R.string.viewer_password_required)) },
         text = {
             Column {
-                Text("This PDF is protected. Enter its password to open it.", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.viewer_password_body), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     singleLine = true,
                     isError = error != null,
-                    label = { Text("Password") },
+                    label = { Text(stringResource(R.string.viewer_password_label)) },
                     visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
                 )
                 if (error != null) {
@@ -783,8 +787,8 @@ private fun PdfPasswordDialog(error: String?, onCancel: () -> Unit, onSubmit: (S
                 }
             }
         },
-        confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { onSubmit(password) }) { Text("Open") } },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } }
+        confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { onSubmit(password) }) { Text(stringResource(R.string.viewer_open)) } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) } }
     )
 }
 

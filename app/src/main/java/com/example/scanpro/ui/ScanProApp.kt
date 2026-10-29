@@ -26,9 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.example.scanpro.AppViewModel
+import com.example.scanpro.R
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
 import com.example.scanpro.navigation.ScanProDestinations
@@ -115,26 +117,26 @@ fun ScanProApp(
         var password by remember(request) { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = viewModel::cancelPdfPassword,
-            title = { Text("Password required") },
+            title = { Text(stringResource(R.string.ui_pdf_password_title)) },
             text = {
                 Column {
-                    Text("This PDF is protected. Enter its password to import it.")
+                    Text(stringResource(R.string.ui_pdf_password_body))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         singleLine = true,
                         isError = request.wrongPassword,
-                        label = { Text("Password") },
+                        label = { Text(stringResource(R.string.ui_password_label)) },
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.padding(top = 12.dp)
                     )
                     if (request.wrongPassword) {
-                        Text("That password didn't work", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+                        Text(stringResource(R.string.ui_pdf_password_wrong), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             },
-            confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { viewModel.importPdf(request.uri, password) }) { Text("Import") } },
-            dismissButton = { TextButton(onClick = viewModel::cancelPdfPassword) { Text("Cancel") } }
+            confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { viewModel.importPdf(request.uri, password) }) { Text(stringResource(R.string.ui_pdf_password_import)) } },
+            dismissButton = { TextButton(onClick = viewModel::cancelPdfPassword) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 

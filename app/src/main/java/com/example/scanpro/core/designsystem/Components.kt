@@ -37,10 +37,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.imaging.ThumbnailStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -112,7 +114,7 @@ fun PageThumbnail(
             val imageBitmap = remember(image) { image.asImageBitmap() }
             Image(
                 bitmap = imageBitmap,
-                contentDescription = "Scanned page",
+                contentDescription = stringResource(R.string.ui_scanned_page),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )
@@ -125,7 +127,7 @@ fun TextInputDialog(
     title: String,
     initial: String = "",
     label: String,
-    confirmLabel: String = "Save",
+    confirmLabel: String = stringResource(R.string.common_save),
     maxLines: Int = 1,
     allowBlank: Boolean = false,
     onDismiss: () -> Unit,
@@ -164,7 +166,7 @@ fun TextInputDialog(
             ) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -185,7 +187,7 @@ fun ConfirmDialog(
             TextButton(onClick = onConfirm) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -210,12 +212,12 @@ fun PasswordInputDialog(
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it },
-                    label = { Text("Password") },
+                    label = { Text(stringResource(R.string.ui_password_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    supportingText = { Text("Minimum $minimumLength characters") }
+                    supportingText = { Text(stringResource(R.string.ui_password_minimum_chars, minimumLength)) }
                 )
             }
         },
@@ -225,7 +227,7 @@ fun PasswordInputDialog(
                 onClick = { onConfirm(value) }
             ) { Text(confirmLabel) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }
 

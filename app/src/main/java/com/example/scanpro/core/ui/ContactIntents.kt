@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.ContactsContract
 import android.widget.Toast
+import com.example.scanpro.R
 
 /** What is known about a person or company, to fill the system "new contact" form. */
 data class ContactDraft(
@@ -59,6 +60,6 @@ fun openNewContactForm(context: Context, draft: ContactDraft) {
     try {
         context.startActivity(intent)
     } catch (_: ActivityNotFoundException) {
-        Toast.makeText(context, "No contacts app found", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_no_contacts_app), Toast.LENGTH_SHORT).show()
     }
 }

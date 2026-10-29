@@ -70,7 +70,7 @@ class MainActivity : FragmentActivity() {
         val pdfUri = scan?.pdf?.uri
         val pageUris = scan?.pages?.map { it.imageUri }.orEmpty()
         if (pdfUri == null && pageUris.isEmpty()) {
-            viewModel.showMessage("The compatibility scanner did not return any pages")
+            viewModel.showMessage(getString(R.string.main_compat_scanner_no_pages))
         } else {
             viewModel.importScan(pdfUri, pageUris)
         }
@@ -137,7 +137,7 @@ class MainActivity : FragmentActivity() {
                                 onNoScreenLock = {
                                     viewModel.setAppLock(false)
                                     viewModel.markUnlocked()
-                                    viewModel.showMessage("This device no longer has a screen lock, so app lock was turned off")
+                                    viewModel.showMessage(getString(R.string.main_screen_lock_removed))
                                 }
                             ) { viewModel.markUnlocked() }
                         },
@@ -314,7 +314,7 @@ class MainActivity : FragmentActivity() {
                 scannerLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
             }
             .addOnFailureListener { error ->
-                viewModel.showMessage(error.message ?: "Compatibility scanner is unavailable on this device")
+                viewModel.showMessage(error.message ?: getString(R.string.main_compat_scanner_unavailable))
             }
     }
 
@@ -337,11 +337,11 @@ class MainActivity : FragmentActivity() {
             BiometricManager.BIOMETRIC_SUCCESS -> Unit
             BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
                 if (onNoScreenLock != null) onNoScreenLock()
-                else viewModel.showMessage("Set up a screen lock on this device to use app lock")
+                else viewModel.showMessage(getString(R.string.main_set_up_screen_lock))
                 return
             }
             else -> {
-                viewModel.showMessage("Device authentication is unavailable right now. Try again shortly.")
+                viewModel.showMessage(getString(R.string.main_device_auth_unavailable))
                 return
             }
         }
@@ -365,8 +365,8 @@ class MainActivity : FragmentActivity() {
         )
 
         val infoBuilder = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock ScanPro")
-            .setSubtitle("Authenticate to access your private document library")
+            .setTitle(getString(R.string.main_unlock_title))
+            .setSubtitle(getString(R.string.main_unlock_subtitle))
             .setAllowedAuthenticators(authenticators)
 
         prompt.authenticate(infoBuilder.build())

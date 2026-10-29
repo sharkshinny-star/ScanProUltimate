@@ -50,10 +50,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
+import com.example.scanpro.R
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,11 +69,11 @@ import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatTrashCountdown
 import com.example.scanpro.core.ui.formatBytes
 
-private enum class TrashSortOption(val label: String) {
-    EXPIRY("Soonest to expire"),
-    DATE("Deletion date"),
-    NAME("File name"),
-    SIZE("File size")
+private enum class TrashSortOption(@StringRes val label: Int) {
+    EXPIRY(R.string.trash_sort_expiry),
+    DATE(R.string.trash_sort_date),
+    NAME(R.string.trash_sort_name),
+    SIZE(R.string.trash_sort_size)
 }
 
 @Composable
@@ -128,16 +132,16 @@ internal fun TrashScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recycle Bin") },
+                title = { Text(stringResource(R.string.trash_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (documents.isNotEmpty()) {
                         TextButton(enabled = !busy, onClick = { showEmptyDialog = true }) {
-                            Text("Empty", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.trash_empty_action), color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -169,10 +173,10 @@ internal fun TrashScreen(
                     }
                 }
                 Spacer(Modifier.height(20.dp))
-                Text("Recycle Bin is Empty", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.trash_empty_title), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Deleted files will appear here for 7 days before being permanently removed.",
+                    stringResource(R.string.trash_empty_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -202,7 +206,7 @@ internal fun TrashScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Files are automatically deleted after 7 days.",
+                            stringResource(R.string.trash_auto_delete_notice),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -218,7 +222,7 @@ internal fun TrashScreen(
                         FilterChip(
                             selected = sortOption == option,
                             onClick = { sortOption = option },
-                            label = { Text(option.label) }
+                            label = { Text(stringResource(option.label)) }
                         )
                     }
                 }
@@ -265,19 +269,19 @@ internal fun TrashScreen(
                                         )
                                     }
                                     Spacer(Modifier.height(2.dp))
-                                    val pagesLabel = if (doc.pageCount == 1) "1 page" else "${doc.pageCount} pages"
-                                    Text("$pagesLabel • ${formatBytes(doc.sizeBytes)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    val pagesLabel = pluralStringResource(R.plurals.trash_pages, doc.pageCount, doc.pageCount)
+                                    Text(stringResource(R.string.trash_doc_meta, pagesLabel, formatBytes(doc.sizeBytes)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Box {
                                     IconButton(enabled = !busy, onClick = { activeMenuDocId = doc.id }) {
-                                        Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.trash_cd_more_actions))
                                     }
                                     DropdownMenu(
                                         expanded = activeMenuDocId == doc.id,
                                         onDismissRequest = { activeMenuDocId = null }
                                     ) {
                                         DropdownMenuItem(
-                                            text = { Text("Restore") },
+                                            text = { Text(stringResource(R.string.trash_restore)) },
                                             leadingIcon = { Icon(Icons.Default.Restore, contentDescription = null) },
                                             onClick = {
                                                 activeMenuDocId = null
@@ -285,7 +289,7 @@ internal fun TrashScreen(
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Delete Permanently", color = MaterialTheme.colorScheme.error) },
+                                            text = { Text(stringResource(R.string.trash_delete_permanently), color = MaterialTheme.colorScheme.error) },
                                             leadingIcon = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                             onClick = {
                                                 activeMenuDocId = null
@@ -304,9 +308,9 @@ internal fun TrashScreen(
 
     if (deleteSingleDoc != null) {
         ConfirmDialog(
-            title = "Delete permanently?",
-            message = "This file will be permanently deleted and cannot be recovered. Are you sure?",
-            confirmLabel = "Delete",
+            title = stringResource(R.string.trash_delete_dialog_title),
+            message = stringResource(R.string.trash_delete_dialog_message),
+            confirmLabel = stringResource(R.string.common_delete),
             onDismiss = { deleteSingleDoc = null },
             onConfirm = {
                 val id = deleteSingleDoc?.id
@@ -318,9 +322,9 @@ internal fun TrashScreen(
 
     if (showEmptyDialog) {
         ConfirmDialog(
-            title = "Empty Recycle Bin?",
-            message = "This will permanently delete all files in the Recycle Bin. This action cannot be undone.",
-            confirmLabel = "Empty",
+            title = stringResource(R.string.trash_empty_dialog_title),
+            message = stringResource(R.string.trash_empty_dialog_message),
+            confirmLabel = stringResource(R.string.trash_empty_action),
             onDismiss = { showEmptyDialog = false },
             onConfirm = {
                 showEmptyDialog = false

@@ -3,6 +3,7 @@ package com.example.scanpro.feature.tools
 import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -106,12 +107,15 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.core.ui.copyFileToUri
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
@@ -131,26 +135,26 @@ import java.io.File
 
 data class PdfToolCard(
     val id: String,
-    val title: String,
-    val description: String,
+    @StringRes val title: Int,
+    @StringRes val description: Int,
     val icon: ImageVector,
-    val badge: String? = null
+    @StringRes val badge: Int? = null
 )
 
 private val PDF_TOOLS = listOf(
-    PdfToolCard("fill", "Fill Form", "Type into a PDF form's fields, tick boxes and save", Icons.Default.EditNote, badge = "New"),
-    PdfToolCard("ocr", "Make Searchable", "Add selectable, searchable text to scanned PDFs", Icons.Default.FindInPage, badge = "New"),
-    PdfToolCard("compress", "Compress PDF", "Reduce PDF size with quality preset options", Icons.Default.Compress),
-    PdfToolCard("merge", "Merge PDFs", "Combine multiple PDFs into a single document", Icons.Default.Merge),
-    PdfToolCard("split", "Split PDF", "Divide PDF by pages, ranges, or fixed chunks", Icons.Default.CallSplit),
-    PdfToolCard("extract", "Extract Pages", "Pick specific pages and save as a new PDF", Icons.AutoMirrored.Filled.DriveFileMove),
-    PdfToolCard("rotate", "Rotate Pages", "Rotate PDF pages 90°, 180°, or 270°", Icons.AutoMirrored.Filled.RotateRight),
-    PdfToolCard("organize", "Organize Pages", "Reorder, delete, and manage PDF pages", Icons.Default.Description),
-    PdfToolCard("img2pdf", "Images to PDF", "Convert gallery photos into a styled PDF", Icons.Default.Image),
-    PdfToolCard("pdf2img", "PDF to Images", "Export PDF pages as JPEG or PNG images", Icons.Default.PictureAsPdf),
-    PdfToolCard("protect", "Protect PDF", "Encrypt PDF with strong password protection", Icons.Default.Lock),
-    PdfToolCard("unlock", "Unlock PDF", "Remove password security from a protected PDF", Icons.Default.LockOpen),
-    PdfToolCard("viewer", "PDF Viewer", "Interactive reader with pinch-to-zoom & search", Icons.Default.Visibility)
+    PdfToolCard("fill", R.string.tools_fill_form, R.string.tools_fill_form_desc, Icons.Default.EditNote, badge = R.string.tools_badge_new),
+    PdfToolCard("ocr", R.string.tools_make_searchable, R.string.tools_make_searchable_desc, Icons.Default.FindInPage, badge = R.string.tools_badge_new),
+    PdfToolCard("compress", R.string.tools_compress_pdf, R.string.tools_compress_pdf_desc, Icons.Default.Compress),
+    PdfToolCard("merge", R.string.tools_merge_pdfs, R.string.tools_merge_pdfs_desc, Icons.Default.Merge),
+    PdfToolCard("split", R.string.tools_split_pdf, R.string.tools_split_pdf_desc, Icons.Default.CallSplit),
+    PdfToolCard("extract", R.string.tools_extract_pages, R.string.tools_extract_pages_desc, Icons.AutoMirrored.Filled.DriveFileMove),
+    PdfToolCard("rotate", R.string.tools_rotate_pages, R.string.tools_rotate_pages_desc, Icons.AutoMirrored.Filled.RotateRight),
+    PdfToolCard("organize", R.string.tools_organize_pages, R.string.tools_organize_pages_desc, Icons.Default.Description),
+    PdfToolCard("img2pdf", R.string.tools_images_to_pdf, R.string.tools_images_to_pdf_desc, Icons.Default.Image),
+    PdfToolCard("pdf2img", R.string.tools_pdf_to_images, R.string.tools_pdf_to_images_desc, Icons.Default.PictureAsPdf),
+    PdfToolCard("protect", R.string.tools_protect_pdf, R.string.tools_protect_pdf_desc, Icons.Default.Lock),
+    PdfToolCard("unlock", R.string.tools_unlock_pdf, R.string.tools_unlock_pdf_desc, Icons.Default.LockOpen),
+    PdfToolCard("viewer", R.string.tools_pdf_viewer, R.string.tools_pdf_viewer_desc, Icons.Default.Visibility)
 )
 
 private data class ThumbnailPageModel(
@@ -167,7 +171,10 @@ fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val snackbarHostState = remember { SnackbarHostState() }
+    // Read here: the picker callbacks and dialog buttons below are not composable scopes.
+    val pdfDocumentTitle = stringResource(R.string.tools_pdf_document)
 
     val progress by viewModel.progress.collectAsStateWithLifecycle()
     val lastResult by viewModel.result.collectAsStateWithLifecycle()
@@ -218,7 +225,7 @@ fun PdfToolsScreen(
                     if (!copied) runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, destUri) }
                 }
             }
-            Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, resources.getString(if (ok) R.string.tools_saved_to_location else R.string.tools_could_not_save_file), Toast.LENGTH_SHORT).show()
         }
     }
     val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { saveTo(it) }
@@ -239,7 +246,7 @@ fun PdfToolsScreen(
             "unlock" -> viewModel.inspectForUnlock(uri)
             "split" -> showSplitDialog = true
             "organize", "extract", "rotate" -> showOrganizerSheet = true
-            "viewer" -> onOpenPdfViewer(uri, "PDF Document")
+            "viewer" -> onOpenPdfViewer(uri, pdfDocumentTitle)
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
         }
@@ -259,7 +266,7 @@ fun PdfToolsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "PDF Toolkit",
+                        stringResource(R.string.tools_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -371,11 +378,10 @@ fun PdfToolsScreen(
                 AlertDialog(
                     onDismissRequest = viewModel::clearUnlockNotice,
                     icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                    title = { Text(if (restricted) "No password to open" else "This PDF has no password") },
+                    title = { Text(stringResource(if (restricted) R.string.tools_unlock_no_open_password_title else R.string.tools_unlock_no_password_title)) },
                     text = {
                         Text(
-                            if (restricted) "This PDF opens without a password, but it has editing or copying restrictions. You can remove those, or just view it."
-                            else "There is nothing to unlock. You can view it, or protect it with a password instead."
+                            stringResource(if (restricted) R.string.tools_unlock_restricted_body else R.string.tools_unlock_nothing_body)
                         )
                     },
                     confirmButton = {
@@ -388,15 +394,15 @@ fun PdfToolsScreen(
                                 selectedTool = "protect"
                                 showPasswordDialog = true
                             }
-                        }) { Text(if (restricted) "Remove restrictions" else "Set password") }
+                        }) { Text(stringResource(if (restricted) R.string.tools_unlock_remove_restrictions else R.string.tools_unlock_set_password)) }
                     },
                     dismissButton = {
                         Row {
                             TextButton(onClick = {
                                 viewModel.clearUnlockNotice()
-                                onOpenPdfViewer(noticeUri, "PDF Document")
-                            }) { Text("View PDF") }
-                            TextButton(onClick = viewModel::clearUnlockNotice) { Text("Cancel") }
+                                onOpenPdfViewer(noticeUri, pdfDocumentTitle)
+                            }) { Text(stringResource(R.string.tools_view_pdf)) }
+                            TextButton(onClick = viewModel::clearUnlockNotice) { Text(stringResource(R.string.common_cancel)) }
                         }
                     }
                 )
@@ -406,7 +412,7 @@ fun PdfToolsScreen(
                 val isProtect = selectedTool == "protect"
                 PasswordDialog(
                     isProtect = isProtect,
-                    initialError = if (!isProtect && wrongPassword) "That password didn't work. Try again." else null,
+                    initialError = if (!isProtect && wrongPassword) stringResource(R.string.tools_wrong_password_try_again) else null,
                     onDismiss = { showPasswordDialog = false; viewModel.clearWrongPassword() },
                     onConfirm = { pwd ->
                         showPasswordDialog = false
@@ -490,10 +496,10 @@ private fun CompressPdfDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Compress PDF Target") },
+        title = { Text(stringResource(R.string.tools_compress_title)) },
         text = {
             Column {
-                Text("Drag slider to select target compression ratio:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.tools_compress_drag_hint), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Card(
@@ -505,7 +511,7 @@ private fun CompressPdfDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Original Size:", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.tools_compress_original_size), style = MaterialTheme.typography.labelMedium)
                             Text(formatBytes(originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -513,9 +519,9 @@ private fun CompressPdfDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Estimated Output:", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.tools_compress_estimated_output), style = MaterialTheme.typography.labelMedium)
                             Text(
-                                "~${formatBytes(estimatedSize)} (-$estimatedSavings%)",
+                                stringResource(R.string.tools_compress_estimate_value, formatBytes(estimatedSize), estimatedSavings),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -531,8 +537,8 @@ private fun CompressPdfDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Compression Reduction:", style = MaterialTheme.typography.labelLarge)
-                    Text("${compressionPercent.toInt()}%", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.tools_compress_reduction), style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.tools_compress_percent, compressionPercent.toInt()), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
 
                 Slider(
@@ -547,8 +553,8 @@ private fun CompressPdfDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("High Quality\n(15% reduction)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Max Compression\n(85% reduction)", style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.tools_compress_high_quality_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.tools_compress_max_compression_label), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -561,30 +567,30 @@ private fun CompressPdfDialog(
                         selected = compressionPercent in 15f..35f,
                         onClick = { compressionPercent = 25f },
                         modifier = Modifier.weight(1f),
-                        label = { Text("High", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
+                        label = { Text(stringResource(R.string.tools_compress_high), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
                     )
                     FilterChip(
                         selected = compressionPercent in 36f..60f,
                         onClick = { compressionPercent = 50f },
                         modifier = Modifier.weight(1f),
-                        label = { Text("Balanced", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
+                        label = { Text(stringResource(R.string.tools_compress_balanced), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
                     )
                     FilterChip(
                         selected = compressionPercent > 60f,
                         onClick = { compressionPercent = 75f },
                         modifier = Modifier.weight(1f),
-                        label = { Text("Maximum", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
+                        label = { Text(stringResource(R.string.tools_compress_maximum), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
                     )
                 }
             }
         },
         confirmButton = {
             Button(onClick = { onConfirm(preset) }) {
-                Text("Compress PDF")
+                Text(stringResource(R.string.tools_compress_pdf))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -598,33 +604,33 @@ private fun PdfToImagesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("PDF to Images Options") },
+        title = { Text(stringResource(R.string.tools_pdf2img_title)) },
         text = {
             Column {
-                Text("Select target image export format:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.tools_pdf2img_hint), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = format == ImageExportFormat.JPEG,
                         onClick = { format = ImageExportFormat.JPEG },
-                        label = { Text("JPEG Image (.jpg)") }
+                        label = { Text(stringResource(R.string.tools_pdf2img_jpeg)) }
                     )
                     FilterChip(
                         selected = format == ImageExportFormat.PNG,
                         onClick = { format = ImageExportFormat.PNG },
-                        label = { Text("PNG Image (.png)") }
+                        label = { Text(stringResource(R.string.tools_pdf2img_png)) }
                     )
                 }
             }
         },
         confirmButton = {
             Button(onClick = { onConfirm(format) }) {
-                Text("Export Page Images")
+                Text(stringResource(R.string.tools_pdf2img_export))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -641,8 +647,8 @@ private fun RecentPdfsRow(
     var removing by remember { mutableStateOf<RecentPdf?>(null) }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Recent PDFs", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            TextButton(onClick = onClear) { Text("Clear") }
+            Text(stringResource(R.string.tools_recent_pdfs), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            TextButton(onClick = onClear) { Text(stringResource(R.string.tools_recent_clear)) }
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(items, key = { it.uri.toString() }) { pdf ->
@@ -653,8 +659,8 @@ private fun RecentPdfsRow(
                         .width(150.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .combinedClickable(
-                            onClickLabel = "Open",
-                            onLongClickLabel = "Remove from recent",
+                            onClickLabel = stringResource(R.string.tools_recent_open),
+                            onLongClickLabel = stringResource(R.string.tools_recent_remove_from_recent),
                             onLongClick = { removing = pdf },
                             onClick = { onOpen(pdf) }
                         )
@@ -671,10 +677,10 @@ private fun RecentPdfsRow(
     removing?.let { pdf ->
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text("Remove from recent?") },
-            text = { Text("\"${pdf.name}\" stays on your device; it is only removed from this list.") },
-            confirmButton = { TextButton(onClick = { onRemove(pdf); removing = null }) { Text("Remove") } },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } }
+            title = { Text(stringResource(R.string.tools_recent_remove_title)) },
+            text = { Text(stringResource(R.string.tools_recent_remove_body, pdf.name)) },
+            confirmButton = { TextButton(onClick = { onRemove(pdf); removing = null }) { Text(stringResource(R.string.tools_recent_remove)) } },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 }
@@ -706,7 +712,7 @@ private fun ToolCardItem(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = tool.icon,
-                        contentDescription = tool.title,
+                        contentDescription = stringResource(tool.title),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
@@ -714,7 +720,7 @@ private fun ToolCardItem(
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = tool.title,
+                text = stringResource(tool.title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -722,7 +728,7 @@ private fun ToolCardItem(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = tool.description,
+                text = stringResource(tool.description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
@@ -758,7 +764,7 @@ private fun ProcessingOverlay(
                     CircularProgressIndicator(modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Processing PDF",
+                        text = stringResource(R.string.tools_processing_pdf),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -777,14 +783,14 @@ private fun ProcessingOverlay(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "$current / $total",
+                            text = stringResource(R.string.tools_progress_count, current, total),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.height(20.dp))
                     OutlinedButton(onClick = onCancel) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
                 }
             }
@@ -814,7 +820,7 @@ private fun ResultDialog(
             ) {
                 Text(result.outputFile.nameWithoutExtension, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
                 }
             }
         },
@@ -843,7 +849,7 @@ private fun ResultDialog(
                     ) {
                         Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (result.outputFile.extension.equals("pdf", ignoreCase = true)) "Preview PDF" else "Open")
+                        Text(stringResource(if (result.outputFile.extension.equals("pdf", ignoreCase = true)) R.string.tools_result_preview_pdf else R.string.tools_result_open))
                     }
                 }
 
@@ -861,7 +867,7 @@ private fun ResultDialog(
                         modifier = Modifier.size(64.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(Icons.Default.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.common_share), tint = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                     }
 
@@ -872,7 +878,7 @@ private fun ResultDialog(
                         modifier = Modifier.size(64.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(Icons.Default.Download, contentDescription = "Save PDF to local", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Icon(Icons.Default.Download, contentDescription = stringResource(R.string.tools_result_save_pdf_to_local_cd), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
                     }
                 }
@@ -881,13 +887,13 @@ private fun ResultDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text("Share", style = MaterialTheme.typography.labelSmall)
-                    Text("Save to Local", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.common_share), style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.tools_result_save_to_local), style = MaterialTheme.typography.labelSmall)
                 }
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) { Text("Done") }
+            Button(onClick = onDismiss) { Text(stringResource(R.string.common_done)) }
         }
     )
 
@@ -925,7 +931,7 @@ fun SmartShareSheet(
             ) {
                 Text(file.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
                 }
             }
 
@@ -936,7 +942,7 @@ fun SmartShareSheet(
                 "image/jpeg" -> "JPG"
                 else -> "PDF"
             }
-            Text("Share as $kind via", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.tools_share_as_via, kind), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(12.dp))
 
             // One share action with the file's real type. Offering "Share as JPG" for a PDF sent PDF bytes labelled
@@ -946,7 +952,7 @@ fun SmartShareSheet(
                     onDismiss()
                     shareFile(context, file.absolutePath, mimeFor(file), file.name)
                 },
-                headlineContent = { Text("Share as $kind") },
+                headlineContent = { Text(stringResource(R.string.tools_share_as, kind)) },
                 leadingContent = { Icon(if (kind == "PDF") Icons.Default.PictureAsPdf else Icons.Default.Image, contentDescription = null) }
             )
 
@@ -956,8 +962,8 @@ fun SmartShareSheet(
                     // Without the Drive app, the system picker still lists Drive, Dropbox, OneDrive and folders.
                     if (!saveToGoogleDrive(context, file.absolutePath, mimeFor(file))) onSaveToLocal()
                 },
-                headlineContent = { Text("Save to Google Drive") },
-                supportingContent = { Text("Or pick Dropbox, OneDrive or another cloud app") },
+                headlineContent = { Text(stringResource(R.string.tools_share_save_to_drive)) },
+                supportingContent = { Text(stringResource(R.string.tools_share_save_to_drive_hint)) },
                 leadingContent = { Icon(Icons.Default.AddToDrive, contentDescription = null) }
             )
 
@@ -966,8 +972,8 @@ fun SmartShareSheet(
                     onDismiss()
                     onSaveToLocal()
                 },
-                headlineContent = { Text("Save to device") },
-                supportingContent = { Text("Choose a folder such as Downloads") },
+                headlineContent = { Text(stringResource(R.string.tools_share_save_to_device)) },
+                supportingContent = { Text(stringResource(R.string.tools_share_save_to_device_hint)) },
                 leadingContent = { Icon(Icons.Default.Download, contentDescription = null) }
             )
 
@@ -986,22 +992,27 @@ private fun PasswordDialog(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorText by remember(initialError) { mutableStateOf(initialError) }
+    // Unlocking must accept whatever password the file already has, however short.
+    val minimum = if (isProtect) com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH else 1
+    // Read here: the confirm button's onClick is not a composable scope.
+    val tooShortError = stringResource(R.string.tools_password_too_short, minimum)
+    val enterPasswordError = stringResource(R.string.tools_password_enter)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isProtect) "Protect PDF with Password" else "Unlock PDF") },
+        title = { Text(stringResource(if (isProtect) R.string.tools_password_protect_title else R.string.tools_unlock_pdf)) },
         text = {
             Column {
                 Text(
-                    if (isProtect) "Enter a password (at least ${com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH} characters) to encrypt this PDF:"
-                    else "Enter password to remove protection from this PDF:",
+                    if (isProtect) stringResource(R.string.tools_password_protect_hint, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH)
+                    else stringResource(R.string.tools_password_unlock_hint),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it; errorText = null },
-                    label = { Text("Password") },
+                    label = { Text(stringResource(R.string.tools_password_label)) },
                     singleLine = true,
                     isError = errorText != null,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -1009,7 +1020,7 @@ private fun PasswordDialog(
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = "Toggle password visibility"
+                                contentDescription = stringResource(R.string.tools_password_toggle_visibility)
                             )
                         }
                     },
@@ -1028,20 +1039,18 @@ private fun PasswordDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    // Unlocking must accept whatever password the file already has, however short.
-                    val minimum = if (isProtect) com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH else 1
                     if (password.length < minimum) {
-                        errorText = if (isProtect) "Password must be at least $minimum characters" else "Enter the PDF's password"
+                        errorText = if (isProtect) tooShortError else enterPasswordError
                     } else {
                         onConfirm(password)
                     }
                 }
             ) {
-                Text(if (isProtect) "Protect PDF" else "Unlock PDF")
+                Text(stringResource(if (isProtect) R.string.tools_protect_pdf else R.string.tools_unlock_pdf))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -1057,10 +1066,10 @@ private fun SplitDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Split PDF Options") },
+        title = { Text(stringResource(R.string.tools_split_title)) },
         text = {
             Column {
-                Text("Select how you would like to split this document:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.tools_split_hint), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(12.dp))
 
                 SplitMode.entries.forEach { item ->
@@ -1085,7 +1094,7 @@ private fun SplitDialog(
                     OutlinedTextField(
                         value = rangesText,
                         onValueChange = { rangesText = it },
-                        label = { Text("Page Ranges (e.g., 1-3, 4-6)") },
+                        label = { Text(stringResource(R.string.tools_split_ranges_label)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -1094,7 +1103,7 @@ private fun SplitDialog(
                     OutlinedTextField(
                         value = chunkSizeText,
                         onValueChange = { chunkSizeText = it },
-                        label = { Text("Pages per PDF chunk") },
+                        label = { Text(stringResource(R.string.tools_split_chunk_label)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -1108,11 +1117,11 @@ private fun SplitDialog(
                     onConfirm(mode, rangesText, n)
                 }
             ) {
-                Text("Split PDF")
+                Text(stringResource(R.string.tools_split_pdf))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -1139,6 +1148,9 @@ private fun PdfPageOrganizerSheet(
     val scope = rememberCoroutineScope()
     var session by remember { mutableStateOf<com.example.scanpro.imaging.PdfPreviewSession?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    // Read here: the loading coroutine below is not a composable scope.
+    val protectedError = stringResource(R.string.tools_organizer_protected)
+    val openFailedError = stringResource(R.string.tools_organizer_open_failed)
 
     androidx.compose.runtime.DisposableEffect(uri) {
         var opened: com.example.scanpro.imaging.PdfPreviewSession? = null
@@ -1151,9 +1163,9 @@ private fun PdfPageOrganizerSheet(
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
             } catch (error: SecurityException) {
-                loadError = "This PDF is password-protected. Unlock it first with the Unlock PDF tool."
+                loadError = protectedError
             } catch (error: Exception) {
-                loadError = error.localizedMessage ?: "Could not open this PDF"
+                loadError = error.localizedMessage ?: openFailedError
             }
         }
         onDispose {
@@ -1171,16 +1183,18 @@ private fun PdfPageOrganizerSheet(
             TopAppBar(
                 title = {
                     Text(
-                        when (mode) {
-                            "extract" -> "Select pages to extract"
-                            "rotate" -> "Rotate pages"
-                            else -> "Organize pages"
-                        }
+                        stringResource(
+                            when (mode) {
+                                "extract" -> R.string.tools_organizer_extract_title
+                                "rotate" -> R.string.tools_organizer_rotate_title
+                                else -> R.string.tools_organizer_organize_title
+                            }
+                        )
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close))
                     }
                 },
                 actions = {
@@ -1197,9 +1211,9 @@ private fun PdfPageOrganizerSheet(
                     ) {
                         Text(
                             when (mode) {
-                                "extract" -> "Extract ($keptCount)"
-                                "organize" -> "Save ($keptCount)"
-                                else -> "Save PDF"
+                                "extract" -> stringResource(R.string.tools_organizer_extract_count, keptCount)
+                                "organize" -> stringResource(R.string.tools_organizer_save_count, keptCount)
+                                else -> stringResource(R.string.tools_organizer_save_pdf)
                             }
                         )
                     }
@@ -1222,7 +1236,7 @@ private fun PdfPageOrganizerSheet(
                 ) {
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Opening PDF…")
+                    Text(stringResource(R.string.tools_organizer_opening))
                 }
                 else -> LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 140.dp),
@@ -1294,7 +1308,7 @@ private fun OrganizerPageCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = { onToggle() })
-                Text("Page ${item.index + 1}", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.tools_page_number, item.index + 1), style = MaterialTheme.typography.labelMedium)
             }
             Box(
                 modifier = Modifier
@@ -1306,7 +1320,7 @@ private fun OrganizerPageCard(
                 if (bitmap != null) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Page ${item.index + 1}",
+                        contentDescription = stringResource(R.string.tools_page_number, item.index + 1),
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer(rotationZ = item.rotation.toFloat())
@@ -1320,16 +1334,16 @@ private fun OrganizerPageCard(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 IconButton(onClick = onRotate) {
-                    Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = "Rotate page ${item.index + 1}")
+                    Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = stringResource(R.string.tools_organizer_rotate_page_cd, item.index + 1))
                 }
                 if (canMoveLeft) {
                     IconButton(onClick = onMoveLeft) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move page ${item.index + 1} earlier")
+                        Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = stringResource(R.string.tools_organizer_move_earlier_cd, item.index + 1))
                     }
                 }
                 if (canMoveRight) {
                     IconButton(onClick = onMoveRight) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page ${item.index + 1} later")
+                        Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.tools_organizer_move_later_cd, item.index + 1))
                     }
                 }
             }

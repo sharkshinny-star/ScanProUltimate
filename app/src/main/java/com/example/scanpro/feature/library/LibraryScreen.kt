@@ -93,8 +93,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanpro.R
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.core.ui.sharePdfs
@@ -105,8 +108,8 @@ import com.example.scanpro.core.designsystem.TopBarWithProgress
 
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
-private enum class LibrarySort(val label: String) {
-    UPDATED("Recent"), NAME("Name"), SIZE("Size")
+private enum class LibrarySort(@StringRes val label: Int) {
+    UPDATED(R.string.lib_sort_recent), NAME(R.string.lib_sort_name), SIZE(R.string.lib_sort_size)
 }
 
 @Composable
@@ -244,10 +247,10 @@ internal fun LibraryScreen(
                 title = {
                     TitleWithStatus(
                         title = when {
-                            selected.isNotEmpty() -> "${selected.size} selected"
-                            mode == ScanProDestinations.FILES -> "My files"
-                            isSearch -> "Search"
-                            else -> "ScanPro"
+                            selected.isNotEmpty() -> stringResource(R.string.lib_title_selected_count, selected.size)
+                            mode == ScanProDestinations.FILES -> stringResource(R.string.lib_title_files)
+                            isSearch -> stringResource(R.string.common_search)
+                            else -> stringResource(R.string.lib_title_home)
                         },
                         status = if (busy) busyLabel else null
                     )
@@ -255,40 +258,40 @@ internal fun LibraryScreen(
                 navigationIcon = {
                     if (selected.isNotEmpty()) {
                         IconButton(onClick = { selected.clear() }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear selection")
+                            Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.lib_cd_clear_selection))
                         }
                     } else if (isSearch) {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                         }
                     }
                 },
                 actions = {
                     if (selected.isNotEmpty()) {
                         IconButton(onClick = { onShareSelected(selected.toSet()) }) {
-                            Icon(Icons.Default.Share, contentDescription = "Share selected")
+                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.lib_cd_share_selected))
                         }
                         IconButton(onClick = {
                             onBulkDelete(selected.toSet())
                             selected.clear()
                         }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Move selected to trash")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.lib_cd_move_selected_to_trash))
                         }
                     } else {
                         if (!isSearch) {
                             IconButton(onClick = onSearch) {
-                                Icon(Icons.Default.Search, contentDescription = "Search")
+                                Icon(Icons.Default.Search, contentDescription = stringResource(R.string.common_search))
                             }
                         }
                         if (!isHome) Box {
                             IconButton(onClick = { sortMenuOpen = true }) {
-                                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort")
+                                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = stringResource(R.string.lib_cd_sort))
                             }
                             DropdownMenu(expanded = sortMenuOpen, onDismissRequest = { sortMenuOpen = false }) {
                                 LibrarySort.entries.forEach { option ->
                                     DropdownMenuItem(
-                                        text = { Text(option.label) },
-                                        trailingIcon = { if (sort == option) Icon(Icons.Default.Check, contentDescription = "Selected") },
+                                        text = { Text(stringResource(option.label)) },
+                                        trailingIcon = { if (sort == option) Icon(Icons.Default.Check, contentDescription = stringResource(R.string.lib_cd_selected)) },
                                         onClick = {
                                             sortName = option.name
                                             sortMenuOpen = false
@@ -298,34 +301,34 @@ internal fun LibraryScreen(
                             }
                         }
                         if (!isHome) IconButton(onClick = { gridMode = !gridMode }) {
-                            Icon(if (gridMode) Icons.AutoMirrored.Filled.List else Icons.Default.GridView, contentDescription = "Toggle layout")
+                            Icon(if (gridMode) Icons.AutoMirrored.Filled.List else Icons.Default.GridView, contentDescription = stringResource(R.string.lib_cd_toggle_layout))
                         }
                         if (!isSearch) Box {
                             IconButton(onClick = { moreMenuOpen = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.lib_cd_more_options))
                             }
                             DropdownMenu(expanded = moreMenuOpen, onDismissRequest = { moreMenuOpen = false }) {
                                 DropdownMenuItem(
-                                    text = { Text("Import photos") },
+                                    text = { Text(stringResource(R.string.lib_menu_import_photos)) },
                                     leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
                                     enabled = !busy,
                                     onClick = { moreMenuOpen = false; onImportImages() }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Import PDF") },
+                                    text = { Text(stringResource(R.string.lib_menu_import_pdf)) },
                                     leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) },
                                     enabled = !busy,
                                     onClick = { moreMenuOpen = false; onImportPdf() }
                                 )
                                 if (mode == ScanProDestinations.FILES && folder.isNotBlank()) {
                                     DropdownMenuItem(
-                                        text = { Text("Rename folder") },
+                                        text = { Text(stringResource(R.string.lib_menu_rename_folder)) },
                                         leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
                                         onClick = { moreMenuOpen = false; renameFolderSource = folder }
                                     )
                                 }
                                 DropdownMenuItem(
-                                    text = { Text(if (trashCount > 0) "Recycle bin ($trashCount)" else "Recycle bin") },
+                                    text = { Text(if (trashCount > 0) stringResource(R.string.lib_menu_recycle_bin_count, trashCount) else stringResource(R.string.lib_menu_recycle_bin)) },
                                     leadingIcon = { Icon(Icons.Default.DeleteOutline, contentDescription = null) },
                                     onClick = { moreMenuOpen = false; onTrash() }
                                 )
@@ -341,7 +344,7 @@ internal fun LibraryScreen(
                 ExtendedFloatingActionButton(
                     onClick = onStartScan,
                     icon = { Icon(Icons.Default.CameraAlt, contentDescription = null) },
-                    text = { Text("Scan") }
+                    text = { Text(stringResource(R.string.lib_scan)) }
                 )
             }
         },
@@ -375,12 +378,12 @@ internal fun LibraryScreen(
                         onValueChange = onQueryChange,
                         modifier = Modifier.fillMaxWidth().focusRequester(searchFocus),
                         singleLine = true,
-                        placeholder = { Text("Search titles, tags, folders and text") },
+                        placeholder = { Text(stringResource(R.string.lib_search_placeholder)) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
                             if (query.isNotEmpty()) {
                                 IconButton(onClick = { onQueryChange("") }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.lib_cd_clear_search))
                                 }
                             }
                         },
@@ -396,14 +399,14 @@ internal fun LibraryScreen(
                             FilterChip(
                                 selected = folder.isBlank() && !favoritesOnly,
                                 onClick = { folder = ""; favoritesOnly = false },
-                                label = { Text("All") }
+                                label = { Text(stringResource(R.string.lib_filter_all)) }
                             )
                         }
                         item {
                             FilterChip(
                                 selected = favoritesOnly,
                                 onClick = { favoritesOnly = !favoritesOnly },
-                                label = { Text("Favorites") },
+                                label = { Text(stringResource(R.string.lib_filter_favorites)) },
                                 leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Star else Icons.Outlined.StarOutline, null) }
                             )
                         }
@@ -433,30 +436,30 @@ internal fun LibraryScreen(
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 when {
-                                    query.isNotBlank() -> "No matching documents"
-                                    favoritesOnly -> "No favorite documents yet"
-                                    folder.isNotBlank() -> "No documents in this folder"
-                                    else -> "No documents yet"
+                                    query.isNotBlank() -> stringResource(R.string.lib_empty_no_matching)
+                                    favoritesOnly -> stringResource(R.string.lib_empty_no_favorites)
+                                    folder.isNotBlank() -> stringResource(R.string.lib_empty_no_documents_in_folder)
+                                    else -> stringResource(R.string.lib_empty_no_documents)
                                 },
                                 style = MaterialTheme.typography.titleMedium
                             )
                             if (query.isBlank() && !favoritesOnly && folder.isBlank()) {
                                 Text(
-                                    "Scan a page, or bring in photos or a PDF you already have.",
+                                    stringResource(R.string.lib_empty_hint),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp)
                                 )
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                                    Button(onClick = onStartScan, enabled = !busy) { Text("Scan") }
-                                    FilledTonalButton(onClick = onImportImages, enabled = !busy) { Text("Photos") }
-                                    FilledTonalButton(onClick = onImportPdf, enabled = !busy) { Text("PDF") }
+                                    Button(onClick = onStartScan, enabled = !busy) { Text(stringResource(R.string.lib_scan)) }
+                                    FilledTonalButton(onClick = onImportImages, enabled = !busy) { Text(stringResource(R.string.lib_photos)) }
+                                    FilledTonalButton(onClick = onImportPdf, enabled = !busy) { Text(stringResource(R.string.lib_pdf)) }
                                 }
                                 PrivacyLine(Modifier.padding(top = 16.dp))
                             } else if (query.isNotBlank()) {
                                 Text(
-                                    "Search looks through titles, tags and every word recognised in your scans.",
+                                    stringResource(R.string.lib_search_hint),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
@@ -508,10 +511,10 @@ internal fun LibraryScreen(
 
     renameFolderSource?.let { source ->
         TextInputDialog(
-            title = "Rename folder",
+            title = stringResource(R.string.lib_menu_rename_folder),
             initial = source,
-            label = "Folder name",
-            confirmLabel = "Rename",
+            label = stringResource(R.string.lib_rename_folder_label),
+            confirmLabel = stringResource(R.string.common_rename),
             onDismiss = { renameFolderSource = null }
         ) { target ->
             onRenameFolder(source, target)
@@ -545,15 +548,18 @@ private fun HomeDashboard(
             Column {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "YOUR DOCUMENT WORKSPACE",
+                    stringResource(R.string.lib_home_eyebrow),
                     style = MaterialTheme.typography.labelSmall,
                     letterSpacing = 1.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text("A little less paper.", style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.lib_home_headline), style = MaterialTheme.typography.headlineMedium)
                 Text(
-                    if (documents.isEmpty()) "Scan, clean, OCR and export your first document."
-                    else "${documents.size} documents · ${documents.count { it.isFavorite }} favorites${if (trashCount > 0) " · $trashCount in trash" else ""}",
+                    when {
+                        documents.isEmpty() -> stringResource(R.string.lib_home_first_document)
+                        trashCount > 0 -> stringResource(R.string.lib_home_stats_with_trash, documents.size, documents.count { it.isFavorite }, trashCount)
+                        else -> stringResource(R.string.lib_home_stats, documents.size, documents.count { it.isFavorite })
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -564,22 +570,22 @@ private fun HomeDashboard(
             QuickActions(
                 enabled = !busy,
                 actions = listOf(
-                    QuickAction(Icons.Default.Badge, "ID card") { onQuickScan(ScanMode.ID_CARD.name) },
-                    QuickAction(Icons.AutoMirrored.Filled.MenuBook, "Book") { onQuickScan(ScanMode.BOOK.name) },
-                    QuickAction(Icons.Default.TextFields, "Extract text") { onQuickScan(ScanMode.TEXT.name) },
-                    QuickAction(Icons.Default.QrCodeScanner, "QR code") { onQuickScan(ScanProDestinations.CAMERA_QR) },
-                    QuickAction(Icons.Default.ReceiptLong, "Receipt") { onQuickScan(ScanMode.RECEIPT.name) },
-                    QuickAction(Icons.Default.Image, "Photos") { onImportImages() },
-                    QuickAction(Icons.Default.PictureAsPdf, "Import PDF") { onImportPdf() },
-                    QuickAction(Icons.Default.Build, "PDF tools") { onOpenTools() }
+                    QuickAction(Icons.Default.Badge, stringResource(R.string.lib_quick_id_card)) { onQuickScan(ScanMode.ID_CARD.name) },
+                    QuickAction(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.lib_quick_book)) { onQuickScan(ScanMode.BOOK.name) },
+                    QuickAction(Icons.Default.TextFields, stringResource(R.string.lib_quick_extract_text)) { onQuickScan(ScanMode.TEXT.name) },
+                    QuickAction(Icons.Default.QrCodeScanner, stringResource(R.string.lib_quick_qr_code)) { onQuickScan(ScanProDestinations.CAMERA_QR) },
+                    QuickAction(Icons.Default.ReceiptLong, stringResource(R.string.lib_quick_receipt)) { onQuickScan(ScanMode.RECEIPT.name) },
+                    QuickAction(Icons.Default.Image, stringResource(R.string.lib_photos)) { onImportImages() },
+                    QuickAction(Icons.Default.PictureAsPdf, stringResource(R.string.lib_menu_import_pdf)) { onImportPdf() },
+                    QuickAction(Icons.Default.Build, stringResource(R.string.lib_quick_pdf_tools)) { onOpenTools() }
                 )
             )
         }
         if (recent.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Recent", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    if (documents.size > recent.size) TextButton(onClick = onSeeAll) { Text("See all") }
+                    Text(stringResource(R.string.lib_sort_recent), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    if (documents.size > recent.size) TextButton(onClick = onSeeAll) { Text(stringResource(R.string.lib_see_all)) }
                 }
             }
             items(recent, key = { it.id }) { doc ->
@@ -600,9 +606,9 @@ private fun HomeDashboard(
                     Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("Your scans will appear here", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.lib_home_empty_title), style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Each one becomes a searchable PDF you can share, sign or export to Word.",
+                            stringResource(R.string.lib_home_empty_body),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -623,7 +629,7 @@ private fun PrivacyLine(modifier: Modifier = Modifier) {
         Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(6.dp))
         Text(
-            "Private by design: no account, nothing uploaded",
+            stringResource(R.string.lib_privacy_line),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -646,20 +652,20 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean) {
     ) {
         Column {
             Text(
-                "SMART SCAN",
+                stringResource(R.string.lib_hero_eyebrow),
                 style = MaterialTheme.typography.labelSmall,
                 letterSpacing = 1.sp,
                 color = caption
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Every detail.\nPerfectly captured.",
+                stringResource(R.string.lib_hero_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Auto-crop. Clean up. Make it searchable.",
+                stringResource(R.string.lib_hero_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = caption
             )
@@ -671,7 +677,7 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean) {
             ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Start scanning")
+                Text(stringResource(R.string.lib_hero_start_scanning))
             }
         }
     }

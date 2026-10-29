@@ -48,10 +48,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanpro.R
+import com.example.scanpro.BuildConfig
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.data.PdfQuality
@@ -110,7 +113,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) }
+                title = { Text(stringResource(R.string.common_settings), fontWeight = FontWeight.Bold) }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -134,13 +137,13 @@ fun SettingsScreen(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable { openPlayStoreListing(context) },
-                        headlineContent = { Text("Feedback or suggestion", fontWeight = FontWeight.Medium) },
+                        headlineContent = { Text(stringResource(R.string.settings_feedback), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.Default.Feedback, contentDescription = null) }
                     )
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable { openPlayStoreListing(context) },
-                        headlineContent = { Text("Request more features", fontWeight = FontWeight.Medium) },
+                        headlineContent = { Text(stringResource(R.string.settings_request_features), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.AutoMirrored.Filled.Comment, contentDescription = null) }
                     )
                 }
@@ -160,9 +163,9 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Default PDF quality", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_pdf_quality_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                             Text(
-                                "High keeps detail. Small creates lighter files.",
+                                stringResource(R.string.settings_pdf_quality_body),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -195,7 +198,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text("App Theme", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_app_theme), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                         }
                         Spacer(Modifier.height(8.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -211,8 +214,8 @@ fun SettingsScreen(
 
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Smart OCR titles", fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text("Use recognized text to name new scans automatically.") },
+                        headlineContent = { Text(stringResource(R.string.settings_smart_titles_title), fontWeight = FontWeight.Medium) },
+                        supportingContent = { Text(stringResource(R.string.settings_smart_titles_body)) },
                         leadingContent = { Icon(Icons.Default.Title, contentDescription = null) },
                         trailingContent = {
                             Switch(
@@ -228,8 +231,8 @@ fun SettingsScreen(
 
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Biometric app lock", fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text("Require device biometric when library is locked.") },
+                        headlineContent = { Text(stringResource(R.string.settings_app_lock_title), fontWeight = FontWeight.Medium) },
+                        supportingContent = { Text(stringResource(R.string.settings_app_lock_body)) },
                         leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingContent = {
                             Switch(
@@ -255,17 +258,17 @@ fun SettingsScreen(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable { openPlayStoreListing(context) },
-                        headlineContent = { Text("Share with friends", fontWeight = FontWeight.Medium) },
+                        headlineContent = { Text(stringResource(R.string.settings_share_with_friends), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.Default.Share, contentDescription = null) }
                     )
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Privacy policy", fontWeight = FontWeight.Medium) },
+                        headlineContent = { Text(stringResource(R.string.settings_privacy_policy), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.Default.PrivacyTip, contentDescription = null) }
                     )
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Terms of use", fontWeight = FontWeight.Medium) },
+                        headlineContent = { Text(stringResource(R.string.settings_terms_of_use), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.Default.Description, contentDescription = null) }
                     )
                 }
@@ -279,13 +282,13 @@ fun SettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "$documentCount active documents · $trashCount in trash · ${formatBytes(storageBytes)} used",
+                    stringResource(R.string.settings_storage_summary, documentCount, trashCount, formatBytes(storageBytes)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Version 4.1.0",
+                    stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )

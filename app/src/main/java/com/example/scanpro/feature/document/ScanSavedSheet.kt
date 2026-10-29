@@ -42,9 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.PageThumbnail
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatBytes
@@ -108,11 +111,11 @@ fun ScanSavedSheet(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Scan saved", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.doc_scan_saved), style = MaterialTheme.typography.titleMedium)
                     }
-                    val pages = if (document.pageCount == 1) "1 page" else "${document.pageCount} pages"
+                    val pages = pluralStringResource(R.plurals.doc_page_count, document.pageCount, document.pageCount)
                     Text(
-                        if (document.sizeBytes > 0) "$pages · ${formatBytes(document.sizeBytes)}" else pages,
+                        if (document.sizeBytes > 0) stringResource(R.string.doc_pages_and_size, pages, formatBytes(document.sizeBytes)) else pages,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -122,7 +125,7 @@ fun ScanSavedSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it.take(120) },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.doc_name)) },
                 singleLine = true,
                 enabled = !busy,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -130,14 +133,14 @@ fun ScanSavedSheet(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
-            SheetAction(Icons.Default.PictureAsPdf, "Share as PDF", "Email, WhatsApp, Gmail and other apps", !busy, then(onSharePdf))
-            SheetAction(Icons.Default.Image, "Share as JPG", "One image per page", !busy, then(onShareJpg))
-            SheetAction(Icons.Default.AddToDrive, "Save to Google Drive", "Or pick Dropbox, OneDrive or another cloud app", !busy, then(onSaveToDrive))
-            SheetAction(Icons.Default.Download, "Save to device", "Choose a folder such as Downloads", !busy, then(onSaveToDevice))
-            SheetAction(Icons.Default.Print, "Print", null, !busy, then(onPrint))
+            SheetAction(Icons.Default.PictureAsPdf, stringResource(R.string.doc_share_as_pdf), stringResource(R.string.doc_share_as_pdf_hint), !busy, then(onSharePdf))
+            SheetAction(Icons.Default.Image, stringResource(R.string.doc_share_as_jpg), stringResource(R.string.doc_share_as_jpg_hint), !busy, then(onShareJpg))
+            SheetAction(Icons.Default.AddToDrive, stringResource(R.string.doc_save_to_google_drive), stringResource(R.string.doc_save_to_google_drive_hint), !busy, then(onSaveToDrive))
+            SheetAction(Icons.Default.Download, stringResource(R.string.doc_save_to_device), stringResource(R.string.doc_save_to_device_hint), !busy, then(onSaveToDevice))
+            SheetAction(Icons.Default.Print, stringResource(R.string.doc_print), null, !busy, then(onPrint))
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Button(onClick = then { }) { Text("Done") }
+                Button(onClick = then { }) { Text(stringResource(R.string.common_done)) }
             }
             Spacer(Modifier.height(16.dp))
         }

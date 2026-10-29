@@ -48,7 +48,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.core.ui.ContactDraft
 import com.example.scanpro.core.ui.openNewContactForm
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -58,6 +61,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 @Composable
 fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val raw = code.rawValue.orEmpty()
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -87,17 +91,17 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                     val uri = url.toUri()
                     // Only web links are opened; other schemes in a code could launch unexpected apps.
                     if (uri.scheme.equals("http", true) || uri.scheme.equals("https", true)) {
-                        Action(Icons.AutoMirrored.Filled.OpenInNew, "Open link", uri.host) { view(context, uri) }
+                        Action(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.scan_code_open_link), uri.host) { view(context, uri) }
                     }
                 }
                 Barcode.TYPE_WIFI -> code.wifi?.let { wifi ->
                     wifi.password?.takeIf { it.isNotEmpty() }?.let { password ->
-                        Action(Icons.Default.ContentCopy, "Copy Wi-Fi password", wifi.ssid) { copy(context, "Wi-Fi password", password, sensitive = true) }
+                        Action(Icons.Default.ContentCopy, stringResource(R.string.scan_code_copy_wifi_password), wifi.ssid) { copy(context, resources.getString(R.string.scan_code_clip_wifi_password), password, sensitive = true) }
                     }
-                    Action(Icons.Default.Wifi, "Open Wi-Fi settings", null) { start(context, Intent(Settings.ACTION_WIFI_SETTINGS)) }
+                    Action(Icons.Default.Wifi, stringResource(R.string.scan_code_open_wifi_settings), null) { start(context, Intent(Settings.ACTION_WIFI_SETTINGS)) }
                 }
                 Barcode.TYPE_CONTACT_INFO -> code.contactInfo?.let { info ->
-                    Action(Icons.Default.PersonAdd, "Add to contacts", info.name?.formattedName) {
+                    Action(Icons.Default.PersonAdd, stringResource(R.string.scan_code_add_to_contacts), info.name?.formattedName) {
                         openNewContactForm(
                             context,
                             ContactDraft(
@@ -113,15 +117,15 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                     }
                 }
                 Barcode.TYPE_PHONE -> code.phone?.number?.let { number ->
-                    Action(Icons.Default.Call, "Call", number) { start(context, Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null))) }
+                    Action(Icons.Default.Call, stringResource(R.string.scan_code_call), number) { start(context, Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null))) }
                 }
                 Barcode.TYPE_SMS -> code.sms?.let { sms ->
-                    Action(Icons.Default.Sms, "Send message", sms.phoneNumber) {
+                    Action(Icons.Default.Sms, stringResource(R.string.scan_code_send_message), sms.phoneNumber) {
                         start(context, Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", sms.phoneNumber.orEmpty(), null)).putExtra("sms_body", sms.message))
                     }
                 }
                 Barcode.TYPE_EMAIL -> code.email?.let { email ->
-                    Action(Icons.Default.Email, "Write email", email.address) {
+                    Action(Icons.Default.Email, stringResource(R.string.scan_code_write_email), email.address) {
                         start(
                             context,
                             Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
@@ -133,10 +137,10 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                     }
                 }
                 Barcode.TYPE_GEO -> code.geoPoint?.let { geo ->
-                    Action(Icons.Default.Map, "Show on map", "${geo.lat}, ${geo.lng}") { view(context, "geo:${geo.lat},${geo.lng}?q=${geo.lat},${geo.lng}".toUri()) }
+                    Action(Icons.Default.Map, stringResource(R.string.scan_code_show_on_map), "${geo.lat}, ${geo.lng}") { view(context, "geo:${geo.lat},${geo.lng}?q=${geo.lat},${geo.lng}".toUri()) }
                 }
                 Barcode.TYPE_CALENDAR_EVENT -> code.calendarEvent?.let { event ->
-                    Action(Icons.Default.Event, "Add to calendar", event.summary) {
+                    Action(Icons.Default.Event, stringResource(R.string.scan_code_add_to_calendar), event.summary) {
                         start(
                             context,
                             Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI).apply {
@@ -148,11 +152,11 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                     }
                 }
             }
-            Action(Icons.Default.ContentCopy, "Copy", null) { copy(context, "Scanned code", raw, sensitive = code.valueType == Barcode.TYPE_WIFI) }
-            Action(Icons.Default.Share, "Share", null) {
-                start(context, Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, raw), "Share"))
+            Action(Icons.Default.ContentCopy, stringResource(R.string.scan_code_copy), null) { copy(context, resources.getString(R.string.scan_code_clip_scanned_code), raw, sensitive = code.valueType == Barcode.TYPE_WIFI) }
+            Action(Icons.Default.Share, stringResource(R.string.common_share), null) {
+                start(context, Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, raw), resources.getString(R.string.common_share)))
             }
-            Action(Icons.Default.QrCodeScanner, "Scan another", null, onScanAgain)
+            Action(Icons.Default.QrCodeScanner, stringResource(R.string.scan_code_scan_another), null, onScanAgain)
             Spacer(Modifier.height(16.dp))
         }
     }
@@ -168,28 +172,34 @@ private fun Action(icon: ImageVector, title: String, detail: String?, onClick: (
     )
 }
 
-private fun titleFor(code: Barcode) = when (code.valueType) {
-    Barcode.TYPE_URL -> "Link"
-    Barcode.TYPE_WIFI -> "Wi-Fi network"
-    Barcode.TYPE_CONTACT_INFO -> "Contact"
-    Barcode.TYPE_PHONE -> "Phone number"
-    Barcode.TYPE_SMS -> "Text message"
-    Barcode.TYPE_EMAIL -> "Email"
-    Barcode.TYPE_GEO -> "Location"
-    Barcode.TYPE_CALENDAR_EVENT -> "Event"
-    Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN -> "Product code"
-    else -> if (code.format == Barcode.FORMAT_QR_CODE) "QR code" else "Barcode"
-}
+@Composable
+private fun titleFor(code: Barcode): String = stringResource(
+    when (code.valueType) {
+        Barcode.TYPE_URL -> R.string.scan_code_type_link
+        Barcode.TYPE_WIFI -> R.string.scan_code_type_wifi
+        Barcode.TYPE_CONTACT_INFO -> R.string.scan_code_type_contact
+        Barcode.TYPE_PHONE -> R.string.scan_code_type_phone
+        Barcode.TYPE_SMS -> R.string.scan_code_type_sms
+        Barcode.TYPE_EMAIL -> R.string.scan_code_type_email
+        Barcode.TYPE_GEO -> R.string.scan_code_type_location
+        Barcode.TYPE_CALENDAR_EVENT -> R.string.scan_code_type_event
+        Barcode.TYPE_PRODUCT, Barcode.TYPE_ISBN -> R.string.scan_code_type_product
+        else -> if (code.format == Barcode.FORMAT_QR_CODE) R.string.scan_qr_code else R.string.scan_code_type_barcode
+    }
+)
 
+@Composable
 private fun displayText(code: Barcode): String = when (code.valueType) {
     // Never show the Wi-Fi password on screen; it can be copied instead.
     Barcode.TYPE_WIFI -> code.wifi?.let { wifi ->
-        val security = when (wifi.encryptionType) {
-            Barcode.WiFi.TYPE_WPA -> "WPA/WPA2"
-            Barcode.WiFi.TYPE_WEP -> "WEP"
-            else -> "Open"
-        }
-        "Network: ${wifi.ssid.orEmpty()}\nSecurity: $security"
+        val security = stringResource(
+            when (wifi.encryptionType) {
+                Barcode.WiFi.TYPE_WPA -> R.string.scan_code_wifi_security_wpa
+                Barcode.WiFi.TYPE_WEP -> R.string.scan_code_wifi_security_wep
+                else -> R.string.scan_code_wifi_security_open
+            }
+        )
+        stringResource(R.string.scan_code_wifi_details, wifi.ssid.orEmpty(), security)
     } ?: code.rawValue.orEmpty()
     Barcode.TYPE_URL -> code.url?.url ?: code.rawValue.orEmpty()
     else -> code.displayValue ?: code.rawValue.orEmpty()
@@ -201,7 +211,7 @@ private fun start(context: Context, intent: Intent) {
     try {
         context.startActivity(intent)
     } catch (_: ActivityNotFoundException) {
-        Toast.makeText(context, "No app can open this", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.scan_code_no_app_can_open), Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -213,5 +223,5 @@ private fun copy(context: Context, label: String, text: String, sensitive: Boole
         }
     }
     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-    if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+    if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, context.getString(R.string.scan_code_copied), Toast.LENGTH_SHORT).show()
 }

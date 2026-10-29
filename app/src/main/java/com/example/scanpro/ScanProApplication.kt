@@ -1,6 +1,7 @@
 package com.example.scanpro
 
 import android.app.Application
+import android.content.Context
 import android.os.StrictMode
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
@@ -8,6 +9,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.scanpro.work.CleanupWorker
+import com.google.android.play.core.splitcompat.SplitCompat
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import dagger.hilt.android.HiltAndroidApp
 import com.example.scanpro.imaging.OpenCvRuntime
@@ -23,6 +25,12 @@ class ScanProApplication : Application(), Configuration.Provider {
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        // Makes code from on-demand modules (translation) usable as soon as Play installs them, without a restart.
+        SplitCompat.install(this)
+    }
 
     override fun onCreate() {
         super.onCreate()

@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.PersistableBundle
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.example.scanpro.R
 import com.example.scanpro.data.ScanDocument
 import java.io.File
 import java.util.Locale
@@ -18,7 +19,7 @@ import java.util.Locale
 fun sharePdf(context: Context, document: ScanDocument) {
     val file = File(document.pdfPath)
     if (!file.isFile) {
-        Toast.makeText(context, "PDF is not available yet", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_pdf_not_available_yet), Toast.LENGTH_SHORT).show()
         return
     }
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
@@ -28,7 +29,7 @@ fun sharePdf(context: Context, document: ScanDocument) {
         putExtra(Intent.EXTRA_TITLE, "${document.title}.pdf")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent, "Share PDF"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.core_share_pdf)))
 }
 
 fun sharePdfs(context: Context, documents: List<ScanDocument>) {
@@ -37,7 +38,7 @@ fun sharePdfs(context: Context, documents: List<ScanDocument>) {
         if (!file.exists()) null else FileProvider.getUriForFile(context, "${context.packageName}.files", file)
     }
     if (valid.isEmpty()) {
-        Toast.makeText(context, "No PDF files are available to share", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_no_pdfs_to_share), Toast.LENGTH_SHORT).show()
         return
     }
     if (valid.size == 1) {
@@ -50,7 +51,7 @@ fun sharePdfs(context: Context, documents: List<ScanDocument>) {
         putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(valid))
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent, "Share PDFs"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.core_share_pdfs)))
 }
 
 fun shareImages(context: Context, document: ScanDocument) {
@@ -66,7 +67,7 @@ fun shareImages(context: Context, document: ScanDocument) {
         }
     }
     if (uris.isEmpty()) {
-        Toast.makeText(context, "JPG images are not available", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_jpg_not_available), Toast.LENGTH_SHORT).show()
         return
     }
     val single = uris.size == 1
@@ -76,13 +77,13 @@ fun shareImages(context: Context, document: ScanDocument) {
         else putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent, if (single) "Share JPG" else "Share JPG pages"))
+    context.startActivity(Intent.createChooser(intent, context.getString(if (single) R.string.core_share_jpg else R.string.core_share_jpg_pages)))
 }
 
 fun shareOcrText(context: Context, document: ScanDocument) {
     val text = document.ocrText
     if (text.isBlank()) {
-        Toast.makeText(context, "No recognized text to share", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_no_text_to_share), Toast.LENGTH_SHORT).show()
         return
     }
     val intent = Intent(Intent.ACTION_SEND).apply {
@@ -90,7 +91,7 @@ fun shareOcrText(context: Context, document: ScanDocument) {
         putExtra(Intent.EXTRA_SUBJECT, document.title)
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, "Share recognized text"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.core_share_recognized_text)))
 }
 
 fun openPdf(context: Context, document: ScanDocument) {
@@ -103,20 +104,20 @@ fun openPdf(context: Context, document: ScanDocument) {
     try {
         context.startActivity(intent)
     } catch (_: ActivityNotFoundException) {
-        Toast.makeText(context, "Install a PDF viewer to open this file", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, context.getString(R.string.core_install_pdf_viewer), Toast.LENGTH_LONG).show()
     }
 }
 
 fun copyText(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("Recognized text", text).apply {
+    val clip = ClipData.newPlainText(context.getString(R.string.core_clip_recognized_text), text).apply {
         // Scans often hold IDs and account numbers; keep them out of the clipboard preview on Android 13+.
         description.extras = PersistableBundle().apply {
             putBoolean(if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true)
         }
     }
     clipboard.setPrimaryClip(clip)
-    Toast.makeText(context, "Text copied", Toast.LENGTH_SHORT).show()
+    Toast.makeText(context, context.getString(R.string.core_text_copied), Toast.LENGTH_SHORT).show()
 }
 
 fun pagesLabel(count: Int) = if (count == 1) "1 page" else "$count pages"
@@ -166,7 +167,7 @@ fun formatTrashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis
 fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String) {
     val file = File(path)
     if (!file.exists()) {
-        Toast.makeText(context, "Export file is missing", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_export_file_missing), Toast.LENGTH_SHORT).show()
         return
     }
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
@@ -190,7 +191,7 @@ fun shareUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String)
     try {
         context.startActivity(Intent.createChooser(intent, chooserTitle))
     } catch (_: ActivityNotFoundException) {
-        Toast.makeText(context, "No app can share this file", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_no_app_can_share), Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -202,7 +203,7 @@ fun shareUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String)
 fun saveToGoogleDrive(context: Context, path: String, mimeType: String, title: String = File(path).name): Boolean {
     val file = File(path)
     if (!file.isFile) {
-        Toast.makeText(context, "Export file is missing", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_export_file_missing), Toast.LENGTH_SHORT).show()
         return true
     }
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
@@ -228,7 +229,7 @@ fun printPdf(context: Context, document: ScanDocument) = printPdfFile(context, F
 /** Hands a PDF on disk to the system print dialog, which also offers "Save as PDF". */
 fun printPdfFile(context: Context, file: File, title: String) {
     if (!file.exists()) {
-        Toast.makeText(context, "The PDF could not be found", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.core_pdf_not_found), Toast.LENGTH_SHORT).show()
         return
     }
     val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
@@ -318,7 +319,7 @@ fun openPlayStoreListing(context: Context) {
         try {
             context.startActivity(website)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, "Google Play isn't available on this device", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.core_google_play_unavailable), Toast.LENGTH_SHORT).show()
         }
     }
 }

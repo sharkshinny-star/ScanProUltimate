@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -42,24 +43,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.scanpro.R
 import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.data.WatermarkPosition
 import com.example.scanpro.data.WatermarkSize
 import com.example.scanpro.data.WatermarkStyle
 import kotlin.math.roundToInt
 
+/** Colour name resource and ARGB value. */
 private val WatermarkColors = listOf(
-    "Grey" to PageAnnotation.DEFAULT_TEXT_COLOR,
-    "Red" to 0xFFD32F2F.toInt(),
-    "Blue" to 0xFF1565C0.toInt(),
-    "Green" to 0xFF2E7D32.toInt(),
-    "Orange" to 0xFFEF6C00.toInt()
+    R.string.doc_watermark_color_grey to PageAnnotation.DEFAULT_TEXT_COLOR,
+    R.string.doc_watermark_color_red to 0xFFD32F2F.toInt(),
+    R.string.doc_watermark_color_blue to 0xFF1565C0.toInt(),
+    R.string.doc_watermark_color_green to 0xFF2E7D32.toInt(),
+    R.string.doc_watermark_color_orange to 0xFFEF6C00.toInt()
 )
 
 /** Text, size, position, colour and transparency for "Watermark all pages", with a sketch of the result. */
 @Composable
 fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) {
-    var text by rememberSaveable { mutableStateOf("CONFIDENTIAL") }
+    val defaultText = stringResource(R.string.doc_watermark_default_text)
+    var text by rememberSaveable { mutableStateOf(defaultText) }
     var size by rememberSaveable { mutableStateOf(WatermarkSize.MEDIUM) }
     var position by rememberSaveable { mutableStateOf(WatermarkPosition.DIAGONAL) }
     var color by rememberSaveable { mutableIntStateOf(PageAnnotation.DEFAULT_TEXT_COLOR) }
@@ -68,7 +72,7 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Watermark all pages") },
+        title = { Text(stringResource(R.string.doc_watermark_all_pages)) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -78,26 +82,27 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it.take(80) },
-                    label = { Text("Watermark text") },
+                    label = { Text(stringResource(R.string.doc_watermark_text)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("Size", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.doc_size), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkSize.entries.forEach { option ->
                         FilterChip(selected = size == option, onClick = { size = option }, label = { Text(option.label) })
                     }
                 }
-                Text("Position", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.doc_position), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkPosition.entries.forEach { option ->
                         FilterChip(selected = position == option, onClick = { position = option }, label = { Text(option.label) })
                     }
                 }
-                Text("Colour", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.doc_colour), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    WatermarkColors.forEach { (name, value) ->
+                    WatermarkColors.forEach { (nameRes, value) ->
                         val chosen = color == value
+                        val name = stringResource(nameRes)
                         Box(
                             Modifier
                                 .size(36.dp)
@@ -115,7 +120,7 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                         )
                     }
                 }
-                Text("Transparency: ${100 - (opacity * 100).roundToInt()}%", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.doc_transparency, 100 - (opacity * 100).roundToInt()), style = MaterialTheme.typography.labelLarge)
                 Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.1f..1f)
             }
         },
@@ -123,9 +128,9 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
             TextButton(
                 enabled = canApply,
                 onClick = { onConfirm(WatermarkStyle(text.trim(), size, position, color, opacity)) }
-            ) { Text("Apply") }
+            ) { Text(stringResource(R.string.common_apply)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }
 

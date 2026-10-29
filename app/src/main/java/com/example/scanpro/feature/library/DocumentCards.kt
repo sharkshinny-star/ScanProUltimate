@@ -23,9 +23,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.data.ScanDocument
 import java.text.DateFormat
 import java.util.Date
@@ -50,8 +52,8 @@ internal fun DocumentListCard(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClickLabel = "Open",
-                onLongClickLabel = if (selected) "Deselect" else "Select",
+                onClickLabel = stringResource(R.string.lib_card_open),
+                onLongClickLabel = if (selected) stringResource(R.string.lib_card_deselect) else stringResource(R.string.lib_card_select),
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
@@ -72,19 +74,19 @@ internal fun DocumentListCard(
                     Text(document.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     if (document.isFavorite) {
                         Spacer(Modifier.width(4.dp))
-                        Icon(Icons.Default.Star, contentDescription = "Favorite", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.Star, contentDescription = stringResource(R.string.lib_cd_favorite), modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                     }
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "${pagesLabel(document.pageCount)} · ${formatBytes(document.sizeBytes)} · $updatedText",
+                    stringResource(R.string.lib_card_meta_three, pagesLabel(document.pageCount), formatBytes(document.sizeBytes), updatedText),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (selected) Icon(Icons.Default.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+            if (selected) Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.lib_cd_selected), tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -101,8 +103,8 @@ internal fun DocumentGridCard(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClickLabel = "Open",
-                onLongClickLabel = if (selected) "Deselect" else "Select",
+                onClickLabel = stringResource(R.string.lib_card_open),
+                onLongClickLabel = if (selected) stringResource(R.string.lib_card_deselect) else stringResource(R.string.lib_card_select),
                 onClick = onClick,
                 onLongClick = onLongClick
             )
@@ -114,12 +116,12 @@ internal fun DocumentGridCard(
                 version = document.pages.firstOrNull(),
                     modifier = Modifier.fillMaxWidth().height(170.dp)
                 )
-                if (selected) Icon(Icons.Default.CheckCircle, contentDescription = "Selected", modifier = Modifier.padding(6.dp), tint = MaterialTheme.colorScheme.primary)
+                if (selected) Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.lib_cd_selected), modifier = Modifier.padding(6.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.height(8.dp))
             Text(document.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                "${pagesLabel(document.pageCount)} · ${formatBytes(document.sizeBytes)}",
+                stringResource(R.string.lib_card_meta_two, pagesLabel(document.pageCount), formatBytes(document.sizeBytes)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

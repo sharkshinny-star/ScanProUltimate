@@ -65,6 +65,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
@@ -77,6 +80,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.PageFilter
@@ -112,6 +116,8 @@ fun ScanReviewScreen(
     onBack: () -> Unit,
     onDone: () -> Unit
 ) {
+    val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val current = index.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
     val uri = pages[current]
@@ -183,7 +189,7 @@ fun ScanReviewScreen(
                     if (filter != null) filters[newUri.toString()] = filter
                     File(uri.path.orEmpty()).delete()
                 }
-            }.onFailure { message = "Could not rotate this page" }
+            }.onFailure { message = resources.getString(R.string.scan_review_rotate_failed) }
             working = false
         }
     }
@@ -191,7 +197,7 @@ fun ScanReviewScreen(
     Column(Modifier.fillMaxSize().background(Color(0xFF0A0F18)).systemBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to camera", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.scan_review_back_to_camera), tint = Color.White)
             }
             Box(Modifier.weight(1f))
             fun move(delta: Int) {
@@ -203,10 +209,10 @@ fun ScanReviewScreen(
                 onIndexChange(target)
             }
             IconButton(enabled = !blocked && current > 0, onClick = { move(-1) }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move page earlier", tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
+                Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = stringResource(R.string.scan_review_move_earlier), tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
             }
             IconButton(enabled = !blocked && current < pages.lastIndex, onClick = { move(1) }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page later", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
+                Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.scan_review_move_later), tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
             }
             IconButton(
                 enabled = !blocked,
@@ -217,7 +223,7 @@ fun ScanReviewScreen(
                     pages.remove(uri)
                     if (pages.isEmpty()) onBack() else onIndexChange(current.coerceAtMost(pages.lastIndex))
                 }
-            ) { Icon(Icons.Default.Delete, contentDescription = "Delete page", tint = Color.White) }
+            ) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page), tint = Color.White) }
         }
 
         var swipe by remember { mutableStateOf(0f) }
@@ -280,7 +286,7 @@ fun ScanReviewScreen(
         )
         if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
             Text(
-                "Use ${pageFilter.label} on all pages",
+                stringResource(R.string.scan_review_use_on_all, pageFilter.label),
                 color = Blue,
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier
@@ -301,17 +307,17 @@ fun ScanReviewScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(enabled = current > 0 && !blocked, onClick = { onIndexChange(current - 1) }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous page", tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
+                    Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.scan_review_previous_page), tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
                 }
                 Text("${current + 1}/${pages.size}", color = Color.White, style = MaterialTheme.typography.titleMedium)
                 IconButton(enabled = current < pages.lastIndex && !blocked, onClick = { onIndexChange(current + 1) }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Next page", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
+                    Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.scan_review_next_page), tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
                 }
             }
             OutlinedButton(enabled = !blocked, onClick = onAdd) {
                 Icon(Icons.Default.AddAPhoto, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Add")
+                Text(stringResource(R.string.scan_review_add))
             }
         }
 
@@ -320,15 +326,15 @@ fun ScanReviewScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            ReviewAction(Icons.Default.CropFree, "Auto crop", !blocked && bitmap != null) {
+            ReviewAction(Icons.Default.CropFree, stringResource(R.string.scan_review_auto_crop), !blocked && bitmap != null) {
                 val image = bitmap ?: return@ReviewAction
                 scope.launch {
                     quads[key] = withContext(Dispatchers.Default) { detectQuad(image) }
                 }
             }
-            ReviewAction(Icons.Default.Fullscreen, "No crop", !blocked) { quads[key] = CropQuad.DEFAULT }
+            ReviewAction(Icons.Default.Fullscreen, stringResource(R.string.scan_review_no_crop), !blocked) { quads[key] = CropQuad.DEFAULT }
             // Same label on or off (the colour shows the state): a longer label squeezed "Done" onto four lines.
-            ReviewAction(Icons.Default.Gesture, "Curve", !blocked && bitmap != null, highlighted = curveMode) {
+            ReviewAction(Icons.Default.Gesture, stringResource(R.string.scan_review_curve), !blocked && bitmap != null, highlighted = curveMode) {
                 val image = bitmap ?: return@ReviewAction
                 val start = quads[key] ?: return@ReviewAction
                 if (curveMode) {
@@ -345,11 +351,11 @@ fun ScanReviewScreen(
                     }
                 }
             }
-            ReviewAction(Icons.AutoMirrored.Filled.RotateLeft, "Left", !blocked) { rotate(clockwise = false) }
-            ReviewAction(Icons.AutoMirrored.Filled.RotateRight, "Right", !blocked) { rotate(clockwise = true) }
+            ReviewAction(Icons.AutoMirrored.Filled.RotateLeft, stringResource(R.string.scan_review_rotate_left), !blocked) { rotate(clockwise = false) }
+            ReviewAction(Icons.AutoMirrored.Filled.RotateRight, stringResource(R.string.scan_review_rotate_right), !blocked) { rotate(clockwise = true) }
             Button(enabled = !blocked, onClick = onDone) {
                 if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color.White)
-                else Text("Done", maxLines = 1, softWrap = false)
+                else Text(stringResource(R.string.common_done), maxLines = 1, softWrap = false)
             }
         }
     }
@@ -362,10 +368,11 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
         highlighted -> Amber
         else -> Color.White
     }
+    val onDescription = stringResource(R.string.scan_review_state_on)
     Column(
         Modifier
             .clickable(enabled = enabled, onClick = onClick)
-            .semantics { if (highlighted) stateDescription = "On" }
+            .semantics { if (highlighted) stateDescription = onDescription }
             .padding(horizontal = 6.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -567,7 +574,7 @@ private fun ThumbnailStrip(
                 thumb?.let {
                     Image(
                         it.asImageBitmap(),
-                        contentDescription = "Page ${index + 1}",
+                        contentDescription = stringResource(R.string.scan_review_page_n, index + 1),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().padding(2.dp)
                     )
