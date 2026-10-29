@@ -54,3 +54,15 @@ A ground-up pass over the app shell so the first minute with ScanPro feels like 
 - Give feedback, Report an issue and Suggest a feature confirm with a snackbar saying where the message went (email app, share sheet or clipboard).
 - **Google Play in-app review** is requested once, quietly, after the third saved scan; Play decides whether its card appears, and no button in the app promises a review (Rate ScanPro opens the listing).
 - A one-time **"How was your scanning experience? 😊"** prompt appears after the fifth saved scan with Share feedback (opens the feedback email) and Maybe later. It is kept apart from the review flow, as Play's guidelines ask.
+
+## Welcome animation
+- Entrance choreography: the brand row, the page, the dots and the buttons rise in one after another on first appearance.
+- The paper stack drifts gently, and the viewfinder brackets around it start loose and white, then snap tight and mint as each page comes into view, echoing the scanner's own lock-on.
+- Feature rows step in one after another as a page settles.
+- All of it stays still when system animations are turned off.
+
+## Scanning experience
+- The ring round the shutter fills clockwise as the page settles and turns solid mint once it is steady, so "hold still" is visible without reading anything; the shutter dips while it fires.
+- The page outline glides instead of jittering (it follows the detector with a small lag), has a faint fill and bracket corners, and turns from white to mint when locked on.
+- A soft tick when the page locks on, so eyes can stay on the paper.
+- The guidance pill carries a state icon (page, focus, hold-steady hand, flash, done) and its text slides in on change.

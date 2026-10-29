@@ -58,6 +58,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CenterFocusWeak
+import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
@@ -111,6 +113,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.aspectRatio
 import com.example.scanpro.imaging.ImageProcessor
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import com.example.scanpro.data.NormalizedPoint
+import androidx.compose.animation.togetherWith
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -173,6 +179,10 @@ fun CameraScannerScreen(
     }
     var detection by remember { mutableStateOf<DocumentDetection?>(null) }
     var stable by remember { mutableStateOf(false) }
+    // How close the page is to being steady enough to capture; fills the ring round the shutter.
+    var steadiness by remember { mutableFloatStateOf(0f) }
+    // The outline as drawn: it follows the detector with a little lag so it glides instead of jittering.
+    var shownQuad by remember { mutableStateOf<CropQuad?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
@@ -299,9 +309,19 @@ fun CameraScannerScreen(
 
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
-            onDetection = { result, isStable ->
+            onDetection = { result, isStable, progress ->
                 detection = result
+                // A soft tick the moment the page locks on, so the eye can stay on the paper.
+                if (isStable && !stable) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 stable = isStable
+                steadiness = if (result.quad == null) 0f else progress
+                val target = result.quad
+                val previous = shownQuad
+                shownQuad = when {
+                    target == null -> null
+                    previous == null -> target
+                    else -> previous.towards(target, 0.45f)
+                }
                 liveGuidance = if (isStable && result.isReady) "Hold… capturing" else result.guidance
             },
             onAutoCapture = { autoCaptureSignal++ }
@@ -636,7 +656,7 @@ fun CameraScannerScreen(
 
         ThirdsGrid()
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
-            DocumentBoundaryOverlay(detection = detection, stable = stable)
+            DocumentBoundaryOverlay(detection = detection, quad = shownQuad, stable = stable, accent = scanLine)
         }
         if (scanMode == ScanMode.ID_CARD) {
             IdCardFrame(label = if (scanBothSides && pages.size == 1) "Back" else "Front")
@@ -710,7 +730,29 @@ fun CameraScannerScreen(
                 color = CameraGlass
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
-                    Text(liveGuidance, color = Color.White, style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    val state = detection
+                    val ready = stable && state?.isReady == true
+                    val hintIcon = when {
+                        ready -> Icons.Default.TaskAlt
+                        state?.isDark == true -> Icons.Default.Bolt
+                        state?.quad != null && state.isBlurry -> Icons.Default.PanTool
+                        state?.quad != null -> Icons.Default.CenterFocusWeak
+                        else -> Icons.Default.DocumentScanner
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(hintIcon, contentDescription = null, tint = if (ready) scanLine else Color.White, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        androidx.compose.animation.AnimatedContent(
+                            targetState = liveGuidance,
+                            transitionSpec = {
+                                (androidx.compose.animation.fadeIn(tween(160)) + androidx.compose.animation.slideInVertically(tween(160)) { it / 3 })
+                                    .togetherWith(androidx.compose.animation.fadeOut(tween(120)))
+                            },
+                            label = "guidance"
+                        ) { text ->
+                            Text(text, color = if (ready) scanLine else Color.White, style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
+                    }
                     // Low light: one tap turns the torch on from the hint itself.
                     if (detection?.isDark == true && !torchEnabled) {
                         Spacer(Modifier.height(8.dp))
@@ -910,11 +952,34 @@ fun CameraScannerScreen(
                     }
                 }
 
-                // Outer ring turns mint once the page is outlined and still; the inner disc is the button.
+                // Outer ring fills clockwise as the page settles and turns solid mint once it is steady; the
+                // inner disc is the button.
+                val ringFill by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (stable) 1f else steadiness,
+                    animationSpec = if (steadiness == 0f) tween(200) else spring(stiffness = 700f),
+                    label = "ring"
+                )
+                val shutterScale by androidx.compose.animation.core.animateFloatAsState(if (capturing) 0.86f else 1f, spring(stiffness = 900f), label = "shutter")
                 Box(
                     Modifier
                         .size(84.dp)
-                        .border(4.dp, if (stable) scanLine else Color.White.copy(alpha = 0.45f), CircleShape)
+                        .graphicsLayer { scaleX = shutterScale; scaleY = shutterScale }
+                        .drawBehind {
+                            val strokeWidth = 4.dp.toPx()
+                            val inset = strokeWidth / 2
+                            drawCircle(Color.White.copy(alpha = 0.35f), radius = size.minDimension / 2 - inset, style = Stroke(strokeWidth))
+                            if (ringFill > 0f) {
+                                drawArc(
+                                    color = scanLine,
+                                    startAngle = -90f,
+                                    sweepAngle = 360f * ringFill,
+                                    useCenter = false,
+                                    topLeft = Offset(inset, inset),
+                                    size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                                    style = Stroke(strokeWidth, cap = StrokeCap.Round)
+                                )
+                            }
+                        }
                         .padding(7.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1076,12 +1141,19 @@ private fun ThirdsGrid() {
     }
 }
 
+/**
+ * The page outline over the preview: a faint fill, an edge line and bracket corners. White while the page
+ * is being tracked; mint, thicker and filled a touch more once it is steady. [quad] is the smoothed outline;
+ * [detection] supplies the frame size the outline is expressed in.
+ */
 @Composable
-private fun DocumentBoundaryOverlay(detection: DocumentDetection?, stable: Boolean) {
-    val primary = MaterialTheme.colorScheme.primary
+private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: CropQuad?, stable: Boolean, accent: Color) {
+    val lineColor by androidx.compose.animation.animateColorAsState(if (stable) accent else Color.White, tween(220), label = "outline")
+    val fillAlpha by androidx.compose.animation.core.animateFloatAsState(if (stable) 0.16f else 0.07f, tween(220), label = "fill")
+    val weight by androidx.compose.animation.core.animateFloatAsState(if (stable) 5f else 3f, tween(220), label = "weight")
     Canvas(Modifier.fillMaxSize()) {
         val result = detection ?: return@Canvas
-        val quad = result.quad ?: return@Canvas
+        val outline = quad ?: return@Canvas
         val frameWidth = result.frameWidth.toFloat().coerceAtLeast(1f)
         val frameHeight = result.frameHeight.toFloat().coerceAtLeast(1f)
         val scale = minOf(size.width / frameWidth, size.height / frameHeight)
@@ -1089,7 +1161,7 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, stable: Boole
         val top = (size.height - frameHeight * scale) / 2f
 
         fun point(x: Float, y: Float): Offset = Offset(left + x * frameWidth * scale, top + y * frameHeight * scale)
-        val points = quad.asList().map { point(it.x, it.y) }
+        val points = outline.asList().map { point(it.x, it.y) }
         val path = Path().apply {
             moveTo(points[0].x, points[0].y)
             lineTo(points[1].x, points[1].y)
@@ -1097,13 +1169,37 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, stable: Boole
             lineTo(points[3].x, points[3].y)
             close()
         }
-        drawPath(path, color = if (stable) primary else Color.White, style = Stroke(width = if (stable) 5f else 3f))
-        points.forEach { drawCircle(color = if (stable) primary else Color.White, radius = 8f, center = it) }
+        drawPath(path, color = lineColor.copy(alpha = fillAlpha))
+        drawPath(path, color = lineColor.copy(alpha = 0.9f), style = Stroke(width = weight, cap = StrokeCap.Round))
 
-        if (stable) {
-            drawLine(primary, points[0], points[1], strokeWidth = 5f, cap = StrokeCap.Round)
+        // Bracket corners: a short run along each edge away from the corner, like a viewfinder.
+        val armLength = (size.minDimension * 0.045f).coerceIn(18f, 44f)
+        for (i in points.indices) {
+            val corner = points[i]
+            val next = points[(i + 1) % 4]
+            val previous = points[(i + 3) % 4]
+            fun arm(toward: Offset) {
+                val dx = toward.x - corner.x
+                val dy = toward.y - corner.y
+                val length = kotlin.math.hypot(dx, dy).coerceAtLeast(1f)
+                val end = Offset(corner.x + dx / length * armLength, corner.y + dy / length * armLength)
+                drawLine(lineColor, corner, end, strokeWidth = weight + 3f, cap = StrokeCap.Round)
+            }
+            arm(next)
+            arm(previous)
         }
     }
+}
+
+/** This outline moved [fraction] of the way towards [target]; the bends are taken from the target. */
+private fun CropQuad.towards(target: CropQuad, fraction: Float): CropQuad {
+    fun step(a: NormalizedPoint, b: NormalizedPoint) = NormalizedPoint(a.x + (b.x - a.x) * fraction, a.y + (b.y - a.y) * fraction)
+    return target.copy(
+        topLeft = step(topLeft, target.topLeft),
+        topRight = step(topRight, target.topRight),
+        bottomRight = step(bottomRight, target.bottomRight),
+        bottomLeft = step(bottomLeft, target.bottomLeft)
+    )
 }
 
 private fun CropQuad.asList() = listOf(topLeft, topRight, bottomRight, bottomLeft)

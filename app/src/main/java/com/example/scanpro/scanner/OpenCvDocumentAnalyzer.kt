@@ -12,7 +12,8 @@ import org.opencv.core.Mat
 import kotlin.math.hypot
 
 class OpenCvDocumentAnalyzer(
-    private val onDetection: (DocumentDetection, Boolean) -> Unit,
+    /** Each analysed frame: the detection, whether the page is steady, and how far along the steadiness count is (0..1). */
+    private val onDetection: (DocumentDetection, Boolean, Float) -> Unit,
     private val onAutoCapture: () -> Unit
 ) : ImageAnalysis.Analyzer {
     private val main = Handler(Looper.getMainLooper())
@@ -39,7 +40,8 @@ class OpenCvDocumentAnalyzer(
                 val raw = DocumentEdgeDetector.detect(gray)
                 val result = raw.copy(guidance = steadyGuidance(raw.guidance))
                 val stable = updateStability(result)
-                main.post { onDetection(result, stable) }
+                val progress = (stableFrames.toFloat() / STEADY_FRAMES).coerceIn(0f, 1f)
+                main.post { onDetection(result, stable, progress) }
 
                 // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -102,7 +104,12 @@ class OpenCvDocumentAnalyzer(
         val movement = averageCornerMovement(previous, quad)
         stableFrames = if (movement < 0.014f) stableFrames + 1 else 0
         previousQuad = quad
-        return stableFrames >= 7
+        return stableFrames >= STEADY_FRAMES
+    }
+
+    private companion object {
+        /** Frames the outline must hold still before the page counts as steady. */
+        const val STEADY_FRAMES = 7
     }
 
     private fun averageCornerMovement(a: CropQuad, b: CropQuad): Float {

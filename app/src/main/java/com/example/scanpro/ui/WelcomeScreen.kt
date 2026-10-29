@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -59,8 +60,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,6 +90,7 @@ import com.example.scanpro.core.designsystem.GradientButton
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.designsystem.TileTone
+import com.example.scanpro.core.designsystem.rememberMotionEnabled
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
@@ -146,6 +152,20 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
     val pagerState = rememberPagerState { pages.size }
     val scope = rememberCoroutineScope()
     val last = pagerState.currentPage == pages.lastIndex
+    val motion = rememberMotionEnabled()
+    // First appearance: the header, pager, dots and buttons rise in one after another. With animations
+    // off in the system settings everything is simply there.
+    var entered by remember { mutableStateOf(!motion) }
+    LaunchedEffect(Unit) { entered = true }
+    @Composable
+    fun Modifier.enter(order: Int): Modifier {
+        val progress by animateFloatAsState(
+            targetValue = if (entered) 1f else 0f,
+            animationSpec = tween(durationMillis = 520, delayMillis = 90 + order * 110, easing = FastOutSlowInEasing),
+            label = "enter$order"
+        )
+        return graphicsLayer { alpha = progress; translationY = (1f - progress) * 36.dp.toPx() }
+    }
 
     AuroraBackground(
         Modifier
@@ -162,7 +182,7 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
         ) {
             Column(Modifier.fillMaxSize().widthIn(max = 600.dp)) {
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 8.dp),
+                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 8.dp).enter(0),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     BrandLockup(Modifier.weight(1f))
@@ -176,7 +196,7 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
                 }
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).enter(1),
                     beyondViewportPageCount = 1
                 ) { index ->
                     // Pages slide with a touch of depth: the one leaving fades and shrinks a little.
@@ -189,11 +209,12 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
                             scaleX = scale
                             scaleY = scale
                         },
-                        offset = offset
+                        offset = offset,
+                        current = index == pagerState.currentPage && pagerState.currentPageOffsetFraction.absoluteValue < 0.5f
                     )
                 }
-                PageIndicator(count = pages.size, current = pagerState.currentPage, Modifier.padding(vertical = 14.dp))
-                Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
+                PageIndicator(count = pages.size, current = pagerState.currentPage, Modifier.padding(vertical = 14.dp).enter(2))
+                Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).enter(3)) {
                     GradientButton(
                         text = if (last) "Scan your first page" else "Continue",
                         icon = if (last) Icons.Rounded.CameraAlt else Icons.AutoMirrored.Rounded.ArrowForward,
@@ -252,7 +273,8 @@ private fun PageIndicator(count: Int, current: Int, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset: Float) {
+private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset: Float, current: Boolean) {
+    val motion = rememberMotionEnabled()
     Column(
         modifier
             .fillMaxSize()
@@ -268,7 +290,8 @@ private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset
                 .fillMaxWidth()
                 .height(236.dp)
                 // Parallax: the illustration moves a little slower than the text as pages slide.
-                .graphicsLayer { translationX = offset * 40f }
+                .graphicsLayer { translationX = offset * 40f },
+            current = current
         )
         Spacer(Modifier.height(26.dp))
         Text(
@@ -301,8 +324,20 @@ private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                page.points.forEach { (icon, text, tone) ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                page.points.forEachIndexed { index, (icon, text, tone) ->
+                    // Rows step in one after another as the page settles into view.
+                    val reveal by animateFloatAsState(
+                        targetValue = if (current || !motion) 1f else 0f,
+                        animationSpec = if (current) tween(380, delayMillis = 140 + index * 70, easing = FastOutSlowInEasing) else tween(120),
+                        label = "point$index"
+                    )
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer { alpha = reveal; translationX = (1f - reveal) * 24.dp.toPx() }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         IconTile(icon, tone, size = 38.dp, corner = 12.dp, iconSize = 20.dp)
                         Spacer(Modifier.width(14.dp))
                         Text(text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
@@ -319,7 +354,7 @@ private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset
  * page's icon. Drawn in Compose so it follows the theme and scales to any width.
  */
 @Composable
-private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifier = Modifier) {
+private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifier = Modifier, current: Boolean = true) {
     val brand = ScanProTheme.colors
     val scheme = MaterialTheme.colorScheme
     val sweep = rememberInfiniteTransition(label = "scan")
@@ -335,9 +370,24 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         animationSpec = infiniteRepeatable(tween(1_800, easing = LinearEasing), RepeatMode.Reverse),
         label = "glow"
     )
-    val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+    val float by sweep.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(3_400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "float"
+    )
+    val motion = rememberMotionEnabled()
     val beamPosition = if (motion) beam else 0.5f
     val haloScale = if (motion) glow else 1f
+    val bob = if (motion) float else 0f
+    // Lock-on: as a page comes into view the brackets start loose and white, then snap tight and mint,
+    // the way the scanner's own outline does when it finds a page.
+    val lock by animateFloatAsState(
+        targetValue = if (current || !motion) 1f else 0f,
+        animationSpec = if (current) tween(620, delayMillis = 160, easing = FastOutSlowInEasing) else tween(150),
+        label = "lock"
+    )
+    val bracketColor = androidx.compose.ui.graphics.lerp(scheme.onSurface.copy(alpha = 0.35f), brand.scanLine, lock)
     val badgeContainer = tone.container()
     val badgeContent = tone.content()
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
@@ -353,11 +403,15 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
                     CircleShape
                 )
         )
-        // Two sheets behind, fanned out.
-        Sheet(sheetWidth, sheetHeight, rotation = -9f, offsetX = (-22).dp, offsetY = 10.dp, alpha = 0.55f, lines = false)
-        Sheet(sheetWidth, sheetHeight, rotation = 6f, offsetX = 18.dp, offsetY = 6.dp, alpha = 0.75f, lines = false)
+        // Two sheets behind, fanned out; the whole stack drifts gently, the back sheets a little more.
+        Box(Modifier.graphicsLayer { translationY = bob * 7.dp.toPx(); rotationZ = bob * 1.2f }) {
+            Sheet(sheetWidth, sheetHeight, rotation = -9f, offsetX = (-22).dp, offsetY = 10.dp, alpha = 0.55f, lines = false)
+        }
+        Box(Modifier.graphicsLayer { translationY = -bob * 5.dp.toPx(); rotationZ = -bob * 0.8f }) {
+            Sheet(sheetWidth, sheetHeight, rotation = 6f, offsetX = 18.dp, offsetY = 6.dp, alpha = 0.75f, lines = false)
+        }
         // Front sheet with text lines and the beam.
-        Box(contentAlignment = Alignment.Center) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob * 3.dp.toPx() }) {
             Sheet(sheetWidth, sheetHeight, rotation = 0f, offsetX = 0.dp, offsetY = 0.dp, alpha = 1f, lines = true)
             Canvas(Modifier.size(sheetWidth + 36.dp, sheetHeight)) {
                 val y = size.height * (0.12f + 0.76f * beamPosition)
@@ -376,11 +430,15 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
                 drawCircle(brand.scanLine, radius = 7f, center = Offset(size.width, y))
             }
         }
-        // Brackets around the whole stack.
-        Canvas(Modifier.size(sheetWidth + 76.dp, sheetHeight + 44.dp)) {
-            val l = 28f
+        // Brackets around the whole stack; loose until the page locks on.
+        Canvas(
+            Modifier
+                .size(sheetWidth + 76.dp, sheetHeight + 44.dp)
+                .graphicsLayer { val s = 1f + (1f - lock) * 0.14f; scaleX = s; scaleY = s }
+        ) {
+            val l = 28f + (1f - lock) * 10f
             val stroke = 6f
-            val c = scheme.primary.copy(alpha = 0.55f)
+            val c = bracketColor
             fun corner(x: Float, y: Float, dx: Float, dy: Float) {
                 drawLine(c, Offset(x, y), Offset(x + dx * l, y), stroke, StrokeCap.Round)
                 drawLine(c, Offset(x, y), Offset(x, y + dy * l), stroke, StrokeCap.Round)
