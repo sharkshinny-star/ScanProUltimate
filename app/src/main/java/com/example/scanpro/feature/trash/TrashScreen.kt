@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,6 +58,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.data.ScanDocument
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.scanpro.core.designsystem.ConfirmDialog
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.PageThumbnail
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatTrashCountdown
@@ -156,25 +156,12 @@ internal fun TrashScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(96.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.DeleteOutline,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                IconTile(Icons.Default.DeleteOutline, TileTone.Slate, size = 84.dp, corner = 28.dp, iconSize = 40.dp)
                 Spacer(Modifier.height(20.dp))
-                Text("Recycle Bin is Empty", style = MaterialTheme.typography.titleLarge)
+                Text("The recycle bin is empty", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Deleted files will appear here for 7 days before being permanently removed.",
+                    "Deleted documents wait here for 7 days before they are removed for good.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -186,26 +173,28 @@ internal fun TrashScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Default.Info,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(10.dp))
                         Text(
-                            "Files are automatically deleted after 7 days.",
-                            style = MaterialTheme.typography.bodySmall
+                            "Documents are removed for good after 7 days.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                 }
@@ -220,7 +209,19 @@ internal fun TrashScreen(
                         FilterChip(
                             selected = sortOption == option,
                             onClick = { sortOption = option },
-                            label = { Text(option.label) }
+                            label = { Text(option.label) },
+                            shape = CircleShape,
+                            colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            border = androidx.compose.material3.FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = sortOption == option,
+                                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                                selectedBorderColor = androidx.compose.ui.graphics.Color.Transparent
+                            )
                         )
                     }
                 }
@@ -232,43 +233,54 @@ internal fun TrashScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(sortedDocuments, key = { it.id }) { doc ->
-                        Card(
+                        Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceContainerLow
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                PageThumbnail(doc.pages.firstOrNull()?.imagePath, Modifier.size(width = 56.dp, height = 74.dp), THUMBNAIL_SMALL, version = doc.pages.firstOrNull())
-                                Spacer(Modifier.width(12.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                    shadowElevation = 3.dp
+                                ) {
+                                    PageThumbnail(
+                                        doc.pages.firstOrNull()?.imagePath,
+                                        Modifier.size(width = 50.dp, height = 66.dp),
+                                        THUMBNAIL_SMALL,
+                                        version = doc.pages.firstOrNull(),
+                                        shape = RoundedCornerShape(8.dp),
+                                        background = androidx.compose.ui.graphics.Color.Transparent
+                                    )
+                                }
+                                Spacer(Modifier.width(14.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(doc.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    val (countdownText, isUrgent) = formatTrashCountdown(doc.trashedAt, nowMs)
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(top = 2.dp)
-                                    ) {
-                                        val countdownColor = if (isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                                        Icon(
-                                            Icons.Default.Schedule,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp),
-                                            tint = countdownColor
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            countdownText,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = countdownColor,
-                                            fontWeight = if (isUrgent) FontWeight.SemiBold else FontWeight.Normal
-                                        )
-                                    }
-                                    Spacer(Modifier.height(2.dp))
+                                    Text(doc.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Spacer(Modifier.height(3.dp))
                                     val pagesLabel = if (doc.pageCount == 1) "1 page" else "${doc.pageCount} pages"
-                                    Text("$pagesLabel • ${formatBytes(doc.sizeBytes)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("$pagesLabel · ${formatBytes(doc.sizeBytes)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.height(6.dp))
+                                    val (countdownText, isUrgent) = formatTrashCountdown(doc.trashedAt, nowMs)
+                                    // Time left as a small pill; it turns to the error colour in the last day.
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = if (isUrgent) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
+                                        val countdownColor = if (isUrgent) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        ) {
+                                            Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(12.dp), tint = countdownColor)
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(countdownText, style = MaterialTheme.typography.labelSmall, color = countdownColor, fontWeight = FontWeight.SemiBold)
+                                        }
+                                    }
                                 }
                                 Box {
                                     IconButton(enabled = !busy, onClick = { activeMenuDocId = doc.id }) {
@@ -287,7 +299,7 @@ internal fun TrashScreen(
                                             }
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Delete Permanently", color = MaterialTheme.colorScheme.error) },
+                                            text = { Text("Delete permanently", color = MaterialTheme.colorScheme.error) },
                                             leadingIcon = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                             onClick = {
                                                 activeMenuDocId = null
@@ -307,7 +319,7 @@ internal fun TrashScreen(
     if (deleteSingleDoc != null) {
         ConfirmDialog(
             title = "Delete permanently?",
-            message = "This file will be permanently deleted and cannot be recovered. Are you sure?",
+            message = "This document will be deleted for good and cannot be recovered.",
             confirmLabel = "Delete",
             onDismiss = { deleteSingleDoc = null },
             onConfirm = {
@@ -320,8 +332,8 @@ internal fun TrashScreen(
 
     if (showEmptyDialog) {
         ConfirmDialog(
-            title = "Empty Recycle Bin?",
-            message = "This will permanently delete all files in the Recycle Bin. This action cannot be undone.",
+            title = "Empty the recycle bin?",
+            message = "Every document in the recycle bin will be deleted for good. This cannot be undone.",
             confirmLabel = "Empty",
             onDismiss = { showEmptyDialog = false },
             onConfirm = {

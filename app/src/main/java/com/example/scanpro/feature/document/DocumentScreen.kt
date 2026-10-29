@@ -112,6 +112,7 @@ import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -139,6 +140,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -564,8 +566,27 @@ internal fun DocumentDetailScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                 }
-                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE, version = currentPage)
-                Spacer(Modifier.height(10.dp))
+                // The page as a sheet on a tonal desk, matching the library's thumbnails.
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceContainerLowest, shadowElevation = 6.dp) {
+                        PageThumbnail(
+                            currentPage.imagePath,
+                            Modifier.fillMaxWidth().height(380.dp),
+                            THUMBNAIL_LARGE,
+                            version = currentPage,
+                            shape = RoundedCornerShape(10.dp),
+                            background = Color.Transparent
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
                         var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
@@ -600,10 +621,12 @@ internal fun DocumentDetailScreen(
                                     )
                                 }
                                 .clickable { selectedPageId = item.id },
-                            shape = RoundedCornerShape(8.dp),
-                            border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                            border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.secondary)
+                            else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                         ) {
-                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item)
+                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, shape = RoundedCornerShape(9.dp), background = Color.Transparent)
                         }
                     }
                 }
@@ -663,8 +686,9 @@ internal fun DocumentDetailScreen(
                         }
                     }
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = MaterialTheme.shapes.medium,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         SelectionContainer {
@@ -1099,9 +1123,9 @@ private fun RowScope.BarAction(icon: ImageVector, label: String, enabled: Boolea
 
 @Composable
 private fun SubHeader(value: String) {
-    Spacer(Modifier.height(14.dp))
-    Text(value, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Spacer(Modifier.height(6.dp))
+    Spacer(Modifier.height(16.dp))
+    com.example.scanpro.core.designsystem.Eyebrow(value, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Spacer(Modifier.height(8.dp))
 }
 
 @Composable
@@ -1124,33 +1148,27 @@ private fun MenuItem(label: String, icon: ImageVector, enabled: Boolean = true, 
 private fun ToolGrid(content: @Composable () -> Unit) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) { content() }
 }
 
 @Composable
 private fun ToolTile(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
+    // Same tile as the home screen's quick actions, so tools look the same everywhere.
     Column(
         modifier = Modifier
-            .width(78.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .width(80.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(enabled = enabled, onClick = onClick)
             .alpha(if (enabled) 1f else 0.38f)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.size(44.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2)
+        com.example.scanpro.core.designsystem.IconTile(icon, com.example.scanpro.core.designsystem.TileTone.Indigo, size = 44.dp, corner = 14.dp)
+        Spacer(Modifier.height(8.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, minLines = 2)
     }
 }
 

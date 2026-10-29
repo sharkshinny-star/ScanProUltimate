@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -475,9 +476,9 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(40.dp), strokeWidth = 3.dp)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Loading document…", style = MaterialTheme.typography.bodyMedium)
+                        Text("Opening document…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 errorMessage != null -> {
@@ -488,17 +489,23 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
+                        com.example.scanpro.core.designsystem.IconTile(
+                            androidx.compose.material.icons.Icons.Rounded.ErrorOutline,
+                            com.example.scanpro.core.designsystem.TileTone.Rose,
+                            size = 72.dp, corner = 24.dp, iconSize = 36.dp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Error Loading File",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
+                            text = "This file couldn't be opened",
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = errorMessage ?: "Unknown error",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 }
@@ -559,8 +566,9 @@ fun PdfViewerScreen(
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            // Pages sit as sheets on the tonal backdrop, with room for the page counter at the end.
+                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 56.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(pageCount) { index ->
                                 PdfPageItem(
@@ -579,15 +587,15 @@ fun PdfViewerScreen(
                                 .align(Alignment.BottomCenter)
                                 .padding(bottom = 16.dp),
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
-                            shadowElevation = 4.dp
+                            color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.92f),
+                            shadowElevation = 6.dp
                         ) {
                             Text(
-                                text = "$currentPage / $pageCount",
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelMedium,
+                                text = "$currentPage of $pageCount",
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.inverseOnSurface
                             )
                         }
                     }
@@ -676,8 +684,10 @@ private fun PdfPageItem(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
         color = Color.White,
-        shadowElevation = 1.dp
+        shadowElevation = 3.dp,
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Box(
             modifier = Modifier
@@ -694,7 +704,7 @@ private fun PdfPageItem(
                     filterQuality = FilterQuality.High
                 )
             } else if (isPageLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.5.dp)
             }
         }
     }
