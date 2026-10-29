@@ -571,11 +571,12 @@ fun CameraScannerScreen(
         return
     }
 
-    // Dark blue-grey scanner backdrop from the approved design (not pure black).
+    // The scanner's chrome uses the dark theme's surfaces whatever the app theme, so the preview reads as the content.
+    val scanLine = com.example.scanpro.core.designsystem.ScanProTheme.colors.scanLine
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0xFF0E141D))
+            .background(CameraBackdrop)
             .onGloballyPositioned { screenOrigin = it.positionInRoot(); screenSize = it.size }
     ) {
         AndroidView(
@@ -651,7 +652,7 @@ fun CameraScannerScreen(
             Surface(
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),
-                color = Color.Black.copy(alpha = 0.55f)
+                color = CameraGlass
             ) {
                 Text(
                     if (barcodeUnavailable) "The QR reader is still downloading. Connect to the internet, then try again."
@@ -671,7 +672,7 @@ fun CameraScannerScreen(
             Surface(
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),
-                color = Color.Black.copy(alpha = 0.55f)
+                color = CameraGlass
             ) {
                 Text(liveGuidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
             }
@@ -682,7 +683,7 @@ fun CameraScannerScreen(
                 onDismissRequest = { confirmQuit = false },
                 title = { Text("Quit scanning?") },
                 text = { Text("If you quit now, the photos you took will be discarded.") },
-                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text("Discard", color = Color(0xFFEF4444)) } },
+                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text("Discard", color = MaterialTheme.colorScheme.error) } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text("Cancel") } }
             )
         }
@@ -694,7 +695,7 @@ fun CameraScannerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(detectMode.label, color = Color.White, style = MaterialTheme.typography.titleMedium)
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Detection mode", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Detection mode", tint = scanLine)
                     }
                     DropdownMenu(expanded = detectMenuOpen, onDismissRequest = { detectMenuOpen = false }) {
                         DetectMode.entries.forEach { option ->
@@ -713,17 +714,17 @@ fun CameraScannerScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
+            Surface(shape = CircleShape, color = CameraGlass) {
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
+                Surface(shape = CircleShape, color = CameraGlass) {
                     IconButton(onClick = { torchEnabled = !torchEnabled }) {
                         Icon(if (torchEnabled) Icons.Default.Bolt else Icons.Default.FlashOff, contentDescription = "Flash", tint = Color.White)
                     }
                 }
                 Box {
-                    Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
+                    Surface(shape = CircleShape, color = CameraGlass) {
                         IconButton(onClick = { overflowOpen = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = Color.White)
                         }
@@ -752,7 +753,7 @@ fun CameraScannerScreen(
 
         Column(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .background(Color(0xFF0A0F18))
+                .background(CameraPanel, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -804,48 +805,29 @@ fun CameraScannerScreen(
             }
 
             // Mode tabs. Receipt, Whiteboard and Book live in the overflow menu under "Docs".
-            val blue = MaterialTheme.colorScheme.primary
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 if (scanMode == ScanMode.ID_CARD) {
                     listOf(false to "Front only", true to "Both sides").forEach { (both, text) ->
-                        Text(
-                            text,
-                            color = if (scanBothSides == both) blue else Color.White,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable(enabled = pages.isEmpty()) { scanBothSides = both }.padding(8.dp)
-                        )
+                        ModeTab(text, selected = scanBothSides == both, enabled = pages.isEmpty()) { scanBothSides = both }
                     }
                 } else {
                     listOf(ScanMode.TEXT to "Text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
                         val selected = !barcodeMode &&
                             if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
-                        Text(
-                            text,
-                            color = if (selected) blue else Color.White,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable(enabled = pages.isEmpty()) {
-                                barcodeMode = false
-                                scanMode = target ?: ScanMode.DOCUMENT
-                                scanBothSides = false
-                            }.padding(8.dp)
-                        )
-                    }
-                    Text(
-                        "QR code",
-                        color = if (barcodeMode) blue else Color.White,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable(enabled = pages.isEmpty()) {
-                            barcodeMode = true
-                            scanMode = ScanMode.DOCUMENT
+                        ModeTab(text, selected = selected, enabled = pages.isEmpty()) {
+                            barcodeMode = false
+                            scanMode = target ?: ScanMode.DOCUMENT
                             scanBothSides = false
-                        }.padding(8.dp)
-                    )
+                        }
+                    }
+                    ModeTab("QR code", selected = barcodeMode, enabled = pages.isEmpty()) {
+                        barcodeMode = true
+                        scanMode = ScanMode.DOCUMENT
+                        scanBothSides = false
+                    }
                 }
             }
 
@@ -866,19 +848,27 @@ fun CameraScannerScreen(
                     }
                 }
 
-                Surface(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        capturePage()
-                    },
-                    enabled = !barcodeMode && !capturing && pages.size < pageLimit,
-                    shape = CircleShape,
-                    // Dimmed in QR mode: codes are read live, there is nothing to capture.
-                    color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
-                    border = androidx.compose.foundation.BorderStroke(5.dp, if (stable) blue else Color.White.copy(alpha = 0.5f)),
-                    // The shutter has no visible label, so screen readers need one.
-                    modifier = Modifier.size(78.dp).semantics { contentDescription = "Take photo" }
-                ) {}
+                // Outer ring turns mint once the page is outlined and still; the inner disc is the button.
+                Box(
+                    Modifier
+                        .size(84.dp)
+                        .border(4.dp, if (stable) scanLine else Color.White.copy(alpha = 0.45f), CircleShape)
+                        .padding(7.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            capturePage()
+                        },
+                        enabled = !barcodeMode && !capturing && pages.size < pageLimit,
+                        shape = CircleShape,
+                        // Dimmed in QR mode: codes are read live, there is nothing to capture.
+                        color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
+                        // The shutter has no visible label, so screen readers need one.
+                        modifier = Modifier.fillMaxSize().semantics { contentDescription = "Take photo" }
+                    ) {}
+                }
 
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
                     if (pages.isEmpty() && !barcodeMode) {
@@ -893,6 +883,7 @@ fun CameraScannerScreen(
                         Button(
                             enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
                             onClick = { finishScan() },
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = scanLine, contentColor = Color(0xFF04281E)),
                             modifier = Modifier
                                 .onGloballyPositioned { counterCenter = it.boundsInRoot().center }
                                 .graphicsLayer { scaleX = counterPulse.value; scaleY = counterPulse.value }
@@ -930,6 +921,30 @@ fun CameraScannerScreen(
                     .border(3.dp, Color.White)
             )
         }
+    }
+}
+
+/** Scanner chrome colours: the dark theme's surfaces, used whatever the app theme. */
+private val CameraBackdrop = Color(0xFF0B0D14)
+private val CameraPanel = Color(0xFF14161F)
+private val CameraGlass = Color(0xFF0F1118).copy(alpha = 0.72f)
+
+/** One of the mode pills above the shutter. */
+@Composable
+private fun ModeTab(text: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        color = if (selected) Color.White.copy(alpha = 0.18f) else Color.Transparent,
+        contentColor = if (selected) Color.White else Color.White.copy(alpha = 0.7f)
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+        )
     }
 }
 

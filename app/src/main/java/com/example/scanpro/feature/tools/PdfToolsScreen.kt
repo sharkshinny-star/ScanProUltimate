@@ -134,23 +134,25 @@ data class PdfToolCard(
     val title: String,
     val description: String,
     val icon: ImageVector,
-    val badge: String? = null
+    val badge: String? = null,
+    /** Colour family of the icon tile, so related tools share a hue. */
+    val tone: com.example.scanpro.core.designsystem.TileTone = com.example.scanpro.core.designsystem.TileTone.Indigo
 )
 
 private val PDF_TOOLS = listOf(
-    PdfToolCard("fill", "Fill Form", "Type into a PDF form's fields, tick boxes and save", Icons.Default.EditNote, badge = "New"),
-    PdfToolCard("ocr", "Make Searchable", "Add selectable, searchable text to scanned PDFs", Icons.Default.FindInPage, badge = "New"),
-    PdfToolCard("compress", "Compress PDF", "Reduce PDF size with quality preset options", Icons.Default.Compress),
-    PdfToolCard("merge", "Merge PDFs", "Combine multiple PDFs into a single document", Icons.Default.Merge),
-    PdfToolCard("split", "Split PDF", "Divide PDF by pages, ranges, or fixed chunks", Icons.Default.CallSplit),
-    PdfToolCard("extract", "Extract Pages", "Pick specific pages and save as a new PDF", Icons.AutoMirrored.Filled.DriveFileMove),
-    PdfToolCard("rotate", "Rotate Pages", "Rotate PDF pages 90°, 180°, or 270°", Icons.AutoMirrored.Filled.RotateRight),
-    PdfToolCard("organize", "Organize Pages", "Reorder, delete, and manage PDF pages", Icons.Default.Description),
-    PdfToolCard("img2pdf", "Images to PDF", "Convert gallery photos into a styled PDF", Icons.Default.Image),
-    PdfToolCard("pdf2img", "PDF to Images", "Export PDF pages as JPEG or PNG images", Icons.Default.PictureAsPdf),
-    PdfToolCard("protect", "Protect PDF", "Encrypt PDF with strong password protection", Icons.Default.Lock),
-    PdfToolCard("unlock", "Unlock PDF", "Remove password security from a protected PDF", Icons.Default.LockOpen),
-    PdfToolCard("viewer", "PDF Viewer", "Interactive reader with pinch-to-zoom & search", Icons.Default.Visibility)
+    PdfToolCard("fill", "Fill form", "Type into a PDF form's fields, tick boxes and save", Icons.Default.EditNote, badge = "New", tone = com.example.scanpro.core.designsystem.TileTone.Violet),
+    PdfToolCard("ocr", "Make searchable", "Add selectable, searchable text to scanned PDFs", Icons.Default.FindInPage, badge = "New", tone = com.example.scanpro.core.designsystem.TileTone.Teal),
+    PdfToolCard("compress", "Compress", "Reduce PDF size with quality presets", Icons.Default.Compress, tone = com.example.scanpro.core.designsystem.TileTone.Amber),
+    PdfToolCard("merge", "Merge", "Combine several PDFs into one document", Icons.Default.Merge, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
+    PdfToolCard("split", "Split", "Divide a PDF by pages, ranges or fixed chunks", Icons.Default.CallSplit, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
+    PdfToolCard("extract", "Extract pages", "Pick specific pages and save them as a new PDF", Icons.AutoMirrored.Filled.DriveFileMove, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
+    PdfToolCard("rotate", "Rotate pages", "Turn pages by 90°, 180° or 270°", Icons.AutoMirrored.Filled.RotateRight, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
+    PdfToolCard("organize", "Organise pages", "Reorder, delete and manage pages", Icons.Default.Description, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
+    PdfToolCard("img2pdf", "Images to PDF", "Turn gallery photos into a tidy PDF", Icons.Default.Image, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
+    PdfToolCard("pdf2img", "PDF to images", "Export pages as JPEG or PNG", Icons.Default.PictureAsPdf, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
+    PdfToolCard("protect", "Protect", "Encrypt a PDF with a password", Icons.Default.Lock, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
+    PdfToolCard("unlock", "Unlock", "Remove the password from a protected PDF", Icons.Default.LockOpen, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
+    PdfToolCard("viewer", "Viewer", "Read with pinch to zoom and search", Icons.Default.Visibility, tone = com.example.scanpro.core.designsystem.TileTone.Slate)
 )
 
 private data class ThumbnailPageModel(
@@ -631,11 +633,11 @@ private fun RecentPdfsRow(
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(items, key = { it.uri.toString() }) { pdf ->
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier
-                        .width(150.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .width(160.dp)
+                        .clip(RoundedCornerShape(16.dp))
                         .combinedClickable(
                             onClickLabel = "Open",
                             onLongClickLabel = "Remove from recent",
@@ -643,10 +645,10 @@ private fun RecentPdfsRow(
                             onClick = { onOpen(pdf) }
                         )
                 ) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(28.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(pdf.name, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        com.example.scanpro.core.designsystem.IconTile(Icons.Default.PictureAsPdf, com.example.scanpro.core.designsystem.TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text(pdf.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -671,32 +673,33 @@ private fun ToolCardItem(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = tool.icon,
-                        contentDescription = tool.title,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
+            Row(verticalAlignment = Alignment.Top) {
+                com.example.scanpro.core.designsystem.IconTile(tool.icon, tool.tone, size = 44.dp, corner = 14.dp)
+                Spacer(Modifier.weight(1f))
+                tool.badge?.let { badge ->
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
+                        Text(
+                            badge,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = tool.title,
                 style = MaterialTheme.typography.titleMedium,

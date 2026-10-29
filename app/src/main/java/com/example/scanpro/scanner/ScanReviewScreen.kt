@@ -65,6 +65,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
@@ -90,8 +91,9 @@ import java.io.File
 import java.util.UUID
 import kotlin.math.hypot
 
-private val Blue = Color(0xFF2F7BFF)
-private val Amber = Color(0xFFF59E0B)
+private val Blue = Color(0xFF2FD6A6)
+private val Amber = Color(0xFFFFB95C)
+private val ReviewBackdrop = Color(0xFF0B0D14)
 
 /**
  * Full-screen review shown after capturing: swipe through pages with the pager, drag the corners, rotate,
@@ -185,7 +187,7 @@ fun ScanReviewScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color(0xFF0A0F18)).systemBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
+    Column(Modifier.fillMaxSize().background(ReviewBackdrop).systemBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to camera", tint = Color.White)
@@ -305,7 +307,12 @@ fun ScanReviewScreen(
                     Icon(Icons.Default.ChevronRight, contentDescription = "Next page", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
                 }
             }
-            OutlinedButton(enabled = !blocked, onClick = onAdd) {
+            OutlinedButton(
+                enabled = !blocked,
+                onClick = onAdd,
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Color.White, disabledContentColor = Color.White.copy(alpha = 0.4f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
+            ) {
                 Icon(Icons.Default.AddAPhoto, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Add")
@@ -344,8 +351,12 @@ fun ScanReviewScreen(
             }
             ReviewAction(Icons.AutoMirrored.Filled.RotateLeft, "Left", !blocked) { rotate(clockwise = false) }
             ReviewAction(Icons.AutoMirrored.Filled.RotateRight, "Right", !blocked) { rotate(clockwise = true) }
-            Button(enabled = !blocked, onClick = onDone) {
-                if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color.White)
+            Button(
+                enabled = !blocked,
+                onClick = onDone,
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Blue, contentColor = Color(0xFF04281E))
+            ) {
+                if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color(0xFF04281E))
                 else Text("Done", maxLines = 1, softWrap = false)
             }
         }
@@ -361,9 +372,11 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
     }
     Column(
         Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (highlighted) Amber.copy(alpha = 0.16f) else Color.Transparent)
             .clickable(enabled = enabled, onClick = onClick)
             .semantics { if (highlighted) stateDescription = "On" }
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(icon, contentDescription = null, tint = tint)

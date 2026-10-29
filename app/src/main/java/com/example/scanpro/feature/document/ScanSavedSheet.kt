@@ -26,12 +26,11 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,6 +45,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.core.designsystem.PageThumbnail
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.InsetDivider
+import com.example.scanpro.core.designsystem.TileTone
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.data.ScanDocument
@@ -101,14 +105,15 @@ fun ScanSavedSheet(
                 PageThumbnail(
                     path = document.pages.minByOrNull { it.position }?.imagePath,
                     modifier = Modifier.size(width = 56.dp, height = 72.dp),
-                    maxDimension = THUMBNAIL_SMALL
+                    maxDimension = THUMBNAIL_SMALL,
+                    shape = RoundedCornerShape(8.dp)
                 )
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Scan saved", style = MaterialTheme.typography.titleMedium)
+                        Text("Scan saved", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     val pages = if (document.pageCount == 1) "1 page" else "${document.pageCount} pages"
                     Text(
@@ -130,11 +135,19 @@ fun ScanSavedSheet(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
-            SheetAction(Icons.Default.PictureAsPdf, "Share as PDF", "Email, WhatsApp, Gmail and other apps", !busy, then(onSharePdf))
-            SheetAction(Icons.Default.Image, "Share as JPG", "One image per page", !busy, then(onShareJpg))
-            SheetAction(Icons.Default.AddToDrive, "Save to Google Drive", "Or pick Dropbox, OneDrive or another cloud app", !busy, then(onSaveToDrive))
-            SheetAction(Icons.Default.Download, "Save to device", "Choose a folder such as Downloads", !busy, then(onSaveToDevice))
-            SheetAction(Icons.Default.Print, "Print", null, !busy, then(onPrint))
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    SheetAction(Icons.Default.PictureAsPdf, TileTone.Coral, "Share as PDF", "Email, WhatsApp, Gmail and other apps", !busy, then(onSharePdf))
+                    InsetDivider()
+                    SheetAction(Icons.Default.Image, TileTone.Sky, "Share as JPG", "One image per page", !busy, then(onShareJpg))
+                    InsetDivider()
+                    SheetAction(Icons.Default.AddToDrive, TileTone.Amber, "Save to Google Drive", "Or pick Dropbox, OneDrive or another cloud app", !busy, then(onSaveToDrive))
+                    InsetDivider()
+                    SheetAction(Icons.Default.Download, TileTone.Indigo, "Save to device", "Choose a folder such as Downloads", !busy, then(onSaveToDevice))
+                    InsetDivider()
+                    SheetAction(Icons.Default.Print, TileTone.Slate, "Print", null, !busy, then(onPrint))
+                }
+            }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 Button(onClick = then { }) { Text("Done") }
@@ -145,12 +158,19 @@ fun ScanSavedSheet(
 }
 
 @Composable
-private fun SheetAction(icon: ImageVector, title: String, subtitle: String?, enabled: Boolean, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(enabled = enabled, onClick = onClick),
-        headlineContent = { Text(title) },
-        supportingContent = subtitle?.let { { Text(it) } },
-        leadingContent = { Icon(icon, contentDescription = null) },
-        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
-    )
+private fun SheetAction(icon: ImageVector, tone: TileTone, title: String, subtitle: String?, enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconTile(icon, tone, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
