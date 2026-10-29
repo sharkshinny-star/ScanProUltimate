@@ -1,7 +1,6 @@
 package com.example.scanpro.feature.viewer
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -193,11 +192,17 @@ fun PdfViewerScreen(
 
                 if (isImage) {
                     isImageMode = true
+                    // Decoded at screen size and turned by its EXIF tag: a full 50 MP photo would need
+                    // hundreds of megabytes and show sideways.
                     val bmp = if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                        BitmapFactory.decodeFile(pdfUri.path)
+                        com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
                     } else {
-                        context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                            BitmapFactory.decodeStream(input)
+                        val copy = java.io.File(context.cacheDir, "view_${java.util.UUID.randomUUID()}.img")
+                        try {
+                            context.contentResolver.openInputStream(pdfUri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
+                            com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(copy.absolutePath, 2400)
+                        } finally {
+                            copy.delete()
                         }
                     }
                     if (bmp != null) {

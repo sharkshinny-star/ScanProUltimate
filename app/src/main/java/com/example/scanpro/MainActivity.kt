@@ -94,7 +94,7 @@ class MainActivity : FragmentActivity() {
             // No translucent scrim behind the gesture bar; the status bar never had one on these versions.
             window.isNavigationBarContrastEnforced = false
         }
-        publishScanShortcut()
+        publishShortcuts()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // With app lock on, keep documents out of screenshots and the recent-apps preview.
@@ -214,6 +214,8 @@ class MainActivity : FragmentActivity() {
 
         when {
             action == ACTION_SCAN_NOW -> viewModel.requestScan()
+            action == ACTION_REPORT_ISSUE -> com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.ISSUE)
+            action == ACTION_GIVE_FEEDBACK -> com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.FEEDBACK)
             action == android.content.Intent.ACTION_SEND -> {
                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM, Uri::class.java)
@@ -260,16 +262,26 @@ class MainActivity : FragmentActivity() {
     private fun isAllowedExternalUri(uri: Uri): Boolean =
         uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
 
-    /** Launcher "Scan" shortcut. Published at runtime so it targets the right package in debug and release. */
-    private fun publishScanShortcut() {
+    /**
+     * Launcher shortcuts, published at runtime: a static shortcuts.xml cannot name the package, which differs
+     * between the debug and release builds, and each intent here is one this activity really handles.
+     */
+    private fun publishShortcuts() {
         runCatching {
-            val shortcut = ShortcutInfoCompat.Builder(this, "scan_now")
-                .setShortLabel(getString(R.string.shortcut_scan_short))
-                .setLongLabel(getString(R.string.shortcut_scan_long))
+            fun shortcut(id: String, short: Int, long: Int, action: String) = ShortcutInfoCompat.Builder(this, id)
+                .setShortLabel(getString(short))
+                .setLongLabel(getString(long))
                 .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
-                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(ACTION_SCAN_NOW))
+                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(action))
                 .build()
-            ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
+            ShortcutManagerCompat.setDynamicShortcuts(
+                this,
+                listOf(
+                    shortcut("scan_now", R.string.shortcut_scan_short, R.string.shortcut_scan_long, ACTION_SCAN_NOW),
+                    shortcut("bugs_or_issues", R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, ACTION_REPORT_ISSUE),
+                    shortcut("dont_remove_app", R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, ACTION_GIVE_FEEDBACK)
+                )
+            )
         }
     }
 
@@ -351,5 +363,7 @@ class MainActivity : FragmentActivity() {
         const val LOCK_TIMEOUT_MS = 30_000L
         const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+        const val ACTION_REPORT_ISSUE = "com.example.scanpro.action.REPORT_ISSUE"
+        const val ACTION_GIVE_FEEDBACK = "com.example.scanpro.action.GIVE_FEEDBACK"
     }
 }

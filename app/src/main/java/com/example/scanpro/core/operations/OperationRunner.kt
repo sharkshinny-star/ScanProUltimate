@@ -105,6 +105,36 @@ class OperationRunner @Inject constructor(
         scope.launch { mutex.withLock { runCatching { action() } } }
     }
 
+    /**
+     * Runs [action] in the caller's coroutine (a WorkManager worker, for instance) while holding the same
+     * lock and busy state as the queued operations, so it never overlaps an edit and the screens show its
+     * label. The caller handles failures.
+     */
+    suspend fun <T> perform(label: String?, action: suspend () -> T): T {
+        synchronized(stateLock) {
+            pending++
+            _busy.value = true
+        }
+        try {
+            return mutex.withLock {
+                synchronized(stateLock) { _busyLabel.value = label }
+                try {
+                    action()
+                } finally {
+                    runCatching { library.refresh() }
+                }
+            }
+        } finally {
+            synchronized(stateLock) {
+                pending--
+                if (pending == 0) {
+                    _busyLabel.value = null
+                    _busy.value = false
+                }
+            }
+        }
+    }
+
     private fun start(label: String?, successMessage: String?, action: suspend () -> Unit) {
         synchronized(stateLock) {
             pending++

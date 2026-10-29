@@ -187,6 +187,8 @@ fun CameraScannerScreen(
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var torchEnabled by remember { mutableStateOf(false) }
+    // A camera problem the user has to act on (camera busy, disabled, failed to open); shown in every mode.
+    var cameraError by remember { mutableStateOf<String?>(null) }
     val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
     var detectMode by rememberSaveable {
         mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.AUTO))
@@ -404,7 +406,8 @@ fun CameraScannerScreen(
 
     fun capturePage() {
         val capture = imageCapture ?: return
-        if (capturing || pages.size >= pageLimit) return
+        // A retake replaces a page, so it is allowed at the page limit.
+        if (capturing || (!retaking && pages.size >= pageLimit)) return
         capturing = true
         status = "Capturing…"
         scope.launch {
@@ -462,7 +465,13 @@ fun CameraScannerScreen(
 
                 override fun onError(exception: ImageCaptureException) {
                     capturing = false
-                    status = exception.message ?: "Could not capture page"
+                    // A half-written file must not be mistaken for a page later.
+                    raw.delete()
+                    status = when (exception.imageCaptureError) {
+                        ImageCapture.ERROR_FILE_IO -> "Could not save the photo. Check free space and try again."
+                        ImageCapture.ERROR_CAMERA_CLOSED -> "The camera closed before the photo was taken. Try again."
+                        else -> "Could not capture the page. Try again."
+                    }
                 }
             }
         )
@@ -489,8 +498,16 @@ fun CameraScannerScreen(
         }
     }
 
-    LaunchedEffect(permissionGranted, lifecycleOwner) {
+    // Re-keyed on `reviewing`: the camera is released while the review step is up, so the preview and
+    // OpenCV analysis stop costing battery behind a screen that doesn't show them, and bound again after.
+    LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, resumeCount) {
         if (!permissionGranted) return@LaunchedEffect
+        if (reviewing) {
+            cameraProvider?.unbindAll()
+            imageCapture = null
+            boundCamera = null
+            return@LaunchedEffect
+        }
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
             // The screen may have been left before the camera provider became ready.
@@ -530,6 +547,20 @@ fun CameraScannerScreen(
                 }
                 imageCapture = capture
                 boundCamera = camera
+                cameraError = null
+                // Errors after binding (another app took the camera, device policy, a fold closing) arrive here.
+                camera.cameraInfo.cameraState.observe(lifecycleOwner) { state ->
+                    val error = state.error
+                    cameraError = when (error?.code) {
+                        null -> null
+                        androidx.camera.core.CameraState.ERROR_CAMERA_IN_USE,
+                        androidx.camera.core.CameraState.ERROR_MAX_CAMERAS_IN_USE -> "Another app is using the camera. Close it and try again."
+                        androidx.camera.core.CameraState.ERROR_CAMERA_DISABLED -> "The camera is disabled on this device."
+                        androidx.camera.core.CameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED -> "Do Not Disturb is blocking the camera on this device."
+                        androidx.camera.core.CameraState.ERROR_STREAM_CONFIG -> "The camera could not start a preview on this device."
+                        else -> if (error.type == androidx.camera.core.CameraState.ErrorType.CRITICAL) "The camera stopped working. Try again or use the compatibility scanner." else null
+                    }
+                }
                 camera.cameraInfo.zoomState.value?.let { zoom = it.linearZoom }
                 val exposureState = camera.cameraInfo.exposureState
                 if (exposureState.isExposureCompensationSupported) {
@@ -542,7 +573,7 @@ fun CameraScannerScreen(
                     exposureIndex = 0
                 }
             }.onFailure {
-                liveGuidance = "Camera unavailable. Use compatibility scanner."
+                cameraError = "The camera could not be opened. Try again or use the compatibility scanner."
             }
         }, mainExecutor)
     }
@@ -768,6 +799,22 @@ fun CameraScannerScreen(
                                 Text("Turn on flash", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                             }
                         }
+                    }
+                }
+            }
+        }
+        cameraError?.let { problem ->
+            Surface(
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 24.dp).widthIn(max = 420.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = CameraGlass
+            ) {
+                Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(problem, color = Color.White, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { cameraError = null; resumeCount++ }) { Text("Try again", color = Color.White) }
+                        TextButton(onClick = onFallbackScanner) { Text("Compatibility scanner", color = scanLine) }
                     }
                 }
             }

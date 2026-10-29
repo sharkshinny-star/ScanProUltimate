@@ -45,6 +45,25 @@ object ImageProcessor {
         annotations: List<PageAnnotation> = emptyList()
     ) {
         val maxDimension = if (filter == PageFilter.BW) 2200 else 3400
+        try {
+            renderPageAt(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension)
+        } catch (memory: OutOfMemoryError) {
+            // A page the device can't hold at full size is still saved, at half the resolution, rather than lost.
+            System.gc()
+            renderPageAt(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension / 2)
+        }
+    }
+
+    private fun renderPageAt(
+        source: File,
+        destination: File,
+        filter: PageFilter,
+        manualRotationDegrees: Int,
+        crop: CropQuad,
+        adjustments: PageAdjustments,
+        annotations: List<PageAnnotation>,
+        maxDimension: Int
+    ) {
         var bitmap = decodeScaled(source.absolutePath, maxDimension)
             ?: error("Unable to decode ${source.name}")
 
@@ -267,12 +286,13 @@ object ImageProcessor {
         val rightControl = bowed(tr, br, crop.rightBow)
         val topLength = CurvedPage.length(tl, topControl, tr)
         val bottomLength = CurvedPage.length(bl, bottomControl, br)
-        val columns = max(topLength, bottomLength).toInt().coerceIn(64, 5000)
+        // Never larger than the photo itself: the extra pixels would hold no detail and cost hundreds of megabytes.
+        val columns = max(topLength, bottomLength).toInt().coerceIn(64, source.width.coerceAtLeast(64))
         val top = CurvedPage.evenlySpaced(tl, topControl, tr, columns)
         val bottom = CurvedPage.evenlySpaced(bl, bottomControl, br, columns)
         val rows = CurvedPage.outputHeight(
             top, bottom, CurvedPage.length(tl, leftControl, bl), CurvedPage.length(tr, rightControl, br)
-        ).coerceIn(64, 7000)
+        ).coerceIn(64, source.height.coerceAtLeast(64))
         val left = CurvedPage.evenlySpaced(tl, leftControl, bl, rows)
         val right = CurvedPage.evenlySpaced(tr, rightControl, br, rows)
 

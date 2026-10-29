@@ -1,7 +1,5 @@
 package com.example.scanpro
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -179,33 +177,8 @@ class AppViewModel @Inject constructor(
         filters: List<com.example.scanpro.data.PageFilter> = emptyList()
     ) {
         if (imageUris.isEmpty()) return
-        operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", null) {
-            val newDocument = try {
-                repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters)
-            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                // Keep the photos: they exist nowhere else. The scanner's own clean-up removes abandoned sessions
-                // after a day, so offering Retry here costs nothing if the user ignores it.
-                operations.showMessage(
-                    UiMessage("Could not save the scan: ${error.message ?: "unknown error"}", actionLabel = "Retry") {
-                        importCameraSession(imageUris, mode, crops, filters)
-                    }
-                )
-                return@enqueue
-            }
-            settings.recordCompletedScan()
-            // Text scans copy their text instead; every other scan offers share/save straight away.
-            if (mode == ScanMode.TEXT) copyRecognizedText(newDocument) else operations.offerScanSaved(newDocument.id)
-            operations.requestOpenDocument(newDocument.id)
-            // The document now holds its own copies; drop the scanner session's temporary captures.
-            imageUris.asSequence()
-                .filter { it.scheme == "file" }
-                .mapNotNull { uri -> uri.path?.let { File(it).parentFile } }
-                .filter { it.parentFile?.name == SESSION_ROOT }
-                .distinct()
-                .forEach { it.deleteRecursively() }
-        }
+        // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
+        com.example.scanpro.work.ImportScanWorker.enqueue(context, com.example.scanpro.work.ImportScanWorker.inputFor(imageUris, mode, crops, filters))
     }
 
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */
@@ -225,26 +198,6 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    /** "Extract text" scans put the recognized text on the clipboard so it can be pasted straight away. */
-    private fun copyRecognizedText(document: ScanDocument) {
-        val text = document.pages.sortedBy { it.position }.joinToString("\n\n") { it.ocrText.trim() }.trim()
-        if (text.isBlank()) {
-            operations.showMessage("No text found in this scan")
-            return
-        }
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Extracted text", text).apply {
-            // Scans often hold IDs and account numbers; keep them out of the clipboard preview on Android 13+.
-            description.extras = android.os.PersistableBundle().apply {
-                putBoolean(
-                    if (android.os.Build.VERSION.SDK_INT >= 33) android.content.ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE",
-                    true
-                )
-            }
-        }
-        clipboard.setPrimaryClip(clip)
-        operations.showMessage("Text copied to clipboard")
-    }
 }
 
 private const val MAX_IMPORT_IMAGES = 100
