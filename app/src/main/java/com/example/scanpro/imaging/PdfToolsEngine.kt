@@ -151,7 +151,7 @@ object PdfToolsEngine {
                         for (i in 0 until totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(i + 1, totalPages, "Splitting page ${i + 1} of $totalPages…")
-                            val outFile = File(outputDir, "page_${i + 1}.pdf")
+                            val outFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.pdf")
                             PDDocument().use { singleDoc ->
                                 singleDoc.addImportedPage(doc.getPage(i))
                                 singleDoc.save(outFile)
@@ -522,24 +522,6 @@ object PdfToolsEngine {
         return tempFile
     }
 
-    private fun parsePageRanges(rangeStr: String, maxPages: Int): List<IntRange> {
-        val result = mutableListOf<IntRange>()
-        val parts = rangeStr.split(",", ";").map { it.trim() }
-        for (part in parts) {
-            if (part.contains("-")) {
-                val bounds = part.split("-").map { it.trim().toIntOrNull() }
-                if (bounds.size == 2 && bounds[0] != null && bounds[1] != null) {
-                    val start = bounds[0]!!.coerceIn(1, maxPages)
-                    val end = bounds[1]!!.coerceIn(1, maxPages)
-                    if (start <= end) result.add(start..end)
-                }
-            } else {
-                val num = part.toIntOrNull()
-                if (num != null && num in 1..maxPages) {
-                    result.add(num..num)
-                }
-            }
-        }
-        return result
-    }
+    private fun parsePageRanges(rangeStr: String, maxPages: Int): List<IntRange> =
+        PageRanges.parse(rangeStr, maxPages).getOrElse { error(it.message ?: "Invalid page ranges") }
 }

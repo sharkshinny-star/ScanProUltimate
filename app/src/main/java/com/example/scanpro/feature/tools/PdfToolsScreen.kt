@@ -72,7 +72,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -91,7 +90,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -150,7 +148,7 @@ private val PDF_TOOLS = listOf(
     PdfToolCard("organize", "Organise pages", "Reorder, delete and manage pages", Icons.Default.Description, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
     PdfToolCard("img2pdf", "Images to PDF", "Turn gallery photos into a tidy PDF", Icons.Default.Image, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
     PdfToolCard("pdf2img", "PDF to images", "Export pages as JPEG or PNG", Icons.Default.PictureAsPdf, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
-    PdfToolCard("protect", "Protect", "Encrypt a PDF with a password", Icons.Default.Lock, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
+    PdfToolCard("protect", "Protect", "Make a copy that needs a password to open", Icons.Default.Lock, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
     PdfToolCard("unlock", "Unlock", "Remove the password from a protected PDF", Icons.Default.LockOpen, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
     PdfToolCard("viewer", "Viewer", "Read with pinch to zoom and search", Icons.Default.Visibility, tone = com.example.scanpro.core.designsystem.TileTone.Slate)
 )
@@ -208,15 +206,20 @@ fun PdfToolsScreen(
 
     // SAF save: one launcher per output type, so the system picker suggests the right extension.
     var saveSourceFile by remember { mutableStateOf<File?>(null) }
+    val saveScope = rememberCoroutineScope()
     fun saveTo(destUri: Uri?) {
         val file = saveSourceFile ?: return
         if (destUri == null) return
-        val ok = copyFileToUri(context, file.absolutePath, destUri)
-        Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
+        // The copy runs off the main thread: a large merged PDF or zip would otherwise freeze the screen.
+        saveScope.launch {
+            val ok = withContext(Dispatchers.IO) { copyFileToUri(context, file.absolutePath, destUri) }
+            Toast.makeText(context, if (ok) "Saved to requested location" else "Could not save file", Toast.LENGTH_SHORT).show()
+        }
     }
     val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { saveTo(it) }
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { saveTo(it) }
-    val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
+    val saveJpegLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
+    val savePngLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { saveTo(it) }
 
     val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val tool = selectedTool
@@ -323,7 +326,8 @@ fun PdfToolsScreen(
                         when (mimeFor(result.outputFile)) {
                             "application/zip" -> saveZipLauncher.launch(name)
                             "application/pdf" -> saveFileLauncher.launch(name)
-                            else -> saveImageLauncher.launch(name)
+                            "image/png" -> savePngLauncher.launch(name)
+                            else -> saveJpegLauncher.launch(name)
                         }
                     }
                 )
@@ -423,6 +427,7 @@ fun PdfToolsScreen(
 
             if (showSplitDialog && uri != null) {
                 SplitDialog(
+                    uri = uri,
                     onDismiss = { showSplitDialog = false },
                     onConfirm = { mode, rangesText, everyN ->
                         showSplitDialog = false
@@ -455,7 +460,7 @@ private fun CompressPdfDialog(
     onConfirm: (preset: CompressionPreset) -> Unit
 ) {
     var originalSize by remember { mutableLongStateOf(0L) }
-    var compressionPercent by remember { mutableFloatStateOf(50f) }
+    var preset by remember { mutableStateOf(CompressionPreset.BALANCED) }
 
     LaunchedEffect(uri) {
         withContext(Dispatchers.IO) {
@@ -465,103 +470,41 @@ private fun CompressPdfDialog(
         }
     }
 
-    val estimatedSize = (originalSize * ((100f - compressionPercent) / 100f)).toLong().coerceAtLeast(1024L)
-    val estimatedSavings = compressionPercent.toInt()
-
-    val preset = when {
-        compressionPercent >= 65f -> CompressionPreset.MAXIMUM
-        compressionPercent >= 40f -> CompressionPreset.BALANCED
-        else -> CompressionPreset.HIGH
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Compress PDF Target") },
+        title = { Text("Compress PDF") },
         text = {
             Column {
-                Text("Drag slider to select target compression ratio:", style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Original Size:", style = MaterialTheme.typography.labelMedium)
-                            Text(formatBytes(originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Estimated Output:", style = MaterialTheme.typography.labelMedium)
-                            Text(
-                                "~${formatBytes(estimatedSize)} (-$estimatedSavings%)",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Current size", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatBytes(originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                // Three real presets rather than a slider: the engine has three settings, and how much a
+                // file shrinks depends on what is in it, so no number is promised up front.
+                CompressionPreset.entries.forEach { item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { preset = item }
+                            .padding(vertical = 6.dp)
+                    ) {
+                        RadioButton(selected = preset == item, onClick = { preset = item })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(item.label, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text(item.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Compression Reduction:", style = MaterialTheme.typography.labelLarge)
-                    Text("${compressionPercent.toInt()}%", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                }
-
-                Slider(
-                    value = compressionPercent,
-                    onValueChange = { compressionPercent = it },
-                    valueRange = 15f..85f,
-                    steps = 14,
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Text stays selectable where the PDF already has it. A file that would not get smaller is kept as it is.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("High Quality\n(15% reduction)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Max Compression\n(85% reduction)", style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    FilterChip(
-                        selected = compressionPercent in 15f..35f,
-                        onClick = { compressionPercent = 25f },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("High", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
-                    )
-                    FilterChip(
-                        selected = compressionPercent in 36f..60f,
-                        onClick = { compressionPercent = 50f },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Balanced", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
-                    )
-                    FilterChip(
-                        selected = compressionPercent > 60f,
-                        onClick = { compressionPercent = 75f },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Maximum", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
-                    )
-                }
             }
         },
         confirmButton = {
@@ -971,6 +914,7 @@ private fun PasswordDialog(
     onConfirm: (String) -> Unit
 ) {
     var password by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorText by remember(initialError) { mutableStateOf(initialError) }
 
@@ -980,8 +924,8 @@ private fun PasswordDialog(
         text = {
             Column {
                 Text(
-                    if (isProtect) "Enter a password (at least ${com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH} characters) to encrypt this PDF:"
-                    else "Enter password to remove protection from this PDF:",
+                    if (isProtect) "Anyone opening the copy will need this password (at least ${com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH} characters). There is no way to recover it."
+                    else "Enter the password to remove protection from this PDF:",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1002,6 +946,18 @@ private fun PasswordDialog(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (isProtect) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = confirm,
+                        onValueChange = { confirm = it; errorText = null },
+                        label = { Text("Confirm password") },
+                        singleLine = true,
+                        isError = errorText != null,
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 if (errorText != null) {
                     Text(
                         errorText!!,
@@ -1019,6 +975,8 @@ private fun PasswordDialog(
                     val minimum = if (isProtect) com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH else 1
                     if (password.length < minimum) {
                         errorText = if (isProtect) "Password must be at least $minimum characters" else "Enter the PDF's password"
+                    } else if (isProtect && confirm != password) {
+                        errorText = "The passwords don't match"
                     } else {
                         onConfirm(password)
                     }
@@ -1035,19 +993,35 @@ private fun PasswordDialog(
 
 @Composable
 private fun SplitDialog(
+    uri: Uri,
     onDismiss: () -> Unit,
     onConfirm: (SplitMode, String, Int) -> Unit
 ) {
+    val context = LocalContext.current
     var mode by remember { mutableStateOf(SplitMode.SINGLE_PAGES) }
-    var rangesText by remember { mutableStateOf("1-2, 3-5") }
+    var rangesText by remember { mutableStateOf("") }
     var chunkSizeText by remember { mutableStateOf("2") }
+    var error by remember { mutableStateOf<String?>(null) }
+    // The page count makes the ranges checkable before the split starts.
+    var pageCount by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(uri) {
+        pageCount = withContext(Dispatchers.IO) {
+            runCatching {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { android.graphics.pdf.PdfRenderer(it).use { r -> r.pageCount } }
+            }.getOrNull()
+        }
+        if (rangesText.isEmpty()) pageCount?.let { rangesText = if (it > 1) "1-${(it + 1) / 2}, ${(it + 1) / 2 + 1}-$it" else "1" }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Split PDF Options") },
         text = {
             Column {
-                Text("Select how you would like to split this document:", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    pageCount?.let { "This PDF has ${if (it == 1) "1 page" else "$it pages"}. Choose how to split it:" } ?: "Choose how to split this document:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 SplitMode.entries.forEach { item ->
@@ -1071,18 +1045,23 @@ private fun SplitDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = rangesText,
-                        onValueChange = { rangesText = it },
-                        label = { Text("Page Ranges (e.g., 1-3, 4-6)") },
+                        onValueChange = { rangesText = it; error = null },
+                        label = { Text("Page ranges, e.g. 1-3, 4-6") },
                         singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else if (mode == SplitMode.EVERY_N_PAGES) {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = chunkSizeText,
-                        onValueChange = { chunkSizeText = it },
-                        label = { Text("Pages per PDF chunk") },
+                        onValueChange = { chunkSizeText = it.filter(Char::isDigit); error = null },
+                        label = { Text("Pages per file") },
                         singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1091,8 +1070,19 @@ private fun SplitDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val n = chunkSizeText.toIntOrNull() ?: 1
-                    onConfirm(mode, rangesText, n)
+                    val n = chunkSizeText.toIntOrNull()
+                    val pages = pageCount ?: Int.MAX_VALUE
+                    when (mode) {
+                        SplitMode.PAGE_RANGES -> com.example.scanpro.imaging.PageRanges.parse(rangesText, pages)
+                            .onSuccess { onConfirm(mode, rangesText, 1) }
+                            .onFailure { error = it.message }
+                        SplitMode.EVERY_N_PAGES -> when {
+                            n == null || n < 1 -> error = "Enter how many pages each file should have"
+                            pageCount != null && n >= pageCount!! -> error = "That is the whole document; choose fewer than $pageCount pages"
+                            else -> onConfirm(mode, rangesText, n)
+                        }
+                        SplitMode.SINGLE_PAGES -> onConfirm(mode, rangesText, 1)
+                    }
                 }
             ) {
                 Text("Split PDF")

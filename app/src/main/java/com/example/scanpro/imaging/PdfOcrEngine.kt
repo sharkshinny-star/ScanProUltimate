@@ -11,6 +11,7 @@ import com.example.scanpro.data.OcrScript
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -53,6 +54,7 @@ object PdfOcrEngine {
                 require(total > 0) { "This PDF has no pages" }
                 val stripper = PDFTextStripper()
                 val needsText = (0 until total).filter { index ->
+                    coroutineContext.ensureActive()
                     stripper.startPage = index + 1
                     stripper.endPage = index + 1
                     runCatching { stripper.getText(document) }.getOrDefault("").isBlank()

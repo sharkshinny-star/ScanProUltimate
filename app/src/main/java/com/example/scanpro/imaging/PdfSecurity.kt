@@ -4,7 +4,6 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
 import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import java.io.File
-import java.util.UUID
 
 object PdfSecurity {
     /** PDF passwords can be attacked offline, so very short ones offer little protection. */
@@ -18,15 +17,11 @@ object PdfSecurity {
         for (keyLength in intArrayOf(256, 128)) {
             try {
                 PDDocument.load(source).use { document ->
-                    val permissions = AccessPermission().apply {
-                        setCanPrint(true)
-                        setCanExtractContent(false)
-                        setCanModify(false)
-                        setCanModifyAnnotations(false)
-                        setCanFillInForm(false)
-                    }
-                    val ownerPassword = UUID.randomUUID().toString() + UUID.randomUUID().toString()
-                    val policy = StandardProtectionPolicy(ownerPassword, password, permissions).apply {
+                    // The screen promises a password to open the file and nothing else, so whoever has the
+                    // password can print, copy, edit and fill it. The same password is the owner password:
+                    // a random one would make the restrictions impossible for the user to lift later.
+                    val permissions = AccessPermission()
+                    val policy = StandardProtectionPolicy(password, password, permissions).apply {
                         encryptionKeyLength = keyLength
                         isPreferAES = true
                     }

@@ -127,6 +127,9 @@ class PdfToolsViewModel @Inject constructor(
             } catch (error: Exception) {
                 // The engines stop with an InterruptedException when cancelled mid-way; report that as a cancel.
                 _message.value = if (error is InterruptedException) "Operation cancelled" else error.localizedMessage ?: failure
+            } catch (memory: OutOfMemoryError) {
+                // A huge page image is a failed tool run, not a reason to lose the app.
+                _message.value = "Not enough memory for this PDF. Try a smaller file or fewer pages."
             } finally {
                 _progress.value = null
             }
@@ -227,14 +230,26 @@ class PdfToolsViewModel @Inject constructor(
 
     fun saveForm(flatten: Boolean) {
         val session = _form.value ?: return
+        if (job?.isActive == true) {
+            _message.value = "Still working on the previous task"
+            return
+        }
+        // The form window would hide the progress, Cancel and any error, so it closes first; a failure
+        // brings it back with the entries intact.
+        _form.value = null
         launchTool("Filling form…", "Could not save the filled form") {
-            val result = PdfFormEngine.fill(
-                context, session.uri, session.changes, flatten,
-                PdfToolsEngine.outputLocation(context, "filled_${System.currentTimeMillis()}.pdf")
-            )
-            // Closed only once saved, so a failure leaves the user's entries in place to try again.
-            _form.value = null
-            result
+            try {
+                PdfFormEngine.fill(
+                    context, session.uri, session.changes, flatten,
+                    PdfToolsEngine.outputLocation(context, "filled_${System.currentTimeMillis()}.pdf")
+                )
+            } catch (cancelled: CancellationException) {
+                _form.value = session
+                throw cancelled
+            } catch (error: Exception) {
+                _form.value = session
+                throw error
+            }
         }
     }
 
