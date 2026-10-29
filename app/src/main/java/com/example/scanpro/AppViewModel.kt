@@ -47,6 +47,22 @@ class AppViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode?> = settings.themeMode
         .map<ThemeMode, ThemeMode?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    /**
+     * The Play in-app review flow is due once, after the third saved scan, when the app is in a calm place
+     * (the document screen). Google decides whether a card is shown; nothing in the app promises one.
+     */
+    val reviewDue: StateFlow<Boolean> = combine(settings.completedScans, settings.reviewRequested) { scans, requested ->
+        scans >= REVIEW_AFTER_SCANS && !requested
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** The one-time "How was your scanning experience?" prompt, due after the fifth saved scan. */
+    val feedbackPromptDue: StateFlow<Boolean> = combine(settings.completedScans, settings.feedbackPromptShown) { scans, shown ->
+        scans >= FEEDBACK_PROMPT_AFTER_SCANS && !shown
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun markReviewRequested() { viewModelScope.launch { settings.setReviewRequested() } }
+    fun markFeedbackPromptShown() { viewModelScope.launch { settings.setFeedbackPromptShown() } }
+
     /** Wallpaper-derived colours (Android 12+); applied as soon as it is known, false until then. */
     val dynamicColor: StateFlow<Boolean> = settings.dynamicColor
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -178,6 +194,7 @@ class AppViewModel @Inject constructor(
                 )
                 return@enqueue
             }
+            settings.recordCompletedScan()
             // Text scans copy their text instead; every other scan offers share/save straight away.
             if (mode == ScanMode.TEXT) copyRecognizedText(newDocument) else operations.offerScanSaved(newDocument.id)
             operations.requestOpenDocument(newDocument.id)
@@ -188,6 +205,23 @@ class AppViewModel @Inject constructor(
                 .filter { it.parentFile?.name == SESSION_ROOT }
                 .distinct()
                 .forEach { it.deleteRecursively() }
+        }
+    }
+
+    /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */
+    fun replacePageFromCamera(
+        target: com.example.scanpro.navigation.RetakeTarget,
+        imageUri: Uri,
+        crop: com.example.scanpro.data.CropQuad,
+        filter: com.example.scanpro.data.PageFilter
+    ) {
+        operations.enqueue("Replacing page ${target.position + 1}…", "Page ${target.position + 1} retaken") {
+            try {
+                repository.replacePage(target.documentId, target.pageId, imageUri, crop, filter)
+            } finally {
+                if (imageUri.scheme == "file") imageUri.path?.let { File(it).parentFile }
+                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
+            }
         }
     }
 
@@ -215,3 +249,8 @@ class AppViewModel @Inject constructor(
 
 private const val MAX_IMPORT_IMAGES = 100
 
+
+/** Saved scans before the Play in-app review flow is requested, once. */
+const val REVIEW_AFTER_SCANS = 3
+/** Saved scans before the one-time feedback prompt; later than the review so the two never meet. */
+const val FEEDBACK_PROMPT_AFTER_SCANS = 5

@@ -178,10 +178,10 @@ object DocumentEdgeDetector {
             val confidence = candidate?.score ?: 0f
             val quad = candidate?.let { toNormalizedQuad(it.points, working.cols(), working.rows()) }
             val guidance = when {
-                quad == null -> "Point camera at document"
-                brightness < 45.0 -> "More light needed"
-                blur < 80.0 -> "Hold steady"
-                confidence < 0.48f -> "Move closer and center page"
+                brightness < 45.0 -> "Too dark · add light or turn on the flash"
+                quad == null -> "Point the camera at a document"
+                blur < 80.0 -> "Hold steady · the image is blurry"
+                confidence < 0.48f -> "Move closer and centre the page"
                 else -> "Ready"
             }
 

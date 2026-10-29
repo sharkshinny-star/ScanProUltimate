@@ -34,7 +34,13 @@ fun supportDetails(): String =
  * Opens the user's email app with the subject, prompt and details filled in; with no email app, the
  * share sheet takes the same text; with neither, the details are copied so they can be pasted elsewhere.
  */
-fun contactSupport(context: Context, topic: SupportTopic) {
+enum class SupportDelivery(val confirmation: String) {
+    EMAIL("Your email app opened with the details filled in"),
+    SHARE("No email app found; pick an app to send the message with"),
+    CLIPBOARD("The message was copied; paste it into any email to ${SupportLinks.EMAIL}")
+}
+
+fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
     val body = "${topic.prompt}\n\n\n—\n${supportDetails()}"
     val email = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
         putExtra(Intent.EXTRA_EMAIL, arrayOf(SupportLinks.EMAIL))
@@ -43,7 +49,7 @@ fun contactSupport(context: Context, topic: SupportTopic) {
     }
     try {
         context.startActivity(email)
-        return
+        return SupportDelivery.EMAIL
     } catch (_: ActivityNotFoundException) {
     }
     val share = Intent(Intent.ACTION_SEND).apply {
@@ -51,11 +57,12 @@ fun contactSupport(context: Context, topic: SupportTopic) {
         putExtra(Intent.EXTRA_SUBJECT, topic.subject)
         putExtra(Intent.EXTRA_TEXT, "To: ${SupportLinks.EMAIL}\n\n$body")
     }
-    try {
+    return try {
         context.startActivity(Intent.createChooser(share, topic.subject))
+        SupportDelivery.SHARE
     } catch (_: ActivityNotFoundException) {
         copyText(context, "To: ${SupportLinks.EMAIL}\nSubject: ${topic.subject}\n\n$body")
-        Toast.makeText(context, "No email app found. The message was copied; send it to ${SupportLinks.EMAIL}.", Toast.LENGTH_LONG).show()
+        SupportDelivery.CLIPBOARD
     }
 }
 

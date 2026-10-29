@@ -147,6 +147,8 @@ private enum class DetectMode(val label: String) { AUTO("Auto"), MANUAL("Manual"
 fun CameraScannerScreen(
     /** Mode to open in: a [ScanMode] name, "QR", or empty for the usual document mode. */
     initialMode: String = "",
+    /** Position of the saved page this session replaces; the session then takes exactly one photo. */
+    retakeOfPage: Int? = null,
     onClose: () -> Unit,
     onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>) -> Unit,
     onFallbackScanner: () -> Unit
@@ -245,7 +247,11 @@ fun CameraScannerScreen(
     var sessionFilter by rememberSaveable { mutableStateOf<PageFilter?>(null) }
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
     var resumeCount by remember { mutableIntStateOf(0) }
-    val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
+    val pageLimit = when {
+        retakeOfPage != null -> 1
+        scanMode == ScanMode.ID_CARD -> if (scanBothSides) 2 else 1
+        else -> 100
+    }
 
     var confirmQuit by remember { mutableStateOf(false) }
     // Closing with captured pages would discard them, so ask first.
@@ -431,7 +437,7 @@ fun CameraScannerScreen(
                         reviewIndex = retakeIndex
                         retakeIndex = -1
                         reviewing = true
-                    } else if (!batch && scanMode != ScanMode.ID_CARD) finishScan() else flyIntoCounter(raw)
+                    } else if (retakeOfPage != null || (!batch && scanMode != ScanMode.ID_CARD)) finishScan() else flyIntoCounter(raw)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -703,7 +709,34 @@ fun CameraScannerScreen(
                 shape = RoundedCornerShape(12.dp),
                 color = CameraGlass
             ) {
-                Text(liveGuidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+                    Text(liveGuidance, color = Color.White, style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    // Low light: one tap turns the torch on from the hint itself.
+                    if (detection?.isDark == true && !torchEnabled) {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            onClick = { torchEnabled = true },
+                            shape = RoundedCornerShape(50),
+                            color = scanLine,
+                            contentColor = Color(0xFF04281E)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                                Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Turn on flash", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (retakeOfPage != null && !showTips && status == null) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 64.dp),
+                shape = RoundedCornerShape(50),
+                color = CameraGlass
+            ) {
+                Text("Retaking page ${retakeOfPage + 1} · the shot replaces it", color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }
         }
 
@@ -840,19 +873,19 @@ fun CameraScannerScreen(
             ) {
                 if (scanMode == ScanMode.ID_CARD) {
                     listOf(false to "Front only", true to "Both sides").forEach { (both, text) ->
-                        ModeTab(text, selected = scanBothSides == both, enabled = pages.isEmpty()) { scanBothSides = both }
+                        ModeTab(text, selected = scanBothSides == both, enabled = pages.isEmpty() && retakeOfPage == null) { scanBothSides = both }
                     }
                 } else {
                     listOf(ScanMode.TEXT to "Text", null to "Docs", ScanMode.ID_CARD to "ID cards").forEach { (target, text) ->
                         val selected = !barcodeMode &&
                             if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
-                        ModeTab(text, selected = selected, enabled = pages.isEmpty()) {
+                        ModeTab(text, selected = selected, enabled = pages.isEmpty() && retakeOfPage == null) {
                             barcodeMode = false
                             scanMode = target ?: ScanMode.DOCUMENT
                             scanBothSides = false
                         }
                     }
-                    ModeTab("QR code", selected = barcodeMode, enabled = pages.isEmpty()) {
+                    ModeTab("QR code", selected = barcodeMode, enabled = pages.isEmpty() && retakeOfPage == null) {
                         barcodeMode = true
                         scanMode = ScanMode.DOCUMENT
                         scanBothSides = false

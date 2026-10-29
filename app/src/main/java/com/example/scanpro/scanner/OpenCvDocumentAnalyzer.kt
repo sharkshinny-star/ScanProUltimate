@@ -36,7 +36,8 @@ class OpenCvDocumentAnalyzer(
             // are found describe exactly the pixels the user sees and the capture keeps.
             val gray = image.toRotatedGrayMat().croppedToViewport(image)
             try {
-                val result = DocumentEdgeDetector.detect(gray)
+                val raw = DocumentEdgeDetector.detect(gray)
+                val result = raw.copy(guidance = steadyGuidance(raw.guidance))
                 val stable = updateStability(result)
                 main.post { onDetection(result, stable) }
 
@@ -66,6 +67,27 @@ class OpenCvDocumentAnalyzer(
         } finally {
             image.close()
         }
+    }
+
+    private var shownGuidance = ""
+    private var candidateGuidance = ""
+    private var candidateFrames = 0
+
+    /**
+     * The hint shown to the user changes only once the detector has said the same thing for a few frames,
+     * so one blurry or dark frame doesn't flash "Hold steady" over a page that is about to be captured.
+     */
+    private fun steadyGuidance(latest: String): String {
+        if (latest == shownGuidance) {
+            candidateFrames = 0
+            return shownGuidance
+        }
+        if (latest == candidateGuidance) candidateFrames++ else { candidateGuidance = latest; candidateFrames = 1 }
+        if (candidateFrames >= 3 || shownGuidance.isEmpty()) {
+            shownGuidance = latest
+            candidateFrames = 0
+        }
+        return shownGuidance
     }
 
     private fun updateStability(result: DocumentDetection): Boolean {

@@ -40,7 +40,8 @@ A ground-up pass over the app shell so the first minute with ScanPro feels like 
 - Predictive back (Android 14+) is on through `enableOnBackInvokedCallback`; the nav host's slide transitions play with the gesture.
 
 ## Scanning and editing
-- **Retake a page** from the review step: the next shot replaces it in place and the review reopens on that page.
+- **Retake a page** from the review step: the next shot replaces it in place and the review reopens on that page. The editor's "This page" sheet has Retake too: the camera opens for one shot and the new photo takes the page's place, with OCR run again.
+- **Live blur and low-light guidance**: the scanner hint reads "Hold steady · the image is blurry" and "Too dark · add light or turn on the flash", with a one-tap **Turn on flash** chip under the hint while the frame is dark. Hints change only after a few frames agree, so one bad frame no longer flickers the text.
 - **Undo for page removal**: deleting a page shows "Page removed · Undo"; the files go only once the message is gone. The last page still moves the whole document to the recycle bin, which has its own restore.
 - **Share as PNG** next to Share JPG, for forms and apps that reject JPG.
 - **Duplicate document** in the editor's Organise section, with an Open action on the confirmation.
@@ -50,3 +51,6 @@ A ground-up pass over the app shell so the first minute with ScanPro feels like 
 - Settings has a **Feedback & support** section: Rate ScanPro (Play listing), Give feedback, Report an issue and Suggest a feature (email with app version and device details filled in; falls back to the share sheet, then to the clipboard), and Share ScanPro (share sheet with the Play link).
 - The support address and the privacy policy and terms links live in `SupportLinks`; the two link rows stay hidden until the URLs are set.
 - A **Privacy** row explains, in the app, what stays on the device and what uses the network.
+- Give feedback, Report an issue and Suggest a feature confirm with a snackbar saying where the message went (email app, share sheet or clipboard).
+- **Google Play in-app review** is requested once, quietly, after the third saved scan; Play decides whether its card appears, and no button in the app promises a review (Rate ScanPro opens the listing).
+- A one-time **"How was your scanning experience? 😊"** prompt appears after the fifth saved scan with Share feedback (opens the feedback email) and Maybe later. It is kept apart from the review flow, as Play's guidelines ask.

@@ -50,6 +50,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -137,6 +139,11 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     var privacyOpen by rememberSaveable { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val contact: (SupportTopic) -> Unit = { topic ->
+        val delivery = contactSupport(context, topic)
+        scope.launch { snackbarHostState.showSnackbar(delivery.confirmation) }
+    }
     if (privacyOpen) PrivacyDialog(onDismiss = { privacyOpen = false })
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -289,7 +296,7 @@ fun SettingsScreen(
                         title = "Give feedback",
                         subtitle = "Tell us what works and what doesn't",
                         trailing = { Chevron() },
-                        onClick = { contactSupport(context, SupportTopic.FEEDBACK) }
+                        onClick = { contact(SupportTopic.FEEDBACK) }
                     )
                     InsetDivider()
                     SettingsRow(
@@ -298,7 +305,7 @@ fun SettingsScreen(
                         title = "Report an issue",
                         subtitle = "App and device details are filled in for you",
                         trailing = { Chevron() },
-                        onClick = { contactSupport(context, SupportTopic.ISSUE) }
+                        onClick = { contact(SupportTopic.ISSUE) }
                     )
                     InsetDivider()
                     SettingsRow(
@@ -306,7 +313,7 @@ fun SettingsScreen(
                         tone = TileTone.Violet,
                         title = "Suggest a feature",
                         trailing = { Chevron() },
-                        onClick = { contactSupport(context, SupportTopic.FEATURE) }
+                        onClick = { contact(SupportTopic.FEATURE) }
                     )
                     InsetDivider()
                     SettingsRow(

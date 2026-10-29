@@ -168,6 +168,8 @@ dependencies {
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("com.google.mlkit:language-id:17.0.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    // Google Play In-App Review: asked for once, quietly, after a few successful scans.
+    implementation("com.google.android.play:review-ktx:2.0.2")
 
     // Room + Hilt + WorkManager.
     implementation("androidx.room:room-runtime:2.8.5")

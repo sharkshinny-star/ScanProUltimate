@@ -40,6 +40,7 @@ fun ScanProNavHost(
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
     onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<com.example.scanpro.data.CropQuad>, List<com.example.scanpro.data.PageFilter>) -> Unit,
+    onCameraRetakeComplete: (RetakeTarget, android.net.Uri, com.example.scanpro.data.CropQuad, com.example.scanpro.data.PageFilter) -> Unit,
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit
 ) {
@@ -115,17 +116,23 @@ fun ScanProNavHost(
         }
         composable(
             route = ScanProDestinations.CAMERA_ROUTE,
-            arguments = listOf(navArgument(ScanProDestinations.CAMERA_MODE_ARG) { type = NavType.StringType; defaultValue = "" })
+            arguments = listOf(
+                navArgument(ScanProDestinations.CAMERA_MODE_ARG) { type = NavType.StringType; defaultValue = "" },
+                navArgument(ScanProDestinations.CAMERA_RETAKE_ARG) { type = NavType.StringType; defaultValue = "" }
+            )
         ) { entry ->
+            val retake = ScanProDestinations.parseRetake(entry.arguments?.getString(ScanProDestinations.CAMERA_RETAKE_ARG))
             // Act only while this screen is resumed, so a double tap during the exit animation can't
             // import twice or pop Home and leave an empty screen.
             fun resumed() = entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             CameraScannerScreen(
                 initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty(),
+                retakeOfPage = retake?.position,
                 onClose = dropUnlessResumed { navController.popBackStack() },
                 onComplete = { uris, mode, crops, filters ->
                     if (resumed()) {
-                        onCameraScanComplete(uris, mode, crops, filters)
+                        if (retake != null) onCameraRetakeComplete(retake, uris.first(), crops.first(), filters.first())
+                        else onCameraScanComplete(uris, mode, crops, filters)
                         navController.popBackStack()
                     }
                 },
@@ -149,7 +156,10 @@ fun ScanProNavHost(
         ) {
             DocumentRoute(
                 snackbarHostState = snackbarHostState,
-                onBack = dropUnlessResumed { navController.popBackStack() }
+                onBack = dropUnlessResumed { navController.popBackStack() },
+                onRetakePage = { documentId, pageId, position ->
+                    navController.navigate(ScanProDestinations.cameraRetake(documentId, pageId, position)) { launchSingleTop = true }
+                }
             )
         }
     }

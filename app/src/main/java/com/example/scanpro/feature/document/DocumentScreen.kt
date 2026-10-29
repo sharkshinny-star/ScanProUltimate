@@ -54,6 +54,7 @@ import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.AddToDrive
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Tag
@@ -189,6 +190,8 @@ import com.example.scanpro.core.designsystem.TopBarWithProgress
 fun DocumentRoute(
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
+    /** Opens the camera to shoot the page again: document id, page id and the page's position. */
+    onRetakePage: (String, String, Int) -> Unit = { _, _, _ -> },
     viewModel: DocumentViewModel = hiltViewModel()
 ) {
     val document by viewModel.document.collectAsStateWithLifecycle()
@@ -261,6 +264,7 @@ fun DocumentRoute(
         onExportLongImage = viewModel::exportLongImage,
         onExportPng = viewModel::exportPng,
         onDuplicateDocument = viewModel::duplicateDocument,
+        onRetakePage = { pageId, position -> onRetakePage(current.id, pageId, position) },
         onExportOcrTextFile = viewModel::exportOcrTextFile,
         onExportWord = viewModel::exportWordFile,
         onExportExcel = viewModel::exportExcelFile,
@@ -312,6 +316,7 @@ internal fun DocumentDetailScreen(
     onDeletePage: (String) -> Unit,
     onExportPng: () -> Unit = {},
     onDuplicateDocument: () -> Unit = {},
+    onRetakePage: (String, Int) -> Unit = { _, _ -> },
     onSign: (String, Bitmap, Boolean) -> Unit,
     savedSignatures: List<java.io.File> = emptyList(),
     onSignSaved: (String, java.io.File) -> Unit = { _, _ -> },
@@ -865,6 +870,7 @@ internal fun DocumentDetailScreen(
                         ToolTile(Icons.AutoMirrored.Filled.RotateRight, "Rotate", !busy, run { onRotate(page.id) })
                         ToolTile(Icons.Default.Tune, "Fine tune", !busy, run { adjustmentsOpen = true })
                         ToolTile(Icons.Default.RestartAlt, "Reset", !busy, run { onResetPage(page.id) })
+                        ToolTile(Icons.Default.Replay, "Retake", !busy, run { onRetakePage(page.id, currentIndex) })
                         ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Move left", !busy && currentIndex > 0, run { onMove(page.id, -1) })
                         ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Move right", !busy && currentIndex < pages.lastIndex, run { onMove(page.id, 1) })
                         ToolTile(Icons.Default.FileCopy, "Duplicate", !busy, run { onDuplicatePage(page.id) })

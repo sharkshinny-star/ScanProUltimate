@@ -606,6 +606,47 @@ class DocumentRepository @Inject constructor(
         saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
     }
 
+    /**
+     * Swaps a page's photo for a new one taken in the camera. The page keeps its place; its mark-up, text
+     * corrections and adjustments belonged to the old photo and are dropped, and OCR runs again.
+     */
+    suspend fun replacePage(documentId: String, pageId: String, imageUri: Uri, crop: CropQuad, filter: PageFilter) = withContext(Dispatchers.IO) {
+        val doc = requireDocument(documentId)
+        val old = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
+        val sourceDir = File(folder, "source").apply { mkdirs() }
+        val renderedDir = File(folder, "rendered").apply { mkdirs() }
+        val newId = UUID.randomUUID().toString()
+        val position = old.position
+        val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$newId")
+        val rendered = File(renderedDir, "page_${position.toString().padStart(3, '0')}_$newId.jpg")
+        copyUri(imageUri, source)
+        val page = try {
+            renderAndOcr(
+                ScanPage(
+                    id = newId,
+                    documentId = doc.id,
+                    position = position,
+                    sourcePath = source.absolutePath,
+                    imagePath = rendered.absolutePath,
+                    crop = crop,
+                    filter = filter
+                )
+            )
+        } catch (error: Throwable) {
+            source.delete()
+            rendered.delete()
+            throw error
+        }
+        val pages = doc.pages.map { if (it.id == pageId) page else it }
+        saveWithStalePdf(doc.copy(pages = normalize(pages.sortedBy { it.position }), updatedAt = now()))
+        history.clear(doc.id)
+        purgeRemovedPage(documentId)
+        File(old.sourcePath).delete()
+        File(old.imagePath).delete()
+        deleteSignatureAssets(old.annotations)
+    }
+
     /** A page removed from a document whose files are still on disk, so the removal can be undone. */
     private class RemovedPage(val documentId: String, val page: ScanPage, val index: Int)
 
