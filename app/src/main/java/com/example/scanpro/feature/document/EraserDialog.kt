@@ -76,7 +76,8 @@ fun EraserDialog(
     var brush by remember { mutableStateOf(Brush.MEDIUM) }
     val ink = Color(0xFFFF5252).copy(alpha = 0.55f)
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

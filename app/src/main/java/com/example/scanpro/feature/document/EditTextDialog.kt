@@ -71,7 +71,8 @@ fun EditTextDialog(
     var text by remember { mutableStateOf("") }
     val blue = MaterialTheme.colorScheme.primary
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

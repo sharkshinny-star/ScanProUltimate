@@ -81,7 +81,8 @@ fun MarkupEditorDialog(
         items[index] = next.copy(width = w, height = h, x = next.x.coerceIn(0f, 1f - w), y = next.y.coerceIn(0f, 1f - h))
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize(), color = Color(0xFF0A0F18)) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
                 Text("Edit markup", color = Color.White, style = MaterialTheme.typography.titleMedium)
