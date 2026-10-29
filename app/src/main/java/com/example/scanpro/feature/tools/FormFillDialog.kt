@@ -75,14 +75,16 @@ internal fun FormFillDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 TopAppBar(
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                     title = { Text("Fill form") },
                     navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = "Close") } }
                 )
             },
             bottomBar = {
-                Surface(tonalElevation = 2.dp) {
+                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
                     Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Row(
                             Modifier
@@ -92,7 +94,7 @@ internal fun FormFillDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text("Flatten", style = MaterialTheme.typography.bodyLarge)
+                                Text("Flatten", style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                                 Text(
                                     "Turns the answers into part of the page, so they can't be changed later",
                                     style = MaterialTheme.typography.bodySmall,

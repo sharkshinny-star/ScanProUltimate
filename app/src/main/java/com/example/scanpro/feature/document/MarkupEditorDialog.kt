@@ -44,6 +44,14 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.scanpro.core.designsystem.AccentButton
+import com.example.scanpro.core.designsystem.DarkChrome
+import com.example.scanpro.core.designsystem.DarkOutlinedButton
+import com.example.scanpro.core.designsystem.DarkTextButton
+import com.example.scanpro.core.designsystem.GlassIconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.imaging.ImageProcessor
@@ -52,7 +60,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.hypot
 
-private val Blue = Color(0xFF2F7BFF)
+private val Blue = Color(0xFF2FD6A6)
 private const val MIN_SIZE = 0.03f
 
 /**
@@ -83,18 +91,23 @@ fun MarkupEditorDialog(
 
     // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Surface(Modifier.fillMaxSize(), color = Color(0xFF0A0F18)) {
+        Surface(Modifier.fillMaxSize(), color = DarkChrome.backdrop) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
-                Text("Edit markup", color = Color.White, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Drag a box to move it. Drag the round handle to resize. Tap a box to select it.",
-                    color = Color.White.copy(alpha = 0.75f),
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, "Close", onClick = onDismiss)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text("Edit markup", color = DarkChrome.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Drag a box to move it, drag the round handle to resize, tap to select.",
+                            color = DarkChrome.mutedText,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
                 Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     val image = base
                     if (image == null) {
-                        Text("Loading page…", color = Color.White)
+                        androidx.compose.material3.CircularProgressIndicator(color = Blue)
                     } else {
                         val latestItems by rememberUpdatedState(items.toList())
                         val latestSelected by rememberUpdatedState(selectedId)
@@ -165,17 +178,17 @@ fun MarkupEditorDialog(
                 val enabled = selectedIndex >= 0
                 val step = 0.01f
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x - step) } }) { Text("←") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x + step) } }) { Text("→") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y - step) } }) { Text("↑") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y + step) } }) { Text("↓") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 0.92f, height = it.height * 0.92f) } }) { Text("Smaller") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 1.08f, height = it.height * 1.08f) } }) { Text("Larger") }
-                    OutlinedButton(enabled = enabled, onClick = { items.removeAt(selectedIndex); selectedId = items.lastOrNull()?.id }) { Text("Delete") }
+                    DarkOutlinedButton("←", enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x - step) } })
+                    DarkOutlinedButton("→", enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x + step) } })
+                    DarkOutlinedButton("↑", enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y - step) } })
+                    DarkOutlinedButton("↓", enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y + step) } })
+                    DarkOutlinedButton("Smaller", enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 0.92f, height = it.height * 0.92f) } })
+                    DarkOutlinedButton("Larger", enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 1.08f, height = it.height * 1.08f) } })
+                    DarkOutlinedButton("Delete", enabled = enabled, onClick = { items.removeAt(selectedIndex); selectedId = items.lastOrNull()?.id })
                 }
-                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    Button(onClick = { onApply(items.toList()) }) { Text("Apply") }
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                    DarkTextButton("Cancel", onClick = onDismiss)
+                    AccentButton("Apply", onClick = { onApply(items.toList()) })
                 }
             }
         }

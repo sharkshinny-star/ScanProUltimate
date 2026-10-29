@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
@@ -82,19 +83,27 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("Size", style = MaterialTheme.typography.labelLarge)
+                com.example.scanpro.core.designsystem.Eyebrow("Size", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkSize.entries.forEach { option ->
-                        FilterChip(selected = size == option, onClick = { size = option }, label = { Text(option.label) })
+                        FilterChip(selected = size == option, onClick = { size = option }, label = { Text(option.label) }, colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ), shape = androidx.compose.foundation.shape.CircleShape)
                     }
                 }
-                Text("Position", style = MaterialTheme.typography.labelLarge)
+                com.example.scanpro.core.designsystem.Eyebrow("Position", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkPosition.entries.forEach { option ->
-                        FilterChip(selected = position == option, onClick = { position = option }, label = { Text(option.label) })
+                        FilterChip(selected = position == option, onClick = { position = option }, label = { Text(option.label) }, colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ), shape = androidx.compose.foundation.shape.CircleShape)
                     }
                 }
-                Text("Colour", style = MaterialTheme.typography.labelLarge)
+                com.example.scanpro.core.designsystem.Eyebrow("Colour", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     WatermarkColors.forEach { (name, value) ->
                         val chosen = color == value
@@ -104,7 +113,7 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                                 .background(Color(value), CircleShape)
                                 .border(
                                     width = if (chosen) 3.dp else 1.dp,
-                                    color = if (chosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    color = if (chosen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
                                     shape = CircleShape
                                 )
                                 .clickable { color = value }
@@ -136,8 +145,9 @@ private fun WatermarkPreview(text: String, size: WatermarkSize, position: Waterm
             .fillMaxWidth(0.5f)
             .heightIn(max = 180.dp)
             .aspectRatio(0.707f)
-            .background(Color.White, RoundedCornerShape(4.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+            .shadow(4.dp, RoundedCornerShape(6.dp))
+            .background(Color.White, RoundedCornerShape(6.dp))
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
             .padding(8.dp),
         contentAlignment = when (position) {
             WatermarkPosition.BOTTOM -> Alignment.BottomCenter

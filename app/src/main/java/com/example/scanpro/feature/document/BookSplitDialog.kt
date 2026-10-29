@@ -67,7 +67,7 @@ fun BookSplitDialog(
                         drawImage(image.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
                         val x = size.width * fraction
                         drawLine(Color.Black.copy(alpha = 0.6f), Offset(x, 0f), Offset(x, size.height), strokeWidth = 7.dp.toPx())
-                        drawLine(Color(0xFF2F7BFF), Offset(x, 0f), Offset(x, size.height), strokeWidth = 3.dp.toPx())
+                        drawLine(Color(0xFF2FD6A6), Offset(x, 0f), Offset(x, size.height), strokeWidth = 3.dp.toPx())
                     }
                 } ?: Text("Loading page…", modifier = Modifier.padding(top = 16.dp))
                 Slider(

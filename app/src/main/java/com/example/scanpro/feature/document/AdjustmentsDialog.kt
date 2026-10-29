@@ -28,6 +28,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -89,16 +91,25 @@ fun AdjustmentsDialog(
         title = { Text("Clean up & fine tune") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                preview?.let { bitmap ->
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Adjustment preview",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .sizeIn(maxHeight = 300.dp),
-                        contentScale = ContentScale.Fit
-                    )
-                } ?: Text("Preparing preview…", style = MaterialTheme.typography.bodySmall)
+                // Preview on a tonal desk, matching the page in the editor.
+                androidx.compose.foundation.layout.Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(10.dp)
+                        .sizeIn(minHeight = 120.dp, maxHeight = 300.dp),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    preview?.let { bitmap ->
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Adjustment preview",
+                            modifier = Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Fit
+                        )
+                    } ?: androidx.compose.material3.CircularProgressIndicator(Modifier.padding(24.dp))
+                }
 
                 Spacer(Modifier.height(8.dp))
                 CleanupSwitch("Remove shadows", "Evens out shadows and uneven light on the paper", removeShadows) { removeShadows = it }
@@ -137,7 +148,7 @@ private fun CleanupSwitch(title: String, subtitle: String, checked: Boolean, onC
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.labelLarge)
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, onCheckedChange = null)
@@ -155,6 +166,9 @@ private fun AdjustmentSlider(
         "Brightness" -> "${(value * 100).roundToInt()}"
         else -> "${(value * 100).roundToInt()}%"
     }
-    Text("$label  $display", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 6.dp))
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+        Text(display, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
     Slider(value = value, onValueChange = onValueChange, valueRange = range)
 }

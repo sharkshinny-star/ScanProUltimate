@@ -32,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -77,7 +79,7 @@ fun EditTextDialog(
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close") }
-                    Text("Edit text", style = MaterialTheme.typography.titleLarge)
+                    Text("Edit text", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 4.dp))
                 }
                 Text(
                     if (lines.isEmpty()) "No text was found on this page, so there is nothing to edit."
@@ -86,7 +88,16 @@ fun EditTextDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
-                Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     val image = bitmap
                     if (image == null) {
                         CircularProgressIndicator()
@@ -132,6 +143,7 @@ fun EditTextDialog(
                     onValueChange = { text = it.replace('\n', ' ').take(400) },
                     enabled = line != null,
                     singleLine = true,
+                    shape = MaterialTheme.shapes.small,
                     label = { Text(if (line == null) "Tap a line on the page" else "New text") },
                     modifier = Modifier.fillMaxWidth()
                 )

@@ -62,6 +62,12 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.core.designsystem.AccentButton
+import com.example.scanpro.core.designsystem.DarkChrome
+import com.example.scanpro.core.designsystem.DarkToolAction
+import com.example.scanpro.core.designsystem.GlassIconButton
+import com.example.scanpro.core.designsystem.ScanProTheme
+import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.scanner.DocumentEdgeDetector
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -94,15 +100,16 @@ fun CropEditorDialog(
         var curveMode by remember(initial) { mutableStateOf(initial.isCurved) }
         val latestCurveMode by rememberUpdatedState(curveMode)
 
-        val handleColor = Color(0xFF2563EB) // High-visibility primary blue handle
-        val boundaryColor = Color(0xFF3B82F6)
+        // The outline and its handles use the same mint as the live scanner, so "found page" looks the same everywhere.
+        val handleColor = ScanProTheme.colors.scanLine
+        val boundaryColor = ScanProTheme.colors.scanLine
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0B0E14))
+                .background(DarkChrome.backdrop)
         ) {
-            // Top Navigation Bar
+            // Top bar: back on glass, with the title and a hint in the middle.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -110,8 +117,15 @@ fun CropEditorDialog(
                     .padding(top = 8.dp, start = 12.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, "Back", onClick = onDismiss)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Crop", color = DarkChrome.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (curveMode) "Drag the middle handles to follow the page's curve" else "Drag the corners to the page edges",
+                        color = DarkChrome.mutedText,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1
+                    )
                 }
             }
 
@@ -227,7 +241,7 @@ fun CropEditorDialog(
                         handles.forEachIndexed { index, point ->
                             val radius = if (index < 4) 18f else 14f
                             val bendHandle = curveMode && index >= 4
-                            drawCircle(if (bendHandle) Color(0xFFF59E0B) else handleColor, radius = radius, center = point)
+                            drawCircle(if (bendHandle) DarkChrome.highlight else handleColor, radius = radius, center = point)
                             drawCircle(Color.White, radius = radius * 0.45f, center = point)
                         }
 
@@ -262,7 +276,7 @@ fun CropEditorDialog(
                             drawLine(Color.White, Offset(center.x, center.y - 16.dp.toPx()), Offset(center.x, center.y + 16.dp.toPx()), strokeWidth = 2f)
                         }
                     }
-                } ?: Text("Loading page…", color = Color.White)
+                } ?: androidx.compose.material3.CircularProgressIndicator(color = ScanProTheme.colors.scanLine)
             }
 
             // Bottom Floating Controls + Toolbar
@@ -270,7 +284,7 @@ fun CropEditorDialog(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .background(Color(0xFF111827))
+                    .background(DarkChrome.panel, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     .navigationBarsPadding()
                     .padding(vertical = 12.dp)
             ) {
@@ -290,9 +304,9 @@ fun CropEditorDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(20.dp))
-                            Text("1 / 1", color = Color.White, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
-                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = "Previous", tint = DarkChrome.disabledText, modifier = Modifier.size(20.dp))
+                            Text("1 of 1", color = DarkChrome.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
+                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = "Next", tint = DarkChrome.disabledText, modifier = Modifier.size(20.dp))
                         }
                     }
 
@@ -324,10 +338,12 @@ fun CropEditorDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    TextButton(
+                    DarkToolAction(
+                        Icons.Default.Crop,
+                        "Auto crop",
                         enabled = bitmap != null,
                         onClick = {
-                            val image = bitmap ?: return@TextButton
+                            val image = bitmap ?: return@DarkToolAction
                             // Outline the page with the edge detector; keep the current corners if none is found.
                             scope.launch {
                                 val detection = withContext(Dispatchers.Default) { runCatching { DocumentEdgeDetector.detect(image) }.getOrNull() }
@@ -339,17 +355,15 @@ fun CropEditorDialog(
                                 }
                             }
                         }
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.Crop, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                            Text("Auto crop", color = Color.White, style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
+                    )
 
-                    TextButton(
+                    DarkToolAction(
+                        Icons.Default.Gesture,
+                        "Curve",
                         enabled = bitmap != null,
+                        highlighted = curveMode,
                         onClick = {
-                            val image = bitmap ?: return@TextButton
+                            val image = bitmap ?: return@DarkToolAction
                             if (curveMode) {
                                 curveMode = false
                                 crop = crop.straightened()
@@ -365,55 +379,17 @@ fun CropEditorDialog(
                                 }
                             }
                         }
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Gesture,
-                                contentDescription = null,
-                                tint = if (curveMode) Color(0xFFF59E0B) else Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Text("Curve", color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
+                    )
 
-                    TextButton(onClick = {
+                    DarkToolAction(Icons.Default.Fullscreen, "No crop") {
                         curveMode = false
                         crop = CropQuad(NormalizedPoint(0f, 0f), NormalizedPoint(1f, 0f), NormalizedPoint(1f, 1f), NormalizedPoint(0f, 1f))
-                    }) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.Fullscreen, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                            Text("No crop", color = Color.White, style = MaterialTheme.typography.labelSmall)
-                        }
                     }
 
-                    if (onRotateLeft != null) {
-                        TextButton(onClick = onRotateLeft) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.AutoMirrored.Filled.RotateLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                Text("Left", color = Color.White, style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
+                    if (onRotateLeft != null) DarkToolAction(Icons.AutoMirrored.Filled.RotateLeft, "Left", onClick = onRotateLeft)
+                    if (onRotateRight != null) DarkToolAction(Icons.AutoMirrored.Filled.RotateRight, "Right", onClick = onRotateRight)
 
-                    if (onRotateRight != null) {
-                        TextButton(onClick = onRotateRight) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                Text("Right", color = Color.White, style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
-
-                    Button(
-                        enabled = bitmap != null,
-                        onClick = { onConfirm(crop) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.height(42.dp)
-                    ) {
-                        Text("Done", maxLines = 1, softWrap = false)
-                    }
+                    AccentButton("Done", enabled = bitmap != null, onClick = { onConfirm(crop) })
                 }
             }
         }

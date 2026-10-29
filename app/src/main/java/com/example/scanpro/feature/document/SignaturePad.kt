@@ -88,7 +88,7 @@ fun SignaturePadDialog(
         text = {
             Column {
                 if (saved.isNotEmpty()) {
-                    Text("Saved signatures", style = MaterialTheme.typography.labelLarge)
+                    com.example.scanpro.core.designsystem.Eyebrow("Saved signatures", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
@@ -108,7 +108,8 @@ fun SignaturePadDialog(
                         .padding(top = 12.dp)
                         .fillMaxWidth()
                         .height(220.dp)
-                        .background(Color.White, RoundedCornerShape(12.dp))
+                        .background(Color.White, RoundedCornerShape(16.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
                         .onSizeChanged { padSize = it }
                         .pointerInput(Unit) {
                             detectDragGestures(
@@ -148,7 +149,7 @@ fun SignaturePadDialog(
                                 .padding(end = 8.dp)
                                 .size(28.dp)
                                 .background(color, CircleShape)
-                                .border(if (chosen) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                .border(if (chosen) 3.dp else 1.dp, if (chosen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
                                 .clickable { ink = color }
                                 .semantics { contentDescription = "$name ink"; selected = chosen }
                         )

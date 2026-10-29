@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -378,3 +380,101 @@ fun InsetDivider(startIndent: Dp = 68.dp) {
 
 /** Standard vertical rhythm between stacked content blocks. */
 val SectionGap = 20.dp
+
+/**
+ * Chrome for the full-screen editors that sit on a dark canvas whatever the app theme (crop, markup,
+ * scanner, review): the backdrop behind the page, the control panel below it, and a translucent "glass"
+ * for buttons floating over the image.
+ */
+object DarkChrome {
+    val backdrop = Color(0xFF0B0D14)
+    val panel = Color(0xFF14161F)
+    val glass = Color(0xFF0F1118).copy(alpha = 0.72f)
+    val text = Color.White
+    val mutedText = Color.White.copy(alpha = 0.7f)
+    val disabledText = Color.White.copy(alpha = 0.35f)
+    /** The amber used for "on" states of tools such as curve mode. */
+    val highlight = Color(0xFFFFB95C)
+}
+
+/** One icon-over-label action in a dark editor toolbar. [highlighted] marks a tool that is switched on. */
+@Composable
+fun DarkToolAction(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    highlighted: Boolean = false,
+    onClick: () -> Unit
+) {
+    val tint = when {
+        !enabled -> DarkChrome.disabledText
+        highlighted -> DarkChrome.highlight
+        else -> DarkChrome.text
+    }
+    Column(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (highlighted) DarkChrome.highlight.copy(alpha = 0.16f) else Color.Transparent)
+            .clickable(enabled = enabled, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .semantics { if (highlighted) stateDescription = "On" }
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.height(2.dp))
+        Text(label, color = tint, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+    }
+}
+
+/** The confirming button on a dark editor: mint, like a captured page. */
+@Composable
+fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, loading: Boolean = false) {
+    val brand = ScanProTheme.colors
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = brand.scanLine,
+            contentColor = Color(0xFF04281E),
+            disabledContainerColor = brand.scanLine.copy(alpha = 0.35f),
+            disabledContentColor = Color(0xFF04281E).copy(alpha = 0.6f)
+        )
+    ) {
+        if (loading) {
+            androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Color(0xFF04281E))
+        } else {
+            Text(text, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+    }
+}
+
+/** A text button that reads on the dark editor chrome. */
+@Composable
+fun DarkTextButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
+    TextButton(onClick = onClick, enabled = enabled, colors = ButtonDefaults.textButtonColors(contentColor = DarkChrome.text, disabledContentColor = DarkChrome.disabledText)) {
+        Text(text)
+    }
+}
+
+/** An outlined button that reads on the dark editor chrome. */
+@Composable
+fun DarkOutlinedButton(text: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
+    androidx.compose.material3.OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier,
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = DarkChrome.text, disabledContentColor = DarkChrome.disabledText),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = if (enabled) 0.35f else 0.15f))
+    ) { Text(text) }
+}
+
+/** Round glass button for icons floating over an image, such as back or close. */
+@Composable
+fun GlassIconButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(shape = androidx.compose.foundation.shape.CircleShape, color = DarkChrome.glass, modifier = modifier) {
+        androidx.compose.material3.IconButton(onClick = onClick) { Icon(icon, contentDescription = contentDescription, tint = DarkChrome.text) }
+    }
+}
