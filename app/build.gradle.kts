@@ -98,6 +98,13 @@ android {
         dynamicFeatures += setOf(":translate")
     }
 
+    testOptions {
+        unitTests.all {
+            // -Pscanpro.updateGoldens=true rewrites the golden images of the imaging tests (see MatFiltersGoldenTest).
+            it.systemProperty("scanpro.updateGoldens", (project.findProperty("scanpro.updateGoldens") ?: "false").toString())
+        }
+    }
+
     packaging {
         // The C++ runtime ships with the :opencv module (from the NDK); Google libraries bundle a copy too.
         jniLibs { pickFirsts += "**/libc++_shared.so" }
@@ -212,6 +219,10 @@ dependencies {
     // Room + Hilt + WorkManager.
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")
+    // The Files list is paged from the database instead of held in memory.
+    implementation("androidx.room:room-paging:2.8.5")
+    implementation("androidx.paging:paging-runtime:3.5.3")
+    implementation("androidx.paging:paging-compose:3.5.3")
     ksp("androidx.room:room-compiler:2.8.5")
 
     implementation("com.google.dagger:hilt-android:2.60.1")

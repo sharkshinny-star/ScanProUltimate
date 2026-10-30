@@ -13,6 +13,7 @@ import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentLibrary
+import com.example.scanpro.data.DocumentStamp
 import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.OcrScript
@@ -48,22 +49,27 @@ class DocumentViewModel @Inject constructor(
 ) : ViewModel() {
     private val id: String = checkNotNull(savedStateHandle[ScanProDestinations.DOCUMENT_ID_ARG])
 
-    /** True once the library no longer lists this document (trashed or deleted elsewhere). */
-    val missing: StateFlow<Boolean> = library.documents
-        .map { all -> all.none { it.id == id } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.none { it.id == id })
-
-    // The library holds summaries without pages; the full document is loaded here and again after every
-    // library refresh (each edit bumps updatedAt, so the summary changes and this re-reads the pages).
-    val document: StateFlow<ScanDocument?> = library.documents
-        .map { all -> all.firstOrNull { it.id == id } }
+    // Changes whenever the document is edited, saved or rebuilt, so the pages are reloaded only then.
+    // UNKNOWN until the first lookup; null once the document is gone or in the recycle bin.
+    private val stamp: StateFlow<DocumentStamp?> = library.overview
+        .map { repository.activeStamp(id) }
         .distinctUntilChanged()
-        .map { summary -> summary?.let { repository.loadDocument(id) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UNKNOWN)
+
+    /** True once the library no longer lists this document (trashed or deleted elsewhere). */
+    val missing: StateFlow<Boolean> = stamp
+        .map { it == null }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    // The library holds summaries without pages; the full document is read here, and again whenever the
+    // stamp changes (every edit bumps updatedAt).
+    val document: StateFlow<ScanDocument?> = stamp
+        .map { current -> if (current == null || current === UNKNOWN) null else repository.loadDocument(id) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val otherDocuments: StateFlow<List<DocumentSummary>> = library.documents
-        .map { all -> all.filterNot { it.id == id } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.filterNot { it.id == id })
+    val otherDocuments: StateFlow<List<DocumentSummary>> = library.overview
+        .map { repository.loadOtherSummaries(id, OTHER_DOCUMENT_LIMIT) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** True right after this document was scanned: its screen offers share, save and rename at once. */
     val scanSaved: StateFlow<Boolean> = operations.scanSaved
@@ -291,6 +297,13 @@ class DocumentViewModel @Inject constructor(
         operations.enqueueQuiet { repository.cleanUnusedSignatures(id) }
         // Leaving the editor: bring the PDF up to date in the background so it's ready next time.
         library.buildPdfInBackground(id)
+    }
+
+    private companion object {
+        /** Stands for "not looked up yet", as opposed to null, which means the document is gone. */
+        val UNKNOWN = DocumentStamp(updatedAt = -1L, sizeBytes = -1L)
+        /** The merge picker lists this many other documents. */
+        const val OTHER_DOCUMENT_LIMIT = 12
     }
 }
 

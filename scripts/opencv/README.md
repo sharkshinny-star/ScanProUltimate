@@ -32,3 +32,22 @@ If the app starts using another OpenCV module, add it to `BUILD_LIST` in the scr
 OpenCV is distributed under the Apache License 2.0; its license text is kept at `opencv/LICENSE`.
 The sources and binaries in `:opencv` are built from the unmodified 4.14.0 release, except that the
 camera view classes and `Utils.loadResource` were removed as described above.
+
+## Desktop build for the imaging tests
+
+`MatFiltersTest`-style tests (`app/src/test/java/com/example/scanpro/imaging/MatFilters*Test.kt`) run the real
+filters on a desktop JVM, so they need a desktop build of the same OpenCV. It is vendored at
+`app/src/test/resources/native/linux-x86_64/opencv_java4.bin` (a stripped Linux x86_64 shared library; the
+extension is `.bin` because the Android Gradle plugin drops `.so` files from test resources). The tests load it by
+path, skip themselves on other platforms, and fail, not skip, if it can't be loaded on Linux x86_64.
+
+Rebuild it with `scripts/opencv/build-opencv-host.sh <opencv-checkout> <output-dir>` when OpenCV is upgraded, then
+copy the stripped `libopencv_java*.so` over the `.bin`.
+
+The tests compare the OpenCV filters with the algorithms they replaced (colour matrix, whiteboard, adaptive
+threshold) and with golden images in `app/src/test/resources/golden`. After an intended change to a filter, review
+the new pictures and accept them with:
+
+```
+./gradlew :app:testDebugUnitTest --tests '*MatFiltersGoldenTest*' -Pscanpro.updateGoldens=true
+```

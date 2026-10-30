@@ -12,7 +12,6 @@ import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.PdfPasswordRequiredException
-import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
@@ -42,7 +41,7 @@ class AppViewModel @Inject constructor(
     private val repository: DocumentRepository,
     private val settings: SettingsStore,
     private val operations: OperationRunner,
-    library: DocumentLibrary
+    private val library: DocumentLibrary
 ) : ViewModel() {
     /** Null until the saved theme has loaded; the launch screen stays up until then, so it never flashes. */
     val themeMode: StateFlow<ThemeMode?> = settings.themeMode
@@ -71,7 +70,12 @@ class AppViewModel @Inject constructor(
     private val _scanRequested = MutableStateFlow(false)
     /** Set by the "Scan" launcher shortcut; the shell opens the camera once the app is unlocked. */
     val scanRequested: StateFlow<Boolean> = _scanRequested.asStateFlow()
-    val documents: StateFlow<List<DocumentSummary>> = library.documents
+    /** Changes after every library refresh; the shell re-checks pending "open this document" requests on it. */
+    val libraryRevision: StateFlow<Long> = library.overview
+        .map { it.revision }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0L)
+
+    suspend fun documentExists(id: String): Boolean = library.exists(id)
     val message: StateFlow<UiMessage?> = operations.message
     val exportArtifact: StateFlow<ExportArtifact?> = operations.exportArtifact
     val openDocumentRequest: StateFlow<String?> = operations.openDocumentRequest

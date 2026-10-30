@@ -58,11 +58,17 @@ class DocumentRepository @Inject constructor(
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
-    suspend fun loadSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) { db.loadSummaries() }
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
         purgeExpiredTrash(maxAgeDays = 7)
         db.loadTrashSummaries()
     }
+    /** The Files list as pages; see [DocumentDatabase.pagedSummaries]. */
+    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort) = db.pagedSummaries(folder, favoritesOnly, sort)
+    suspend fun loadOverview(recentLimit: Int): LibraryOverview = withContext(Dispatchers.IO) { db.loadOverview(recentLimit) }
+    suspend fun loadOtherSummaries(excludeId: String, limit: Int): List<DocumentSummary> =
+        withContext(Dispatchers.IO) { db.loadOtherSummaries(excludeId, limit) }
+    /** Null when the document is missing or in the recycle bin. */
+    suspend fun activeStamp(id: String): DocumentStamp? = withContext(Dispatchers.IO) { db.loadActiveStamp(id) }
     /** The full document with its pages, or null when it no longer exists. */
     suspend fun loadDocument(id: String): ScanDocument? = withContext(Dispatchers.IO) { db.loadDocument(id) }
     suspend fun search(query: String): List<DocumentSummary> = withContext(Dispatchers.IO) { db.search(query) }

@@ -49,8 +49,8 @@ class SettingsViewModel @Inject constructor(
     val autoTitle = settings.autoTitle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val appLock = settings.appLock.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.LIGHT)
-    val documentCount: StateFlow<Int> = library.documents.map { it.size }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.size)
+    val documentCount: StateFlow<Int> = library.overview.map { it.documentCount }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.overview.value.documentCount)
     val trashCount: StateFlow<Int> = library.trash.map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.trash.value.size)
     val storageBytes: StateFlow<Long> = library.storageBytes

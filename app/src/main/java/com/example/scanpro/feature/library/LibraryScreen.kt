@@ -45,7 +45,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -82,6 +81,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -98,6 +101,8 @@ import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
+import com.example.scanpro.data.LibraryOverview
+import com.example.scanpro.data.LibrarySort
 import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.core.ui.sharePdfs
@@ -107,10 +112,6 @@ import com.example.scanpro.core.designsystem.TitleWithStatus
 import com.example.scanpro.core.designsystem.TopBarWithProgress
 
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-
-private enum class LibrarySort(@StringRes val label: Int) {
-    UPDATED(R.string.lib_sort_recent), NAME(R.string.lib_sort_name), SIZE(R.string.lib_sort_size)
-}
 
 @Composable
 fun LibraryRoute(
@@ -129,14 +130,26 @@ fun LibraryRoute(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val documents by viewModel.documents.collectAsStateWithLifecycle()
+    val overview by viewModel.overview.collectAsStateWithLifecycle()
+    val folder by viewModel.folder.collectAsStateWithLifecycle()
+    val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
+    val sort by viewModel.sort.collectAsStateWithLifecycle()
+    // Home shows the few newest documents from the overview; only the Files and Search lists page the database.
+    val items = if (mode == ScanProDestinations.HOME) null else viewModel.documents.collectAsLazyPagingItems()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
     LibraryScreen(
         mode = mode,
-        documents = documents,
+        overview = overview,
+        items = items,
+        folder = folder,
+        favoritesOnly = favoritesOnly,
+        sort = sort,
+        onFolderChange = viewModel::setFolder,
+        onFavoritesOnlyChange = viewModel::setFavoritesOnly,
+        onSortChange = viewModel::setSort,
         trashCount = trashCount,
         query = query,
         busy = busy,
@@ -163,7 +176,14 @@ fun LibraryRoute(
 @Composable
 internal fun LibraryScreen(
     mode: String,
-    documents: List<DocumentSummary>,
+    overview: LibraryOverview,
+    items: LazyPagingItems<DocumentSummary>?,
+    folder: String,
+    favoritesOnly: Boolean,
+    sort: LibrarySort,
+    onFolderChange: (String) -> Unit,
+    onFavoritesOnlyChange: (Boolean) -> Unit,
+    onSortChange: (LibrarySort) -> Unit,
     trashCount: Int,
     query: String,
     busy: Boolean,
@@ -187,47 +207,30 @@ internal fun LibraryScreen(
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
     var gridMode by rememberSaveable { mutableStateOf(mode == ScanProDestinations.FILES) }
-    var sortName by rememberSaveable { mutableStateOf(LibrarySort.UPDATED.name) }
-    var folder by rememberSaveable { mutableStateOf("") }
-    var favoritesOnly by rememberSaveable { mutableStateOf(false) }
     var renameFolderSource by remember { mutableStateOf<String?>(null) }
     var sortMenuOpen by remember { mutableStateOf(false) }
     var moreMenuOpen by remember { mutableStateOf(false) }
     val selected = remember { mutableStateListOf<String>() }
-    val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
-    val folders = remember(documents) { documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinct().sorted() }
+    val folders = overview.folders
 
     // A folder filter whose folder no longer exists (renamed, or its documents trashed) would hide
     // everything with no chip left to clear it.
-    // Only on Files, and only once documents have loaded: an empty list just after launch, or search
-    // results that happen to miss the folder, don't mean the folder is gone.
+    // Only on Files, and only once documents have loaded: an empty overview just after launch doesn't
+    // mean the folder is gone.
     LaunchedEffect(folders) {
-        if (mode == ScanProDestinations.FILES && documents.isNotEmpty() && folder.isNotBlank() &&
+        if (mode == ScanProDestinations.FILES && overview.documentCount > 0 && folder.isNotBlank() &&
             folders.none { it.equals(folder, ignoreCase = true) }
-        ) folder = ""
+        ) onFolderChange("")
     }
 
-    val visible = remember(documents, mode, folder, favoritesOnly, sort) {
-        // Home only shows the most recent documents, so selection and bulk actions are limited to those.
-        if (mode == ScanProDestinations.HOME) {
-            return@remember documents.sortedByDescending { it.updatedAt }.take(RECENT_LIMIT)
-        }
-        val base = documents.asSequence()
-            .filter { folder.isBlank() || it.folderName.equals(folder, ignoreCase = true) }
-            .filter { !favoritesOnly || it.isFavorite }
-            .toList()
-        when (sort) {
-            LibrarySort.UPDATED -> base.sortedByDescending { it.updatedAt }
-            LibrarySort.NAME -> base.sortedBy { it.title.lowercase() }
-            LibrarySort.SIZE -> base.sortedByDescending { it.sizeBytes }
-        }
+    // Home's selection is limited to the documents it shows.
+    val homeIds = remember(overview) { overview.recent.mapTo(HashSet()) { it.id } }
+    LaunchedEffect(homeIds) {
+        if (mode == ScanProDestinations.HOME) selected.removeAll { it !in homeIds }
     }
-
-    // Drop selections hidden by a folder/favorites/sort change so bulk actions only touch visible items.
-    LaunchedEffect(visible) {
-        val visibleIds = visible.mapTo(HashSet()) { it.id }
-        selected.removeAll { it !in visibleIds }
-    }
+    // A new folder, favorites, sort or search shows different documents, so a selection made before it would
+    // act on items no longer on screen.
+    LaunchedEffect(folder, favoritesOnly, sort, query) { selected.clear() }
 
     fun toggleSelection(id: String) {
         if (id in selected) selected.remove(id) else selected.add(id)
@@ -293,7 +296,7 @@ internal fun LibraryScreen(
                                         text = { Text(stringResource(option.label)) },
                                         trailingIcon = { if (sort == option) Icon(Icons.Default.Check, contentDescription = stringResource(R.string.lib_cd_selected)) },
                                         onClick = {
-                                            sortName = option.name
+                                            onSortChange(option)
                                             sortMenuOpen = false
                                         }
                                     )
@@ -358,7 +361,7 @@ internal fun LibraryScreen(
         ) {
             if (isHome) {
                 HomeDashboard(
-                    documents = documents,
+                    overview = overview,
                     trashCount = trashCount,
                     busy = busy,
                     selected = selected,
@@ -393,19 +396,19 @@ internal fun LibraryScreen(
                 }
 
                 // Folder/favorite filters only earn their space once there is something to filter.
-                if (documents.isNotEmpty() && (folders.isNotEmpty() || documents.any { it.isFavorite } || favoritesOnly)) {
+                if (overview.documentCount > 0 && (folders.isNotEmpty() || overview.favoriteCount > 0 || favoritesOnly)) {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         item {
                             FilterChip(
                                 selected = folder.isBlank() && !favoritesOnly,
-                                onClick = { folder = ""; favoritesOnly = false },
+                                onClick = { onFolderChange(""); onFavoritesOnlyChange(false) },
                                 label = { Text(stringResource(R.string.lib_filter_all)) }
                             )
                         }
                         item {
                             FilterChip(
                                 selected = favoritesOnly,
-                                onClick = { favoritesOnly = !favoritesOnly },
+                                onClick = { onFavoritesOnlyChange(!favoritesOnly) },
                                 label = { Text(stringResource(R.string.lib_filter_favorites)) },
                                 leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Star else Icons.Outlined.StarOutline, null) }
                             )
@@ -414,7 +417,7 @@ internal fun LibraryScreen(
                             item(key = "folder_$name") {
                                 FilterChip(
                                     selected = folder == name,
-                                    onClick = { folder = if (folder == name) "" else name },
+                                    onClick = { onFolderChange(if (folder == name) "" else name) },
                                     label = { Text(name, maxLines = 1) },
                                     leadingIcon = { Icon(Icons.Default.Folder, null) }
                                 )
@@ -424,7 +427,12 @@ internal fun LibraryScreen(
                     Spacer(Modifier.height(10.dp))
                 }
 
-                if (visible.isEmpty()) {
+                val list = items
+                val loading = list == null || list.loadState.refresh is LoadState.Loading
+                if (list == null || (list.itemCount == 0 && loading)) {
+                    // First page on its way: nothing to say yet, and no "empty" message that would flash.
+                    Box(Modifier.fillMaxSize())
+                } else if (list.itemCount == 0) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
@@ -475,7 +483,8 @@ internal fun LibraryScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        gridItems(visible, key = { it.id }) { doc ->
+                        items(count = list.itemCount, key = list.itemKey { it.id }) { index ->
+                            val doc = list[index] ?: return@items
                             DocumentGridCard(
                                 document = doc,
                                 selected = doc.id in selected,
@@ -492,7 +501,8 @@ internal fun LibraryScreen(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(visible, key = { it.id }) { doc ->
+                        items(count = list.itemCount, key = list.itemKey { it.id }) { index ->
+                            val doc = list[index] ?: return@items
                             DocumentListCard(
                                 document = doc,
                                 selected = doc.id in selected,
@@ -518,18 +528,16 @@ internal fun LibraryScreen(
             onDismiss = { renameFolderSource = null }
         ) { target ->
             onRenameFolder(source, target)
-            folder = target.trim()
+            onFolderChange(target.trim())
             renameFolderSource = null
         }
     }
 }
 
-private const val RECENT_LIMIT = 8
-
 /** Home tab: workspace header, primary scan entry points and the most recent documents. */
 @Composable
 private fun HomeDashboard(
-    documents: List<DocumentSummary>,
+    overview: LibraryOverview,
     trashCount: Int,
     busy: Boolean,
     selected: List<String>,
@@ -542,7 +550,7 @@ private fun HomeDashboard(
     onOpenDocument: (String) -> Unit,
     onToggleSelection: (String) -> Unit
 ) {
-    val recent = remember(documents) { documents.sortedByDescending { it.updatedAt }.take(RECENT_LIMIT) }
+    val recent = overview.recent
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Column {
@@ -556,9 +564,9 @@ private fun HomeDashboard(
                 Text(stringResource(R.string.lib_home_headline), style = MaterialTheme.typography.headlineMedium)
                 Text(
                     when {
-                        documents.isEmpty() -> stringResource(R.string.lib_home_first_document)
-                        trashCount > 0 -> stringResource(R.string.lib_home_stats_with_trash, documents.size, documents.count { it.isFavorite }, trashCount)
-                        else -> stringResource(R.string.lib_home_stats, documents.size, documents.count { it.isFavorite })
+                        overview.documentCount == 0 -> stringResource(R.string.lib_home_first_document)
+                        trashCount > 0 -> stringResource(R.string.lib_home_stats_with_trash, overview.documentCount, overview.favoriteCount, trashCount)
+                        else -> stringResource(R.string.lib_home_stats, overview.documentCount, overview.favoriteCount)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -585,7 +593,7 @@ private fun HomeDashboard(
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.lib_sort_recent), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    if (documents.size > recent.size) TextButton(onClick = onSeeAll) { Text(stringResource(R.string.lib_see_all)) }
+                    if (overview.documentCount > recent.size) TextButton(onClick = onSeeAll) { Text(stringResource(R.string.lib_see_all)) }
                 }
             }
             items(recent, key = { it.id }) { doc ->

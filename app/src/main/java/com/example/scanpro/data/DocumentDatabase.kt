@@ -4,6 +4,11 @@ import android.content.Context
 import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.Dao
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.map
 import androidx.room.Embedded
 import androidx.room.Database
 import androidx.room.Entity
@@ -19,6 +24,8 @@ import androidx.room.Transaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 // Stay under SQLite's historical 999 bound-variable limit for IN (...) queries.
 private const val SQL_VARIABLE_CHUNK = 900
@@ -108,6 +115,47 @@ internal interface ScanDao {
 
     @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.id IN (:ids)")
     fun loadSummaries(ids: List<String>): List<DocumentSummaryRow>
+
+    // The Files list, paged. An empty folder means every folder; the folder name compares ignoring case,
+    // like the folder chips do.
+    @Query(
+        "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
+            "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "ORDER BY d.updated_at DESC, d.id"
+    )
+    fun pagedByUpdated(folder: String, favoritesOnly: Boolean): PagingSource<Int, DocumentSummaryRow>
+
+    @Query(
+        "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
+            "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "ORDER BY d.title COLLATE NOCASE ASC, d.id"
+    )
+    fun pagedByName(folder: String, favoritesOnly: Boolean): PagingSource<Int, DocumentSummaryRow>
+
+    @Query(
+        "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
+            "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "ORDER BY d.size_bytes DESC, d.id"
+    )
+    fun pagedBySize(folder: String, favoritesOnly: Boolean): PagingSource<Int, DocumentSummaryRow>
+
+    @Query("SELECT COUNT(*) FROM documents WHERE trashed_at = 0")
+    fun countActive(): Int
+
+    @Query("SELECT COUNT(*) FROM documents WHERE trashed_at = 0 AND is_favorite = 1")
+    fun countFavorites(): Int
+
+    @Query("SELECT DISTINCT TRIM(folder_name) FROM documents WHERE trashed_at = 0 AND TRIM(folder_name) != ''")
+    fun loadFolderNames(): List<String>
+
+    @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 ORDER BY d.updated_at DESC, d.id LIMIT :limit")
+    fun loadRecentSummaries(limit: Int): List<DocumentSummaryRow>
+
+    @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 AND d.id != :excludeId ORDER BY d.updated_at DESC, d.id LIMIT :limit")
+    fun loadOtherSummaries(excludeId: String, limit: Int): List<DocumentSummaryRow>
+
+    @Query("SELECT updated_at AS updatedAt, size_bytes AS sizeBytes FROM documents WHERE id = :id AND trashed_at = 0 LIMIT 1")
+    fun loadActiveStamp(id: String): DocumentStamp?
 
     @Query("SELECT * FROM documents WHERE trashed_at > 0 ORDER BY trashed_at DESC")
     fun loadTrashDocuments(): List<DocumentEntity>
@@ -245,6 +293,33 @@ class DocumentDatabase @Inject constructor(
     }
 
     fun loadSummaries(): List<DocumentSummary> = dao.loadActiveSummaries().map { it.toSummary() }
+
+    /**
+     * The Files list as pages of summaries, straight from the database: it stays current by itself, because
+     * Room invalidates the source whenever the documents or pages tables change.
+     */
+    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort): Flow<PagingData<DocumentSummary>> =
+        Pager(PagingConfig(pageSize = 30, prefetchDistance = 30, enablePlaceholders = false)) {
+            when (sort) {
+                LibrarySort.UPDATED -> dao.pagedByUpdated(folder.trim(), favoritesOnly)
+                LibrarySort.NAME -> dao.pagedByName(folder.trim(), favoritesOnly)
+                LibrarySort.SIZE -> dao.pagedBySize(folder.trim(), favoritesOnly)
+            }
+        }.flow.map { data -> data.map { row -> row.toSummary() } }
+
+    fun loadOverview(recentLimit: Int): LibraryOverview = room.runInTransaction<LibraryOverview> {
+        LibraryOverview(
+            documentCount = dao.countActive(),
+            favoriteCount = dao.countFavorites(),
+            folders = dao.loadFolderNames().distinct().sorted(),
+            recent = dao.loadRecentSummaries(recentLimit).map { it.toSummary() }
+        )
+    }
+
+    fun loadOtherSummaries(excludeId: String, limit: Int): List<DocumentSummary> =
+        dao.loadOtherSummaries(excludeId, limit).map { it.toSummary() }
+
+    fun loadActiveStamp(id: String): DocumentStamp? = dao.loadActiveStamp(id)
 
     fun loadTrashSummaries(): List<DocumentSummary> = dao.loadTrashSummaries().map { it.toSummary() }
 

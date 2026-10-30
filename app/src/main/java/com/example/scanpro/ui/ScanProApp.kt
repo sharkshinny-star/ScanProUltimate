@@ -49,7 +49,7 @@ fun ScanProApp(
     onAppLockChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    val documents by viewModel.documents.collectAsStateWithLifecycle()
+    val libraryRevision by viewModel.libraryRevision.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val exportArtifact by viewModel.exportArtifact.collectAsStateWithLifecycle()
     val openDocumentRequest by viewModel.openDocumentRequest.collectAsStateWithLifecycle()
@@ -105,9 +105,9 @@ fun ScanProApp(
 
     // A finished camera scan opens its new document once the library has picked it up. This sits
     // below the lock gate: navigating before the NavHost has set its graph would crash.
-    LaunchedEffect(openDocumentRequest, documents) {
+    LaunchedEffect(openDocumentRequest, libraryRevision) {
         val id = openDocumentRequest ?: return@LaunchedEffect
-        if (documents.any { it.id == id }) {
+        if (viewModel.documentExists(id)) {
             navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
             viewModel.clearOpenDocumentRequest()
         }
