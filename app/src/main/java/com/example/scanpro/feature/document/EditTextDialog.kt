@@ -32,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -76,12 +78,13 @@ fun EditTextDialog(
     val blue = MaterialTheme.colorScheme.primary
     val pagePreview = stringResource(R.string.a11y_page_preview)
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
-                    Text(stringResource(R.string.doc_edit_text), style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.doc_edit_text), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 4.dp))
                 }
                 Text(
                     if (lines.isEmpty()) stringResource(R.string.doc_edit_text_empty)
@@ -90,7 +93,16 @@ fun EditTextDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
-                Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     val image = bitmap
                     if (image == null) {
                         CircularProgressIndicator()
@@ -137,6 +149,7 @@ fun EditTextDialog(
                     onValueChange = { text = it.replace('\n', ' ').take(400) },
                     enabled = line != null,
                     singleLine = true,
+                    shape = MaterialTheme.shapes.small,
                     label = { Text(if (line == null) stringResource(R.string.doc_tap_a_line) else stringResource(R.string.doc_new_text)) },
                     modifier = Modifier.fillMaxWidth()
                 )

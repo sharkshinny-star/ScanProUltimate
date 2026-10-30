@@ -1,7 +1,5 @@
 package com.example.scanpro
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -12,7 +10,6 @@ import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.PdfPasswordRequiredException
-import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.ThemeMode
@@ -47,6 +44,25 @@ class AppViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode?> = settings.themeMode
         .map<ThemeMode, ThemeMode?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    /**
+     * The Play in-app review flow is due once, after the third saved scan, when the app is in a calm place
+     * (the document screen). Google decides whether a card is shown; nothing in the app promises one.
+     */
+    val reviewDue: StateFlow<Boolean> = combine(settings.completedScans, settings.reviewRequested) { scans, requested ->
+        scans >= REVIEW_AFTER_SCANS && !requested
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** The one-time "How was your scanning experience?" prompt, due after the fifth saved scan. */
+    val feedbackPromptDue: StateFlow<Boolean> = combine(settings.completedScans, settings.feedbackPromptShown) { scans, shown ->
+        scans >= FEEDBACK_PROMPT_AFTER_SCANS && !shown
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun markReviewRequested() { viewModelScope.launch { settings.setReviewRequested() } }
+    fun markFeedbackPromptShown() { viewModelScope.launch { settings.setFeedbackPromptShown() } }
+
+    /** Wallpaper-derived colours (Android 12+); applied as soon as it is known, false until then. */
+    val dynamicColor: StateFlow<Boolean> = settings.dynamicColor
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     /** Null until the setting has loaded, so the library is never shown before the lock decision. */
     val appLockEnabled: StateFlow<Boolean?> = settings.appLock
         .map<Boolean, Boolean?> { it }
@@ -165,55 +181,34 @@ class AppViewModel @Inject constructor(
         filters: List<com.example.scanpro.data.PageFilter> = emptyList()
     ) {
         if (imageUris.isEmpty()) return
-        operations.enqueue(context.getString(R.string.msg_finishing_scan_progress, context.getString(mode.labelRes).lowercase()), null) {
-            val newDocument = try {
-                repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters)
-            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                // Keep the photos: they exist nowhere else. The scanner's own clean-up removes abandoned sessions
-                // after a day, so offering Retry here costs nothing if the user ignores it.
-                operations.showMessage(
-                    UiMessage(context.getString(R.string.msg_could_not_save_scan, error.message ?: context.getString(R.string.msg_unknown_error)), actionLabel = context.getString(R.string.common_retry)) {
-                        importCameraSession(imageUris, mode, crops, filters)
-                    }
-                )
-                return@enqueue
+        // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
+        com.example.scanpro.work.ImportScanWorker.enqueue(context, com.example.scanpro.work.ImportScanWorker.inputFor(imageUris, mode, crops, filters))
+    }
+
+    /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */
+    fun replacePageFromCamera(
+        target: com.example.scanpro.navigation.RetakeTarget,
+        imageUri: Uri,
+        crop: com.example.scanpro.data.CropQuad,
+        filter: com.example.scanpro.data.PageFilter
+    ) {
+        val number = target.position + 1
+        operations.enqueue(context.getString(R.string.msg_replacing_page, number), context.getString(R.string.msg_page_retaken, number)) {
+            try {
+                repository.replacePage(target.documentId, target.pageId, imageUri, crop, filter)
+            } finally {
+                if (imageUri.scheme == "file") imageUri.path?.let { File(it).parentFile }
+                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
             }
-            // Text scans copy their text instead; every other scan offers share/save straight away.
-            if (mode == ScanMode.TEXT) copyRecognizedText(newDocument) else operations.offerScanSaved(newDocument.id)
-            operations.requestOpenDocument(newDocument.id)
-            // The document now holds its own copies; drop the scanner session's temporary captures.
-            imageUris.asSequence()
-                .filter { it.scheme == "file" }
-                .mapNotNull { uri -> uri.path?.let { File(it).parentFile } }
-                .filter { it.parentFile?.name == SESSION_ROOT }
-                .distinct()
-                .forEach { it.deleteRecursively() }
         }
     }
 
-    /** "Extract text" scans put the recognized text on the clipboard so it can be pasted straight away. */
-    private fun copyRecognizedText(document: ScanDocument) {
-        val text = document.pages.sortedBy { it.position }.joinToString("\n\n") { it.ocrText.trim() }.trim()
-        if (text.isBlank()) {
-            operations.showMessage(context.getString(R.string.msg_no_text_found_in_scan))
-            return
-        }
-        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText(context.getString(R.string.msg_clip_extracted_text), text).apply {
-            // Scans often hold IDs and account numbers; keep them out of the clipboard preview on Android 13+.
-            description.extras = android.os.PersistableBundle().apply {
-                putBoolean(
-                    if (android.os.Build.VERSION.SDK_INT >= 33) android.content.ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE",
-                    true
-                )
-            }
-        }
-        clipboard.setPrimaryClip(clip)
-        operations.showMessage(context.getString(R.string.msg_text_copied_to_clipboard))
-    }
 }
 
 private const val MAX_IMPORT_IMAGES = 100
 
+
+/** Saved scans before the Play in-app review flow is requested, once. */
+const val REVIEW_AFTER_SCANS = 3
+/** Saved scans before the one-time feedback prompt; later than the review so the two never meet. */
+const val FEEDBACK_PROMPT_AFTER_SCANS = 5

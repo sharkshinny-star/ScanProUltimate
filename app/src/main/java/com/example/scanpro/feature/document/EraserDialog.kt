@@ -33,6 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -81,12 +83,13 @@ fun EraserDialog(
     val ink = Color(0xFFFF5252).copy(alpha = 0.55f)
     val pagePreview = stringResource(R.string.a11y_page_preview)
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
-                    Text(stringResource(R.string.doc_eraser), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.doc_eraser), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).padding(start = 4.dp))
                     IconButton(enabled = strokes.isNotEmpty(), onClick = { strokes.removeAt(strokes.lastIndex) }) {
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.doc_undo_last_stroke))
                     }
@@ -97,7 +100,17 @@ fun EraserDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
-                Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                // The page sits on a tonal desk, like the editor's own preview.
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     val image = bitmap
                     if (image == null) {
                         CircularProgressIndicator()
@@ -147,7 +160,11 @@ fun EraserDialog(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.doc_brush), style = MaterialTheme.typography.labelLarge)
                     Brush.entries.forEach { option ->
-                        FilterChip(selected = brush == option, onClick = { brush = option }, label = { Text(stringResource(option.labelRes)) })
+                        FilterChip(selected = brush == option, onClick = { brush = option }, label = { Text(stringResource(option.labelRes)) }, colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ), shape = androidx.compose.foundation.shape.CircleShape)
                     }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {

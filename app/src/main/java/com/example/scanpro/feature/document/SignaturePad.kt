@@ -93,7 +93,7 @@ fun SignaturePadDialog(
         text = {
             Column {
                 if (saved.isNotEmpty()) {
-                    Text(stringResource(R.string.doc_saved_signatures), style = MaterialTheme.typography.labelLarge)
+                    com.example.scanpro.core.designsystem.Eyebrow(stringResource(R.string.doc_saved_signatures), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
@@ -113,7 +113,8 @@ fun SignaturePadDialog(
                         .padding(top = 12.dp)
                         .fillMaxWidth()
                         .height(220.dp)
-                        .background(Color.White, RoundedCornerShape(12.dp))
+                        .background(Color.White, RoundedCornerShape(16.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
                         .semantics { contentDescription = padDescription }
                         .onSizeChanged { padSize = it }
                         .pointerInput(Unit) {
@@ -157,7 +158,7 @@ fun SignaturePadDialog(
                                 .minimumInteractiveComponentSize()
                                 .size(28.dp)
                                 .background(color, CircleShape)
-                                .border(if (chosen) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                .border(if (chosen) 3.dp else 1.dp, if (chosen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
                                 .clickable(role = Role.RadioButton) { ink = color }
                                 .semantics { contentDescription = inkDescription; selected = chosen }
                         )

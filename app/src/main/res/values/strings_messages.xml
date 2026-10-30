@@ -159,4 +159,19 @@
     <!-- OcrEngine: failure shown when a text model is not on the device yet -->
     <string name="msg_ocr_model_downloading">The %1$s text model is still downloading.</string>
     <string name="msg_ocr_model_downloading_retry">The %1$s text model is still downloading. Connect to the internet, then run OCR again.</string>
+    <!-- Added by the compassionate-turing merge -->
+    <string name="msg_ocr_partial">Text read on %1$d of %2$d pages; the rest kept their old text</string>
+    <string name="msg_restoring_page">Restoring page…</string>
+    <string name="msg_page_restore_failed">The page could not be restored</string>
+    <string name="msg_duplicating_document">Duplicating document…</string>
+    <string name="msg_copy_saved_as">Copy saved as \"%1$s\"</string>
+    <string name="msg_open">Open</string>
+    <string name="msg_converting_to_png">Converting pages to PNG…</string>
+    <string name="msg_share_png">Share PNG</string>
+    <string name="msg_renamed_duplicate_name">Renamed. Another document has the same name.</string>
+    <string name="msg_replacing_page">Replacing page %1$d…</string>
+    <string name="msg_page_retaken">Page %1$d retaken</string>
+    <string name="msg_scan_photos_unavailable">The photos from an unfinished scan are no longer available</string>
+    <string name="msg_tools_out_of_memory">Not enough memory for this PDF. Try a smaller file or fewer pages.</string>
+    <string name="msg_tools_form_nothing_changed">Nothing has been changed yet</string>
 </resources>

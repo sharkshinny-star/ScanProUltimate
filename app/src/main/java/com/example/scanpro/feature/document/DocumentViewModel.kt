@@ -92,7 +92,11 @@ class DocumentViewModel @Inject constructor(
     private fun run(@StringRes label: Int?, @StringRes successMessage: Int?, action: suspend () -> Unit) =
         operations.run(label?.let { context.getString(it) }, successMessage?.let { context.getString(it) }, action)
 
-    fun rename(title: String) = run(null, null) { repository.rename(id, title) }
+    fun rename(title: String) = run(null, null) {
+        if (repository.rename(id, title)) operations.showMessage(context.getString(R.string.msg_renamed_duplicate_name))
+    }
+
+    fun stopCurrent() = operations.cancelCurrent()
     fun setTags(tags: String) = run(null, R.string.msg_tags_updated) { repository.setTags(id, tags) }
     fun setFolder(folder: String) = run(null, R.string.msg_folder_updated) { repository.setFolder(id, folder) }
     fun toggleFavorite() = run(null, null) { repository.toggleFavorite(id) }
@@ -142,8 +146,38 @@ class DocumentViewModel @Inject constructor(
     fun splitBookSpread(pageId: String, splitFraction: Float) =
         run(R.string.msg_splitting_book_spread, R.string.msg_book_spread_split) { repository.splitBookSpread(id, pageId, splitFraction) }
 
-    fun deletePage(pageId: String) =
-        run(R.string.msg_removing_page, R.string.msg_page_removed) { repository.deletePage(id, pageId) }
+    /** Removes the page and offers Undo; the page's files go only once the message is gone. */
+    fun deletePage(pageId: String) = run(R.string.msg_removing_page, null) {
+        repository.deletePage(id, pageId)
+        operations.showMessage(
+            UiMessage(
+                context.getString(R.string.msg_page_removed),
+                actionLabel = context.getString(R.string.common_undo),
+                onAction = { undoDeletePage() },
+                onDismiss = { repository.purgeRemovedPage(id, pageId) }
+            )
+        )
+    }
+
+    private fun undoDeletePage() = operations.enqueue(context.getString(R.string.msg_restoring_page), null) {
+        if (!repository.restoreRemovedPage(id)) operations.showMessage(context.getString(R.string.msg_page_restore_failed))
+    }
+
+    fun duplicateDocument() = run(R.string.msg_duplicating_document, null) {
+        val copy = repository.duplicateDocument(id)
+        operations.showMessage(
+            UiMessage(context.getString(R.string.msg_copy_saved_as, copy.title), actionLabel = context.getString(R.string.msg_open), onAction = {
+                operations.requestOpenDocument(copy.id)
+            })
+        )
+    }
+
+    fun exportPng() = run(R.string.msg_converting_to_png, null) {
+        val files = repository.exportPng(id)
+        operations.publishExport(
+            ExportArtifact(files.first().absolutePath, "image/png", context.getString(R.string.msg_share_png), files.drop(1).map { it.absolutePath })
+        )
+    }
 
     /** Saved signatures, newest first, offered in the signature dialog. */
     val savedSignatures: StateFlow<List<java.io.File>> = signatures.items
@@ -199,10 +233,17 @@ class DocumentViewModel @Inject constructor(
     fun updatePageOcrText(pageId: String, text: String) =
         run(R.string.msg_updating_ocr_text, R.string.msg_ocr_text_updated) { repository.updatePageOcrText(id, pageId, text) }
 
-    fun reOcr() = run(R.string.msg_refreshing_ocr, R.string.msg_ocr_refreshed) { repository.reOcrDocument(id) }
+    fun reOcr() = run(R.string.msg_refreshing_ocr, null) { reportOcr(repository.reOcrDocument(id), context.getString(R.string.msg_ocr_refreshed)) }
 
     fun reOcr(script: OcrScript) =
-        operations.run(context.getString(R.string.msg_running_script_ocr, context.getString(script.labelRes)), context.getString(R.string.msg_script_ocr_applied, context.getString(script.labelRes))) { repository.reOcrDocument(id, script) }
+        operations.run(context.getString(R.string.msg_running_script_ocr, context.getString(script.labelRes)), null) {
+            reportOcr(repository.reOcrDocument(id, script), context.getString(R.string.msg_script_ocr_applied, context.getString(script.labelRes)))
+        }
+
+    private fun reportOcr(failed: Int, success: String) {
+        val total = document.value?.pages?.size ?: 0
+        operations.showMessage(if (failed == 0) success else context.getString(R.string.msg_ocr_partial, total - failed, total))
+    }
 
     fun splitDocument() = run(R.string.msg_splitting_document, null) {
         val count = repository.splitIntoPageDocuments(id)
@@ -253,13 +294,19 @@ class DocumentViewModel @Inject constructor(
     }
 
     // Queued, not rejected while busy: the screen closes as soon as this is tapped, so a dropped request would
-    // leave the document in the library with nothing but a "still working" message to show for it.
-    fun moveToTrash() = operations.enqueue(null, null) {
+    // leave the document in the library with nothing but a "still working" message to show for it. Always true,
+    // so the screen can close straight away.
+    fun moveToTrash(): Boolean {
+        moveToTrashQueued()
+        return true
+    }
+
+    private fun moveToTrashQueued() = operations.enqueue(null, null) {
         repository.moveToTrash(id)
         operations.showMessage(
-            UiMessage(context.getString(R.string.msg_moved_to_recycle_bin), actionLabel = context.getString(R.string.common_undo)) {
+            UiMessage(context.getString(R.string.msg_moved_to_recycle_bin), actionLabel = context.getString(R.string.common_undo), onAction = {
                 operations.enqueue(null, context.getString(R.string.msg_document_restored)) { repository.restore(id) }
-            }
+            })
         )
     }
 

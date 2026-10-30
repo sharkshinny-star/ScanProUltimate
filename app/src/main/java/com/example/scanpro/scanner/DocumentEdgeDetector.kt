@@ -33,7 +33,19 @@ data class DocumentDetection(
 ) {
     val isBlurry: Boolean get() = blurScore < 80.0
     val isDark: Boolean get() = brightness < 45.0
-    val isReady: Boolean get() = quad != null && confidence >= 0.48f && !isBlurry && !isDark
+    /** Share of the frame the outline covers, 0..1. */
+    val areaRatio: Float get() = quad?.let { QuadGeometry.area(it) } ?: 0f
+    /** The outline is (nearly) the whole frame: the background, not a page. */
+    val fillsFrame: Boolean get() = areaRatio > 0.9f
+    /**
+     * Steady enough to capture: a confident outline that takes up a real share of the frame (a phone or a
+     * card held far away does not), is not just the frame edge, and is sharp and lit.
+     */
+    val isReady: Boolean get() = quad != null && confidence >= 0.48f && areaRatio >= MIN_READY_AREA && !fillsFrame && !isBlurry && !isDark
+
+    companion object {
+        const val MIN_READY_AREA = 0.2f
+    }
 }
 
 /** What the live scanner tells the user to do next; the screen resolves [labelRes] in the current language. */
@@ -112,7 +124,7 @@ object DocumentEdgeDetector {
             // Blur & Brightness diagnostics
             Imgproc.Laplacian(processed, laplacian, CvType.CV_64F)
             Core.meanStdDev(laplacian, mean, stdDev)
-            val blur = stdDev.toArray().firstOrNull()?.let { it * it } ?: 0.0
+            val blurWhole = stdDev.toArray().firstOrNull()?.let { it * it } ?: 0.0
             val brightness = Core.mean(working).`val`[0]
 
             val frameArea = working.cols().toDouble() * working.rows().toDouble()
@@ -160,7 +172,7 @@ object DocumentEdgeDetector {
                                 val onBorder = ordered.count {
                                     it.x < margin || it.y < margin || it.x > frameWidth - margin || it.y > frameHeight - margin
                                 }
-                                if (areaRatio > 0.9 && onBorder >= 3) score *= 0.6
+                                if (areaRatio > 0.9 && onBorder >= 3) score *= 0.3
                                 // Several objects fused into one blob have a dented outline; a page is nearly solid.
                                 score *= weight * solidity * solidity * solidity
 
@@ -188,9 +200,31 @@ object DocumentEdgeDetector {
             val candidate = best
             val confidence = candidate?.score ?: 0f
             val quad = candidate?.let { toNormalizedQuad(it.points, working.cols(), working.rows()) }
+            // Sharpness is judged on the page itself: a blurry background around a sharp page, or the other
+            // way round, must not decide whether the capture is taken.
+            val blur = if (candidate == null) blurWhole else runCatching {
+                val box = Imgproc.boundingRect(MatOfPoint(*candidate.points.toTypedArray()))
+                val inside = org.opencv.core.Rect(
+                    box.x.coerceIn(0, working.cols() - 1), box.y.coerceIn(0, working.rows() - 1),
+                    box.width.coerceIn(1, working.cols() - box.x.coerceIn(0, working.cols() - 1)),
+                    box.height.coerceIn(1, working.rows() - box.y.coerceIn(0, working.rows() - 1))
+                )
+                val region = processed.submat(inside)
+                val regionLaplacian = Mat()
+                val regionMean = MatOfDouble()
+                val regionStd = MatOfDouble()
+                try {
+                    Imgproc.Laplacian(region, regionLaplacian, CvType.CV_64F)
+                    Core.meanStdDev(regionLaplacian, regionMean, regionStd)
+                    regionStd.toArray().firstOrNull()?.let { it * it } ?: blurWhole
+                } finally {
+                    region.release(); regionLaplacian.release(); regionMean.release(); regionStd.release()
+                }
+            }.getOrDefault(blurWhole)
             val guidance = when {
-                quad == null -> Guidance.POINT_AT_DOCUMENT
+                // Darkness first: a dark frame hides the outline, so "point at a document" would mislead.
                 brightness < 45.0 -> Guidance.MORE_LIGHT
+                quad == null -> Guidance.POINT_AT_DOCUMENT
                 blur < 80.0 -> Guidance.HOLD_STEADY
                 confidence < 0.48f -> Guidance.MOVE_CLOSER
                 else -> Guidance.READY

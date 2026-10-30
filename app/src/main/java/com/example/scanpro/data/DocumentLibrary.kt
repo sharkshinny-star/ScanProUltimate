@@ -48,8 +48,16 @@ class DocumentLibrary @Inject constructor(
     }
 
     /** Returns the documents with current PDFs, rebuilding any that page edits made stale. */
-    suspend fun withFreshPdfs(ids: Collection<String>): List<ScanDocument> =
-        ids.mapNotNull { id -> runCatching { repository.ensurePdf(id) }.getOrNull() }
+    suspend fun withFreshPdfs(ids: Collection<String>): List<ScanDocument> = freshPdfs(ids).documents
+
+    class FreshPdfs(val documents: List<ScanDocument>, val failed: Int)
+
+    /** Like [withFreshPdfs], and says how many documents could not be prepared so the caller can tell the user. */
+    suspend fun freshPdfs(ids: Collection<String>): FreshPdfs {
+        var failed = 0
+        val documents = ids.mapNotNull { id -> runCatching { repository.ensurePdf(id) }.getOrElse { failed++; null } }
+        return FreshPdfs(documents, failed)
+    }
 
     suspend fun refresh() {
         val next = repository.loadOverview(RECENT_LIMIT)

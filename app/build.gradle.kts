@@ -22,8 +22,8 @@ android {
         applicationId = "com.scanpro.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "4.1.0"
+        versionCode = 7
+        versionName = "4.2.0"
 
         vectorDrawables { useSupportLibrary = true }
         // True when the ML Kit models ship inside the APK (-Pscanpro.bundledMl=true): no Play-services download checks.
@@ -217,6 +217,8 @@ dependencies {
         implementation("com.google.mlkit:language-id:17.0.6")
     }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    // Google Play In-App Review: asked for once, quietly, after a few successful scans.
+    implementation("com.google.android.play:review-ktx:2.0.2")
 
     // Room + Hilt + WorkManager.
     implementation("androidx.room:room-runtime:2.8.5")

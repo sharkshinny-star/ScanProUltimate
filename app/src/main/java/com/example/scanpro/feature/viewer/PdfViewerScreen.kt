@@ -1,7 +1,6 @@
 package com.example.scanpro.feature.viewer
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -26,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -146,11 +146,24 @@ fun PdfViewerScreen(
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
     val closeScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again; evicted ones are recycled.
+    val pageCache = remember {
+        object : android.util.LruCache<Int, Bitmap>(24 * 1024 * 1024) {
+            override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
+            override fun entryRemoved(evicted: Boolean, key: Int, oldValue: Bitmap, newValue: Bitmap?) {
+                if (evicted && oldValue !== newValue) oldValue.recycle()
+            }
+        }
+    }
+    DisposableEffect(Unit) { onDispose { pageCache.evictAll() } }
+    // The text of every page, read once per file; each search then scans these strings.
+    var pageTexts by remember { mutableStateOf<List<String>?>(null) }
     // Copies made for viewing (including decrypted ones) are removed when the viewer closes.
     val tempFiles = remember { mutableListOf<File>() }
     var needsPassword by remember { mutableStateOf(false) }
     // The file actually on screen: an unlocked or unrestricted copy when the original is protected.
     var openedFile by remember { mutableStateOf<File?>(null) }
+    LaunchedEffect(openedFile) { pageTexts = null }
     var lockedFile by remember { mutableStateOf<File?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
@@ -197,11 +210,17 @@ fun PdfViewerScreen(
 
                 if (isImage) {
                     isImageMode = true
+                    // Decoded at screen size and turned by its EXIF tag: a full 50 MP photo would need
+                    // hundreds of megabytes and show sideways.
                     val bmp = if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                        BitmapFactory.decodeFile(pdfUri.path)
+                        com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
                     } else {
-                        context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                            BitmapFactory.decodeStream(input)
+                        val copy = java.io.File(context.cacheDir, "view_${java.util.UUID.randomUUID()}.img")
+                        try {
+                            context.contentResolver.openInputStream(pdfUri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
+                            com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(copy.absolutePath, 2400)
+                        } finally {
+                            copy.delete()
                         }
                     }
                     if (bmp != null) {
@@ -278,8 +297,8 @@ fun PdfViewerScreen(
         isSearchingText = true
         try {
             val query = searchQuery
-            val matches = withContext(Dispatchers.IO) {
-                val found = mutableListOf<Int>()
+            val texts = pageTexts ?: withContext(Dispatchers.IO) {
+                // Read once per file (and once per protected copy); later queries only scan the strings.
                 val tempPdf = File(context.cacheDir, "search_temp_${System.currentTimeMillis()}.pdf")
                 try {
                     // Search the file being shown; for a protected PDF that is the unlocked copy, not the original.
@@ -291,24 +310,23 @@ fun PdfViewerScreen(
                         }
                         tempPdf
                     }
-                    if (stream.exists()) {
-                        PDDocument.load(stream).use { pdDoc ->
-                            val stripper = PDFTextStripper()
-                            for (i in 0 until pdDoc.numberOfPages) {
-                                // Stop as soon as a newer query replaces this one.
-                                ensureActive()
-                                stripper.startPage = i + 1
-                                stripper.endPage = i + 1
-                                if (stripper.getText(pdDoc).contains(query, ignoreCase = true)) found.add(i)
-                            }
+                    if (!stream.exists()) emptyList()
+                    else PDDocument.load(stream, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { pdDoc ->
+                        val stripper = PDFTextStripper()
+                        (0 until pdDoc.numberOfPages).map { i ->
+                            // Stop as soon as a newer query replaces this one.
+                            ensureActive()
+                            stripper.startPage = i + 1
+                            stripper.endPage = i + 1
+                            runCatching { stripper.getText(pdDoc) }.getOrDefault("")
                         }
                     }
                 } finally {
-                    // Each search may copy the document; never leave those copies behind.
+                    // The copy is read once; never leave it behind.
                     tempPdf.delete()
                 }
-                found
-            }
+            }.also { pageTexts = it }
+            val matches = texts.withIndex().filter { (_, text) -> text.contains(query, ignoreCase = true) }.map { it.index }
             matchingPageIndices = matches
             currentMatchIdx = 0
             if (matches.isNotEmpty()) listState.scrollToItem(matches.first())
@@ -322,8 +340,10 @@ fun PdfViewerScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = {
                     if (isSearchActive) {
                         OutlinedTextField(
@@ -484,9 +504,9 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(40.dp), strokeWidth = 3.dp)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(stringResource(R.string.viewer_loading_document), style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.viewer_loading_document), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 errorMessage != null -> {
@@ -497,17 +517,23 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
+                        com.example.scanpro.core.designsystem.IconTile(
+                            androidx.compose.material.icons.Icons.Rounded.ErrorOutline,
+                            com.example.scanpro.core.designsystem.TileTone.Rose,
+                            size = 72.dp, corner = 24.dp, iconSize = 36.dp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = stringResource(R.string.viewer_error_loading_file),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.viewer_file_couldnt_open),
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = errorMessage ?: stringResource(R.string.viewer_unknown_error),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 }
@@ -568,13 +594,15 @@ fun PdfViewerScreen(
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            // Pages sit as sheets on the tonal backdrop, with room for the page counter at the end.
+                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 56.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(pageCount) { index ->
                                 PdfPageItem(
                                     renderer = pdfRenderer!!,
                                     renderLock = renderLock,
+                                    pageCache = pageCache,
                                     pageIndex = index,
                                     pageCount = pageCount
                                 )
@@ -588,15 +616,15 @@ fun PdfViewerScreen(
                                 .align(Alignment.BottomCenter)
                                 .padding(bottom = 16.dp),
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
-                            shadowElevation = 4.dp
+                            color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.92f),
+                            shadowElevation = 6.dp
                         ) {
                             Text(
                                 text = stringResource(R.string.viewer_page_counter, currentPage, pageCount),
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.inverseOnSurface
                             )
                         }
                     }
@@ -651,6 +679,7 @@ fun PdfViewerScreen(
 private fun PdfPageItem(
     renderer: PdfRenderer,
     renderLock: Mutex,
+    pageCache: android.util.LruCache<Int, Bitmap>,
     pageIndex: Int,
     pageCount: Int
 ) {
@@ -659,6 +688,12 @@ private fun PdfPageItem(
     var aspectRatio by remember { mutableFloatStateOf(0.707f) }
 
     LaunchedEffect(pageIndex) {
+        pageCache.get(pageIndex)?.takeIf { !it.isRecycled }?.let { cached ->
+            bitmap = cached
+            aspectRatio = cached.width.toFloat() / cached.height.toFloat()
+            isPageLoading = false
+            return@LaunchedEffect
+        }
         withContext(Dispatchers.IO) {
             try {
                 isPageLoading = true
@@ -672,6 +707,7 @@ private fun PdfPageItem(
                         val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
                         bmp.eraseColor(android.graphics.Color.WHITE)
                         page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        pageCache.put(pageIndex, bmp)
                         bitmap = bmp
                     }
                 }
@@ -685,8 +721,10 @@ private fun PdfPageItem(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
         color = Color.White,
-        shadowElevation = 1.dp
+        shadowElevation = 3.dp,
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Box(
             modifier = Modifier
@@ -703,7 +741,7 @@ private fun PdfPageItem(
                     filterQuality = FilterQuality.High
                 )
             } else if (isPageLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.5.dp)
             }
         }
     }

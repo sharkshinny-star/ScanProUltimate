@@ -6,8 +6,6 @@ import android.os.SystemClock
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import android.view.View
-import android.view.ViewTreeObserver
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import com.example.scanpro.core.crash.CrashReportPrompt
@@ -27,8 +25,6 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -92,8 +88,14 @@ class MainActivity : FragmentActivity() {
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()
-        hideNavigationBar()
-        publishScanShortcut()
+        // The app draws behind both system bars; screens pad their own content with the insets. The
+        // bars themselves stay available (hiding them took three-button navigation away from people).
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // No translucent scrim behind the gesture bar; the status bar never had one on these versions.
+            window.isNavigationBarContrastEnforced = false
+        }
+        publishShortcuts()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // With app lock on, keep documents out of screenshots and the recent-apps preview.
@@ -105,6 +107,7 @@ class MainActivity : FragmentActivity() {
         }
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
             // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
             val mode = themeMode ?: return@setContent
@@ -120,7 +123,7 @@ class MainActivity : FragmentActivity() {
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                     onDispose { }
                 }
-                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
+                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = dynamicColor) {
                     CrashReportPrompt()
                     ScanProApp(
                         viewModel = viewModel,
@@ -197,26 +200,23 @@ class MainActivity : FragmentActivity() {
         })
     }
 
-    private fun hideNavigationBar() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.navigationBars())
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-        }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideNavigationBar()
-    }
-
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
+    }
+
+    /** Either volume key takes a photo while the scanner is up, for one-handed batch scanning. */
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val volume = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (volume && event?.repeatCount == 0 && com.example.scanpro.scanner.HardwareShutter.onVolumeKey()) return true
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val volume = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (volume && com.example.scanpro.scanner.HardwareShutter.active) return true
+        return super.onKeyUp(keyCode, event)
     }
 
     private fun handleIntent(intent: android.content.Intent?) {
@@ -225,11 +225,15 @@ class MainActivity : FragmentActivity() {
         // the ViewModel itself rather than `this`, which would leak a rotated-away Activity.
         val appViewModel = viewModel
         val action = intent.action
-        val type = intent.type.orEmpty()
+        // Senders don't always set a type; the provider usually knows it.
+        val type = intent.type ?: intent.data?.let { runCatching { contentResolver.getType(it) }.getOrNull() }.orEmpty()
+        fun typeOf(uri: Uri): String = runCatching { contentResolver.getType(uri) }.getOrNull() ?: type
 
         when {
             action == ACTION_SCAN_NOW -> viewModel.requestScan()
-            // "Don't remove our app" / "Bugs or issues?" launcher shortcuts: both lead to the Play listing.
+            action == ACTION_REPORT_ISSUE -> com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.ISSUE)
+            action == ACTION_GIVE_FEEDBACK -> com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.FEEDBACK)
+            // Shortcuts pinned from an earlier build still carry the old single support action.
             action == ACTION_SUPPORT -> com.example.scanpro.core.ui.openPlayStoreListing(this)
             action == android.content.Intent.ACTION_SEND -> {
                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -253,8 +257,12 @@ class MainActivity : FragmentActivity() {
                     @Suppress("DEPRECATION")
                     intent.getParcelableArrayListExtra<Uri>(android.content.Intent.EXTRA_STREAM).orEmpty()
                 }.filter(::isAllowedExternalUri)
-                if (uris.isNotEmpty()) {
-                    appViewModel.submitExternalImport { appViewModel.importImages(uris) }
+                // Several PDFs arrive as one document each; images become the pages of one document.
+                val pdfs = uris.filter { typeOf(it) == "application/pdf" || it.toString().endsWith(".pdf", ignoreCase = true) }
+                val images = uris.filter { it !in pdfs && typeOf(it).startsWith("image/") }
+                pdfs.forEach { pdf -> appViewModel.submitExternalImport { appViewModel.importPdf(pdf) } }
+                if (images.isNotEmpty()) {
+                    appViewModel.submitExternalImport { appViewModel.importImages(images) }
                 }
             }
             action == android.content.Intent.ACTION_VIEW -> {
@@ -278,10 +286,10 @@ class MainActivity : FragmentActivity() {
         uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
 
     /**
-     * Launcher long-press shortcuts. Published at runtime rather than from res/xml: a static shortcut can't name
-     * the package per build type (debug adds ".debug"), and a manifest shortcut's id can't be replaced by code.
+     * Launcher shortcuts, published at runtime: a static shortcuts.xml cannot name the package, which differs
+     * between the debug and release builds, and each intent here is one this activity really handles.
      */
-    private fun publishScanShortcut() {
+    private fun publishShortcuts() {
         runCatching {
             fun shortcut(id: String, short: Int, long: Int, action: String) = ShortcutInfoCompat.Builder(this, id)
                 .setShortLabel(getString(short))
@@ -293,8 +301,8 @@ class MainActivity : FragmentActivity() {
                 this,
                 listOf(
                     shortcut("scan_now", R.string.shortcut_scan_short, R.string.shortcut_scan_long, ACTION_SCAN_NOW),
-                    shortcut("bugs_or_issues", R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, ACTION_SUPPORT),
-                    shortcut("dont_remove_app", R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, ACTION_SUPPORT)
+                    shortcut("bugs_or_issues", R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, ACTION_REPORT_ISSUE),
+                    shortcut("dont_remove_app", R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, ACTION_GIVE_FEEDBACK)
                 )
             )
         }
@@ -378,6 +386,9 @@ class MainActivity : FragmentActivity() {
         const val LOCK_TIMEOUT_MS = 30_000L
         const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+        const val ACTION_REPORT_ISSUE = "com.example.scanpro.action.REPORT_ISSUE"
+        const val ACTION_GIVE_FEEDBACK = "com.example.scanpro.action.GIVE_FEEDBACK"
+        /** Superseded by the two actions above; still handled for shortcuts pinned before they existed. */
         const val ACTION_SUPPORT = "com.example.scanpro.action.SUPPORT"
     }
 }

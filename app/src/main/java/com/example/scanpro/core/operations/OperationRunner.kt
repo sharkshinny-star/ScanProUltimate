@@ -19,14 +19,18 @@ import kotlinx.coroutines.sync.withLock
 data class UiMessage(
     val text: String,
     val actionLabel: String? = null,
-    val onAction: (() -> Unit)? = null
+    val onAction: (() -> Unit)? = null,
+    /** Runs when the message goes away without its action being taken, e.g. to purge what Undo would have restored. */
+    val onDismiss: (() -> Unit)? = null
 )
 
 /** A file produced by an export that the UI should hand to the share sheet. */
 data class ExportArtifact(
     val path: String,
     val mimeType: String,
-    val title: String
+    val title: String,
+    /** Further files of the same type shared together with [path], such as the other pages of a PNG export. */
+    val extraPaths: List<String> = emptyList()
 )
 
 /**
@@ -71,6 +75,15 @@ class OperationRunner @Inject constructor(
     fun clearScanSaved(id: String) { _scanSaved.compareAndSet(id, null) }
 
     private val mutex = Mutex()
+    @Volatile private var current: kotlinx.coroutines.Job? = null
+
+    /**
+     * Stops the operation that is running now. Operations that loop over pages check for cancellation
+     * between pages; the document is left as it was before the operation.
+     */
+    fun cancelCurrent() {
+        current?.cancel()
+    }
     // Guards the pending count together with the busy flags: start() runs on Main and the finish runs
     // on a background thread, and without one lock a finishing job could clear busy just after a
     // new job set it.
@@ -82,7 +95,11 @@ class OperationRunner @Inject constructor(
      * another operation is running are queued, never dropped: each action reads the document afresh
      * when its turn comes, so running after the earlier edit is the same as the user tapping later.
      */
-    fun run(label: String?, successMessage: String?, action: suspend () -> Unit) = start(label, successMessage, action)
+    fun run(label: String?, successMessage: String?, action: suspend () -> Unit): Boolean {
+        start(label, successMessage, action)
+        // Always accepted, since requests are queued; callers that clear a selection on success can rely on it.
+        return true
+    }
 
     /**
      * Queues an operation that must not be lost, such as an import or an Undo; it runs as soon as the
@@ -97,6 +114,36 @@ class OperationRunner @Inject constructor(
      */
     fun enqueueQuiet(action: suspend () -> Unit) {
         scope.launch { mutex.withLock { runCatching { action() } } }
+    }
+
+    /**
+     * Runs [action] in the caller's coroutine (a WorkManager worker, for instance) while holding the same
+     * lock and busy state as the queued operations, so it never overlaps an edit and the screens show its
+     * label. The caller handles failures.
+     */
+    suspend fun <T> perform(label: String?, action: suspend () -> T): T {
+        synchronized(stateLock) {
+            pending++
+            _busy.value = true
+        }
+        try {
+            return mutex.withLock {
+                synchronized(stateLock) { _busyLabel.value = label }
+                try {
+                    action()
+                } finally {
+                    runCatching { library.refresh() }
+                }
+            }
+        } finally {
+            synchronized(stateLock) {
+                pending--
+                if (pending == 0) {
+                    _busyLabel.value = null
+                    _busy.value = false
+                }
+            }
+        }
     }
 
     private fun start(label: String?, successMessage: String?, action: suspend () -> Unit) {
@@ -116,11 +163,17 @@ class OperationRunner @Inject constructor(
                         _busyLabel.value = label
                         OperationForegroundService.show(context, label)
                     }
-                    runCatching { action() }
-                        .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
-                        .onFailure { error ->
-                            _message.value = UiMessage(error.message ?: context.getString(R.string.common_something_went_wrong))
-                        }
+                    current = coroutineContext[kotlinx.coroutines.Job]
+                    try {
+                        action()
+                        if (successMessage != null) _message.value = UiMessage(successMessage)
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        _message.value = UiMessage(context.getString(R.string.common_stopped))
+                    } catch (error: Throwable) {
+                        _message.value = UiMessage(error.message ?: context.getString(R.string.common_something_went_wrong))
+                    } finally {
+                        current = null
+                    }
                     runCatching { library.refresh() }
                 }
             } finally {

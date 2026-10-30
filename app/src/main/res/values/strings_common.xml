@@ -21,4 +21,7 @@
     <string name="common_loading">Loading…</string>
     <string name="common_working">Working…</string>
     <string name="common_something_went_wrong">Something went wrong</string>
+    <!-- Added by the compassionate-turing merge -->
+    <string name="common_stopped">Stopped</string>
+    <string name="common_stop">Stop</string>
 </resources>

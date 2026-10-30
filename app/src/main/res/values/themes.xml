@@ -1,22 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Edge to edge: both bars are transparent and the app draws behind them; Compose pads its own content. -->
     <style name="Theme.ScanPro" parent="android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowBackground">#FEF7FF</item>
-        <item name="android:windowSplashScreenBackground" tools:targetApi="31">#FEF7FF</item>
-        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">#FEF7FF</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
+        <item name="android:enforceStatusBarContrast" tools:targetApi="29">false</item>
+        <item name="android:windowBackground">@color/scanpro_window_light</item>
+        <!-- Android 12+ launch screen: launcher icon on the app background so the hand-off is seamless. -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/scanpro_window_light</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@drawable/ic_launcher_splash</item>
+        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@color/scanpro_brand</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
 
     <!-- Shown by the system while the app starts, then swapped for Theme.ScanPro (see installSplashScreen). -->
     <style name="Theme.ScanPro.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#F8FAFC</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_scanpro</item>
-        <item name="windowSplashScreenIconBackgroundColor">#0F172A</item>
+        <item name="windowSplashScreenBackground">@color/scanpro_window_light</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_splash</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/scanpro_brand</item>
         <item name="postSplashScreenTheme">@style/Theme.ScanPro</item>
     </style>
 </resources>

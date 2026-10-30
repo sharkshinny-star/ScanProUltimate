@@ -27,6 +27,9 @@ import com.example.scanpro.imaging.SpecialExporters
 import com.example.scanpro.scanner.detectCrop
 import com.example.scanpro.scanner.OpenCvScanProcessor
 import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
@@ -44,6 +47,7 @@ class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: DocumentDatabase,
     private val ocr: OcrEngine,
+    private val settings: SettingsStore,
 ) {
     private val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
     private val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
@@ -58,8 +62,13 @@ class DocumentRepository @Inject constructor(
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
+    suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
+    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
+        purgeExpiredTrash(maxAgeDays = settings.trashRetentionDays.first())
+        db.loadTrash()
+    }
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
-        purgeExpiredTrash(maxAgeDays = 7)
+        purgeExpiredTrash(maxAgeDays = settings.trashRetentionDays.first())
         db.loadTrashSummaries()
     }
     /** The Files list as pages; see [DocumentDatabase.pagedSummaries]. */
@@ -105,6 +114,7 @@ class DocumentRepository @Inject constructor(
         autoTitle: Boolean,
         password: String? = null,
     ): ScanDocument = withContext(Dispatchers.IO) {
+        val defaultScript = settings.defaultOcrScript.first()
         val created = now()
         val id = UUID.randomUUID().toString()
         val folder = File(rootDir, id).apply { mkdirs() }
@@ -155,7 +165,8 @@ class DocumentRepository @Inject constructor(
                             ImageProcessor.saveBitmapJpeg(bitmap, source, 98)
                             bitmap.recycle()
                             pages += renderAndOcr(
-                                ScanPage(
+                                script = defaultScript,
+                                page = ScanPage(
                                     id = pageId,
                                     documentId = id,
                                     position = index,
@@ -181,7 +192,8 @@ class DocumentRepository @Inject constructor(
                 sizeBytes = 0L,
                 pdfQuality = quality,
                 pdfPageSize = PdfPageSize.AUTO,
-                searchablePdf = true
+                searchablePdf = true,
+                ocrScript = defaultScript
             )
             regenerateAndSave(doc)
         } catch (error: Throwable) {
@@ -193,8 +205,28 @@ class DocumentRepository @Inject constructor(
         }
     }
 
-    suspend fun rename(id: String, title: String) = mutateDocument(id) { doc ->
-        doc.copy(title = title.trim().ifBlank { doc.title }, updatedAt = now())
+    /** Renames the document. Returns true when another document already has this name, so the caller can say so. */
+    suspend fun rename(id: String, title: String): Boolean = withContext(Dispatchers.IO) {
+        val clean = title.trim().take(MAX_TITLE_LENGTH)
+        require(clean.isNotBlank()) { "A name is required" }
+        val clash = db.loadAll().any { it.id != id && it.title.equals(clean, ignoreCase = true) }
+        mutateDocument(id) { doc -> doc.copy(title = clean, updatedAt = now()) }
+        clash
+    }
+
+    /** Every document in the folder goes back to the top level; the folder then no longer exists. */
+    suspend fun deleteFolder(name: String) = withContext(Dispatchers.IO) {
+        val target = name.trim()
+        require(target.isNotBlank()) { "Folder name is required" }
+        db.loadAll(includeTrashed = true)
+            .filter { doc -> doc.folderName.equals(target, ignoreCase = true) }
+            .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = "", updatedAt = now())) }
+    }
+
+    /** True when a folder of this name (in any case) already exists, for the rename dialog's merge warning. */
+    suspend fun folderExists(name: String): Boolean = withContext(Dispatchers.IO) {
+        val target = name.trim()
+        target.isNotBlank() && db.loadAll().any { it.folderName.equals(target, ignoreCase = true) }
     }
 
     suspend fun setTags(id: String, tagsText: String) = mutateDocument(id) { doc ->
@@ -207,8 +239,13 @@ class DocumentRepository @Inject constructor(
         doc.copy(tags = tags, updatedAt = now())
     }
 
-    suspend fun setFolder(id: String, folder: String) = mutateDocument(id) { doc ->
-        doc.copy(folderName = folder.trim().take(80), updatedAt = now())
+    suspend fun setFolder(id: String, folder: String) = withContext(Dispatchers.IO) {
+        val wanted = folder.trim().take(80)
+        // "bills" joins an existing "Bills" rather than starting a second folder that differs only in case.
+        val existing = if (wanted.isBlank()) "" else db.loadAll(includeTrashed = true)
+            .map { it.folderName }
+            .firstOrNull { it.isNotBlank() && it.equals(wanted, ignoreCase = true) } ?: wanted
+        mutateDocument(id) { doc -> doc.copy(folderName = existing, updatedAt = now()) }
     }
 
     suspend fun renameFolder(oldName: String, newName: String) = withContext(Dispatchers.IO) {
@@ -225,17 +262,18 @@ class DocumentRepository @Inject constructor(
         doc.copy(isFavorite = !doc.isFavorite, updatedAt = now())
     }
 
+    // PDF settings mark the PDF stale and rebuild it on the next export, like page edits do, so changing
+    // three settings in a row costs one rebuild rather than three blocking ones.
     suspend fun setPdfQuality(id: String, quality: PdfQuality) = withContext(Dispatchers.IO) {
-        val doc = requireDocument(id)
-        regenerateAndSave(doc.copy(pdfQuality = quality, updatedAt = now()))
+        saveWithStalePdf(requireDocument(id).copy(pdfQuality = quality))
     }
 
     suspend fun setPdfPageSize(id: String, size: PdfPageSize) = withContext(Dispatchers.IO) {
-        regenerateAndSave(requireDocument(id).copy(pdfPageSize = size, updatedAt = now()))
+        saveWithStalePdf(requireDocument(id).copy(pdfPageSize = size))
     }
 
     suspend fun setSearchablePdf(id: String, enabled: Boolean) = withContext(Dispatchers.IO) {
-        regenerateAndSave(requireDocument(id).copy(searchablePdf = enabled, updatedAt = now()))
+        saveWithStalePdf(requireDocument(id).copy(searchablePdf = enabled))
     }
 
     suspend fun setPageNumbers(id: String, enabled: Boolean) = withContext(Dispatchers.IO) {
@@ -550,7 +588,8 @@ class DocumentRepository @Inject constructor(
             pageSize = doc.pdfPageSize,
             searchable = doc.searchablePdf,
             pageNumbers = false,
-            mode = doc.scanMode
+            mode = doc.scanMode,
+            like = doc
         )
     }
 
@@ -565,7 +604,8 @@ class DocumentRepository @Inject constructor(
             pageSize = first.pdfPageSize,
             searchable = first.searchablePdf,
             pageNumbers = first.pageNumbers,
-            mode = first.scanMode
+            mode = first.scanMode,
+            like = first
         )
     }
 
@@ -614,6 +654,7 @@ class DocumentRepository @Inject constructor(
     suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
         if (imageUris.isEmpty()) return@withContext
         val doc = requireDocument(documentId)
+        require(doc.pages.size + imageUris.size <= MAX_PAGES) { "A document can hold up to $MAX_PAGES pages" }
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
@@ -621,6 +662,7 @@ class DocumentRepository @Inject constructor(
         val newPages = mutableListOf<ScanPage>()
         try {
             imageUris.forEachIndexed { offset, uri ->
+                coroutineContext.ensureActive()
                 val position = start + offset
                 val pageId = UUID.randomUUID().toString()
                 val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$pageId")
@@ -635,7 +677,9 @@ class DocumentRepository @Inject constructor(
                 // Listed before copying, so a photo that fails half-way is cleaned up with the rest.
                 newPages += page
                 copyUri(uri, source)
-                newPages[newPages.lastIndex] = renderAndOcr(page)
+                // Outlined like a camera page, so a photo of a page on a desk comes in cropped and straight.
+                val crop = runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
+                newPages[newPages.lastIndex] = renderAndOcr(page.copy(crop = crop))
             }
             saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
         } catch (error: Throwable) {
@@ -645,21 +689,133 @@ class DocumentRepository @Inject constructor(
         }
     }
 
+    /**
+     * Swaps a page's photo for a new one taken in the camera. The page keeps its place; its mark-up, text
+     * corrections and adjustments belonged to the old photo and are dropped, and OCR runs again.
+     */
+    suspend fun replacePage(documentId: String, pageId: String, imageUri: Uri, crop: CropQuad, filter: PageFilter) = withContext(Dispatchers.IO) {
+        val doc = requireDocument(documentId)
+        val old = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
+        val sourceDir = File(folder, "source").apply { mkdirs() }
+        val renderedDir = File(folder, "rendered").apply { mkdirs() }
+        val newId = UUID.randomUUID().toString()
+        val position = old.position
+        val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$newId")
+        val rendered = File(renderedDir, "page_${position.toString().padStart(3, '0')}_$newId.jpg")
+        copyUri(imageUri, source)
+        val page = try {
+            renderAndOcr(
+                ScanPage(
+                    id = newId,
+                    documentId = doc.id,
+                    position = position,
+                    sourcePath = source.absolutePath,
+                    imagePath = rendered.absolutePath,
+                    crop = crop,
+                    filter = filter
+                )
+            )
+        } catch (error: Throwable) {
+            source.delete()
+            rendered.delete()
+            throw error
+        }
+        val pages = doc.pages.map { if (it.id == pageId) page else it }
+        saveWithStalePdf(doc.copy(pages = normalize(pages.sortedBy { it.position }), updatedAt = now()))
+        history.clear(doc.id)
+        purgeRemovedPage(documentId)
+        deletePageFiles(old)
+        deleteSignatureAssets(old.annotations)
+    }
+
+    /** A page removed from a document whose files are still on disk, so the removal can be undone. */
+    private class RemovedPage(val documentId: String, val page: ScanPage, val index: Int)
+
+    // At most one removed page per document is kept; removing another page, or the "Page removed"
+    // message going away, purges the earlier one.
+    private val removedPages = java.util.concurrent.ConcurrentHashMap<String, RemovedPage>()
+
+    /**
+     * Removes a page but keeps its files until [purgeRemovedPage] (or the next removal) drops them, so
+     * [restoreRemovedPage] can put it back. A document's last page sends the whole document to the
+     * recycle bin instead, which has its own restore.
+     */
     suspend fun deletePage(documentId: String, pageId: String) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val target = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val sorted = doc.pages.sortedBy { it.position }
+        val index = sorted.indexOfFirst { it.id == pageId }
+        if (index == -1) error("Page not found")
         if (doc.pages.size == 1) {
             moveToTrash(documentId)
             return@withContext
         }
-        val pages = normalize(doc.pages.sortedBy { it.position }.filterNot { it.id == pageId })
+        val pages = normalize(sorted.filterNot { it.id == pageId })
         val saved = saveWithStalePdf(doc.copy(pages = pages, updatedAt = now()))
-        // The deleted page's files are about to go, so earlier steps could not be restored.
+        // The document's page set changed, so earlier steps no longer fit it.
         history.clear(doc.id)
-        // Delete the files only after the page is gone from the database, so a failed save loses nothing.
-        deletePageFiles(target)
-        deleteSignatureAssets(target.annotations)
+        // The page's files stay until the undo window closes; see purgeRemovedPage.
+        purgeRemovedPage(documentId)
+        removedPages[documentId] = RemovedPage(documentId, sorted[index], index)
         saved
+    }
+
+    /** Puts the most recently removed page back where it was; false when there is nothing to restore. */
+    suspend fun restoreRemovedPage(documentId: String): Boolean = withContext(Dispatchers.IO) {
+        val removed = removedPages.remove(documentId) ?: return@withContext false
+        if (!File(removed.page.imagePath).isFile) return@withContext false
+        val doc = requireDocument(documentId)
+        val pages = doc.pages.sortedBy { it.position }.toMutableList()
+        pages.add(removed.index.coerceIn(0, pages.size), removed.page)
+        saveWithStalePdf(doc.copy(pages = normalize(pages), updatedAt = now()))
+        history.clear(doc.id)
+        true
+    }
+
+    /**
+     * Deletes the files of a removed page once it can no longer be restored. With [pageId], only that
+     * page is purged, so a message going away late cannot drop a page removed after it.
+     */
+    fun purgeRemovedPage(documentId: String, pageId: String? = null) {
+        val current = removedPages[documentId] ?: return
+        if (pageId != null && current.page.id != pageId) return
+        val removed = removedPages.remove(documentId) ?: return
+        deletePageFiles(removed.page)
+        deleteSignatureAssets(removed.page.annotations)
+    }
+
+    /** A new document with copies of every page, for editing one version while keeping the other. */
+    suspend fun duplicateDocument(documentId: String): ScanDocument = withContext(Dispatchers.IO) {
+        val doc = requireDocument(documentId)
+        createFromPages(
+            sourcePages = doc.pages.sortedBy { it.position },
+            title = "${doc.title} copy".take(120),
+            quality = doc.pdfQuality,
+            pageSize = doc.pdfPageSize,
+            searchable = doc.searchablePdf,
+            pageNumbers = doc.pageNumbers,
+            mode = doc.scanMode,
+            like = doc
+        )
+    }
+
+    /** Every page as a lossless PNG, for apps and forms that reject JPG. */
+    suspend fun exportPng(id: String): List<File> = withContext(Dispatchers.IO) {
+        val doc = requireDocument(id)
+        val pages = doc.pages.sortedBy { it.position }
+        val base = safeName(doc.title)
+        pages.mapIndexed { index, page ->
+            val bitmap = ImageProcessor.decodeScaled(page.imagePath, 4000) ?: error("Page ${index + 1} could not be read")
+            try {
+                val file = freshExportFile(if (pages.size == 1) base else "${base}_p${(index + 1).toString().padStart(2, '0')}", "png")
+                file.outputStream().buffered().use { out ->
+                    check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)) { "PNG could not be written" }
+                }
+                file
+            } finally {
+                bitmap.recycle()
+            }
+        }
     }
 
     suspend fun moveToTrash(id: String) = mutateDocument(id) { doc ->
@@ -736,16 +892,25 @@ class DocumentRepository @Inject constructor(
 
     suspend fun splitIntoPageDocuments(id: String): Int = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
-        doc.pages.sortedBy { it.position }.forEachIndexed { index, page ->
-            createFromPages(
-                sourcePages = listOf(page),
-                title = "${doc.title} - ${index + 1}",
-                quality = doc.pdfQuality,
-                pageSize = doc.pdfPageSize,
-                searchable = doc.searchablePdf,
-                pageNumbers = false,
-                mode = doc.scanMode
-            )
+        val created = mutableListOf<ScanDocument>()
+        try {
+            doc.pages.sortedBy { it.position }.forEachIndexed { index, page ->
+                coroutineContext.ensureActive()
+                created += createFromPages(
+                    sourcePages = listOf(page),
+                    title = "${doc.title} - ${index + 1}",
+                    quality = doc.pdfQuality,
+                    pageSize = doc.pdfPageSize,
+                    searchable = doc.searchablePdf,
+                    pageNumbers = false,
+                    mode = doc.scanMode,
+                    like = doc
+                )
+            }
+        } catch (error: Throwable) {
+            // All or nothing: a failure or a cancel part-way leaves no half set of page documents behind.
+            created.forEach { partial -> runCatching { deleteDocumentFilesAndRecord(partial) } }
+            throw error
         }
         doc.pages.size
     }
@@ -872,18 +1037,22 @@ class DocumentRepository @Inject constructor(
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
-    suspend fun reOcrDocument(id: String, script: OcrScript? = null) = withContext(Dispatchers.IO) {
+    /** Reads every page again. Returns how many pages could not be read (they keep their old text). */
+    suspend fun reOcrDocument(id: String, script: OcrScript? = null): Int = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
         val selected = script ?: doc.ocrScript
         // Fails with a clear message when the script's model can't be fetched, instead of silently blanking every page.
         ocr.prepare(selected)
+        var failed = 0
         val pages = doc.pages.map { page ->
+            coroutineContext.ensureActive()
             // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
             runCatching { ocr.recognizeDetailed(File(page.imagePath), selected) }
                 .map { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
-                .getOrDefault(page)
+                .getOrElse { failed++; page }
         }
         saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now())).also { history.record(doc.id, doc.pages) }
+        failed
     }
 
     private suspend fun addAnnotation(documentId: String, pageId: String, annotation: PageAnnotation) =
@@ -907,6 +1076,7 @@ class DocumentRepository @Inject constructor(
         /** Find the page in each photo, as the camera does, when no outline was given. */
         detectCrops: Boolean = false
     ): ScanDocument {
+        val defaultScript = settings.defaultOcrScript.first()
         val created = now()
         val id = UUID.randomUUID().toString()
         val folder = File(rootDir, id).apply { mkdirs() }
@@ -924,7 +1094,8 @@ class DocumentRepository @Inject constructor(
                     ?: if (detectCrops) runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
                     else CropQuad.DEFAULT
                 renderAndOcr(
-                    ScanPage(
+                    script = defaultScript,
+                    page = ScanPage(
                         id = pageId,
                         documentId = id,
                         position = index,
@@ -959,7 +1130,8 @@ class DocumentRepository @Inject constructor(
                 sizeBytes = pdf.length(),
                 pdfQuality = quality,
                 searchablePdf = pages.isNotEmpty(),
-                scanMode = mode
+                scanMode = mode,
+                ocrScript = defaultScript
             )
             db.saveDocument(doc)
             return doc
@@ -976,7 +1148,9 @@ class DocumentRepository @Inject constructor(
         pageSize: PdfPageSize,
         searchable: Boolean,
         pageNumbers: Boolean,
-        mode: ScanMode
+        mode: ScanMode,
+        /** The document the pages come from: its folder, tags, favourite mark and OCR script carry over. */
+        like: ScanDocument? = null
     ): ScanDocument {
         require(sourcePages.isNotEmpty()) { "No pages" }
         val created = now()
@@ -997,7 +1171,11 @@ class DocumentRepository @Inject constructor(
                 pdfPageSize = pageSize,
                 searchablePdf = searchable,
                 pageNumbers = pageNumbers,
-                scanMode = mode
+                scanMode = mode,
+                folderName = like?.folderName.orEmpty(),
+                tags = like?.tags.orEmpty(),
+                isFavorite = like?.isFavorite ?: false,
+                ocrScript = like?.ocrScript ?: OcrScript.LATIN
             )
             return regenerateAndSave(doc)
         } catch (error: Throwable) {
@@ -1105,7 +1283,7 @@ class DocumentRepository @Inject constructor(
      * moved or removed: the page is then always read again, even over hand-corrected text, because the old text
      * may include words that are now covered.
      */
-    private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false): ScanPage {
+    private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false, script: OcrScript? = null): ScanPage {
         ImageProcessor.renderPage(
             source = File(page.sourcePath),
             destination = File(page.imagePath),
@@ -1119,7 +1297,8 @@ class DocumentRepository @Inject constructor(
         // Corrected text is the user's work: keep it through edits, unless a redaction changed.
         if (page.ocrEdited && !redactionChanged) return page
         return if (runOcr || redactionChanged) {
-            val script = db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
+            // A document being created has no row yet; its builder passes the script it will be saved with.
+            val script = script ?: db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
             // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
             // must end up with no text rather than keep the old text that includes what was covered.
             val read = runCatching { ocr.recognizeDetailed(File(page.imagePath), script) }.getOrNull()
@@ -1323,13 +1502,28 @@ class DocumentRepository @Inject constructor(
         // "Clear cache" or the system can remove the folder while the app runs; the text export writes straight into it.
         exportDir.mkdirs()
         exportDir.listFiles()?.filter { it.lastModified() < now() - 24 * 60 * 60 * 1000L }?.forEach { it.delete() }
-        return File(exportDir, "${base}_${now()}.$extension")
+        val plain = File(exportDir, "$base.$extension")
+        if (!plain.exists()) return plain
+        var n = 2
+        while (File(exportDir, "$base ($n).$extension").exists()) n++
+        return File(exportDir, "$base ($n).$extension")
     }
 
     private companion object {
+        const val MAX_TITLE_LENGTH = 120
+        const val MAX_PAGES = 300
         const val MAX_IMPORT_BYTES = 300L * 1024 * 1024
     }
 
-    private fun safeName(value: String): String = value.replace(Regex("[^A-Za-z0-9._-]+"), "_").take(60)
+    private fun safeName(value: String): String = fileSafeName(value)
     private fun now() = System.currentTimeMillis()
+}
+
+/**
+ * A title as a file name: only the characters file systems and share targets reject are replaced, so
+ * titles in any script survive the trip.
+ */
+fun fileSafeName(value: String): String {
+    val cleaned = value.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]+"), "_").trim().trim('.').take(80)
+    return cleaned.ifBlank { "Document" }
 }

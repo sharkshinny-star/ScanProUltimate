@@ -12,8 +12,9 @@ import android.provider.CalendarContract
 import android.provider.Settings
 import android.widget.Toast
 import androidx.core.net.toUri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,7 +40,6 @@ import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -50,7 +50,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.ui.ContactDraft
@@ -73,9 +72,9 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                 .padding(horizontal = 20.dp)
                 .navigationBarsPadding()
         ) {
-            Text(titleFor(code), style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
-            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+            Text(titleFor(code), style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(10.dp))
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                 SelectionContainer {
                     Text(
                         displayText(code),
@@ -165,12 +164,21 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
 
 @Composable
 private fun Action(icon: ImageVector, title: String, detail: String?, onClick: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
-        headlineContent = { Text(title) },
-        supportingContent = detail?.takeIf { it.isNotBlank() }?.let { { Text(it, maxLines = 1) } },
-        leadingContent = { Icon(icon, contentDescription = null) }
-    )
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            com.example.scanpro.core.designsystem.IconTile(icon, com.example.scanpro.core.designsystem.TileTone.Indigo, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                detail?.takeIf { it.isNotBlank() }?.let { Text(it, maxLines = 1, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+        }
+    }
 }
 
 @Composable

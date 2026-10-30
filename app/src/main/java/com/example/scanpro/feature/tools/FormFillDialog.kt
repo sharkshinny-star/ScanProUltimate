@@ -78,14 +78,16 @@ internal fun FormFillDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 TopAppBar(
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                     title = { Text(stringResource(R.string.tools_form_fill_form)) },
                     navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close)) } }
                 )
             },
             bottomBar = {
-                Surface(tonalElevation = 2.dp) {
+                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
                     Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Row(
                             Modifier
@@ -95,7 +97,7 @@ internal fun FormFillDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(stringResource(R.string.tools_form_flatten), style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(R.string.tools_form_flatten), style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                                 Text(
                                     stringResource(R.string.tools_form_flatten_hint),
                                     style = MaterialTheme.typography.bodySmall,
@@ -105,7 +107,21 @@ internal fun FormFillDialog(
                             Spacer(Modifier.width(12.dp))
                             Switch(checked = flatten, onCheckedChange = null)
                         }
-                        Button(onClick = { onSave(flatten) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        val missing = FormFieldRules.missingRequired(session.fields, session.values)
+                        if (missing.isNotEmpty()) {
+                            Text(
+                                pluralStringResource(
+                                    R.plurals.tools_form_required_missing,
+                                    missing.size,
+                                    missing.size,
+                                    missing.take(3).joinToString { it.label } + if (missing.size > 3) "…" else ""
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        Button(onClick = { onSave(flatten) }, enabled = missing.isEmpty(), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                             Text(if (changed == 0) stringResource(R.string.common_save) else pluralStringResource(R.plurals.tools_form_save_changes, changed, changed))
                         }
                     }
@@ -146,7 +162,11 @@ internal fun FormFillDialog(
 @Composable
 private fun FieldInput(field: FormField, value: String, onChange: (String) -> Unit) {
     val enabled = !field.readOnly
-    val label = if (field.readOnly) stringResource(R.string.tools_form_read_only_label, field.label) else field.label
+    val label = when {
+        field.readOnly -> stringResource(R.string.tools_form_read_only_label, field.label)
+        field.required -> "${field.label} *"
+        else -> field.label
+    }
     when (field.kind) {
         FormFieldKind.TEXT -> OutlinedTextField(
             value = value,

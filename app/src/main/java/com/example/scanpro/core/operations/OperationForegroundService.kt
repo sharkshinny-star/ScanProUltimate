@@ -51,7 +51,7 @@ class OperationForegroundService : Service() {
 
     private fun buildNotification(label: String?): Notification =
         NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_scanpro)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(label ?: getString(R.string.operation_notification_working))
             .setOngoing(true)

@@ -8,14 +8,10 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.Restore
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.example.scanpro.core.designsystem.PasswordInputDialog
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,56 +19,84 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Feedback
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Policy
-import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Title
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Restore
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Feedback
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.PrivacyTip
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Title
+import androidx.compose.material.icons.rounded.Translate
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.scanpro.R
 import com.example.scanpro.BuildConfig
+import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.PasswordInputDialog
+import com.example.scanpro.core.designsystem.BrandMark
+import com.example.scanpro.core.designsystem.Eyebrow
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.InsetDivider
+import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.SupportLinks
+import com.example.scanpro.core.ui.SupportTopic
+import com.example.scanpro.core.ui.contactSupport
 import com.example.scanpro.core.ui.openPlayStoreListing
+import com.example.scanpro.core.ui.sharePlayStoreListing
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ThemeMode
 
@@ -87,18 +111,25 @@ fun SettingsRoute(
     val autoTitle by viewModel.autoTitle.collectAsStateWithLifecycle()
     val appLock by viewModel.appLock.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
     val documentCount by viewModel.documentCount.collectAsStateWithLifecycle()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
+    val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
+    val defaultOcrScript by viewModel.defaultOcrScript.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     SettingsScreen(
         busy = busy,
         onBackupAll = viewModel::backupAll,
-        onRestoreBackup = viewModel::restoreBackup,
+        trashRetentionDays = trashRetentionDays,
+        defaultOcrScript = defaultOcrScript,
+        onTrashRetentionChange = viewModel::setTrashRetentionDays,
+        onDefaultOcrScriptChange = viewModel::setDefaultOcrScript,
         pdfQuality = pdfQuality,
         autoTitle = autoTitle,
         appLock = appLock,
         themeMode = themeMode,
+        dynamicColor = dynamicColor,
         documentCount = documentCount,
         trashCount = trashCount,
         storageBytes = storageBytes,
@@ -107,6 +138,8 @@ fun SettingsRoute(
         onAutoTitleChange = viewModel::setAutoTitle,
         onAppLockChange = onAppLockChange,
         onThemeModeChange = viewModel::setThemeMode,
+        onDynamicColorChange = viewModel::setDynamicColor,
+        onRestoreBackup = viewModel::restoreBackup,
         bottomBar = bottomBar
     )
 }
@@ -116,11 +149,11 @@ fun SettingsRoute(
 fun SettingsScreen(
     busy: Boolean = false,
     onBackupAll: (Uri, String) -> Unit = { _, _ -> },
-    onRestoreBackup: (Uri, String) -> Unit = { _, _ -> },
     pdfQuality: PdfQuality,
     autoTitle: Boolean,
     appLock: Boolean,
     themeMode: ThemeMode,
+    dynamicColor: Boolean,
     documentCount: Int,
     trashCount: Int,
     storageBytes: Long,
@@ -129,269 +162,506 @@ fun SettingsScreen(
     onAutoTitleChange: (Boolean) -> Unit,
     onAppLockChange: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
+    onDynamicColorChange: (Boolean) -> Unit = {},
+    onRestoreBackup: (Uri, String) -> Unit = { _, _ -> },
+    trashRetentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS,
+    defaultOcrScript: com.example.scanpro.data.OcrScript = com.example.scanpro.data.OcrScript.LATIN,
+    onTrashRetentionChange: (Int) -> Unit = {},
+    onDefaultOcrScriptChange: (com.example.scanpro.data.OcrScript) -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
+    var privacyOpen by rememberSaveable { mutableStateOf(false) }
+    // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive works
+    // too); restore reads one such file back. Documents never leave the device otherwise.
+    var backupFolder by remember { mutableStateOf<Uri?>(null) }
+    var backupToRestore by remember { mutableStateOf<Uri?>(null) }
+    val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        uri?.let {
+            runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            backupFolder = it
+        }
+    }
+    val backupPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) backupToRestore = uri
+    }
+    backupFolder?.let { folder ->
+        PasswordInputDialog(
+            title = stringResource(R.string.settings_backup_all),
+            message = stringResource(R.string.settings_backup_password_message),
+            confirmLabel = stringResource(R.string.settings_backup_start),
+            onDismiss = { backupFolder = null }
+        ) { password ->
+            backupFolder = null
+            onBackupAll(folder, password)
+        }
+    }
+    backupToRestore?.let { uri ->
+        PasswordInputDialog(
+            title = stringResource(R.string.settings_restore_backup),
+            message = stringResource(R.string.settings_restore_password_message),
+            confirmLabel = stringResource(R.string.settings_restore_start),
+            onDismiss = { backupToRestore = null }
+        ) { password ->
+            backupToRestore = null
+            onRestoreBackup(uri, password)
+        }
+    }
+    val linkUnavailable = stringResource(R.string.settings_link_unavailable)
+    val openLink: (String) -> Unit = { url ->
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(context, linkUnavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
+    // Set per build from Gradle properties; the constants in SupportLinks are the fallback.
+    val privacyPolicyUrl = BuildConfig.PRIVACY_POLICY_URL.ifBlank { SupportLinks.PRIVACY_POLICY_URL }
+    val termsUrl = BuildConfig.TERMS_URL.ifBlank { SupportLinks.TERMS_OF_USE_URL }
+    val scope = rememberCoroutineScope()
+    val contact: (SupportTopic) -> Unit = { topic ->
+        val delivery = contactSupport(context, topic)
+        scope.launch { snackbarHostState.showSnackbar(delivery.confirmation) }
+    }
+    if (privacyOpen) PrivacyDialog(onDismiss = { privacyOpen = false })
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.common_settings), fontWeight = FontWeight.Bold) }
+                title = { Text(stringResource(R.string.common_settings)) },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = bottomBar
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Group 1: Feedback & Feature Requests
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
+        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 720.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
-                Column {
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable(role = Role.Button) { openPlayStoreListing(context) },
-                        headlineContent = { Text(stringResource(R.string.settings_feedback), fontWeight = FontWeight.Medium) },
-                        leadingContent = { Icon(Icons.Default.Feedback, contentDescription = null) }
+                StorageCard(documentCount, trashCount, storageBytes)
+
+                SettingsSection(stringResource(R.string.settings_section_backup)) {
+                    SettingsRow(
+                        icon = Icons.Rounded.Backup,
+                        tone = TileTone.Indigo,
+                        title = stringResource(R.string.settings_backup_all),
+                        subtitle = stringResource(R.string.settings_backup_all_subtitle),
+                        trailing = { Chevron() },
+                        enabled = !busy,
+                        onClick = { pickBackupFolder.launch(null) }
                     )
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable(role = Role.Button) { openPlayStoreListing(context) },
-                        headlineContent = { Text(stringResource(R.string.settings_request_features), fontWeight = FontWeight.Medium) },
-                        leadingContent = { Icon(Icons.AutoMirrored.Filled.Comment, contentDescription = null) }
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.Restore,
+                        tone = TileTone.Teal,
+                        title = stringResource(R.string.settings_restore_backup),
+                        subtitle = stringResource(R.string.settings_restore_backup_subtitle),
+                        trailing = { Chevron() },
+                        enabled = !busy,
+                        onClick = { backupPicker.launch(arrayOf("*/*")) }
                     )
                 }
-            }
 
-            // Group 2: Scanning & PDF Defaults
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.settings_pdf_quality_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-                            Text(
-                                stringResource(R.string.settings_pdf_quality_body),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(10.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(PdfQuality.entries) { quality ->
-                            FilterChip(
-                                selected = quality == pdfQuality,
-                                onClick = { onPdfQualityChange(quality) },
-                                label = { Text(stringResource(quality.labelRes)) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Group 3: App Theme & Security
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text(stringResource(R.string.settings_app_theme), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(ThemeMode.entries) { mode ->
-                                FilterChip(
-                                    selected = mode == themeMode,
-                                    onClick = { onThemeModeChange(mode) },
-                                    label = { Text(stringResource(mode.labelRes)) }
+                SettingsSection(stringResource(R.string.settings_section_appearance)) {
+                    SettingsRow(
+                        icon = Icons.Rounded.Palette,
+                        tone = TileTone.Violet,
+                        title = stringResource(R.string.settings_theme_title),
+                        subtitle = stringResource(R.string.settings_theme_subtitle)
+                    )
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+                        ThemeMode.entries.forEachIndexed { index, mode ->
+                            SegmentedButton(
+                                selected = mode == themeMode,
+                                onClick = { onThemeModeChange(mode) },
+                                shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
-                            }
+                            ) { Text(stringResource(mode.labelRes)) }
                         }
                     }
-
+                    if (supportsDynamicColor) {
+                        InsetDivider()
+                        SettingsRow(
+                            icon = Icons.Rounded.Wallpaper,
+                            tone = TileTone.Sky,
+                            title = stringResource(R.string.settings_dynamic_color_title),
+                            subtitle = stringResource(R.string.settings_dynamic_color_subtitle),
+                            checked = dynamicColor,
+                            onCheckedChange = onDynamicColorChange
+                        )
+                    }
                     if (Build.VERSION.SDK_INT >= 33) {
                         val languageUnavailable = stringResource(R.string.settings_app_language_unavailable)
-                        ListItem(
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                            modifier = Modifier.clickable(role = Role.Button) {
+                        InsetDivider()
+                        SettingsRow(
+                            icon = Icons.Rounded.Language,
+                            tone = TileTone.Teal,
+                            title = stringResource(R.string.settings_app_language),
+                            subtitle = stringResource(R.string.settings_app_language_subtitle),
+                            trailing = { Chevron() },
+                            onClick = {
                                 val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.fromParts("package", context.packageName, null))
                                 try {
                                     context.startActivity(intent)
                                 } catch (_: ActivityNotFoundException) {
                                     Toast.makeText(context, languageUnavailable, Toast.LENGTH_SHORT).show()
                                 }
-                            },
-                            headlineContent = { Text(stringResource(R.string.settings_app_language), fontWeight = FontWeight.Medium) },
-                            supportingContent = { Text(stringResource(R.string.settings_app_language_subtitle)) },
-                            leadingContent = { Icon(Icons.Default.Language, contentDescription = null) }
-                        )
-                    }
-
-                    // Each switch row is one control for a screen reader: title, hint and state together.
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.toggleable(value = autoTitle, role = Role.Switch, onValueChange = onAutoTitleChange),
-                        headlineContent = { Text(stringResource(R.string.settings_smart_titles_title), fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text(stringResource(R.string.settings_smart_titles_body)) },
-                        leadingContent = { Icon(Icons.Default.Title, contentDescription = null) },
-                        trailingContent = {
-                            Switch(
-                                checked = autoTitle,
-                                onCheckedChange = null,
-                                colors = SwitchDefaults.colors(
-                                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    uncheckedBorderColor = MaterialTheme.colorScheme.outline
-                                )
-                            )
-                        }
-                    )
-
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.toggleable(value = appLock, role = Role.Switch, onValueChange = onAppLockChange),
-                        headlineContent = { Text(stringResource(R.string.settings_app_lock_title), fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text(stringResource(R.string.settings_app_lock_body)) },
-                        leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
-                        trailingContent = {
-                            Switch(
-                                checked = appLock,
-                                onCheckedChange = null,
-                                colors = SwitchDefaults.colors(
-                                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    uncheckedBorderColor = MaterialTheme.colorScheme.outline
-                                )
-                            )
-                        }
-                    )
-                }
-            }
-
-            // Group 4: Legal & App Details
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable(role = Role.Button) { openPlayStoreListing(context) },
-                        headlineContent = { Text(stringResource(R.string.settings_share_with_friends), fontWeight = FontWeight.Medium) },
-                        leadingContent = { Icon(Icons.Default.Share, contentDescription = null) }
-                    )
-                    // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive
-                    // works too); restore reads one such file back. Documents never leave the device otherwise.
-                    var backupFolder by remember { mutableStateOf<Uri?>(null) }
-                    var restoreFile by remember { mutableStateOf<Uri?>(null) }
-                    val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-                        uri?.let {
-                            runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-                            backupFolder = it
-                        }
-                    }
-                    val pickRestoreFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> restoreFile = uri }
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable(enabled = !busy, role = Role.Button) { pickBackupFolder.launch(null) },
-                        headlineContent = { Text(stringResource(R.string.settings_backup_all), fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text(stringResource(R.string.settings_backup_all_subtitle)) },
-                        leadingContent = { Icon(Icons.Default.Backup, contentDescription = null) }
-                    )
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable(enabled = !busy, role = Role.Button) { pickRestoreFile.launch(arrayOf("*/*")) },
-                        headlineContent = { Text(stringResource(R.string.settings_restore_backup), fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text(stringResource(R.string.settings_restore_backup_subtitle)) },
-                        leadingContent = { Icon(Icons.Default.Restore, contentDescription = null) }
-                    )
-                    backupFolder?.let { folder ->
-                        PasswordInputDialog(
-                            title = stringResource(R.string.settings_backup_all),
-                            message = stringResource(R.string.settings_backup_password_message),
-                            confirmLabel = stringResource(R.string.settings_backup_start),
-                            onDismiss = { backupFolder = null }
-                        ) { password -> onBackupAll(folder, password); backupFolder = null }
-                    }
-                    restoreFile?.let { file ->
-                        PasswordInputDialog(
-                            title = stringResource(R.string.settings_restore_backup),
-                            message = stringResource(R.string.settings_restore_password_message),
-                            confirmLabel = stringResource(R.string.settings_restore_start),
-                            onDismiss = { restoreFile = null }
-                        ) { password -> onRestoreBackup(file, password); restoreFile = null }
-                    }
-                    val linkUnavailable = stringResource(R.string.settings_link_unavailable)
-                    val openLink: (String) -> Unit = { url ->
-                        try {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                        } catch (_: ActivityNotFoundException) {
-                            Toast.makeText(context, linkUnavailable, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    if (BuildConfig.PRIVACY_POLICY_URL.isNotBlank()) {
-                        ListItem(
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                            modifier = Modifier.clickable(role = Role.Button) { openLink(BuildConfig.PRIVACY_POLICY_URL) },
-                            headlineContent = { Text(stringResource(R.string.settings_privacy_policy), fontWeight = FontWeight.Medium) },
-                            leadingContent = { Icon(Icons.Default.PrivacyTip, contentDescription = null) }
-                        )
-                    }
-                    if (BuildConfig.TERMS_URL.isNotBlank()) {
-                        ListItem(
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                            modifier = Modifier.clickable(role = Role.Button) { openLink(BuildConfig.TERMS_URL) },
-                            headlineContent = { Text(stringResource(R.string.settings_terms_of_use), fontWeight = FontWeight.Medium) },
-                            leadingContent = { Icon(Icons.Default.Description, contentDescription = null) }
+                            }
                         )
                     }
                 }
-            }
 
-            // Storage & Version info
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    stringResource(R.string.settings_storage_summary, documentCount, trashCount, formatBytes(storageBytes)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
+                SettingsSection(stringResource(R.string.settings_section_scanning)) {
+                    SettingsRow(
+                        icon = Icons.Rounded.PictureAsPdf,
+                        tone = TileTone.Coral,
+                        title = stringResource(R.string.settings_pdf_quality_title),
+                        subtitle = stringResource(R.string.settings_pdf_quality_body)
+                    )
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+                        PdfQuality.entries.forEachIndexed { index, quality ->
+                            SegmentedButton(
+                                selected = quality == pdfQuality,
+                                onClick = { onPdfQualityChange(quality) },
+                                shape = SegmentedButtonDefaults.itemShape(index, PdfQuality.entries.size),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            ) { Text(stringResource(quality.labelRes)) }
+                        }
+                    }
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.Title,
+                        tone = TileTone.Teal,
+                        title = stringResource(R.string.settings_smart_titles_title),
+                        subtitle = stringResource(R.string.settings_smart_titles_body),
+                        checked = autoTitle,
+                        onCheckedChange = onAutoTitleChange
+                    )
+                    InsetDivider()
+                    var scriptMenuOpen by remember { mutableStateOf(false) }
+                    val scriptLabel = stringResource(defaultOcrScript.labelRes)
+                    SettingsRow(
+                        icon = Icons.Rounded.Translate,
+                        tone = TileTone.Violet,
+                        title = stringResource(R.string.settings_ocr_language_title),
+                        subtitle = stringResource(R.string.settings_ocr_language_subtitle, scriptLabel),
+                        trailing = {
+                            Box {
+                                Text(scriptLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                androidx.compose.material3.DropdownMenu(expanded = scriptMenuOpen, onDismissRequest = { scriptMenuOpen = false }) {
+                                    com.example.scanpro.data.OcrScript.entries.forEach { script ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(stringResource(script.labelRes)) },
+                                            onClick = { scriptMenuOpen = false; onDefaultOcrScriptChange(script) }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { scriptMenuOpen = true }
+                    )
+                }
+
+                SettingsSection(stringResource(R.string.settings_section_recycle_bin)) {
+                    var retentionMenuOpen by remember { mutableStateOf(false) }
+                    SettingsRow(
+                        icon = Icons.Rounded.Delete,
+                        tone = TileTone.Slate,
+                        title = stringResource(R.string.settings_trash_retention_title),
+                        subtitle = stringResource(R.string.settings_trash_retention_subtitle),
+                        trailing = {
+                            Box {
+                                Text(pluralStringResource(R.plurals.settings_trash_retention_days, trashRetentionDays, trashRetentionDays), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                androidx.compose.material3.DropdownMenu(expanded = retentionMenuOpen, onDismissRequest = { retentionMenuOpen = false }) {
+                                    com.example.scanpro.data.TRASH_RETENTION_CHOICES.forEach { days ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(pluralStringResource(R.plurals.settings_trash_retention_days, days, days)) },
+                                            onClick = { retentionMenuOpen = false; onTrashRetentionChange(days) }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { retentionMenuOpen = true }
+                    )
+                }
+
+                SettingsSection(stringResource(R.string.settings_section_privacy)) {
+                    SettingsRow(
+                        icon = Icons.Rounded.Fingerprint,
+                        tone = TileTone.Indigo,
+                        title = stringResource(R.string.settings_app_lock_title),
+                        subtitle = stringResource(R.string.settings_app_lock_body),
+                        checked = appLock,
+                        onCheckedChange = onAppLockChange
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.PrivacyTip,
+                        tone = TileTone.Slate,
+                        title = stringResource(R.string.settings_privacy_title),
+                        subtitle = stringResource(R.string.settings_privacy_subtitle),
+                        trailing = { Chevron() },
+                        onClick = { privacyOpen = true }
+                    )
+                    if (privacyPolicyUrl.isNotBlank()) {
+                        InsetDivider()
+                        SettingsRow(
+                            icon = Icons.Rounded.PrivacyTip,
+                            tone = TileTone.Slate,
+                            title = stringResource(R.string.settings_privacy_policy),
+                            trailing = { Chevron() },
+                            onClick = { openLink(privacyPolicyUrl) }
+                        )
+                    }
+                    if (termsUrl.isNotBlank()) {
+                        InsetDivider()
+                        SettingsRow(
+                            icon = Icons.Rounded.Description,
+                            tone = TileTone.Slate,
+                            title = stringResource(R.string.settings_terms_of_use),
+                            trailing = { Chevron() },
+                            onClick = { openLink(termsUrl) }
+                        )
+                    }
+                }
+
+                SettingsSection(stringResource(R.string.settings_section_support)) {
+                    SettingsRow(
+                        icon = Icons.Rounded.Star,
+                        tone = TileTone.Amber,
+                        title = stringResource(R.string.settings_rate_title),
+                        subtitle = stringResource(R.string.settings_rate_subtitle),
+                        trailing = { Chevron() },
+                        onClick = { openPlayStoreListing(context) }
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.Feedback,
+                        tone = TileTone.Teal,
+                        title = stringResource(R.string.settings_feedback),
+                        subtitle = stringResource(R.string.settings_feedback_subtitle),
+                        trailing = { Chevron() },
+                        onClick = { contact(SupportTopic.FEEDBACK) }
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.BugReport,
+                        tone = TileTone.Rose,
+                        title = stringResource(R.string.settings_report_issue_title),
+                        subtitle = stringResource(R.string.settings_report_issue_subtitle),
+                        trailing = { Chevron() },
+                        onClick = { contact(SupportTopic.ISSUE) }
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.Lightbulb,
+                        tone = TileTone.Violet,
+                        title = stringResource(R.string.settings_request_features),
+                        trailing = { Chevron() },
+                        onClick = { contact(SupportTopic.FEATURE) }
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.Share,
+                        tone = TileTone.Sky,
+                        title = stringResource(R.string.settings_share_with_friends),
+                        subtitle = stringResource(R.string.settings_share_subtitle),
+                        trailing = { Chevron() },
+                        onClick = { sharePlayStoreListing(context) }
+                    )
+                }
+
+                AboutFooter()
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Pieces
+// ---------------------------------------------------------------------------------------------
+
+/** Library at a glance: three figures on one card. */
+@Composable
+private fun StorageCard(documentCount: Int, trashCount: Int, storageBytes: Long) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(Icons.Rounded.Storage, TileTone.Indigo, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(stringResource(R.string.settings_library_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.settings_library_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Stat(Modifier.weight(1f), "$documentCount", pluralStringResource(R.plurals.settings_stat_documents, documentCount))
+                Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin), icon = Icons.Rounded.Delete)
+                Stat(Modifier.weight(1f), formatBytes(storageBytes), stringResource(R.string.settings_stat_used))
+            }
+        }
+    }
+}
+
+@Composable
+private fun Stat(modifier: Modifier, value: String, label: String, icon: ImageVector? = null) {
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLowest, modifier = modifier) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                    Spacer(Modifier.width(4.dp))
+                }
+                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+        }
+    }
+}
+
+/** A titled group of rows on one tonal card. */
+@Composable
+private fun SettingsSection(title: String, content: @Composable () -> Unit) {
+    Column {
+        Eyebrow(title, Modifier.padding(start = 6.dp, bottom = 10.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column { content() }
+        }
+    }
+}
+
+@Composable
+private fun SettingsRow(
+    icon: ImageVector,
+    tone: TileTone,
+    title: String,
+    subtitle: String? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    enabled: Boolean = true,
+    onClick: (() -> Unit)? = null
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconTile(icon, tone, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            if (subtitle != null) {
+                Spacer(Modifier.height(2.dp))
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(12.dp))
+            trailing()
+        }
+    }
+}
+
+/**
+ * A row with a switch. The whole row is one control for a screen reader, title, hint and state together,
+ * so the switch itself takes no clicks of its own.
+ */
+@Composable
+private fun SettingsRow(
+    icon: ImageVector,
+    tone: TileTone,
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Box(Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)) {
+        SettingsRow(
+            icon = icon,
+            tone = tone,
+            title = title,
+            subtitle = subtitle,
+            trailing = { Switch(checked = checked, onCheckedChange = null) }
+        )
+    }
+}
+
+@Composable
+private fun Chevron() {
+    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+/** Brand sign-off at the end of the page. */
+@Composable
+private fun AboutFooter() {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        BrandMark(size = 44.dp)
+        Spacer(Modifier.height(10.dp))
+        Text(stringResource(R.string.core_recommend_app_subject), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
+        Text(
+            stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondary))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                stringResource(R.string.settings_footer_privacy),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** The app's privacy facts, in plain words, for the Privacy row. */
+@Composable
+private fun PrivacyDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_privacy_dialog_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.settings_privacy_dialog_account))
+                Text(stringResource(R.string.settings_privacy_dialog_storage))
+                Text(stringResource(R.string.settings_privacy_dialog_translation))
+                Text(stringResource(R.string.settings_privacy_dialog_camera))
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_privacy_dialog_ok)) } }
+    )
 }

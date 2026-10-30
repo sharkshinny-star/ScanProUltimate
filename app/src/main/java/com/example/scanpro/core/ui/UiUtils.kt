@@ -15,43 +15,75 @@ import com.example.scanpro.R
 import com.example.scanpro.data.ScanDocument
 import java.io.File
 import java.util.Locale
+import kotlinx.coroutines.launch
 
-fun sharePdf(context: Context, document: ScanDocument) {
-    val file = File(document.pdfPath)
-    if (!file.isFile) {
-        Toast.makeText(context, context.getString(R.string.core_pdf_not_available_yet), Toast.LENGTH_SHORT).show()
-        return
+/**
+ * Every document's PDF is stored as "document.pdf", and the receiving app names the attachment after the
+ * file. So a copy named after the title is made in the shareable export cache first, off the main thread.
+ */
+private fun namedPdfCopies(context: Context, documents: List<ScanDocument>): List<File> {
+    val exports = File(context.cacheDir, "exports").apply { mkdirs() }
+    val used = HashSet<String>()
+    return documents.mapNotNull { document ->
+        val source = File(document.pdfPath)
+        if (!source.isFile) return@mapNotNull null
+        var name = "${com.example.scanpro.data.fileSafeName(document.title)}.pdf"
+        var n = 2
+        while (!used.add(name.lowercase())) { name = "${com.example.scanpro.data.fileSafeName(document.title)} ($n).pdf"; n++ }
+        val copy = File(exports, name)
+        if (!copy.isFile || copy.length() != source.length() || copy.lastModified() < source.lastModified()) {
+            source.copyTo(copy, overwrite = true)
+        }
+        copy
     }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "application/pdf"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_TITLE, "${document.title}.pdf")
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.core_share_pdf)))
 }
 
+fun sharePdf(context: Context, document: ScanDocument) = sharePdfs(context, listOf(document))
+
 fun sharePdfs(context: Context, documents: List<ScanDocument>) {
-    val valid = documents.mapNotNull { document ->
-        val file = File(document.pdfPath)
-        if (!file.exists()) null else FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate).launch {
+        val files = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { namedPdfCopies(context, documents) }.getOrDefault(emptyList()) }
+        if (files.isEmpty()) {
+            Toast.makeText(context, context.getString(if (documents.size == 1) R.string.core_pdf_not_available_yet else R.string.core_no_pdfs_to_share), Toast.LENGTH_SHORT).show()
+            return@launch
+        }
+        val uris = files.map { FileProvider.getUriForFile(context, "${context.packageName}.files", it) }
+        val intent = if (uris.size == 1) {
+            Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uris.single())
+                putExtra(Intent.EXTRA_TITLE, files.single().name)
+            }
+        } else {
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = "application/pdf"
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            }
+        }
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        context.startActivity(Intent.createChooser(intent, context.getString(if (uris.size == 1) R.string.core_share_pdf else R.string.core_share_pdfs)))
     }
-    if (valid.isEmpty()) {
-        Toast.makeText(context, context.getString(R.string.core_no_pdfs_to_share), Toast.LENGTH_SHORT).show()
-        return
+}
+
+/** Prints a PDF given as any readable link; a content link is copied to the cache first, off the main thread. */
+fun printPdfUri(context: Context, uri: Uri, title: String) {
+    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate).launch {
+        val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                if (uri.scheme == "file") File(uri.path.orEmpty()).takeIf { it.isFile }
+                else File(context.cacheDir, "view_print_${System.currentTimeMillis()}.pdf").also { copy ->
+                    context.contentResolver.openInputStream(uri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
+                        ?: error("unreadable")
+                }
+            }.getOrNull()
+        }
+        if (file == null) {
+            Toast.makeText(context, context.getString(R.string.core_pdf_unreadable_for_printing), Toast.LENGTH_SHORT).show()
+            return@launch
+        }
+        val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
+        manager.print(title, PdfFilePrintAdapter(file), android.print.PrintAttributes.Builder().build())
     }
-    if (valid.size == 1) {
-        val document = documents.firstOrNull { File(it.pdfPath).exists() } ?: return
-        sharePdf(context, document)
-        return
-    }
-    val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-        type = "application/pdf"
-        putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(valid))
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.core_share_pdfs)))
 }
 
 fun shareImages(context: Context, document: ScanDocument) {
@@ -141,8 +173,12 @@ sealed class TrashCountdown(val isUrgent: Boolean) {
 }
 
 /** Pure part of [formatTrashCountdown], without resources, so it stays testable in a plain JUnit test. */
-fun trashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis()): TrashCountdown {
-    val retentionMs = 7L * 24L * 60L * 60L * 1000L
+fun trashCountdown(
+    trashedAt: Long,
+    nowMs: Long = System.currentTimeMillis(),
+    retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
+): TrashCountdown {
+    val retentionMs = retentionDays * 24L * 60L * 60L * 1000L
     val expirationMs = trashedAt + retentionMs
     val remainingMs = expirationMs - nowMs
 
@@ -160,8 +196,13 @@ fun trashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis()): T
     }
 }
 
-fun formatTrashCountdown(context: Context, trashedAt: Long, nowMs: Long = System.currentTimeMillis()): Pair<String, Boolean> {
-    val countdown = trashCountdown(trashedAt, nowMs)
+fun formatTrashCountdown(
+    context: Context,
+    trashedAt: Long,
+    nowMs: Long = System.currentTimeMillis(),
+    retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
+): Pair<String, Boolean> {
+    val countdown = trashCountdown(trashedAt, nowMs, retentionDays)
     val resources = context.resources
     val text = when (countdown) {
         TrashCountdown.Soon -> context.getString(R.string.core_trash_auto_deletes_soon)
@@ -172,19 +213,26 @@ fun formatTrashCountdown(context: Context, trashedAt: Long, nowMs: Long = System
     return Pair(text, countdown.isUrgent)
 }
 
-fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String) {
-    val file = File(path)
-    if (!file.exists()) {
+fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String, extraPaths: List<String> = emptyList()) {
+    val files = (listOf(path) + extraPaths).map(::File).filter { it.isFile }
+    if (files.isEmpty()) {
         Toast.makeText(context, context.getString(R.string.core_export_file_missing), Toast.LENGTH_SHORT).show()
         return
     }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_TITLE, file.name)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    val uris = files.map { FileProvider.getUriForFile(context, "${context.packageName}.files", it) }
+    val intent = if (uris.size == 1) {
+        Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uris.single())
+            putExtra(Intent.EXTRA_TITLE, files.single().name)
+        }
+    } else {
+        Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = mimeType
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+        }
     }
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     context.startActivity(Intent.createChooser(intent, chooserTitle))
 }
 
@@ -315,6 +363,20 @@ private class PdfFilePrintAdapter(
 
 /** The app's Play Store package, the release applicationId (debug builds add a ".debug" suffix). */
 const val PLAY_STORE_PACKAGE = "com.scanpro.app"
+
+/** Hands the Play listing link to the share sheet, for recommending the app. */
+fun sharePlayStoreListing(context: Context) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.core_recommend_app_subject))
+        putExtra(Intent.EXTRA_TEXT, context.getString(R.string.core_recommend_app_text, "https://play.google.com/store/apps/details?id=$PLAY_STORE_PACKAGE"))
+    }
+    try {
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.core_share_app)))
+    } catch (_: ActivityNotFoundException) {
+        openPlayStoreListing(context)
+    }
+}
 
 /** Opens ScanPro's listing in the Play Store app, or on the Play website if the Store isn't installed. */
 fun openPlayStoreListing(context: Context) {

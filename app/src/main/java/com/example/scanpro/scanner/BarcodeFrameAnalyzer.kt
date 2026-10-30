@@ -24,7 +24,8 @@ class BarcodeFrameAnalyzer(
     private val onFound: (Barcode) -> Unit,
     private val onUnavailable: () -> Unit = {}
 ) : ImageAnalysis.Analyzer, Closeable {
-    private val scanner = BarcodeScanning.getClient()
+    // Created on first use: document mode never needs it, and creating it costs time before the preview.
+    private val scanner by lazy { BarcodeScanning.getClient() }
     @Volatile private var paused = false
     @Volatile private var closed = false
     @Volatile private var reportedUnavailable = false

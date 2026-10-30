@@ -17,7 +17,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
-import android.util.Size
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
@@ -60,6 +59,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CenterFocusWeak
+import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
@@ -113,6 +114,18 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.aspectRatio
 import com.example.scanpro.imaging.ImageProcessor
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import com.example.scanpro.data.NormalizedPoint
+import androidx.compose.animation.togetherWith
+import androidx.compose.material.icons.filled.FlashAuto
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.produceState
+import com.example.scanpro.core.ui.findActivity
+import android.graphics.Bitmap
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -154,6 +167,8 @@ private enum class DetectMode(@StringRes val label: Int) { AUTO(R.string.scan_de
 fun CameraScannerScreen(
     /** Mode to open in: a [ScanMode] name, "QR", or empty for the usual document mode. */
     initialMode: String = "",
+    /** Position of the saved page this session replaces; the session then takes exactly one photo. */
+    retakeOfPage: Int? = null,
     onClose: () -> Unit,
     onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>) -> Unit,
     onFallbackScanner: () -> Unit
@@ -177,12 +192,22 @@ fun CameraScannerScreen(
     var permissionGranted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
+    // After a refusal with "don't ask again", the system dialog no longer appears; the panel then leads to Settings.
+    var permissionRefused by remember { mutableStateOf(false) }
     var detection by remember { mutableStateOf<DocumentDetection?>(null) }
     var stable by remember { mutableStateOf(false) }
+    // How close the page is to being steady enough to capture; fills the ring round the shutter.
+    var steadiness by remember { mutableFloatStateOf(0f) }
+    // The outline as drawn: it follows the detector with a little lag so it glides instead of jittering.
+    var shownQuad by remember { mutableStateOf<CropQuad?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
-    var torchEnabled by remember { mutableStateOf(false) }
+    // Off, auto, on (fires with the shutter) or torch (steady light for dark rooms).
+    var flashMode by rememberSaveable { mutableStateOf(FlashMode.OFF) }
+    val torchEnabled = flashMode == FlashMode.TORCH
+    // A camera problem the user has to act on (camera busy, disabled, failed to open); shown in every mode.
+    var cameraError by remember { mutableStateOf<String?>(null) }
     val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
     var detectMode by rememberSaveable {
         mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.AUTO))
@@ -226,6 +251,8 @@ fun CameraScannerScreen(
     // The review step after capture: crop, rotate, reorder and add pages before saving.
     var reviewing by rememberSaveable { mutableStateOf(false) }
     var reviewIndex by rememberSaveable { mutableIntStateOf(0) }
+    // Page the next capture replaces, when the review step asked to retake one; -1 otherwise.
+    var retakeIndex by rememberSaveable { mutableIntStateOf(-1) }
     var processing by remember { mutableStateOf(false) }
     val quads = rememberSaveable(
         saver = listSaver(
@@ -251,15 +278,27 @@ fun CameraScannerScreen(
     var sessionFilter by rememberSaveable { mutableStateOf<PageFilter?>(null) }
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
     var resumeCount by remember { mutableIntStateOf(0) }
-    val pageLimit = if (scanMode == ScanMode.ID_CARD) (if (scanBothSides) 2 else 1) else 100
+    val pageLimit = when {
+        retakeOfPage != null -> 1
+        scanMode == ScanMode.ID_CARD -> if (scanBothSides) 2 else 1
+        else -> 100
+    }
 
     var confirmQuit by remember { mutableStateOf(false) }
     // Closing with captured pages would discard them, so ask first.
-    val requestClose = { if (pages.isNotEmpty() && !completed) confirmQuit = true else onClose() }
-    BackHandler(enabled = pages.isNotEmpty() && !completed) { confirmQuit = true }
+    val retaking = retakeIndex in pages.indices
+    val requestClose = {
+        when {
+            retaking -> { retakeIndex = -1; reviewing = true }
+            pages.isNotEmpty() && !completed -> confirmQuit = true
+            else -> onClose()
+        }
+    }
+    BackHandler(enabled = pages.isNotEmpty() && !completed) { requestClose() }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permissionGranted = it
+        if (!it) permissionRefused = true
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
@@ -276,6 +315,14 @@ fun CameraScannerScreen(
                             context.contentResolver.openInputStream(uri)?.use { input ->
                                 target.outputStream().use { input.copyTo(it) }
                             } ?: error("Could not open image")
+                            // Android 8 and older cannot decode HEIC; a page that can't be read is left out with a reason.
+                            val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            android.graphics.BitmapFactory.decodeFile(target.absolutePath, bounds)
+                            if (bounds.outWidth <= 0) {
+                                target.delete()
+                                val heic = bounds.outMimeType?.contains("hei", ignoreCase = true) == true || uri.toString().contains(".hei", ignoreCase = true)
+                                error(if (heic) "HEIC photos need Android 9 or newer; choose a JPG or PNG" else "This image could not be read")
+                            }
                             Uri.fromFile(target)
                         }.getOrNull()
                     }
@@ -296,15 +343,32 @@ fun CameraScannerScreen(
     // review step, a full page list) and the mode shows the outline it fires on: ID cards are lined up in the
     // bracket by hand, with no outline or guidance, so firing the shutter there would come as a surprise.
     val autoCaptureActive = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing &&
-        pages.size < pageLimit && scanMode != ScanMode.ID_CARD
+        (retaking || pages.size < pageLimit) && scanMode != ScanMode.ID_CARD
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
-            onDetection = { result, isStable ->
-                detection = result
+            onDetection = { result, isStable, progress ->
+                // The screen recomposes on this object; it is replaced only when something it shows changed, not every frame.
+                val previousResult = detection
+                if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
+                    previousResult.isBlurry != result.isBlurry || previousResult.isReady != result.isReady ||
+                    previousResult.frameWidth != result.frameWidth || previousResult.frameHeight != result.frameHeight
+                ) detection = result
+                // A soft tick the moment the page locks on, so the eye can stay on the paper.
+                if (isStable && !stable) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 stable = isStable
+                steadiness = if (result.quad == null) 0f else progress
+                val target = result.quad
+                val previous = shownQuad
+                shownQuad = when {
+                    target == null -> null
+                    previous == null -> target
+                    else -> previous.towards(target, 0.45f)
+                }
+                // "Hold… capturing" is chosen where it is shown, which knows whether auto-capture is on.
                 liveGuidance = resources.getString(result.guidance.labelRes)
             },
-            onAutoCapture = { autoCaptureSignal++ }
+            onAutoCapture = { autoCaptureSignal++ },
+            onUnavailable = { cameraError = resources.getString(R.string.scan_error_detector_unavailable) }
         )
     }
     // Taking a page by hand while the tips show means they have done their job.
@@ -325,6 +389,8 @@ fun CameraScannerScreen(
     val frameAnalyzer = remember { SwitchingAnalyzer(analyzer, barcodeAnalyzer) }
     SideEffect {
         frameAnalyzer.barcodeMode = barcodeMode
+        // Nothing reads the result in No-detect mode or during review, so the frames are not analysed at all.
+        analyzer.enabled = detectMode != DetectMode.NO_DETECT && !reviewing && !barcodeMode
         analyzer.autoCaptureEnabled = autoCaptureActive
     }
 
@@ -381,7 +447,8 @@ fun CameraScannerScreen(
 
     fun capturePage() {
         val capture = imageCapture ?: return
-        if (capturing || pages.size >= pageLimit) return
+        // A retake replaces a page, so it is allowed at the page limit.
+        if (capturing || (!retaking && pages.size >= pageLimit)) return
         capturing = true
         status = resources.getString(R.string.scan_status_capturing)
         scope.launch {
@@ -389,11 +456,11 @@ fun CameraScannerScreen(
             flash.animateTo(0f, tween(280))
         }
 
-        sessionDir.mkdirs()
         val id = UUID.randomUUID().toString()
         val raw = File(sessionDir, "raw_$id.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(raw).build()
-
+        // The folder is made on the camera's own thread rather than here on main.
+        analysisExecutor.execute { sessionDir.mkdirs() }
         capture.takePicture(
             options,
             mainExecutor,
@@ -407,7 +474,16 @@ fun CameraScannerScreen(
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
                     val captured = Uri.fromFile(raw)
-                    pages.add(captured)
+                    val replacing = retakeIndex in pages.indices
+                    if (replacing) {
+                        val old = pages[retakeIndex]
+                        pages[retakeIndex] = captured
+                        quads.remove(old.toString())
+                        filters.remove(old.toString())
+                        if (old.scheme == "file") deleteInBackground(File(old.path.orEmpty()))
+                    } else {
+                        pages.add(captured)
+                    }
                     capturing = false
                     // Outline the page in the background so the review screen opens ready.
                     scope.launch {
@@ -415,16 +491,28 @@ fun CameraScannerScreen(
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                     }
                     status = when {
+                        replacing -> resources.getString(R.string.scan_status_page_retaken, retakeIndex + 1)
                         scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> resources.getString(R.string.scan_status_front_saved)
                         scanMode == ScanMode.ID_CARD && pages.size == pageLimit -> resources.getString(R.string.scan_status_id_ready)
                         else -> resources.getString(R.string.scan_status_page_captured, pages.size)
                     }
-                    if (!batch && scanMode != ScanMode.ID_CARD) finishScan() else flyIntoCounter(raw)
+                    if (replacing) {
+                        // Straight back to the page that was retaken, so it can be checked at once.
+                        reviewIndex = retakeIndex
+                        retakeIndex = -1
+                        reviewing = true
+                    } else if (retakeOfPage != null || (!batch && scanMode != ScanMode.ID_CARD)) finishScan() else flyIntoCounter(raw)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     capturing = false
-                    status = exception.message ?: resources.getString(R.string.scan_error_capture)
+                    // A half-written file must not be mistaken for a page later.
+                    deleteInBackground(raw)
+                    status = when (exception.imageCaptureError) {
+                        ImageCapture.ERROR_FILE_IO -> resources.getString(R.string.scan_error_save_photo)
+                        ImageCapture.ERROR_CAMERA_CLOSED -> resources.getString(R.string.scan_error_camera_closed)
+                        else -> resources.getString(R.string.scan_error_capture_retry)
+                    }
                 }
             }
         )
@@ -445,14 +533,22 @@ fun CameraScannerScreen(
     }
 
     LaunchedEffect(autoCaptureSignal) {
-        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && pages.size < pageLimit) {
+        if (autoCaptureSignal > 0 && autoCapture && !capturing && !reviewing && (retaking || pages.size < pageLimit)) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             capturePage()
         }
     }
 
-    LaunchedEffect(permissionGranted, lifecycleOwner) {
+    // Re-keyed on `reviewing`: the camera is released while the review step is up, so the preview and
+    // OpenCV analysis stop costing battery behind a screen that doesn't show them, and bound again after.
+    LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, resumeCount) {
         if (!permissionGranted) return@LaunchedEffect
+        if (reviewing) {
+            cameraProvider?.unbindAll()
+            imageCapture = null
+            boundCamera = null
+            return@LaunchedEffect
+        }
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
             // The screen may have been left before the camera provider became ready.
@@ -465,15 +561,17 @@ fun CameraScannerScreen(
                     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
                     .build()
                 val preview = Preview.Builder().setResolutionSelector(selector).build().also { it.surfaceProvider = previewView.surfaceProvider }
-                // Around 12 MP is plenty for a page: a 50 MP capture is a 15 MB file, slower to take, decode and
-                // process, with no visible gain in the rendered scan. Same 4:3 ratio, so the framing is unchanged.
+                // About 12 MP is more than the pipeline keeps (it works at 3400 px); a 50 MP sensor would only
+                // add shutter lag, disk and decode time. Quality 92 is visually lossless for paper.
                 val captureSelector = ResolutionSelector.Builder()
                     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
-                    .setResolutionStrategy(ResolutionStrategy(Size(4000, 3000), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
+                    .setResolutionStrategy(ResolutionStrategy(android.util.Size(4000, 3000), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
                     .build()
                 val capture = ImageCapture.Builder()
                     .setResolutionSelector(captureSelector)
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    // Low latency keeps the shutter responsive (the page is captured the moment it is steady);
+                    // quality 95 keeps paper text crisp after the filters.
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                     .setJpegQuality(95)
                     .build()
                 val analysis = ImageAnalysis.Builder()
@@ -487,17 +585,41 @@ fun CameraScannerScreen(
                 // A shared view port crops all three streams to one region, so analysis coordinates line up with
                 // the preview and the saved photo. It can be unavailable before the first layout; bind without it then.
                 val viewPort = previewView.viewPort
+                if (viewPort == null && !previewView.isLaidOut) {
+                    // First bind before layout: bind again once the view has a size, so analysis lines up with the preview.
+                    previewView.post { if (!disposed.get() && previewView.viewPort != null) resumeCount++ }
+                }
+                // Tablets and Chromebooks may only have a front or external camera; any camera beats none.
+                val cameraSelector = when {
+                    provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
+                    provider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA
+                    else -> CameraSelector.Builder().build()
+                }
                 val camera = if (viewPort != null) {
                     provider.bindToLifecycle(
                         lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        cameraSelector,
                         UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(preview).addUseCase(capture).addUseCase(analysis).build()
                     )
                 } else {
-                    provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture, analysis)
+                    provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, capture, analysis)
                 }
                 imageCapture = capture
                 boundCamera = camera
+                cameraError = null
+                // Errors after binding (another app took the camera, device policy, a fold closing) arrive here.
+                camera.cameraInfo.cameraState.observe(lifecycleOwner) { state ->
+                    val error = state.error
+                    cameraError = when (error?.code) {
+                        null -> null
+                        androidx.camera.core.CameraState.ERROR_CAMERA_IN_USE,
+                        androidx.camera.core.CameraState.ERROR_MAX_CAMERAS_IN_USE -> resources.getString(R.string.scan_error_camera_in_use)
+                        androidx.camera.core.CameraState.ERROR_CAMERA_DISABLED -> resources.getString(R.string.scan_error_camera_disabled)
+                        androidx.camera.core.CameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED -> resources.getString(R.string.scan_error_camera_dnd)
+                        androidx.camera.core.CameraState.ERROR_STREAM_CONFIG -> resources.getString(R.string.scan_error_camera_stream)
+                        else -> if (error.type == androidx.camera.core.CameraState.ErrorType.CRITICAL) resources.getString(R.string.scan_error_camera_stopped) else null
+                    }
+                }
                 camera.cameraInfo.zoomState.value?.let { zoom = it.linearZoom }
                 val exposureState = camera.cameraInfo.exposureState
                 if (exposureState.isExposureCompensationSupported) {
@@ -510,9 +632,44 @@ fun CameraScannerScreen(
                     exposureIndex = 0
                 }
             }.onFailure {
-                liveGuidance = resources.getString(R.string.scan_guidance_camera_unavailable)
+                cameraError = resources.getString(R.string.scan_error_camera_open)
             }
         }, mainExecutor)
+    }
+
+    // Volume keys take a photo while this screen can; presses arrive from the activity.
+    DisposableEffect(reviewing, barcodeMode, permissionGranted) {
+        HardwareShutter.active = permissionGranted && !reviewing && !barcodeMode
+        onDispose { HardwareShutter.active = false }
+    }
+    val shutterPresses by HardwareShutter.presses.collectAsState()
+    LaunchedEffect(shutterPresses) {
+        if (shutterPresses > 0 && HardwareShutter.active && !capturing && (retaking || pages.size < pageLimit)) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            capturePage()
+        }
+    }
+
+    // 17: a level bubble from the accelerometer, so an oblique angle shows before the capture.
+    var tilt by remember { mutableStateOf(Offset.Zero) }
+    DisposableEffect(permissionGranted) {
+        val sensors = context.getSystemService(android.content.Context.SENSOR_SERVICE) as? android.hardware.SensorManager
+        val accelerometer = sensors?.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
+        val listener = object : android.hardware.SensorEventListener {
+            private var sx = 0f
+            private var sy = 0f
+            override fun onSensorChanged(event: android.hardware.SensorEvent) {
+                // Degrees of lean along each axis; smoothed so the bubble glides.
+                val x = Math.toDegrees(kotlin.math.atan2(event.values[0].toDouble(), event.values[2].toDouble().coerceAtLeast(0.01))).toFloat()
+                val y = Math.toDegrees(kotlin.math.atan2(event.values[1].toDouble(), event.values[2].toDouble().coerceAtLeast(0.01))).toFloat()
+                sx += (x - sx) * 0.2f
+                sy += (y - sy) * 0.2f
+                tilt = Offset(sx, sy)
+            }
+            override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+        }
+        if (permissionGranted && accelerometer != null) sensors.registerListener(listener, accelerometer, android.hardware.SensorManager.SENSOR_DELAY_UI)
+        onDispose { sensors?.unregisterListener(listener) }
     }
 
     DisposableEffect(Unit) {
@@ -524,7 +681,9 @@ fun CameraScannerScreen(
             // Leaving without Done discards the session's captures. A rotation recreates the screen
             // with the same saved pages, so keep the files then.
             val changingConfigurations = (context as? android.app.Activity)?.isChangingConfigurations == true
-            if (!completed && !changingConfigurations) sessionDir.deleteRecursively()
+            // Up to a hundred large JPEGs: not on the main thread during the exit animation.
+            if (!completed && !changingConfigurations) Thread { sessionDir.deleteRecursively() }.start()
+            analyzer.close()
         }
     }
 
@@ -540,14 +699,23 @@ fun CameraScannerScreen(
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) resumeCount++
+            if (event == Lifecycle.Event.ON_RESUME) {
+                resumeCount++
+                // Granted in Settings and came back: the panel must go without a tap.
+                permissionGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(torchEnabled, boundCamera, resumeCount) {
+    LaunchedEffect(flashMode, boundCamera, resumeCount) {
         boundCamera?.cameraControl?.enableTorch(torchEnabled)
+        imageCapture?.flashMode = when (flashMode) {
+            FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO
+            FlashMode.ON -> ImageCapture.FLASH_MODE_ON
+            else -> ImageCapture.FLASH_MODE_OFF
+        }
     }
 
     LaunchedEffect(zoom, boundCamera, resumeCount) {
@@ -563,7 +731,11 @@ fun CameraScannerScreen(
     }
 
     if (!permissionGranted) {
+        val activity = context.findActivity()
+        val askable = activity == null || !permissionRefused ||
+            androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
         PermissionPanel(
+            askable = askable,
             onRequest = { permissionLauncher.launch(Manifest.permission.CAMERA) },
             onFallback = onFallbackScanner,
             onClose = onClose
@@ -582,18 +754,24 @@ fun CameraScannerScreen(
             sessionDir = sessionDir,
             processing = processing,
             onIndexChange = { reviewIndex = it },
-            onAdd = { reviewing = false },
-            onBack = { reviewing = false },
-            onDone = ::saveReviewed
+            onAdd = { retakeIndex = -1; reviewing = false },
+            onBack = { retakeIndex = -1; reviewing = false },
+            onDone = ::saveReviewed,
+            onRetake = {
+                retakeIndex = reviewIndex.coerceIn(0, pages.lastIndex)
+                status = resources.getString(R.string.scan_status_retaking_page, retakeIndex + 1)
+                reviewing = false
+            }
         )
         return
     }
 
-    // Dark blue-grey scanner backdrop from the approved design (not pure black).
+    // The scanner's chrome uses the dark theme's surfaces whatever the app theme, so the preview reads as the content.
+    val scanLine = com.example.scanpro.core.designsystem.ScanProTheme.colors.scanLine
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0xFF0E141D))
+            .background(CameraBackdrop)
             .onGloballyPositioned { screenOrigin = it.positionInRoot(); screenSize = it.size }
     ) {
         AndroidView(
@@ -617,8 +795,11 @@ fun CameraScannerScreen(
         )
 
         ThirdsGrid()
+        if (!barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
+            LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp))
+        }
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
-            DocumentBoundaryOverlay(detection = detection, stable = stable)
+            DocumentBoundaryOverlay(detection = detection, quad = shownQuad, stable = stable, accent = scanLine)
         }
         if (scanMode == ScanMode.ID_CARD) {
             IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
@@ -669,7 +850,7 @@ fun CameraScannerScreen(
             Surface(
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),
-                color = Color.Black.copy(alpha = 0.55f)
+                color = CameraGlass
             ) {
                 Text(
                     if (barcodeUnavailable) stringResource(R.string.scan_qr_downloading)
@@ -689,11 +870,76 @@ fun CameraScannerScreen(
             Surface(
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),
-                color = Color.Black.copy(alpha = 0.55f)
+                color = CameraGlass
             ) {
-                // "Capturing" only when the shutter really is about to fire on its own; in Manual mode the page is just outlined.
-                val guidance = if (stable && detection?.isReady == true && autoCaptureActive) stringResource(R.string.scan_guidance_hold_capturing) else liveGuidance
-                Text(guidance, color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+                    val state = detection
+                    // "Capturing" only when the shutter really is about to fire on its own; in Manual mode the page is just outlined.
+                    val guidance = if (stable && state?.isReady == true && autoCaptureActive) stringResource(R.string.scan_guidance_hold_capturing) else liveGuidance
+                    val ready = stable && state?.isReady == true
+                    val hintIcon = when {
+                        ready -> Icons.Default.TaskAlt
+                        state?.isDark == true -> Icons.Default.Bolt
+                        state?.quad != null && state.isBlurry -> Icons.Default.PanTool
+                        state?.quad != null -> Icons.Default.CenterFocusWeak
+                        else -> Icons.Default.DocumentScanner
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(hintIcon, contentDescription = null, tint = if (ready) scanLine else Color.White, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        androidx.compose.animation.AnimatedContent(
+                            targetState = guidance,
+                            transitionSpec = {
+                                (androidx.compose.animation.fadeIn(tween(160)) + androidx.compose.animation.slideInVertically(tween(160)) { it / 3 })
+                                    .togetherWith(androidx.compose.animation.fadeOut(tween(120)))
+                            },
+                            label = "guidance"
+                        ) { text ->
+                            Text(text, color = if (ready) scanLine else Color.White, style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
+                    }
+                    // Low light: one tap turns the torch on from the hint itself.
+                    if (detection?.isDark == true && !torchEnabled) {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            onClick = { flashMode = FlashMode.TORCH },
+                            shape = RoundedCornerShape(50),
+                            color = scanLine,
+                            contentColor = Color(0xFF04281E)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                                Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.scan_turn_on_flash), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        cameraError?.let { problem ->
+            Surface(
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 24.dp).widthIn(max = 420.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = CameraGlass
+            ) {
+                Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(problem, color = Color.White, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { cameraError = null; resumeCount++ }) { Text(stringResource(R.string.common_retry), color = Color.White) }
+                        TextButton(onClick = onFallbackScanner) { Text(stringResource(R.string.scan_compat_scanner), color = scanLine) }
+                    }
+                }
+            }
+        }
+        if (retakeOfPage != null && !showTips && status == null) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 64.dp),
+                shape = RoundedCornerShape(50),
+                color = CameraGlass
+            ) {
+                Text(stringResource(R.string.scan_retaking_page, retakeOfPage + 1), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
             }
         }
 
@@ -702,7 +948,7 @@ fun CameraScannerScreen(
                 onDismissRequest = { confirmQuit = false },
                 title = { Text(stringResource(R.string.scan_quit_title)) },
                 text = { Text(stringResource(R.string.scan_quit_body)) },
-                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = Color(0xFFEF4444)) } },
+                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.common_cancel)) } }
             )
         }
@@ -714,7 +960,7 @@ fun CameraScannerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(stringResource(detectMode.label), color = Color.White, style = MaterialTheme.typography.titleMedium)
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = stringResource(R.string.scan_detection_mode), tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = stringResource(R.string.scan_detection_mode), tint = scanLine)
                     }
                     DropdownMenu(expanded = detectMenuOpen, onDismissRequest = { detectMenuOpen = false }) {
                         DetectMode.entries.forEach { option ->
@@ -733,17 +979,30 @@ fun CameraScannerScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
+            Surface(shape = CircleShape, color = CameraGlass) {
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
-                    IconButton(onClick = { torchEnabled = !torchEnabled }) {
-                        Icon(if (torchEnabled) Icons.Default.Bolt else Icons.Default.FlashOff, contentDescription = stringResource(R.string.scan_flash), tint = Color.White)
+                Surface(shape = CircleShape, color = CameraGlass) {
+                    // Each tap moves to the next flash mode; a short label under the icon says which.
+                    IconButton(onClick = {
+                        flashMode = FlashMode.entries[(flashMode.ordinal + 1) % FlashMode.entries.size]
+                        status = resources.getString(R.string.scan_flash_state, resources.getString(flashMode.labelRes))
+                    }) {
+                        Icon(
+                            when (flashMode) {
+                                FlashMode.OFF -> Icons.Default.FlashOff
+                                FlashMode.AUTO -> Icons.Default.FlashAuto
+                                FlashMode.ON -> Icons.Default.FlashOn
+                                FlashMode.TORCH -> Icons.Default.Bolt
+                            },
+                            contentDescription = stringResource(R.string.scan_flash_state, stringResource(flashMode.labelRes)),
+                            tint = if (flashMode == FlashMode.OFF) Color.White else scanLine
+                        )
                     }
                 }
                 Box {
-                    Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f)) {
+                    Surface(shape = CircleShape, color = CameraGlass) {
                         IconButton(onClick = { overflowOpen = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.scan_more_options), tint = Color.White)
                         }
@@ -772,11 +1031,22 @@ fun CameraScannerScreen(
 
         Column(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .background(Color(0xFF0A0F18))
+                .background(CameraPanel, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Batch: the pages so far, newest last; tap one to check it in the review step.
+            if (pages.size > 1 || (batch && pages.isNotEmpty())) {
+                CapturedStrip(
+                    pages = pages,
+                    onOpen = { index ->
+                        reviewIndex = index
+                        reviewing = true
+                    }
+                )
+                Spacer(Modifier.height(8.dp))
+            }
             if (status != null) {
                 Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
                     Text(status.orEmpty(), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
@@ -825,7 +1095,6 @@ fun CameraScannerScreen(
             }
 
             // Mode tabs. Receipt, Whiteboard and Book live in the overflow menu under "Docs".
-            val blue = MaterialTheme.colorScheme.primary
             // ID cards add a Front only / Both sides row; the mode tabs stay, so a wrong tap is undone with another tap.
             if (scanMode == ScanMode.ID_CARD) {
                 Row(
@@ -833,13 +1102,7 @@ fun CameraScannerScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     listOf(false to R.string.scan_id_front_only, true to R.string.scan_id_both_sides).forEach { (both, text) ->
-                        Text(
-                            stringResource(text),
-                            color = if (scanBothSides == both) blue else Color.White,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable(enabled = pages.isEmpty()) { scanBothSides = both }.padding(8.dp)
-                        )
+                        ModeTab(stringResource(text), selected = scanBothSides == both, enabled = pages.isEmpty() && retakeOfPage == null) { scanBothSides = both }
                     }
                 }
             }
@@ -850,29 +1113,17 @@ fun CameraScannerScreen(
                 listOf(ScanMode.TEXT to R.string.scan_tab_text, null to R.string.scan_tab_docs, ScanMode.ID_CARD to R.string.scan_tab_id_cards).forEach { (target, text) ->
                     val selected = !barcodeMode &&
                         if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
-                    Text(
-                        stringResource(text),
-                        color = if (selected) blue else Color.White,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable(enabled = pages.isEmpty()) {
-                            barcodeMode = false
-                            scanMode = target ?: ScanMode.DOCUMENT
-                            scanBothSides = false
-                        }.padding(8.dp)
-                    )
-                }
-                Text(
-                    stringResource(R.string.scan_qr_code),
-                    color = if (barcodeMode) blue else Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable(enabled = pages.isEmpty()) {
-                        barcodeMode = true
-                        scanMode = ScanMode.DOCUMENT
+                    ModeTab(stringResource(text), selected = selected, enabled = pages.isEmpty() && retakeOfPage == null) {
+                        barcodeMode = false
+                        scanMode = target ?: ScanMode.DOCUMENT
                         scanBothSides = false
-                    }.padding(8.dp)
-                )
+                    }
+                }
+                ModeTab(stringResource(R.string.scan_qr_code), selected = barcodeMode, enabled = pages.isEmpty() && retakeOfPage == null) {
+                    barcodeMode = true
+                    scanMode = ScanMode.DOCUMENT
+                    scanBothSides = false
+                }
             }
 
             val takePhotoDescription = stringResource(R.string.scan_take_photo)
@@ -884,7 +1135,7 @@ fun CameraScannerScreen(
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
                     if (pages.isNotEmpty()) {
                         Column(
-                            Modifier.clickable { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") File(uri.path.orEmpty()).delete() } }.padding(8.dp),
+                            Modifier.clickable { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") deleteInBackground(File(uri.path.orEmpty())) } }.padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.scan_remove_last_page), tint = Color.White)
@@ -893,19 +1144,50 @@ fun CameraScannerScreen(
                     }
                 }
 
-                Surface(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        capturePage()
-                    },
-                    enabled = !barcodeMode && !capturing && pages.size < pageLimit,
-                    shape = CircleShape,
-                    // Dimmed in QR mode: codes are read live, there is nothing to capture.
-                    color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
-                    border = androidx.compose.foundation.BorderStroke(5.dp, if (stable) blue else Color.White.copy(alpha = 0.5f)),
-                    // The shutter has no visible label, so screen readers need one.
-                    modifier = Modifier.size(78.dp).semantics { contentDescription = takePhotoDescription }
-                ) {}
+                // Outer ring fills clockwise as the page settles and turns solid mint once it is steady; the
+                // inner disc is the button.
+                val ringFill by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (stable) 1f else steadiness,
+                    animationSpec = if (steadiness == 0f) tween(200) else spring(stiffness = 700f),
+                    label = "ring"
+                )
+                val shutterScale by androidx.compose.animation.core.animateFloatAsState(if (capturing) 0.86f else 1f, spring(stiffness = 900f), label = "shutter")
+                Box(
+                    Modifier
+                        .size(84.dp)
+                        .graphicsLayer { scaleX = shutterScale; scaleY = shutterScale }
+                        .drawBehind {
+                            val strokeWidth = 4.dp.toPx()
+                            val inset = strokeWidth / 2
+                            drawCircle(Color.White.copy(alpha = 0.35f), radius = size.minDimension / 2 - inset, style = Stroke(strokeWidth))
+                            if (ringFill > 0f) {
+                                drawArc(
+                                    color = scanLine,
+                                    startAngle = -90f,
+                                    sweepAngle = 360f * ringFill,
+                                    useCenter = false,
+                                    topLeft = Offset(inset, inset),
+                                    size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                                    style = Stroke(strokeWidth, cap = StrokeCap.Round)
+                                )
+                            }
+                        }
+                        .padding(7.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            capturePage()
+                        },
+                        enabled = !barcodeMode && !capturing && (retaking || pages.size < pageLimit),
+                        shape = CircleShape,
+                        // Dimmed in QR mode: codes are read live, there is nothing to capture.
+                        color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
+                        // The shutter has no visible label, so screen readers need one.
+                        modifier = Modifier.fillMaxSize().semantics { contentDescription = takePhotoDescription }
+                    ) {}
+                }
 
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
                     if (pages.isEmpty() && !barcodeMode) {
@@ -920,6 +1202,7 @@ fun CameraScannerScreen(
                         Button(
                             enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
                             onClick = { finishScan() },
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = scanLine, contentColor = Color(0xFF04281E)),
                             modifier = Modifier
                                 .onGloballyPositioned { counterCenter = it.boundsInRoot().center }
                                 .graphicsLayer { scaleX = counterPulse.value; scaleY = counterPulse.value }
@@ -960,9 +1243,39 @@ fun CameraScannerScreen(
     }
 }
 
+/** Scanner chrome colours: the dark theme's surfaces, used whatever the app theme. */
+private val CameraBackdrop = Color(0xFF0B0D14)
+private val CameraPanel = Color(0xFF14161F)
+private val CameraGlass = Color(0xFF0F1118).copy(alpha = 0.72f)
+
+/** One of the mode pills above the shutter. */
 @Composable
-private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClose: () -> Unit) {
+private fun ModeTab(text: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        color = if (selected) Color.White.copy(alpha = 0.18f) else Color.Transparent,
+        contentColor = if (selected) Color.White else Color.White.copy(alpha = 0.7f)
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun PermissionPanel(askable: Boolean, onRequest: () -> Unit, onFallback: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
+    val openSettings = {
+        context.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Card(Modifier.padding(24.dp)) {
             Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -970,16 +1283,12 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.scan_permission_title), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.scan_permission_body))
+                Text(stringResource(if (askable) R.string.scan_permission_body else R.string.scan_permission_denied_body))
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = onRequest) { Text(stringResource(R.string.scan_permission_allow)) }
                 // After "Don't ask again" the system dialog no longer appears; settings is the only way back.
-                TextButton(onClick = {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
-                }) { Text(stringResource(R.string.scan_permission_open_settings)) }
+                if (askable) Button(onClick = onRequest) { Text(stringResource(R.string.scan_permission_allow)) }
+                else Button(onClick = openSettings) { Text(stringResource(R.string.scan_permission_open_settings)) }
+                if (askable) TextButton(onClick = openSettings) { Text(stringResource(R.string.scan_permission_open_settings)) }
                 OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text(stringResource(R.string.scan_permission_use_compat)) }
                 TextButton(onClick = onClose) { Text(stringResource(R.string.common_cancel)) }
             }
@@ -1014,6 +1323,75 @@ private fun IdCardFrame(label: String) {
     }
 }
 
+/** File deletes happen off the main thread; the UI never waits on the disk. */
+private fun deleteInBackground(file: File) {
+    Thread { file.delete() }.start()
+}
+
+/** Flash setting for the shutter; torch is the steady light the low-light hint offers. */
+enum class FlashMode(@StringRes val labelRes: Int) {
+    OFF(R.string.scan_flash_off), AUTO(R.string.scan_flash_auto), ON(R.string.scan_flash_on), TORCH(R.string.scan_flash_torch)
+}
+
+/**
+ * Spirit level: the bubble drifts with the phone's lean and the ring turns mint when the phone is flat
+ * over the page (within a few degrees), so a skewed shot is noticed before it is taken.
+ */
+@Composable
+private fun LevelBubble(tilt: Offset, accent: Color, modifier: Modifier = Modifier) {
+    val level = kotlin.math.abs(tilt.x) < 6f && kotlin.math.abs(tilt.y) < 6f
+    val ring by androidx.compose.animation.animateColorAsState(if (level) accent else Color.White.copy(alpha = 0.7f), tween(180), label = "level")
+    Canvas(modifier.size(44.dp)) {
+        val radius = size.minDimension / 2f
+        drawCircle(Color.Black.copy(alpha = 0.35f), radius)
+        drawCircle(ring, radius - 1.5.dp.toPx(), style = Stroke(2.dp.toPx()))
+        drawCircle(ring.copy(alpha = 0.5f), 5.dp.toPx(), style = Stroke(1.dp.toPx()))
+        // Up to 25 degrees of lean moves the bubble to the rim.
+        val reach = radius - 7.dp.toPx()
+        val dx = (tilt.x / 25f).coerceIn(-1f, 1f) * reach
+        val dy = (-tilt.y / 25f).coerceIn(-1f, 1f) * reach
+        drawCircle(ring, 5.dp.toPx(), center = center + Offset(dx, dy))
+    }
+}
+
+/** Thumbnails of the pages captured so far, decoded small and kept while the screen lives. */
+@Composable
+private fun CapturedStrip(pages: List<Uri>, onOpen: (Int) -> Unit) {
+    val cache = remember { HashMap<String, Bitmap>() }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(pages.size) { if (pages.isNotEmpty()) listState.animateScrollToItem(pages.lastIndex) }
+    LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+            val key = uri.toString()
+            val pageLabel = stringResource(R.string.scan_review_page_n, index + 1)
+            val bitmap by produceState<Bitmap?>(initialValue = cache[key], key) {
+                if (value == null) {
+                    value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160) }
+                    value?.let { cache[key] = it }
+                }
+            }
+            Box(
+                Modifier
+                    .size(44.dp, 58.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.White.copy(alpha = 0.1f))
+                    .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                    .clickable { onOpen(index) }
+                    .semantics { contentDescription = pageLabel },
+                contentAlignment = Alignment.Center
+            ) {
+                bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                Text(
+                    "${index + 1}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(topStart = 6.dp)).padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
+        }
+    }
+}
+
 /** Faint rule-of-thirds lines that help keep the document square to the camera. */
 @Composable
 private fun ThirdsGrid() {
@@ -1026,12 +1404,19 @@ private fun ThirdsGrid() {
     }
 }
 
+/**
+ * The page outline over the preview: a faint fill, an edge line and bracket corners. White while the page
+ * is being tracked; mint, thicker and filled a touch more once it is steady. [quad] is the smoothed outline;
+ * [detection] supplies the frame size the outline is expressed in.
+ */
 @Composable
-private fun DocumentBoundaryOverlay(detection: DocumentDetection?, stable: Boolean) {
-    val primary = MaterialTheme.colorScheme.primary
+private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: CropQuad?, stable: Boolean, accent: Color) {
+    val lineColor by androidx.compose.animation.animateColorAsState(if (stable) accent else Color.White, tween(220), label = "outline")
+    val fillAlpha by androidx.compose.animation.core.animateFloatAsState(if (stable) 0.16f else 0.07f, tween(220), label = "fill")
+    val weight by androidx.compose.animation.core.animateFloatAsState(if (stable) 5f else 3f, tween(220), label = "weight")
     Canvas(Modifier.fillMaxSize()) {
         val result = detection ?: return@Canvas
-        val quad = result.quad ?: return@Canvas
+        val outline = quad ?: return@Canvas
         val frameWidth = result.frameWidth.toFloat().coerceAtLeast(1f)
         val frameHeight = result.frameHeight.toFloat().coerceAtLeast(1f)
         val scale = minOf(size.width / frameWidth, size.height / frameHeight)
@@ -1039,7 +1424,7 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, stable: Boole
         val top = (size.height - frameHeight * scale) / 2f
 
         fun point(x: Float, y: Float): Offset = Offset(left + x * frameWidth * scale, top + y * frameHeight * scale)
-        val points = quad.asList().map { point(it.x, it.y) }
+        val points = outline.asList().map { point(it.x, it.y) }
         val path = Path().apply {
             moveTo(points[0].x, points[0].y)
             lineTo(points[1].x, points[1].y)
@@ -1047,13 +1432,37 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, stable: Boole
             lineTo(points[3].x, points[3].y)
             close()
         }
-        drawPath(path, color = if (stable) primary else Color.White, style = Stroke(width = if (stable) 5f else 3f))
-        points.forEach { drawCircle(color = if (stable) primary else Color.White, radius = 8f, center = it) }
+        drawPath(path, color = lineColor.copy(alpha = fillAlpha))
+        drawPath(path, color = lineColor.copy(alpha = 0.9f), style = Stroke(width = weight, cap = StrokeCap.Round))
 
-        if (stable) {
-            drawLine(primary, points[0], points[1], strokeWidth = 5f, cap = StrokeCap.Round)
+        // Bracket corners: a short run along each edge away from the corner, like a viewfinder.
+        val armLength = (size.minDimension * 0.045f).coerceIn(18f, 44f)
+        for (i in points.indices) {
+            val corner = points[i]
+            val next = points[(i + 1) % 4]
+            val previous = points[(i + 3) % 4]
+            fun arm(toward: Offset) {
+                val dx = toward.x - corner.x
+                val dy = toward.y - corner.y
+                val length = kotlin.math.hypot(dx, dy).coerceAtLeast(1f)
+                val end = Offset(corner.x + dx / length * armLength, corner.y + dy / length * armLength)
+                drawLine(lineColor, corner, end, strokeWidth = weight + 3f, cap = StrokeCap.Round)
+            }
+            arm(next)
+            arm(previous)
         }
     }
+}
+
+/** This outline moved [fraction] of the way towards [target]; the bends are taken from the target. */
+private fun CropQuad.towards(target: CropQuad, fraction: Float): CropQuad {
+    fun step(a: NormalizedPoint, b: NormalizedPoint) = NormalizedPoint(a.x + (b.x - a.x) * fraction, a.y + (b.y - a.y) * fraction)
+    return target.copy(
+        topLeft = step(topLeft, target.topLeft),
+        topRight = step(topRight, target.topRight),
+        bottomRight = step(bottomRight, target.bottomRight),
+        bottomLeft = step(bottomLeft, target.bottomLeft)
+    )
 }
 
 private fun CropQuad.asList() = listOf(topLeft, topRight, bottomRight, bottomLeft)

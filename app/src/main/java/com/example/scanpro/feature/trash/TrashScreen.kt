@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,14 +55,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.annotation.StringRes
-import com.example.scanpro.R
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.annotation.StringRes
+import com.example.scanpro.R
 import com.example.scanpro.data.DocumentSummary
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.scanpro.core.designsystem.ConfirmDialog
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.PageThumbnail
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatTrashCountdown
@@ -85,9 +85,12 @@ fun TrashRoute(
 ) {
     val documents by viewModel.documents.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val retentionDays by viewModel.retentionDays.collectAsStateWithLifecycle()
     TrashScreen(
         documents = documents,
         busy = busy,
+        retentionDays = retentionDays,
+        onRestoreAll = viewModel::restoreAll,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         onRestore = viewModel::restore,
@@ -105,7 +108,9 @@ internal fun TrashScreen(
     onBack: () -> Unit,
     onRestore: (String) -> Unit,
     onDeleteForever: (String) -> Unit,
-    onEmptyTrash: () -> Unit
+    onEmptyTrash: () -> Unit,
+    retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS,
+    onRestoreAll: () -> Unit = {}
 ) {
     var sortOption by remember { mutableStateOf(TrashSortOption.EXPIRY) }
     var showEmptyDialog by remember { mutableStateOf(false) }
@@ -114,16 +119,17 @@ internal fun TrashScreen(
 
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
+        // The countdown reads in days and hours; once a minute keeps it honest without redrawing every second.
         while (true) {
-            delay(1.seconds)
+            delay(60.seconds)
             nowMs = System.currentTimeMillis()
         }
     }
 
-    val sortedDocuments = remember(documents, sortOption, nowMs) {
-        val retentionMs = 7L * 24L * 60L * 60L * 1000L
+    val sortedDocuments = remember(documents, sortOption) {
         when (sortOption) {
-            TrashSortOption.EXPIRY -> documents.sortedBy { (it.trashedAt + retentionMs) - nowMs }
+            // Soonest to expire first: the same order as oldest in the bin first.
+            TrashSortOption.EXPIRY -> documents.sortedBy { it.trashedAt }
             TrashSortOption.DATE -> documents.sortedByDescending { it.trashedAt }
             TrashSortOption.NAME -> documents.sortedBy { it.title.lowercase() }
             TrashSortOption.SIZE -> documents.sortedByDescending { it.sizeBytes }
@@ -131,8 +137,10 @@ internal fun TrashScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(stringResource(R.string.trash_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -141,6 +149,7 @@ internal fun TrashScreen(
                 },
                 actions = {
                     if (documents.isNotEmpty()) {
+                        TextButton(enabled = !busy, onClick = onRestoreAll) { Text(stringResource(R.string.trash_restore_all)) }
                         TextButton(enabled = !busy, onClick = { showEmptyDialog = true }) {
                             Text(stringResource(R.string.trash_empty_action), color = MaterialTheme.colorScheme.error)
                         }
@@ -159,25 +168,12 @@ internal fun TrashScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(96.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.DeleteOutline,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                IconTile(Icons.Default.DeleteOutline, TileTone.Slate, size = 84.dp, corner = 28.dp, iconSize = 40.dp)
                 Spacer(Modifier.height(20.dp))
-                Text(stringResource(R.string.trash_empty_title), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.trash_empty_state_title), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    stringResource(R.string.trash_empty_body),
+                    pluralStringResource(R.plurals.trash_empty_state_body, retentionDays, retentionDays),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -189,26 +185,28 @@ internal fun TrashScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Default.Info,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(10.dp))
                         Text(
-                            stringResource(R.string.trash_auto_delete_notice),
-                            style = MaterialTheme.typography.bodySmall
+                            pluralStringResource(R.plurals.trash_retention_notice, retentionDays, retentionDays),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                 }
@@ -223,7 +221,19 @@ internal fun TrashScreen(
                         FilterChip(
                             selected = sortOption == option,
                             onClick = { sortOption = option },
-                            label = { Text(stringResource(option.label)) }
+                            label = { Text(stringResource(option.label)) },
+                            shape = CircleShape,
+                            colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            border = androidx.compose.material3.FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = sortOption == option,
+                                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                                selectedBorderColor = androidx.compose.ui.graphics.Color.Transparent
+                            )
                         )
                     }
                 }
@@ -235,43 +245,54 @@ internal fun TrashScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(sortedDocuments, key = { it.id }) { doc ->
-                        Card(
+                        Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceContainerLow
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                PageThumbnail(doc.coverPath, Modifier.size(width = 56.dp, height = 74.dp), THUMBNAIL_SMALL, version = doc.updatedAt)
-                                Spacer(Modifier.width(12.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                    shadowElevation = 3.dp
+                                ) {
+                                    PageThumbnail(
+                                        doc.coverPath,
+                                        Modifier.size(width = 50.dp, height = 66.dp),
+                                        THUMBNAIL_SMALL,
+                                        version = doc.updatedAt,
+                                        shape = RoundedCornerShape(8.dp),
+                                        background = androidx.compose.ui.graphics.Color.Transparent
+                                    )
+                                }
+                                Spacer(Modifier.width(14.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(doc.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    val (countdownText, isUrgent) = formatTrashCountdown(LocalContext.current, doc.trashedAt, nowMs)
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(top = 2.dp)
-                                    ) {
-                                        val countdownColor = if (isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                                        Icon(
-                                            Icons.Default.Schedule,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp),
-                                            tint = countdownColor
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            countdownText,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = countdownColor,
-                                            fontWeight = if (isUrgent) FontWeight.SemiBold else FontWeight.Normal
-                                        )
-                                    }
-                                    Spacer(Modifier.height(2.dp))
+                                    Text(doc.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Spacer(Modifier.height(3.dp))
                                     val pagesLabel = pluralStringResource(R.plurals.trash_pages, doc.pageCount, doc.pageCount)
-                                    Text(stringResource(R.string.trash_doc_meta, pagesLabel, formatBytes(doc.sizeBytes)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.trash_doc_meta, pagesLabel, formatBytes(doc.sizeBytes)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.height(6.dp))
+                                    val (countdownText, isUrgent) = formatTrashCountdown(LocalContext.current, doc.trashedAt, nowMs, retentionDays)
+                                    // Time left as a small pill; it turns to the error colour in the last day.
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = if (isUrgent) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ) {
+                                        val countdownColor = if (isUrgent) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        ) {
+                                            Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(12.dp), tint = countdownColor)
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(countdownText, style = MaterialTheme.typography.labelSmall, color = countdownColor, fontWeight = FontWeight.SemiBold)
+                                        }
+                                    }
                                 }
                                 Box {
                                     IconButton(enabled = !busy, onClick = { activeMenuDocId = doc.id }) {

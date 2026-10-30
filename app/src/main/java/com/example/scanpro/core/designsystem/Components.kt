@@ -5,6 +5,7 @@ import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.ImeAction
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,7 +63,9 @@ private val latestCacheKey = LruCache<String, String>(512)
 
 /** Decode size for small list/strip thumbnails. */
 const val THUMBNAIL_SMALL = 256
-/** Decode size for grid cards. */
+/** Decode size for grid cards: sharp in a 150dp cell on dense screens, a quarter of the memory of the page preview. */
+const val THUMBNAIL_GRID = 420
+/** Decode size for medium previews. */
 const val THUMBNAIL_MEDIUM = 640
 /** Decode size for the full-width page preview. */
 const val THUMBNAIL_LARGE = 1600
@@ -77,8 +81,15 @@ fun PageThumbnail(
      * the old cached bitmap.
      */
     version: Any? = null,
-    /** What the screen reader says for the image; pass e.g. "Page 3 of 12" where the position is known. */
-    contentDescription: String = stringResource(R.string.ui_scanned_page)
+    /** Corner shape of the placeholder; the image itself is clipped to it as well. */
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(12.dp),
+    /** Placeholder colour shown while the thumbnail loads, or when the page has no image. */
+    background: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
+    /**
+     * What a screen reader says for the image; pass e.g. "Page 3 of 12" where the position is known,
+     * or null when the container describes it.
+     */
+    contentDescription: String? = stringResource(R.string.ui_scanned_page)
 ) {
     // The file's timestamp is part of the cache key, but reading it is disk I/O, so it happens on the
     // IO thread. Meanwhile the last bitmap shown for this request is drawn straight away, so coming
@@ -99,11 +110,11 @@ fun PageThumbnail(
         }
     }
 
+    val placeholder = if (background == androidx.compose.ui.graphics.Color.Unspecified) MaterialTheme.colorScheme.surfaceContainerHigh else background
     Box(
-        modifier = modifier.background(
-            MaterialTheme.colorScheme.surfaceVariant,
-            RoundedCornerShape(12.dp)
-        ),
+        modifier = modifier
+            .clip(shape)
+            .background(placeholder, shape),
         contentAlignment = Alignment.Center
     ) {
         val image = bitmap
@@ -238,11 +249,20 @@ fun PasswordInputDialog(
  * task never shifts the screen's content up or down.
  */
 @Composable
-fun TopBarWithProgress(busy: Boolean, topBar: @Composable () -> Unit) {
+fun TopBarWithProgress(busy: Boolean, onStop: (() -> Unit)? = null, topBar: @Composable () -> Unit) {
     androidx.compose.foundation.layout.Column {
         topBar()
         Box(Modifier.fillMaxWidth().height(4.dp)) {
             if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        // A long task (re-reading 300 pages, say) can be stopped from the screen that shows it running.
+        if (busy && onStop != null) {
+            androidx.compose.foundation.layout.Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+            ) {
+                TextButton(onClick = onStop) { Text(stringResource(R.string.common_stop)) }
+            }
         }
     }
 }

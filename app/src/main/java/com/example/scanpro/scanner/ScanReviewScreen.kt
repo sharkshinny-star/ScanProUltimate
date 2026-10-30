@@ -1,7 +1,6 @@
 package com.example.scanpro.scanner
 
 import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -46,6 +45,7 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.RotateLeft
 import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -58,6 +58,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,6 +74,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
@@ -100,8 +102,9 @@ import java.io.File
 import java.util.UUID
 import kotlin.math.hypot
 
-private val Blue = Color(0xFF2F7BFF)
-private val Amber = Color(0xFFF59E0B)
+private val Blue = Color(0xFF2FD6A6)
+private val Amber = Color(0xFFFFB95C)
+private val ReviewBackdrop = Color(0xFF0B0D14)
 
 /** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would). */
 @Suppress("DEPRECATION")
@@ -126,7 +129,9 @@ fun ScanReviewScreen(
     onIndexChange: (Int) -> Unit,
     onAdd: () -> Unit,
     onBack: () -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    /** Returns to the camera to shoot this page again; the next capture replaces it in place. */
+    onRetake: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -138,20 +143,23 @@ fun ScanReviewScreen(
     // Curve mode shows a handle in the middle of each edge that bends it, for book pages and curled paper.
     var curveMode by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    // Bumped after a rotation so the page and its thumbnail are decoded again from the same file.
+    var rotationTick by remember { mutableIntStateOf(0) }
+    val thumbCache = remember { HashMap<String, Bitmap>() }
     val blocked = working || processing
 
     // While a rotation or the save is running, Back is swallowed: leaving then would strand a half-written file.
     BackHandler(enabled = blocked) { }
     BackHandler(enabled = !blocked) { onBack() }
 
-    val bitmap by produceState<Bitmap?>(initialValue = null, key) {
+    val bitmap by produceState<Bitmap?>(initialValue = null, key, rotationTick) {
         value = null
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 1800) }
     }
 
     // Filter previews follow the outline, a moment after the last drag so dragging stays smooth. The previous
     // previews stay up meanwhile.
-    var previews by remember(key) { mutableStateOf<Map<PageFilter, Bitmap>>(emptyMap()) }
+    var previews by remember(key, rotationTick) { mutableStateOf<Map<PageFilter, Bitmap>>(emptyMap()) }
     val previewQuad = quads[key]
     LaunchedEffect(bitmap, previewQuad) {
         val image = bitmap ?: return@LaunchedEffect
@@ -177,36 +185,24 @@ fun ScanReviewScreen(
         if (blocked) return
         working = true
         scope.launch {
-            val oldKey = key
+            // The turn is written into the photo's EXIF orientation: no pixels are re-encoded, nothing is
+            // downscaled, and every later step reads the tag. The outline turns with it.
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val source = ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 4200) ?: error("decode")
-                    val matrix = Matrix().apply { postRotate(if (clockwise) 90f else -90f) }
-                    val turned = Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
-                    if (turned !== source) source.recycle()
-                    val target = File(sessionDir, "rot_${UUID.randomUUID()}.jpg")
-                    try { ImageProcessor.saveBitmapJpeg(turned, target, 98) } finally { turned.recycle() }
-                    target
+                    val exif = androidx.exifinterface.media.ExifInterface(uri.path.orEmpty())
+                    exif.rotate(if (clockwise) 90 else -90)
+                    exif.saveAttributes()
                 }
             }
-            result.onSuccess { file ->
-                val newUri = Uri.fromFile(file)
-                val quad = quads.remove(oldKey)?.let { rotateQuad(it, clockwise) }
-                val filter = filters.remove(oldKey)
-                // The page is only replaced once the rotated file exists, so a failure loses nothing.
-                val position = pages.indexOf(uri)
-                if (position >= 0) {
-                    pages[position] = newUri
-                    if (quad != null) quads[newUri.toString()] = quad
-                    if (filter != null) filters[newUri.toString()] = filter
-                    File(uri.path.orEmpty()).delete()
-                }
+            result.onSuccess {
+                quads[key]?.let { quads[key] = rotateQuad(it, clockwise) }
+                rotationTick++
             }.onFailure { message = resources.getString(R.string.scan_review_rotate_failed) }
             working = false
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color(0xFF0A0F18)).systemBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
+    Column(Modifier.fillMaxSize().background(ReviewBackdrop).systemBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.scan_review_back_to_camera), tint = Color.White)
@@ -226,12 +222,17 @@ fun ScanReviewScreen(
             IconButton(enabled = !blocked && current < pages.lastIndex, onClick = { move(1) }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.scan_review_move_later), tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
             }
+            if (onRetake != null) {
+                IconButton(enabled = !blocked, onClick = onRetake) {
+                    Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.scan_review_retake_page), tint = Color.White)
+                }
+            }
             IconButton(
                 enabled = !blocked,
                 onClick = {
                     quads.remove(key)
                     filters.remove(key)
-                    File(uri.path.orEmpty()).delete()
+                    Thread { File(uri.path.orEmpty()).delete() }.start()
                     pages.remove(uri)
                     if (pages.isEmpty()) onBack() else onIndexChange(current.coerceAtMost(pages.lastIndex))
                 }
@@ -272,6 +273,8 @@ fun ScanReviewScreen(
         if (pages.size > 1) {
             ThumbnailStrip(
                 pages = pages,
+                rotationTick = rotationTick,
+                thumbCache = thumbCache,
                 selected = current,
                 enabled = !blocked,
                 onSelect = onIndexChange,
@@ -330,7 +333,12 @@ fun ScanReviewScreen(
                     Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_next_page), tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
                 }
             }
-            OutlinedButton(enabled = !blocked, onClick = onAdd) {
+            OutlinedButton(
+                enabled = !blocked,
+                onClick = onAdd,
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Color.White, disabledContentColor = Color.White.copy(alpha = 0.4f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
+            ) {
                 Icon(Icons.Default.AddAPhoto, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.scan_review_add))
@@ -369,8 +377,12 @@ fun ScanReviewScreen(
             }
             ReviewAction(RotateLeftIcon, stringResource(R.string.scan_review_rotate_left), !blocked) { rotate(clockwise = false) }
             ReviewAction(RotateRightIcon, stringResource(R.string.scan_review_rotate_right), !blocked) { rotate(clockwise = true) }
-            Button(enabled = !blocked, onClick = onDone) {
-                if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color.White)
+            Button(
+                enabled = !blocked,
+                onClick = onDone,
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Blue, contentColor = Color(0xFF04281E))
+            ) {
+                if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color(0xFF04281E))
                 else Text(stringResource(R.string.common_done), maxLines = 1, softWrap = false)
             }
         }
@@ -388,9 +400,11 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
     Column(
         Modifier
             .minimumInteractiveComponentSize()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (highlighted) Amber.copy(alpha = 0.16f) else Color.Transparent)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { if (highlighted) stateDescription = onDescription }
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(icon, contentDescription = null, tint = tint)
@@ -527,6 +541,8 @@ private fun detectQuad(image: Bitmap): CropQuad {
 @Composable
 private fun ThumbnailStrip(
     pages: SnapshotStateList<Uri>,
+    rotationTick: Int,
+    thumbCache: HashMap<String, Bitmap>,
     selected: Int,
     enabled: Boolean,
     onSelect: (Int) -> Unit,
@@ -547,8 +563,13 @@ private fun ThumbnailStrip(
     ) {
         itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
             val key = uri.toString()
-            val thumb by produceState<Bitmap?>(initialValue = null, key) {
-                value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 220) }
+            // Decoded once per page and kept, so scrolling a long batch doesn't re-read every JPEG.
+            val cacheKey = "$key#$rotationTick"
+            val thumb by produceState<Bitmap?>(initialValue = thumbCache[cacheKey], cacheKey) {
+                if (value == null) {
+                    value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 220) }
+                    value?.let { thumbCache[cacheKey] = it }
+                }
             }
             val isDragging = draggingKey == key
             val isSelected = index == selected

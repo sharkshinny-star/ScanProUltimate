@@ -31,6 +31,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.example.scanpro.AppViewModel
 import com.example.scanpro.R
+import com.example.scanpro.core.ui.FeedbackPromptDialog
+import com.example.scanpro.core.ui.SupportTopic
+import com.example.scanpro.core.ui.contactSupport
+import com.example.scanpro.core.ui.findActivity
+import com.example.scanpro.core.ui.requestInAppReview
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
 import com.example.scanpro.navigation.ScanProDestinations
@@ -57,7 +62,26 @@ fun ScanProApp(
     val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
     val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
+    val reviewDue by viewModel.reviewDue.collectAsStateWithLifecycle()
+    val feedbackPromptDue by viewModel.feedbackPromptDue.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Requested once, after the third saved scan, from the screen the scan lands on; marked as requested
+    // before the call so a crash or a quota-limited answer never leads to a second ask.
+    LaunchedEffect(reviewDue, sessionUnlocked) {
+        if (!reviewDue || !sessionUnlocked) return@LaunchedEffect
+        viewModel.markReviewRequested()
+        context.findActivity()?.let { requestInAppReview(it) }
+    }
+    if (feedbackPromptDue && sessionUnlocked) {
+        FeedbackPromptDialog(
+            onShareFeedback = {
+                viewModel.markFeedbackPromptShown()
+                contactSupport(context, SupportTopic.FEEDBACK)
+            },
+            onLater = viewModel::markFeedbackPromptShown
+        )
+    }
     val navController = rememberNavController()
     val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.importPdf(uri)
@@ -74,12 +98,12 @@ fun ScanProApp(
             // Clear before running the action, so a message the action posts (e.g. "Document restored")
             // isn't wiped by this clear.
             viewModel.clearMessage(current)
-            if (result == SnackbarResult.ActionPerformed) current.onAction?.invoke()
+            if (result == SnackbarResult.ActionPerformed) current.onAction?.invoke() else current.onDismiss?.invoke()
         }
     }
     LaunchedEffect(exportArtifact) {
         exportArtifact?.let {
-            shareFile(context, it.path, it.mimeType, it.title)
+            shareFile(context, it.path, it.mimeType, it.title, it.extraPaths)
             viewModel.clearExportArtifact()
         }
     }
@@ -164,14 +188,21 @@ fun ScanProApp(
                     onImportImages = onImportImages,
                     onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
                     onCameraScanComplete = viewModel::importCameraSession,
+                    onCameraRetakeComplete = viewModel::replacePageFromCamera,
                     onFallbackScanner = onFallbackScanner,
                     onAppLockChange = onAppLockChange
                 )
             }
         }
 
-        // First launch only, drawn over the app so the library is already there underneath when it closes.
-        if (welcomeShowing) {
+        // First launch only, drawn over the app so the library is already there underneath when it
+        // closes; it fades and grows away rather than cutting to the home screen.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = welcomeShowing,
+            enter = androidx.compose.animation.EnterTransition.None,
+            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(320)) +
+                androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(320), targetScale = 1.06f)
+        ) {
             androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
             WelcomeScreen(
                 onStartScanning = {

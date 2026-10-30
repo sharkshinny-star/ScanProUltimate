@@ -13,8 +13,10 @@ object CacheCleaner {
     private val TEMP_PREFIXES = listOf(
         "view_", "search_temp_", "pdf_import_", "pdf_unlocked_", "import_", "restore_", "merge_in_",
         "split_in", "extract_in", "rotate_in", "organize_in", "protect_in", "unlock_in", "count_",
-        "thumb_", "markup_", "inspect_", "pdf2img_in", "img2pdf_", "raster_", "temp_in_"
+        "thumb_", "markup_", "inspect_", "pdf2img_in", "img2pdf_", "raster_", "temp_in_",
+        "ocr_in_", "ocr_page_", "form_read_", "form_fill_", "view_"
     )
+    private const val SESSION_MAX_AGE_MS = 24L * 60 * 60 * 1000
     private const val TEMP_MAX_AGE_MS = 60L * 60 * 1000
     private const val EXPORT_MAX_AGE_MS = 24L * 60 * 60 * 1000
 
@@ -23,6 +25,10 @@ object CacheCleaner {
         cache.listFiles()?.forEach { file ->
             val isTemp = TEMP_PREFIXES.any { file.name.startsWith(it) }
             if (isTemp && now - file.lastModified() > TEMP_MAX_AGE_MS) file.deleteRecursively()
+        }
+        // Scanner sessions nobody came back to (the scanner itself cleans them only when it is opened again).
+        File(cache, com.example.scanpro.scanner.SESSION_ROOT).listFiles()?.forEach { session ->
+            if (now - session.lastModified() > SESSION_MAX_AGE_MS) session.deleteRecursively()
         }
         // Results of the PDF tools (including unlocked copies) are shareable for a day, then go.
         File(cache, "exports").listFiles()?.forEach { file ->

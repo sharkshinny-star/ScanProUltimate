@@ -2,7 +2,6 @@ package com.example.scanpro.feature.tools
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -45,7 +44,7 @@ import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FindInPage
-import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Description
@@ -73,7 +72,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -89,10 +87,25 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.isActive
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -107,6 +120,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -136,23 +150,25 @@ data class PdfToolCard(
     @StringRes val title: Int,
     @StringRes val description: Int,
     val icon: ImageVector,
-    @StringRes val badge: Int? = null
+    @StringRes val badge: Int? = null,
+    /** Colour family of the icon tile, so related tools share a hue. */
+    val tone: com.example.scanpro.core.designsystem.TileTone = com.example.scanpro.core.designsystem.TileTone.Indigo
 )
 
 private val PDF_TOOLS = listOf(
-    PdfToolCard("fill", R.string.tools_fill_form, R.string.tools_fill_form_desc, Icons.Default.EditNote, badge = R.string.tools_badge_new),
-    PdfToolCard("ocr", R.string.tools_make_searchable, R.string.tools_make_searchable_desc, Icons.Default.FindInPage, badge = R.string.tools_badge_new),
-    PdfToolCard("compress", R.string.tools_compress_pdf, R.string.tools_compress_pdf_desc, Icons.Default.Compress),
-    PdfToolCard("merge", R.string.tools_merge_pdfs, R.string.tools_merge_pdfs_desc, Icons.Default.Merge),
-    PdfToolCard("split", R.string.tools_split_pdf, R.string.tools_split_pdf_desc, Icons.Default.CallSplit),
-    PdfToolCard("extract", R.string.tools_extract_pages, R.string.tools_extract_pages_desc, Icons.AutoMirrored.Filled.DriveFileMove),
-    PdfToolCard("rotate", R.string.tools_rotate_pages, R.string.tools_rotate_pages_desc, Icons.AutoMirrored.Filled.RotateRight),
-    PdfToolCard("organize", R.string.tools_organize_pages, R.string.tools_organize_pages_desc, Icons.Default.Description),
-    PdfToolCard("img2pdf", R.string.tools_images_to_pdf, R.string.tools_images_to_pdf_desc, Icons.Default.Image),
-    PdfToolCard("pdf2img", R.string.tools_pdf_to_images, R.string.tools_pdf_to_images_desc, Icons.Default.PictureAsPdf),
-    PdfToolCard("protect", R.string.tools_protect_pdf, R.string.tools_protect_pdf_desc, Icons.Default.Lock),
-    PdfToolCard("unlock", R.string.tools_unlock_pdf, R.string.tools_unlock_pdf_desc, Icons.Default.LockOpen),
-    PdfToolCard("viewer", R.string.tools_pdf_viewer, R.string.tools_pdf_viewer_desc, Icons.Default.Visibility)
+    PdfToolCard("fill", R.string.tools_card_fill, R.string.tools_fill_form_desc, Icons.Default.EditNote, badge = R.string.tools_badge_new, tone = com.example.scanpro.core.designsystem.TileTone.Violet),
+    PdfToolCard("ocr", R.string.tools_card_ocr, R.string.tools_make_searchable_desc, Icons.Default.FindInPage, badge = R.string.tools_badge_new, tone = com.example.scanpro.core.designsystem.TileTone.Teal),
+    PdfToolCard("compress", R.string.tools_card_compress, R.string.tools_card_compress_desc, Icons.Default.Compress, tone = com.example.scanpro.core.designsystem.TileTone.Amber),
+    PdfToolCard("merge", R.string.tools_card_merge, R.string.tools_card_merge_desc, Icons.Default.Merge, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
+    PdfToolCard("split", R.string.tools_card_split, R.string.tools_card_split_desc, Icons.AutoMirrored.Filled.CallSplit, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
+    PdfToolCard("extract", R.string.tools_card_extract, R.string.tools_card_extract_desc, Icons.AutoMirrored.Filled.DriveFileMove, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
+    PdfToolCard("rotate", R.string.tools_card_rotate, R.string.tools_card_rotate_desc, Icons.AutoMirrored.Filled.RotateRight, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
+    PdfToolCard("organize", R.string.tools_card_organize, R.string.tools_card_organize_desc, Icons.Default.Description, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
+    PdfToolCard("img2pdf", R.string.tools_images_to_pdf, R.string.tools_card_img2pdf_desc, Icons.Default.Image, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
+    PdfToolCard("pdf2img", R.string.tools_card_pdf2img, R.string.tools_card_pdf2img_desc, Icons.Default.PictureAsPdf, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
+    PdfToolCard("protect", R.string.tools_card_protect, R.string.tools_card_protect_desc, Icons.Default.Lock, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
+    PdfToolCard("unlock", R.string.tools_card_unlock, R.string.tools_card_unlock_desc, Icons.Default.LockOpen, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
+    PdfToolCard("viewer", R.string.tools_card_viewer, R.string.tools_card_viewer_desc, Icons.Default.Visibility, tone = com.example.scanpro.core.designsystem.TileTone.Slate)
 )
 
 private data class ThumbnailPageModel(
@@ -219,14 +235,12 @@ fun PdfToolsScreen(
     }
     val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { saveTo(it) }
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { saveTo(it) }
-    val saveImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
+    val saveJpegLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
     // Declared with its own type: a PNG saved through the JPEG launcher is renamed "page.png.jpg" by some providers.
     val savePngLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { saveTo(it) }
 
-    val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val tool = selectedTool
-        if (uri == null || tool == null) return@rememberLauncherForActivityResult
-        viewModel.rememberPdfs(listOf(uri))
+    fun startTool(tool: String, uri: Uri) {
+        selectedTool = tool
         pendingUri = uri
         when (tool) {
             "compress" -> showCompressDialog = true
@@ -235,31 +249,61 @@ fun PdfToolsScreen(
             "unlock" -> viewModel.inspectForUnlock(uri)
             "split" -> showSplitDialog = true
             "organize", "extract", "rotate" -> showOrganizerSheet = true
-            "viewer" -> onOpenPdfViewer(uri, pdfDocumentTitle)
+            "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
         }
     }
+    val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val tool = selectedTool
+        if (uri == null || tool == null) return@rememberLauncherForActivityResult
+        viewModel.rememberPdfs(listOf(uri))
+        startTool(tool, uri)
+    }
+    // Files picked for Merge or Images to PDF are shown in a list to put in order before the tool runs:
+    // the picker's order is not the order they were tapped in.
+    var ordering by remember { mutableStateOf<List<Uri>?>(null) }
+    var imagesToConvert by remember { mutableStateOf<List<Uri>?>(null) }
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty() && selectedTool == "merge") {
             viewModel.rememberPdfs(uris)
-            viewModel.merge(uris)
+            if (uris.size == 1) viewModel.merge(uris) else ordering = uris
         }
     }
     val imagesPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
-        if (uris.isNotEmpty() && selectedTool == "img2pdf") viewModel.imagesToPdf(uris)
+        if (uris.isNotEmpty() && selectedTool == "img2pdf") {
+            if (uris.size == 1) imagesToConvert = uris else ordering = uris
+        }
+    }
+    ordering?.let { picked ->
+        OrderFilesDialog(
+            title = stringResource(if (selectedTool == "merge") R.string.tools_order_merge_title else R.string.tools_order_pages_title),
+            items = picked,
+            nameOf = viewModel::displayName,
+            onDismiss = { ordering = null },
+            onConfirm = { inOrder ->
+                ordering = null
+                if (selectedTool == "merge") viewModel.merge(inOrder) else imagesToConvert = inOrder
+            }
+        )
+    }
+    imagesToConvert?.let { images ->
+        ImagesToPdfDialog(
+            count = images.size,
+            onDismiss = { imagesToConvert = null },
+            onConfirm = { size, quality ->
+                imagesToConvert = null
+                viewModel.imagesToPdf(images, size, quality)
+            }
+        )
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.tools_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                title = { Text(stringResource(R.string.tools_screen_title)) },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         bottomBar = bottomBar,
@@ -285,6 +329,7 @@ fun PdfToolsScreen(
                         RecentPdfsRow(
                             items = recentPdfs,
                             onOpen = { onOpenPdfViewer(it.uri, it.name) },
+                            onUseWith = { pdf, tool -> startTool(tool, pdf.uri) },
                             onRemove = { viewModel.forgetPdf(it.uri) },
                             onClear = viewModel::clearRecentPdfs
                         )
@@ -325,7 +370,6 @@ fun PdfToolsScreen(
                         if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
                         else shareFile(context, file.absolutePath, mimeFor(file), file.name)
                     },
-                    onShare = { shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name) },
                     onSaveAs = {
                         saveSourceFile = result.outputFile
                         val name = result.outputFile.name
@@ -333,7 +377,7 @@ fun PdfToolsScreen(
                             "application/zip" -> saveZipLauncher.launch(name)
                             "application/pdf" -> saveFileLauncher.launch(name)
                             "image/png" -> savePngLauncher.launch(name)
-                            else -> saveImageLauncher.launch(name)
+                            else -> saveJpegLauncher.launch(name)
                         }
                     }
                 )
@@ -354,10 +398,11 @@ fun PdfToolsScreen(
 
             if (showPdfToImagesDialog && uri != null) {
                 PdfToImagesDialog(
+                    uri = uri,
                     onDismiss = { showPdfToImagesDialog = false },
-                    onConfirm = { format ->
+                    onConfirm = { format, pages, scale ->
                         showPdfToImagesDialog = false
-                        viewModel.pdfToImages(uri, format)
+                        viewModel.pdfToImages(uri, format, pages, scale)
                     }
                 )
             }
@@ -432,6 +477,7 @@ fun PdfToolsScreen(
 
             if (showSplitDialog && uri != null) {
                 SplitDialog(
+                    uri = uri,
                     onDismiss = { showSplitDialog = false },
                     onConfirm = { mode, rangesText, everyN ->
                         showSplitDialog = false
@@ -464,7 +510,7 @@ private fun CompressPdfDialog(
     onConfirm: (preset: CompressionPreset) -> Unit
 ) {
     var originalSize by remember { mutableLongStateOf(0L) }
-    var compressionPercent by remember { mutableFloatStateOf(50f) }
+    var preset by remember { mutableStateOf(CompressionPreset.BALANCED) }
 
     LaunchedEffect(uri) {
         withContext(Dispatchers.IO) {
@@ -474,103 +520,41 @@ private fun CompressPdfDialog(
         }
     }
 
-    val estimatedSize = (originalSize * ((100f - compressionPercent) / 100f)).toLong().coerceAtLeast(1024L)
-    val estimatedSavings = compressionPercent.toInt()
-
-    val preset = when {
-        compressionPercent >= 65f -> CompressionPreset.MAXIMUM
-        compressionPercent >= 40f -> CompressionPreset.BALANCED
-        else -> CompressionPreset.HIGH
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_compress_title)) },
+        title = { Text(stringResource(R.string.tools_compress_pdf)) },
         text = {
             Column {
-                Text(stringResource(R.string.tools_compress_drag_hint), style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(stringResource(R.string.tools_compress_original_size), style = MaterialTheme.typography.labelMedium)
-                            Text(formatBytes(originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(stringResource(R.string.tools_compress_estimated_output), style = MaterialTheme.typography.labelMedium)
-                            Text(
-                                stringResource(R.string.tools_compress_estimate_value, formatBytes(estimatedSize), estimatedSavings),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(stringResource(R.string.tools_compress_current_size), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatBytes(originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                // Three real presets rather than a slider: the engine has three settings, and how much a
+                // file shrinks depends on what is in it, so no number is promised up front.
+                CompressionPreset.entries.forEach { item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { preset = item }
+                            .padding(vertical = 6.dp)
+                    ) {
+                        RadioButton(selected = preset == item, onClick = { preset = item })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(stringResource(item.labelRes), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(item.descriptionRes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(stringResource(R.string.tools_compress_reduction), style = MaterialTheme.typography.labelLarge)
-                    Text(stringResource(R.string.tools_compress_percent, compressionPercent.toInt()), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                }
-
-                Slider(
-                    value = compressionPercent,
-                    onValueChange = { compressionPercent = it },
-                    valueRange = 15f..85f,
-                    steps = 14,
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.tools_compress_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(stringResource(R.string.tools_compress_high_quality_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(R.string.tools_compress_max_compression_label), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    FilterChip(
-                        selected = compressionPercent in 15f..35f,
-                        onClick = { compressionPercent = 25f },
-                        modifier = Modifier.weight(1f),
-                        label = { Text(stringResource(R.string.tools_compress_high), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
-                    )
-                    FilterChip(
-                        selected = compressionPercent in 36f..60f,
-                        onClick = { compressionPercent = 50f },
-                        modifier = Modifier.weight(1f),
-                        label = { Text(stringResource(R.string.tools_compress_balanced), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
-                    )
-                    FilterChip(
-                        selected = compressionPercent > 60f,
-                        onClick = { compressionPercent = 75f },
-                        modifier = Modifier.weight(1f),
-                        label = { Text(stringResource(R.string.tools_compress_maximum), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
-                    )
-                }
             }
         },
         confirmButton = {
@@ -586,37 +570,89 @@ private fun CompressPdfDialog(
 
 @Composable
 private fun PdfToImagesDialog(
+    uri: Uri,
     onDismiss: () -> Unit,
-    onConfirm: (format: ImageExportFormat) -> Unit
+    onConfirm: (format: ImageExportFormat, pages: List<Int>?, scale: Float) -> Unit
 ) {
+    val context = LocalContext.current
     var format by remember { mutableStateOf(ImageExportFormat.JPEG) }
+    var scale by remember { mutableFloatStateOf(2.5f) }
+    var allPages by remember { mutableStateOf(true) }
+    var rangesText by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var pageCount by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(uri) {
+        pageCount = withContext(Dispatchers.IO) {
+            runCatching {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { android.graphics.pdf.PdfRenderer(it).use { r -> r.pageCount } }
+            }.getOrNull()
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_pdf2img_title)) },
+        title = { Text(stringResource(R.string.tools_pdf2img_dialog_title)) },
         text = {
-            Column {
-                Text(stringResource(R.string.tools_pdf2img_hint), style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(16.dp))
-
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(stringResource(R.string.tools_pdf2img_format), style = MaterialTheme.typography.labelLarge)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ImageExportFormat.entries.forEach { item ->
+                        FilterChip(selected = format == item, onClick = { format = item }, label = { Text(item.extension.uppercase()) })
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(stringResource(R.string.tools_pdf2img_resolution), style = MaterialTheme.typography.labelLarge)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(R.string.tools_pdf2img_screen to 1.5f, R.string.tools_pdf2img_sharp to 2.5f, R.string.tools_pdf2img_print to 4f).forEach { (label, value) ->
+                        FilterChip(selected = scale == value, onClick = { scale = value }, label = { Text(stringResource(label)) })
+                    }
+                }
+                Text(
+                    stringResource(
+                        when (scale) {
+                            1.5f -> R.string.tools_pdf2img_screen_hint
+                            4f -> R.string.tools_pdf2img_print_hint
+                            else -> R.string.tools_pdf2img_sharp_hint
+                        }
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(stringResource(R.string.tools_pdf2img_pages), style = MaterialTheme.typography.labelLarge)
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
-                        selected = format == ImageExportFormat.JPEG,
-                        onClick = { format = ImageExportFormat.JPEG },
-                        label = { Text(stringResource(R.string.tools_pdf2img_jpeg)) }
+                        selected = allPages,
+                        onClick = { allPages = true; error = null },
+                        label = { Text(pageCount?.let { stringResource(R.string.tools_pdf2img_all_count, it) } ?: stringResource(R.string.tools_pdf2img_all)) }
                     )
-                    FilterChip(
-                        selected = format == ImageExportFormat.PNG,
-                        onClick = { format = ImageExportFormat.PNG },
-                        label = { Text(stringResource(R.string.tools_pdf2img_png)) }
+                    FilterChip(selected = !allPages, onClick = { allPages = false }, label = { Text(stringResource(R.string.tools_pdf2img_some)) })
+                }
+                if (!allPages) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = rangesText,
+                        onValueChange = { rangesText = it; error = null },
+                        label = { Text(stringResource(R.string.tools_pdf2img_pages_label)) },
+                        singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(format) }) {
-                Text(stringResource(R.string.tools_pdf2img_export))
-            }
+            Button(onClick = {
+                if (allPages) onConfirm(format, null, scale)
+                else com.example.scanpro.imaging.PageRanges.parse(rangesText, pageCount ?: Int.MAX_VALUE)
+                    .onSuccess { ranges -> onConfirm(format, ranges.flatMap { it.toList() }, scale) }
+                    .onFailure { error = it.message }
+            }) { Text(stringResource(R.string.tools_pdf2img_export_button)) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
@@ -624,40 +660,137 @@ private fun PdfToImagesDialog(
     )
 }
 
-/** PDFs opened before, newest first: tap to read, long-press to remove from the list. */
+/** Puts picked files in the order the user wants before Merge or Images to PDF runs on them. */
+@Composable
+private fun OrderFilesDialog(
+    title: String,
+    items: List<Uri>,
+    nameOf: (Uri) -> String,
+    onDismiss: () -> Unit,
+    onConfirm: (List<Uri>) -> Unit
+) {
+    val order = remember(items) { androidx.compose.runtime.mutableStateListOf<Uri>().apply { addAll(items) } }
+    val names = remember(items) { items.associateWith(nameOf) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(stringResource(R.string.tools_order_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 380.dp)) {
+                    itemsIndexed(order, key = { _, uri -> uri.toString() }) { index, uri ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.tools_order_position, index + 1), style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(28.dp))
+                            Text(names[uri] ?: stringResource(R.string.tools_file_fallback_name), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            IconButton(enabled = index > 0, onClick = { order.add(index - 1, order.removeAt(index)) }) {
+                                Icon(Icons.Default.KeyboardArrowUp, contentDescription = stringResource(R.string.tools_order_move_up))
+                            }
+                            IconButton(enabled = index < order.lastIndex, onClick = { order.add(index + 1, order.removeAt(index)) }) {
+                                Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.tools_order_move_down))
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = { onConfirm(order.toList()) }) { Text(stringResource(R.string.common_continue)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+    )
+}
+
+/** Page size and quality for Images to PDF, the two settings the engine already takes. */
+@Composable
+private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (PdfPageSize, PdfQuality) -> Unit) {
+    var size by remember { mutableStateOf(PdfPageSize.AUTO) }
+    var quality by remember { mutableStateOf(PdfQuality.BALANCED) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(pluralStringResource(R.plurals.tools_img2pdf_title, count, count)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.tools_img2pdf_page_size), style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PdfPageSize.entries.forEach { item -> FilterChip(selected = size == item, onClick = { size = item }, label = { Text(stringResource(item.labelRes)) }) }
+                }
+                Text(
+                    if (size == PdfPageSize.AUTO) stringResource(R.string.tools_img2pdf_auto_hint) else stringResource(R.string.tools_img2pdf_fitted_hint, stringResource(size.labelRes)),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp)
+                )
+                Spacer(Modifier.height(14.dp))
+                Text(stringResource(R.string.tools_img2pdf_quality), style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PdfQuality.entries.forEach { item -> FilterChip(selected = quality == item, onClick = { quality = item }, label = { Text(stringResource(item.labelRes)) }) }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = { onConfirm(size, quality) }) { Text(stringResource(R.string.tools_img2pdf_create)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+    )
+}
+
+/** PDFs opened before, newest first: tap to read, long-press for the tools or to remove from the list. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPdfsRow(
     items: List<RecentPdf>,
     onOpen: (RecentPdf) -> Unit,
+    onUseWith: (RecentPdf, String) -> Unit,
     onRemove: (RecentPdf) -> Unit,
     onClear: () -> Unit
 ) {
     var removing by remember { mutableStateOf<RecentPdf?>(null) }
+    var menuFor by remember { mutableStateOf<RecentPdf?>(null) }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.tools_recent_pdfs), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            TextButton(onClick = onClear) { Text(stringResource(R.string.tools_recent_clear)) }
+            var confirmClear by remember { mutableStateOf(false) }
+            TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.tools_recent_clear)) }
+            if (confirmClear) {
+                AlertDialog(
+                    onDismissRequest = { confirmClear = false },
+                    title = { Text(stringResource(R.string.tools_recent_clear_title)) },
+                    text = { Text(stringResource(R.string.tools_recent_clear_body)) },
+                    confirmButton = { TextButton(onClick = { confirmClear = false; onClear() }) { Text(stringResource(R.string.tools_recent_clear)) } },
+                    dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.common_cancel)) } }
+                )
+            }
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(items, key = { it.uri.toString() }) { pdf ->
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier
-                        .width(150.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .width(160.dp)
+                        .clip(RoundedCornerShape(16.dp))
                         .combinedClickable(
                             onClickLabel = stringResource(R.string.tools_recent_open),
-                            onLongClickLabel = stringResource(R.string.tools_recent_remove_from_recent),
-                            onLongClick = { removing = pdf },
+                            onLongClickLabel = stringResource(R.string.tools_recent_use_with_tool),
+                            onLongClick = { menuFor = pdf },
                             onClick = { onOpen(pdf) }
                         )
                 ) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(28.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(pdf.name, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Box {
+                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            com.example.scanpro.core.designsystem.IconTile(Icons.Default.PictureAsPdf, com.example.scanpro.core.designsystem.TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
+                            Spacer(Modifier.width(10.dp))
+                            Text(pdf.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                        // Long-press: the same file straight into a tool, without picking it again.
+                        DropdownMenu(expanded = menuFor == pdf, onDismissRequest = { menuFor = null }) {
+                            PDF_TOOLS.filter { it.id !in setOf("merge", "img2pdf") }.forEach { tool ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(tool.title)) },
+                                    leadingIcon = { Icon(tool.icon, contentDescription = null) },
+                                    onClick = { menuFor = null; onUseWith(pdf, tool.id) }
+                                )
+                            }
+                            androidx.compose.material3.HorizontalDivider()
+                            DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_remove_from_recent)) }, onClick = { menuFor = null; removing = pdf })
+                        }
                     }
                 }
             }
@@ -682,32 +815,33 @@ private fun ToolCardItem(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = tool.icon,
-                        contentDescription = stringResource(tool.title),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
+            Row(verticalAlignment = Alignment.Top) {
+                com.example.scanpro.core.designsystem.IconTile(tool.icon, tool.tone, size = 44.dp, corner = 14.dp)
+                Spacer(Modifier.weight(1f))
+                tool.badge?.let { badge ->
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
+                        Text(
+                            stringResource(badge),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = stringResource(tool.title),
                 style = MaterialTheme.typography.titleMedium,
@@ -762,7 +896,9 @@ private fun ProcessingOverlay(
                         text = label,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        // Screen readers hear each step as it changes.
+                        modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
                     )
                     if (total > 0) {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -793,11 +929,16 @@ private fun ResultDialog(
     result: PdfToolResult,
     onDismiss: () -> Unit,
     onView: () -> Unit,
-    onShare: () -> Unit,
     onSaveAs: () -> Unit
 ) {
     val context = LocalContext.current
-    var showShareSheet by remember { mutableStateOf(false) }
+    val saveLabel = stringResource(
+        when (mimeFor(result.outputFile)) {
+            "application/zip" -> R.string.tools_result_save_zip_cd
+            "application/pdf" -> R.string.tools_result_save_pdf_cd
+            else -> R.string.tools_result_save_image_cd
+        }
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -850,7 +991,7 @@ private fun ResultDialog(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Card(
-                        onClick = { showShareSheet = true },
+                        onClick = { shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name) },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                         shape = CircleShape,
                         modifier = Modifier.size(64.dp)
@@ -867,7 +1008,7 @@ private fun ResultDialog(
                         modifier = Modifier.size(64.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(Icons.Default.Download, contentDescription = stringResource(R.string.tools_result_save_pdf_to_local_cd), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Icon(Icons.Default.Download, contentDescription = saveLabel, tint = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
                     }
                 }
@@ -877,7 +1018,7 @@ private fun ResultDialog(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Text(stringResource(R.string.common_share), style = MaterialTheme.typography.labelSmall)
-                    Text(stringResource(R.string.tools_result_save_to_local), style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.tools_share_save_to_device), style = MaterialTheme.typography.labelSmall)
                 }
             }
         },
@@ -885,90 +1026,6 @@ private fun ResultDialog(
             Button(onClick = onDismiss) { Text(stringResource(R.string.common_done)) }
         }
     )
-
-    if (showShareSheet) {
-        SmartShareSheet(
-            file = result.outputFile,
-            onDismiss = { showShareSheet = false },
-            onSaveToLocal = {
-                showShareSheet = false
-                onSaveAs()
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SmartShareSheet(
-    file: File,
-    onDismiss: () -> Unit,
-    onSaveToLocal: () -> Unit
-) {
-    val context = LocalContext.current
-
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(file.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            val kind = when (mimeFor(file)) {
-                "application/zip" -> "ZIP"
-                "image/png" -> "PNG"
-                "image/jpeg" -> "JPG"
-                else -> "PDF"
-            }
-            Text(stringResource(R.string.tools_share_as_via, kind), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // One share action with the file's real type. Offering "Share as JPG" for a PDF sent PDF bytes labelled
-            // as an image, which receiving apps could not open.
-            ListItem(
-                modifier = Modifier.clickable {
-                    onDismiss()
-                    shareFile(context, file.absolutePath, mimeFor(file), file.name)
-                },
-                headlineContent = { Text(stringResource(R.string.tools_share_as, kind)) },
-                leadingContent = { Icon(if (kind == "PDF") Icons.Default.PictureAsPdf else Icons.Default.Image, contentDescription = null) }
-            )
-
-            ListItem(
-                modifier = Modifier.clickable {
-                    onDismiss()
-                    // Without the Drive app, the system picker still lists Drive, Dropbox, OneDrive and folders.
-                    if (!saveToGoogleDrive(context, file.absolutePath, mimeFor(file))) onSaveToLocal()
-                },
-                headlineContent = { Text(stringResource(R.string.tools_share_save_to_drive)) },
-                supportingContent = { Text(stringResource(R.string.tools_share_save_to_drive_hint)) },
-                leadingContent = { Icon(Icons.Default.AddToDrive, contentDescription = null) }
-            )
-
-            ListItem(
-                modifier = Modifier.clickable {
-                    onDismiss()
-                    onSaveToLocal()
-                },
-                headlineContent = { Text(stringResource(R.string.tools_share_save_to_device)) },
-                supportingContent = { Text(stringResource(R.string.tools_share_save_to_device_hint)) },
-                leadingContent = { Icon(Icons.Default.Download, contentDescription = null) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
 }
 
 @Composable
@@ -979,6 +1036,7 @@ private fun PasswordDialog(
     onConfirm: (String) -> Unit
 ) {
     var password by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorText by remember(initialError) { mutableStateOf(initialError) }
     // Unlocking must accept whatever password the file already has, however short.
@@ -986,6 +1044,7 @@ private fun PasswordDialog(
     // Read here: the confirm button's onClick is not a composable scope.
     val tooShortError = stringResource(R.string.tools_password_too_short, minimum)
     val enterPasswordError = stringResource(R.string.tools_password_enter)
+    val mismatchError = stringResource(R.string.tools_password_mismatch)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -993,8 +1052,8 @@ private fun PasswordDialog(
         text = {
             Column {
                 Text(
-                    if (isProtect) stringResource(R.string.tools_password_protect_hint, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH)
-                    else stringResource(R.string.tools_password_unlock_hint),
+                    if (isProtect) stringResource(R.string.tools_password_protect_warning, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH)
+                    else stringResource(R.string.tools_password_unlock_prompt),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1015,6 +1074,18 @@ private fun PasswordDialog(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (isProtect) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = confirm,
+                        onValueChange = { confirm = it; errorText = null },
+                        label = { Text(stringResource(R.string.tools_password_confirm_label)) },
+                        singleLine = true,
+                        isError = errorText != null,
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 if (errorText != null) {
                     Text(
                         errorText!!,
@@ -1030,6 +1101,8 @@ private fun PasswordDialog(
                 onClick = {
                     if (password.length < minimum) {
                         errorText = if (isProtect) tooShortError else enterPasswordError
+                    } else if (isProtect && confirm != password) {
+                        errorText = mismatchError
                     } else {
                         onConfirm(password)
                     }
@@ -1046,19 +1119,35 @@ private fun PasswordDialog(
 
 @Composable
 private fun SplitDialog(
+    uri: Uri,
     onDismiss: () -> Unit,
     onConfirm: (SplitMode, String, Int) -> Unit
 ) {
+    val context = LocalContext.current
     var mode by remember { mutableStateOf(SplitMode.SINGLE_PAGES) }
-    var rangesText by remember { mutableStateOf("1-2, 3-5") }
+    var rangesText by remember { mutableStateOf("") }
     var chunkSizeText by remember { mutableStateOf("2") }
+    var error by remember { mutableStateOf<String?>(null) }
+    // The page count makes the ranges checkable before the split starts.
+    var pageCount by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(uri) {
+        pageCount = withContext(Dispatchers.IO) {
+            runCatching {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { android.graphics.pdf.PdfRenderer(it).use { r -> r.pageCount } }
+            }.getOrNull()
+        }
+        if (rangesText.isEmpty()) pageCount?.let { rangesText = if (it > 1) "1-${(it + 1) / 2}, ${(it + 1) / 2 + 1}-$it" else "1" }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.tools_split_title)) },
         text = {
             Column {
-                Text(stringResource(R.string.tools_split_hint), style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    pageCount?.let { pluralStringResource(R.plurals.tools_split_has_pages, it, it) } ?: stringResource(R.string.tools_split_choose),
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 SplitMode.entries.forEach { item ->
@@ -1082,18 +1171,23 @@ private fun SplitDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = rangesText,
-                        onValueChange = { rangesText = it },
-                        label = { Text(stringResource(R.string.tools_split_ranges_label)) },
+                        onValueChange = { rangesText = it; error = null },
+                        label = { Text(stringResource(R.string.tools_split_ranges_example)) },
                         singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else if (mode == SplitMode.EVERY_N_PAGES) {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = chunkSizeText,
-                        onValueChange = { chunkSizeText = it },
-                        label = { Text(stringResource(R.string.tools_split_chunk_label)) },
+                        onValueChange = { chunkSizeText = it.filter(Char::isDigit); error = null },
+                        label = { Text(stringResource(R.string.tools_split_pages_per_file)) },
                         singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1102,8 +1196,19 @@ private fun SplitDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val n = chunkSizeText.toIntOrNull() ?: 1
-                    onConfirm(mode, rangesText, n)
+                    val n = chunkSizeText.toIntOrNull()
+                    val pages = pageCount ?: Int.MAX_VALUE
+                    when (mode) {
+                        SplitMode.PAGE_RANGES -> com.example.scanpro.imaging.PageRanges.parse(rangesText, pages)
+                            .onSuccess { onConfirm(mode, rangesText, 1) }
+                            .onFailure { error = it.message }
+                        SplitMode.EVERY_N_PAGES -> when {
+                            n == null || n < 1 -> error = context.getString(R.string.tools_split_enter_count)
+                            pageCount != null && n >= pageCount!! -> error = context.getString(R.string.tools_split_whole_document, pageCount!!)
+                            else -> onConfirm(mode, rangesText, n)
+                        }
+                        SplitMode.SINGLE_PAGES -> onConfirm(mode, rangesText, 1)
+                    }
                 }
             ) {
                 Text(stringResource(R.string.tools_split_pdf))
@@ -1140,12 +1245,29 @@ private fun PdfPageOrganizerSheet(
     // Read here: the loading coroutine below is not a composable scope.
     val protectedError = stringResource(R.string.tools_organizer_protected)
     val openFailedError = stringResource(R.string.tools_organizer_open_failed)
+    // Every change is recorded first, so Undo steps back through deletes, moves and rotations.
+    val undoStack = remember { mutableStateListOf<List<ThumbnailPageModel>>() }
+    fun change(block: () -> Unit) {
+        undoStack.add(pages.toList())
+        if (undoStack.size > 50) undoStack.removeAt(0)
+        block()
+    }
+    fun undo() {
+        val previous = undoStack.removeLastOrNull() ?: return
+        pages.clear()
+        pages.addAll(previous)
+    }
 
     androidx.compose.runtime.DisposableEffect(uri) {
         var opened: com.example.scanpro.imaging.PdfPreviewSession? = null
         val job = scope.launch {
             try {
                 val preview = com.example.scanpro.imaging.PdfPreviewSession.open(context, uri)
+                if (!isActive) {
+                    // The sheet closed while the file was opening; nothing will close this later.
+                    preview.close()
+                    return@launch
+                }
                 opened = preview
                 session = preview
                 if (pages.isEmpty()) pages.addAll((0 until preview.pageCount).map { ThumbnailPageModel(it, selected = defaultSelected) })
@@ -1187,6 +1309,37 @@ private fun PdfPageOrganizerSheet(
                     }
                 },
                 actions = {
+                    IconButton(onClick = ::undo, enabled = undoStack.isNotEmpty()) {
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.common_undo))
+                    }
+                    var organizerMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { organizerMenu = true }, enabled = !isLoading) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more))
+                        }
+                        DropdownMenu(expanded = organizerMenu, onDismissRequest = { organizerMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.tools_organizer_rotate_all)) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = null) },
+                                onClick = { organizerMenu = false; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(rotation = (pages[i].rotation + 90) % 360) } } }
+                            )
+                            if (mode != "rotate") {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(if (pages.all { it.selected }) R.string.tools_organizer_untick_all else R.string.tools_organizer_tick_all)) },
+                                    onClick = { organizerMenu = false; val all = pages.all { it.selected }; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(selected = !all) } } }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.common_reset)) },
+                                leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
+                                onClick = {
+                                    organizerMenu = false
+                                    val count = session?.pageCount ?: pages.size
+                                    change { pages.clear(); pages.addAll((0 until count).map { ThumbnailPageModel(it, selected = defaultSelected) }) }
+                                }
+                            )
+                        }
+                    }
                     Button(
                         onClick = {
                             // Organize drops the pages that were unticked; Rotate keeps every page.
@@ -1243,18 +1396,12 @@ private fun PdfPageOrganizerSheet(
                             showCheckbox = mode != "rotate",
                             canMoveLeft = mode == "organize" && index > 0,
                             canMoveRight = mode == "organize" && index < pages.lastIndex,
-                            onToggle = { pages[index] = item.copy(selected = !item.selected) },
-                            onRotate = { pages[index] = item.copy(rotation = (item.rotation + 90) % 360) },
-                            onMoveLeft = {
-                                val prev = pages[index - 1]
-                                pages[index - 1] = item
-                                pages[index] = prev
-                            },
-                            onMoveRight = {
-                                val next = pages[index + 1]
-                                pages[index + 1] = item
-                                pages[index] = next
-                            }
+                            onToggle = { change { pages[index] = item.copy(selected = !item.selected) } },
+                            onRotate = { change { pages[index] = item.copy(rotation = (item.rotation + 90) % 360) } },
+                            onMoveLeft = { change { pages.add(index - 1, pages.removeAt(index)) } },
+                            onMoveRight = { change { pages.add(index + 1, pages.removeAt(index)) } },
+                            onMoveToStart = { change { pages.add(0, pages.removeAt(index)) } },
+                            onMoveToEnd = { change { pages.add(pages.removeAt(index)) } }
                         )
                     }
                 }
@@ -1274,7 +1421,9 @@ private fun OrganizerPageCard(
     onToggle: () -> Unit,
     onRotate: () -> Unit,
     onMoveLeft: () -> Unit,
-    onMoveRight: () -> Unit
+    onMoveRight: () -> Unit,
+    onMoveToStart: () -> Unit = {},
+    onMoveToEnd: () -> Unit = {}
 ) {
     val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
         val preview = session ?: return@produceState
@@ -1283,7 +1432,11 @@ private fun OrganizerPageCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = showCheckbox, onClick = onToggle),
+            // One focus target per card, read as a checkbox with its state, rather than a card plus a separate box.
+            .then(
+                if (showCheckbox) Modifier.toggleable(value = item.selected, role = Role.Checkbox, onValueChange = { onToggle() })
+                else Modifier
+            ),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (showCheckbox && item.selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -1296,7 +1449,7 @@ private fun OrganizerPageCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = { onToggle() })
+                if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = null)
                 Text(stringResource(R.string.tools_page_number, item.index + 1), style = MaterialTheme.typography.labelMedium)
             }
             Box(
@@ -1325,15 +1478,18 @@ private fun OrganizerPageCard(
                 IconButton(onClick = onRotate) {
                     Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = stringResource(R.string.tools_organizer_rotate_page_cd, item.index + 1))
                 }
+                // Tap: one step. Long press: all the way to the start or end.
                 if (canMoveLeft) {
-                    IconButton(onClick = onMoveLeft) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = stringResource(R.string.tools_organizer_move_earlier_cd, item.index + 1))
-                    }
+                    Box(
+                        Modifier.size(48.dp).combinedClickable(onClick = onMoveLeft, onLongClick = onMoveToStart, onLongClickLabel = stringResource(R.string.tools_organizer_move_to_start)),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = stringResource(R.string.tools_organizer_move_earlier_cd, item.index + 1)) }
                 }
                 if (canMoveRight) {
-                    IconButton(onClick = onMoveRight) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.tools_organizer_move_later_cd, item.index + 1))
-                    }
+                    Box(
+                        Modifier.size(48.dp).combinedClickable(onClick = onMoveRight, onLongClick = onMoveToEnd, onLongClickLabel = stringResource(R.string.tools_organizer_move_to_end)),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.tools_organizer_move_later_cd, item.index + 1)) }
                 }
             }
         }
@@ -1346,3 +1502,19 @@ private fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "zip" -> "application/zip"
     else -> "application/pdf"
 }
+
+@get:StringRes
+private val CompressionPreset.labelRes: Int
+    get() = when (this) {
+        CompressionPreset.HIGH -> R.string.tools_compress_preset_high
+        CompressionPreset.BALANCED -> R.string.tools_compress_preset_balanced
+        CompressionPreset.MAXIMUM -> R.string.tools_compress_preset_maximum
+    }
+
+@get:StringRes
+private val CompressionPreset.descriptionRes: Int
+    get() = when (this) {
+        CompressionPreset.HIGH -> R.string.tools_compress_preset_high_desc
+        CompressionPreset.BALANCED -> R.string.tools_compress_preset_balanced_desc
+        CompressionPreset.MAXIMUM -> R.string.tools_compress_preset_maximum_desc
+    }

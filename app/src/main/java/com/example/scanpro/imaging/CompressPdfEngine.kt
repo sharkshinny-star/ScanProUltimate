@@ -17,6 +17,8 @@ import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -54,11 +56,11 @@ object CompressPdfEngine {
         context: Context,
         inputUri: Uri,
         preset: CompressionPreset,
-        // Under cache/exports, the only cache folder the FileProvider can share.
-        outputDir: File = File(context.cacheDir, "exports").apply { mkdirs() }
+        /** Where the result goes; under cache/exports, the only cache folder the FileProvider can share. */
+        outputFile: File = PdfToolsEngine.outputLocation(context, "compressed_${UUID.randomUUID()}.pdf")
     ): CompressionResult = withContext(Dispatchers.IO) {
+        val outputDir = outputFile.parentFile!!.apply { mkdirs() }
         val tempInput = File(outputDir, "temp_in_${UUID.randomUUID()}.pdf")
-        val outputFile = File(outputDir, "compressed_${UUID.randomUUID()}.pdf")
 
         try {
             context.contentResolver.openInputStream(inputUri)?.use { input ->
@@ -66,7 +68,7 @@ object CompressPdfEngine {
             } ?: error("Could not open input PDF")
 
             val originalSize = tempInput.length()
-            val pageTotal = runCatching { PDDocument.load(tempInput).use { it.numberOfPages } }.getOrDefault(1)
+            val pageTotal = runCatching { PDDocument.load(tempInput, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { it.numberOfPages } }.getOrDefault(1)
             val hasSearchableText = checkSearchableText(tempInput)
 
             if (hasSearchableText) {
@@ -91,6 +93,7 @@ object CompressPdfEngine {
             rasterCompressPdf(context, tempInput, outputFile, preset)
 
             // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.
+            // The original is untouched, so whatever text it had is still there.
             val keptOriginal = outputFile.length() <= 0L || outputFile.length() >= originalSize
             if (keptOriginal) tempInput.copyTo(outputFile, overwrite = true)
             val finalSize = outputFile.length()
@@ -99,28 +102,37 @@ object CompressPdfEngine {
                 pageCount = pageTotal,
                 originalSizeBytes = originalSize,
                 compressedSizeBytes = if (finalSize > 0) finalSize else originalSize,
-                // The untouched original still has whatever text it had; only a rebuilt file lost it.
-                isSearchablePreserved = keptOriginal && hasSearchableText
+                // Only a rebuilt file that had text lost it; the untouched original, or one with no text, lost nothing.
+                isSearchablePreserved = keptOriginal || !hasSearchableText
             )
+        } catch (error: Throwable) {
+            outputFile.delete()
+            throw error
         } finally {
             tempInput.delete()
         }
     }
 
     private fun checkSearchableText(pdfFile: File): Boolean = runCatching {
-        PDDocument.load(pdfFile).use { doc ->
+        // Stops at the first page with text; a 300-page scan with none is read at most 25 pages deep.
+        PDDocument.load(pdfFile, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { doc ->
             val stripper = PDFTextStripper()
-            val text = stripper.getText(doc)
-            text.trim().isNotBlank()
+            (1..minOf(doc.numberOfPages, 25)).any { page ->
+                stripper.startPage = page
+                stripper.endPage = page
+                stripper.getText(doc).isNotBlank()
+            }
         }
     }.getOrDefault(false)
 
-    private fun recompressEmbeddedImages(
+    private suspend fun recompressEmbeddedImages(
         inputPdf: File,
         outputPdf: File,
         preset: CompressionPreset
     ) {
-        with(PdfToolsEngine) { PDDocument.load(inputPdf).editable() }.use { pdDoc ->
+        with(PdfToolsEngine) {
+            PDDocument.load(inputPdf, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
+        }.use { pdDoc ->
             // Pages often share one resource dictionary or one image (a logo, a background). Each original image is
             // recompressed once and reused; without this a shared image was shrunk again on every page.
             val replaced = HashMap<com.tom_roush.pdfbox.cos.COSBase, PDImageXObject>()
@@ -128,6 +140,8 @@ object CompressPdfEngine {
             for (page in pdDoc.pages) {
                 val resources = page.resources ?: continue
                 for (xObjectName in resources.xObjectNames) {
+                    // Cancel stops at the next image rather than after the whole file.
+                    coroutineContext.ensureActive()
                     val xObject = resources.getXObject(xObjectName)
                     // Stencil masks (1-bit text layers of scanner PDFs, painted in the fill colour) are already tiny
                     // and cannot be expressed as a JPEG: re-encoding one paints an opaque picture over the page.
@@ -158,7 +172,7 @@ object CompressPdfEngine {
         }
     }
 
-    private fun rasterCompressPdf(
+    private suspend fun rasterCompressPdf(
         context: Context,
         inputPdf: File,
         outputPdf: File,
@@ -171,6 +185,7 @@ object CompressPdfEngine {
             ParcelFileDescriptor.open(inputPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
                 PdfRenderer(descriptor).use { renderer ->
                     for (index in 0 until renderer.pageCount) {
+                        coroutineContext.ensureActive()
                         renderer.openPage(index).use { page ->
                             val scale = preset.targetScale * 2.0f
                             val width = (page.width * scale).toInt().coerceAtLeast(1)

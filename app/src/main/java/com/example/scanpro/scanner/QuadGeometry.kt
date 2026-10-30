@@ -33,4 +33,16 @@ internal object QuadGeometry {
         val worst = interiorAngles(points).maxOf { abs(it - 90.0) }
         return (1.0 - worst / 45.0).coerceIn(0.0, 1.0)
     }
+
+    /** Area of the outline as a share of the (normalised) frame, by the shoelace formula. */
+    fun area(quad: com.example.scanpro.data.CropQuad): Float {
+        val p = listOf(quad.topLeft, quad.topRight, quad.bottomRight, quad.bottomLeft)
+        var sum = 0.0
+        for (i in p.indices) {
+            val a = p[i]
+            val b = p[(i + 1) % p.size]
+            sum += a.x.toDouble() * b.y - b.x.toDouble() * a.y
+        }
+        return (kotlin.math.abs(sum) / 2.0).toFloat().coerceIn(0f, 1f)
+    }
 }

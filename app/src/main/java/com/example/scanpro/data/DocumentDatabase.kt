@@ -311,7 +311,8 @@ class DocumentDatabase @Inject constructor(
         LibraryOverview(
             documentCount = dao.countActive(),
             favoriteCount = dao.countFavorites(),
-            folders = dao.loadFolderNames().distinct().sorted(),
+            // One entry per folder whatever the case of its name, as the filter itself ignores case.
+            folders = dao.loadFolderNames().distinctBy { it.lowercase() }.sortedBy { it.lowercase() },
             recent = dao.loadRecentSummaries(recentLimit).map { it.toSummary() }
         )
     }
@@ -358,24 +359,36 @@ class DocumentDatabase @Inject constructor(
         })
     }
 
+    /**
+     * Every word of the query must be found somewhere in the document: in its title, folder or tags, or in
+     * the text of any of its pages. Words may be on different pages, and a query can mix a title word with
+     * a page-text word.
+     */
     fun search(query: String): List<DocumentSummary> {
         val clean = query.trim()
         if (clean.isBlank()) return loadSummaries()
+        val words = clean.lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }.take(8)
         return room.runInTransaction<List<DocumentSummary>> {
-            // Escape LIKE wildcards so typing % or _ searches for those characters instead of matching everything.
-        val metadata = dao.searchMetadata(clean.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"))
-            val fts = buildFtsQuery(clean)?.let { safeQuery ->
-                runCatching { dao.searchOcrDocumentIds(safeQuery) }.getOrDefault(emptyList())
-            }.orEmpty().toSet()
-
-            val byId = LinkedHashMap<String, DocumentEntity>()
-            metadata.forEach { byId[it.id] = it }
-            val ftsOnly = fts.filterNot { it in byId }
-            ftsOnly.chunked(SQL_VARIABLE_CHUNK)
+            var matching: Set<String>? = null
+            for (word in words) {
+                val ids = HashSet<String>()
+                // Escape LIKE wildcards so typing % or _ searches for those characters instead of matching everything.
+                dao.searchMetadata(word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"))
+                    .filter { entity -> entity.title.contains(word, true) || entity.folderName.contains(word, true) ||
+                        JsonCodec.decodeStringList(entity.tagsJson).any { it.contains(word, true) } }
+                    .forEach { ids += it.id }
+                buildFtsQuery(word)?.let { safeQuery ->
+                    runCatching { dao.searchOcrDocumentIds(safeQuery) }.getOrDefault(emptyList()).forEach { ids += it }
+                }
+                matching = matching?.intersect(ids) ?: ids
+                if (matching.isEmpty()) break
+            }
+            val found = matching.orEmpty()
+            if (found.isEmpty()) return@runInTransaction emptyList()
+            val entities = found.toList().chunked(SQL_VARIABLE_CHUNK)
                 .flatMap(dao::loadDocuments)
                 .filter { it.trashedAt == 0L }
-                .forEach { byId[it.id] = it }
-            loadSummaries(byId.values.sortedByDescending { it.updatedAt }.map { it.id })
+            loadSummaries(entities.sortedByDescending { it.updatedAt }.map { it.id })
         }
     }
 

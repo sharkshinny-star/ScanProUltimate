@@ -2,6 +2,7 @@ package com.example.scanpro.data
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -91,4 +92,58 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         pendingThemeMode.value = value
         context.scanProSettings.edit { it[keyThemeMode] = value.name }
     }
+
+    private val keyDynamicColor = booleanPreferencesKey("dynamic_color")
+
+    /** Android 12+ wallpaper colours instead of the brand palette. Off by default so the brand shows first. */
+    val dynamicColor: Flow<Boolean> = preferences.map { it[keyDynamicColor] ?: false }
+
+    suspend fun setDynamicColor(value: Boolean) {
+        context.scanProSettings.edit { it[keyDynamicColor] = value }
+    }
+
+    private val keyLibrarySort = stringPreferencesKey("library_sort")
+    private val keyLibraryGrid = booleanPreferencesKey("library_grid")
+    private val keyTrashRetentionDays = intPreferencesKey("trash_retention_days")
+    private val keyDefaultOcrScript = stringPreferencesKey("default_ocr_script")
+
+    /** How the Files tab is sorted; a [com.example.scanpro.feature.library.LibrarySort] name. */
+    val librarySort: Flow<String> = preferences.map { it[keyLibrarySort] ?: "UPDATED" }
+    val libraryGrid: Flow<Boolean> = preferences.map { it[keyLibraryGrid] ?: true }
+    /** Days a deleted document waits in the recycle bin before it is removed for good. */
+    val trashRetentionDays: Flow<Int> = preferences.map { it[keyTrashRetentionDays] ?: DEFAULT_TRASH_RETENTION_DAYS }
+    /** The OCR script new documents are read with. */
+    val defaultOcrScript: Flow<OcrScript> = preferences.map { runCatching { OcrScript.valueOf(it[keyDefaultOcrScript].orEmpty()) }.getOrDefault(OcrScript.LATIN) }
+
+    suspend fun setLibrarySort(value: String) { context.scanProSettings.edit { it[keyLibrarySort] = value } }
+    suspend fun setLibraryGrid(value: Boolean) { context.scanProSettings.edit { it[keyLibraryGrid] = value } }
+    suspend fun setTrashRetentionDays(value: Int) { context.scanProSettings.edit { it[keyTrashRetentionDays] = value.coerceIn(1, 365) } }
+    suspend fun setDefaultOcrScript(value: OcrScript) { context.scanProSettings.edit { it[keyDefaultOcrScript] = value.name } }
+
+    private val keyCompletedScans = intPreferencesKey("completed_scans")
+    private val keyReviewRequested = booleanPreferencesKey("review_requested")
+    private val keyFeedbackPromptShown = booleanPreferencesKey("feedback_prompt_shown")
+
+    /** Camera scans saved as documents, for deciding when to ask about the experience. */
+    val completedScans: Flow<Int> = preferences.map { it[keyCompletedScans] ?: 0 }
+    /** True once the Play in-app review flow has been requested; it is requested only once. */
+    val reviewRequested: Flow<Boolean> = preferences.map { it[keyReviewRequested] ?: false }
+    /** True once the "How was your scanning experience?" prompt has been shown; it is shown only once. */
+    val feedbackPromptShown: Flow<Boolean> = preferences.map { it[keyFeedbackPromptShown] ?: false }
+
+    suspend fun recordCompletedScan() {
+        context.scanProSettings.edit { it[keyCompletedScans] = (it[keyCompletedScans] ?: 0) + 1 }
+    }
+
+    suspend fun setReviewRequested() {
+        context.scanProSettings.edit { it[keyReviewRequested] = true }
+    }
+
+    suspend fun setFeedbackPromptShown() {
+        context.scanProSettings.edit { it[keyFeedbackPromptShown] = true }
+    }
 }
+
+const val DEFAULT_TRASH_RETENTION_DAYS = 7
+/** The recycle-bin retention choices offered in Settings. */
+val TRASH_RETENTION_CHOICES = listOf(7, 14, 30)

@@ -68,8 +68,28 @@ object PdfToolsEngine {
      * Where tool results go: under cache/exports/, the only cache folder the FileProvider shares,
      * and which DocumentRepository clears of anything older than a day.
      */
-    fun outputLocation(context: Context, name: String): File =
-        File(File(context.cacheDir, "exports"), name).also { it.parentFile?.mkdirs() }
+    fun outputLocation(context: Context, name: String): File {
+        val dir = File(context.cacheDir, "exports").also { it.mkdirs() }
+        val plain = File(dir, name)
+        if (!plain.exists()) return plain
+        // A second run on the same file gets " (2)", not a silently replaced result.
+        val base = name.substringBeforeLast('.')
+        val extension = name.substringAfterLast('.', "")
+        var n = 2
+        while (File(dir, "$base ($n)" + if (extension.isEmpty()) "" else ".$extension").exists()) n++
+        return File(dir, "$base ($n)" + if (extension.isEmpty()) "" else ".$extension")
+    }
+
+    /** The picked file's own name without its extension, safe for a file name, or [fallback]. */
+    fun sourceBaseName(context: Context, uri: Uri, fallback: String = "PDF"): String {
+        val shown = runCatching {
+            context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        }.getOrNull() ?: uri.lastPathSegment
+        val base = shown.orEmpty().substringAfterLast('/').substringBeforeLast('.').trim()
+        return com.example.scanpro.data.fileSafeName(base.ifBlank { fallback })
+    }
 
     suspend fun mergePdfs(
         context: Context,
@@ -151,7 +171,7 @@ object PdfToolsEngine {
                         for (i in 0 until totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(i + 1, totalPages, "Splitting page ${i + 1} of $totalPages…")
-                            val outFile = File(outputDir, "page_${i + 1}.pdf")
+                            val outFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.pdf")
                             PDDocument().use { singleDoc ->
                                 singleDoc.addImportedPage(doc.getPage(i))
                                 singleDoc.save(outFile)
@@ -229,7 +249,7 @@ object PdfToolsEngine {
                 pageCount = selectedPageIndices.size,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "Successfully extracted ${selectedPageIndices.size} pages"
+                message = "Extracted ${selectedPageIndices.size} ${if (selectedPageIndices.size == 1) "page" else "pages"}"
             )
         } finally {
             tempFile.delete()
@@ -382,7 +402,11 @@ object PdfToolsEngine {
         inputUri: Uri,
         format: ImageExportFormat = ImageExportFormat.JPEG,
         outputDir: File,
-        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        /** 1-based pages to export; null for every page. */
+        pages: List<Int>? = null,
+        /** Render scale over the PDF's 72 dpi: 2 is about 150 dpi, 2.5 is sharp on screen, 4 is print quality. */
+        scale: Float = 2.5f
     ): List<File> = withContext(Dispatchers.IO) {
         outputDir.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in_${UUID.randomUUID()}.pdf")
@@ -392,13 +416,16 @@ object PdfToolsEngine {
             ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                 PdfRenderer(pfd).use { renderer ->
                     val totalPages = renderer.pageCount
-                    for (i in 0 until totalPages) {
+                    val chosen = pages?.filter { it in 1..totalPages }?.distinct()?.sorted() ?: (1..totalPages).toList()
+                    require(chosen.isNotEmpty()) { "None of the chosen pages exist in this PDF" }
+                    chosen.forEachIndexed { step, pageNumber ->
+                        val i = pageNumber - 1
                         if (!coroutineContext.isActive) throw InterruptedException("PDF to images operation cancelled")
-                        onProgress(i + 1, totalPages, "Exporting page ${i + 1} of $totalPages as ${format.extension.uppercase()}…")
+                        onProgress(step + 1, chosen.size, "Exporting page $pageNumber as ${format.extension.uppercase()}…")
 
                         renderer.openPage(i).use { page ->
-                            // 2.5x for sharp text, but capped so a poster-sized page can't run out of memory.
-                            val scale = minOf(2.5f, 4000f / maxOf(page.width, page.height))
+                            // Capped so a poster-sized page can't run out of memory.
+                            val scale = minOf(scale, 4000f / maxOf(page.width, page.height))
                             val width = (page.width * scale).toInt().coerceAtLeast(1)
                             val height = (page.height * scale).toInt().coerceAtLeast(1)
                             val bitmap = createBitmap(width, height)
@@ -435,6 +462,9 @@ object PdfToolsEngine {
         val tempFile = copyUriToTemp(context, inputUri, "protect_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
+            if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
+                throw IllegalArgumentException("This PDF already needs a password to open. Unlock it first, then protect it with the new password.")
+            }
             PdfSecurity.protect(tempFile, outputFile, password)
             var pageCount = 0
             PDDocument.load(outputFile, password).use { pageCount = it.numberOfPages }
@@ -459,6 +489,7 @@ object PdfToolsEngine {
         val tempFile = copyUriToTemp(context, inputUri, "unlock_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
+            val before = PdfSecurity.protection(tempFile)
             PdfSecurity.unlock(tempFile, outputFile, password)
             var pageCount = 0
             PDDocument.load(outputFile).use { pageCount = it.numberOfPages }
@@ -467,7 +498,8 @@ object PdfToolsEngine {
                 pageCount = pageCount,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "PDF password protection removed successfully"
+                message = if (before == PdfProtection.PASSWORD_REQUIRED) "The password was removed; the copy opens without one"
+                else "Editing and copying restrictions were removed; the file never needed a password to open"
             )
         } finally {
             tempFile.delete()
@@ -498,12 +530,16 @@ object PdfToolsEngine {
                 out.closeEntry()
             }
         }
+        // The zip is the result; keeping the loose pages beside it would use the space twice.
+        files.forEach { it.delete() }
+        files.firstOrNull()?.parentFile?.takeIf { it != zip.parentFile }?.delete()
         zip
     }
 
     /** Opens a PDF, turning "wrong password" on a protected file into a message that says what to do. */
     internal fun loadPdf(file: File): PDDocument = try {
-        PDDocument.load(file).editable()
+        // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
+        PDDocument.load(file, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
     } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
         throw IllegalArgumentException("This PDF is password-protected. Unlock it first with the Unlock PDF tool.", error)
     }
@@ -530,24 +566,6 @@ object PdfToolsEngine {
         return tempFile
     }
 
-    private fun parsePageRanges(rangeStr: String, maxPages: Int): List<IntRange> {
-        val result = mutableListOf<IntRange>()
-        val parts = rangeStr.split(",", ";").map { it.trim() }
-        for (part in parts) {
-            if (part.contains("-")) {
-                val bounds = part.split("-").map { it.trim().toIntOrNull() }
-                if (bounds.size == 2 && bounds[0] != null && bounds[1] != null) {
-                    val start = bounds[0]!!.coerceIn(1, maxPages)
-                    val end = bounds[1]!!.coerceIn(1, maxPages)
-                    if (start <= end) result.add(start..end)
-                }
-            } else {
-                val num = part.toIntOrNull()
-                if (num != null && num in 1..maxPages) {
-                    result.add(num..num)
-                }
-            }
-        }
-        return result
-    }
+    private fun parsePageRanges(rangeStr: String, maxPages: Int): List<IntRange> =
+        PageRanges.parse(rangeStr, maxPages).getOrElse { error(it.message ?: "Invalid page ranges") }
 }

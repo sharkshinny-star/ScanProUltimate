@@ -15,6 +15,7 @@ import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.LibraryOverview
 import com.example.scanpro.data.LibrarySort
 import com.example.scanpro.data.ScanDocument
+import com.example.scanpro.data.SettingsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -32,8 +33,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Backs the Home, Files and Search tabs. Each tab gets its own instance, so queries don't leak between them. */
@@ -43,22 +44,27 @@ class LibraryViewModel @Inject constructor(
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
     private val library: DocumentLibrary,
+    private val settings: SettingsStore,
     private val savedState: SavedStateHandle
 ) : ViewModel() {
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    // Filters live here (saved with the screen's state) because they decide which pages the database returns.
+    // Folder and favorites filters live here (saved with the screen's state) because they decide which pages
+    // the database returns.
     val folder: StateFlow<String> = savedState.getStateFlow(KEY_FOLDER, "")
     val favoritesOnly: StateFlow<Boolean> = savedState.getStateFlow(KEY_FAVORITES, false)
-    private val sortName: StateFlow<String> = savedState.getStateFlow(KEY_SORT, LibrarySort.UPDATED.name)
-    val sort: StateFlow<LibrarySort> = sortName
+
+    /** Sort and layout of the Files tab, kept across restarts. */
+    val sort: StateFlow<LibrarySort> = settings.librarySort
         .map { name -> runCatching { LibrarySort.valueOf(name) }.getOrDefault(LibrarySort.UPDATED) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, LibrarySort.UPDATED)
+    val libraryGrid: StateFlow<Boolean> = settings.libraryGrid.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     fun setFolder(value: String) { savedState[KEY_FOLDER] = value }
     fun setFavoritesOnly(value: Boolean) { savedState[KEY_FAVORITES] = value }
-    fun setSort(value: LibrarySort) { savedState[KEY_SORT] = value.name }
+    fun setSort(value: LibrarySort) { viewModelScope.launch { settings.setLibrarySort(value.name) } }
+    fun setLibraryGrid(value: Boolean) { viewModelScope.launch { settings.setLibraryGrid(value) } }
 
     val overview: StateFlow<LibraryOverview> = library.overview
 
@@ -101,12 +107,38 @@ class LibraryViewModel @Inject constructor(
 
     fun setQuery(value: String) { _query.value = value }
 
-    fun moveManyToTrash(ids: Set<String>) {
-        if (ids.isEmpty()) return
+    fun stopCurrent() = operations.cancelCurrent()
+
+    /** Moves the selected documents into [folder] (blank for the top level). False when the app was busy. */
+    fun moveToFolder(ids: Set<String>, folder: String): Boolean = operations.run(
+        context.resources.getQuantityString(R.plurals.lib_msg_moving_documents, ids.size, ids.size),
+        if (folder.isBlank()) context.getString(R.string.lib_msg_moved_out_of_folder)
+        else context.getString(R.string.lib_msg_moved_to_folder, folder.trim())
+    ) { ids.forEach { repository.setFolder(it, folder) } }
+
+    /** Stars or unstars the selected documents. False when the app was busy. */
+    fun setFavorite(ids: Set<String>, favorite: Boolean): Boolean = operations.run(
+        null,
+        context.getString(if (favorite) R.string.lib_msg_added_to_favorites else R.string.lib_msg_removed_from_favorites)
+    ) {
+        ids.forEach { id -> if (repository.loadDocument(id)?.isFavorite == !favorite) repository.toggleFavorite(id) }
+    }
+
+    /** Takes every document out of the folder; the folder is gone once it holds nothing. */
+    fun deleteFolder(name: String): Boolean = operations.run(
+        context.getString(R.string.lib_msg_removing_folder),
+        context.getString(R.string.lib_msg_folder_removed)
+    ) { repository.deleteFolder(name) }
+
+    suspend fun folderExists(name: String): Boolean = repository.folderExists(name)
+
+    /** False when the app was busy and nothing was done, so the caller keeps its selection. */
+    fun moveManyToTrash(ids: Set<String>): Boolean {
+        if (ids.isEmpty()) return false
         val label = if (ids.size == 1) context.getString(R.string.msg_moved_to_recycle_bin) else context.getString(R.string.msg_documents_moved_to_recycle_bin, ids.size)
-        operations.run(context.getString(R.string.msg_moving_documents_to_recycle_bin, ids.size), null) {
+        return operations.run(context.getString(R.string.msg_moving_documents_to_recycle_bin, ids.size), null) {
             ids.forEach { repository.moveToTrash(it) }
-            operations.showMessage(UiMessage(label, actionLabel = context.getString(R.string.common_undo)) { restore(ids) })
+            operations.showMessage(UiMessage(label, actionLabel = context.getString(R.string.common_undo), onAction = { restore(ids) }))
         }
     }
 
@@ -118,17 +150,23 @@ class LibraryViewModel @Inject constructor(
     /** Hands [onReady] the selected documents with current PDFs, rebuilding stale ones first. */
     fun withFreshPdfs(ids: Set<String>, onReady: (List<ScanDocument>) -> Unit) {
         operations.run(context.getString(R.string.msg_preparing_pdfs), null) {
-            val fresh = library.withFreshPdfs(ids)
-            withContext(Dispatchers.Main) { onReady(fresh) }
+            val fresh = library.freshPdfs(ids)
+            if (fresh.failed > 0) {
+                operations.showMessage(
+                    if (fresh.documents.isEmpty()) context.getString(R.string.lib_msg_pdf_not_prepared)
+                    else context.getString(R.string.lib_msg_pdfs_left_out, fresh.failed, ids.size)
+                )
+            }
+            if (fresh.documents.isNotEmpty()) withContext(Dispatchers.Main) { onReady(fresh.documents) }
         }
     }
 
-    fun renameFolder(oldName: String, newName: String) =
+    /** False when the app was busy and the folder was not renamed. */
+    fun renameFolder(oldName: String, newName: String): Boolean =
         operations.run(context.getString(R.string.msg_renaming_folder), context.getString(R.string.msg_folder_renamed)) { repository.renameFolder(oldName, newName) }
 
     private companion object {
         const val KEY_FOLDER = "folder"
         const val KEY_FAVORITES = "favoritesOnly"
-        const val KEY_SORT = "sort"
     }
 }

@@ -251,4 +251,19 @@
     <string name="doc_position">Position</string>
     <string name="doc_colour">Colour</string>
     <string name="doc_transparency">Transparency: %1$d%%</string>
+    <!-- Added by the compassionate-turing merge -->
+    <string name="doc_crop_page_x_of_y">%1$d of %2$d</string>
+    <string name="doc_crop_hint_corners">Drag the corners to the page edges</string>
+    <string name="doc_crop_hint_curve">Drag the middle handles to follow the page\'s curve</string>
+    <string name="doc_pdf_updates_on_export">PDF updates on export</string>
+    <string name="doc_replace_corrected_title">Replace corrected text?</string>
+    <string name="doc_replace_corrected_message">Some pages have text you corrected by hand. Reading the pages again replaces it; Undo can bring it back afterwards.</string>
+    <string name="doc_read_again">Read again</string>
+    <string name="doc_split_into_title">Split into %1$d documents?</string>
+    <string name="doc_split_into_message">Each page becomes its own document named \"%1$s - 1\", \"%1$s - 2\" and so on. This document is kept.</string>
+    <string name="doc_retake">Retake</string>
+    <string name="doc_share_png">Share PNG</string>
+    <string name="doc_duplicate_doc">Duplicate doc</string>
+    <string name="doc_search_documents">Search documents</string>
+    <string name="doc_no_documents_match">No documents match</string>
 </resources>
