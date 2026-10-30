@@ -252,6 +252,10 @@ class PdfToolsViewModel @Inject constructor(
             _message.value = "Still working on the previous task"
             return
         }
+        if (session.changes.isEmpty() && !flatten) {
+            _message.value = "Nothing has been changed yet"
+            return
+        }
         // The form window would hide the progress, Cancel and any error, so it closes first; a failure
         // brings it back with the entries intact.
         _form.value = null

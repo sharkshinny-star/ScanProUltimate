@@ -249,7 +249,7 @@ object PdfToolsEngine {
                 pageCount = selectedPageIndices.size,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "Successfully extracted ${selectedPageIndices.size} pages"
+                message = "Extracted ${selectedPageIndices.size} ${if (selectedPageIndices.size == 1) "page" else "pages"}"
             )
         } finally {
             tempFile.delete()
@@ -462,6 +462,9 @@ object PdfToolsEngine {
         val tempFile = copyUriToTemp(context, inputUri, "protect_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
+            if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
+                throw IllegalArgumentException("This PDF already needs a password to open. Unlock it first, then protect it with the new password.")
+            }
             PdfSecurity.protect(tempFile, outputFile, password)
             var pageCount = 0
             PDDocument.load(outputFile, password).use { pageCount = it.numberOfPages }
@@ -486,6 +489,7 @@ object PdfToolsEngine {
         val tempFile = copyUriToTemp(context, inputUri, "unlock_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
+            val before = PdfSecurity.protection(tempFile)
             PdfSecurity.unlock(tempFile, outputFile, password)
             var pageCount = 0
             PDDocument.load(outputFile).use { pageCount = it.numberOfPages }
@@ -494,7 +498,8 @@ object PdfToolsEngine {
                 pageCount = pageCount,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "PDF password protection removed successfully"
+                message = if (before == PdfProtection.PASSWORD_REQUIRED) "The password was removed; the copy opens without one"
+                else "Editing and copying restrictions were removed; the file never needed a password to open"
             )
         } finally {
             tempFile.delete()

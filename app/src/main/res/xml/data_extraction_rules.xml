@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cloud backup stays off: documents are private and must not leave the device for a server.
+  Device-to-device transfer (encrypted, phone to phone when setting up a new phone) is allowed, so
+  the library and settings move with the user instead of being lost.
+-->
 <data-extraction-rules>
     <cloud-backup disableIfNoEncryptionCapabilities="true">
         <exclude domain="file" path="." />
@@ -6,8 +11,6 @@
         <exclude domain="sharedpref" path="." />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="file" path="." />
-        <exclude domain="database" path="." />
-        <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="../cache" />
     </device-transfer>
 </data-extraction-rules>

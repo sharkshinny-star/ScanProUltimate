@@ -95,6 +95,14 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.isActive
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -360,7 +368,6 @@ fun PdfToolsScreen(
                         if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
                         else shareFile(context, file.absolutePath, mimeFor(file), file.name)
                     },
-                    onShare = { shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name) },
                     onSaveAs = {
                         saveSourceFile = result.outputFile
                         val name = result.outputFile.name
@@ -728,7 +735,17 @@ private fun RecentPdfsRow(
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Recent PDFs", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            TextButton(onClick = onClear) { Text("Clear") }
+            var confirmClear by remember { mutableStateOf(false) }
+            TextButton(onClick = { confirmClear = true }) { Text("Clear") }
+            if (confirmClear) {
+                AlertDialog(
+                    onDismissRequest = { confirmClear = false },
+                    title = { Text("Clear recent PDFs?") },
+                    text = { Text("The files stay on your device; only this list is cleared.") },
+                    confirmButton = { TextButton(onClick = { confirmClear = false; onClear() }) { Text("Clear") } },
+                    dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } }
+                )
+            }
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(items, key = { it.uri.toString() }) { pdf ->
@@ -868,7 +885,9 @@ private fun ProcessingOverlay(
                         text = label,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        // Screen readers hear each step as it changes.
+                        modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
                     )
                     if (total > 0) {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -899,11 +918,14 @@ private fun ResultDialog(
     result: PdfToolResult,
     onDismiss: () -> Unit,
     onView: () -> Unit,
-    onShare: () -> Unit,
     onSaveAs: () -> Unit
 ) {
     val context = LocalContext.current
-    var showShareSheet by remember { mutableStateOf(false) }
+    val saveLabel = when (mimeFor(result.outputFile)) {
+        "application/zip" -> "Save zip to device"
+        "application/pdf" -> "Save PDF to device"
+        else -> "Save image to device"
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -956,7 +978,7 @@ private fun ResultDialog(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Card(
-                        onClick = { showShareSheet = true },
+                        onClick = { shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name) },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                         shape = CircleShape,
                         modifier = Modifier.size(64.dp)
@@ -973,7 +995,7 @@ private fun ResultDialog(
                         modifier = Modifier.size(64.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(Icons.Default.Download, contentDescription = "Save PDF to local", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Icon(Icons.Default.Download, contentDescription = saveLabel, tint = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
                     }
                 }
@@ -983,7 +1005,7 @@ private fun ResultDialog(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Text("Share", style = MaterialTheme.typography.labelSmall)
-                    Text("Save to Local", style = MaterialTheme.typography.labelSmall)
+                    Text("Save to device", style = MaterialTheme.typography.labelSmall)
                 }
             }
         },
@@ -991,90 +1013,6 @@ private fun ResultDialog(
             Button(onClick = onDismiss) { Text("Done") }
         }
     )
-
-    if (showShareSheet) {
-        SmartShareSheet(
-            file = result.outputFile,
-            onDismiss = { showShareSheet = false },
-            onSaveToLocal = {
-                showShareSheet = false
-                onSaveAs()
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SmartShareSheet(
-    file: File,
-    onDismiss: () -> Unit,
-    onSaveToLocal: () -> Unit
-) {
-    val context = LocalContext.current
-
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(file.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            val kind = when (mimeFor(file)) {
-                "application/zip" -> "ZIP"
-                "image/png" -> "PNG"
-                "image/jpeg" -> "JPG"
-                else -> "PDF"
-            }
-            Text("Share as $kind via", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // One share action with the file's real type. Offering "Share as JPG" for a PDF sent PDF bytes labelled
-            // as an image, which receiving apps could not open.
-            ListItem(
-                modifier = Modifier.clickable {
-                    onDismiss()
-                    shareFile(context, file.absolutePath, mimeFor(file), file.name)
-                },
-                headlineContent = { Text("Share as $kind") },
-                leadingContent = { Icon(if (kind == "PDF") Icons.Default.PictureAsPdf else Icons.Default.Image, contentDescription = null) }
-            )
-
-            ListItem(
-                modifier = Modifier.clickable {
-                    onDismiss()
-                    // Without the Drive app, the system picker still lists Drive, Dropbox, OneDrive and folders.
-                    if (!saveToGoogleDrive(context, file.absolutePath, mimeFor(file))) onSaveToLocal()
-                },
-                headlineContent = { Text("Save to Google Drive") },
-                supportingContent = { Text("Or pick Dropbox, OneDrive or another cloud app") },
-                leadingContent = { Icon(Icons.Default.AddToDrive, contentDescription = null) }
-            )
-
-            ListItem(
-                modifier = Modifier.clickable {
-                    onDismiss()
-                    onSaveToLocal()
-                },
-                headlineContent = { Text("Save to device") },
-                supportingContent = { Text("Choose a folder such as Downloads") },
-                leadingContent = { Icon(Icons.Default.Download, contentDescription = null) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
 }
 
 @Composable
@@ -1287,12 +1225,29 @@ private fun PdfPageOrganizerSheet(
     val scope = rememberCoroutineScope()
     var session by remember { mutableStateOf<com.example.scanpro.imaging.PdfPreviewSession?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    // Every change is recorded first, so Undo steps back through deletes, moves and rotations.
+    val undoStack = remember { mutableStateListOf<List<ThumbnailPageModel>>() }
+    fun change(block: () -> Unit) {
+        undoStack.add(pages.toList())
+        if (undoStack.size > 50) undoStack.removeAt(0)
+        block()
+    }
+    fun undo() {
+        val previous = undoStack.removeLastOrNull() ?: return
+        pages.clear()
+        pages.addAll(previous)
+    }
 
     androidx.compose.runtime.DisposableEffect(uri) {
         var opened: com.example.scanpro.imaging.PdfPreviewSession? = null
         val job = scope.launch {
             try {
                 val preview = com.example.scanpro.imaging.PdfPreviewSession.open(context, uri)
+                if (!isActive) {
+                    // The sheet closed while the file was opening; nothing will close this later.
+                    preview.close()
+                    return@launch
+                }
                 opened = preview
                 session = preview
                 if (pages.isEmpty()) pages.addAll((0 until preview.pageCount).map { ThumbnailPageModel(it, selected = defaultSelected) })
@@ -1332,6 +1287,37 @@ private fun PdfPageOrganizerSheet(
                     }
                 },
                 actions = {
+                    IconButton(onClick = ::undo, enabled = undoStack.isNotEmpty()) {
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
+                    }
+                    var organizerMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { organizerMenu = true }, enabled = !isLoading) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More")
+                        }
+                        DropdownMenu(expanded = organizerMenu, onDismissRequest = { organizerMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Rotate all pages") },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = null) },
+                                onClick = { organizerMenu = false; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(rotation = (pages[i].rotation + 90) % 360) } } }
+                            )
+                            if (mode != "rotate") {
+                                DropdownMenuItem(
+                                    text = { Text(if (pages.all { it.selected }) "Untick all" else "Tick all") },
+                                    onClick = { organizerMenu = false; val all = pages.all { it.selected }; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(selected = !all) } } }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text("Reset") },
+                                leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
+                                onClick = {
+                                    organizerMenu = false
+                                    val count = session?.pageCount ?: pages.size
+                                    change { pages.clear(); pages.addAll((0 until count).map { ThumbnailPageModel(it, selected = defaultSelected) }) }
+                                }
+                            )
+                        }
+                    }
                     Button(
                         onClick = {
                             // Organize drops the pages that were unticked; Rotate keeps every page.
@@ -1388,18 +1374,12 @@ private fun PdfPageOrganizerSheet(
                             showCheckbox = mode != "rotate",
                             canMoveLeft = mode == "organize" && index > 0,
                             canMoveRight = mode == "organize" && index < pages.lastIndex,
-                            onToggle = { pages[index] = item.copy(selected = !item.selected) },
-                            onRotate = { pages[index] = item.copy(rotation = (item.rotation + 90) % 360) },
-                            onMoveLeft = {
-                                val prev = pages[index - 1]
-                                pages[index - 1] = item
-                                pages[index] = prev
-                            },
-                            onMoveRight = {
-                                val next = pages[index + 1]
-                                pages[index + 1] = item
-                                pages[index] = next
-                            }
+                            onToggle = { change { pages[index] = item.copy(selected = !item.selected) } },
+                            onRotate = { change { pages[index] = item.copy(rotation = (item.rotation + 90) % 360) } },
+                            onMoveLeft = { change { pages.add(index - 1, pages.removeAt(index)) } },
+                            onMoveRight = { change { pages.add(index + 1, pages.removeAt(index)) } },
+                            onMoveToStart = { change { pages.add(0, pages.removeAt(index)) } },
+                            onMoveToEnd = { change { pages.add(pages.removeAt(index)) } }
                         )
                     }
                 }
@@ -1419,7 +1399,9 @@ private fun OrganizerPageCard(
     onToggle: () -> Unit,
     onRotate: () -> Unit,
     onMoveLeft: () -> Unit,
-    onMoveRight: () -> Unit
+    onMoveRight: () -> Unit,
+    onMoveToStart: () -> Unit = {},
+    onMoveToEnd: () -> Unit = {}
 ) {
     val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
         val preview = session ?: return@produceState
@@ -1428,7 +1410,11 @@ private fun OrganizerPageCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = showCheckbox, onClick = onToggle),
+            // One focus target per card, read as a checkbox with its state, rather than a card plus a separate box.
+            .then(
+                if (showCheckbox) Modifier.toggleable(value = item.selected, role = Role.Checkbox, onValueChange = { onToggle() })
+                else Modifier
+            ),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (showCheckbox && item.selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -1441,7 +1427,7 @@ private fun OrganizerPageCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = { onToggle() })
+                if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = null)
                 Text("Page ${item.index + 1}", style = MaterialTheme.typography.labelMedium)
             }
             Box(
@@ -1470,15 +1456,18 @@ private fun OrganizerPageCard(
                 IconButton(onClick = onRotate) {
                     Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = "Rotate page ${item.index + 1}")
                 }
+                // Tap: one step. Long press: all the way to the start or end.
                 if (canMoveLeft) {
-                    IconButton(onClick = onMoveLeft) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move page ${item.index + 1} earlier")
-                    }
+                    Box(
+                        Modifier.size(48.dp).combinedClickable(onClick = onMoveLeft, onLongClick = onMoveToStart, onLongClickLabel = "Move to start"),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move page ${item.index + 1} earlier") }
                 }
                 if (canMoveRight) {
-                    IconButton(onClick = onMoveRight) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page ${item.index + 1} later")
-                    }
+                    Box(
+                        Modifier.size(48.dp).combinedClickable(onClick = onMoveRight, onLongClick = onMoveToEnd, onLongClickLabel = "Move to end"),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page ${item.index + 1} later") }
                 }
             }
         }

@@ -32,7 +32,35 @@ class OpenCvDocumentAnalyzer(
     @Volatile
     var autoCaptureEnabled: Boolean = true
 
+    /** False while nothing is shown for the result (No-detect mode, review step): frames are dropped unread. */
+    @Volatile
+    var enabled: Boolean = true
+
+    @Volatile
+    private var closed = false
+
+    /** Stops callbacks after the screen is gone; a frame finishing late must not touch disposed state. */
+    fun close() { closed = true }
+
+    // Reused across frames: one allocation per frame of the full image was most of the analyser's garbage.
+    private var frameBytes = ByteArray(0)
+    private var rowBytes = ByteArray(0)
+
+    internal fun frameBuffer(size: Int): ByteArray {
+        if (frameBytes.size != size) frameBytes = ByteArray(size)
+        return frameBytes
+    }
+
+    internal fun rowBuffer(size: Int): ByteArray {
+        if (rowBytes.size < size) rowBytes = ByteArray(size)
+        return rowBytes
+    }
+
     override fun analyze(image: ImageProxy) {
+        if (!enabled || closed) {
+            image.close()
+            return
+        }
         // Analysis runs on the camera executor, so waiting here for a still-loading OpenCV never blocks the UI.
         if (!OpenCvRuntime.ensureLoaded()) {
             if (!reportedUnavailable) {
@@ -45,13 +73,13 @@ class OpenCvDocumentAnalyzer(
         try {
             // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
             // are found describe exactly the pixels the user sees and the capture keeps.
-            val gray = image.toRotatedGrayMat().croppedToViewport(image)
+            val gray = toRotatedGrayMat(image).croppedToViewport(image)
             try {
                 val raw = DocumentEdgeDetector.detect(gray)
                 val result = raw.copy(guidance = steadyGuidance(raw.guidance))
                 val stable = updateStability(result)
                 val progress = (stableFrames.toFloat() / STEADY_FRAMES).coerceIn(0f, 1f)
-                main.post { onDetection(result, stable, progress) }
+                main.post { if (!closed) onDetection(result, stable, progress) }
 
                 // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -69,7 +97,7 @@ class OpenCvDocumentAnalyzer(
                     capturedQuad = result.quad
                     lastAutoCaptureAt = now
                     stableFrames = 0
-                    main.post(onAutoCapture)
+                    main.post { if (!closed) onAutoCapture() }
                 }
             } finally {
                 gray.release()
@@ -149,20 +177,23 @@ private fun Mat.croppedToViewport(image: ImageProxy): Mat {
     return copy
 }
 
-private fun ImageProxy.toRotatedGrayMat(): Mat {
+private fun OpenCvDocumentAnalyzer.toRotatedGrayMat(image: ImageProxy): Mat = grayMatOf(image)
+
+/** The Y plane as an upright single-channel Mat, through the analyser's reusable buffers. */
+private fun OpenCvDocumentAnalyzer.grayMatOf(image: ImageProxy): Mat = with(image) {
     val plane = planes[0]
     val buffer = plane.buffer
     val width = width
     val height = height
     val rowStride = plane.rowStride
     val pixelStride = plane.pixelStride
-    val bytes = ByteArray(width * height)
+    val bytes = frameBuffer(width * height)
 
     if (pixelStride == 1 && rowStride == width) {
         buffer.rewind()
         buffer.get(bytes, 0, minOf(bytes.size, buffer.remaining()))
     } else {
-        val row = ByteArray(rowStride)
+        val row = rowBuffer(rowStride)
         var offset = 0
         buffer.rewind()
         for (y in 0 until height) {

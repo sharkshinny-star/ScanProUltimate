@@ -165,7 +165,10 @@ object PdfFormEngine {
             )
             is PDCheckBox -> FormField(name, label, FormFieldKind.CHECKBOX, if (field.isChecked) FormFieldRules.CHECKED else "", readOnly = readOnly, required = required)
             is PDRadioButton -> {
-                val options = field.onValues.sorted().map { FormOption(it, it) }
+                // Forms often store "Choice1" as the state and keep the readable text as the export value.
+                val states = field.onValues.sorted()
+                val exports = runCatching { field.exportValues }.getOrDefault(emptyList())
+                val options = states.mapIndexed { i, state -> FormOption(state, exports.getOrNull(i)?.takeIf { it.isNotBlank() && it != state } ?: state.replace('_', ' ')) }
                 FormField(name, label, FormFieldKind.RADIO, field.value.takeIf { it != "Off" }.orEmpty(), options, readOnly, required = required)
             }
             is PDChoice -> {

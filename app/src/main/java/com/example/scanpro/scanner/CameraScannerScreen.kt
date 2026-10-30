@@ -309,6 +309,14 @@ fun CameraScannerScreen(
                             context.contentResolver.openInputStream(uri)?.use { input ->
                                 target.outputStream().use { input.copyTo(it) }
                             } ?: error("Could not open image")
+                            // Android 8 and older cannot decode HEIC; a page that can't be read is left out with a reason.
+                            val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            android.graphics.BitmapFactory.decodeFile(target.absolutePath, bounds)
+                            if (bounds.outWidth <= 0) {
+                                target.delete()
+                                val heic = bounds.outMimeType?.contains("hei", ignoreCase = true) == true || uri.toString().contains(".hei", ignoreCase = true)
+                                error(if (heic) "HEIC photos need Android 9 or newer; choose a JPG or PNG" else "This image could not be read")
+                            }
                             Uri.fromFile(target)
                         }.getOrNull()
                     }
@@ -326,7 +334,12 @@ fun CameraScannerScreen(
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
             onDetection = { result, isStable, progress ->
-                detection = result
+                // The screen recomposes on this object; it is replaced only when something it shows changed, not every frame.
+                val previousResult = detection
+                if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
+                    previousResult.isBlurry != result.isBlurry || previousResult.isReady != result.isReady ||
+                    previousResult.frameWidth != result.frameWidth || previousResult.frameHeight != result.frameHeight
+                ) detection = result
                 // A soft tick the moment the page locks on, so the eye can stay on the paper.
                 if (isStable && !stable) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 stable = isStable
@@ -364,6 +377,8 @@ fun CameraScannerScreen(
     val frameAnalyzer = remember { SwitchingAnalyzer(analyzer, barcodeAnalyzer) }
     SideEffect {
         frameAnalyzer.barcodeMode = barcodeMode
+        // Nothing reads the result in No-detect mode or during review, so the frames are not analysed at all.
+        analyzer.enabled = detectMode != DetectMode.NO_DETECT && !reviewing && !barcodeMode
         // No auto-capture while the first-time tips are being read.
         analyzer.autoCaptureEnabled = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing && (retaking || pages.size < pageLimit)
     }
@@ -430,11 +445,11 @@ fun CameraScannerScreen(
             flash.animateTo(0f, tween(280))
         }
 
-        sessionDir.mkdirs()
         val id = UUID.randomUUID().toString()
         val raw = File(sessionDir, "raw_$id.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(raw).build()
-
+        // The folder is made on the camera's own thread rather than here on main.
+        analysisExecutor.execute { sessionDir.mkdirs() }
         capture.takePicture(
             options,
             mainExecutor,
@@ -454,7 +469,7 @@ fun CameraScannerScreen(
                         pages[retakeIndex] = captured
                         quads.remove(old.toString())
                         filters.remove(old.toString())
-                        if (old.scheme == "file") File(old.path.orEmpty()).delete()
+                        if (old.scheme == "file") deleteInBackground(File(old.path.orEmpty()))
                     } else {
                         pages.add(captured)
                     }
@@ -481,7 +496,7 @@ fun CameraScannerScreen(
                 override fun onError(exception: ImageCaptureException) {
                     capturing = false
                     // A half-written file must not be mistaken for a page later.
-                    raw.delete()
+                    deleteInBackground(raw)
                     status = when (exception.imageCaptureError) {
                         ImageCapture.ERROR_FILE_IO -> "Could not save the photo. Check free space and try again."
                         ImageCapture.ERROR_CAMERA_CLOSED -> "The camera closed before the photo was taken. Try again."
@@ -557,6 +572,10 @@ fun CameraScannerScreen(
                 // A shared view port crops all three streams to one region, so analysis coordinates line up with
                 // the preview and the saved photo. It can be unavailable before the first layout; bind without it then.
                 val viewPort = previewView.viewPort
+                if (viewPort == null && !previewView.isLaidOut) {
+                    // First bind before layout: bind again once the view has a size, so analysis lines up with the preview.
+                    previewView.post { if (!disposed.get() && previewView.viewPort != null) resumeCount++ }
+                }
                 // Tablets and Chromebooks may only have a front or external camera; any camera beats none.
                 val cameraSelector = when {
                     provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
@@ -649,7 +668,9 @@ fun CameraScannerScreen(
             // Leaving without Done discards the session's captures. A rotation recreates the screen
             // with the same saved pages, so keep the files then.
             val changingConfigurations = (context as? android.app.Activity)?.isChangingConfigurations == true
-            if (!completed && !changingConfigurations) sessionDir.deleteRecursively()
+            // Up to a hundred large JPEGs: not on the main thread during the exit animation.
+            if (!completed && !changingConfigurations) Thread { sessionDir.deleteRecursively() }.start()
+            analyzer.close()
         }
     }
 
@@ -1092,7 +1113,7 @@ fun CameraScannerScreen(
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
                     if (pages.isNotEmpty()) {
                         Column(
-                            Modifier.clickable { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") File(uri.path.orEmpty()).delete() } }.padding(8.dp),
+                            Modifier.clickable { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") deleteInBackground(File(uri.path.orEmpty())) } }.padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Remove last page", tint = Color.White)
@@ -1281,6 +1302,11 @@ private fun IdCardFrame(label: String) {
             Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
         }
     }
+}
+
+/** File deletes happen off the main thread; the UI never waits on the disk. */
+private fun deleteInBackground(file: File) {
+    Thread { file.delete() }.start()
 }
 
 /** Flash setting for the shutter; torch is the steady light the low-light hint offers. */
