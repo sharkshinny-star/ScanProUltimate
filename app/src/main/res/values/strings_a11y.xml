@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen-reader only text (content descriptions and state descriptions); never shown on screen. -->
+
+    <!-- Document screen: state of the favorite toggle in the app bar -->
+    <string name="a11y_favorite_on">In favorites</string>
+    <string name="a11y_favorite_off">Not in favorites</string>
+
+    <!-- Editing dialogs: the page image under crop handles, eraser strokes, mark-up boxes or the book-split line -->
+    <string name="a11y_page_preview">Page preview</string>
+
+    <!-- Signature dialog: the drawing area -->
+    <string name="a11y_signature_pad">Signature pad</string>
+
+    <!-- Mark-up editor: the arrow buttons that nudge the selected box (left/right reuse doc_move_left/doc_move_right) -->
+    <string name="a11y_move_up">Move up</string>
+    <string name="a11y_move_down">Move down</string>
+</resources>

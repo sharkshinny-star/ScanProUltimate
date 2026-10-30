@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import android.net.Uri
+import android.provider.DocumentsContract
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -57,12 +58,14 @@ class DocumentRepository @Inject constructor(
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
-    suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
-    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
+    suspend fun loadSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) { db.loadSummaries() }
+    suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
         purgeExpiredTrash(maxAgeDays = 7)
-        db.loadTrash()
+        db.loadTrashSummaries()
     }
-    suspend fun search(query: String): List<ScanDocument> = withContext(Dispatchers.IO) { db.search(query) }
+    /** The full document with its pages, or null when it no longer exists. */
+    suspend fun loadDocument(id: String): ScanDocument? = withContext(Dispatchers.IO) { db.loadDocument(id) }
+    suspend fun search(query: String): List<DocumentSummary> = withContext(Dispatchers.IO) { db.search(query) }
     suspend fun storageBytes(): Long = withContext(Dispatchers.IO) {
         rootDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
@@ -756,6 +759,35 @@ class DocumentRepository @Inject constructor(
         file
     }
 
+    /**
+     * Writes every document (recycle bin excluded) as its own encrypted ".scanpro" package into the folder the
+     * user picked, one at a time, so a library larger than the free space on the device never has to be
+     * staged whole. [onProgress] gets (done, total) after each document. Returns how many were written.
+     */
+    suspend fun backupAll(treeUri: Uri, password: String, onProgress: (Int, Int) -> Unit = { _, _ -> }): Int = withContext(Dispatchers.IO) {
+        require(password.length >= 6) { "Use a backup password with at least 6 characters" }
+        val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
+        val documents = db.loadAll()
+        val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now()))
+        var written = 0
+        documents.forEachIndexed { index, doc ->
+            val temp = File(context.cacheDir, "backup_${UUID.randomUUID()}.scanpro")
+            try {
+                encryptedPackages.export(doc, password.toCharArray(), temp)
+                val name = "${safeName(doc.title)}_$stamp.scanpro"
+                val target = DocumentsContract.createDocument(context.contentResolver, parent, "application/octet-stream", name)
+                    ?: error("Could not create a file in the chosen folder")
+                context.contentResolver.openOutputStream(target, "wt")?.use { out -> temp.inputStream().use { it.copyTo(out) } }
+                    ?: error("Could not write to the chosen folder")
+                written++
+            } finally {
+                temp.delete()
+            }
+            onProgress(index + 1, documents.size)
+        }
+        written
+    }
+
     suspend fun importEncryptedBackup(source: Uri, password: String): ScanDocument = withContext(Dispatchers.IO) {
         require(password.length >= 6) { "Backup password must be at least 6 characters" }
         val restored = encryptedPackages.import(source, password.toCharArray())
@@ -899,13 +931,14 @@ class DocumentRepository @Inject constructor(
                 )
             }
 
-            if (pages.isNotEmpty()) {
-                PdfExporter.export(pages, pdf, quality, PdfPageSize.A4, searchable = true, pageNumbers = false)
-            } else if (fallbackPdfUri != null) {
-                copyUri(fallbackPdfUri, pdf)
-            } else {
+            if (pages.isEmpty()) {
+                // A document without pages can't be opened or edited. When the fallback scanner returned only a
+                // PDF, import that instead: it renders a page per PDF page like any other PDF import.
+                folder.deleteRecursively()
+                if (fallbackPdfUri != null) return importPdf(fallbackPdfUri, quality, autoTitle)
                 error("No scan pages were returned")
             }
+            PdfExporter.export(pages, pdf, quality, PdfPageSize.A4, searchable = true, pageNumbers = false)
 
             val fallbackTitle = "Scan " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)

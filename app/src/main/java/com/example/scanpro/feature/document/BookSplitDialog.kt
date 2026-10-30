@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -43,6 +45,7 @@ fun BookSplitDialog(
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(imagePath, 1400) }
     }
     var fraction by remember { mutableFloatStateOf(0.5f) }
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -59,6 +62,8 @@ fun BookSplitDialog(
                             .fillMaxWidth()
                             .padding(top = 12.dp)
                             .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                            .semantics { contentDescription = pagePreview }
+                            // The line follows the finger across the picture itself, so no RTL flip here; the slider is the non-drag way.
                             .pointerInput(Unit) {
                                 detectHorizontalDragGestures { change, amount ->
                                     change.consume()

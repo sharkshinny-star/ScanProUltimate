@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
+import com.example.scanpro.core.crash.CrashReportPrompt
 import com.example.scanpro.core.designsystem.ThemeTransition
 import com.example.scanpro.data.ThemeMode
 import androidx.activity.compose.setContent
@@ -120,6 +121,7 @@ class MainActivity : FragmentActivity() {
                     onDispose { }
                 }
                 ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
+                    CrashReportPrompt()
                     ScanProApp(
                         viewModel = viewModel,
                         sessionUnlocked = sessionUnlocked,

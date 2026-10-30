@@ -60,6 +60,23 @@
     <string name="core_no_app_can_share">No app can share this file</string>
     <string name="core_pdf_not_found">The PDF could not be found</string>
     <string name="core_google_play_unavailable">Google Play isn\'t available on this device</string>
+    <plurals name="core_pages">
+        <item quantity="one">%1$d page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
+    <string name="core_trash_auto_deletes_soon">Auto-deletes soon</string>
+    <plurals name="core_trash_auto_deletes_days">
+        <item quantity="one">Auto-deletes in %1$d day</item>
+        <item quantity="other">Auto-deletes in %1$d days</item>
+    </plurals>
+    <plurals name="core_trash_auto_deletes_hours">
+        <item quantity="one">Auto-deletes in %1$d hour</item>
+        <item quantity="other">Auto-deletes in %1$d hours</item>
+    </plurals>
+    <plurals name="core_trash_auto_deletes_minutes">
+        <item quantity="one">Auto-deletes in %1$d minute</item>
+        <item quantity="other">Auto-deletes in %1$d minutes</item>
+    </plurals>
 
     <!-- Navigation: bottom bar / rail tabs, PDF viewer default title -->
     <string name="nav_tab_home">Home</string>
@@ -104,6 +121,11 @@
     <string name="scan_detect_manual">Manual</string>
     <string name="scan_detect_no_detect">No detect</string>
     <string name="scan_guidance_point_at_document">Point the camera at a document</string>
+    <!-- DocumentEdgeDetector.Guidance -->
+    <string name="scan_guidance_more_light">More light needed</string>
+    <string name="scan_guidance_hold_steady">Hold steady</string>
+    <string name="scan_guidance_move_closer">Move closer and center page</string>
+    <string name="scan_guidance_ready">Ready</string>
     <string name="scan_status_front_ready">Front ready · capture the back</string>
     <string name="scan_status_pages_ready">%1$d page(s) ready</string>
     <string name="scan_status_select_document">Select a document to scan</string>

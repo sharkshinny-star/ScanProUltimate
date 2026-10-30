@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -84,6 +85,7 @@ fun SignaturePadDialog(
     var ink by remember { mutableStateOf(InkColors.first().second) }
     var keep by remember { mutableStateOf(true) }
     var deleting by remember { mutableStateOf<File?>(null) }
+    val padDescription = stringResource(R.string.a11y_signature_pad)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -112,6 +114,7 @@ fun SignaturePadDialog(
                         .fillMaxWidth()
                         .height(220.dp)
                         .background(Color.White, RoundedCornerShape(12.dp))
+                        .semantics { contentDescription = padDescription }
                         .onSizeChanged { padSize = it }
                         .pointerInput(Unit) {
                             detectDragGestures(
@@ -147,13 +150,15 @@ fun SignaturePadDialog(
                     InkColors.forEach { (nameRes, color) ->
                         val chosen = ink == color
                         val inkDescription = stringResource(R.string.doc_ink_description, stringResource(nameRes))
+                        // The swatch stays 28dp; the 48dp minimum is invisible touch area around it.
                         Box(
                             Modifier
                                 .padding(end = 8.dp)
+                                .minimumInteractiveComponentSize()
                                 .size(28.dp)
                                 .background(color, CircleShape)
                                 .border(if (chosen) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                .clickable { ink = color }
+                                .clickable(role = Role.RadioButton) { ink = color }
                                 .semantics { contentDescription = inkDescription; selected = chosen }
                         )
                     }

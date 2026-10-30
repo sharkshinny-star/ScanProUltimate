@@ -10,4 +10,16 @@
 
     <string name="shortcut_bugs_short">⚠️ Bugs or any issues?</string>
     <string name="shortcut_bugs_long">Let us know here!</string>
+
+    <!-- Notification shown while OCR, compression or an export runs, so Android keeps the app alive in the background. -->
+    <string name="operation_channel_name">Background tasks</string>
+    <string name="operation_channel_description">Shown while a scan is being processed, so the work finishes even when you switch apps.</string>
+    <string name="operation_notification_working">Working on your document…</string>
+
+    <!-- Offered on the next launch after a crash. Nothing is sent unless the user chooses Share. -->
+    <string name="crash_prompt_title">ScanPro closed unexpectedly</string>
+    <string name="crash_prompt_body">Last time, the app stopped because of an error. Sharing the report with the developers helps fix it. The report contains the error details and your device model, not your documents.</string>
+    <string name="crash_prompt_share">Share report</string>
+    <string name="crash_prompt_dismiss">Not now</string>
+    <string name="crash_share_subject">ScanPro crash report</string>
 </resources>

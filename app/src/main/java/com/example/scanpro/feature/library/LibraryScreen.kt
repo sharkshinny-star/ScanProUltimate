@@ -98,7 +98,7 @@ import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
-import com.example.scanpro.data.ScanDocument
+import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.core.ui.sharePdfs
 import com.example.scanpro.navigation.ScanProBottomBar
@@ -163,7 +163,7 @@ fun LibraryRoute(
 @Composable
 internal fun LibraryScreen(
     mode: String,
-    documents: List<ScanDocument>,
+    documents: List<DocumentSummary>,
     trashCount: Int,
     query: String,
     busy: Boolean,
@@ -529,7 +529,7 @@ private const val RECENT_LIMIT = 8
 /** Home tab: workspace header, primary scan entry points and the most recent documents. */
 @Composable
 private fun HomeDashboard(
-    documents: List<ScanDocument>,
+    documents: List<DocumentSummary>,
     trashCount: Int,
     busy: Boolean,
     selected: List<String>,

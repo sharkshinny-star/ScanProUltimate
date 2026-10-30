@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -77,6 +79,7 @@ fun EraserDialog(
     var current by remember { mutableStateOf<List<NormalizedPoint>>(emptyList()) }
     var brush by remember { mutableStateOf(Brush.MEDIUM) }
     val ink = Color(0xFFFF5252).copy(alpha = 0.55f)
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
@@ -102,6 +105,7 @@ fun EraserDialog(
                         Canvas(
                             Modifier
                                 .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                                .semantics { contentDescription = pagePreview }
                                 .pointerInput(Unit) {
                                     fun at(x: Float, y: Float) = NormalizedPoint(x / size.width, y / size.height).clamped()
                                     detectTapGestures { strokes += brush to listOf(at(it.x, it.y)) }

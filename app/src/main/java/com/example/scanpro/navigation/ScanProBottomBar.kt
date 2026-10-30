@@ -56,7 +56,8 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit) {
             NavigationRailItem(
                 selected = selectedRoute == route,
                 onClick = { onTab(route) },
-                icon = { Icon(icon, contentDescription = label) },
+                // The rail always shows the label, so a described icon would be read twice.
+                icon = { Icon(icon, contentDescription = null) },
                 label = { Text(label) }
             )
         }

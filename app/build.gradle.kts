@@ -28,6 +28,9 @@ android {
         vectorDrawables { useSupportLibrary = true }
         // True when the ML Kit models ship inside the APK (-Pscanpro.bundledMl=true): no Play-services download checks.
         buildConfigField("boolean", "BUNDLED_ML", (providers.gradleProperty("scanpro.bundledMl").orNull == "true").toString())
+        // Links shown in Settings. Empty (the default) hides the rows: -Pscanpro.privacyPolicyUrl=... -Pscanpro.termsUrl=...
+        buildConfigField("String", "PRIVACY_POLICY_URL", "\"${providers.gradleProperty("scanpro.privacyPolicyUrl").orNull.orEmpty()}\"")
+        buildConfigField("String", "TERMS_URL", "\"${providers.gradleProperty("scanpro.termsUrl").orNull.orEmpty()}\"")
         // 32-bit x86 is only used by old emulators; leaving it out removes ~70 MB of native code from universal APKs.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -89,7 +92,7 @@ android {
 
     if (sideload) {
         // No Play to deliver modules: the translation code is built into the app instead.
-        sourceSets.getByName("main").java.srcDir("../translate/src/main/java")
+        sourceSets.getByName("main").kotlin.srcDir("../translate/src/main/java")
     } else {
         // Delivered by Google Play when first used; see TranslationFeature and translate/build.gradle.kts.
         dynamicFeatures += setOf(":translate")
@@ -113,6 +116,16 @@ android {
                 "org/bouncycastle/pqc/crypto/picnic/**"
             )
         }
+    }
+}
+
+composeCompiler {
+    // Classes from other modules the compiler can't see into; listing them lets it skip recompositions
+    // when they are passed unchanged. Compose metrics: -Pscanpro.composeMetrics=true, then see build/compose_metrics.
+    stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability.conf"))
+    if (providers.gradleProperty("scanpro.composeMetrics").orNull == "true") {
+        metricsDestination = layout.buildDirectory.dir("compose_metrics")
+        reportsDestination = layout.buildDirectory.dir("compose_metrics")
     }
 }
 

@@ -40,6 +40,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -74,6 +76,7 @@ fun MarkupEditorDialog(
         value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeScaled(loadBase().absolutePath, 1600) }.getOrNull() }
     }
     val selectedIndex = items.indexOfFirst { it.id == selectedId }
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     fun update(index: Int, change: (PageAnnotation) -> PageAnnotation) {
         if (index !in items.indices) return
@@ -103,6 +106,7 @@ fun MarkupEditorDialog(
                         Canvas(
                             Modifier
                                 .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                                .semantics { contentDescription = pagePreview }
                                 .pointerInput(Unit) {
                                     detectTapGestures { tap ->
                                         selectedId = latestItems.lastOrNull { hit(it, tap, size.width.toFloat(), size.height.toFloat()) }?.id
@@ -165,11 +169,17 @@ fun MarkupEditorDialog(
 
                 val enabled = selectedIndex >= 0
                 val step = 0.01f
+                // The arrows nudge the box on the page itself (physical directions), so they are not mirrored in RTL;
+                // the glyphs say nothing to a screen reader, hence the spoken labels.
+                val moveLeft = stringResource(R.string.doc_move_left)
+                val moveRight = stringResource(R.string.doc_move_right)
+                val moveUp = stringResource(R.string.a11y_move_up)
+                val moveDown = stringResource(R.string.a11y_move_down)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x - step) } }) { Text("←") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x + step) } }) { Text("→") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y - step) } }) { Text("↑") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y + step) } }) { Text("↓") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x - step) } }, modifier = Modifier.semantics { contentDescription = moveLeft }) { Text("←") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x + step) } }, modifier = Modifier.semantics { contentDescription = moveRight }) { Text("→") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y - step) } }, modifier = Modifier.semantics { contentDescription = moveUp }) { Text("↑") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y + step) } }, modifier = Modifier.semantics { contentDescription = moveDown }) { Text("↓") }
                     OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 0.92f, height = it.height * 0.92f) } }) { Text(stringResource(R.string.doc_smaller)) }
                     OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 1.08f, height = it.height * 1.08f) } }) { Text(stringResource(R.string.doc_larger)) }
                     OutlinedButton(enabled = enabled, onClick = { items.removeAt(selectedIndex); selectedId = items.lastOrNull()?.id }) { Text(stringResource(R.string.common_delete)) }

@@ -1,6 +1,7 @@
 package com.example.scanpro.data
 
-import com.example.scanpro.core.ui.formatTrashCountdown
+import com.example.scanpro.core.ui.TrashCountdown
+import com.example.scanpro.core.ui.trashCountdown
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -9,50 +10,50 @@ import org.junit.Test
 class TrashCountdownTest {
 
     @Test
-    fun `formatTrashCountdown formats days remaining correctly`() {
+    fun `trashCountdown formats days remaining correctly`() {
         val now = 1000000000000L
         val dayMs = 24L * 60L * 60L * 1000L
 
         // Trashed 1 hour ago -> 7 days remaining
-        val (text7, urgent7) = formatTrashCountdown(now - 1L * 60L * 60L * 1000L, now)
-        assertEquals("Auto-deletes in 7 days", text7)
-        assertFalse(urgent7)
+        val text7 = trashCountdown(now - 1L * 60L * 60L * 1000L, now)
+        assertEquals(TrashCountdown.Days(7), text7)
+        assertFalse(text7.isUrgent)
 
         // Trashed 2 days ago -> 5 days remaining
-        val (text5, urgent5) = formatTrashCountdown(now - 2L * dayMs, now)
-        assertEquals("Auto-deletes in 5 days", text5)
-        assertFalse(urgent5)
+        val text5 = trashCountdown(now - 2L * dayMs, now)
+        assertEquals(TrashCountdown.Days(5), text5)
+        assertFalse(text5.isUrgent)
 
         // Trashed 6 days ago -> 1 day remaining
-        val (text1, urgent1) = formatTrashCountdown(now - 6L * dayMs, now)
-        assertEquals("Auto-deletes in 1 day", text1)
-        assertFalse(urgent1)
+        val text1 = trashCountdown(now - 6L * dayMs, now)
+        assertEquals(TrashCountdown.Days(1), text1)
+        assertFalse(text1.isUrgent)
     }
 
     @Test
-    fun `formatTrashCountdown formats hours and minutes when urgent`() {
+    fun `trashCountdown formats hours and minutes when urgent`() {
         val now = 1000000000000L
         val hourMs = 60L * 60L * 1000L
         val dayMs = 24L * hourMs
 
         // 12 hours remaining
-        val (text12h, urgent12h) = formatTrashCountdown(now - (7L * dayMs - 12L * hourMs), now)
-        assertEquals("Auto-deletes in 12 hours", text12h)
-        assertTrue(urgent12h)
+        val text12h = trashCountdown(now - (7L * dayMs - 12L * hourMs), now)
+        assertEquals(TrashCountdown.Hours(12), text12h)
+        assertTrue(text12h.isUrgent)
 
         // 30 minutes remaining
-        val (text30m, urgent30m) = formatTrashCountdown(now - (7L * dayMs - 30L * 60L * 1000L), now)
-        assertEquals("Auto-deletes in 30 minutes", text30m)
-        assertTrue(urgent30m)
+        val text30m = trashCountdown(now - (7L * dayMs - 30L * 60L * 1000L), now)
+        assertEquals(TrashCountdown.Minutes(30), text30m)
+        assertTrue(text30m.isUrgent)
     }
 
     @Test
-    fun `formatTrashCountdown handles expired trashed documents`() {
+    fun `trashCountdown handles expired trashed documents`() {
         val now = 1000000000000L
         val dayMs = 24L * 60L * 60L * 1000L
 
-        val (textExpired, urgentExpired) = formatTrashCountdown(now - 8L * dayMs, now)
-        assertEquals("Auto-deletes soon", textExpired)
-        assertTrue(urgentExpired)
+        val textExpired = trashCountdown(now - 8L * dayMs, now)
+        assertEquals(TrashCountdown.Soon, textExpired)
+        assertTrue(textExpired.isUrgent)
     }
 }

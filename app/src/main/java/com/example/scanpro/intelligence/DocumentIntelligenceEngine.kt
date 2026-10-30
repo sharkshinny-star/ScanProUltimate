@@ -1,17 +1,23 @@
 package com.example.scanpro.intelligence
 
+import androidx.annotation.StringRes
+import com.example.scanpro.R
 import java.util.Locale
 import kotlin.math.min
 
-enum class DocumentKind(val label: String) {
-    INVOICE("Invoice"),
-    RECEIPT("Receipt"),
-    CONTRACT("Contract"),
-    IDENTITY("Identity document"),
-    BUSINESS_CARD("Business card"),
-    LETTER("Letter"),
-    NOTES("Notes"),
-    GENERAL("Document")
+/**
+ * [label] is the English keyword the engine's own logic works with (suggested tags, issuer matching, summary
+ * text, smart titles); [labelRes] is what the screens show for the kind.
+ */
+enum class DocumentKind(val label: String, @StringRes val labelRes: Int) {
+    INVOICE("Invoice", R.string.data_kind_invoice),
+    RECEIPT("Receipt", R.string.data_kind_receipt),
+    CONTRACT("Contract", R.string.data_kind_contract),
+    IDENTITY("Identity document", R.string.data_kind_identity),
+    BUSINESS_CARD("Business card", R.string.data_kind_business_card),
+    LETTER("Letter", R.string.data_kind_letter),
+    NOTES("Notes", R.string.data_kind_notes),
+    GENERAL("Document", R.string.data_kind_general)
 }
 
 data class DocumentInsights(

@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.scanpro.BuildConfig
+import com.example.scanpro.R
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.OcrWord
 import com.google.mlkit.vision.common.InputImage
@@ -65,7 +66,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
                 if (requestedScripts.add(script)) {
                     runCatching { modules.installModules(ModuleInstallRequest.newBuilder().addApi(recognizer).build()) }
                 }
-                throw IllegalStateException("The ${script.label} text model is still downloading.")
+                throw IllegalStateException(context.getString(R.string.msg_ocr_model_downloading, context.getString(script.labelRes)))
             }
             requestedScripts += script
             runCatching { modules.installModules(ModuleInstallRequest.newBuilder().addApi(recognizer).build()).await() }
@@ -77,7 +78,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
             } ?: false
             if (!ready) {
                 throw IllegalStateException(
-                    "The ${script.label} text model is still downloading. Connect to the internet, then run OCR again."
+                    context.getString(R.string.msg_ocr_model_downloading_retry, context.getString(script.labelRes))
                 )
             }
         }
@@ -99,7 +100,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
     } catch (cancelled: kotlinx.coroutines.CancellationException) {
         throw cancelled
     } catch (error: Throwable) {
-        Log.w(TAG, "Text recognition failed (${script.label}) for ${file.name}", error)
+        Log.w(TAG, "Text recognition failed (${script.name}) for ${file.name}", error)
         throw error
     }
 

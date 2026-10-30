@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -89,22 +91,25 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                 Text(stringResource(R.string.doc_size), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkSize.entries.forEach { option ->
-                        FilterChip(selected = size == option, onClick = { size = option }, label = { Text(option.label) })
+                        FilterChip(selected = size == option, onClick = { size = option }, label = { Text(stringResource(option.labelRes)) })
                     }
                 }
                 Text(stringResource(R.string.doc_position), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkPosition.entries.forEach { option ->
-                        FilterChip(selected = position == option, onClick = { position = option }, label = { Text(option.label) })
+                        FilterChip(selected = position == option, onClick = { position = option }, label = { Text(stringResource(option.labelRes)) })
                     }
                 }
                 Text(stringResource(R.string.doc_colour), style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Each 36dp swatch sits in a 48dp touch target; the targets touch, which keeps the row inside the dialog
+                // (12dp between swatches instead of 10dp).
+                Row {
                     WatermarkColors.forEach { (nameRes, value) ->
                         val chosen = color == value
                         val name = stringResource(nameRes)
                         Box(
                             Modifier
+                                .minimumInteractiveComponentSize()
                                 .size(36.dp)
                                 .background(Color(value), CircleShape)
                                 .border(
@@ -112,7 +117,7 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                                     color = if (chosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     shape = CircleShape
                                 )
-                                .clickable { color = value }
+                                .clickable(role = Role.RadioButton) { color = value }
                                 .semantics {
                                     contentDescription = name
                                     selected = chosen

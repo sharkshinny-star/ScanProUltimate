@@ -273,7 +273,7 @@ internal fun OcrScriptDialog(onDismiss: () -> Unit, onConfirm: (OcrScript) -> Un
                     ) {
                         RadioButton(selected = script == option, onClick = null)
                         Spacer(Modifier.width(8.dp))
-                        Text(if (option == OcrScript.LATIN) stringResource(R.string.tools_ocr_latin_label) else option.label)
+                        Text(if (option == OcrScript.LATIN) stringResource(R.string.tools_ocr_latin_label) else stringResource(option.labelRes))
                     }
                 }
             }

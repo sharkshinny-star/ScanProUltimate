@@ -9,17 +9,18 @@
 -dontwarn com.gemalto.jp2.JP2Encoder
 -dontwarn org.bouncycastle.**
 
-# OpenCV's Java classes are looked up from native code; keep them intact when minifying.
--keep class org.opencv.** {
-    native <methods>;
-    <fields>;
-    <methods>;
-}
+# OpenCV's own rules ship with the :opencv module (opencv/consumer-rules.pro).
 -dontwarn org.opencv.**
 
-# PDFBox-Android resolves encryption handlers, filters and font data by name at runtime. Without this the
-# password-protect tool works in debug builds but fails once R8 has renamed or removed those classes.
--keep class com.tom_roush.pdfbox.** { *; }
+# PDFBox-Android reaches a few classes by name; the rest is referenced statically and can be shrunk:
+#  - SecurityHandlerFactory instantiates the encryption handlers through their constructors
+#  - FDFAnnotation builds its subclasses from the annotation subtype name
+#  - filters and font loading are looked up through registries of class names
+#  - JPXFilter loads an optional JPEG 2000 decoder (absent here, hence the dontwarn above)
+-keep class com.tom_roush.pdfbox.pdmodel.encryption.** { *; }
+-keep class com.tom_roush.pdfbox.pdmodel.fdf.** { *; }
+-keep class com.tom_roush.pdfbox.filter.** { *; }
+-keep class com.tom_roush.pdfbox.pdmodel.font.** { *; }
 -dontwarn com.tom_roush.pdfbox.**
 
 # ML Kit creates its components (text recognition, barcode, translate, language ID, common) by reflection

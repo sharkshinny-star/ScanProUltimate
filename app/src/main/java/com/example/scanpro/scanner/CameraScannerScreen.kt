@@ -17,12 +17,14 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
+import android.util.Size
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
@@ -300,7 +302,7 @@ fun CameraScannerScreen(
             onDetection = { result, isStable ->
                 detection = result
                 stable = isStable
-                liveGuidance = result.guidance
+                liveGuidance = resources.getString(result.guidance.labelRes)
             },
             onAutoCapture = { autoCaptureSignal++ }
         )
@@ -463,10 +465,16 @@ fun CameraScannerScreen(
                     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
                     .build()
                 val preview = Preview.Builder().setResolutionSelector(selector).build().also { it.surfaceProvider = previewView.surfaceProvider }
+                // Around 12 MP is plenty for a page: a 50 MP capture is a 15 MB file, slower to take, decode and
+                // process, with no visible gain in the rendered scan. Same 4:3 ratio, so the framing is unchanged.
+                val captureSelector = ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                    .setResolutionStrategy(ResolutionStrategy(Size(4000, 3000), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
+                    .build()
                 val capture = ImageCapture.Builder()
-                    .setResolutionSelector(selector)
+                    .setResolutionSelector(captureSelector)
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                    .setJpegQuality(98)
+                    .setJpegQuality(95)
                     .build()
                 val analysis = ImageAnalysis.Builder()
                     .setResolutionSelector(selector)
@@ -748,7 +756,7 @@ fun CameraScannerScreen(
                         if (pages.isEmpty() && scanMode != ScanMode.ID_CARD && scanMode != ScanMode.TEXT) {
                             listOf(ScanMode.DOCUMENT, ScanMode.RECEIPT, ScanMode.WHITEBOARD, ScanMode.BOOK).forEach { type ->
                                 DropdownMenuItem(
-                                    text = { Text(type.label, color = if (scanMode == type) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
+                                    text = { Text(stringResource(type.labelRes), color = if (scanMode == type) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
                                     onClick = { scanMode = type; overflowOpen = false }
                                 )
                             }

@@ -8,6 +8,7 @@ import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.scanpro.core.crash.CrashReporter
 import com.example.scanpro.work.CleanupWorker
 import com.google.android.play.core.splitcompat.SplitCompat
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
@@ -39,9 +40,13 @@ class ScanProApplication : Application(), Configuration.Provider {
         // Maven OpenCV packages the native libraries in the app. Load them off the main thread so they
         // don't hold up the first frame.
         OpenCvRuntime.preloadInBackground()
-        scheduleMaintenance()
-        // Off the main thread: clear temporary copies of documents that a crash may have left in the cache.
-        Thread { runCatching { com.example.scanpro.work.CacheCleaner.purge(this) } }.apply { priority = Thread.MIN_PRIORITY }.start()
+        CrashReporter.install(this)
+        // Off the main thread: WorkManager's first use reads its database, and the cache sweep clears temporary
+        // copies of documents that a crash may have left behind. Neither should delay the first frame.
+        Thread {
+            runCatching { scheduleMaintenance() }
+            runCatching { com.example.scanpro.work.CacheCleaner.purge(this) }
+        }.apply { priority = Thread.MIN_PRIORITY }.start()
     }
 
     /**

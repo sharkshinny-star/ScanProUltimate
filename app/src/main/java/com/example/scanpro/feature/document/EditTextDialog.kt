@@ -39,6 +39,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -72,6 +74,7 @@ fun EditTextDialog(
     var selected by remember { mutableStateOf(-1) }
     var text by remember { mutableStateOf("") }
     val blue = MaterialTheme.colorScheme.primary
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
@@ -95,6 +98,7 @@ fun EditTextDialog(
                         Canvas(
                             Modifier
                                 .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                                .semantics { contentDescription = pagePreview }
                                 .pointerInput(lines) {
                                     detectTapGestures { tap ->
                                         val x = tap.x / size.width

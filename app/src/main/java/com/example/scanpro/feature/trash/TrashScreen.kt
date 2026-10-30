@@ -50,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,7 +62,7 @@ import com.example.scanpro.R
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.scanpro.data.ScanDocument
+import com.example.scanpro.data.DocumentSummary
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.scanpro.core.designsystem.ConfirmDialog
 import com.example.scanpro.core.designsystem.PageThumbnail
@@ -98,7 +99,7 @@ fun TrashRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TrashScreen(
-    documents: List<ScanDocument>,
+    documents: List<DocumentSummary>,
     busy: Boolean,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
@@ -108,7 +109,7 @@ internal fun TrashScreen(
 ) {
     var sortOption by remember { mutableStateOf(TrashSortOption.EXPIRY) }
     var showEmptyDialog by remember { mutableStateOf(false) }
-    var deleteSingleDoc by remember { mutableStateOf<ScanDocument?>(null) }
+    var deleteSingleDoc by remember { mutableStateOf<DocumentSummary?>(null) }
     var activeMenuDocId by remember { mutableStateOf<String?>(null) }
 
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -244,11 +245,11 @@ internal fun TrashScreen(
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                PageThumbnail(doc.pages.firstOrNull()?.imagePath, Modifier.size(width = 56.dp, height = 74.dp), THUMBNAIL_SMALL, version = doc.pages.firstOrNull())
+                                PageThumbnail(doc.coverPath, Modifier.size(width = 56.dp, height = 74.dp), THUMBNAIL_SMALL, version = doc.updatedAt)
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(doc.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    val (countdownText, isUrgent) = formatTrashCountdown(doc.trashedAt, nowMs)
+                                    val (countdownText, isUrgent) = formatTrashCountdown(LocalContext.current, doc.trashedAt, nowMs)
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.padding(top = 2.dp)

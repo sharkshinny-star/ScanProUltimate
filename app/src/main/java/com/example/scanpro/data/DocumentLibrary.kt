@@ -18,11 +18,11 @@ class DocumentLibrary @Inject constructor(
     private val repository: DocumentRepository,
     @ApplicationScope private val scope: CoroutineScope
 ) {
-    private val _documents = MutableStateFlow<List<ScanDocument>>(emptyList())
-    val documents: StateFlow<List<ScanDocument>> = _documents.asStateFlow()
+    private val _documents = MutableStateFlow<List<DocumentSummary>>(emptyList())
+    val documents: StateFlow<List<DocumentSummary>> = _documents.asStateFlow()
 
-    private val _trash = MutableStateFlow<List<ScanDocument>>(emptyList())
-    val trash: StateFlow<List<ScanDocument>> = _trash.asStateFlow()
+    private val _trash = MutableStateFlow<List<DocumentSummary>>(emptyList())
+    val trash: StateFlow<List<DocumentSummary>> = _trash.asStateFlow()
 
     private val _storageBytes = MutableStateFlow(0L)
     val storageBytes: StateFlow<Long> = _storageBytes.asStateFlow()
@@ -51,10 +51,10 @@ class DocumentLibrary @Inject constructor(
         ids.mapNotNull { id -> runCatching { repository.ensurePdf(id) }.getOrNull() }
 
     suspend fun refresh() {
-        _documents.value = repository.loadAll()
-        _trash.value = repository.loadTrash()
+        _documents.value = repository.loadSummaries()
+        _trash.value = repository.loadTrashSummaries()
         _storageBytes.value = repository.storageBytes()
     }
 
-    suspend fun search(query: String): List<ScanDocument> = repository.search(query)
+    suspend fun search(query: String): List<DocumentSummary> = repository.search(query)
 }

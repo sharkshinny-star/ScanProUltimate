@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -83,10 +84,30 @@ data class PageFtsEntity(
     val content: String
 )
 
+/** A document row with its page count and first page, for lists; see [DocumentSummary]. */
+internal data class DocumentSummaryRow(
+    @Embedded val document: DocumentEntity,
+    @ColumnInfo(name = "page_count") val pageCount: Int,
+    @ColumnInfo(name = "cover_path") val coverPath: String?
+)
+
+private const val SUMMARY_COLUMNS = "d.*, " +
+    "(SELECT COUNT(*) FROM pages p WHERE p.document_id = d.id) AS page_count, " +
+    "(SELECT p.image_path FROM pages p WHERE p.document_id = d.id ORDER BY p.position ASC LIMIT 1) AS cover_path"
+
 @Dao
 internal interface ScanDao {
     @Query("SELECT * FROM documents WHERE trashed_at = 0 ORDER BY updated_at DESC")
     fun loadActiveDocuments(): List<DocumentEntity>
+
+    @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 ORDER BY d.updated_at DESC")
+    fun loadActiveSummaries(): List<DocumentSummaryRow>
+
+    @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at > 0 ORDER BY d.trashed_at DESC")
+    fun loadTrashSummaries(): List<DocumentSummaryRow>
+
+    @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.id IN (:ids)")
+    fun loadSummaries(ids: List<String>): List<DocumentSummaryRow>
 
     @Query("SELECT * FROM documents WHERE trashed_at > 0 ORDER BY trashed_at DESC")
     fun loadTrashDocuments(): List<DocumentEntity>
@@ -223,6 +244,16 @@ class DocumentDatabase @Inject constructor(
         hydrateAll(dao.loadTrashDocuments())
     }
 
+    fun loadSummaries(): List<DocumentSummary> = dao.loadActiveSummaries().map { it.toSummary() }
+
+    fun loadTrashSummaries(): List<DocumentSummary> = dao.loadTrashSummaries().map { it.toSummary() }
+
+    /** Summaries for [ids], in the same order (ids without a document are skipped). */
+    private fun loadSummaries(ids: List<String>): List<DocumentSummary> {
+        val byId = ids.chunked(SQL_VARIABLE_CHUNK).flatMap(dao::loadSummaries).associateBy { it.document.id }
+        return ids.mapNotNull { byId[it]?.toSummary() }
+    }
+
     fun loadDocument(id: String): ScanDocument? = dao.loadDocument(id)?.let(::hydrate)
 
     /** Saves document-level fields only (title, tags, folder, favorite, mode, trash state); pages and PDF size are untouched. */
@@ -252,10 +283,10 @@ class DocumentDatabase @Inject constructor(
         })
     }
 
-    fun search(query: String): List<ScanDocument> {
+    fun search(query: String): List<DocumentSummary> {
         val clean = query.trim()
-        if (clean.isBlank()) return loadAll()
-        return room.runInTransaction<List<ScanDocument>> {
+        if (clean.isBlank()) return loadSummaries()
+        return room.runInTransaction<List<DocumentSummary>> {
             // Escape LIKE wildcards so typing % or _ searches for those characters instead of matching everything.
         val metadata = dao.searchMetadata(clean.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"))
             val fts = buildFtsQuery(clean)?.let { safeQuery ->
@@ -269,7 +300,7 @@ class DocumentDatabase @Inject constructor(
                 .flatMap(dao::loadDocuments)
                 .filter { it.trashedAt == 0L }
                 .forEach { byId[it.id] = it }
-            hydrateAll(byId.values.sortedByDescending { it.updatedAt })
+            loadSummaries(byId.values.sortedByDescending { it.updatedAt }.map { it.id })
         }
     }
 
@@ -339,6 +370,23 @@ private fun DocumentEntity.toModel(pages: List<ScanPage>) = ScanDocument(
     ocrScript = enumValueOrDefault(ocrScript, OcrScript.LATIN),
     isTrashed = trashedAt > 0L,
     trashedAt = trashedAt
+)
+
+private fun DocumentSummaryRow.toSummary() = DocumentSummary(
+    id = document.id,
+    title = document.title,
+    createdAt = document.createdAt,
+    updatedAt = document.updatedAt,
+    pdfPath = document.pdfPath,
+    pageCount = pageCount,
+    coverPath = coverPath,
+    sizeBytes = document.sizeBytes,
+    isFavorite = document.isFavorite,
+    tags = JsonCodec.decodeStringList(document.tagsJson),
+    folderName = document.folderName,
+    scanMode = enumValueOrDefault(document.scanMode, ScanMode.DOCUMENT),
+    isTrashed = document.trashedAt > 0L,
+    trashedAt = document.trashedAt
 )
 
 private fun ScanPage.toEntity() = PageEntity(

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Snackbar, progress and export messages produced by the ViewModels -->
+
+    <!-- Shared -->
+    <string name="msg_moved_to_recycle_bin">Moved to recycle bin</string>
+    <string name="msg_document_restored">Document restored</string>
+    <string name="msg_preparing_pdf">Preparing PDF…</string>
+    <string name="msg_preparing_pdfs">Preparing PDFs…</string>
+    <string name="msg_encrypting_pdf">Encrypting PDF…</string>
+
+    <!-- LibraryViewModel -->
+    <string name="msg_documents_moved_to_recycle_bin">%1$d documents moved to recycle bin</string>
+    <string name="msg_moving_documents_to_recycle_bin">Moving %1$d documents to recycle bin…</string>
+    <string name="msg_documents_restored">%1$d documents restored</string>
+    <string name="msg_renaming_folder">Renaming folder…</string>
+    <string name="msg_folder_renamed">Folder renamed</string>
+
+    <!-- TrashViewModel -->
+    <string name="msg_file_restored">File restored successfully.</string>
+    <string name="msg_document_permanently_deleted">Document permanently deleted</string>
+    <string name="msg_emptying_recycle_bin">Emptying recycle bin…</string>
+    <string name="msg_recycle_bin_emptied">Recycle bin emptied</string>
+
+    <!-- AppViewModel -->
+    <string name="msg_import_scan_progress">Enhancing pages, generating OCR, and building searchable PDF…</string>
+    <string name="msg_import_images_limit">Import up to %1$d images at a time</string>
+    <string name="msg_import_images_progress">Importing pages, enhancing them, and running OCR…</string>
+    <string name="msg_document_saved">Document saved</string>
+    <string name="msg_import_pdf_progress">Importing PDF pages and building OCR index…</string>
+    <string name="msg_pdf_imported">PDF imported</string>
+    <string name="msg_finishing_scan_progress">Finishing %1$s scan, enhancing pages, and running OCR…</string>
+    <string name="msg_could_not_save_scan">Could not save the scan: %1$s</string>
+    <string name="msg_unknown_error">unknown error</string>
+    <string name="msg_no_text_found_in_scan">No text found in this scan</string>
+    <string name="msg_clip_extracted_text">Extracted text</string>
+    <string name="msg_text_copied_to_clipboard">Text copied to clipboard</string>
+
+    <!-- DocumentViewModel -->
+    <string name="msg_undoing">Undoing…</string>
+    <string name="msg_redoing">Redoing…</string>
+    <string name="msg_tags_updated">Tags updated</string>
+    <string name="msg_folder_updated">Folder updated</string>
+    <string name="msg_rebuilding_pdf_quality">Rebuilding PDF at %1$s quality…</string>
+    <string name="msg_pdf_quality_updated">PDF quality updated</string>
+    <string name="msg_rebuilding_pdf_page_size">Rebuilding PDF for %1$s pages…</string>
+    <string name="msg_pdf_page_size_updated">PDF page size updated</string>
+    <string name="msg_rebuilding_ocr_layer">Rebuilding OCR PDF layer…</string>
+    <string name="msg_searchable_pdf_enabled">Searchable PDF enabled</string>
+    <string name="msg_searchable_layer_disabled">Searchable layer disabled</string>
+    <string name="msg_updating_page_numbers">Updating PDF page numbers…</string>
+    <string name="msg_mode_set_to">Mode set to %1$s</string>
+    <string name="msg_applying_filter">Applying %1$s…</string>
+    <string name="msg_rotating_page">Rotating page and rebuilding PDF…</string>
+    <string name="msg_perspective_correcting">Perspective-correcting page…</string>
+    <string name="msg_crop_applied">Crop applied</string>
+    <string name="msg_cleaning_up_every_page">Cleaning up every page…</string>
+    <string name="msg_cleanup_applied_all">Clean-up applied to all pages</string>
+    <string name="msg_applying_adjustments">Applying image adjustments…</string>
+    <string name="msg_adjustments_applied">Adjustments applied</string>
+    <string name="msg_restoring_original_page">Restoring original page…</string>
+    <string name="msg_page_reset">Page reset</string>
+    <string name="msg_reordering_pages">Reordering pages…</string>
+    <string name="msg_duplicating_page">Duplicating page…</string>
+    <string name="msg_page_duplicated">Page duplicated</string>
+    <string name="msg_extracting_page">Extracting page into a new document…</string>
+    <string name="msg_page_extracted">Page extracted</string>
+    <string name="msg_splitting_book_spread">Splitting book spread into two pages…</string>
+    <string name="msg_book_spread_split">Book spread split</string>
+    <string name="msg_removing_page">Removing page…</string>
+    <string name="msg_page_removed">Page removed</string>
+    <string name="msg_adding_signature">Adding signature overlay…</string>
+    <string name="msg_signature_added">Signature added</string>
+    <string name="msg_saved_signature_unreadable">Saved signature could not be read</string>
+    <string name="msg_adding_text_annotation">Adding text annotation…</string>
+    <string name="msg_text_added">Text added</string>
+    <string name="msg_adding_highlight">Adding highlight…</string>
+    <string name="msg_highlight_added">Highlight added</string>
+    <string name="msg_applying_redaction">Applying redaction…</string>
+    <string name="msg_redaction_added">Redaction added</string>
+    <string name="msg_removing_last_annotation">Removing last annotation…</string>
+    <string name="msg_annotation_removed">Annotation removed</string>
+    <string name="msg_updating_markup">Updating markup…</string>
+    <string name="msg_markup_updated">Markup updated</string>
+    <string name="msg_adding_watermark">Adding watermark to all pages…</string>
+    <string name="msg_watermark_added">Watermark added</string>
+    <string name="msg_adding_pages">Adding pages and rebuilding searchable PDF…</string>
+    <string name="msg_pages_added">Pages added</string>
+    <string name="msg_merging_documents">Merging documents…</string>
+    <string name="msg_merged_copy_created">Merged copy created</string>
+    <string name="msg_updating_ocr_text">Updating OCR text and searchable PDF…</string>
+    <string name="msg_ocr_text_updated">OCR text updated</string>
+    <string name="msg_refreshing_ocr">Refreshing OCR on every page…</string>
+    <string name="msg_ocr_refreshed">OCR refreshed</string>
+    <string name="msg_running_script_ocr">Running %1$s OCR on every page…</string>
+    <string name="msg_script_ocr_applied">%1$s OCR applied</string>
+    <string name="msg_splitting_document">Splitting document into individual page documents…</string>
+    <string name="msg_page_documents_created">%1$d page documents created</string>
+    <string name="msg_creating_id_copy">Creating printable ID copy…</string>
+    <string name="msg_share_id_copy">Share ID copy</string>
+    <string name="msg_creating_long_image">Creating long image…</string>
+    <string name="msg_share_long_image">Share long image</string>
+    <string name="msg_creating_text_export">Creating text export…</string>
+    <string name="msg_share_ocr_text_file">Share OCR text file</string>
+    <string name="msg_creating_word_document">Creating Word document…</string>
+    <string name="msg_share_word_document">Share Word document</string>
+    <string name="msg_creating_excel_workbook">Creating Excel workbook…</string>
+    <string name="msg_share_excel_workbook">Share Excel workbook</string>
+    <string name="msg_replacing_text">Replacing text…</string>
+    <string name="msg_text_removed">Text removed</string>
+    <string name="msg_text_replaced">Text replaced</string>
+    <string name="msg_erasing">Erasing…</string>
+    <string name="msg_erased">Erased</string>
+    <string name="msg_share_protected_pdf">Share protected PDF</string>
+    <string name="msg_encrypting_backup">Encrypting document backup…</string>
+    <string name="msg_share_encrypted_backup">Share encrypted ScanPro backup</string>
+
+    <!-- PdfToolsViewModel -->
+    <string name="msg_tools_still_working">Still working on the previous task</string>
+    <string name="msg_tools_operation_cancelled">Operation cancelled</string>
+    <string name="msg_tools_compressing">Compressing PDF…</string>
+    <string name="msg_tools_compression_failed">Compression failed</string>
+    <string name="msg_tools_compressed_by">Compressed by %1$d%% (%2$s → %3$s)</string>
+    <string name="msg_tools_compressed_not_searchable">. Pages were converted to images, so the text is no longer selectable or searchable.</string>
+    <string name="msg_tools_exporting_pages">Exporting pages…</string>
+    <string name="msg_tools_export_failed">Export failed</string>
+    <string name="msg_tools_exported_page_images">Exported %1$d page images</string>
+    <string name="msg_tools_splitting">Splitting PDF…</string>
+    <string name="msg_tools_split_failed">Split failed</string>
+    <string name="msg_tools_split_into_files">Split PDF into %1$d files</string>
+    <string name="msg_tools_protect_failed">Could not protect the PDF</string>
+    <string name="msg_tools_unlocking">Unlocking PDF…</string>
+    <string name="msg_tools_unlock_failed">Could not unlock the PDF</string>
+    <string name="msg_tools_checking_protection">Checking PDF protection…</string>
+    <string name="msg_tools_read_failed">Could not read this PDF</string>
+    <string name="msg_tools_saving_pages">Saving PDF pages…</string>
+    <string name="msg_tools_page_operation_failed">Page operation failed</string>
+    <string name="msg_tools_merging">Merging %1$d PDFs…</string>
+    <string name="msg_tools_merge_failed">Failed to merge PDFs</string>
+    <string name="msg_tools_reading_form_fields">Reading form fields…</string>
+    <string name="msg_tools_read_form_failed">Could not read this PDF\'s form</string>
+    <string name="msg_tools_no_fillable_fields">This PDF has no fillable fields. Import it into your documents and use Add text to type on it.</string>
+    <string name="msg_tools_filling_form">Filling form…</string>
+    <string name="msg_tools_save_form_failed">Could not save the filled form</string>
+    <string name="msg_tools_making_searchable">Making PDF searchable…</string>
+    <string name="msg_tools_make_searchable_failed">Could not make the PDF searchable</string>
+    <string name="msg_tools_already_searchable">This PDF is already searchable: every page has text</string>
+    <string name="msg_tools_no_readable_text">No readable text was found on the pages without text</string>
+    <plurals name="msg_tools_made_pages_searchable">
+        <item quantity="one">Made %1$d page searchable</item>
+        <item quantity="other">Made %1$d pages searchable</item>
+    </plurals>
+    <string name="msg_tools_already_had_text">%1$d already had text</string>
+    <string name="msg_tools_had_no_readable_text">%1$d had no readable text</string>
+    <string name="msg_tools_with_extras">%1$s (%2$s)</string>
+    <string name="msg_tools_converting_images">Converting %1$d images…</string>
+    <string name="msg_tools_convert_images_failed">Failed to convert images</string>
+
+    <!-- OcrEngine: failure shown when a text model is not on the device yet -->
+    <string name="msg_ocr_model_downloading">The %1$s text model is still downloading.</string>
+    <string name="msg_ocr_model_downloading_retry">The %1$s text model is still downloading. Connect to the internet, then run OCR again.</string>
+</resources>

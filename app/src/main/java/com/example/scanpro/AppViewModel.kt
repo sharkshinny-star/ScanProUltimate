@@ -12,6 +12,7 @@ import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.PdfPasswordRequiredException
+import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
@@ -70,7 +71,7 @@ class AppViewModel @Inject constructor(
     private val _scanRequested = MutableStateFlow(false)
     /** Set by the "Scan" launcher shortcut; the shell opens the camera once the app is unlocked. */
     val scanRequested: StateFlow<Boolean> = _scanRequested.asStateFlow()
-    val documents: StateFlow<List<ScanDocument>> = library.documents
+    val documents: StateFlow<List<DocumentSummary>> = library.documents
     val message: StateFlow<UiMessage?> = operations.message
     val exportArtifact: StateFlow<ExportArtifact?> = operations.exportArtifact
     val openDocumentRequest: StateFlow<String?> = operations.openDocumentRequest
@@ -116,7 +117,7 @@ class AppViewModel @Inject constructor(
     }
 
     fun importScan(pdfUri: Uri?, imageUris: List<Uri>) {
-        operations.enqueue("Enhancing pages, generating OCR, and building searchable PDF…", null) {
+        operations.enqueue(context.getString(R.string.msg_import_scan_progress), null) {
             val document = repository.importScan(pdfUri, imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
             operations.offerScanSaved(document.id)
             operations.requestOpenDocument(document.id)
@@ -126,10 +127,10 @@ class AppViewModel @Inject constructor(
     fun importImages(imageUris: List<Uri>) {
         if (imageUris.isEmpty()) return
         if (imageUris.size > MAX_IMPORT_IMAGES) {
-            operations.showMessage("Import up to $MAX_IMPORT_IMAGES images at a time")
+            operations.showMessage(context.getString(R.string.msg_import_images_limit, MAX_IMPORT_IMAGES))
             return
         }
-        operations.enqueue("Importing pages, enhancing them, and running OCR…", "Document saved") {
+        operations.enqueue(context.getString(R.string.msg_import_images_progress), context.getString(R.string.msg_document_saved)) {
             repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
         }
     }
@@ -143,10 +144,10 @@ class AppViewModel @Inject constructor(
 
     fun importPdf(uri: Uri, password: String? = null) {
         _pdfPasswordRequest.value = null
-        operations.enqueue("Importing PDF pages and building OCR index…", null) {
+        operations.enqueue(context.getString(R.string.msg_import_pdf_progress), null) {
             try {
                 repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first(), password)
-                operations.showMessage("PDF imported")
+                operations.showMessage(context.getString(R.string.msg_pdf_imported))
             } catch (needsPassword: PdfPasswordRequiredException) {
                 _pdfPasswordRequest.value = PdfPasswordRequest(uri, needsPassword.wrongPassword)
             }
@@ -160,7 +161,7 @@ class AppViewModel @Inject constructor(
         filters: List<com.example.scanpro.data.PageFilter> = emptyList()
     ) {
         if (imageUris.isEmpty()) return
-        operations.enqueue("Finishing ${mode.label.lowercase()} scan, enhancing pages, and running OCR…", null) {
+        operations.enqueue(context.getString(R.string.msg_finishing_scan_progress, context.getString(mode.labelRes).lowercase()), null) {
             val newDocument = try {
                 repository.importImages(imageUris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters)
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
@@ -169,7 +170,7 @@ class AppViewModel @Inject constructor(
                 // Keep the photos: they exist nowhere else. The scanner's own clean-up removes abandoned sessions
                 // after a day, so offering Retry here costs nothing if the user ignores it.
                 operations.showMessage(
-                    UiMessage("Could not save the scan: ${error.message ?: "unknown error"}", actionLabel = "Retry") {
+                    UiMessage(context.getString(R.string.msg_could_not_save_scan, error.message ?: context.getString(R.string.msg_unknown_error)), actionLabel = context.getString(R.string.common_retry)) {
                         importCameraSession(imageUris, mode, crops, filters)
                     }
                 )
@@ -192,11 +193,11 @@ class AppViewModel @Inject constructor(
     private fun copyRecognizedText(document: ScanDocument) {
         val text = document.pages.sortedBy { it.position }.joinToString("\n\n") { it.ocrText.trim() }.trim()
         if (text.isBlank()) {
-            operations.showMessage("No text found in this scan")
+            operations.showMessage(context.getString(R.string.msg_no_text_found_in_scan))
             return
         }
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Extracted text", text).apply {
+        val clip = ClipData.newPlainText(context.getString(R.string.msg_clip_extracted_text), text).apply {
             // Scans often hold IDs and account numbers; keep them out of the clipboard preview on Android 13+.
             description.extras = android.os.PersistableBundle().apply {
                 putBoolean(
@@ -206,7 +207,7 @@ class AppViewModel @Inject constructor(
             }
         }
         clipboard.setPrimaryClip(clip)
-        operations.showMessage("Text copied to clipboard")
+        operations.showMessage(context.getString(R.string.msg_text_copied_to_clipboard))
     }
 }
 

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- data/Models.kt: enum labels -->
+    <string name="data_filter_original">Original</string>
+    <string name="data_filter_auto">Auto Clean</string>
+    <string name="data_filter_color">Magic Color</string>
+    <string name="data_filter_gray">Gray</string>
+    <string name="data_filter_bw">B&amp;W</string>
+    <string name="data_filter_whiteboard">Whiteboard</string>
+
+    <string name="data_pdf_quality_high">High</string>
+    <string name="data_pdf_quality_balanced">Balanced</string>
+    <string name="data_pdf_quality_small">Small</string>
+
+    <string name="data_page_size_auto">Auto</string>
+    <string name="data_page_size_a4">A4</string>
+    <string name="data_page_size_letter">Letter</string>
+    <string name="data_page_size_legal">Legal</string>
+
+    <string name="data_theme_light">Light</string>
+    <string name="data_theme_dark">Dark</string>
+    <string name="data_theme_system">System default</string>
+
+    <string name="data_scan_mode_document">Document</string>
+    <string name="data_scan_mode_receipt">Receipt</string>
+    <string name="data_scan_mode_whiteboard">Whiteboard</string>
+    <string name="data_scan_mode_id_card">ID card</string>
+    <string name="data_scan_mode_book">Book</string>
+    <string name="data_scan_mode_text">Extract text</string>
+
+    <string name="data_ocr_script_latin">Latin</string>
+    <string name="data_ocr_script_devanagari">Devanagari</string>
+    <string name="data_ocr_script_chinese">Chinese</string>
+    <string name="data_ocr_script_japanese">Japanese</string>
+    <string name="data_ocr_script_korean">Korean</string>
+
+    <string name="data_watermark_size_small">Small</string>
+    <string name="data_watermark_size_medium">Medium</string>
+    <string name="data_watermark_size_large">Large</string>
+
+    <string name="data_watermark_position_diagonal">Diagonal</string>
+    <string name="data_watermark_position_center">Centre</string>
+    <string name="data_watermark_position_bottom">Bottom</string>
+
+    <!-- intelligence/DocumentIntelligenceEngine.kt: document kind shown in the summary card -->
+    <string name="data_kind_invoice">Invoice</string>
+    <string name="data_kind_receipt">Receipt</string>
+    <string name="data_kind_contract">Contract</string>
+    <string name="data_kind_identity">Identity document</string>
+    <string name="data_kind_business_card">Business card</string>
+    <string name="data_kind_letter">Letter</string>
+    <string name="data_kind_notes">Notes</string>
+    <string name="data_kind_general">Document</string>
+</resources>

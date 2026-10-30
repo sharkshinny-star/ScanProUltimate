@@ -107,7 +107,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -116,7 +115,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
-import com.example.scanpro.core.ui.copyFileToUri
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.core.ui.saveToGoogleDrive
@@ -171,7 +169,6 @@ fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
-    val resources = LocalResources.current
     val snackbarHostState = remember { SnackbarHostState() }
     // Read here: the picker callbacks and dialog buttons below are not composable scopes.
     val pdfDocumentTitle = stringResource(R.string.tools_pdf_document)
@@ -213,20 +210,12 @@ fun PdfToolsScreen(
 
     // SAF save: one launcher per output type, so the system picker suggests the right extension.
     var saveSourceFile by remember { mutableStateOf<File?>(null) }
-    val saveScope = rememberCoroutineScope()
     fun saveTo(destUri: Uri?) {
         val file = saveSourceFile ?: return
         if (destUri == null) return
-        // Off the main thread: a large file going to a cloud provider takes long enough to freeze the screen.
-        saveScope.launch {
-            val ok = withContext(Dispatchers.IO) {
-                copyFileToUri(context, file.absolutePath, destUri).also { copied ->
-                    // The picker already created the destination; don't leave an empty file behind.
-                    if (!copied) runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, destUri) }
-                }
-            }
-            Toast.makeText(context, resources.getString(if (ok) R.string.tools_saved_to_location else R.string.tools_could_not_save_file), Toast.LENGTH_SHORT).show()
-        }
+        // The ViewModel does the copy off the main thread and reports through its message flow, so a
+        // rotation during a large copy to a cloud provider neither freezes nor cancels it.
+        viewModel.saveTo(file, destUri)
     }
     val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { saveTo(it) }
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { saveTo(it) }

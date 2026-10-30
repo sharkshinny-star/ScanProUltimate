@@ -88,7 +88,8 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -144,6 +145,7 @@ fun PdfViewerScreen(
 
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
+    val closeScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
     // Copies made for viewing (including decrypted ones) are removed when the viewer closes.
     val tempFiles = remember { mutableListOf<File>() }
     var needsPassword by remember { mutableStateOf(false) }
@@ -156,18 +158,16 @@ fun PdfViewerScreen(
     val viewerClosed = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
     var unlocking by remember { mutableStateOf(false) }
 
-    fun openRenderer(file: File) {
+    suspend fun openRenderer(file: File) {
         val descriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         try {
             val renderer = PdfRenderer(descriptor)
-            val stale = runBlocking {
-                renderLock.withLock {
-                    if (viewerClosed.get()) true else {
-                        // Replace (and close) any renderer already open, e.g. after a second password attempt.
-                        runCatching { pdfRenderer?.close() }
-                        runCatching { pfd?.close() }
-                        false
-                    }
+            val stale = renderLock.withLock {
+                if (viewerClosed.get()) true else {
+                    // Replace (and close) any renderer already open, e.g. after a second password attempt.
+                    runCatching { pdfRenderer?.close() }
+                    runCatching { pfd?.close() }
+                    false
                 }
             }
             if (stale) {
@@ -249,11 +249,15 @@ fun PdfViewerScreen(
         onDispose {
             viewerClosed.set(true)
             job.cancel()
-            runBlocking {
+            // Closing waits for any page render holding the lock, so it runs off the main thread on a scope
+            // that outlives this screen; the captured values are the ones to close.
+            val renderer = pdfRenderer
+            val descriptor = pfd
+            pdfRenderer = null
+            closeScope.launch {
                 renderLock.withLock {
-                    runCatching { pdfRenderer?.close() }
-                    runCatching { pfd?.close() }
-                    pdfRenderer = null
+                    runCatching { renderer?.close() }
+                    runCatching { descriptor?.close() }
                 }
             }
             imageBitmap?.recycle()
@@ -694,7 +698,7 @@ private fun PdfPageItem(
             if (bitmap != null) {
                 Image(
                     bitmap = bitmap!!.asImageBitmap(),
-                    contentDescription = stringResource(R.string.viewer_page_number, pageIndex + 1),
+                    contentDescription = stringResource(R.string.viewer_page_of, pageIndex + 1, pageCount),
                     modifier = Modifier.fillMaxSize(),
                     filterQuality = FilterQuality.High
                 )

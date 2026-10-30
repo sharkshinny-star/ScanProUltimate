@@ -2,8 +2,13 @@ package com.example.scanpro.feature.tools
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import java.io.File
+import com.example.scanpro.core.ui.copyFileToUri
+import android.provider.DocumentsContract
+import com.example.scanpro.R
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.imaging.CompressPdfEngine
 import com.example.scanpro.imaging.CompressionPreset
@@ -106,14 +111,30 @@ class PdfToolsViewModel @Inject constructor(
         job?.cancel()
     }
 
+    /**
+     * Copies a result to the location the user picked. Runs here rather than in the screen, so turning the
+     * phone mid-copy can't cancel it; the outcome arrives as a message either way.
+     */
+    fun saveTo(file: File, destination: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ok = copyFileToUri(context, file.absolutePath, destination)
+            // The picker already created the destination; don't leave an empty file behind.
+            if (!ok) runCatching { DocumentsContract.deleteDocument(context.contentResolver, destination) }
+            _message.value = context.getString(if (ok) R.string.tools_saved_to_location else R.string.tools_could_not_save_file)
+        }
+    }
+
     private fun report(current: Int, total: Int, label: String) {
         _progress.update { ToolProgress(label, current, total) }
     }
 
     /** One job at a time; a second request while one runs is refused with a message rather than queued silently. */
+    private fun launchTool(@StringRes label: Int, @StringRes failure: Int, work: suspend () -> PdfToolResult?) =
+        launchTool(context.getString(label), context.getString(failure), work)
+
     private fun launchTool(label: String, failure: String, work: suspend () -> PdfToolResult?) {
         if (job?.isActive == true) {
-            _message.value = "Still working on the previous task"
+            _message.value = context.getString(R.string.msg_tools_still_working)
             return
         }
         _result.value = null
@@ -122,57 +143,57 @@ class PdfToolsViewModel @Inject constructor(
             try {
                 _result.value = work()
             } catch (cancelled: CancellationException) {
-                _message.value = "Operation cancelled"
+                _message.value = context.getString(R.string.msg_tools_operation_cancelled)
                 throw cancelled
             } catch (error: Exception) {
                 // The engines stop with an InterruptedException when cancelled mid-way; report that as a cancel.
-                _message.value = if (error is InterruptedException) "Operation cancelled" else error.localizedMessage ?: failure
+                _message.value = if (error is InterruptedException) context.getString(R.string.msg_tools_operation_cancelled) else error.localizedMessage ?: failure
             } finally {
                 _progress.value = null
             }
         }
     }
 
-    private fun bundled(files: List<java.io.File>, prefix: String, message: String): suspend () -> PdfToolResult? = {
+    private fun bundled(files: List<java.io.File>, prefix: String, @StringRes message: Int): suspend () -> PdfToolResult? = {
         if (files.isEmpty()) null
         else PdfToolResult(
             outputFile = PdfToolsEngine.bundleOutputs(context, files, "${prefix}_${System.currentTimeMillis()}"),
             pageCount = files.size,
             originalSizeBytes = 0,
             outputSizeBytes = files.sumOf { it.length() },
-            message = message.format(files.size)
+            message = context.getString(message, files.size)
         )
     }
 
-    fun compress(uri: Uri, preset: CompressionPreset) = launchTool("Compressing PDF…", "Compression failed") {
+    fun compress(uri: Uri, preset: CompressionPreset) = launchTool(R.string.msg_tools_compressing, R.string.msg_tools_compression_failed) {
         val res = CompressPdfEngine.compressPdf(context, uri, preset)
         PdfToolResult(
             outputFile = res.outputFile,
             pageCount = res.pageCount,
             originalSizeBytes = res.originalSizeBytes,
             outputSizeBytes = res.compressedSizeBytes,
-            message = "Compressed by ${res.savingsPercentage}% (${formatBytes(res.originalSizeBytes)} → ${formatBytes(res.compressedSizeBytes)})" +
-                if (res.isSearchablePreserved) "" else ". Pages were converted to images, so the text is no longer selectable or searchable."
+            message = context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(res.originalSizeBytes), formatBytes(res.compressedSizeBytes)) +
+                if (res.isSearchablePreserved) "" else context.getString(R.string.msg_tools_compressed_not_searchable)
         )
     }
 
-    fun pdfToImages(uri: Uri, format: ImageExportFormat) = launchTool("Exporting pages…", "Export failed") {
+    fun pdfToImages(uri: Uri, format: ImageExportFormat) = launchTool(R.string.msg_tools_exporting_pages, R.string.msg_tools_export_failed) {
         val dir = PdfToolsEngine.outputLocation(context, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
         val files = PdfToolsEngine.pdfToImages(context, uri, format, dir, ::report)
-        bundled(files, "pdf_pages", "Exported %d page images")()
+        bundled(files, "pdf_pages", R.string.msg_tools_exported_page_images)()
     }
 
-    fun split(uri: Uri, mode: SplitMode, ranges: String, everyN: Int) = launchTool("Splitting PDF…", "Split failed") {
+    fun split(uri: Uri, mode: SplitMode, ranges: String, everyN: Int) = launchTool(R.string.msg_tools_splitting, R.string.msg_tools_split_failed) {
         val dir = PdfToolsEngine.outputLocation(context, "split_${System.currentTimeMillis()}").apply { mkdirs() }
         val files = PdfToolsEngine.splitPdf(context, uri, mode, ranges, everyN, dir, ::report)
-        bundled(files, "split", "Split PDF into %d files")()
+        bundled(files, "split", R.string.msg_tools_split_into_files)()
     }
 
-    fun protect(uri: Uri, password: String) = launchTool("Encrypting PDF…", "Could not protect the PDF") {
+    fun protect(uri: Uri, password: String) = launchTool(R.string.msg_encrypting_pdf, R.string.msg_tools_protect_failed) {
         PdfToolsEngine.protectPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "protected_${System.currentTimeMillis()}.pdf"))
     }
 
-    fun unlock(uri: Uri, password: String) = launchTool("Unlocking PDF…", "Could not unlock the PDF") {
+    fun unlock(uri: Uri, password: String) = launchTool(R.string.msg_tools_unlocking, R.string.msg_tools_unlock_failed) {
         try {
             PdfToolsEngine.unlockPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "unlocked_${System.currentTimeMillis()}.pdf"))
         } catch (wrong: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
@@ -184,7 +205,7 @@ class PdfToolsViewModel @Inject constructor(
     }
 
     /** Checks how a PDF is protected before asking for a password it may not have. */
-    fun inspectForUnlock(uri: Uri) = launchTool("Checking PDF protection…", "Could not read this PDF") {
+    fun inspectForUnlock(uri: Uri) = launchTool(R.string.msg_tools_checking_protection, R.string.msg_tools_read_failed) {
         when (val protection = PdfToolsEngine.inspectProtection(context, uri)) {
             PdfProtection.PASSWORD_REQUIRED -> _passwordNeeded.value = uri
             else -> _unlockNotice.value = uri to protection
@@ -193,7 +214,7 @@ class PdfToolsViewModel @Inject constructor(
     }
 
     fun organize(tool: String, uri: Uri, specs: List<PageSpec>, extracted: List<Int>, rotations: Map<Int, Int>) =
-        launchTool("Saving PDF pages…", "Page operation failed") {
+        launchTool(R.string.msg_tools_saving_pages, R.string.msg_tools_page_operation_failed) {
             val out = PdfToolsEngine.outputLocation(context, "${tool}_${System.currentTimeMillis()}.pdf")
             when (tool) {
                 "extract" -> PdfToolsEngine.extractPages(context, uri, extracted, out, ::report)
@@ -202,17 +223,17 @@ class PdfToolsViewModel @Inject constructor(
             }
         }
 
-    fun merge(uris: List<Uri>) = launchTool("Merging ${uris.size} PDFs…", "Failed to merge PDFs") {
+    fun merge(uris: List<Uri>) = launchTool(context.getString(R.string.msg_tools_merging, uris.size), context.getString(R.string.msg_tools_merge_failed)) {
         PdfToolsEngine.mergePdfs(context, uris, PdfToolsEngine.outputLocation(context, "merged_${System.currentTimeMillis()}.pdf"), ::report)
     }
 
     private val _form = MutableStateFlow<FormSession?>(null)
     val form: StateFlow<FormSession?> = _form.asStateFlow()
 
-    fun openForm(uri: Uri) = launchTool("Reading form fields…", "Could not read this PDF's form") {
+    fun openForm(uri: Uri) = launchTool(R.string.msg_tools_reading_form_fields, R.string.msg_tools_read_form_failed) {
         val fields = PdfFormEngine.readFields(context, uri)
         if (fields.isEmpty()) {
-            _message.value = "This PDF has no fillable fields. Import it into your documents and use Add text to type on it."
+            _message.value = context.getString(R.string.msg_tools_no_fillable_fields)
         } else {
             _form.value = FormSession(uri, fields, fields.associate { it.name to it.value })
         }
@@ -227,7 +248,7 @@ class PdfToolsViewModel @Inject constructor(
 
     fun saveForm(flatten: Boolean) {
         val session = _form.value ?: return
-        launchTool("Filling form…", "Could not save the filled form") {
+        launchTool(R.string.msg_tools_filling_form, R.string.msg_tools_save_form_failed) {
             val result = PdfFormEngine.fill(
                 context, session.uri, session.changes, flatten,
                 PdfToolsEngine.outputLocation(context, "filled_${System.currentTimeMillis()}.pdf")
@@ -238,7 +259,7 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun makeSearchable(uri: Uri, script: OcrScript) = launchTool("Making PDF searchable…", "Could not make the PDF searchable") {
+    fun makeSearchable(uri: Uri, script: OcrScript) = launchTool(R.string.msg_tools_making_searchable, R.string.msg_tools_make_searchable_failed) {
         val outcome = PdfOcrEngine.makeSearchable(
             context, uri, script, ocr,
             PdfToolsEngine.outputLocation(context, "searchable_${System.currentTimeMillis()}.pdf"), ::report
@@ -246,28 +267,28 @@ class PdfToolsViewModel @Inject constructor(
         val output = outcome.outputFile
         if (output == null) {
             _message.value = if (outcome.alreadyHadText == outcome.pageCount) {
-                "This PDF is already searchable: every page has text"
+                context.getString(R.string.msg_tools_already_searchable)
             } else {
-                "No readable text was found on the pages without text"
+                context.getString(R.string.msg_tools_no_readable_text)
             }
             null
         } else {
-            val noun = if (outcome.madeSearchable == 1) "page" else "pages"
+            val made = context.resources.getQuantityString(R.plurals.msg_tools_made_pages_searchable, outcome.madeSearchable, outcome.madeSearchable)
             val extras = listOfNotNull(
-                outcome.alreadyHadText.takeIf { it > 0 }?.let { "$it already had text" },
-                outcome.noTextFound.takeIf { it > 0 }?.let { "$it had no readable text" }
+                outcome.alreadyHadText.takeIf { it > 0 }?.let { context.getString(R.string.msg_tools_already_had_text, it) },
+                outcome.noTextFound.takeIf { it > 0 }?.let { context.getString(R.string.msg_tools_had_no_readable_text, it) }
             )
             PdfToolResult(
                 outputFile = output,
                 pageCount = outcome.pageCount,
                 originalSizeBytes = outcome.originalSizeBytes,
                 outputSizeBytes = output.length(),
-                message = "Made ${outcome.madeSearchable} $noun searchable" + if (extras.isEmpty()) "" else " (${extras.joinToString(", ")})"
+                message = if (extras.isEmpty()) made else context.getString(R.string.msg_tools_with_extras, made, extras.joinToString(", "))
             )
         }
     }
 
-    fun imagesToPdf(uris: List<Uri>) = launchTool("Converting ${uris.size} images…", "Failed to convert images") {
+    fun imagesToPdf(uris: List<Uri>) = launchTool(context.getString(R.string.msg_tools_converting_images, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
         PdfToolsEngine.imagesToPdf(
             context, uris, PdfPageSize.AUTO, PdfQuality.BALANCED,
             PdfToolsEngine.outputLocation(context, "images_${System.currentTimeMillis()}.pdf"), ::report

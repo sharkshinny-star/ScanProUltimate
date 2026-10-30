@@ -1,15 +1,19 @@
 package com.example.scanpro.feature.document
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.scanpro.R
 import com.example.scanpro.core.operations.ExportArtifact
 import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentLibrary
+import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageAdjustments
@@ -23,9 +27,11 @@ import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.imaging.ImageProcessor
 import kotlinx.coroutines.launch
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -34,6 +40,7 @@ import kotlinx.coroutines.flow.stateIn
 @HiltViewModel
 class DocumentViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    @ApplicationContext private val context: Context,
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
     private val library: DocumentLibrary,
@@ -41,11 +48,20 @@ class DocumentViewModel @Inject constructor(
 ) : ViewModel() {
     private val id: String = checkNotNull(savedStateHandle[ScanProDestinations.DOCUMENT_ID_ARG])
 
+    /** True once the library no longer lists this document (trashed or deleted elsewhere). */
+    val missing: StateFlow<Boolean> = library.documents
+        .map { all -> all.none { it.id == id } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.none { it.id == id })
+
+    // The library holds summaries without pages; the full document is loaded here and again after every
+    // library refresh (each edit bumps updatedAt, so the summary changes and this re-reads the pages).
     val document: StateFlow<ScanDocument?> = library.documents
         .map { all -> all.firstOrNull { it.id == id } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.firstOrNull { it.id == id })
+        .distinctUntilChanged()
+        .map { summary -> summary?.let { repository.loadDocument(id) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val otherDocuments: StateFlow<List<ScanDocument>> = library.documents
+    val otherDocuments: StateFlow<List<DocumentSummary>> = library.documents
         .map { all -> all.filterNot { it.id == id } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.documents.value.filterNot { it.id == id })
 
@@ -61,80 +77,80 @@ class DocumentViewModel @Inject constructor(
         .map { it[id] ?: com.example.scanpro.data.UndoState() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), repository.undoState.value[id] ?: com.example.scanpro.data.UndoState())
 
-    fun undo() = run("Undoing…", null) { repository.undo(id) }
-    fun redo() = run("Redoing…", null) { repository.redo(id) }
+    fun undo() = run(R.string.msg_undoing, null) { repository.undo(id) }
+    fun redo() = run(R.string.msg_redoing, null) { repository.redo(id) }
 
     val busy: StateFlow<Boolean> = operations.busy
     val busyLabel: StateFlow<String?> = operations.busyLabel
 
-    private fun run(label: String?, successMessage: String?, action: suspend () -> Unit) =
-        operations.run(label, successMessage, action)
+    private fun run(@StringRes label: Int?, @StringRes successMessage: Int?, action: suspend () -> Unit) =
+        operations.run(label?.let { context.getString(it) }, successMessage?.let { context.getString(it) }, action)
 
     fun rename(title: String) = run(null, null) { repository.rename(id, title) }
-    fun setTags(tags: String) = run(null, "Tags updated") { repository.setTags(id, tags) }
-    fun setFolder(folder: String) = run(null, "Folder updated") { repository.setFolder(id, folder) }
+    fun setTags(tags: String) = run(null, R.string.msg_tags_updated) { repository.setTags(id, tags) }
+    fun setFolder(folder: String) = run(null, R.string.msg_folder_updated) { repository.setFolder(id, folder) }
     fun toggleFavorite() = run(null, null) { repository.toggleFavorite(id) }
 
     fun setPdfQuality(quality: PdfQuality) =
-        run("Rebuilding PDF at ${quality.label} quality…", "PDF quality updated") { repository.setPdfQuality(id, quality) }
+        operations.run(context.getString(R.string.msg_rebuilding_pdf_quality, context.getString(quality.labelRes)), context.getString(R.string.msg_pdf_quality_updated)) { repository.setPdfQuality(id, quality) }
 
     fun setPdfPageSize(size: PdfPageSize) =
-        run("Rebuilding PDF for ${size.label} pages…", "PDF page size updated") { repository.setPdfPageSize(id, size) }
+        operations.run(context.getString(R.string.msg_rebuilding_pdf_page_size, context.getString(size.labelRes)), context.getString(R.string.msg_pdf_page_size_updated)) { repository.setPdfPageSize(id, size) }
 
     fun setSearchablePdf(enabled: Boolean) =
-        run("Rebuilding OCR PDF layer…", if (enabled) "Searchable PDF enabled" else "Searchable layer disabled") {
+        run(R.string.msg_rebuilding_ocr_layer, if (enabled) R.string.msg_searchable_pdf_enabled else R.string.msg_searchable_layer_disabled) {
             repository.setSearchablePdf(id, enabled)
         }
 
     fun setPageNumbers(enabled: Boolean) =
-        run("Updating PDF page numbers…", null) { repository.setPageNumbers(id, enabled) }
+        run(R.string.msg_updating_page_numbers, null) { repository.setPageNumbers(id, enabled) }
 
     fun setScanMode(mode: ScanMode) =
-        run(null, "Mode set to ${mode.label}") { repository.setScanMode(id, mode) }
+        operations.run(null, context.getString(R.string.msg_mode_set_to, context.getString(mode.labelRes))) { repository.setScanMode(id, mode) }
 
     fun applyFilter(pageId: String, filter: PageFilter) =
-        run("Applying ${filter.label}…", null) { repository.applyFilter(id, pageId, filter) }
+        operations.run(context.getString(R.string.msg_applying_filter, context.getString(filter.labelRes)), null) { repository.applyFilter(id, pageId, filter) }
 
     fun rotatePage(pageId: String) =
-        run("Rotating page and rebuilding PDF…", null) { repository.rotatePage(id, pageId) }
+        run(R.string.msg_rotating_page, null) { repository.rotatePage(id, pageId) }
 
     fun applyCrop(pageId: String, crop: CropQuad) =
-        run("Perspective-correcting page…", "Crop applied") { repository.applyCrop(id, pageId, crop) }
+        run(R.string.msg_perspective_correcting, R.string.msg_crop_applied) { repository.applyCrop(id, pageId, crop) }
 
     fun applyAdjustments(pageId: String, adjustments: PageAdjustments, allPages: Boolean = false) =
-        if (allPages) run("Cleaning up every page…", "Clean-up applied to all pages") { repository.applyAdjustmentsToAll(id, pageId, adjustments) }
-        else run("Applying image adjustments…", "Adjustments applied") { repository.applyAdjustments(id, pageId, adjustments) }
+        if (allPages) run(R.string.msg_cleaning_up_every_page, R.string.msg_cleanup_applied_all) { repository.applyAdjustmentsToAll(id, pageId, adjustments) }
+        else run(R.string.msg_applying_adjustments, R.string.msg_adjustments_applied) { repository.applyAdjustments(id, pageId, adjustments) }
 
     fun resetPage(pageId: String) =
-        run("Restoring original page…", "Page reset") { repository.resetPage(id, pageId) }
+        run(R.string.msg_restoring_original_page, R.string.msg_page_reset) { repository.resetPage(id, pageId) }
 
     fun movePage(pageId: String, delta: Int) =
-        run("Reordering pages…", null) { repository.movePage(id, pageId, delta) }
+        run(R.string.msg_reordering_pages, null) { repository.movePage(id, pageId, delta) }
 
     fun duplicatePage(pageId: String) =
-        run("Duplicating page…", "Page duplicated") { repository.duplicatePage(id, pageId) }
+        run(R.string.msg_duplicating_page, R.string.msg_page_duplicated) { repository.duplicatePage(id, pageId) }
 
     fun extractPage(pageId: String) =
-        run("Extracting page into a new document…", "Page extracted") { repository.extractPage(id, pageId) }
+        run(R.string.msg_extracting_page, R.string.msg_page_extracted) { repository.extractPage(id, pageId) }
 
     fun splitBookSpread(pageId: String, splitFraction: Float) =
-        run("Splitting book spread into two pages…", "Book spread split") { repository.splitBookSpread(id, pageId, splitFraction) }
+        run(R.string.msg_splitting_book_spread, R.string.msg_book_spread_split) { repository.splitBookSpread(id, pageId, splitFraction) }
 
     fun deletePage(pageId: String) =
-        run("Removing page…", "Page removed") { repository.deletePage(id, pageId) }
+        run(R.string.msg_removing_page, R.string.msg_page_removed) { repository.deletePage(id, pageId) }
 
     /** Saved signatures, newest first, offered in the signature dialog. */
     val savedSignatures: StateFlow<List<java.io.File>> = signatures.items
 
     fun stampSignature(pageId: String, signature: Bitmap, keep: Boolean = false) =
-        run("Adding signature overlay…", "Signature added") {
+        run(R.string.msg_adding_signature, R.string.msg_signature_added) {
             if (keep) runCatching { signatures.save(signature) }
             repository.stampSignature(id, pageId, signature)
         }
 
     fun stampSavedSignature(pageId: String, file: java.io.File) =
-        run("Adding signature overlay…", "Signature added") {
-            val bitmap = ImageProcessor.decodeScaled(file.absolutePath, 1600) ?: error("Saved signature could not be read")
+        run(R.string.msg_adding_signature, R.string.msg_signature_added) {
+            val bitmap = ImageProcessor.decodeScaled(file.absolutePath, 1600) ?: error(context.getString(R.string.msg_saved_signature_unreadable))
             try {
                 repository.stampSignature(id, pageId, bitmap)
             } finally {
@@ -147,87 +163,87 @@ class DocumentViewModel @Inject constructor(
     }
 
     fun addTextAnnotation(pageId: String, text: String) =
-        run("Adding text annotation…", "Text added") { repository.addTextAnnotation(id, pageId, text) }
+        run(R.string.msg_adding_text_annotation, R.string.msg_text_added) { repository.addTextAnnotation(id, pageId, text) }
 
     fun addHighlight(pageId: String) =
-        run("Adding highlight…", "Highlight added") { repository.addHighlight(id, pageId) }
+        run(R.string.msg_adding_highlight, R.string.msg_highlight_added) { repository.addHighlight(id, pageId) }
 
     fun addRedaction(pageId: String) =
-        run("Applying redaction…", "Redaction added") { repository.addRedaction(id, pageId) }
+        run(R.string.msg_applying_redaction, R.string.msg_redaction_added) { repository.addRedaction(id, pageId) }
 
     fun undoLastAnnotation(pageId: String) =
-        run("Removing last annotation…", "Annotation removed") { repository.removeLastAnnotation(id, pageId) }
+        run(R.string.msg_removing_last_annotation, R.string.msg_annotation_removed) { repository.removeLastAnnotation(id, pageId) }
 
     suspend fun markupBase(pageId: String) = repository.markupBase(id, pageId)
 
     fun applyMarkup(pageId: String, annotations: List<com.example.scanpro.data.PageAnnotation>) =
-        run("Updating markup…", "Markup updated") { repository.replaceAnnotations(id, pageId, annotations) }
+        run(R.string.msg_updating_markup, R.string.msg_markup_updated) { repository.replaceAnnotations(id, pageId, annotations) }
 
     fun addWatermark(style: com.example.scanpro.data.WatermarkStyle) =
-        run("Adding watermark to all pages…", "Watermark added") { repository.addWatermark(id, style) }
+        run(R.string.msg_adding_watermark, R.string.msg_watermark_added) { repository.addWatermark(id, style) }
 
     fun appendImages(imageUris: List<Uri>) {
         if (imageUris.isEmpty()) return
-        run("Adding pages and rebuilding searchable PDF…", "Pages added") { repository.appendImages(id, imageUris) }
+        run(R.string.msg_adding_pages, R.string.msg_pages_added) { repository.appendImages(id, imageUris) }
     }
 
     fun mergeWith(otherId: String) =
-        run("Merging documents…", "Merged copy created") { repository.mergeDocuments(id, otherId) }
+        run(R.string.msg_merging_documents, R.string.msg_merged_copy_created) { repository.mergeDocuments(id, otherId) }
 
     fun updatePageOcrText(pageId: String, text: String) =
-        run("Updating OCR text and searchable PDF…", "OCR text updated") { repository.updatePageOcrText(id, pageId, text) }
+        run(R.string.msg_updating_ocr_text, R.string.msg_ocr_text_updated) { repository.updatePageOcrText(id, pageId, text) }
 
-    fun reOcr() = run("Refreshing OCR on every page…", "OCR refreshed") { repository.reOcrDocument(id) }
+    fun reOcr() = run(R.string.msg_refreshing_ocr, R.string.msg_ocr_refreshed) { repository.reOcrDocument(id) }
 
     fun reOcr(script: OcrScript) =
-        run("Running ${script.label} OCR on every page…", "${script.label} OCR applied") { repository.reOcrDocument(id, script) }
+        operations.run(context.getString(R.string.msg_running_script_ocr, context.getString(script.labelRes)), context.getString(R.string.msg_script_ocr_applied, context.getString(script.labelRes))) { repository.reOcrDocument(id, script) }
 
-    fun splitDocument() = run("Splitting document into individual page documents…", null) {
+    fun splitDocument() = run(R.string.msg_splitting_document, null) {
         val count = repository.splitIntoPageDocuments(id)
-        operations.showMessage("$count page documents created")
+        operations.showMessage(context.getString(R.string.msg_page_documents_created, count))
     }
 
-    fun exportIdCopy() = run("Creating printable ID copy…", null) {
+    fun exportIdCopy() = run(R.string.msg_creating_id_copy, null) {
         val file = repository.exportIdCopy(id)
-        operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", "Share ID copy"))
+        operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", context.getString(R.string.msg_share_id_copy)))
     }
 
-    fun exportLongImage() = run("Creating long image…", null) {
+    fun exportLongImage() = run(R.string.msg_creating_long_image, null) {
         val file = repository.exportLongImage(id)
-        operations.publishExport(ExportArtifact(file.absolutePath, "image/jpeg", "Share long image"))
+        operations.publishExport(ExportArtifact(file.absolutePath, "image/jpeg", context.getString(R.string.msg_share_long_image)))
     }
 
-    fun exportOcrTextFile() = run("Creating text export…", null) {
+    fun exportOcrTextFile() = run(R.string.msg_creating_text_export, null) {
         val file = repository.exportOcrText(id)
-        operations.publishExport(ExportArtifact(file.absolutePath, "text/plain", "Share OCR text file"))
+        operations.publishExport(ExportArtifact(file.absolutePath, "text/plain", context.getString(R.string.msg_share_ocr_text_file)))
     }
 
-    fun exportWordFile() = run("Creating Word document…", null) {
+    fun exportWordFile() = run(R.string.msg_creating_word_document, null) {
         val file = repository.exportWord(id)
-        operations.publishExport(ExportArtifact(file.absolutePath, DOCX_MIME, "Share Word document"))
+        operations.publishExport(ExportArtifact(file.absolutePath, DOCX_MIME, context.getString(R.string.msg_share_word_document)))
     }
 
-    fun exportExcelFile() = run("Creating Excel workbook…", null) {
+    fun exportExcelFile() = run(R.string.msg_creating_excel_workbook, null) {
         val file = repository.exportExcel(id)
-        operations.publishExport(ExportArtifact(file.absolutePath, XLSX_MIME, "Share Excel workbook"))
+        operations.publishExport(ExportArtifact(file.absolutePath, XLSX_MIME, context.getString(R.string.msg_share_excel_workbook)))
     }
 
     fun replaceText(pageId: String, edit: TextEdit) =
-        run("Replacing text…", if (edit.text.isBlank()) "Text removed" else "Text replaced") {
+        run(R.string.msg_replacing_text, if (edit.text.isBlank()) R.string.msg_text_removed else R.string.msg_text_replaced) {
             repository.replaceText(id, pageId, edit.left, edit.top, edit.right, edit.bottom, edit.text)
         }
 
     fun erase(pageId: String, strokesByBrush: Map<Float, List<List<com.example.scanpro.data.NormalizedPoint>>>) =
-        run("Erasing…", "Erased") { repository.erase(id, pageId, strokesByBrush) }
+        run(R.string.msg_erasing, R.string.msg_erased) { repository.erase(id, pageId, strokesByBrush) }
 
-    fun exportPasswordProtectedPdf(password: String) = run("Encrypting PDF…", null) {
+    fun exportPasswordProtectedPdf(password: String) = run(R.string.msg_encrypting_pdf, null) {
         val file = repository.exportPasswordProtectedPdf(id, password)
-        operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", "Share protected PDF"))
+        operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", context.getString(R.string.msg_share_protected_pdf)))
     }
 
-    fun exportEncryptedBackup(password: String) = run("Encrypting document backup…", null) {
+    fun exportEncryptedBackup(password: String) = run(R.string.msg_encrypting_backup, null) {
         val file = repository.exportEncryptedBackup(id, password)
-        operations.publishExport(ExportArtifact(file.absolutePath, "application/octet-stream", "Share encrypted ScanPro backup"))
+        operations.publishExport(ExportArtifact(file.absolutePath, "application/octet-stream", context.getString(R.string.msg_share_encrypted_backup)))
     }
 
     // Queued, not rejected while busy: the screen closes as soon as this is tapped, so a dropped request would
@@ -235,8 +251,8 @@ class DocumentViewModel @Inject constructor(
     fun moveToTrash() = operations.enqueue(null, null) {
         repository.moveToTrash(id)
         operations.showMessage(
-            UiMessage("Moved to recycle bin", actionLabel = "Undo") {
-                operations.enqueue(null, "Document restored") { repository.restore(id) }
+            UiMessage(context.getString(R.string.msg_moved_to_recycle_bin), actionLabel = context.getString(R.string.common_undo)) {
+                operations.enqueue(null, context.getString(R.string.msg_document_restored)) { repository.restore(id) }
             }
         )
     }
@@ -257,7 +273,7 @@ class DocumentViewModel @Inject constructor(
         }
         // Queued rather than rejected while busy: by now the user has already asked for the file
         // (and for Save, already created the destination), so dropping the request would lose it.
-        operations.enqueue("Preparing PDF…", null) {
+        operations.enqueue(context.getString(R.string.msg_preparing_pdf), null) {
             val fresh = try {
                 repository.ensurePdf(id)
             } catch (error: Throwable) {

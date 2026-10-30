@@ -23,12 +23,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
-import com.example.scanpro.data.ScanDocument
+import com.example.scanpro.data.DocumentSummary
 import java.text.DateFormat
 import java.util.Date
 import com.example.scanpro.core.designsystem.PageThumbnail
@@ -39,7 +40,7 @@ import com.example.scanpro.core.ui.pagesLabel
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun DocumentListCard(
-    document: ScanDocument,
+    document: DocumentSummary,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -63,8 +64,8 @@ internal fun DocumentListCard(
     ) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             PageThumbnail(
-                path = document.pages.firstOrNull()?.imagePath,
-                version = document.pages.firstOrNull(),
+                path = document.coverPath,
+                version = document.updatedAt,
                 modifier = Modifier.size(width = 48.dp, height = 64.dp),
                 maxDimension = THUMBNAIL_SMALL
             )
@@ -79,7 +80,7 @@ internal fun DocumentListCard(
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    stringResource(R.string.lib_card_meta_three, pagesLabel(document.pageCount), formatBytes(document.sizeBytes), updatedText),
+                    stringResource(R.string.lib_card_meta_three, pagesLabel(LocalContext.current, document.pageCount), formatBytes(document.sizeBytes), updatedText),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -94,7 +95,7 @@ internal fun DocumentListCard(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun DocumentGridCard(
-    document: ScanDocument,
+    document: DocumentSummary,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -112,8 +113,8 @@ internal fun DocumentGridCard(
         Column(Modifier.padding(10.dp)) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
                 PageThumbnail(
-                    path = document.pages.firstOrNull()?.imagePath,
-                version = document.pages.firstOrNull(),
+                    path = document.coverPath,
+                version = document.updatedAt,
                     modifier = Modifier.fillMaxWidth().height(170.dp)
                 )
                 if (selected) Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.lib_cd_selected), modifier = Modifier.padding(6.dp), tint = MaterialTheme.colorScheme.primary)
@@ -121,7 +122,7 @@ internal fun DocumentGridCard(
             Spacer(Modifier.height(8.dp))
             Text(document.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                stringResource(R.string.lib_card_meta_two, pagesLabel(document.pageCount), formatBytes(document.sizeBytes)),
+                stringResource(R.string.lib_card_meta_two, pagesLabel(LocalContext.current, document.pageCount), formatBytes(document.sizeBytes)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

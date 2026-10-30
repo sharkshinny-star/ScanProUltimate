@@ -76,7 +76,9 @@ fun PageThumbnail(
      * overwrite the same file, and with unchanged arguments this call would be skipped and keep showing
      * the old cached bitmap.
      */
-    version: Any? = null
+    version: Any? = null,
+    /** What the screen reader says for the image; pass e.g. "Page 3 of 12" where the position is known. */
+    contentDescription: String = stringResource(R.string.ui_scanned_page)
 ) {
     // The file's timestamp is part of the cache key, but reading it is disk I/O, so it happens on the
     // IO thread. Meanwhile the last bitmap shown for this request is drawn straight away, so coming
@@ -114,7 +116,7 @@ fun PageThumbnail(
             val imageBitmap = remember(image) { image.asImageBitmap() }
             Image(
                 bitmap = imageBitmap,
-                contentDescription = stringResource(R.string.ui_scanned_page),
+                contentDescription = contentDescription,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )

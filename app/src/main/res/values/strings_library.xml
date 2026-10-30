@@ -93,6 +93,10 @@
     <string name="settings_pdf_quality_title">Default PDF quality</string>
     <string name="settings_pdf_quality_body">High keeps detail. Small creates lighter files.</string>
     <string name="settings_app_theme">App Theme</string>
+    <string name="settings_app_language">App language</string>
+    <string name="settings_app_language_subtitle">Choose the language ScanPro uses</string>
+    <string name="settings_app_language_unavailable">Language settings aren\'t available on this device</string>
+    <string name="settings_link_unavailable">No app can open this link</string>
     <string name="settings_smart_titles_title">Smart OCR titles</string>
     <string name="settings_smart_titles_body">Use recognized text to name new scans automatically.</string>
     <string name="settings_app_lock_title">Biometric app lock</string>
@@ -106,4 +110,21 @@
     <!-- Lock screen -->
     <string name="lock_title">ScanPro is locked</string>
     <string name="lock_unlock">Unlock</string>
+
+    <!-- Settings: backup and restore -->
+    <string name="settings_backup_all">Back up all documents</string>
+    <string name="settings_backup_all_subtitle">Encrypted copies in a folder you choose, one file per document</string>
+    <string name="settings_backup_password_message">Each file is encrypted with this password. You will need it to restore; it is not stored anywhere.</string>
+    <string name="settings_backup_start">Back up</string>
+    <string name="settings_backup_running">Backing up documents…</string>
+    <plurals name="settings_backup_done">
+        <item quantity="one">Backed up %1$d document</item>
+        <item quantity="other">Backed up %1$d documents</item>
+    </plurals>
+    <string name="settings_restore_backup">Restore from backup</string>
+    <string name="settings_restore_backup_subtitle">Add a document back from a .scanpro backup file</string>
+    <string name="settings_restore_password_message">Enter the password the backup was made with.</string>
+    <string name="settings_restore_start">Restore</string>
+    <string name="settings_restore_running">Restoring backup…</string>
+    <string name="settings_restore_done">Restored \"%1$s\"</string>
 </resources>

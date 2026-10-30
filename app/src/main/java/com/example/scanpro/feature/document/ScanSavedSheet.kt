@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -150,7 +151,7 @@ fun ScanSavedSheet(
 @Composable
 private fun SheetAction(icon: ImageVector, title: String, subtitle: String?, enabled: Boolean, onClick: () -> Unit) {
     ListItem(
-        modifier = Modifier.clickable(enabled = enabled, onClick = onClick),
+        modifier = Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         leadingContent = { Icon(icon, contentDescription = null) },

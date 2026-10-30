@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.ui.ContactDraft
@@ -165,7 +166,7 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
 @Composable
 private fun Action(icon: ImageVector, title: String, detail: String?, onClick: () -> Unit) {
     ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
         headlineContent = { Text(title) },
         supportingContent = detail?.takeIf { it.isNotBlank() }?.let { { Text(it, maxLines = 1) } },
         leadingContent = { Icon(icon, contentDescription = null) }

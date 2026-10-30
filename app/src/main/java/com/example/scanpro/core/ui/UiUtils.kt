@@ -120,7 +120,7 @@ fun copyText(context: Context, text: String) {
     Toast.makeText(context, context.getString(R.string.core_text_copied), Toast.LENGTH_SHORT).show()
 }
 
-fun pagesLabel(count: Int) = if (count == 1) "1 page" else "$count pages"
+fun pagesLabel(context: Context, count: Int): String = context.resources.getQuantityString(R.plurals.core_pages, count, count)
 
 fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
@@ -132,36 +132,44 @@ fun formatBytes(bytes: Long): String {
     return if (group == 0) "$bytes B" else String.format(Locale.getDefault(), "%.1f %s", value, units[group])
 }
 
-fun formatTrashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis()): Pair<String, Boolean> {
+/** How long a trashed document has left before it is deleted for good, in the largest whole unit. */
+sealed class TrashCountdown(val isUrgent: Boolean) {
+    object Soon : TrashCountdown(isUrgent = true)
+    data class Days(val days: Int) : TrashCountdown(isUrgent = false)
+    data class Hours(val hours: Int) : TrashCountdown(isUrgent = true)
+    data class Minutes(val minutes: Int) : TrashCountdown(isUrgent = true)
+}
+
+/** Pure part of [formatTrashCountdown], without resources, so it stays testable in a plain JUnit test. */
+fun trashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis()): TrashCountdown {
     val retentionMs = 7L * 24L * 60L * 60L * 1000L
     val expirationMs = trashedAt + retentionMs
     val remainingMs = expirationMs - nowMs
 
-    if (remainingMs <= 0) return Pair("Auto-deletes soon", true)
+    if (remainingMs <= 0) return TrashCountdown.Soon
 
     val hourMs = 60L * 60L * 1000L
     val dayMs = 24L * hourMs
     val minMs = 60L * 1000L
 
-    val isUrgent = remainingMs < dayMs
-
-    val text = when {
-        remainingMs >= dayMs -> {
-            val days = kotlin.math.ceil(remainingMs.toDouble() / dayMs.toDouble()).toInt().coerceAtLeast(1)
-            "Auto-deletes in $days ${if (days == 1) "day" else "days"}"
-        }
-        remainingMs >= hourMs -> {
-            val hours = kotlin.math.ceil(remainingMs.toDouble() / hourMs.toDouble()).toInt().coerceAtLeast(1)
-            "Auto-deletes in $hours ${if (hours == 1) "hour" else "hours"}"
-        }
-        remainingMs >= minMs -> {
-            val mins = kotlin.math.ceil(remainingMs.toDouble() / minMs.toDouble()).toInt().coerceAtLeast(1)
-            "Auto-deletes in $mins ${if (mins == 1) "minute" else "minutes"}"
-        }
-        else -> "Auto-deletes soon"
+    return when {
+        remainingMs >= dayMs -> TrashCountdown.Days(kotlin.math.ceil(remainingMs.toDouble() / dayMs.toDouble()).toInt().coerceAtLeast(1))
+        remainingMs >= hourMs -> TrashCountdown.Hours(kotlin.math.ceil(remainingMs.toDouble() / hourMs.toDouble()).toInt().coerceAtLeast(1))
+        remainingMs >= minMs -> TrashCountdown.Minutes(kotlin.math.ceil(remainingMs.toDouble() / minMs.toDouble()).toInt().coerceAtLeast(1))
+        else -> TrashCountdown.Soon
     }
+}
 
-    return Pair(text, isUrgent)
+fun formatTrashCountdown(context: Context, trashedAt: Long, nowMs: Long = System.currentTimeMillis()): Pair<String, Boolean> {
+    val countdown = trashCountdown(trashedAt, nowMs)
+    val resources = context.resources
+    val text = when (countdown) {
+        TrashCountdown.Soon -> context.getString(R.string.core_trash_auto_deletes_soon)
+        is TrashCountdown.Days -> resources.getQuantityString(R.plurals.core_trash_auto_deletes_days, countdown.days, countdown.days)
+        is TrashCountdown.Hours -> resources.getQuantityString(R.plurals.core_trash_auto_deletes_hours, countdown.hours, countdown.hours)
+        is TrashCountdown.Minutes -> resources.getQuantityString(R.plurals.core_trash_auto_deletes_minutes, countdown.minutes, countdown.minutes)
+    }
+    return Pair(text, countdown.isUrgent)
 }
 
 fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String) {

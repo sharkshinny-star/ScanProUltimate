@@ -107,7 +107,7 @@ import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.automirrored.filled.RotateRight
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -140,12 +140,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.selection.toggleable
 import com.example.scanpro.R
 import com.example.scanpro.data.WatermarkStyle
 import com.example.scanpro.data.CropQuad
@@ -155,6 +161,7 @@ import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
+import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.intelligence.DocumentInsights
@@ -187,6 +194,10 @@ import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.designsystem.TitleWithStatus
 import com.example.scanpro.core.designsystem.TopBarWithProgress
 
+/** Rotation is a physical direction, so this icon must not flip in right-to-left layouts (the AutoMirrored one would). */
+@Suppress("DEPRECATION")
+private val RotateRightIcon: ImageVector = Icons.Filled.RotateRight
+
 @Composable
 fun DocumentRoute(
     snackbarHostState: SnackbarHostState,
@@ -194,6 +205,7 @@ fun DocumentRoute(
     viewModel: DocumentViewModel = hiltViewModel()
 ) {
     val document by viewModel.document.collectAsStateWithLifecycle()
+    val missing by viewModel.missing.collectAsStateWithLifecycle()
     val otherDocuments by viewModel.otherDocuments.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
@@ -204,14 +216,16 @@ fun DocumentRoute(
     // If the open document disappears (trashed or deleted elsewhere), leave instead of stranding the
     // user on an "unavailable" screen with no way back.
     var hadDocument by remember { mutableStateOf(false) }
-    LaunchedEffect(document == null) {
-        if (document != null) hadDocument = true else if (hadDocument) onBack()
+    LaunchedEffect(document != null, missing) {
+        if (document != null) hadDocument = true else if (missing && hadDocument) onBack()
     }
 
     val current = document
     if (current == null) {
+        // Pages are read from the database after the screen opens; only a document the library no
+        // longer lists is really unavailable.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(48.dp))
+            if (busy || !missing) LinearProgressIndicator(Modifier.fillMaxWidth().padding(48.dp))
             else Text(stringResource(R.string.doc_unavailable))
         }
         return
@@ -286,7 +300,7 @@ fun DocumentRoute(
 @Composable
 internal fun DocumentDetailScreen(
     document: ScanDocument,
-    otherDocuments: List<ScanDocument>,
+    otherDocuments: List<DocumentSummary>,
     busy: Boolean,
     busyLabel: String?,
     snackbarHostState: SnackbarHostState,
@@ -487,7 +501,8 @@ internal fun DocumentDetailScreen(
                             Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.common_redo))
                         }
                     }
-                    IconButton(onClick = onToggleFavorite, enabled = !busy) {
+                    val favoriteState = stringResource(if (document.isFavorite) R.string.a11y_favorite_on else R.string.a11y_favorite_off)
+                    IconButton(onClick = onToggleFavorite, enabled = !busy, modifier = Modifier.semantics { stateDescription = favoriteState }) {
                         Icon(if (document.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = stringResource(R.string.doc_favorite))
                     }
                     Box {
@@ -569,8 +584,16 @@ internal fun DocumentDetailScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                 }
-                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE, version = currentPage)
+                PageThumbnail(
+                    currentPage.imagePath,
+                    Modifier.fillMaxWidth().height(400.dp),
+                    THUMBNAIL_LARGE,
+                    version = currentPage,
+                    contentDescription = stringResource(R.string.viewer_page_of, currentIndex + 1, pages.size)
+                )
                 Spacer(Modifier.height(10.dp))
+                // In a right-to-left layout the strip runs right to left, so a drag to the right moves a page earlier.
+                val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
                         var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
@@ -578,7 +601,9 @@ internal fun DocumentDetailScreen(
                         val latestIndex by rememberUpdatedState(index)
                         val latestLast by rememberUpdatedState(pages.lastIndex)
                         val latestBusy by rememberUpdatedState(busy)
+                        val latestRtl by rememberUpdatedState(isRtl)
                         val isCurrent = item.id == currentPage.id
+                        val pageDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
                         Card(
                             modifier = Modifier
                                 .size(width = 52.dp, height = 70.dp)
@@ -592,7 +617,8 @@ internal fun DocumentDetailScreen(
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { dragDistance = 0f },
                                         onDragEnd = {
-                                            val target = (latestIndex + (dragDistance / slot).roundToInt()).coerceIn(0, latestLast)
+                                            val slots = (dragDistance / slot).roundToInt()
+                                            val target = (latestIndex + if (latestRtl) -slots else slots).coerceIn(0, latestLast)
                                             val delta = target - latestIndex
                                             dragDistance = 0f
                                             if (delta != 0 && !latestBusy) onMove(item.id, delta)
@@ -604,11 +630,12 @@ internal fun DocumentDetailScreen(
                                         }
                                     )
                                 }
-                                .clickable { selectedPageId = item.id },
+                                .clickable(role = Role.Tab) { selectedPageId = item.id }
+                                .semantics { selected = isCurrent },
                             shape = RoundedCornerShape(8.dp),
                             border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
                         ) {
-                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item)
+                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, contentDescription = pageDescription)
                         }
                     }
                 }
@@ -700,7 +727,7 @@ internal fun DocumentDetailScreen(
                                 selected = document.ocrScript == script,
                                 enabled = !busy,
                                 onClick = { onOcrScript(script) },
-                                label = { Text(script.label) }
+                                label = { Text(stringResource(script.labelRes)) }
                             )
                         }
                     }
@@ -760,7 +787,7 @@ internal fun DocumentDetailScreen(
                 }
 
                 DetailTab.INSIGHTS -> {
-                    Text(insights.kind.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(insights.kind.labelRes), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(4.dp))
                     Text(insights.summary, style = MaterialTheme.typography.bodyMedium)
                     if (insights.amounts.isNotEmpty()) Text(stringResource(R.string.doc_amounts, insights.amounts.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
@@ -813,19 +840,19 @@ internal fun DocumentDetailScreen(
                     SubHeader(stringResource(R.string.doc_quality))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(PdfQuality.entries, key = { it.name }) { quality ->
-                            FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(quality.label) })
+                            FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(stringResource(quality.labelRes)) })
                         }
                     }
                     SubHeader(stringResource(R.string.doc_page_size))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(PdfPageSize.entries, key = { it.name }) { size ->
-                            FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(size.label) })
+                            FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(stringResource(size.labelRes)) })
                         }
                     }
                     SubHeader(stringResource(R.string.doc_document_mode))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(ScanMode.entries.filter { it != ScanMode.TEXT }, key = { it.name }) { mode ->
-                            FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(mode.label) })
+                            FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(stringResource(mode.labelRes)) })
                         }
                     }
                     Spacer(Modifier.height(4.dp))
@@ -854,7 +881,7 @@ internal fun DocumentDetailScreen(
                 if (page != null) {
                     SubHeader(stringResource(R.string.doc_this_page))
                     ToolGrid {
-                        ToolTile(Icons.AutoMirrored.Filled.RotateRight, stringResource(R.string.doc_rotate), !busy, run { onRotate(page.id) })
+                        ToolTile(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(page.id) })
                         ToolTile(Icons.Default.Tune, stringResource(R.string.doc_fine_tune), !busy, run { adjustmentsOpen = true })
                         ToolTile(Icons.Default.RestartAlt, stringResource(R.string.common_reset), !busy, run { onResetPage(page.id) })
                         ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_left), !busy && currentIndex > 0, run { onMove(page.id, -1) })
@@ -1144,7 +1171,7 @@ private fun ToolTile(icon: ImageVector, label: String, enabled: Boolean = true, 
         modifier = Modifier
             .width(78.dp)
             .clip(RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .alpha(if (enabled) 1f else 0.38f)
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -1171,14 +1198,18 @@ private fun ToggleRow(
     enabled: Boolean,
     onChange: (Boolean) -> Unit
 ) {
+    // The whole row is the switch, so a screen reader hears the title, hint and state as one control.
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, fontWeight = FontWeight.Medium)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, enabled = enabled, onCheckedChange = onChange)
+        Switch(checked = checked, enabled = enabled, onCheckedChange = null)
     }
 }
