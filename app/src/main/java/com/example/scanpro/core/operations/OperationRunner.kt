@@ -103,14 +103,19 @@ class OperationRunner @Inject constructor(
         synchronized(stateLock) {
             pending++
             _busy.value = true
+            // Keeps the process alive if the user leaves the app before the work is done. Start and stop
+            // requests are sent under the same lock that counts running jobs, so they reach the service in
+            // the order of the count: a job finishing as another starts can't switch the service off after
+            // the new job asked for it.
+            OperationForegroundService.show(context, label ?: _busyLabel.value)
         }
-        // Keeps the process alive if the user leaves the app before the work is done.
-        OperationForegroundService.show(context, label ?: _busyLabel.value)
         scope.launch {
             try {
                 mutex.withLock {
-                    synchronized(stateLock) { _busyLabel.value = label }
-                    OperationForegroundService.show(context, label)
+                    synchronized(stateLock) {
+                        _busyLabel.value = label
+                        OperationForegroundService.show(context, label)
+                    }
                     runCatching { action() }
                         .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
                         .onFailure { error ->
@@ -119,15 +124,14 @@ class OperationRunner @Inject constructor(
                     runCatching { library.refresh() }
                 }
             } finally {
-                val drained = synchronized(stateLock) {
+                synchronized(stateLock) {
                     pending--
                     if (pending == 0) {
                         _busyLabel.value = null
                         _busy.value = false
+                        OperationForegroundService.stop(context)
                     }
-                    pending == 0
                 }
-                if (drained) OperationForegroundService.stop(context)
             }
         }
     }

@@ -21,6 +21,10 @@
 -keep class com.tom_roush.pdfbox.pdmodel.fdf.** { *; }
 -keep class com.tom_roush.pdfbox.filter.** { *; }
 -keep class com.tom_roush.pdfbox.pdmodel.font.** { *; }
+#  - PDNumberTreeNode creates its value objects through their constructors: page labels (PDPageLabelRange)
+#    and the tagged-PDF parent tree (PDParentTreeValue). Only reached when a PDF carries those structures.
+-keep class com.tom_roush.pdfbox.pdmodel.common.PDPageLabelRange { <init>(...); }
+-keep class com.tom_roush.pdfbox.pdmodel.documentinterchange.logicalstructure.PDParentTreeValue { <init>(...); }
 -dontwarn com.tom_roush.pdfbox.**
 
 # ML Kit creates its components (text recognition, barcode, translate, language ID, common) by reflection
