@@ -129,6 +129,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import com.example.scanpro.data.hasCurrentPdf
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -387,6 +390,7 @@ internal fun DocumentDetailScreen(
     }
     var assistantQuestion by rememberSaveable(document.id) { mutableStateOf("") }
     var assistantAnswer by rememberSaveable(document.id) { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
     val detailScope = rememberCoroutineScope()
     var translationTarget by rememberSaveable(document.id) { mutableStateOf("en") }
     // Plain remember: a whole translated document in saved state can exceed the Binder limit and crash.
@@ -639,13 +643,18 @@ internal fun DocumentDetailScreen(
                                         }
                                     )
                                 }
-                                .clickable { selectedPageId = item.id },
+                                .clickable { selectedPageId = item.id }
+                                // One announcement per card: its number and whether it is the page being edited.
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription = "Page ${index + 1} of ${pages.size}"
+                                    selected = isCurrent
+                                },
                             shape = RoundedCornerShape(10.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
                             border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.secondary)
                             else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                         ) {
-                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, shape = RoundedCornerShape(9.dp), background = Color.Transparent)
+                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, shape = RoundedCornerShape(9.dp), background = Color.Transparent, contentDescription = null)
                         }
                     }
                 }
@@ -822,7 +831,11 @@ internal fun DocumentDetailScreen(
                         maxLines = 3
                     )
                     FilledTonalButton(
-                        onClick = { assistantAnswer = DocumentIntelligenceEngine.answer(assistantQuestion, document.ocrText) },
+                        onClick = {
+                            val question = assistantQuestion
+                            val text = document.ocrText
+                            scope.launch { assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(question, text) } }
+                        },
                         enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank()
                     ) { Text("Find answer") }
                     if (assistantAnswer.isNotBlank()) {

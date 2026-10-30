@@ -81,7 +81,9 @@ fun PageThumbnail(
     /** Corner shape of the placeholder; the image itself is clipped to it as well. */
     shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(12.dp),
     /** Placeholder colour shown while the thumbnail loads, or when the page has no image. */
-    background: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+    background: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
+    /** What a screen reader says for the image; null when the container describes it. */
+    contentDescription: String? = "Scanned page"
 ) {
     // The file's timestamp is part of the cache key, but reading it is disk I/O, so it happens on the
     // IO thread. Meanwhile the last bitmap shown for this request is drawn straight away, so coming
@@ -117,7 +119,7 @@ fun PageThumbnail(
             val imageBitmap = remember(image) { image.asImageBitmap() }
             Image(
                 bitmap = imageBitmap,
-                contentDescription = "Scanned page",
+                contentDescription = contentDescription,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )

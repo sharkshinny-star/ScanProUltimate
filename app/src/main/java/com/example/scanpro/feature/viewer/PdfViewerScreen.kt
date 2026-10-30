@@ -139,11 +139,24 @@ fun PdfViewerScreen(
 
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
+    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again; evicted ones are recycled.
+    val pageCache = remember {
+        object : android.util.LruCache<Int, Bitmap>(24 * 1024 * 1024) {
+            override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
+            override fun entryRemoved(evicted: Boolean, key: Int, oldValue: Bitmap, newValue: Bitmap?) {
+                if (evicted && oldValue !== newValue) oldValue.recycle()
+            }
+        }
+    }
+    DisposableEffect(Unit) { onDispose { pageCache.evictAll() } }
+    // The text of every page, read once per file; each search then scans these strings.
+    var pageTexts by remember { mutableStateOf<List<String>?>(null) }
     // Copies made for viewing (including decrypted ones) are removed when the viewer closes.
     val tempFiles = remember { mutableListOf<File>() }
     var needsPassword by remember { mutableStateOf(false) }
     // The file actually on screen: an unlocked or unrestricted copy when the original is protected.
     var openedFile by remember { mutableStateOf<File?>(null) }
+    LaunchedEffect(openedFile) { pageTexts = null }
     var lockedFile by remember { mutableStateOf<File?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
 
@@ -275,8 +288,8 @@ fun PdfViewerScreen(
         isSearchingText = true
         try {
             val query = searchQuery
-            val matches = withContext(Dispatchers.IO) {
-                val found = mutableListOf<Int>()
+            val texts = pageTexts ?: withContext(Dispatchers.IO) {
+                // Read once per file (and once per protected copy); later queries only scan the strings.
                 val tempPdf = File(context.cacheDir, "search_temp_${System.currentTimeMillis()}.pdf")
                 try {
                     // Search the file being shown; for a protected PDF that is the unlocked copy, not the original.
@@ -288,24 +301,23 @@ fun PdfViewerScreen(
                         }
                         tempPdf
                     }
-                    if (stream.exists()) {
-                        PDDocument.load(stream).use { pdDoc ->
-                            val stripper = PDFTextStripper()
-                            for (i in 0 until pdDoc.numberOfPages) {
-                                // Stop as soon as a newer query replaces this one.
-                                ensureActive()
-                                stripper.startPage = i + 1
-                                stripper.endPage = i + 1
-                                if (stripper.getText(pdDoc).contains(query, ignoreCase = true)) found.add(i)
-                            }
+                    if (!stream.exists()) emptyList()
+                    else PDDocument.load(stream, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { pdDoc ->
+                        val stripper = PDFTextStripper()
+                        (0 until pdDoc.numberOfPages).map { i ->
+                            // Stop as soon as a newer query replaces this one.
+                            ensureActive()
+                            stripper.startPage = i + 1
+                            stripper.endPage = i + 1
+                            runCatching { stripper.getText(pdDoc) }.getOrDefault("")
                         }
                     }
                 } finally {
-                    // Each search may copy the document; never leave those copies behind.
+                    // The copy is read once; never leave it behind.
                     tempPdf.delete()
                 }
-                found
-            }
+            }.also { pageTexts = it }
+            val matches = texts.withIndex().filter { (_, text) -> text.contains(query, ignoreCase = true) }.map { it.index }
             matchingPageIndices = matches
             currentMatchIdx = 0
             if (matches.isNotEmpty()) listState.scrollToItem(matches.first())
@@ -579,6 +591,7 @@ fun PdfViewerScreen(
                                 PdfPageItem(
                                     renderer = pdfRenderer!!,
                                     renderLock = renderLock,
+                                    pageCache = pageCache,
                                     pageIndex = index,
                                     pageCount = pageCount
                                 )
@@ -655,6 +668,7 @@ fun PdfViewerScreen(
 private fun PdfPageItem(
     renderer: PdfRenderer,
     renderLock: Mutex,
+    pageCache: android.util.LruCache<Int, Bitmap>,
     pageIndex: Int,
     pageCount: Int
 ) {
@@ -663,6 +677,12 @@ private fun PdfPageItem(
     var aspectRatio by remember { mutableFloatStateOf(0.707f) }
 
     LaunchedEffect(pageIndex) {
+        pageCache.get(pageIndex)?.takeIf { !it.isRecycled }?.let { cached ->
+            bitmap = cached
+            aspectRatio = cached.width.toFloat() / cached.height.toFloat()
+            isPageLoading = false
+            return@LaunchedEffect
+        }
         withContext(Dispatchers.IO) {
             try {
                 isPageLoading = true
@@ -676,6 +696,7 @@ private fun PdfPageItem(
                         val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
                         bmp.eraseColor(android.graphics.Color.WHITE)
                         page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        pageCache.put(pageIndex, bmp)
                         bitmap = bmp
                     }
                 }

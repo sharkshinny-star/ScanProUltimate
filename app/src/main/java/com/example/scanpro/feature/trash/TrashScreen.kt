@@ -114,16 +114,17 @@ internal fun TrashScreen(
 
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
+        // The countdown reads in days and hours; once a minute keeps it honest without redrawing every second.
         while (true) {
-            delay(1.seconds)
+            delay(60.seconds)
             nowMs = System.currentTimeMillis()
         }
     }
 
-    val sortedDocuments = remember(documents, sortOption, nowMs) {
-        val retentionMs = retentionDays * 24L * 60L * 60L * 1000L
+    val sortedDocuments = remember(documents, sortOption) {
         when (sortOption) {
-            TrashSortOption.EXPIRY -> documents.sortedBy { (it.trashedAt + retentionMs) - nowMs }
+            // Soonest to expire first: the same order as oldest in the bin first.
+            TrashSortOption.EXPIRY -> documents.sortedBy { it.trashedAt }
             TrashSortOption.DATE -> documents.sortedByDescending { it.trashedAt }
             TrashSortOption.NAME -> documents.sortedBy { it.title.lowercase() }
             TrashSortOption.SIZE -> documents.sortedByDescending { it.sizeBytes }

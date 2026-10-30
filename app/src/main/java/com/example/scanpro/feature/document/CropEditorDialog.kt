@@ -317,14 +317,14 @@ fun CropEditorDialog(
                                 Icons.AutoMirrored.Filled.NavigateBefore,
                                 contentDescription = "Previous page",
                                 tint = if (hasPrevious) DarkChrome.text else DarkChrome.disabledText,
-                                modifier = Modifier.size(28.dp).clip(CircleShape).clickable(enabled = hasPrevious) { onPage?.invoke(-1, crop) }.padding(4.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasPrevious) { onPage?.invoke(-1, crop) }.padding(12.dp)
                             )
                             Text("${pageIndex + 1} of $pageCount", color = DarkChrome.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
                             Icon(
                                 Icons.AutoMirrored.Filled.NavigateNext,
                                 contentDescription = "Next page",
                                 tint = if (hasNext) DarkChrome.text else DarkChrome.disabledText,
-                                modifier = Modifier.size(28.dp).clip(CircleShape).clickable(enabled = hasNext) { onPage?.invoke(1, crop) }.padding(4.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasNext) { onPage?.invoke(1, crop) }.padding(12.dp)
                             )
                         }
                     }
