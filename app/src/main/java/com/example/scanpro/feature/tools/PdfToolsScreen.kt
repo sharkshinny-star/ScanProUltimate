@@ -87,6 +87,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -221,10 +229,8 @@ fun PdfToolsScreen(
     val saveJpegLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
     val savePngLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { saveTo(it) }
 
-    val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val tool = selectedTool
-        if (uri == null || tool == null) return@rememberLauncherForActivityResult
-        viewModel.rememberPdfs(listOf(uri))
+    fun startTool(tool: String, uri: Uri) {
+        selectedTool = tool
         pendingUri = uri
         when (tool) {
             "compress" -> showCompressDialog = true
@@ -233,19 +239,53 @@ fun PdfToolsScreen(
             "unlock" -> viewModel.inspectForUnlock(uri)
             "split" -> showSplitDialog = true
             "organize", "extract", "rotate" -> showOrganizerSheet = true
-            "viewer" -> onOpenPdfViewer(uri, "PDF Document")
+            "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
         }
     }
+    val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val tool = selectedTool
+        if (uri == null || tool == null) return@rememberLauncherForActivityResult
+        viewModel.rememberPdfs(listOf(uri))
+        startTool(tool, uri)
+    }
+    // Files picked for Merge or Images to PDF are shown in a list to put in order before the tool runs:
+    // the picker's order is not the order they were tapped in.
+    var ordering by remember { mutableStateOf<List<Uri>?>(null) }
+    var imagesToConvert by remember { mutableStateOf<List<Uri>?>(null) }
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty() && selectedTool == "merge") {
             viewModel.rememberPdfs(uris)
-            viewModel.merge(uris)
+            if (uris.size == 1) viewModel.merge(uris) else ordering = uris
         }
     }
     val imagesPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
-        if (uris.isNotEmpty() && selectedTool == "img2pdf") viewModel.imagesToPdf(uris)
+        if (uris.isNotEmpty() && selectedTool == "img2pdf") {
+            if (uris.size == 1) imagesToConvert = uris else ordering = uris
+        }
+    }
+    ordering?.let { picked ->
+        OrderFilesDialog(
+            title = if (selectedTool == "merge") "Merge order" else "Page order",
+            items = picked,
+            nameOf = viewModel::displayName,
+            onDismiss = { ordering = null },
+            onConfirm = { inOrder ->
+                ordering = null
+                if (selectedTool == "merge") viewModel.merge(inOrder) else imagesToConvert = inOrder
+            }
+        )
+    }
+    imagesToConvert?.let { images ->
+        ImagesToPdfDialog(
+            count = images.size,
+            onDismiss = { imagesToConvert = null },
+            onConfirm = { size, quality ->
+                imagesToConvert = null
+                viewModel.imagesToPdf(images, size, quality)
+            }
+        )
     }
 
     Scaffold(
@@ -279,6 +319,7 @@ fun PdfToolsScreen(
                         RecentPdfsRow(
                             items = recentPdfs,
                             onOpen = { onOpenPdfViewer(it.uri, it.name) },
+                            onUseWith = { pdf, tool -> startTool(tool, pdf.uri) },
                             onRemove = { viewModel.forgetPdf(it.uri) },
                             onClear = viewModel::clearRecentPdfs
                         )
@@ -348,10 +389,11 @@ fun PdfToolsScreen(
 
             if (showPdfToImagesDialog && uri != null) {
                 PdfToImagesDialog(
+                    uri = uri,
                     onDismiss = { showPdfToImagesDialog = false },
-                    onConfirm = { format ->
+                    onConfirm = { format, pages, scale ->
                         showPdfToImagesDialog = false
-                        viewModel.pdfToImages(uri, format)
+                        viewModel.pdfToImages(uri, format, pages, scale)
                     }
                 )
             }
@@ -520,37 +562,79 @@ private fun CompressPdfDialog(
 
 @Composable
 private fun PdfToImagesDialog(
+    uri: Uri,
     onDismiss: () -> Unit,
-    onConfirm: (format: ImageExportFormat) -> Unit
+    onConfirm: (format: ImageExportFormat, pages: List<Int>?, scale: Float) -> Unit
 ) {
+    val context = LocalContext.current
     var format by remember { mutableStateOf(ImageExportFormat.JPEG) }
+    var scale by remember { mutableFloatStateOf(2.5f) }
+    var allPages by remember { mutableStateOf(true) }
+    var rangesText by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var pageCount by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(uri) {
+        pageCount = withContext(Dispatchers.IO) {
+            runCatching {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { android.graphics.pdf.PdfRenderer(it).use { r -> r.pageCount } }
+            }.getOrNull()
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("PDF to Images Options") },
+        title = { Text("PDF to images") },
         text = {
-            Column {
-                Text("Select target image export format:", style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(16.dp))
-
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text("Format", style = MaterialTheme.typography.labelLarge)
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = format == ImageExportFormat.JPEG,
-                        onClick = { format = ImageExportFormat.JPEG },
-                        label = { Text("JPEG Image (.jpg)") }
-                    )
-                    FilterChip(
-                        selected = format == ImageExportFormat.PNG,
-                        onClick = { format = ImageExportFormat.PNG },
-                        label = { Text("PNG Image (.png)") }
+                    ImageExportFormat.entries.forEach { item ->
+                        FilterChip(selected = format == item, onClick = { format = item }, label = { Text(item.extension.uppercase()) })
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+                Text("Resolution", style = MaterialTheme.typography.labelLarge)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Screen" to 1.5f, "Sharp" to 2.5f, "Print" to 4f).forEach { (label, value) ->
+                        FilterChip(selected = scale == value, onClick = { scale = value }, label = { Text(label) })
+                    }
+                }
+                Text(
+                    when (scale) { 1.5f -> "About 110 dpi: small files for messaging"; 4f -> "About 290 dpi: large files, fit for printing"; else -> "About 180 dpi: sharp on any screen" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+                Text("Pages", style = MaterialTheme.typography.labelLarge)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = allPages, onClick = { allPages = true; error = null }, label = { Text(pageCount?.let { "All $it" } ?: "All") })
+                    FilterChip(selected = !allPages, onClick = { allPages = false }, label = { Text("Some") })
+                }
+                if (!allPages) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = rangesText,
+                        onValueChange = { rangesText = it; error = null },
+                        label = { Text("Pages, e.g. 1-3, 7") },
+                        singleLine = true,
+                        isError = error != null,
+                        supportingText = error?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(format) }) {
-                Text("Export Page Images")
-            }
+            Button(onClick = {
+                if (allPages) onConfirm(format, null, scale)
+                else com.example.scanpro.imaging.PageRanges.parse(rangesText, pageCount ?: Int.MAX_VALUE)
+                    .onSuccess { ranges -> onConfirm(format, ranges.flatMap { it.toList() }, scale) }
+                    .onFailure { error = it.message }
+            }) { Text("Export") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
@@ -558,16 +642,89 @@ private fun PdfToImagesDialog(
     )
 }
 
-/** PDFs opened before, newest first: tap to read, long-press to remove from the list. */
+/** Puts picked files in the order the user wants before Merge or Images to PDF runs on them. */
+@Composable
+private fun OrderFilesDialog(
+    title: String,
+    items: List<Uri>,
+    nameOf: (Uri) -> String,
+    onDismiss: () -> Unit,
+    onConfirm: (List<Uri>) -> Unit
+) {
+    val order = remember(items) { androidx.compose.runtime.mutableStateListOf<Uri>().apply { addAll(items) } }
+    val names = remember(items) { items.associateWith(nameOf) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text("Use the arrows to put the files in order. The first is the first in the result.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 380.dp)) {
+                    itemsIndexed(order, key = { _, uri -> uri.toString() }) { index, uri ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("${index + 1}.", style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(28.dp))
+                            Text(names[uri] ?: "File", style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            IconButton(enabled = index > 0, onClick = { order.add(index - 1, order.removeAt(index)) }) {
+                                Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move up")
+                            }
+                            IconButton(enabled = index < order.lastIndex, onClick = { order.add(index + 1, order.removeAt(index)) }) {
+                                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Move down")
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = { onConfirm(order.toList()) }) { Text("Continue") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+/** Page size and quality for Images to PDF, the two settings the engine already takes. */
+@Composable
+private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (PdfPageSize, PdfQuality) -> Unit) {
+    var size by remember { mutableStateOf(PdfPageSize.AUTO) }
+    var quality by remember { mutableStateOf(PdfQuality.BALANCED) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (count == 1) "Image to PDF" else "$count images to PDF") },
+        text = {
+            Column {
+                Text("Page size", style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PdfPageSize.entries.forEach { item -> FilterChip(selected = size == item, onClick = { size = item }, label = { Text(item.label) }) }
+                }
+                Text(
+                    if (size == PdfPageSize.AUTO) "Each page takes the image's own proportions" else "Images are fitted onto ${size.label} pages",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp)
+                )
+                Spacer(Modifier.height(14.dp))
+                Text("Quality", style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PdfQuality.entries.forEach { item -> FilterChip(selected = quality == item, onClick = { quality = item }, label = { Text(item.label) }) }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = { onConfirm(size, quality) }) { Text("Create PDF") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+/** PDFs opened before, newest first: tap to read, long-press for the tools or to remove from the list. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPdfsRow(
     items: List<RecentPdf>,
     onOpen: (RecentPdf) -> Unit,
+    onUseWith: (RecentPdf, String) -> Unit,
     onRemove: (RecentPdf) -> Unit,
     onClear: () -> Unit
 ) {
     var removing by remember { mutableStateOf<RecentPdf?>(null) }
+    var menuFor by remember { mutableStateOf<RecentPdf?>(null) }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Recent PDFs", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -583,15 +740,29 @@ private fun RecentPdfsRow(
                         .clip(RoundedCornerShape(16.dp))
                         .combinedClickable(
                             onClickLabel = "Open",
-                            onLongClickLabel = "Remove from recent",
-                            onLongClick = { removing = pdf },
+                            onLongClickLabel = "Use with a tool",
+                            onLongClick = { menuFor = pdf },
                             onClick = { onOpen(pdf) }
                         )
                 ) {
-                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        com.example.scanpro.core.designsystem.IconTile(Icons.Default.PictureAsPdf, com.example.scanpro.core.designsystem.TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
-                        Spacer(Modifier.width(10.dp))
-                        Text(pdf.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Box {
+                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            com.example.scanpro.core.designsystem.IconTile(Icons.Default.PictureAsPdf, com.example.scanpro.core.designsystem.TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
+                            Spacer(Modifier.width(10.dp))
+                            Text(pdf.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                        // Long-press: the same file straight into a tool, without picking it again.
+                        DropdownMenu(expanded = menuFor == pdf, onDismissRequest = { menuFor = null }) {
+                            PDF_TOOLS.filter { it.id !in setOf("merge", "img2pdf") }.forEach { tool ->
+                                DropdownMenuItem(
+                                    text = { Text(tool.title) },
+                                    leadingIcon = { Icon(tool.icon, contentDescription = null) },
+                                    onClick = { menuFor = null; onUseWith(pdf, tool.id) }
+                                )
+                            }
+                            androidx.compose.material3.HorizontalDivider()
+                            DropdownMenuItem(text = { Text("Remove from recent") }, onClick = { menuFor = null; removing = pdf })
+                        }
                     }
                 }
             }

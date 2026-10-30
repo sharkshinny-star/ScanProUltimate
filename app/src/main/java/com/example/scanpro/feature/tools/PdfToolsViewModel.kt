@@ -147,8 +147,22 @@ class PdfToolsViewModel @Inject constructor(
         )
     }
 
+    private fun named(uri: Uri, suffix: String, extension: String = "pdf"): java.io.File =
+        PdfToolsEngine.outputLocation(context, "${PdfToolsEngine.sourceBaseName(context, uri)} $suffix.$extension")
+
+    /** Runs [work] in a fresh folder that is removed again if the tool fails or is cancelled part-way. */
+    private suspend fun <T> inScratchDir(name: String, work: suspend (java.io.File) -> T): T {
+        val dir = PdfToolsEngine.outputLocation(context, name).apply { mkdirs() }
+        try {
+            return work(dir)
+        } catch (error: Throwable) {
+            dir.deleteRecursively()
+            throw error
+        }
+    }
+
     fun compress(uri: Uri, preset: CompressionPreset) = launchTool("Compressing PDF…", "Compression failed") {
-        val res = CompressPdfEngine.compressPdf(context, uri, preset)
+        val res = CompressPdfEngine.compressPdf(context, uri, preset, named(uri, "compressed"))
         PdfToolResult(
             outputFile = res.outputFile,
             pageCount = res.pageCount,
@@ -159,25 +173,29 @@ class PdfToolsViewModel @Inject constructor(
         )
     }
 
-    fun pdfToImages(uri: Uri, format: ImageExportFormat) = launchTool("Exporting pages…", "Export failed") {
-        val dir = PdfToolsEngine.outputLocation(context, "pdf2img_${System.currentTimeMillis()}").apply { mkdirs() }
-        val files = PdfToolsEngine.pdfToImages(context, uri, format, dir, ::report)
-        bundled(files, "pdf_pages", "Exported %d page images")()
+    fun pdfToImages(uri: Uri, format: ImageExportFormat, pages: List<Int>? = null, scale: Float = 2.5f) = launchTool("Exporting pages…", "Export failed") {
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        inScratchDir("$base pages") { dir ->
+            val files = PdfToolsEngine.pdfToImages(context, uri, format, dir, ::report, pages, scale)
+            bundled(files, "$base pages", "Exported %d page images")()
+        }
     }
 
     fun split(uri: Uri, mode: SplitMode, ranges: String, everyN: Int) = launchTool("Splitting PDF…", "Split failed") {
-        val dir = PdfToolsEngine.outputLocation(context, "split_${System.currentTimeMillis()}").apply { mkdirs() }
-        val files = PdfToolsEngine.splitPdf(context, uri, mode, ranges, everyN, dir, ::report)
-        bundled(files, "split", "Split PDF into %d files")()
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        inScratchDir("$base split") { dir ->
+            val files = PdfToolsEngine.splitPdf(context, uri, mode, ranges, everyN, dir, ::report)
+            bundled(files, "$base split", "Split PDF into %d files")()
+        }
     }
 
     fun protect(uri: Uri, password: String) = launchTool("Encrypting PDF…", "Could not protect the PDF") {
-        PdfToolsEngine.protectPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "protected_${System.currentTimeMillis()}.pdf"))
+        PdfToolsEngine.protectPdf(context, uri, password, named(uri, "protected"))
     }
 
     fun unlock(uri: Uri, password: String) = launchTool("Unlocking PDF…", "Could not unlock the PDF") {
         try {
-            PdfToolsEngine.unlockPdf(context, uri, password, PdfToolsEngine.outputLocation(context, "unlocked_${System.currentTimeMillis()}.pdf"))
+            PdfToolsEngine.unlockPdf(context, uri, password, named(uri, "unlocked"))
         } catch (wrong: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
             // Ask again for the same file, with the error in the dialog (a snackbar would sit behind it).
             _wrongPassword.value = true
@@ -197,7 +215,7 @@ class PdfToolsViewModel @Inject constructor(
 
     fun organize(tool: String, uri: Uri, specs: List<PageSpec>, extracted: List<Int>, rotations: Map<Int, Int>) =
         launchTool("Saving PDF pages…", "Page operation failed") {
-            val out = PdfToolsEngine.outputLocation(context, "${tool}_${System.currentTimeMillis()}.pdf")
+            val out = named(uri, when (tool) { "extract" -> "extracted"; "rotate" -> "rotated"; else -> "organised" })
             when (tool) {
                 "extract" -> PdfToolsEngine.extractPages(context, uri, extracted, out, ::report)
                 "rotate" -> PdfToolsEngine.rotatePages(context, uri, rotations, out, ::report)
@@ -206,7 +224,7 @@ class PdfToolsViewModel @Inject constructor(
         }
 
     fun merge(uris: List<Uri>) = launchTool("Merging ${uris.size} PDFs…", "Failed to merge PDFs") {
-        PdfToolsEngine.mergePdfs(context, uris, PdfToolsEngine.outputLocation(context, "merged_${System.currentTimeMillis()}.pdf"), ::report)
+        PdfToolsEngine.mergePdfs(context, uris, named(uris.first(), "merged"), ::report)
     }
 
     private val _form = MutableStateFlow<FormSession?>(null)
@@ -239,10 +257,7 @@ class PdfToolsViewModel @Inject constructor(
         _form.value = null
         launchTool("Filling form…", "Could not save the filled form") {
             try {
-                PdfFormEngine.fill(
-                    context, session.uri, session.changes, flatten,
-                    PdfToolsEngine.outputLocation(context, "filled_${System.currentTimeMillis()}.pdf")
-                )
+                PdfFormEngine.fill(context, session.uri, session.changes, flatten, named(session.uri, "filled"))
             } catch (cancelled: CancellationException) {
                 _form.value = session
                 throw cancelled
@@ -256,7 +271,7 @@ class PdfToolsViewModel @Inject constructor(
     fun makeSearchable(uri: Uri, script: OcrScript) = launchTool("Making PDF searchable…", "Could not make the PDF searchable") {
         val outcome = PdfOcrEngine.makeSearchable(
             context, uri, script, ocr,
-            PdfToolsEngine.outputLocation(context, "searchable_${System.currentTimeMillis()}.pdf"), ::report
+            named(uri, "searchable"), ::report
         )
         val output = outcome.outputFile
         if (output == null) {
@@ -282,10 +297,12 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun imagesToPdf(uris: List<Uri>) = launchTool("Converting ${uris.size} images…", "Failed to convert images") {
-        PdfToolsEngine.imagesToPdf(
-            context, uris, PdfPageSize.AUTO, PdfQuality.BALANCED,
-            PdfToolsEngine.outputLocation(context, "images_${System.currentTimeMillis()}.pdf"), ::report
-        )
-    }
+    fun imagesToPdf(uris: List<Uri>, pageSize: PdfPageSize = PdfPageSize.AUTO, quality: PdfQuality = PdfQuality.BALANCED) =
+        launchTool("Converting ${uris.size} images…", "Failed to convert images") {
+            val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm", java.util.Locale.getDefault()).format(java.util.Date())
+            PdfToolsEngine.imagesToPdf(context, uris, pageSize, quality, PdfToolsEngine.outputLocation(context, "Images $stamp.pdf"), ::report)
+        }
+
+    /** A picked file's name, for the ordering step before Merge and Images to PDF. */
+    fun displayName(uri: Uri): String = PdfToolsEngine.sourceBaseName(context, uri, "File")
 }

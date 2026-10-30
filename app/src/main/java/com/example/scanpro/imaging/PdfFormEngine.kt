@@ -33,7 +33,9 @@ data class FormField(
     val multiline: Boolean = false,
     /** A combo box that also accepts typed text. */
     val editable: Boolean = false,
-    val maxLength: Int = 0
+    val maxLength: Int = 0,
+    /** The form marks this field as required; saving with it empty is refused. */
+    val required: Boolean = false
 )
 
 /** The pure rules behind the form screen, kept free of PDFBox so they can be unit-tested. */
@@ -56,6 +58,10 @@ object FormFieldRules {
     }
 
     fun isChecked(value: String) = value.isNotEmpty()
+
+    /** Required fields that are still empty, in form order. */
+    fun missingRequired(fields: List<FormField>, values: Map<String, String>): List<FormField> =
+        fields.filter { it.required && !it.readOnly && (values[it.name] ?: it.value).isBlank() }
 
     fun multiValues(value: String): List<String> = value.split('\n').filter { it.isNotEmpty() }
 
@@ -151,15 +157,16 @@ object PdfFormEngine {
         val name = field.fullyQualifiedName ?: return null
         val label = FormFieldRules.label(field.alternateFieldName, field.partialName, name)
         val readOnly = field.isReadOnly
+        val required = field.isRequired
         return when (field) {
             is PDTextField -> FormField(
                 name, label, FormFieldKind.TEXT, field.value.orEmpty(),
-                readOnly = readOnly, multiline = field.isMultiline, maxLength = field.maxLen.coerceAtLeast(0)
+                readOnly = readOnly, multiline = field.isMultiline, maxLength = field.maxLen.coerceAtLeast(0), required = required
             )
-            is PDCheckBox -> FormField(name, label, FormFieldKind.CHECKBOX, if (field.isChecked) FormFieldRules.CHECKED else "", readOnly = readOnly)
+            is PDCheckBox -> FormField(name, label, FormFieldKind.CHECKBOX, if (field.isChecked) FormFieldRules.CHECKED else "", readOnly = readOnly, required = required)
             is PDRadioButton -> {
                 val options = field.onValues.sorted().map { FormOption(it, it) }
-                FormField(name, label, FormFieldKind.RADIO, field.value.takeIf { it != "Off" }.orEmpty(), options, readOnly)
+                FormField(name, label, FormFieldKind.RADIO, field.value.takeIf { it != "Off" }.orEmpty(), options, readOnly, required = required)
             }
             is PDChoice -> {
                 val exports = field.optionsExportValues
@@ -169,7 +176,7 @@ object PdfFormEngine {
                 FormField(
                     name, label, if (multi) FormFieldKind.MULTI_CHOICE else FormFieldKind.CHOICE,
                     if (multi) FormFieldRules.joinMulti(field.value) else field.value.firstOrNull().orEmpty(),
-                    options, readOnly, editable = field is PDComboBox && field.isEdit
+                    options, readOnly, editable = field is PDComboBox && field.isEdit, required = required
                 )
             }
             // Signature fields and push buttons can't be filled in with a value.

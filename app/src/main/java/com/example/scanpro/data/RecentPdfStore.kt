@@ -55,7 +55,8 @@ class RecentPdfStore @Inject constructor(@ApplicationContext private val context
     @Synchronized
     fun prune() {
         val granted = context.contentResolver.persistedUriPermissions.filter { it.isReadPermission }.map { it.uri }.toSet()
-        val alive = _items.value.filter { it.uri in granted }
+        // The grant can outlive the file; a provider that no longer knows the document returns no row.
+        val alive = _items.value.filter { it.uri in granted && displayName(it.uri) != null }
         if (alive.size != _items.value.size) save(alive)
     }
 

@@ -56,11 +56,11 @@ object CompressPdfEngine {
         context: Context,
         inputUri: Uri,
         preset: CompressionPreset,
-        // Under cache/exports, the only cache folder the FileProvider can share.
-        outputDir: File = File(context.cacheDir, "exports").apply { mkdirs() }
+        /** Where the result goes; under cache/exports, the only cache folder the FileProvider can share. */
+        outputFile: File = PdfToolsEngine.outputLocation(context, "compressed_${UUID.randomUUID()}.pdf")
     ): CompressionResult = withContext(Dispatchers.IO) {
+        val outputDir = outputFile.parentFile!!.apply { mkdirs() }
         val tempInput = File(outputDir, "temp_in_${UUID.randomUUID()}.pdf")
-        val outputFile = File(outputDir, "compressed_${UUID.randomUUID()}.pdf")
 
         try {
             context.contentResolver.openInputStream(inputUri)?.use { input ->
@@ -68,7 +68,7 @@ object CompressPdfEngine {
             } ?: error("Could not open input PDF")
 
             val originalSize = tempInput.length()
-            val pageTotal = runCatching { PDDocument.load(tempInput).use { it.numberOfPages } }.getOrDefault(1)
+            val pageTotal = runCatching { PDDocument.load(tempInput, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { it.numberOfPages } }.getOrDefault(1)
             val hasSearchableText = checkSearchableText(tempInput)
 
             if (hasSearchableText) {
@@ -113,10 +113,14 @@ object CompressPdfEngine {
     }
 
     private fun checkSearchableText(pdfFile: File): Boolean = runCatching {
-        PDDocument.load(pdfFile).use { doc ->
+        // Stops at the first page with text; a 300-page scan with none is read at most 25 pages deep.
+        PDDocument.load(pdfFile, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { doc ->
             val stripper = PDFTextStripper()
-            val text = stripper.getText(doc)
-            text.trim().isNotBlank()
+            (1..minOf(doc.numberOfPages, 25)).any { page ->
+                stripper.startPage = page
+                stripper.endPage = page
+                stripper.getText(doc).isNotBlank()
+            }
         }
     }.getOrDefault(false)
 
@@ -125,7 +129,7 @@ object CompressPdfEngine {
         outputPdf: File,
         preset: CompressionPreset
     ) {
-        PDDocument.load(inputPdf).use { pdDoc ->
+        PDDocument.load(inputPdf, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { pdDoc ->
             // Pages often share one resource dictionary or one image (a logo, a background). Each original image is
             // recompressed once and reused; without this a shared image was shrunk again on every page.
             val replaced = HashMap<com.tom_roush.pdfbox.cos.COSBase, PDImageXObject>()

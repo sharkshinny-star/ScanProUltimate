@@ -104,7 +104,16 @@ internal fun FormFillDialog(
                             Spacer(Modifier.width(12.dp))
                             Switch(checked = flatten, onCheckedChange = null)
                         }
-                        Button(onClick = { onSave(flatten) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        val missing = FormFieldRules.missingRequired(session.fields, session.values)
+                        if (missing.isNotEmpty()) {
+                            Text(
+                                "${missing.size} required ${if (missing.size == 1) "field is" else "fields are"} empty: ${missing.take(3).joinToString { it.label }}${if (missing.size > 3) "…" else ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        Button(onClick = { onSave(flatten) }, enabled = missing.isEmpty(), modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                             Text(if (changed == 0) "Save" else "Save ($changed ${if (changed == 1) "change" else "changes"})")
                         }
                     }
@@ -145,7 +154,11 @@ internal fun FormFillDialog(
 @Composable
 private fun FieldInput(field: FormField, value: String, onChange: (String) -> Unit) {
     val enabled = !field.readOnly
-    val label = if (field.readOnly) "${field.label} (read-only)" else field.label
+    val label = when {
+        field.readOnly -> "${field.label} (read-only)"
+        field.required -> "${field.label} *"
+        else -> field.label
+    }
     when (field.kind) {
         FormFieldKind.TEXT -> OutlinedTextField(
             value = value,
