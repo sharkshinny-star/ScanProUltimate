@@ -204,13 +204,28 @@ class MainActivity : FragmentActivity() {
         handleIntent(intent)
     }
 
+    /** Either volume key takes a photo while the scanner is up, for one-handed batch scanning. */
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val volume = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (volume && event?.repeatCount == 0 && com.example.scanpro.scanner.HardwareShutter.onVolumeKey()) return true
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val volume = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (volume && com.example.scanpro.scanner.HardwareShutter.active) return true
+        return super.onKeyUp(keyCode, event)
+    }
+
     private fun handleIntent(intent: android.content.Intent?) {
         if (intent == null) return
         // Queued imports outlive this Activity (they wait in the ViewModel until unlock), so capture
         // the ViewModel itself rather than `this`, which would leak a rotated-away Activity.
         val appViewModel = viewModel
         val action = intent.action
-        val type = intent.type.orEmpty()
+        // Senders don't always set a type; the provider usually knows it.
+        val type = intent.type ?: intent.data?.let { runCatching { contentResolver.getType(it) }.getOrNull() }.orEmpty()
+        fun typeOf(uri: Uri): String = runCatching { contentResolver.getType(uri) }.getOrNull() ?: type
 
         when {
             action == ACTION_SCAN_NOW -> viewModel.requestScan()
@@ -238,8 +253,12 @@ class MainActivity : FragmentActivity() {
                     @Suppress("DEPRECATION")
                     intent.getParcelableArrayListExtra<Uri>(android.content.Intent.EXTRA_STREAM).orEmpty()
                 }.filter(::isAllowedExternalUri)
-                if (uris.isNotEmpty()) {
-                    appViewModel.submitExternalImport { appViewModel.importImages(uris) }
+                // Several PDFs arrive as one document each; images become the pages of one document.
+                val pdfs = uris.filter { typeOf(it) == "application/pdf" || it.toString().endsWith(".pdf", ignoreCase = true) }
+                val images = uris.filter { it !in pdfs && typeOf(it).startsWith("image/") }
+                pdfs.forEach { pdf -> appViewModel.submitExternalImport { appViewModel.importPdf(pdf) } }
+                if (images.isNotEmpty()) {
+                    appViewModel.submitExternalImport { appViewModel.importImages(images) }
                 }
             }
             action == android.content.Intent.ACTION_VIEW -> {

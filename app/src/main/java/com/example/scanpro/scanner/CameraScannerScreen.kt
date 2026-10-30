@@ -117,6 +117,15 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import com.example.scanpro.data.NormalizedPoint
 import androidx.compose.animation.togetherWith
+import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.compose.material.icons.filled.FlashAuto
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.produceState
+import com.example.scanpro.core.ui.findActivity
+import android.graphics.Bitmap
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -177,6 +186,8 @@ fun CameraScannerScreen(
     var permissionGranted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
+    // After a refusal with "don't ask again", the system dialog no longer appears; the panel then leads to Settings.
+    var permissionRefused by remember { mutableStateOf(false) }
     var detection by remember { mutableStateOf<DocumentDetection?>(null) }
     var stable by remember { mutableStateOf(false) }
     // How close the page is to being steady enough to capture; fills the ring round the shutter.
@@ -186,7 +197,9 @@ fun CameraScannerScreen(
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
-    var torchEnabled by remember { mutableStateOf(false) }
+    // Off, auto, on (fires with the shutter) or torch (steady light for dark rooms).
+    var flashMode by rememberSaveable { mutableStateOf(FlashMode.OFF) }
+    val torchEnabled = flashMode == FlashMode.TORCH
     // A camera problem the user has to act on (camera busy, disabled, failed to open); shown in every mode.
     var cameraError by remember { mutableStateOf<String?>(null) }
     val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
@@ -279,6 +292,7 @@ fun CameraScannerScreen(
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permissionGranted = it
+        if (!it) permissionRefused = true
     }
 
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
@@ -326,7 +340,8 @@ fun CameraScannerScreen(
                 }
                 liveGuidance = if (isStable && result.isReady) "Hold… capturing" else result.guidance
             },
-            onAutoCapture = { autoCaptureSignal++ }
+            onAutoCapture = { autoCaptureSignal++ },
+            onUnavailable = { cameraError = "The document detector could not start on this device. The compatibility scanner still works." }
         )
     }
     // Taking a page by hand while the tips show means they have done their job.
@@ -520,10 +535,16 @@ fun CameraScannerScreen(
                     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
                     .build()
                 val preview = Preview.Builder().setResolutionSelector(selector).build().also { it.surfaceProvider = previewView.surfaceProvider }
+                // About 12 MP is more than the pipeline keeps (it works at 3400 px); a 50 MP sensor would only
+                // add shutter lag, disk and decode time. Quality 92 is visually lossless for paper.
+                val captureSelector = ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                    .setResolutionStrategy(ResolutionStrategy(android.util.Size(4000, 3000), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
+                    .build()
                 val capture = ImageCapture.Builder()
-                    .setResolutionSelector(selector)
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                    .setJpegQuality(98)
+                    .setResolutionSelector(captureSelector)
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    .setJpegQuality(92)
                     .build()
                 val analysis = ImageAnalysis.Builder()
                     .setResolutionSelector(selector)
@@ -536,14 +557,20 @@ fun CameraScannerScreen(
                 // A shared view port crops all three streams to one region, so analysis coordinates line up with
                 // the preview and the saved photo. It can be unavailable before the first layout; bind without it then.
                 val viewPort = previewView.viewPort
+                // Tablets and Chromebooks may only have a front or external camera; any camera beats none.
+                val cameraSelector = when {
+                    provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
+                    provider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA
+                    else -> CameraSelector.Builder().build()
+                }
                 val camera = if (viewPort != null) {
                     provider.bindToLifecycle(
                         lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        cameraSelector,
                         UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(preview).addUseCase(capture).addUseCase(analysis).build()
                     )
                 } else {
-                    provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture, analysis)
+                    provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, capture, analysis)
                 }
                 imageCapture = capture
                 boundCamera = camera
@@ -578,6 +605,41 @@ fun CameraScannerScreen(
         }, mainExecutor)
     }
 
+    // Volume keys take a photo while this screen can; presses arrive from the activity.
+    DisposableEffect(reviewing, barcodeMode, permissionGranted) {
+        HardwareShutter.active = permissionGranted && !reviewing && !barcodeMode
+        onDispose { HardwareShutter.active = false }
+    }
+    val shutterPresses by HardwareShutter.presses.collectAsState()
+    LaunchedEffect(shutterPresses) {
+        if (shutterPresses > 0 && HardwareShutter.active && !capturing && (retaking || pages.size < pageLimit)) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            capturePage()
+        }
+    }
+
+    // 17: a level bubble from the accelerometer, so an oblique angle shows before the capture.
+    var tilt by remember { mutableStateOf(Offset.Zero) }
+    DisposableEffect(permissionGranted) {
+        val sensors = context.getSystemService(android.content.Context.SENSOR_SERVICE) as? android.hardware.SensorManager
+        val accelerometer = sensors?.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
+        val listener = object : android.hardware.SensorEventListener {
+            private var sx = 0f
+            private var sy = 0f
+            override fun onSensorChanged(event: android.hardware.SensorEvent) {
+                // Degrees of lean along each axis; smoothed so the bubble glides.
+                val x = Math.toDegrees(kotlin.math.atan2(event.values[0].toDouble(), event.values[2].toDouble().coerceAtLeast(0.01))).toFloat()
+                val y = Math.toDegrees(kotlin.math.atan2(event.values[1].toDouble(), event.values[2].toDouble().coerceAtLeast(0.01))).toFloat()
+                sx += (x - sx) * 0.2f
+                sy += (y - sy) * 0.2f
+                tilt = Offset(sx, sy)
+            }
+            override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+        }
+        if (permissionGranted && accelerometer != null) sensors.registerListener(listener, accelerometer, android.hardware.SensorManager.SENSOR_DELAY_UI)
+        onDispose { sensors?.unregisterListener(listener) }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             disposed.set(true)
@@ -603,14 +665,23 @@ fun CameraScannerScreen(
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) resumeCount++
+            if (event == Lifecycle.Event.ON_RESUME) {
+                resumeCount++
+                // Granted in Settings and came back: the panel must go without a tap.
+                permissionGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(torchEnabled, boundCamera, resumeCount) {
+    LaunchedEffect(flashMode, boundCamera, resumeCount) {
         boundCamera?.cameraControl?.enableTorch(torchEnabled)
+        imageCapture?.flashMode = when (flashMode) {
+            FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO
+            FlashMode.ON -> ImageCapture.FLASH_MODE_ON
+            else -> ImageCapture.FLASH_MODE_OFF
+        }
     }
 
     LaunchedEffect(zoom, boundCamera, resumeCount) {
@@ -626,7 +697,11 @@ fun CameraScannerScreen(
     }
 
     if (!permissionGranted) {
+        val activity = context.findActivity()
+        val askable = activity == null || !permissionRefused ||
+            androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
         PermissionPanel(
+            askable = askable,
             onRequest = { permissionLauncher.launch(Manifest.permission.CAMERA) },
             onFallback = onFallbackScanner,
             onClose = onClose
@@ -686,6 +761,9 @@ fun CameraScannerScreen(
         )
 
         ThirdsGrid()
+        if (!barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
+            LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp))
+        }
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             DocumentBoundaryOverlay(detection = detection, quad = shownQuad, stable = stable, accent = scanLine)
         }
@@ -788,7 +866,7 @@ fun CameraScannerScreen(
                     if (detection?.isDark == true && !torchEnabled) {
                         Spacer(Modifier.height(8.dp))
                         Surface(
-                            onClick = { torchEnabled = true },
+                            onClick = { flashMode = FlashMode.TORCH },
                             shape = RoundedCornerShape(50),
                             color = scanLine,
                             contentColor = Color(0xFF04281E)
@@ -870,8 +948,21 @@ fun CameraScannerScreen(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = CircleShape, color = CameraGlass) {
-                    IconButton(onClick = { torchEnabled = !torchEnabled }) {
-                        Icon(if (torchEnabled) Icons.Default.Bolt else Icons.Default.FlashOff, contentDescription = "Flash", tint = Color.White)
+                    // Each tap moves to the next flash mode; a short label under the icon says which.
+                    IconButton(onClick = {
+                        flashMode = FlashMode.entries[(flashMode.ordinal + 1) % FlashMode.entries.size]
+                        status = "Flash: ${flashMode.label}"
+                    }) {
+                        Icon(
+                            when (flashMode) {
+                                FlashMode.OFF -> Icons.Default.FlashOff
+                                FlashMode.AUTO -> Icons.Default.FlashAuto
+                                FlashMode.ON -> Icons.Default.FlashOn
+                                FlashMode.TORCH -> Icons.Default.Bolt
+                            },
+                            contentDescription = "Flash: ${flashMode.label}",
+                            tint = if (flashMode == FlashMode.OFF) Color.White else scanLine
+                        )
                     }
                 }
                 Box {
@@ -909,6 +1000,17 @@ fun CameraScannerScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Batch: the pages so far, newest last; tap one to check it in the review step.
+            if (pages.size > 1 || (batch && pages.isNotEmpty())) {
+                CapturedStrip(
+                    pages = pages,
+                    onOpen = { index ->
+                        reviewIndex = index
+                        reviewing = true
+                    }
+                )
+                Spacer(Modifier.height(8.dp))
+            }
             if (status != null) {
                 Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
                     Text(status.orEmpty(), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
@@ -1123,8 +1225,14 @@ private fun ModeTab(text: String, selected: Boolean, enabled: Boolean, onClick: 
 }
 
 @Composable
-private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClose: () -> Unit) {
+private fun PermissionPanel(askable: Boolean, onRequest: () -> Unit, onFallback: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
+    val openSettings = {
+        context.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Card(Modifier.padding(24.dp)) {
             Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1132,16 +1240,15 @@ private fun PermissionPanel(onRequest: () -> Unit, onFallback: () -> Unit, onClo
                 Spacer(Modifier.height(12.dp))
                 Text("Camera permission", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
-                Text("The Pro scanner needs camera access only while you scan. Your documents stay on this device by default.")
+                Text(
+                    if (askable) "The Pro scanner needs camera access only while you scan. Your documents stay on this device by default."
+                    else "Camera access was turned off for ScanPro. Turn it on under Permissions in the app's settings, then come back."
+                )
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = onRequest) { Text("Allow camera") }
                 // After "Don't ask again" the system dialog no longer appears; settings is the only way back.
-                TextButton(onClick = {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
-                }) { Text("Open app settings") }
+                if (askable) Button(onClick = onRequest) { Text("Allow camera") }
+                else Button(onClick = openSettings) { Text("Open app settings") }
+                if (askable) TextButton(onClick = openSettings) { Text("Open app settings") }
                 OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text("Use compatibility scanner") }
                 TextButton(onClick = onClose) { Text("Cancel") }
             }
@@ -1172,6 +1279,67 @@ private fun IdCardFrame(label: String) {
         Text("Fit it inside the borders", color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter).padding(top = 110.dp))
         Surface(modifier = Modifier.align(Alignment.Center).offset(y = (-40).dp), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.45f)) {
             Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+        }
+    }
+}
+
+/** Flash setting for the shutter; torch is the steady light the low-light hint offers. */
+enum class FlashMode(val label: String) { OFF("off"), AUTO("auto"), ON("on"), TORCH("torch") }
+
+/**
+ * Spirit level: the bubble drifts with the phone's lean and the ring turns mint when the phone is flat
+ * over the page (within a few degrees), so a skewed shot is noticed before it is taken.
+ */
+@Composable
+private fun LevelBubble(tilt: Offset, accent: Color, modifier: Modifier = Modifier) {
+    val level = kotlin.math.abs(tilt.x) < 6f && kotlin.math.abs(tilt.y) < 6f
+    val ring by androidx.compose.animation.animateColorAsState(if (level) accent else Color.White.copy(alpha = 0.7f), tween(180), label = "level")
+    Canvas(modifier.size(44.dp)) {
+        val radius = size.minDimension / 2f
+        drawCircle(Color.Black.copy(alpha = 0.35f), radius)
+        drawCircle(ring, radius - 1.5.dp.toPx(), style = Stroke(2.dp.toPx()))
+        drawCircle(ring.copy(alpha = 0.5f), 5.dp.toPx(), style = Stroke(1.dp.toPx()))
+        // Up to 25 degrees of lean moves the bubble to the rim.
+        val reach = radius - 7.dp.toPx()
+        val dx = (tilt.x / 25f).coerceIn(-1f, 1f) * reach
+        val dy = (-tilt.y / 25f).coerceIn(-1f, 1f) * reach
+        drawCircle(ring, 5.dp.toPx(), center = center + Offset(dx, dy))
+    }
+}
+
+/** Thumbnails of the pages captured so far, decoded small and kept while the screen lives. */
+@Composable
+private fun CapturedStrip(pages: List<Uri>, onOpen: (Int) -> Unit) {
+    val cache = remember { HashMap<String, Bitmap>() }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(pages.size) { if (pages.isNotEmpty()) listState.animateScrollToItem(pages.lastIndex) }
+    LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+            val key = uri.toString()
+            val bitmap by produceState<Bitmap?>(initialValue = cache[key], key) {
+                if (value == null) {
+                    value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160) }
+                    value?.let { cache[key] = it }
+                }
+            }
+            Box(
+                Modifier
+                    .size(44.dp, 58.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.White.copy(alpha = 0.1f))
+                    .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                    .clickable { onOpen(index) }
+                    .semantics { contentDescription = "Page ${index + 1}" },
+                contentAlignment = Alignment.Center
+            ) {
+                bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                Text(
+                    "${index + 1}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(topStart = 6.dp)).padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
         }
     }
 }

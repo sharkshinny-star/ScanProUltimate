@@ -14,8 +14,11 @@ import kotlin.math.hypot
 class OpenCvDocumentAnalyzer(
     /** Each analysed frame: the detection, whether the page is steady, and how far along the steadiness count is (0..1). */
     private val onDetection: (DocumentDetection, Boolean, Float) -> Unit,
-    private val onAutoCapture: () -> Unit
+    private val onAutoCapture: () -> Unit,
+    /** Called once if the native detector cannot be loaded on this device; frames are then dropped. */
+    private val onUnavailable: () -> Unit = {}
 ) : ImageAnalysis.Analyzer {
+    private var reportedUnavailable = false
     private val main = Handler(Looper.getMainLooper())
     private var previousQuad: CropQuad? = null
     private var stableFrames = 0
@@ -31,7 +34,14 @@ class OpenCvDocumentAnalyzer(
 
     override fun analyze(image: ImageProxy) {
         // Analysis runs on the camera executor, so waiting here for a still-loading OpenCV never blocks the UI.
-        OpenCvRuntime.ensureLoaded()
+        if (!OpenCvRuntime.ensureLoaded()) {
+            if (!reportedUnavailable) {
+                reportedUnavailable = true
+                main.post(onUnavailable)
+            }
+            image.close()
+            return
+        }
         try {
             // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
             // are found describe exactly the pixels the user sees and the capture keeps.
