@@ -102,6 +102,8 @@ android {
         unitTests.all {
             // -Pscanpro.updateGoldens=true rewrites the golden images of the imaging tests (see MatFiltersGoldenTest).
             it.systemProperty("scanpro.updateGoldens", (project.findProperty("scanpro.updateGoldens") ?: "false").toString())
+            // -Pscanpro.photoDir=<folder of photos> enables RealPhotoEquivalenceTest.
+            it.systemProperty("scanpro.photoDir", (project.findProperty("scanpro.photoDir") ?: "").toString())
         }
     }
 
@@ -237,6 +239,8 @@ dependencies {
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
     testImplementation("junit:junit:4.13.2")
+    // The real org.json: the Android jar's version only has stubs, and the backup format is JSON.
+    testImplementation("org.json:json:20240303")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")

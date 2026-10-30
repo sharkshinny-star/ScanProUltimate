@@ -45,7 +45,7 @@ internal object ReferenceFilters {
     }
 
     /** Integral-image adaptive threshold: true where the pixel stays white (not darker than its surroundings by the bias). */
-    fun adaptiveBlackWhite(rgb: ByteArray, width: Int, height: Int): BooleanArray {
+    fun adaptiveBlackWhite(rgb: ByteArray, width: Int, height: Int, margins: IntArray? = null): BooleanArray {
         val gray = IntArray(width * height) { p ->
             (0.299f * rgb[p * 3].u() + 0.587f * rgb[p * 3 + 1].u() + 0.114f * rgb[p * 3 + 2].u()).toInt()
         }
@@ -70,6 +70,8 @@ internal object ReferenceFilters {
                     integral[(y2 + 1) * stride + x1] + integral[y1 * stride + x1]
                 val localMean = (sum / area).toInt()
                 white[y * width + x] = !(gray[y * width + x] < localMean - bias)
+                // How far the pixel is above its threshold; zero or one means it was nearly a coin toss.
+                margins?.set(y * width + x, gray[y * width + x] - (localMean - bias))
             }
         }
         return white
