@@ -23,9 +23,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.imaging.ImageProcessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -41,14 +45,15 @@ fun BookSplitDialog(
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(imagePath, 1400) }
     }
     var fraction by remember { mutableFloatStateOf(0.5f) }
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Split book spread") },
+        title = { Text(stringResource(R.string.doc_split_book_spread)) },
         text = {
             Column {
                 Text(
-                    "Move the line to the gutter between the two pages.",
+                    stringResource(R.string.doc_split_book_hint),
                     style = MaterialTheme.typography.bodySmall
                 )
                 bitmap?.let { image ->
@@ -57,6 +62,8 @@ fun BookSplitDialog(
                             .fillMaxWidth()
                             .padding(top = 12.dp)
                             .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                            .semantics { contentDescription = pagePreview }
+                            // The line follows the finger across the picture itself, so no RTL flip here; the slider is the non-drag way.
                             .pointerInput(Unit) {
                                 detectHorizontalDragGestures { change, amount ->
                                     change.consume()
@@ -69,7 +76,7 @@ fun BookSplitDialog(
                         drawLine(Color.Black.copy(alpha = 0.6f), Offset(x, 0f), Offset(x, size.height), strokeWidth = 7.dp.toPx())
                         drawLine(Color(0xFF2F7BFF), Offset(x, 0f), Offset(x, size.height), strokeWidth = 3.dp.toPx())
                     }
-                } ?: Text("Loading page…", modifier = Modifier.padding(top = 16.dp))
+                } ?: Text(stringResource(R.string.doc_loading_page), modifier = Modifier.padding(top = 16.dp))
                 Slider(
                     value = fraction,
                     onValueChange = { fraction = it },
@@ -78,7 +85,7 @@ fun BookSplitDialog(
                 )
             }
         },
-        confirmButton = { TextButton(enabled = bitmap != null, onClick = { onConfirm(fraction) }) { Text("Split") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(enabled = bitmap != null, onClick = { onConfirm(fraction) }) { Text(stringResource(R.string.doc_split)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }

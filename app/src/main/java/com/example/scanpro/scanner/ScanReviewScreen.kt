@@ -37,15 +37,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
-import androidx.compose.material.icons.automirrored.filled.RotateLeft
-import androidx.compose.material.icons.automirrored.filled.RotateRight
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
+import androidx.compose.material.icons.filled.RotateLeft
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -53,6 +53,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,8 +66,16 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -77,6 +86,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.PageFilter
@@ -92,6 +102,12 @@ import kotlin.math.hypot
 
 private val Blue = Color(0xFF2F7BFF)
 private val Amber = Color(0xFFF59E0B)
+
+/** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would). */
+@Suppress("DEPRECATION")
+private val RotateLeftIcon: ImageVector = Icons.Filled.RotateLeft
+@Suppress("DEPRECATION")
+private val RotateRightIcon: ImageVector = Icons.Filled.RotateRight
 
 /**
  * Full-screen review shown after capturing: swipe through pages with the pager, drag the corners, rotate,
@@ -112,6 +128,8 @@ fun ScanReviewScreen(
     onBack: () -> Unit,
     onDone: () -> Unit
 ) {
+    val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val current = index.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
     val uri = pages[current]
@@ -148,7 +166,10 @@ fun ScanReviewScreen(
     LaunchedEffect(bitmap) {
         val image = bitmap ?: return@LaunchedEffect
         if (quads[key] == null) {
-            quads[key] = withContext(Dispatchers.Default) { detectQuad(image) }
+            val detected = withContext(Dispatchers.Default) { detectQuad(image) }
+            // Checked again after detecting: the capture's own detection, or a corner the user has already
+            // dragged, must not be replaced.
+            if (quads[key] == null) quads[key] = detected
         }
     }
 
@@ -180,7 +201,7 @@ fun ScanReviewScreen(
                     if (filter != null) filters[newUri.toString()] = filter
                     File(uri.path.orEmpty()).delete()
                 }
-            }.onFailure { message = "Could not rotate this page" }
+            }.onFailure { message = resources.getString(R.string.scan_review_rotate_failed) }
             working = false
         }
     }
@@ -188,7 +209,7 @@ fun ScanReviewScreen(
     Column(Modifier.fillMaxSize().background(Color(0xFF0A0F18)).systemBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to camera", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.scan_review_back_to_camera), tint = Color.White)
             }
             Box(Modifier.weight(1f))
             fun move(delta: Int) {
@@ -200,10 +221,10 @@ fun ScanReviewScreen(
                 onIndexChange(target)
             }
             IconButton(enabled = !blocked && current > 0, onClick = { move(-1) }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = "Move page earlier", tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
+                Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = stringResource(R.string.scan_review_move_earlier), tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
             }
             IconButton(enabled = !blocked && current < pages.lastIndex, onClick = { move(1) }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Move page later", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
+                Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.scan_review_move_later), tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
             }
             IconButton(
                 enabled = !blocked,
@@ -214,20 +235,23 @@ fun ScanReviewScreen(
                     pages.remove(uri)
                     if (pages.isEmpty()) onBack() else onIndexChange(current.coerceAtMost(pages.lastIndex))
                 }
-            ) { Icon(Icons.Default.Delete, contentDescription = "Delete page", tint = Color.White) }
+            ) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page), tint = Color.White) }
         }
 
         var swipe by remember { mutableStateOf(0f) }
+        // Pages follow the reading direction: swiping towards the end of the row (left in LTR, right in RTL) goes forward.
+        val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
         Box(
-            Modifier.weight(1f).fillMaxWidth().pointerInput(current, blocked) {
+            Modifier.weight(1f).fillMaxWidth().pointerInput(current, blocked, isRtl) {
                 // Only drags that start away from a corner reach here; corner drags are consumed by the outline.
                 detectHorizontalDragGestures(
                     onDragStart = { swipe = 0f },
                     onHorizontalDrag = { change, amount -> change.consume(); swipe += amount },
                     onDragEnd = {
                         if (!blocked) {
-                            if (swipe < -120f && current < pages.lastIndex) onIndexChange(current + 1)
-                            else if (swipe > 120f && current > 0) onIndexChange(current - 1)
+                            val travel = if (isRtl) -swipe else swipe
+                            if (travel < -120f && current < pages.lastIndex) onIndexChange(current + 1)
+                            else if (travel > 120f && current > 0) onIndexChange(current - 1)
                         }
                         swipe = 0f
                     },
@@ -277,11 +301,12 @@ fun ScanReviewScreen(
         )
         if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
             Text(
-                "Use ${pageFilter.label} on all pages",
+                stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes)),
                 color = Blue,
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier
-                    .clickable(enabled = !blocked) { pages.forEach { filters[it.toString()] = pageFilter } }
+                    .minimumInteractiveComponentSize()
+                    .clickable(enabled = !blocked, role = Role.Button) { pages.forEach { filters[it.toString()] = pageFilter } }
                     .padding(vertical = 6.dp)
             )
         }
@@ -298,17 +323,17 @@ fun ScanReviewScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(enabled = current > 0 && !blocked, onClick = { onIndexChange(current - 1) }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "Previous page", tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
+                    Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = stringResource(R.string.scan_review_previous_page), tint = Color.White.copy(alpha = if (current > 0) 1f else 0.35f))
                 }
                 Text("${current + 1}/${pages.size}", color = Color.White, style = MaterialTheme.typography.titleMedium)
                 IconButton(enabled = current < pages.lastIndex && !blocked, onClick = { onIndexChange(current + 1) }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Next page", tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
+                    Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_next_page), tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
                 }
             }
             OutlinedButton(enabled = !blocked, onClick = onAdd) {
                 Icon(Icons.Default.AddAPhoto, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Add")
+                Text(stringResource(R.string.scan_review_add))
             }
         }
 
@@ -317,15 +342,15 @@ fun ScanReviewScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            ReviewAction(Icons.Default.CropFree, "Auto crop", !blocked && bitmap != null) {
+            ReviewAction(Icons.Default.CropFree, stringResource(R.string.scan_review_auto_crop), !blocked && bitmap != null) {
                 val image = bitmap ?: return@ReviewAction
                 scope.launch {
                     quads[key] = withContext(Dispatchers.Default) { detectQuad(image) }
                 }
             }
-            ReviewAction(Icons.Default.Fullscreen, "No crop", !blocked) { quads[key] = CropQuad.DEFAULT }
+            ReviewAction(Icons.Default.Fullscreen, stringResource(R.string.scan_review_no_crop), !blocked) { quads[key] = CropQuad.DEFAULT }
             // Same label on or off (the colour shows the state): a longer label squeezed "Done" onto four lines.
-            ReviewAction(Icons.Default.Gesture, "Curve", !blocked && bitmap != null, highlighted = curveMode) {
+            ReviewAction(Icons.Default.Gesture, stringResource(R.string.scan_review_curve), !blocked && bitmap != null, highlighted = curveMode) {
                 val image = bitmap ?: return@ReviewAction
                 val start = quads[key] ?: return@ReviewAction
                 if (curveMode) {
@@ -342,11 +367,11 @@ fun ScanReviewScreen(
                     }
                 }
             }
-            ReviewAction(Icons.AutoMirrored.Filled.RotateLeft, "Left", !blocked) { rotate(clockwise = false) }
-            ReviewAction(Icons.AutoMirrored.Filled.RotateRight, "Right", !blocked) { rotate(clockwise = true) }
+            ReviewAction(RotateLeftIcon, stringResource(R.string.scan_review_rotate_left), !blocked) { rotate(clockwise = false) }
+            ReviewAction(RotateRightIcon, stringResource(R.string.scan_review_rotate_right), !blocked) { rotate(clockwise = true) }
             Button(enabled = !blocked, onClick = onDone) {
                 if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color.White)
-                else Text("Done", maxLines = 1, softWrap = false)
+                else Text(stringResource(R.string.common_done), maxLines = 1, softWrap = false)
             }
         }
     }
@@ -359,10 +384,12 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
         highlighted -> Amber
         else -> Color.White
     }
+    val onDescription = stringResource(R.string.scan_review_state_on)
     Column(
         Modifier
-            .clickable(enabled = enabled, onClick = onClick)
-            .semantics { if (highlighted) stateDescription = "On" }
+            .minimumInteractiveComponentSize()
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { if (highlighted) stateDescription = onDescription }
             .padding(horizontal = 6.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -382,9 +409,11 @@ private fun CropCanvas(image: Bitmap, crop: CropQuad, curveMode: Boolean, enable
     val latest by androidx.compose.runtime.rememberUpdatedState(crop)
     val latestEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
     val latestCurveMode by androidx.compose.runtime.rememberUpdatedState(curveMode)
+    val pagePreview = stringResource(R.string.a11y_page_preview)
     Canvas(
         Modifier
             .aspectRatio(image.width.toFloat() / image.height.toFloat())
+            .semantics { contentDescription = pagePreview }
             .pointerInput(image) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
@@ -510,6 +539,8 @@ private fun ThumbnailStrip(
     val latestOnSelect by androidx.compose.runtime.rememberUpdatedState(onSelect)
     var draggingKey by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
+    // The strip runs right to left in a right-to-left layout, so a drag to the right then moves a page earlier.
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     LazyRow(
         modifier = Modifier.fillMaxWidth().height(80.dp).padding(top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(gap)
@@ -520,6 +551,8 @@ private fun ThumbnailStrip(
                 value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 220) }
             }
             val isDragging = draggingKey == key
+            val isSelected = index == selected
+            val pageDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
             Box(
                 Modifier
                     .size(itemWidth, 72.dp)
@@ -530,20 +563,24 @@ private fun ThumbnailStrip(
                         scaleX = if (isDragging) 1.08f else 1f
                         scaleY = if (isDragging) 1.08f else 1f
                     }
-                    .border(if (index == selected) 2.dp else 1.dp, if (index == selected) Blue else Color.White.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
-                    .clickable(enabled = enabled) { latestOnSelect(pages.indexOf(uri)) }
-                    .pointerInput(key, enabled) {
+                    .border(if (isSelected) 2.dp else 1.dp, if (isSelected) Blue else Color.White.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                    .clickable(enabled = enabled, role = Role.Tab) { latestOnSelect(pages.indexOf(uri)) }
+                    .semantics { this.selected = isSelected }
+                    .pointerInput(key, enabled, isRtl) {
                         if (!enabled) return@pointerInput
                         val step = (itemWidth + gap).toPx()
+                        // +1 slot per step of travel towards the end of the row: rightwards in LTR, leftwards in RTL.
+                        val direction = if (isRtl) -1f else 1f
                         detectDragGesturesAfterLongPress(
                             onDragStart = { draggingKey = key; dragOffset = 0f },
                             onDrag = { change, amount ->
                                 change.consume()
                                 dragOffset += amount.x
                                 val from = pages.indexOf(uri)
+                                val travel = dragOffset * direction
                                 val to = when {
-                                    dragOffset > step / 2 && from < pages.lastIndex -> from + 1
-                                    dragOffset < -step / 2 && from > 0 -> from - 1
+                                    travel > step / 2 && from < pages.lastIndex -> from + 1
+                                    travel < -step / 2 && from > 0 -> from - 1
                                     else -> from
                                 }
                                 if (to != from) {
@@ -551,7 +588,7 @@ private fun ThumbnailStrip(
                                     pages[to] = uri
                                     pages[from] = other
                                     // The item now sits one slot over, so the finger offset is measured from there.
-                                    dragOffset -= (to - from) * step
+                                    dragOffset -= (to - from) * step * direction
                                     latestOnMoved(from, to)
                                 }
                             },
@@ -564,7 +601,7 @@ private fun ThumbnailStrip(
                 thumb?.let {
                     Image(
                         it.asImageBitmap(),
-                        contentDescription = "Page ${index + 1}",
+                        contentDescription = pageDescription,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().padding(2.dp)
                     )

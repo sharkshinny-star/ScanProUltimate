@@ -40,20 +40,24 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.scanpro.R
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.imaging.ImageProcessor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private enum class Brush(val label: String, val size: Float) {
-    SMALL("Fine", 0.015f),
-    MEDIUM("Medium", 0.03f),
-    LARGE("Wide", 0.06f)
+private enum class Brush(val labelRes: Int, val size: Float) {
+    SMALL(R.string.doc_brush_fine, 0.015f),
+    MEDIUM(R.string.doc_brush_medium, 0.03f),
+    LARGE(R.string.doc_brush_wide, 0.06f)
 }
 
 /**
@@ -75,19 +79,20 @@ fun EraserDialog(
     var current by remember { mutableStateOf<List<NormalizedPoint>>(emptyList()) }
     var brush by remember { mutableStateOf(Brush.MEDIUM) }
     val ink = Color(0xFFFF5252).copy(alpha = 0.55f)
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close") }
-                    Text("Eraser", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
+                    Text(stringResource(R.string.doc_eraser), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     IconButton(enabled = strokes.isNotEmpty(), onClick = { strokes.removeAt(strokes.lastIndex) }) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo last stroke")
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.doc_undo_last_stroke))
                     }
                 }
                 Text(
-                    "Brush over stains, pen marks or handwriting. They're filled in with the paper around them.",
+                    stringResource(R.string.doc_eraser_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -100,6 +105,7 @@ fun EraserDialog(
                         Canvas(
                             Modifier
                                 .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                                .semantics { contentDescription = pagePreview }
                                 .pointerInput(Unit) {
                                     fun at(x: Float, y: Float) = NormalizedPoint(x / size.width, y / size.height).clamped()
                                     detectTapGestures { strokes += brush to listOf(at(it.x, it.y)) }
@@ -139,16 +145,16 @@ fun EraserDialog(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brush", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.doc_brush), style = MaterialTheme.typography.labelLarge)
                     Brush.entries.forEach { option ->
-                        FilterChip(selected = brush == option, onClick = { brush = option }, label = { Text(option.label) })
+                        FilterChip(selected = brush == option, onClick = { brush = option }, label = { Text(stringResource(option.labelRes)) })
                     }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
                     Button(
                         enabled = strokes.isNotEmpty(),
                         onClick = { onApply(strokes.groupBy({ it.first.size }, { it.second })) }
-                    ) { Text("Erase") }
+                    ) { Text(stringResource(R.string.doc_erase)) }
                 }
             }
         }

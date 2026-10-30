@@ -1,5 +1,19 @@
 package com.example.scanpro.feature.settings
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.scanpro.core.designsystem.PasswordInputDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -48,10 +63,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanpro.R
+import com.example.scanpro.BuildConfig
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.data.PdfQuality
@@ -71,7 +90,11 @@ fun SettingsRoute(
     val documentCount by viewModel.documentCount.collectAsStateWithLifecycle()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
     SettingsScreen(
+        busy = busy,
+        onBackupAll = viewModel::backupAll,
+        onRestoreBackup = viewModel::restoreBackup,
         pdfQuality = pdfQuality,
         autoTitle = autoTitle,
         appLock = appLock,
@@ -91,6 +114,9 @@ fun SettingsRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    busy: Boolean = false,
+    onBackupAll: (Uri, String) -> Unit = { _, _ -> },
+    onRestoreBackup: (Uri, String) -> Unit = { _, _ -> },
     pdfQuality: PdfQuality,
     autoTitle: Boolean,
     appLock: Boolean,
@@ -110,7 +136,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) }
+                title = { Text(stringResource(R.string.common_settings), fontWeight = FontWeight.Bold) }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -133,14 +159,14 @@ fun SettingsScreen(
                 Column {
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable { openPlayStoreListing(context) },
-                        headlineContent = { Text("Feedback or suggestion", fontWeight = FontWeight.Medium) },
+                        modifier = Modifier.clickable(role = Role.Button) { openPlayStoreListing(context) },
+                        headlineContent = { Text(stringResource(R.string.settings_feedback), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.Default.Feedback, contentDescription = null) }
                     )
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable { openPlayStoreListing(context) },
-                        headlineContent = { Text("Request more features", fontWeight = FontWeight.Medium) },
+                        modifier = Modifier.clickable(role = Role.Button) { openPlayStoreListing(context) },
+                        headlineContent = { Text(stringResource(R.string.settings_request_features), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.AutoMirrored.Filled.Comment, contentDescription = null) }
                     )
                 }
@@ -160,9 +186,9 @@ fun SettingsScreen(
                     ) {
                         Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Default PDF quality", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_pdf_quality_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                             Text(
-                                "High keeps detail. Small creates lighter files.",
+                                stringResource(R.string.settings_pdf_quality_body),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -175,7 +201,7 @@ fun SettingsScreen(
                             FilterChip(
                                 selected = quality == pdfQuality,
                                 onClick = { onPdfQualityChange(quality) },
-                                label = { Text(quality.label) }
+                                label = { Text(stringResource(quality.labelRes)) }
                             )
                         }
                     }
@@ -195,7 +221,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text("App Theme", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_app_theme), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                         }
                         Spacer(Modifier.height(8.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -203,21 +229,41 @@ fun SettingsScreen(
                                 FilterChip(
                                     selected = mode == themeMode,
                                     onClick = { onThemeModeChange(mode) },
-                                    label = { Text(mode.label) }
+                                    label = { Text(stringResource(mode.labelRes)) }
                                 )
                             }
                         }
                     }
 
+                    if (Build.VERSION.SDK_INT >= 33) {
+                        val languageUnavailable = stringResource(R.string.settings_app_language_unavailable)
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier.clickable(role = Role.Button) {
+                                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                                try {
+                                    context.startActivity(intent)
+                                } catch (_: ActivityNotFoundException) {
+                                    Toast.makeText(context, languageUnavailable, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            headlineContent = { Text(stringResource(R.string.settings_app_language), fontWeight = FontWeight.Medium) },
+                            supportingContent = { Text(stringResource(R.string.settings_app_language_subtitle)) },
+                            leadingContent = { Icon(Icons.Default.Language, contentDescription = null) }
+                        )
+                    }
+
+                    // Each switch row is one control for a screen reader: title, hint and state together.
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Smart OCR titles", fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text("Use recognized text to name new scans automatically.") },
+                        modifier = Modifier.toggleable(value = autoTitle, role = Role.Switch, onValueChange = onAutoTitleChange),
+                        headlineContent = { Text(stringResource(R.string.settings_smart_titles_title), fontWeight = FontWeight.Medium) },
+                        supportingContent = { Text(stringResource(R.string.settings_smart_titles_body)) },
                         leadingContent = { Icon(Icons.Default.Title, contentDescription = null) },
                         trailingContent = {
                             Switch(
                                 checked = autoTitle,
-                                onCheckedChange = onAutoTitleChange,
+                                onCheckedChange = null,
                                 colors = SwitchDefaults.colors(
                                     uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                                     uncheckedBorderColor = MaterialTheme.colorScheme.outline
@@ -228,13 +274,14 @@ fun SettingsScreen(
 
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Biometric app lock", fontWeight = FontWeight.Medium) },
-                        supportingContent = { Text("Require device biometric when library is locked.") },
+                        modifier = Modifier.toggleable(value = appLock, role = Role.Switch, onValueChange = onAppLockChange),
+                        headlineContent = { Text(stringResource(R.string.settings_app_lock_title), fontWeight = FontWeight.Medium) },
+                        supportingContent = { Text(stringResource(R.string.settings_app_lock_body)) },
                         leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingContent = {
                             Switch(
                                 checked = appLock,
-                                onCheckedChange = onAppLockChange,
+                                onCheckedChange = null,
                                 colors = SwitchDefaults.colors(
                                     uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                                     uncheckedBorderColor = MaterialTheme.colorScheme.outline
@@ -254,20 +301,75 @@ fun SettingsScreen(
                 Column {
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier = Modifier.clickable { openPlayStoreListing(context) },
-                        headlineContent = { Text("Share with friends", fontWeight = FontWeight.Medium) },
+                        modifier = Modifier.clickable(role = Role.Button) { openPlayStoreListing(context) },
+                        headlineContent = { Text(stringResource(R.string.settings_share_with_friends), fontWeight = FontWeight.Medium) },
                         leadingContent = { Icon(Icons.Default.Share, contentDescription = null) }
                     )
+                    // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive
+                    // works too); restore reads one such file back. Documents never leave the device otherwise.
+                    var backupFolder by remember { mutableStateOf<Uri?>(null) }
+                    var restoreFile by remember { mutableStateOf<Uri?>(null) }
+                    val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+                        uri?.let {
+                            runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                            backupFolder = it
+                        }
+                    }
+                    val pickRestoreFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> restoreFile = uri }
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Privacy policy", fontWeight = FontWeight.Medium) },
-                        leadingContent = { Icon(Icons.Default.PrivacyTip, contentDescription = null) }
+                        modifier = Modifier.clickable(enabled = !busy, role = Role.Button) { pickBackupFolder.launch(null) },
+                        headlineContent = { Text(stringResource(R.string.settings_backup_all), fontWeight = FontWeight.Medium) },
+                        supportingContent = { Text(stringResource(R.string.settings_backup_all_subtitle)) },
+                        leadingContent = { Icon(Icons.Default.Backup, contentDescription = null) }
                     )
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text("Terms of use", fontWeight = FontWeight.Medium) },
-                        leadingContent = { Icon(Icons.Default.Description, contentDescription = null) }
+                        modifier = Modifier.clickable(enabled = !busy, role = Role.Button) { pickRestoreFile.launch(arrayOf("*/*")) },
+                        headlineContent = { Text(stringResource(R.string.settings_restore_backup), fontWeight = FontWeight.Medium) },
+                        supportingContent = { Text(stringResource(R.string.settings_restore_backup_subtitle)) },
+                        leadingContent = { Icon(Icons.Default.Restore, contentDescription = null) }
                     )
+                    backupFolder?.let { folder ->
+                        PasswordInputDialog(
+                            title = stringResource(R.string.settings_backup_all),
+                            message = stringResource(R.string.settings_backup_password_message),
+                            confirmLabel = stringResource(R.string.settings_backup_start),
+                            onDismiss = { backupFolder = null }
+                        ) { password -> onBackupAll(folder, password); backupFolder = null }
+                    }
+                    restoreFile?.let { file ->
+                        PasswordInputDialog(
+                            title = stringResource(R.string.settings_restore_backup),
+                            message = stringResource(R.string.settings_restore_password_message),
+                            confirmLabel = stringResource(R.string.settings_restore_start),
+                            onDismiss = { restoreFile = null }
+                        ) { password -> onRestoreBackup(file, password); restoreFile = null }
+                    }
+                    val linkUnavailable = stringResource(R.string.settings_link_unavailable)
+                    val openLink: (String) -> Unit = { url ->
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        } catch (_: ActivityNotFoundException) {
+                            Toast.makeText(context, linkUnavailable, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    if (BuildConfig.PRIVACY_POLICY_URL.isNotBlank()) {
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier.clickable(role = Role.Button) { openLink(BuildConfig.PRIVACY_POLICY_URL) },
+                            headlineContent = { Text(stringResource(R.string.settings_privacy_policy), fontWeight = FontWeight.Medium) },
+                            leadingContent = { Icon(Icons.Default.PrivacyTip, contentDescription = null) }
+                        )
+                    }
+                    if (BuildConfig.TERMS_URL.isNotBlank()) {
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier.clickable(role = Role.Button) { openLink(BuildConfig.TERMS_URL) },
+                            headlineContent = { Text(stringResource(R.string.settings_terms_of_use), fontWeight = FontWeight.Medium) },
+                            leadingContent = { Icon(Icons.Default.Description, contentDescription = null) }
+                        )
+                    }
                 }
             }
 
@@ -279,13 +381,13 @@ fun SettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "$documentCount active documents · $trashCount in trash · ${formatBytes(storageBytes)} used",
+                    stringResource(R.string.settings_storage_summary, documentCount, trashCount, formatBytes(storageBytes)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Version 4.1.0",
+                    stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )

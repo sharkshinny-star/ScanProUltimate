@@ -23,12 +23,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
-import androidx.compose.material.icons.automirrored.filled.RotateLeft
-import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
+import androidx.compose.material.icons.filled.RotateLeft
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -53,12 +53,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.scanpro.R
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.imaging.ImageProcessor
@@ -67,6 +72,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.hypot
+
+/** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would). */
+@Suppress("DEPRECATION")
+private val RotateLeftIcon: ImageVector = Icons.Filled.RotateLeft
+@Suppress("DEPRECATION")
+private val RotateRightIcon: ImageVector = Icons.Filled.RotateRight
 
 @Composable
 fun CropEditorDialog(
@@ -96,6 +107,7 @@ fun CropEditorDialog(
 
         val handleColor = Color(0xFF2563EB) // High-visibility primary blue handle
         val boundaryColor = Color(0xFF3B82F6)
+        val pagePreview = stringResource(R.string.a11y_page_preview)
 
         Box(
             modifier = Modifier
@@ -111,7 +123,7 @@ fun CropEditorDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White)
                 }
             }
 
@@ -129,6 +141,7 @@ fun CropEditorDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                            .semantics { contentDescription = pagePreview }
                             .pointerInput(Unit) {
                                 detectDragGestures(
                                     onDragStart = { start ->
@@ -262,7 +275,7 @@ fun CropEditorDialog(
                             drawLine(Color.White, Offset(center.x, center.y - 16.dp.toPx()), Offset(center.x, center.y + 16.dp.toPx()), strokeWidth = 2f)
                         }
                     }
-                } ?: Text("Loading page…", color = Color.White)
+                } ?: Text(stringResource(R.string.doc_loading_page), color = Color.White)
             }
 
             // Bottom Floating Controls + Toolbar
@@ -290,9 +303,10 @@ fun CropEditorDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(20.dp))
+                            // Not buttons (nothing to page through here), so the arrows are decoration beside the counter.
+                            Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                             Text("1 / 1", color = Color.White, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
-                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
 
@@ -308,7 +322,7 @@ fun CropEditorDialog(
                             ) {
                                 Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Add", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.doc_add), color = Color.White, style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
@@ -342,7 +356,7 @@ fun CropEditorDialog(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Crop, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                            Text("Auto crop", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.doc_auto_crop), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -373,7 +387,7 @@ fun CropEditorDialog(
                                 tint = if (curveMode) Color(0xFFF59E0B) else Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
-                            Text("Curve", color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.doc_curve), color = if (curveMode) Color(0xFFF59E0B) else Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
@@ -383,15 +397,15 @@ fun CropEditorDialog(
                     }) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Fullscreen, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                            Text("No crop", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.doc_no_crop), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         }
                     }
 
                     if (onRotateLeft != null) {
                         TextButton(onClick = onRotateLeft) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.AutoMirrored.Filled.RotateLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                Text("Left", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                Icon(RotateLeftIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                Text(stringResource(R.string.doc_rotate_left), color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -399,8 +413,8 @@ fun CropEditorDialog(
                     if (onRotateRight != null) {
                         TextButton(onClick = onRotateRight) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                Text("Right", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                Icon(RotateRightIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                Text(stringResource(R.string.doc_rotate_right), color = Color.White, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -412,7 +426,7 @@ fun CropEditorDialog(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.height(42.dp)
                     ) {
-                        Text("Done", maxLines = 1, softWrap = false)
+                        Text(stringResource(R.string.common_done), maxLines = 1, softWrap = false)
                     }
                 }
             }

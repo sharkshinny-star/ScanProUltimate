@@ -2,6 +2,8 @@ package com.example.scanpro.scanner
 
 import com.example.scanpro.imaging.OpenCvRuntime
 import android.graphics.Bitmap
+import androidx.annotation.StringRes
+import com.example.scanpro.R
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
 import org.opencv.android.Utils
@@ -27,11 +29,20 @@ data class DocumentDetection(
     val brightness: Double,
     val frameWidth: Int,
     val frameHeight: Int,
-    val guidance: String
+    val guidance: Guidance
 ) {
     val isBlurry: Boolean get() = blurScore < 80.0
     val isDark: Boolean get() = brightness < 45.0
     val isReady: Boolean get() = quad != null && confidence >= 0.48f && !isBlurry && !isDark
+}
+
+/** What the live scanner tells the user to do next; the screen resolves [labelRes] in the current language. */
+enum class Guidance(@StringRes val labelRes: Int) {
+    POINT_AT_DOCUMENT(R.string.scan_guidance_point_at_document),
+    MORE_LIGHT(R.string.scan_guidance_more_light),
+    HOLD_STEADY(R.string.scan_guidance_hold_steady),
+    MOVE_CLOSER(R.string.scan_guidance_move_closer),
+    READY(R.string.scan_guidance_ready)
 }
 
 /**
@@ -178,11 +189,11 @@ object DocumentEdgeDetector {
             val confidence = candidate?.score ?: 0f
             val quad = candidate?.let { toNormalizedQuad(it.points, working.cols(), working.rows()) }
             val guidance = when {
-                quad == null -> "Point camera at document"
-                brightness < 45.0 -> "More light needed"
-                blur < 80.0 -> "Hold steady"
-                confidence < 0.48f -> "Move closer and center page"
-                else -> "Ready"
+                quad == null -> Guidance.POINT_AT_DOCUMENT
+                brightness < 45.0 -> Guidance.MORE_LIGHT
+                blur < 80.0 -> Guidance.HOLD_STEADY
+                confidence < 0.48f -> Guidance.MOVE_CLOSER
+                else -> Guidance.READY
             }
 
             return DocumentDetection(

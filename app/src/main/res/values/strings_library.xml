@@ -1,0 +1,130 @@
+<resources>
+    <!-- Library (Home / Files / Search tabs): top bar, menus and selection mode -->
+    <string name="lib_title_selected_count">%1$d selected</string>
+    <string name="lib_title_files">My files</string>
+    <string name="lib_title_home">ScanPro</string>
+    <string name="lib_cd_clear_selection">Clear selection</string>
+    <string name="lib_cd_share_selected">Share selected</string>
+    <string name="lib_cd_move_selected_to_trash">Move selected to trash</string>
+    <string name="lib_cd_sort">Sort</string>
+    <string name="lib_cd_selected">Selected</string>
+    <string name="lib_cd_toggle_layout">Toggle layout</string>
+    <string name="lib_cd_more_options">More options</string>
+    <string name="lib_cd_clear_search">Clear search</string>
+    <string name="lib_sort_recent">Recent</string>
+    <string name="lib_sort_name">Name</string>
+    <string name="lib_sort_size">Size</string>
+    <string name="lib_menu_import_photos">Import photos</string>
+    <string name="lib_menu_import_pdf">Import PDF</string>
+    <string name="lib_menu_rename_folder">Rename folder</string>
+    <string name="lib_menu_recycle_bin">Recycle bin</string>
+    <string name="lib_menu_recycle_bin_count">Recycle bin (%1$d)</string>
+    <string name="lib_scan">Scan</string>
+
+    <!-- Library: search field, filter chips and empty states -->
+    <string name="lib_search_placeholder">Search titles, tags, folders and text</string>
+    <string name="lib_filter_all">All</string>
+    <string name="lib_filter_favorites">Favorites</string>
+    <string name="lib_empty_no_matching">No matching documents</string>
+    <string name="lib_empty_no_favorites">No favorite documents yet</string>
+    <string name="lib_empty_no_documents_in_folder">No documents in this folder</string>
+    <string name="lib_empty_no_documents">No documents yet</string>
+    <string name="lib_empty_hint">Scan a page, or bring in photos or a PDF you already have.</string>
+    <string name="lib_photos">Photos</string>
+    <string name="lib_pdf">PDF</string>
+    <string name="lib_search_hint">Search looks through titles, tags and every word recognised in your scans.</string>
+    <string name="lib_rename_folder_label">Folder name</string>
+
+    <!-- Library: home dashboard -->
+    <string name="lib_home_eyebrow">YOUR DOCUMENT WORKSPACE</string>
+    <string name="lib_home_headline">A little less paper.</string>
+    <string name="lib_home_first_document">Scan, clean, OCR and export your first document.</string>
+    <string name="lib_home_stats">%1$d documents · %2$d favorites</string>
+    <string name="lib_home_stats_with_trash">%1$d documents · %2$d favorites · %3$d in trash</string>
+    <string name="lib_quick_id_card">ID card</string>
+    <string name="lib_quick_book">Book</string>
+    <string name="lib_quick_extract_text">Extract text</string>
+    <string name="lib_quick_qr_code">QR code</string>
+    <string name="lib_quick_receipt">Receipt</string>
+    <string name="lib_quick_pdf_tools">PDF tools</string>
+    <string name="lib_see_all">See all</string>
+    <string name="lib_home_empty_title">Your scans will appear here</string>
+    <string name="lib_home_empty_body">Each one becomes a searchable PDF you can share, sign or export to Word.</string>
+    <string name="lib_privacy_line">Private by design: no account, nothing uploaded</string>
+    <string name="lib_hero_eyebrow">SMART SCAN</string>
+    <string name="lib_hero_title">Every detail.\nPerfectly captured.</string>
+    <string name="lib_hero_body">Auto-crop. Clean up. Make it searchable.</string>
+    <string name="lib_hero_start_scanning">Start scanning</string>
+
+    <!-- Library: document cards -->
+    <string name="lib_card_open">Open</string>
+    <string name="lib_card_select">Select</string>
+    <string name="lib_card_deselect">Deselect</string>
+    <string name="lib_cd_favorite">Favorite</string>
+    <string name="lib_card_meta_three">%1$s · %2$s · %3$s</string>
+    <string name="lib_card_meta_two">%1$s · %2$s</string>
+
+    <!-- Trash (Recycle Bin) screen -->
+    <string name="trash_title">Recycle Bin</string>
+    <string name="trash_empty_action">Empty</string>
+    <string name="trash_empty_title">Recycle Bin is Empty</string>
+    <string name="trash_empty_body">Deleted files will appear here for 7 days before being permanently removed.</string>
+    <string name="trash_auto_delete_notice">Files are automatically deleted after 7 days.</string>
+    <string name="trash_sort_expiry">Soonest to expire</string>
+    <string name="trash_sort_date">Deletion date</string>
+    <string name="trash_sort_name">File name</string>
+    <string name="trash_sort_size">File size</string>
+    <plurals name="trash_pages">
+        <item quantity="one">%1$d page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
+    <string name="trash_doc_meta">%1$s • %2$s</string>
+    <string name="trash_cd_more_actions">More actions</string>
+    <string name="trash_restore">Restore</string>
+    <string name="trash_delete_permanently">Delete Permanently</string>
+    <string name="trash_delete_dialog_title">Delete permanently?</string>
+    <string name="trash_delete_dialog_message">This file will be permanently deleted and cannot be recovered. Are you sure?</string>
+    <string name="trash_empty_dialog_title">Empty Recycle Bin?</string>
+    <string name="trash_empty_dialog_message">This will permanently delete all files in the Recycle Bin. This action cannot be undone.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_feedback">Feedback or suggestion</string>
+    <string name="settings_request_features">Request more features</string>
+    <string name="settings_pdf_quality_title">Default PDF quality</string>
+    <string name="settings_pdf_quality_body">High keeps detail. Small creates lighter files.</string>
+    <string name="settings_app_theme">App Theme</string>
+    <string name="settings_app_language">App language</string>
+    <string name="settings_app_language_subtitle">Choose the language ScanPro uses</string>
+    <string name="settings_app_language_unavailable">Language settings aren\'t available on this device</string>
+    <string name="settings_link_unavailable">No app can open this link</string>
+    <string name="settings_smart_titles_title">Smart OCR titles</string>
+    <string name="settings_smart_titles_body">Use recognized text to name new scans automatically.</string>
+    <string name="settings_app_lock_title">Biometric app lock</string>
+    <string name="settings_app_lock_body">Require device biometric when library is locked.</string>
+    <string name="settings_share_with_friends">Share with friends</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_terms_of_use">Terms of use</string>
+    <string name="settings_storage_summary">%1$d active documents · %2$d in trash · %3$s used</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <!-- Lock screen -->
+    <string name="lock_title">ScanPro is locked</string>
+    <string name="lock_unlock">Unlock</string>
+
+    <!-- Settings: backup and restore -->
+    <string name="settings_backup_all">Back up all documents</string>
+    <string name="settings_backup_all_subtitle">Encrypted copies in a folder you choose, one file per document</string>
+    <string name="settings_backup_password_message">Each file is encrypted with this password. You will need it to restore; it is not stored anywhere.</string>
+    <string name="settings_backup_start">Back up</string>
+    <string name="settings_backup_running">Backing up documents…</string>
+    <plurals name="settings_backup_done">
+        <item quantity="one">Backed up %1$d document</item>
+        <item quantity="other">Backed up %1$d documents</item>
+    </plurals>
+    <string name="settings_restore_backup">Restore from backup</string>
+    <string name="settings_restore_backup_subtitle">Add a document back from a .scanpro backup file</string>
+    <string name="settings_restore_password_message">Enter the password the backup was made with.</string>
+    <string name="settings_restore_start">Restore</string>
+    <string name="settings_restore_running">Restoring backup…</string>
+    <string name="settings_restore_done">Restored \"%1$s\"</string>
+</resources>

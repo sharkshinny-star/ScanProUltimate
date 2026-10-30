@@ -1,0 +1,197 @@
+<resources>
+    <!-- MainActivity: app lock, compatibility scanner -->
+    <string name="main_compat_scanner_no_pages">The compatibility scanner did not return any pages</string>
+    <string name="main_screen_lock_removed">This device no longer has a screen lock, so app lock was turned off</string>
+    <string name="main_compat_scanner_unavailable">Compatibility scanner is unavailable on this device</string>
+    <string name="main_set_up_screen_lock">Set up a screen lock on this device to use app lock</string>
+    <string name="main_device_auth_unavailable">Device authentication is unavailable right now. Try again shortly.</string>
+    <string name="main_unlock_title">Unlock ScanPro</string>
+    <string name="main_unlock_subtitle">Authenticate to access your private document library</string>
+
+    <!-- App shell: protected PDF import dialog -->
+    <string name="ui_pdf_password_title">Password required</string>
+    <string name="ui_pdf_password_body">This PDF is protected. Enter its password to import it.</string>
+    <string name="ui_pdf_password_wrong">That password didn\'t work</string>
+    <string name="ui_pdf_password_import">Import</string>
+
+    <!-- Welcome screen (first launch) -->
+    <string name="ui_welcome_privacy_title">Your documents stay on your phone</string>
+    <string name="ui_welcome_privacy_body">ScanPro works without an account. Nothing you scan is uploaded unless you choose to share it or save it somewhere.</string>
+    <string name="ui_welcome_privacy_point_account">No account or sign-in</string>
+    <string name="ui_welcome_privacy_point_offline">Nothing uploaded: scanning, OCR and PDF tools run on this phone</string>
+    <string name="ui_welcome_privacy_point_ads">No ads, and no watermark on your scans</string>
+    <string name="ui_welcome_scan_title">Scan like a pro</string>
+    <string name="ui_welcome_scan_body">Point the camera at a page and hold steady. ScanPro finds the edges and captures it for you.</string>
+    <string name="ui_welcome_scan_point_modes">Batch mode for many pages, ID cards front and back, books</string>
+    <string name="ui_welcome_scan_point_cleanup">Clean up shadows and fingers, straighten curved pages</string>
+    <string name="ui_welcome_scan_point_codes">Read QR codes and barcodes</string>
+    <string name="ui_welcome_more_title">Do more with every page</string>
+    <string name="ui_welcome_more_body">Every scan is a searchable PDF, ready to share.</string>
+    <string name="ui_welcome_more_point_search">Find any word you scanned</string>
+    <string name="ui_welcome_more_point_export">Export to PDF, Word, text or images</string>
+    <string name="ui_welcome_more_point_sign">Sign, redact, watermark and password-protect</string>
+    <string name="ui_welcome_more_point_contacts">Business cards straight to your contacts</string>
+    <string name="ui_welcome_skip">Skip</string>
+    <string name="ui_welcome_page_of">Page %1$d of %2$d</string>
+    <string name="ui_welcome_scan_first_page">Scan your first page</string>
+    <string name="ui_welcome_next">Next</string>
+    <string name="ui_welcome_look_around">Look around first</string>
+
+    <!-- Design system components: thumbnails and shared dialogs -->
+    <string name="ui_scanned_page">Scanned page</string>
+    <string name="ui_password_label">Password</string>
+    <string name="ui_password_minimum_chars">Minimum %1$d characters</string>
+
+    <!-- core/ui: contact form, share sheets, print, Play Store -->
+    <string name="core_no_contacts_app">No contacts app found</string>
+    <string name="core_pdf_not_available_yet">PDF is not available yet</string>
+    <string name="core_share_pdf">Share PDF</string>
+    <string name="core_no_pdfs_to_share">No PDF files are available to share</string>
+    <string name="core_share_pdfs">Share PDFs</string>
+    <string name="core_jpg_not_available">JPG images are not available</string>
+    <string name="core_share_jpg">Share JPG</string>
+    <string name="core_share_jpg_pages">Share JPG pages</string>
+    <string name="core_no_text_to_share">No recognized text to share</string>
+    <string name="core_share_recognized_text">Share recognized text</string>
+    <string name="core_install_pdf_viewer">Install a PDF viewer to open this file</string>
+    <string name="core_clip_recognized_text">Recognized text</string>
+    <string name="core_text_copied">Text copied</string>
+    <string name="core_export_file_missing">Export file is missing</string>
+    <string name="core_no_app_can_share">No app can share this file</string>
+    <string name="core_pdf_not_found">The PDF could not be found</string>
+    <string name="core_google_play_unavailable">Google Play isn\'t available on this device</string>
+    <plurals name="core_pages">
+        <item quantity="one">%1$d page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
+    <string name="core_trash_auto_deletes_soon">Auto-deletes soon</string>
+    <plurals name="core_trash_auto_deletes_days">
+        <item quantity="one">Auto-deletes in %1$d day</item>
+        <item quantity="other">Auto-deletes in %1$d days</item>
+    </plurals>
+    <plurals name="core_trash_auto_deletes_hours">
+        <item quantity="one">Auto-deletes in %1$d hour</item>
+        <item quantity="other">Auto-deletes in %1$d hours</item>
+    </plurals>
+    <plurals name="core_trash_auto_deletes_minutes">
+        <item quantity="one">Auto-deletes in %1$d minute</item>
+        <item quantity="other">Auto-deletes in %1$d minutes</item>
+    </plurals>
+
+    <!-- Navigation: bottom bar / rail tabs, PDF viewer default title -->
+    <string name="nav_tab_home">Home</string>
+    <string name="nav_tab_files">Files</string>
+    <string name="nav_tab_tools">Tools</string>
+    <string name="nav_pdf_document">PDF Document</string>
+
+    <!-- Scanner: barcode result sheet -->
+    <string name="scan_code_open_link">Open link</string>
+    <string name="scan_code_copy_wifi_password">Copy Wi-Fi password</string>
+    <string name="scan_code_clip_wifi_password">Wi-Fi password</string>
+    <string name="scan_code_open_wifi_settings">Open Wi-Fi settings</string>
+    <string name="scan_code_add_to_contacts">Add to contacts</string>
+    <string name="scan_code_call">Call</string>
+    <string name="scan_code_send_message">Send message</string>
+    <string name="scan_code_write_email">Write email</string>
+    <string name="scan_code_show_on_map">Show on map</string>
+    <string name="scan_code_add_to_calendar">Add to calendar</string>
+    <string name="scan_code_copy">Copy</string>
+    <string name="scan_code_clip_scanned_code">Scanned code</string>
+    <string name="scan_code_scan_another">Scan another</string>
+    <string name="scan_code_type_link">Link</string>
+    <string name="scan_code_type_wifi">Wi-Fi network</string>
+    <string name="scan_code_type_contact">Contact</string>
+    <string name="scan_code_type_phone">Phone number</string>
+    <string name="scan_code_type_sms">Text message</string>
+    <string name="scan_code_type_email">Email</string>
+    <string name="scan_code_type_location">Location</string>
+    <string name="scan_code_type_event">Event</string>
+    <string name="scan_code_type_product">Product code</string>
+    <string name="scan_code_type_barcode">Barcode</string>
+    <string name="scan_code_wifi_security_wpa">WPA/WPA2</string>
+    <string name="scan_code_wifi_security_wep">WEP</string>
+    <string name="scan_code_wifi_security_open">Open</string>
+    <string name="scan_code_wifi_details">Network: %1$s\nSecurity: %2$s</string>
+    <string name="scan_code_no_app_can_open">No app can open this</string>
+    <string name="scan_code_copied">Copied</string>
+
+    <!-- Scanner: camera screen -->
+    <string name="scan_qr_code">QR code</string>
+    <string name="scan_detect_auto">Auto</string>
+    <string name="scan_detect_manual">Manual</string>
+    <string name="scan_detect_no_detect">No detect</string>
+    <string name="scan_guidance_point_at_document">Point the camera at a document</string>
+    <!-- DocumentEdgeDetector.Guidance -->
+    <string name="scan_guidance_more_light">More light needed</string>
+    <string name="scan_guidance_hold_steady">Hold steady</string>
+    <string name="scan_guidance_move_closer">Move closer and center page</string>
+    <string name="scan_guidance_ready">Ready</string>
+    <string name="scan_status_front_ready">Front ready · capture the back</string>
+    <string name="scan_status_pages_ready">%1$d page(s) ready</string>
+    <string name="scan_status_select_document">Select a document to scan</string>
+    <string name="scan_status_capturing">Capturing…</string>
+    <string name="scan_status_front_saved">Front saved · now capture the back</string>
+    <string name="scan_status_id_ready">ID capture ready · tap Done</string>
+    <string name="scan_status_page_captured">Page %1$d captured</string>
+    <string name="scan_error_capture">Could not capture page</string>
+    <string name="scan_guidance_camera_unavailable">Camera unavailable. Use compatibility scanner.</string>
+    <!-- Side of an ID card, not the navigation "Back" -->
+    <string name="scan_id_side_front">Front</string>
+    <string name="scan_id_side_back">Back</string>
+    <string name="scan_id_fit_inside">Fit it inside the borders</string>
+    <string name="scan_tips_title">Quick tips</string>
+    <string name="scan_tip_hold_steady">Hold steady over the page. Once it is outlined and still, it is captured for you.</string>
+    <string name="scan_tip_tap_focus">Tap to focus. Tap \"Auto\" at the top to capture by hand.</string>
+    <string name="scan_tip_batch">Many pages? Choose Batch above the shutter, then tap the page count to finish.</string>
+    <string name="scan_tip_cleanup">Later, Clean up removes shadows and fingers; Curve flattens book pages.</string>
+    <string name="scan_tips_got_it">Got it</string>
+    <string name="scan_qr_downloading">The QR reader is still downloading. Connect to the internet, then try again.</string>
+    <string name="scan_qr_point">Point at a QR code or barcode</string>
+    <string name="scan_guidance_hold_capturing">Hold… capturing</string>
+    <string name="scan_quit_title">Quit scanning?</string>
+    <string name="scan_quit_body">If you quit now, the photos you took will be discarded.</string>
+    <string name="scan_quit_discard">Discard</string>
+    <string name="scan_detection_mode">Detection mode</string>
+    <string name="scan_flash">Flash</string>
+    <string name="scan_more_options">More options</string>
+    <string name="scan_hide_zoom_exposure">Hide zoom &amp; exposure</string>
+    <string name="scan_zoom_exposure">Zoom &amp; exposure</string>
+    <string name="scan_compat_scanner">Compatibility scanner</string>
+    <string name="scan_mode_single">Single</string>
+    <string name="scan_mode_batch">Batch</string>
+    <string name="scan_zoom_min">1×</string>
+    <string name="scan_zoom">Zoom</string>
+    <string name="scan_ev">EV</string>
+    <string name="scan_id_front_only">Front only</string>
+    <string name="scan_id_both_sides">Both sides</string>
+    <string name="scan_tab_text">Text</string>
+    <string name="scan_tab_docs">Docs</string>
+    <string name="scan_tab_id_cards">ID cards</string>
+    <string name="scan_remove_last_page">Remove last page</string>
+    <string name="scan_take_photo">Take photo</string>
+    <string name="scan_import_photos">Import photos</string>
+    <string name="scan_import_images">Import images</string>
+    <string name="scan_permission_title">Camera permission</string>
+    <string name="scan_permission_body">The Pro scanner needs camera access only while you scan. Your documents stay on this device by default.</string>
+    <string name="scan_permission_allow">Allow camera</string>
+    <string name="scan_permission_open_settings">Open app settings</string>
+    <string name="scan_permission_use_compat">Use compatibility scanner</string>
+
+    <!-- Scanner: review screen after capture -->
+    <string name="scan_review_rotate_failed">Could not rotate this page</string>
+    <string name="scan_review_back_to_camera">Back to camera</string>
+    <string name="scan_review_move_earlier">Move page earlier</string>
+    <string name="scan_review_move_later">Move page later</string>
+    <string name="scan_review_delete_page">Delete page</string>
+    <string name="scan_review_use_on_all">Use %1$s on all pages</string>
+    <string name="scan_review_previous_page">Previous page</string>
+    <string name="scan_review_next_page">Next page</string>
+    <string name="scan_review_add">Add</string>
+    <string name="scan_review_auto_crop">Auto crop</string>
+    <string name="scan_review_no_crop">No crop</string>
+    <string name="scan_review_curve">Curve</string>
+    <string name="scan_review_rotate_left">Left</string>
+    <string name="scan_review_rotate_right">Right</string>
+    <string name="scan_review_state_on">On</string>
+    <string name="scan_review_page_n">Page %1$d</string>
+</resources>

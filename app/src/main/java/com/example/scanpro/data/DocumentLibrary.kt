@@ -18,11 +18,12 @@ class DocumentLibrary @Inject constructor(
     private val repository: DocumentRepository,
     @ApplicationScope private val scope: CoroutineScope
 ) {
-    private val _documents = MutableStateFlow<List<ScanDocument>>(emptyList())
-    val documents: StateFlow<List<ScanDocument>> = _documents.asStateFlow()
+    private val _overview = MutableStateFlow(LibraryOverview())
+    /** Totals, folders and the newest documents; the full list is paged from the database (see DocumentRepository). */
+    val overview: StateFlow<LibraryOverview> = _overview.asStateFlow()
 
-    private val _trash = MutableStateFlow<List<ScanDocument>>(emptyList())
-    val trash: StateFlow<List<ScanDocument>> = _trash.asStateFlow()
+    private val _trash = MutableStateFlow<List<DocumentSummary>>(emptyList())
+    val trash: StateFlow<List<DocumentSummary>> = _trash.asStateFlow()
 
     private val _storageBytes = MutableStateFlow(0L)
     val storageBytes: StateFlow<Long> = _storageBytes.asStateFlow()
@@ -51,10 +52,19 @@ class DocumentLibrary @Inject constructor(
         ids.mapNotNull { id -> runCatching { repository.ensurePdf(id) }.getOrNull() }
 
     suspend fun refresh() {
-        _documents.value = repository.loadAll()
-        _trash.value = repository.loadTrash()
+        val next = repository.loadOverview(RECENT_LIMIT)
+        _overview.value = next.copy(revision = _overview.value.revision + 1)
+        _trash.value = repository.loadTrashSummaries()
         _storageBytes.value = repository.storageBytes()
     }
 
-    suspend fun search(query: String): List<ScanDocument> = repository.search(query)
+    suspend fun search(query: String): List<DocumentSummary> = repository.search(query)
+
+    /** True when [id] is a document in the library (not in the recycle bin). */
+    suspend fun exists(id: String): Boolean = repository.activeStamp(id) != null
+
+    private companion object {
+        /** How many recent documents Home shows. */
+        const val RECENT_LIMIT = 8
+    }
 }

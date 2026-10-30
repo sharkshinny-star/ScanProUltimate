@@ -22,16 +22,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import com.example.scanpro.R
 import com.example.scanpro.imaging.ImageProcessor
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +64,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
-private val InkColors = listOf("Black" to Color(0xFF111111), "Blue" to Color(0xFF1A3FB8))
+/** Ink name resource and colour. */
+private val InkColors = listOf(R.string.doc_ink_black to Color(0xFF111111), R.string.doc_ink_blue to Color(0xFF1A3FB8))
 
 /**
  * Draw a signature, or tap one saved earlier. New signatures are kept for next time unless unticked;
@@ -81,14 +85,15 @@ fun SignaturePadDialog(
     var ink by remember { mutableStateOf(InkColors.first().second) }
     var keep by remember { mutableStateOf(true) }
     var deleting by remember { mutableStateOf<File?>(null) }
+    val padDescription = stringResource(R.string.a11y_signature_pad)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add signature") },
+        title = { Text(stringResource(R.string.doc_add_signature)) },
         text = {
             Column {
                 if (saved.isNotEmpty()) {
-                    Text("Saved signatures", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.doc_saved_signatures), style = MaterialTheme.typography.labelLarge)
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
@@ -99,8 +104,8 @@ fun SignaturePadDialog(
                     }
                 }
                 Text(
-                    if (saved.isEmpty()) "Sign below. The signature will be flattened onto the current page."
-                    else "Or draw a new one below.",
+                    if (saved.isEmpty()) stringResource(R.string.doc_sign_below)
+                    else stringResource(R.string.doc_or_draw_new),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Canvas(
@@ -109,6 +114,7 @@ fun SignaturePadDialog(
                         .fillMaxWidth()
                         .height(220.dp)
                         .background(Color.White, RoundedCornerShape(12.dp))
+                        .semantics { contentDescription = padDescription }
                         .onSizeChanged { padSize = it }
                         .pointerInput(Unit) {
                             detectDragGestures(
@@ -141,16 +147,19 @@ fun SignaturePadDialog(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    InkColors.forEach { (name, color) ->
+                    InkColors.forEach { (nameRes, color) ->
                         val chosen = ink == color
+                        val inkDescription = stringResource(R.string.doc_ink_description, stringResource(nameRes))
+                        // The swatch stays 28dp; the 48dp minimum is invisible touch area around it.
                         Box(
                             Modifier
                                 .padding(end = 8.dp)
+                                .minimumInteractiveComponentSize()
                                 .size(28.dp)
                                 .background(color, CircleShape)
                                 .border(if (chosen) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                .clickable { ink = color }
-                                .semantics { contentDescription = "$name ink"; selected = chosen }
+                                .clickable(role = Role.RadioButton) { ink = color }
+                                .semantics { contentDescription = inkDescription; selected = chosen }
                         )
                     }
                     Spacer(Modifier.weight(1f))
@@ -159,7 +168,7 @@ fun SignaturePadDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(checked = keep, onCheckedChange = null)
-                        Text("Save for next time", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp))
+                        Text(stringResource(R.string.doc_save_for_next_time), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp))
                     }
                 }
             }
@@ -170,13 +179,13 @@ fun SignaturePadDialog(
                 onClick = {
                     onConfirm(signatureBitmap(strokes, padSize, ink.toArgb()), keep)
                 }
-            ) { Text("Place signature") }
+            ) { Text(stringResource(R.string.doc_place_signature)) }
         },
         dismissButton = {
             TextButton(onClick = {
                 if (strokes.isEmpty()) onDismiss() else strokes = emptyList()
             }) {
-                Text(if (strokes.isEmpty()) "Cancel" else "Clear")
+                Text(if (strokes.isEmpty()) stringResource(R.string.common_cancel) else stringResource(R.string.doc_clear))
             }
         }
     )
@@ -184,10 +193,10 @@ fun SignaturePadDialog(
     deleting?.let { file ->
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("Delete saved signature?") },
-            text = { Text("Pages already signed keep their signature.") },
-            confirmButton = { TextButton(onClick = { onDeleteSaved(file); deleting = null }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancel") } }
+            title = { Text(stringResource(R.string.doc_delete_saved_signature)) },
+            text = { Text(stringResource(R.string.doc_delete_saved_signature_message)) },
+            confirmButton = { TextButton(onClick = { onDeleteSaved(file); deleting = null }) { Text(stringResource(R.string.common_delete)) } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 }
@@ -204,12 +213,12 @@ private fun SavedSignature(file: File, onClick: () -> Unit, onLongClick: () -> U
             .background(Color.White, RoundedCornerShape(10.dp))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
-            .combinedClickable(onClickLabel = "Place this signature", onLongClickLabel = "Delete", onClick = onClick, onLongClick = onLongClick)
+            .combinedClickable(onClickLabel = stringResource(R.string.doc_place_this_signature), onLongClickLabel = stringResource(R.string.common_delete), onClick = onClick, onLongClick = onLongClick)
             .padding(6.dp),
         contentAlignment = Alignment.Center
     ) {
         image?.let {
-            Image(it.asImageBitmap(), contentDescription = "Saved signature", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+            Image(it.asImageBitmap(), contentDescription = stringResource(R.string.doc_saved_signature), contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
         }
     }
 }

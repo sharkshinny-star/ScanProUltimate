@@ -6,6 +6,14 @@ plugins {
     id("androidx.baselineprofile")
 }
 
+// Two ways to build:
+//  * Default (Google Play): an app bundle, with translation as an on-demand module that Play installs the
+//    first time someone translates. `./gradlew :app:bundleRelease`
+//  * -Pscanpro.sideload=true: standalone APKs to share directly, one per CPU type plus a universal one,
+//    with translation compiled into the app. `./gradlew :app:assembleRelease -Pscanpro.sideload=true`
+// Android does not allow on-demand modules together with per-CPU APK splits, hence the switch.
+val sideload = providers.gradleProperty("scanpro.sideload").orNull == "true"
+
 android {
     namespace = "com.example.scanpro"
     compileSdk = 37
@@ -20,6 +28,9 @@ android {
         vectorDrawables { useSupportLibrary = true }
         // True when the ML Kit models ship inside the APK (-Pscanpro.bundledMl=true): no Play-services download checks.
         buildConfigField("boolean", "BUNDLED_ML", (providers.gradleProperty("scanpro.bundledMl").orNull == "true").toString())
+        // Links shown in Settings. Empty (the default) hides the rows: -Pscanpro.privacyPolicyUrl=... -Pscanpro.termsUrl=...
+        buildConfigField("String", "PRIVACY_POLICY_URL", "\"${providers.gradleProperty("scanpro.privacyPolicyUrl").orNull.orEmpty()}\"")
+        buildConfigField("String", "TERMS_URL", "\"${providers.gradleProperty("scanpro.termsUrl").orNull.orEmpty()}\"")
         // 32-bit x86 is only used by old emulators; leaving it out removes ~70 MB of native code from universal APKs.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -58,10 +69,11 @@ android {
         }
     }
 
-    // Shared APKs: one small APK per CPU type plus a universal one. Play Store bundles split by CPU on their own.
+    // Shared APKs (sideload builds only): one small APK per CPU type plus a universal one. Play Store
+    // bundles split by CPU on their own.
     splits {
         abi {
-            isEnable = true
+            isEnable = sideload
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86_64")
             isUniversalApk = true
@@ -78,7 +90,26 @@ android {
         buildConfig = true
     }
 
+    if (sideload) {
+        // No Play to deliver modules: the translation code is built into the app instead.
+        sourceSets.getByName("main").kotlin.srcDir("../translate/src/main/java")
+    } else {
+        // Delivered by Google Play when first used; see TranslationFeature and translate/build.gradle.kts.
+        dynamicFeatures += setOf(":translate")
+    }
+
+    testOptions {
+        unitTests.all {
+            // -Pscanpro.updateGoldens=true rewrites the golden images of the imaging tests (see MatFiltersGoldenTest).
+            it.systemProperty("scanpro.updateGoldens", (project.findProperty("scanpro.updateGoldens") ?: "false").toString())
+            // -Pscanpro.photoDir=<folder of photos> enables RealPhotoEquivalenceTest.
+            it.systemProperty("scanpro.photoDir", (project.findProperty("scanpro.photoDir") ?: "").toString())
+        }
+    }
+
     packaging {
+        // The C++ runtime ships with the :opencv module (from the NDK); Google libraries bundle a copy too.
+        jniLibs { pickFirsts += "**/libc++_shared.so" }
         resources {
             excludes += setOf(
                 "/META-INF/{AL2.0,LGPL2.1}",
@@ -87,10 +118,23 @@ android {
                 "META-INF/LICENSE.txt",
                 "META-INF/NOTICE",
                 "META-INF/NOTICE.txt",
-                "**/sike*",
-                "**/picnic*"
+                // PDFBox brings BouncyCastle for PDF encryption; its post-quantum lookup tables (about 8 MB) are
+                // never used. The patterns name the folders' contents: a bare "**/sike*" would only match a
+                // path segment, not the files inside it, and shipped every table.
+                "org/bouncycastle/pqc/crypto/sike/**",
+                "org/bouncycastle/pqc/crypto/picnic/**"
             )
         }
+    }
+}
+
+composeCompiler {
+    // Classes from other modules the compiler can't see into; listing them lets it skip recompositions
+    // when they are passed unchanged. Compose metrics: -Pscanpro.composeMetrics=true, then see build/compose_metrics.
+    stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability.conf"))
+    if (providers.gradleProperty("scanpro.composeMetrics").orNull == "true") {
+        metricsDestination = layout.buildDirectory.dir("compose_metrics")
+        reportsDestination = layout.buildDirectory.dir("compose_metrics")
     }
 }
 
@@ -139,9 +183,9 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraX")
     implementation("androidx.camera:camera-view:$cameraX")
 
-    // OpenCV 4.x is deliberately used instead of the newer 5.x major line for
-    // a more conservative production baseline.
-    implementation("org.opencv:opencv:4.14.0")
+    // OpenCV 4.14 trimmed to core, imgproc and photo: a fifth of the Maven artifact's native code.
+    // Built from unmodified sources by scripts/opencv/build-opencv-android.sh (see scripts/opencv/README.md).
+    implementation(project(":opencv"))
 
     // Google scanner remains as a compatibility fallback.
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
@@ -165,13 +209,22 @@ dependencies {
         implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.1")
         implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
     }
-    implementation("com.google.mlkit:translate:17.0.3")
-    implementation("com.google.mlkit:language-id:17.0.6")
+    // ML Kit Translate and language identification live in the on-demand :translate module, or in the app
+    // itself for sideload builds.
+    implementation("com.google.android.play:feature-delivery:2.1.0")
+    if (sideload) {
+        implementation("com.google.mlkit:translate:17.0.3")
+        implementation("com.google.mlkit:language-id:17.0.6")
+    }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
     // Room + Hilt + WorkManager.
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")
+    // The Files list is paged from the database instead of held in memory.
+    implementation("androidx.room:room-paging:2.8.5")
+    implementation("androidx.paging:paging-runtime:3.5.3")
+    implementation("androidx.paging:paging-compose:3.5.3")
     ksp("androidx.room:room-compiler:2.8.5")
 
     implementation("com.google.dagger:hilt-android:2.60.1")
@@ -186,6 +239,8 @@ dependencies {
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
     testImplementation("junit:junit:4.13.2")
+    // The real org.json: the Android jar's version only has stubs, and the backup format is JSON.
+    testImplementation("org.json:json:20240303")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")

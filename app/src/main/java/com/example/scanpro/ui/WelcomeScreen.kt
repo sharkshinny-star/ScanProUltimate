@@ -47,45 +47,48 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
+import com.example.scanpro.R
 import kotlinx.coroutines.launch
 
-private class WelcomePage(val icon: ImageVector, val title: String, val body: String, val points: List<Pair<ImageVector, String>>)
+private class WelcomePage(val icon: ImageVector, @StringRes val title: Int, @StringRes val body: Int, val points: List<Pair<ImageVector, Int>>)
 
 private val pages = listOf(
     WelcomePage(
         Icons.Default.Lock,
-        "Your documents stay on your phone",
-        "ScanPro works without an account. Nothing you scan is uploaded unless you choose to share it or save it somewhere.",
+        R.string.ui_welcome_privacy_title,
+        R.string.ui_welcome_privacy_body,
         listOf(
-            Icons.Default.NoAccounts to "No account or sign-in",
-            Icons.Default.CloudOff to "Nothing uploaded: scanning, OCR and PDF tools run on this phone",
-            Icons.Default.MoneyOff to "No ads, and no watermark on your scans"
+            Icons.Default.NoAccounts to R.string.ui_welcome_privacy_point_account,
+            Icons.Default.CloudOff to R.string.ui_welcome_privacy_point_offline,
+            Icons.Default.MoneyOff to R.string.ui_welcome_privacy_point_ads
         )
     ),
     WelcomePage(
         Icons.Default.DocumentScanner,
-        "Scan like a pro",
-        "Point the camera at a page and hold steady. ScanPro finds the edges and captures it for you.",
+        R.string.ui_welcome_scan_title,
+        R.string.ui_welcome_scan_body,
         listOf(
-            Icons.Default.CameraAlt to "Batch mode for many pages, ID cards front and back, books",
-            Icons.Default.AutoFixHigh to "Clean up shadows and fingers, straighten curved pages",
-            Icons.Default.QrCodeScanner to "Read QR codes and barcodes"
+            Icons.Default.CameraAlt to R.string.ui_welcome_scan_point_modes,
+            Icons.Default.AutoFixHigh to R.string.ui_welcome_scan_point_cleanup,
+            Icons.Default.QrCodeScanner to R.string.ui_welcome_scan_point_codes
         )
     ),
     WelcomePage(
         Icons.Default.PictureAsPdf,
-        "Do more with every page",
-        "Every scan is a searchable PDF, ready to share.",
+        R.string.ui_welcome_more_title,
+        R.string.ui_welcome_more_body,
         listOf(
-            Icons.Default.Search to "Find any word you scanned",
-            Icons.Default.Description to "Export to PDF, Word, text or images",
-            Icons.Default.Draw to "Sign, redact, watermark and password-protect",
-            Icons.Default.Badge to "Business cards straight to your contacts"
+            Icons.Default.Search to R.string.ui_welcome_more_point_search,
+            Icons.Default.Description to R.string.ui_welcome_more_point_export,
+            Icons.Default.Draw to R.string.ui_welcome_more_point_sign,
+            Icons.Default.Badge to R.string.ui_welcome_more_point_contacts
         )
     )
 )
@@ -108,13 +111,14 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
     ) {
         Column(Modifier.fillMaxSize().widthIn(max = 560.dp)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                if (!last) TextButton(onClick = onExplore) { Text("Skip") }
+                if (!last) TextButton(onClick = onExplore) { Text(stringResource(R.string.ui_welcome_skip)) }
             }
             HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) { index ->
                 PageContent(pages[index])
             }
+            val pageIndicatorDescription = stringResource(R.string.ui_welcome_page_of, pagerState.currentPage + 1, pages.size)
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 12.dp).semantics { contentDescription = "Page ${pagerState.currentPage + 1} of ${pages.size}" },
+                Modifier.fillMaxWidth().padding(vertical = 12.dp).semantics { contentDescription = pageIndicatorDescription },
                 horizontalArrangement = Arrangement.Center
             ) {
                 repeat(pages.size) { index ->
@@ -133,9 +137,9 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
                 Button(
                     onClick = { if (last) onStartScanning() else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
                     modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) { Text(if (last) "Scan your first page" else "Next") }
+                ) { Text(if (last) stringResource(R.string.ui_welcome_scan_first_page) else stringResource(R.string.ui_welcome_next)) }
                 if (last) {
-                    TextButton(onClick = onExplore, modifier = Modifier.fillMaxWidth()) { Text("Look around first") }
+                    TextButton(onClick = onExplore, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ui_welcome_look_around)) }
                 }
             }
         }
@@ -158,15 +162,15 @@ private fun PageContent(page: WelcomePage) {
             }
         }
         Spacer(Modifier.height(24.dp))
-        Text(page.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        Text(stringResource(page.title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         Spacer(Modifier.height(10.dp))
-        Text(page.body, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(page.body), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
         page.points.forEach { (icon, text) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(14.dp))
-                Text(text, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(text), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

@@ -1,44 +1,46 @@
 package com.example.scanpro.data
 
+import androidx.annotation.StringRes
+import com.example.scanpro.R
 import java.io.File
 
 import java.util.UUID
 
-enum class PageFilter(val label: String) {
-    ORIGINAL("Original"),
-    AUTO("Auto Clean"),
-    COLOR("Magic Color"),
-    GRAY("Gray"),
-    BW("B&W"),
-    WHITEBOARD("Whiteboard")
+enum class PageFilter(@StringRes val labelRes: Int) {
+    ORIGINAL(R.string.data_filter_original),
+    AUTO(R.string.data_filter_auto),
+    COLOR(R.string.data_filter_color),
+    GRAY(R.string.data_filter_gray),
+    BW(R.string.data_filter_bw),
+    WHITEBOARD(R.string.data_filter_whiteboard)
 }
 
-enum class PdfQuality(val label: String, val maxImageDimension: Int) {
-    HIGH("High", 3200),
-    BALANCED("Balanced", 2200),
-    SMALL("Small", 1400)
+enum class PdfQuality(@StringRes val labelRes: Int, val maxImageDimension: Int) {
+    HIGH(R.string.data_pdf_quality_high, 3200),
+    BALANCED(R.string.data_pdf_quality_balanced, 2200),
+    SMALL(R.string.data_pdf_quality_small, 1400)
 }
 
-enum class PdfPageSize(val label: String) {
-    AUTO("Auto"),
-    A4("A4"),
-    LETTER("Letter"),
-    LEGAL("Legal")
+enum class PdfPageSize(@StringRes val labelRes: Int) {
+    AUTO(R.string.data_page_size_auto),
+    A4(R.string.data_page_size_a4),
+    LETTER(R.string.data_page_size_letter),
+    LEGAL(R.string.data_page_size_legal)
 }
 
-enum class ThemeMode(val label: String) {
-    LIGHT("Light"),
-    DARK("Dark"),
-    SYSTEM("System default")
+enum class ThemeMode(@StringRes val labelRes: Int) {
+    LIGHT(R.string.data_theme_light),
+    DARK(R.string.data_theme_dark),
+    SYSTEM(R.string.data_theme_system)
 }
 
-enum class ScanMode(val label: String) {
-    DOCUMENT("Document"),
-    RECEIPT("Receipt"),
-    WHITEBOARD("Whiteboard"),
-    ID_CARD("ID card"),
-    BOOK("Book"),
-    TEXT("Extract text")
+enum class ScanMode(@StringRes val labelRes: Int) {
+    DOCUMENT(R.string.data_scan_mode_document),
+    RECEIPT(R.string.data_scan_mode_receipt),
+    WHITEBOARD(R.string.data_scan_mode_whiteboard),
+    ID_CARD(R.string.data_scan_mode_id_card),
+    BOOK(R.string.data_scan_mode_book),
+    TEXT(R.string.data_scan_mode_text)
 }
 
 /** The look a new scan starts with in each mode; the review screen's filter strip can change it per page. */
@@ -50,12 +52,12 @@ val ScanMode.defaultFilter: PageFilter
         else -> PageFilter.AUTO
     }
 
-enum class OcrScript(val label: String) {
-    LATIN("Latin"),
-    DEVANAGARI("Devanagari"),
-    CHINESE("Chinese"),
-    JAPANESE("Japanese"),
-    KOREAN("Korean")
+enum class OcrScript(@StringRes val labelRes: Int) {
+    LATIN(R.string.data_ocr_script_latin),
+    DEVANAGARI(R.string.data_ocr_script_devanagari),
+    CHINESE(R.string.data_ocr_script_chinese),
+    JAPANESE(R.string.data_ocr_script_japanese),
+    KOREAN(R.string.data_ocr_script_korean)
 }
 
 enum class AnnotationType {
@@ -180,16 +182,32 @@ data class PageAnnotation(
     }
 }
 
-enum class WatermarkSize(val label: String, val height: Float) {
-    SMALL("Small", 0.07f),
-    MEDIUM("Medium", 0.12f),
-    LARGE("Large", 0.18f)
+/**
+ * The same mark-up after the page turns a quarter clockwise (coordinates are fractions of the page). The box
+ * moves with the page, and the content inside it turns too, so text, watermarks and signatures stay aligned
+ * with what is printed instead of staying upright inside a box that is now on its side.
+ */
+fun PageAnnotation.rotatedClockwise(
+    /** Width divided by height of the page before the turn, so an eraser brush (a fraction of the width) keeps its size. */
+    pageAspect: Float = 1f
+) = copy(
+    x = 1f - (y + height), y = x, width = height, height = width,
+    rotationDegrees = ((rotationDegrees + 90f) % 360f + 360f) % 360f,
+    brushSize = brushSize * pageAspect,
+    // Eraser strokes are fractions of the box, so they turn with it.
+    strokes = strokes.map { stroke -> stroke.map { NormalizedPoint(1f - it.y, it.x) } }
+)
+
+enum class WatermarkSize(@StringRes val labelRes: Int, val height: Float) {
+    SMALL(R.string.data_watermark_size_small, 0.07f),
+    MEDIUM(R.string.data_watermark_size_medium, 0.12f),
+    LARGE(R.string.data_watermark_size_large, 0.18f)
 }
 
-enum class WatermarkPosition(val label: String) {
-    DIAGONAL("Diagonal"),
-    CENTER("Centre"),
-    BOTTOM("Bottom")
+enum class WatermarkPosition(@StringRes val labelRes: Int) {
+    DIAGONAL(R.string.data_watermark_position_diagonal),
+    CENTER(R.string.data_watermark_position_center),
+    BOTTOM(R.string.data_watermark_position_bottom)
 }
 
 /** How "Watermark all pages" stamps its text. */

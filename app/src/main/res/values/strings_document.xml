@@ -1,0 +1,254 @@
+<resources>
+    <!-- Document screen: route, top bar, menu and bottom toolbar -->
+    <string name="doc_unavailable">Document is unavailable</string>
+    <string name="doc_could_not_save_pdf">Could not save PDF</string>
+    <string name="doc_drive_not_installed">Google Drive isn\'t installed. Choose where to save.</string>
+    <string name="doc_favorite">Favorite</string>
+    <string name="doc_more_options">More options</string>
+    <string name="doc_move_to_folder">Move to folder</string>
+    <string name="doc_tags">Tags</string>
+    <string name="doc_details">Details</string>
+    <string name="doc_move_to_recycle_bin">Move to recycle bin</string>
+    <string name="doc_crop">Crop</string>
+    <string name="doc_clean_up">Clean up</string>
+    <string name="doc_sign">Sign</string>
+    <string name="doc_share_pdf">Share PDF</string>
+
+    <!-- Document screen: page header, thumbnails and tabs -->
+    <string name="doc_ready_to_export">Ready to export</string>
+    <plurals name="doc_pages_searchable">
+        <item quantity="one">%1$d page · searchable</item>
+        <item quantity="other">%1$d pages · searchable</item>
+    </plurals>
+    <string name="doc_page_x_of_y_reorder">Page %1$d of %2$d · long-press a page to reorder</string>
+    <string name="doc_page_1_of_1">Page 1 of 1</string>
+    <string name="doc_tab_text">Text</string>
+    <string name="doc_tab_insights">Insights</string>
+    <string name="doc_tab_pdf_settings">PDF settings</string>
+
+    <!-- Document screen: Text tab -->
+    <string name="doc_page_n">Page %1$d</string>
+    <string name="doc_recognized_text">Recognized text</string>
+    <string name="doc_edit_recognized_text">Edit recognized text</string>
+    <string name="doc_copy_text">Copy text</string>
+    <string name="doc_no_text_recognized">No text recognized on this page.</string>
+    <string name="doc_no_page_selected">No page selected.</string>
+    <string name="doc_share_text">Share text</string>
+    <string name="doc_txt_file">TXT file</string>
+    <string name="doc_word_file">Word file</string>
+    <string name="doc_excel_file">Excel file</string>
+    <string name="doc_rerun_ocr">Re-run OCR</string>
+    <string name="doc_ocr_script">OCR script</string>
+    <string name="doc_translate">Translate</string>
+    <string name="doc_translation_failed">Translation failed</string>
+    <string name="doc_preparing_translation">Preparing translation…</string>
+    <string name="doc_downloading_translation">Downloading translation… %1$d%%</string>
+    <string name="doc_installing_translation">Installing translation…</string>
+    <string name="doc_translating">Translating…</string>
+    <string name="doc_translate_hint">Runs on-device with ML Kit; the translation feature and its language model download once.</string>
+
+    <!-- Document screen: Insights tab -->
+    <string name="doc_amounts">Amounts: %1$s</string>
+    <string name="doc_dates">Dates: %1$s</string>
+    <string name="doc_references">References: %1$s</string>
+    <string name="doc_contact_details">Contact details</string>
+    <string name="doc_add_to_contacts">Add to contacts</string>
+    <string name="doc_potential_action_items">Potential action items</string>
+    <string name="doc_bullet_item">• %1$s</string>
+    <string name="doc_suggested_tags">Suggested tags: %1$s</string>
+    <string name="doc_apply_suggested_tags">Apply suggested tags</string>
+    <string name="doc_ask_about_scan">Ask about this scan</string>
+    <string name="doc_ask_placeholder">e.g. What is the total?</string>
+    <string name="doc_ask_supporting">Answers come only from OCR text; nothing is uploaded.</string>
+    <string name="doc_find_answer">Find answer</string>
+
+    <!-- Document screen: PDF settings tab -->
+    <string name="doc_quality">Quality</string>
+    <string name="doc_page_size">Page size</string>
+    <string name="doc_document_mode">Document mode</string>
+    <string name="doc_searchable_pdf">Searchable PDF</string>
+    <string name="doc_searchable_pdf_hint">Embed recognized text so the PDF can be searched.</string>
+    <string name="doc_page_numbers">Page numbers</string>
+    <string name="doc_page_numbers_hint">Print page x / total at the bottom of each page.</string>
+
+    <!-- Document screen: rename / tags / folder dialogs -->
+    <string name="doc_rename_document">Rename document</string>
+    <string name="doc_name">Name</string>
+    <string name="doc_document_tags">Document tags</string>
+    <string name="doc_comma_separated_tags">Comma-separated tags</string>
+    <string name="doc_folder_name">Folder name</string>
+
+    <!-- Document screen: More sheet -->
+    <string name="doc_this_page">This page</string>
+    <string name="doc_rotate">Rotate</string>
+    <string name="doc_fine_tune">Fine tune</string>
+    <string name="doc_move_left">Move left</string>
+    <string name="doc_move_right">Move right</string>
+    <string name="doc_duplicate">Duplicate</string>
+    <string name="doc_extract">Extract</string>
+    <string name="doc_split_book">Split book</string>
+    <string name="doc_delete_page">Delete page</string>
+    <string name="doc_mark_up">Mark up</string>
+    <string name="doc_edit_text">Edit text</string>
+    <string name="doc_eraser">Eraser</string>
+    <string name="doc_add_text">Add text</string>
+    <string name="doc_highlight">Highlight</string>
+    <string name="doc_redact">Redact</string>
+    <string name="doc_watermark">Watermark</string>
+    <string name="doc_edit_markup">Edit markup</string>
+    <string name="doc_remove_last">Remove last</string>
+    <string name="doc_share_and_save">Share and save</string>
+    <string name="doc_share_jpg">Share JPG</string>
+    <string name="doc_open_pdf">Open PDF</string>
+    <string name="doc_save_pdf">Save PDF</string>
+    <string name="doc_save_to_drive">Save to Drive</string>
+    <string name="doc_word_docx">Word (.docx)</string>
+    <string name="doc_excel_xlsx">Excel (.xlsx)</string>
+    <string name="doc_print">Print</string>
+    <string name="doc_protect_pdf">Protect PDF</string>
+    <string name="doc_id_copy">ID copy</string>
+    <string name="doc_long_image">Long image</string>
+    <string name="doc_encrypted_backup">Encrypted backup</string>
+    <string name="doc_organise">Organise</string>
+    <string name="doc_add_pages">Add pages</string>
+    <string name="doc_merge">Merge</string>
+    <string name="doc_split_all">Split all</string>
+
+    <!-- Document screen: password, annotation and OCR edit dialogs -->
+    <string name="doc_protect_pdf_copy">Protect PDF copy</string>
+    <string name="doc_protect_pdf_message">Create a password-protected PDF for sharing.</string>
+    <string name="doc_create">Create</string>
+    <string name="doc_encrypted_backup_title">Encrypted ScanPro backup</string>
+    <string name="doc_encrypted_backup_message">Backs up page images, OCR and document settings in an AES-GCM encrypted portable package.</string>
+    <string name="doc_create_backup">Create backup</string>
+    <string name="doc_add_text_to_page">Add text to page</string>
+    <string name="doc_text">Text</string>
+    <string name="doc_add">Add</string>
+    <string name="doc_ocr_text">OCR text</string>
+    <string name="doc_save_text">Save text</string>
+
+    <!-- Document screen: merge, delete page, details and recycle bin dialogs -->
+    <string name="doc_merge_with_another">Merge with another document</string>
+    <string name="doc_delete_this_page">Delete this page?</string>
+    <string name="doc_delete_only_page_message">This is the only page, so the document will move to the recycle bin.</string>
+    <string name="doc_delete_page_message">The page will be removed from this document.</string>
+    <string name="doc_details_pages">Pages: %1$d</string>
+    <string name="doc_details_pdf_size">PDF size: %1$s</string>
+    <string name="doc_details_updated">Updated: %1$s</string>
+    <string name="doc_details_folder">Folder: %1$s</string>
+    <string name="doc_details_tags">Tags: %1$s</string>
+    <string name="doc_move_to_recycle_bin_question">Move to recycle bin?</string>
+    <string name="doc_move_to_recycle_bin_message">You can restore the document later or permanently delete it from the recycle bin.</string>
+    <string name="doc_move">Move</string>
+
+    <!-- Adjustments (clean up & fine tune) dialog -->
+    <string name="doc_adjustments_title">Clean up &amp; fine tune</string>
+    <string name="doc_adjustment_preview">Adjustment preview</string>
+    <string name="doc_preparing_preview">Preparing preview…</string>
+    <string name="doc_remove_shadows">Remove shadows</string>
+    <string name="doc_remove_shadows_hint">Evens out shadows and uneven light on the paper</string>
+    <string name="doc_remove_fingers">Remove fingers</string>
+    <string name="doc_remove_fingers_hint">Paints over fingers holding the page edges</string>
+    <string name="doc_clean_up_all_pages">Clean up all %1$d pages</string>
+    <string name="doc_clean_up_all_pages_hint">Apply the two switches above to every page</string>
+    <string name="doc_brightness">Brightness</string>
+    <string name="doc_contrast">Contrast</string>
+    <string name="doc_saturation">Saturation</string>
+    <string name="doc_slider_label">%1$s  %2$s</string>
+    <string name="doc_percent_value">%1$d%%</string>
+
+    <!-- Book split dialog -->
+    <string name="doc_split_book_spread">Split book spread</string>
+    <string name="doc_split_book_hint">Move the line to the gutter between the two pages.</string>
+    <string name="doc_loading_page">Loading page…</string>
+    <string name="doc_split">Split</string>
+
+    <!-- Crop editor dialog -->
+    <string name="doc_previous">Previous</string>
+    <string name="doc_next">Next</string>
+    <string name="doc_auto_crop">Auto crop</string>
+    <string name="doc_curve">Curve</string>
+    <string name="doc_no_crop">No crop</string>
+    <string name="doc_rotate_left">Left</string>
+    <string name="doc_rotate_right">Right</string>
+
+    <!-- Edit text dialog -->
+    <string name="doc_edit_text_empty">No text was found on this page, so there is nothing to edit.</string>
+    <string name="doc_edit_text_hint">Tap the line you want to change, then type the new words.</string>
+    <string name="doc_tap_a_line">Tap a line on the page</string>
+    <string name="doc_new_text">New text</string>
+    <string name="doc_remove_line">Remove line</string>
+    <string name="doc_replace">Replace</string>
+
+    <!-- Eraser dialog -->
+    <string name="doc_undo_last_stroke">Undo last stroke</string>
+    <string name="doc_eraser_hint">Brush over stains, pen marks or handwriting. They\'re filled in with the paper around them.</string>
+    <string name="doc_brush">Brush</string>
+    <string name="doc_brush_fine">Fine</string>
+    <string name="doc_brush_medium">Medium</string>
+    <string name="doc_brush_wide">Wide</string>
+    <string name="doc_erase">Erase</string>
+
+    <!-- Markup editor dialog -->
+    <string name="doc_markup_hint">Drag a box to move it. Drag the round handle to resize. Tap a box to select it.</string>
+    <string name="doc_smaller">Smaller</string>
+    <string name="doc_larger">Larger</string>
+
+    <!-- Scan saved sheet -->
+    <string name="doc_scan_saved">Scan saved</string>
+    <plurals name="doc_page_count">
+        <item quantity="one">%1$d page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
+    <string name="doc_pages_and_size">%1$s · %2$s</string>
+    <string name="doc_share_as_pdf">Share as PDF</string>
+    <string name="doc_share_as_pdf_hint">Email, WhatsApp, Gmail and other apps</string>
+    <string name="doc_share_as_jpg">Share as JPG</string>
+    <string name="doc_share_as_jpg_hint">One image per page</string>
+    <string name="doc_save_to_google_drive">Save to Google Drive</string>
+    <string name="doc_save_to_google_drive_hint">Or pick Dropbox, OneDrive or another cloud app</string>
+    <string name="doc_save_to_device">Save to device</string>
+    <string name="doc_save_to_device_hint">Choose a folder such as Downloads</string>
+
+    <!-- Signature pad dialog -->
+    <string name="doc_ink_black">Black</string>
+    <string name="doc_ink_blue">Blue</string>
+    <string name="doc_ink_description">%1$s ink</string>
+    <string name="doc_add_signature">Add signature</string>
+    <string name="doc_saved_signatures">Saved signatures</string>
+    <string name="doc_sign_below">Sign below. The signature will be flattened onto the current page.</string>
+    <string name="doc_or_draw_new">Or draw a new one below.</string>
+    <string name="doc_save_for_next_time">Save for next time</string>
+    <string name="doc_place_signature">Place signature</string>
+    <string name="doc_clear">Clear</string>
+    <string name="doc_delete_saved_signature">Delete saved signature?</string>
+    <string name="doc_delete_saved_signature_message">Pages already signed keep their signature.</string>
+    <string name="doc_place_this_signature">Place this signature</string>
+    <string name="doc_saved_signature">Saved signature</string>
+
+    <!-- Summary card -->
+    <string name="doc_summary">Summary</string>
+    <string name="doc_show_less">Show less</string>
+    <string name="doc_show_all">Show all</string>
+    <string name="doc_fact_amount">Amount %1$s</string>
+    <string name="doc_fact_date">Date %1$s</string>
+    <plurals name="doc_action_items">
+        <item quantity="one">%1$d action item</item>
+        <item quantity="other">%1$d action items</item>
+    </plurals>
+    <string name="doc_open_insights">Open insights</string>
+
+    <!-- Watermark dialog -->
+    <string name="doc_watermark_color_grey">Grey</string>
+    <string name="doc_watermark_color_red">Red</string>
+    <string name="doc_watermark_color_blue">Blue</string>
+    <string name="doc_watermark_color_green">Green</string>
+    <string name="doc_watermark_color_orange">Orange</string>
+    <string name="doc_watermark_default_text">CONFIDENTIAL</string>
+    <string name="doc_watermark_all_pages">Watermark all pages</string>
+    <string name="doc_watermark_text">Watermark text</string>
+    <string name="doc_size">Size</string>
+    <string name="doc_position">Position</string>
+    <string name="doc_colour">Colour</string>
+    <string name="doc_transparency">Transparency: %1$d%%</string>
+</resources>

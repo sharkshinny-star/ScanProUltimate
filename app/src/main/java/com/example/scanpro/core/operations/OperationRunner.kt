@@ -1,7 +1,10 @@
 package com.example.scanpro.core.operations
 
+import android.content.Context
+import com.example.scanpro.R
 import com.example.scanpro.core.di.ApplicationScope
 import com.example.scanpro.data.DocumentLibrary
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +35,7 @@ data class ExportArtifact(
  */
 @Singleton
 class OperationRunner @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val library: DocumentLibrary,
     @ApplicationScope private val scope: CoroutineScope
 ) {
@@ -74,17 +78,11 @@ class OperationRunner @Inject constructor(
     private var pending = 0
 
     /**
-     * Runs an edit the user triggered from a screen, then reloads the library. While another operation
-     * is running the request is rejected with a message, because it was made against state that is
-     * about to change.
+     * Runs an edit the user triggered from a screen, then reloads the library. Requests made while
+     * another operation is running are queued, never dropped: each action reads the document afresh
+     * when its turn comes, so running after the earlier edit is the same as the user tapping later.
      */
-    fun run(label: String?, successMessage: String?, action: suspend () -> Unit) {
-        if (_busy.value) {
-            _message.value = UiMessage("Still working on the previous task. Try again in a moment.")
-            return
-        }
-        start(label, successMessage, action)
-    }
+    fun run(label: String?, successMessage: String?, action: suspend () -> Unit) = start(label, successMessage, action)
 
     /**
      * Queues an operation that must not be lost, such as an import or an Undo; it runs as soon as the
@@ -105,14 +103,24 @@ class OperationRunner @Inject constructor(
         synchronized(stateLock) {
             pending++
             _busy.value = true
+            // Keeps the process alive if the user leaves the app before the work is done. Start and stop
+            // requests are sent under the same lock that counts running jobs, so they reach the service in
+            // the order of the count: a job finishing as another starts can't switch the service off after
+            // the new job asked for it.
+            OperationForegroundService.show(context, label ?: _busyLabel.value)
         }
         scope.launch {
             try {
                 mutex.withLock {
-                    synchronized(stateLock) { _busyLabel.value = label }
+                    synchronized(stateLock) {
+                        _busyLabel.value = label
+                        OperationForegroundService.show(context, label)
+                    }
                     runCatching { action() }
                         .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
-                        .onFailure { error -> _message.value = UiMessage(error.message ?: "Something went wrong") }
+                        .onFailure { error ->
+                            _message.value = UiMessage(error.message ?: context.getString(R.string.common_something_went_wrong))
+                        }
                     runCatching { library.refresh() }
                 }
             } finally {
@@ -121,6 +129,7 @@ class OperationRunner @Inject constructor(
                     if (pending == 0) {
                         _busyLabel.value = null
                         _busy.value = false
+                        OperationForegroundService.stop(context)
                     }
                 }
             }

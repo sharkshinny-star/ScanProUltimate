@@ -70,7 +70,8 @@ object BusinessCardParser {
 
         val jobTitle = rest.firstOrNull { hasWord(it, titleWords) && !hasWord(it, companyWords) }
         val company = rest.firstOrNull { it != jobTitle && hasWord(it, companyWords) }
-            ?: (emails.firstOrNull()?.substringAfter('@') ?: website?.removePrefix("www."))
+            // "https://www.acme.com" names Acme, not "Https://www": drop the scheme before the host prefix.
+            ?: (emails.firstOrNull()?.substringAfter('@') ?: website?.substringAfter("://")?.removePrefix("www."))
                 ?.substringBefore('.')
                 ?.takeIf { it.length >= 3 && it !in GENERIC_MAIL_DOMAINS }
                 ?.replaceFirstChar { it.titlecase(Locale.ROOT) }

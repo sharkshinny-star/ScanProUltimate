@@ -4,8 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
@@ -45,24 +43,7 @@ object ImageProcessor {
         annotations: List<PageAnnotation> = emptyList()
     ) {
         val maxDimension = if (filter == PageFilter.BW) 2200 else 3400
-        var bitmap = decodeScaled(source.absolutePath, maxDimension)
-            ?: error("Unable to decode ${source.name}")
-
-        val exifRotation = runCatching {
-            ExifInterface(source.absolutePath).rotationDegrees
-        }.getOrDefault(0)
-
-        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
-        if (!crop.isIdentity()) bitmap = bitmap.then { cropPage(it, crop) }
-
-        val totalRotation = ((manualRotationDegrees % 360) + 360) % 360
-        if (totalRotation != 0) bitmap = bitmap.then { rotate(it, totalRotation) }
-
-        if (adjustments.removeFingers) bitmap = bitmap.then { removeFingers(it) }
-        if (adjustments.removeShadows) bitmap = bitmap.then { removeShadows(it) }
-        bitmap = bitmap.then { applyNamedFilter(it, filter) }
-        if (!adjustments.isTonallyNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
-        if (annotations.isNotEmpty()) bitmap = bitmap.then { applyAnnotations(it, annotations) }
+        val bitmap = processPage(source, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension)
         try {
             saveJpeg(bitmap, destination, 96)
         } finally {
@@ -82,6 +63,21 @@ object ImageProcessor {
         adjustments: PageAdjustments = PageAdjustments.DEFAULT,
         annotations: List<PageAnnotation> = emptyList(),
         maxDimension: Int = 960
+    ): Bitmap = processPage(source, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension)
+
+    /**
+     * The whole page pipeline: decode, turn and cut out the page as a bitmap, then clean it up and apply the
+     * look on one 3-channel OpenCV image (a third less memory than a bitmap, and no copy per step), and
+     * finally convert back once for the annotations, which are drawn with the Android canvas.
+     */
+    private fun processPage(
+        source: File,
+        filter: PageFilter,
+        manualRotationDegrees: Int,
+        crop: CropQuad,
+        adjustments: PageAdjustments,
+        annotations: List<PageAnnotation>,
+        maxDimension: Int
     ): Bitmap {
         var bitmap = decodeScaled(source.absolutePath, maxDimension)
             ?: error("Unable to decode ${source.name}")
@@ -90,12 +86,22 @@ object ImageProcessor {
         if (!crop.isIdentity()) bitmap = bitmap.then { cropPage(it, crop) }
         val totalRotation = ((manualRotationDegrees % 360) + 360) % 360
         if (totalRotation != 0) bitmap = bitmap.then { rotate(it, totalRotation) }
-        if (adjustments.removeFingers) bitmap = bitmap.then { removeFingers(it) }
-        if (adjustments.removeShadows) bitmap = bitmap.then { removeShadows(it) }
-        bitmap = bitmap.then { applyNamedFilter(it, filter) }
-        if (!adjustments.isTonallyNeutral()) bitmap = bitmap.then { applyUserAdjustments(it, adjustments.normalized()) }
+        bitmap = applyLook(bitmap, filter, adjustments)
         if (annotations.isNotEmpty()) bitmap = bitmap.then { applyAnnotations(it, annotations) }
         return bitmap
+    }
+
+    /** Clean-up, filter and tonal adjustments on one OpenCV image; returns [page] itself when there is nothing to do. */
+    private fun applyLook(page: Bitmap, filter: PageFilter, adjustments: PageAdjustments): Bitmap {
+        if (!MatFilters.changesPixels(filter, adjustments)) return page
+        val rgb = page.toRgb()
+        page.recycle()
+        val styled = MatFilters.look(rgb, filter, adjustments)
+        try {
+            return styled.toBitmap()
+        } finally {
+            styled.release()
+        }
     }
 
     /**
@@ -121,50 +127,21 @@ object ImageProcessor {
         if (fit < 1f) page = page.then { Bitmap.createScaledBitmap(it, (it.width * fit).toInt().coerceAtLeast(1), (it.height * fit).toInt().coerceAtLeast(1), true) }
         val turn = ((rotationDegrees % 360) + 360) % 360
         if (turn != 0) page = page.then { rotate(it, turn) }
-        if (adjustments.removeFingers) page = page.then { removeFingers(it) }
-        if (adjustments.removeShadows) page = page.then { removeShadows(it) }
-        return try {
-            PageFilter.entries.associateWith { filter ->
-                var copy = page.copy(Bitmap.Config.ARGB_8888, false).then { applyNamedFilter(it, filter) }
-                if (!adjustments.isTonallyNeutral()) copy = copy.then { applyUserAdjustments(it, adjustments.normalized()) }
-                copy
+        var base = page.toRgb()
+        page.recycle()
+        try {
+            base = MatFilters.cleanUp(base, adjustments)
+            return PageFilter.entries.associateWith { filter ->
+                val styled = MatFilters.style(base.clone(), filter, adjustments)
+                try {
+                    styled.toBitmap()
+                } finally {
+                    styled.release()
+                }
             }
         } finally {
-            page.recycle()
+            base.release()
         }
-    }
-
-    private fun applyNamedFilter(source: Bitmap, filter: PageFilter): Bitmap = when (filter) {
-        PageFilter.ORIGINAL -> source
-        PageFilter.AUTO -> autoDocumentEnhance(source, colorBoost = false)
-        PageFilter.COLOR -> autoDocumentEnhance(source, colorBoost = true)
-        PageFilter.GRAY -> enhancedGrayscale(source)
-        PageFilter.BW -> adaptiveBlackWhite(source)
-        PageFilter.WHITEBOARD -> autoDocumentEnhance(source, colorBoost = true).then { whiteboard(it) }
-    }
-
-    private fun applyUserAdjustments(source: Bitmap, adjustments: PageAdjustments): Bitmap {
-        val a = adjustments.normalized()
-        val saturationMatrix = ColorMatrix().apply { setSaturation(a.saturation) }
-        val brightnessShift = a.brightness * 92f
-        val translation = 128f * (1f - a.contrast) + brightnessShift
-        val tonalMatrix = ColorMatrix(
-            floatArrayOf(
-                a.contrast, 0f, 0f, 0f, translation,
-                0f, a.contrast, 0f, 0f, translation,
-                0f, 0f, a.contrast, 0f, translation,
-                0f, 0f, 0f, 1f, 0f
-            )
-        )
-        saturationMatrix.postConcat(tonalMatrix)
-        val output = createBitmap(source.width, source.height)
-        Canvas(output).drawBitmap(
-            source, 0f, 0f,
-            Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
-                colorFilter = ColorMatrixColorFilter(saturationMatrix)
-            }
-        )
-        return output
     }
 
     fun saveSignature(bitmap: Bitmap, destination: File) {
@@ -196,6 +173,14 @@ object ImageProcessor {
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
         val turned = runCatching { ExifInterface(path).rotationDegrees }.getOrDefault(0) % 180 != 0
         return if (turned) bounds.outHeight.toFloat() / bounds.outWidth else bounds.outWidth.toFloat() / bounds.outHeight
+    }
+
+    /** Width divided by height of an image as stored (rendered pages are already upright), read without decoding pixels. */
+    fun imageAspect(path: String): Float? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        return bounds.outWidth.toFloat() / bounds.outHeight
     }
 
     fun decodeOrientedScaled(path: String, maxDimension: Int): Bitmap? {
@@ -437,8 +422,15 @@ object ImageProcessor {
             val top = item.y.coerceIn(0f, 1f) * output.height
             val width = item.width.coerceIn(0.01f, 1f) * output.width
             val height = item.height.coerceIn(0.01f, 1f) * output.height
-            val rect = RectF(left, top, (left + width).coerceAtMost(output.width.toFloat()), (top + height).coerceAtMost(output.height.toFloat()))
-            canvas.withRotation(item.rotationDegrees, rect.centerX(), rect.centerY()) {
+            // The box is the mark-up's footprint on the page. Content that was turned a quarter (the page was
+            // rotated after it was added) is laid out in the box turned back, then rotated into place.
+            val box = RectF(left, top, (left + width).coerceAtMost(output.width.toFloat()), (top + height).coerceAtMost(output.height.toFloat()))
+            val turned = quarterTurned(item.rotationDegrees)
+            val rect = if (turned) RectF(
+                box.centerX() - box.height() / 2f, box.centerY() - box.width() / 2f,
+                box.centerX() + box.height() / 2f, box.centerY() + box.width() / 2f
+            ) else box
+            canvas.withRotation(item.rotationDegrees, box.centerX(), box.centerY()) {
             when (item.type) {
                 AnnotationType.REDACT -> canvas.drawRect(rect, Paint().apply { color = Color.BLACK })
                 AnnotationType.HIGHLIGHT -> canvas.drawRect(rect, Paint().apply {
@@ -446,7 +438,7 @@ object ImageProcessor {
                 })
                 AnnotationType.ERASE -> Unit
                 AnnotationType.TEXT -> if (item.background != null) {
-                    drawReplacementText(output, canvas, item, rect)
+                    drawReplacementText(output, canvas, item, rect, box, turned)
                 } else {
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = Color.argb(
@@ -495,9 +487,12 @@ object ImageProcessor {
      * text is drawn on one line at the height of the words it replaces, narrowed only if it would run past the
      * box. The box carries a margin of 15% of its height on each side (see DocumentRepository.replaceText).
      */
-    private fun drawReplacementText(output: Bitmap, canvas: Canvas, item: PageAnnotation, rect: RectF) {
+    private fun drawReplacementText(output: Bitmap, canvas: Canvas, item: PageAnnotation, rect: RectF, box: RectF, turned: Boolean) {
         val pad = rect.height() * 0.12f
-        val cover = RectF(rect.left, rect.top - pad, rect.right, rect.bottom + pad)
+        // The paper is filled in on the page itself (not through the rotated canvas), so the covered area is the
+        // box's footprint, padded above and below the words: sideways when the words run down the page.
+        val cover = if (turned) RectF(box.left - pad, box.top, box.right + pad, box.bottom)
+        else RectF(box.left, box.top - pad, box.right, box.bottom + pad)
         val filled = runCatching {
             inpaintPatch(output, cover, maskFor = { mask, scale, origin ->
                 Imgproc.rectangle(
@@ -508,7 +503,7 @@ object ImageProcessor {
                 )
             }) { target, paint -> target.drawRect(cover, paint.apply { style = Paint.Style.FILL }) }
         }.isSuccess
-        if (!filled) canvas.drawRect(cover, Paint().apply { color = item.background ?: Color.WHITE })
+        if (!filled) Canvas(output).drawRect(cover, Paint().apply { color = item.background ?: Color.WHITE })
 
         val text = item.text.take(400).replace(Regex("\\s+"), " ").trim()
         if (text.isEmpty()) return
@@ -627,6 +622,12 @@ object ImageProcessor {
         }
     }
 
+    /** True when [degrees] is nearer a quarter turn than upright or upside down. */
+    private fun quarterTurned(degrees: Float): Boolean {
+        val turn = ((degrees % 180f) + 180f) % 180f
+        return turn in 45f..135f
+    }
+
     /** Shrinks [paint] until every word fits the box's width and the wrapped lines fit its height. */
     private fun fitTextToBox(text: String, rect: RectF, paint: Paint) {
         val words = text.split(Regex("\\s+")).filter { it.isNotEmpty() }
@@ -673,277 +674,23 @@ object ImageProcessor {
         }
     }
 
-    /**
-     * Premium document enhancement: normalize uneven illumination in LAB luminance,
-     * apply local contrast (CLAHE), edge-preserving denoise and a restrained unsharp mask.
-     * This improves both visual output and OCR without sending pixels off-device.
-     */
-    private fun autoDocumentEnhance(source: Bitmap, colorBoost: Boolean): Bitmap {
+    /** The bitmap's pixels as a 3-channel RGB image (the bitmap is opaque, so alpha carries nothing). */
+    private fun Bitmap.toRgb(): Mat {
         val rgba = Mat()
         val rgb = Mat()
-        val lab = Mat()
-        val channels = mutableListOf<Mat>()
-        val background = Mat()
-        val normalized = Mat()
-        val denoised = Mat()
-        val blurred = Mat()
-        val sharpened = Mat()
-        val outputRgba = Mat()
         try {
-            Utils.bitmapToMat(source, rgba)
+            Utils.bitmapToMat(this, rgba)
             Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
-            Imgproc.cvtColor(rgb, lab, Imgproc.COLOR_RGB2Lab)
-            Core.split(lab, channels)
-            val luminance = channels[0]
-
-            // Large-radius illumination estimate. Dividing by it suppresses page shadows.
-            Imgproc.GaussianBlur(luminance, background, Size(0.0, 0.0), 24.0)
-            Core.divide(luminance, background, normalized, 235.0)
-            val clahe = Imgproc.createCLAHE(if (colorBoost) 2.0 else 2.35, Size(8.0, 8.0))
-            try {
-                clahe.apply(normalized, luminance)
-            } finally {
-                clahe.collectGarbage()
-            }
-            Core.merge(channels, lab)
-            Imgproc.cvtColor(lab, rgb, Imgproc.COLOR_Lab2RGB)
-
-            Imgproc.bilateralFilter(rgb, denoised, 5, 34.0, 34.0)
-            Imgproc.GaussianBlur(denoised, blurred, Size(0.0, 0.0), 1.1)
-            Core.addWeighted(denoised, 1.22, blurred, -0.22, 0.0, sharpened)
-            Imgproc.cvtColor(sharpened, outputRgba, Imgproc.COLOR_RGB2RGBA)
-
-            val output = createBitmap(source.width, source.height)
-            Utils.matToBitmap(outputRgba, output)
-            return if (colorBoost) {
-                output.then { applyColorMatrix(it, saturation = 1.10f, contrast = 1.04f, brightness = 1f) }
-            } else output
+            return rgb
         } finally {
-            channels.forEach(Mat::release)
-            rgba.release(); rgb.release(); lab.release(); background.release(); normalized.release()
-            denoised.release(); blurred.release(); sharpened.release(); outputRgba.release()
+            rgba.release()
         }
     }
 
-    /**
-     * Evens out shadows and lighting: every colour channel is divided by an estimate of the bare paper under it.
-     * The estimate is made at low resolution from text-free (dilated), low-saturation pixels only, so coloured
-     * blocks such as logos and photos keep their colour instead of being washed out to white.
-     */
-    private fun removeShadows(source: Bitmap): Bitmap {
-        val rgba = Mat(); val rgb = Mat(); val small = Mat(); val dilated = Mat(); val paper = Mat(); val hsv = Mat()
-        val saturation = Mat(); val mask = Mat(); val maskF = Mat(); val paperF = Mat(); val masked = Mat()
-        val den = Mat(); val den3 = Mat(); val bgF = Mat(); val fallback = Mat(); val fallbackF = Mat()
-        val sparse = Mat(); val background = Mat(); val full = Mat(); val out = Mat(); val outRgba = Mat()
-        val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(7.0, 7.0))
-        try {
-            Utils.bitmapToMat(source, rgba)
-            Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
-            val scale = min(1.0, SHADOW_ESTIMATE_SIZE / max(source.width, source.height).toDouble())
-            Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
-            // Dilating keeps the brightest nearby value, which wipes dark text strokes out of the paper estimate.
-            Imgproc.dilate(small, dilated, kernel)
-            Imgproc.medianBlur(dilated, paper, 9)
-            Imgproc.cvtColor(paper, hsv, Imgproc.COLOR_RGB2HSV)
-            Core.extractChannel(hsv, saturation, 1)
-            Imgproc.threshold(saturation, mask, PAPER_MAX_SATURATION, 1.0, Imgproc.THRESH_BINARY_INV)
-            mask.convertTo(maskF, org.opencv.core.CvType.CV_32F)
-            paper.convertTo(paperF, org.opencv.core.CvType.CV_32FC3)
-            Core.merge(listOf(maskF, maskF, maskF), den3)
-            Core.multiply(paperF, den3, masked)
-            // Normalised convolution: the average paper colour nearby, ignoring coloured (masked-out) pixels.
-            Imgproc.GaussianBlur(masked, masked, Size(0.0, 0.0), SHADOW_SIGMA)
-            Imgproc.GaussianBlur(maskF, den, Size(0.0, 0.0), SHADOW_SIGMA)
-            Core.max(den, org.opencv.core.Scalar(1e-3), den)
-            Core.merge(listOf(den, den, den), den3)
-            Core.divide(masked, den3, bgF)
-            // Large coloured areas with no paper nearby fall back to a plain local median.
-            Imgproc.medianBlur(paper, fallback, 21)
-            fallback.convertTo(fallbackF, org.opencv.core.CvType.CV_32FC3)
-            Core.compare(den, org.opencv.core.Scalar(0.02), sparse, Core.CMP_LE)
-            fallbackF.copyTo(bgF, sparse)
-            bgF.convertTo(background, org.opencv.core.CvType.CV_8UC3)
-            Core.max(background, org.opencv.core.Scalar(1.0, 1.0, 1.0), background)
-            Imgproc.resize(background, full, rgb.size(), 0.0, 0.0, Imgproc.INTER_LINEAR)
-            Core.divide(rgb, full, out, 255.0)
-            Imgproc.cvtColor(out, outRgba, Imgproc.COLOR_RGB2RGBA)
-            val output = createBitmap(source.width, source.height)
-            Utils.matToBitmap(outRgba, output)
-            return output
-        } finally {
-            listOf(rgba, rgb, small, dilated, paper, hsv, saturation, mask, maskF, paperF, masked, den, den3, bgF,
-                fallback, fallbackF, sparse, background, full, out, outRgba, kernel).forEach(Mat::release)
-        }
-    }
-
-    /**
-     * Paints over fingers holding the page: skin-coloured patches that touch the image border and stay near it
-     * are filled from the surrounding paper. Patches deep inside the page (a photo of a face, say) are left alone.
-     */
-    private fun removeFingers(source: Bitmap): Bitmap {
-        val rgba = Mat(); val rgb = Mat(); val small = Mat(); val ycc = Mat(); val skin = Mat()
-        val labels = Mat(); val stats = Mat(); val centroids = Mat(); val keep = Mat(); val part = Mat()
-        val filled = Mat(); val filledFull = Mat(); val maskFull = Mat(); val outRgba = Mat()
-        val open = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, Size(5.0, 5.0))
-        val close = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, Size(9.0, 9.0))
-        try {
-            Utils.bitmapToMat(source, rgba)
-            Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
-            val scale = min(1.0, FINGER_ESTIMATE_SIZE / max(source.width, source.height).toDouble())
-            Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
-            Imgproc.cvtColor(small, ycc, Imgproc.COLOR_RGB2YCrCb)
-            Core.inRange(ycc, org.opencv.core.Scalar(0.0, 138.0, 77.0), org.opencv.core.Scalar(255.0, 178.0, 127.0), skin)
-            Imgproc.morphologyEx(skin, skin, Imgproc.MORPH_OPEN, open)
-            Imgproc.morphologyEx(skin, skin, Imgproc.MORPH_CLOSE, close)
-
-            val w = small.cols(); val h = small.rows()
-            val count = Imgproc.connectedComponentsWithStats(skin, labels, stats, centroids)
-            keep.create(skin.size(), org.opencv.core.CvType.CV_8UC1)
-            keep.setTo(org.opencv.core.Scalar(0.0))
-            var found = false
-            for (label in 1 until count) {
-                val x = stats.get(label, Imgproc.CC_STAT_LEFT)[0].toInt()
-                val y = stats.get(label, Imgproc.CC_STAT_TOP)[0].toInt()
-                val cw = stats.get(label, Imgproc.CC_STAT_WIDTH)[0].toInt()
-                val ch = stats.get(label, Imgproc.CC_STAT_HEIGHT)[0].toInt()
-                val area = stats.get(label, Imgproc.CC_STAT_AREA)[0]
-                val touchesBorder = x == 0 || y == 0 || x + cw == w || y + ch == h
-                val fingerSized = area > 0.001 * w * h && area < 0.12 * w * h && cw < 0.4 * w && ch < 0.4 * h
-                if (touchesBorder && fingerSized) {
-                    Core.compare(labels, org.opencv.core.Scalar(label.toDouble()), part, Core.CMP_EQ)
-                    Core.bitwise_or(keep, part, keep)
-                    found = true
-                }
-            }
-            if (!found) return source
-            // Grow the mask to cover the finger's soft edge and shadow, then fill it from the paper around it.
-            Imgproc.dilate(keep, keep, close)
-            org.opencv.photo.Photo.inpaint(small, keep, filled, 7.0, org.opencv.photo.Photo.INPAINT_TELEA)
-            Imgproc.resize(filled, filledFull, rgb.size(), 0.0, 0.0, Imgproc.INTER_LINEAR)
-            Imgproc.resize(keep, maskFull, rgb.size(), 0.0, 0.0, Imgproc.INTER_NEAREST)
-            filledFull.copyTo(rgb, maskFull)
-            Imgproc.cvtColor(rgb, outRgba, Imgproc.COLOR_RGB2RGBA)
-            val output = createBitmap(source.width, source.height)
-            Utils.matToBitmap(outRgba, output)
-            return output
-        } finally {
-            listOf(rgba, rgb, small, ycc, skin, labels, stats, centroids, keep, part, filled, filledFull,
-                maskFull, outRgba, open, close).forEach(Mat::release)
-        }
-    }
-
-    private fun enhancedGrayscale(source: Bitmap): Bitmap {
-        val rgba = Mat()
-        val gray = Mat()
-        val background = Mat()
-        val normalized = Mat()
-        val outputRgba = Mat()
-        try {
-            Utils.bitmapToMat(source, rgba)
-            Imgproc.cvtColor(rgba, gray, Imgproc.COLOR_RGBA2GRAY)
-            Imgproc.GaussianBlur(gray, background, Size(0.0, 0.0), 24.0)
-            Core.divide(gray, background, normalized, 235.0)
-            val clahe = Imgproc.createCLAHE(2.4, Size(8.0, 8.0))
-            try { clahe.apply(normalized, normalized) } finally { clahe.collectGarbage() }
-            Imgproc.cvtColor(normalized, outputRgba, Imgproc.COLOR_GRAY2RGBA)
-            val output = createBitmap(source.width, source.height)
-            Utils.matToBitmap(outputRgba, output)
-            return output
-        } finally {
-            rgba.release(); gray.release(); background.release(); normalized.release(); outputRgba.release()
-        }
-    }
-
-    private fun applyColorMatrix(
-        source: Bitmap,
-        saturation: Float,
-        contrast: Float,
-        brightness: Float
-    ): Bitmap {
-        val saturationMatrix = ColorMatrix().apply { setSaturation(saturation) }
-        val translation = 128f * (1f - contrast) + brightness
-        val contrastMatrix = ColorMatrix(
-            floatArrayOf(
-                contrast, 0f, 0f, 0f, translation,
-                0f, contrast, 0f, 0f, translation,
-                0f, 0f, contrast, 0f, translation,
-                0f, 0f, 0f, 1f, 0f
-            )
-        )
-        saturationMatrix.postConcat(contrastMatrix)
-
-        val output = createBitmap(source.width, source.height)
-        val canvas = Canvas(output)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
-            colorFilter = ColorMatrixColorFilter(saturationMatrix)
-        }
-        canvas.drawBitmap(source, 0f, 0f, paint)
+    private fun Mat.toBitmap(): Bitmap {
+        val output = createBitmap(cols(), rows())
+        Utils.matToBitmap(this, output)
         return output
-    }
-
-    private fun whiteboard(source: Bitmap): Bitmap {
-        val width = source.width
-        val height = source.height
-        val pixels = IntArray(width * height)
-        source.getPixels(pixels, 0, width, 0, 0, width, height)
-        for (index in pixels.indices) {
-            val c = pixels[index]
-            val r = Color.red(c); val g = Color.green(c); val b = Color.blue(c)
-            val minChannel = min(r, min(g, b))
-            val boost = if (minChannel > 150) 42 else 16
-            val nr = (r + boost).coerceAtMost(255)
-            val ng = (g + boost).coerceAtMost(255)
-            val nb = (b + boost).coerceAtMost(255)
-            pixels[index] = Color.rgb(nr, ng, nb)
-        }
-        val bright = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
-        return bright.then { applyColorMatrix(it, saturation = 1.08f, contrast = 1.28f, brightness = 6f) }
-    }
-
-    /** Adaptive thresholding keeps text readable under uneven paper lighting. */
-    private fun adaptiveBlackWhite(source: Bitmap): Bitmap {
-        val width = source.width
-        val height = source.height
-        val pixels = IntArray(width * height)
-        source.getPixels(pixels, 0, width, 0, 0, width, height)
-
-        val stride = width + 1
-        val integral = LongArray((width + 1) * (height + 1))
-        for (y in 1..height) {
-            var rowSum = 0L
-            val sourceRow = (y - 1) * width
-            val integralRow = y * stride
-            val integralPrevRow = (y - 1) * stride
-            for (x in 1..width) {
-                val color = pixels[sourceRow + x - 1]
-                val gray = (0.299f * Color.red(color) + 0.587f * Color.green(color) + 0.114f * Color.blue(color)).toInt()
-                rowSum += gray
-                integral[integralRow + x] = integral[integralPrevRow + x] + rowSum
-            }
-        }
-
-        val radius = max(10, min(width, height) / 55)
-        val bias = 13
-        val outputPixels = IntArray(pixels.size)
-        for (y in 0 until height) {
-            val y1 = max(0, y - radius)
-            val y2 = min(height - 1, y + radius)
-            for (x in 0 until width) {
-                val x1 = max(0, x - radius)
-                val x2 = min(width - 1, x + radius)
-                val area = (x2 - x1 + 1) * (y2 - y1 + 1)
-                val sum = integral[(y2 + 1) * stride + (x2 + 1)] -
-                    integral[y1 * stride + (x2 + 1)] -
-                    integral[(y2 + 1) * stride + x1] +
-                    integral[y1 * stride + x1]
-                val localMean = (sum / area).toInt()
-                val color = pixels[y * width + x]
-                val gray = (0.299f * Color.red(color) + 0.587f * Color.green(color) + 0.114f * Color.blue(color)).toInt()
-                outputPixels[y * width + x] = if (gray < localMean - bias) Color.BLACK else Color.WHITE
-            }
-        }
-
-        return Bitmap.createBitmap(outputPixels, width, height, Bitmap.Config.ARGB_8888)
     }
 
     /**
@@ -971,7 +718,3 @@ object ImageProcessor {
 }
 
 private const val MIN_TEXT_SIZE = 22f
-private const val SHADOW_ESTIMATE_SIZE = 600.0
-private const val SHADOW_SIGMA = 30.0
-private const val PAPER_MAX_SATURATION = 59.0
-private const val FINGER_ESTIMATE_SIZE = 800.0

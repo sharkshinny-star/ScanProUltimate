@@ -18,7 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.scanpro.R
 
 @Composable
 fun LockScreen(onUnlock: () -> Unit, snackbarHostState: SnackbarHostState) {
@@ -28,9 +30,9 @@ fun LockScreen(onUnlock: () -> Unit, snackbarHostState: SnackbarHostState) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(52.dp))
             Spacer(Modifier.height(14.dp))
-            Text("ScanPro is locked", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onUnlock) { Text("Unlock") }
+            Button(onClick = onUnlock) { Text(stringResource(R.string.lock_unlock)) }
         }
     }
 }

@@ -39,11 +39,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.scanpro.R
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.imaging.ImageProcessor
@@ -72,6 +76,7 @@ fun MarkupEditorDialog(
         value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeScaled(loadBase().absolutePath, 1600) }.getOrNull() }
     }
     val selectedIndex = items.indexOfFirst { it.id == selectedId }
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     fun update(index: Int, change: (PageAnnotation) -> PageAnnotation) {
         if (index !in items.indices) return
@@ -84,16 +89,16 @@ fun MarkupEditorDialog(
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize(), color = Color(0xFF0A0F18)) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
-                Text("Edit markup", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.doc_edit_markup), color = Color.White, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Drag a box to move it. Drag the round handle to resize. Tap a box to select it.",
+                    stringResource(R.string.doc_markup_hint),
                     color = Color.White.copy(alpha = 0.75f),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     val image = base
                     if (image == null) {
-                        Text("Loading page…", color = Color.White)
+                        Text(stringResource(R.string.doc_loading_page), color = Color.White)
                     } else {
                         val latestItems by rememberUpdatedState(items.toList())
                         val latestSelected by rememberUpdatedState(selectedId)
@@ -101,6 +106,7 @@ fun MarkupEditorDialog(
                         Canvas(
                             Modifier
                                 .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                                .semantics { contentDescription = pagePreview }
                                 .pointerInput(Unit) {
                                     detectTapGestures { tap ->
                                         selectedId = latestItems.lastOrNull { hit(it, tap, size.width.toFloat(), size.height.toFloat()) }?.id
@@ -163,18 +169,24 @@ fun MarkupEditorDialog(
 
                 val enabled = selectedIndex >= 0
                 val step = 0.01f
+                // The arrows nudge the box on the page itself (physical directions), so they are not mirrored in RTL;
+                // the glyphs say nothing to a screen reader, hence the spoken labels.
+                val moveLeft = stringResource(R.string.doc_move_left)
+                val moveRight = stringResource(R.string.doc_move_right)
+                val moveUp = stringResource(R.string.a11y_move_up)
+                val moveDown = stringResource(R.string.a11y_move_down)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x - step) } }) { Text("←") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x + step) } }) { Text("→") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y - step) } }) { Text("↑") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y + step) } }) { Text("↓") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 0.92f, height = it.height * 0.92f) } }) { Text("Smaller") }
-                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 1.08f, height = it.height * 1.08f) } }) { Text("Larger") }
-                    OutlinedButton(enabled = enabled, onClick = { items.removeAt(selectedIndex); selectedId = items.lastOrNull()?.id }) { Text("Delete") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x - step) } }, modifier = Modifier.semantics { contentDescription = moveLeft }) { Text("←") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(x = it.x + step) } }, modifier = Modifier.semantics { contentDescription = moveRight }) { Text("→") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y - step) } }, modifier = Modifier.semantics { contentDescription = moveUp }) { Text("↑") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(y = it.y + step) } }, modifier = Modifier.semantics { contentDescription = moveDown }) { Text("↓") }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 0.92f, height = it.height * 0.92f) } }) { Text(stringResource(R.string.doc_smaller)) }
+                    OutlinedButton(enabled = enabled, onClick = { update(selectedIndex) { it.copy(width = it.width * 1.08f, height = it.height * 1.08f) } }) { Text(stringResource(R.string.doc_larger)) }
+                    OutlinedButton(enabled = enabled, onClick = { items.removeAt(selectedIndex); selectedId = items.lastOrNull()?.id }) { Text(stringResource(R.string.common_delete)) }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    Button(onClick = { onApply(items.toList()) }) { Text("Apply") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+                    Button(onClick = { onApply(items.toList()) }) { Text(stringResource(R.string.common_apply)) }
                 }
             }
         }

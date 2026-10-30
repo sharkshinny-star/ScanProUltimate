@@ -7,6 +7,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -15,6 +16,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.scanpro.R
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.feature.document.DocumentRoute
 import com.example.scanpro.feature.library.LibraryRoute
@@ -38,6 +40,7 @@ fun ScanProNavHost(
     onAppLockChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
+    val pdfDocumentTitle = stringResource(R.string.nav_pdf_document)
     val onTab: (String) -> Unit = { route -> navController.navigateToTopLevel(route) }
     val onOpenPdfViewer: (android.net.Uri, String) -> Unit = { uri, title ->
         navController.navigate(ScanProDestinations.pdfViewer(uri, title))
@@ -89,11 +92,11 @@ fun ScanProNavHost(
             route = ScanProDestinations.PDF_VIEWER,
             arguments = listOf(
                 navArgument(ScanProDestinations.PDF_URI_ARG) { type = NavType.StringType },
-                navArgument(ScanProDestinations.PDF_TITLE_ARG) { type = NavType.StringType; defaultValue = "PDF Document" }
+                navArgument(ScanProDestinations.PDF_TITLE_ARG) { type = NavType.StringType; defaultValue = pdfDocumentTitle }
             )
         ) { entry ->
             val pdfUri = android.net.Uri.parse(entry.arguments?.getString(ScanProDestinations.PDF_URI_ARG).orEmpty())
-            val title = entry.arguments?.getString(ScanProDestinations.PDF_TITLE_ARG) ?: "PDF Document"
+            val title = entry.arguments?.getString(ScanProDestinations.PDF_TITLE_ARG) ?: pdfDocumentTitle
             PdfViewerScreen(
                 title = title,
                 pdfUri = pdfUri,

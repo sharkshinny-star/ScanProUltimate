@@ -107,7 +107,7 @@ import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.automirrored.filled.RotateRight
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -140,9 +140,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.selection.toggleable
+import com.example.scanpro.R
 import com.example.scanpro.data.WatermarkStyle
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.imaging.PdfSecurity
@@ -151,11 +161,13 @@ import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
+import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.intelligence.DocumentInsights
 import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.TranslationEngine
+import com.example.scanpro.intelligence.TranslationFeature
 import java.text.DateFormat
 import java.util.Date
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -182,6 +194,10 @@ import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.designsystem.TitleWithStatus
 import com.example.scanpro.core.designsystem.TopBarWithProgress
 
+/** Rotation is a physical direction, so this icon must not flip in right-to-left layouts (the AutoMirrored one would). */
+@Suppress("DEPRECATION")
+private val RotateRightIcon: ImageVector = Icons.Filled.RotateRight
+
 @Composable
 fun DocumentRoute(
     snackbarHostState: SnackbarHostState,
@@ -189,6 +205,7 @@ fun DocumentRoute(
     viewModel: DocumentViewModel = hiltViewModel()
 ) {
     val document by viewModel.document.collectAsStateWithLifecycle()
+    val missing by viewModel.missing.collectAsStateWithLifecycle()
     val otherDocuments by viewModel.otherDocuments.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
@@ -199,15 +216,17 @@ fun DocumentRoute(
     // If the open document disappears (trashed or deleted elsewhere), leave instead of stranding the
     // user on an "unavailable" screen with no way back.
     var hadDocument by remember { mutableStateOf(false) }
-    LaunchedEffect(document == null) {
-        if (document != null) hadDocument = true else if (hadDocument) onBack()
+    LaunchedEffect(document != null, missing) {
+        if (document != null) hadDocument = true else if (missing && hadDocument) onBack()
     }
 
     val current = document
     if (current == null) {
+        // Pages are read from the database after the screen opens; only a document the library no
+        // longer lists is really unavailable.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(48.dp))
-            else Text("Document is unavailable")
+            if (busy || !missing) LinearProgressIndicator(Modifier.fillMaxWidth().padding(48.dp))
+            else Text(stringResource(R.string.doc_unavailable))
         }
         return
     }
@@ -281,7 +300,7 @@ fun DocumentRoute(
 @Composable
 internal fun DocumentDetailScreen(
     document: ScanDocument,
-    otherDocuments: List<ScanDocument>,
+    otherDocuments: List<DocumentSummary>,
     busy: Boolean,
     busyLabel: String?,
     snackbarHostState: SnackbarHostState,
@@ -342,6 +361,7 @@ internal fun DocumentDetailScreen(
     onDeleteDocument: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val pages = remember(document.pages) { document.pages.sortedBy { it.position } }
     var selectedPageId by rememberSaveable(document.id) { mutableStateOf(pages.firstOrNull()?.id) }
     val currentPage = pages.firstOrNull { it.id == selectedPageId } ?: pages.firstOrNull()
@@ -377,6 +397,8 @@ internal fun DocumentDetailScreen(
     // Plain remember: a whole translated document in saved state can exceed the Binder limit and crash.
     var translationResult by remember(document.id) { mutableStateOf("") }
     var translating by remember { mutableStateOf(false) }
+    // Set while the on-demand translation module is being fetched from Google Play.
+    var translationProgress by remember { mutableStateOf<TranslationFeature.Progress?>(null) }
 
     var renameOpen by remember { mutableStateOf(false) }
     var tagsOpen by remember { mutableStateOf(false) }
@@ -418,7 +440,7 @@ internal fun DocumentDetailScreen(
                             if (!copied) deleteDestination()
                         }
                     }
-                    if (!ok) android.widget.Toast.makeText(context, "Could not save PDF", android.widget.Toast.LENGTH_SHORT).show()
+                    if (!ok) android.widget.Toast.makeText(context, resources.getString(R.string.doc_could_not_save_pdf), android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -428,7 +450,7 @@ internal fun DocumentDetailScreen(
     val saveToDrive: (String) -> Unit = { title ->
         onWithFreshPdf({}) { fresh ->
             if (!saveToGoogleDrive(context, fresh.pdfPath, "application/pdf", "$title.pdf")) {
-                android.widget.Toast.makeText(context, "Google Drive isn't installed. Choose where to save.", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, resources.getString(R.string.doc_drive_not_installed), android.widget.Toast.LENGTH_SHORT).show()
                 savePdfLauncher.launch("$title.pdf")
             }
         }
@@ -467,30 +489,31 @@ internal fun DocumentDetailScreen(
             TopBarWithProgress(busy) { TopAppBar(
                 title = { TitleWithStatus(document.title, if (busy) busyLabel else null) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back)) }
                 },
                 actions = {
                     // Undo and redo cover page edits made in this session (filters, crop, clean-up, mark-up, text, order).
                     IconButton(onClick = onUndo, enabled = !busy && undoState.canUndo) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.common_undo))
                     }
                     if (undoState.canRedo) {
                         IconButton(onClick = onRedo, enabled = !busy) {
-                            Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = "Redo")
+                            Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.common_redo))
                         }
                     }
-                    IconButton(onClick = onToggleFavorite, enabled = !busy) {
-                        Icon(if (document.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorite")
+                    val favoriteState = stringResource(if (document.isFavorite) R.string.a11y_favorite_on else R.string.a11y_favorite_off)
+                    IconButton(onClick = onToggleFavorite, enabled = !busy, modifier = Modifier.semantics { stateDescription = favoriteState }) {
+                        Icon(if (document.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = stringResource(R.string.doc_favorite))
                     }
                     Box {
-                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "More options") }
+                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.doc_more_options)) }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            MenuItem("Rename", Icons.Default.Edit, !busy) { menuOpen = false; renameOpen = true }
-                            MenuItem("Move to folder", Icons.Default.Folder, !busy) { menuOpen = false; folderOpen = true }
-                            MenuItem("Tags", Icons.Default.Tag, !busy) { menuOpen = false; tagsOpen = true }
-                            MenuItem("Details", Icons.Default.Info) { menuOpen = false; detailsOpen = true }
+                            MenuItem(stringResource(R.string.common_rename), Icons.Default.Edit, !busy) { menuOpen = false; renameOpen = true }
+                            MenuItem(stringResource(R.string.doc_move_to_folder), Icons.Default.Folder, !busy) { menuOpen = false; folderOpen = true }
+                            MenuItem(stringResource(R.string.doc_tags), Icons.Default.Tag, !busy) { menuOpen = false; tagsOpen = true }
+                            MenuItem(stringResource(R.string.doc_details), Icons.Default.Info) { menuOpen = false; detailsOpen = true }
                             HorizontalDivider()
-                            MenuItem("Move to recycle bin", Icons.Default.Delete, !busy) { menuOpen = false; deleteDocumentOpen = true }
+                            MenuItem(stringResource(R.string.doc_move_to_recycle_bin), Icons.Default.Delete, !busy) { menuOpen = false; deleteDocumentOpen = true }
                         }
                     }
                 }
@@ -507,11 +530,11 @@ internal fun DocumentDetailScreen(
                             .padding(horizontal = 4.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        BarAction(Icons.Default.Crop, "Crop", !busy) { cropOpen = true }
-                        BarAction(Icons.Default.AutoFixHigh, "Clean up", !busy) { adjustmentsOpen = true }
-                        BarAction(Icons.Default.Draw, "Sign", !busy) { signatureOpen = true }
-                        BarAction(Icons.Default.Share, "Share PDF", !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
-                        BarAction(Icons.Default.MoreHoriz, "More", true) { moreOpen = true }
+                        BarAction(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy) { cropOpen = true }
+                        BarAction(Icons.Default.AutoFixHigh, stringResource(R.string.doc_clean_up), !busy) { adjustmentsOpen = true }
+                        BarAction(Icons.Default.Draw, stringResource(R.string.doc_sign), !busy) { signatureOpen = true }
+                        BarAction(Icons.Default.Share, stringResource(R.string.doc_share_pdf), !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
+                        BarAction(Icons.Default.MoreHoriz, stringResource(R.string.common_more), true) { moreOpen = true }
                     }
                 }
             }
@@ -541,11 +564,11 @@ internal fun DocumentDetailScreen(
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                             Spacer(Modifier.width(4.dp))
-                            Text("Ready to export", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                            Text(stringResource(R.string.doc_ready_to_export), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
                     }
                     Text(
-                        "${document.pages.size} ${if (document.pages.size == 1) "page" else "pages"} · searchable",
+                        pluralStringResource(R.plurals.doc_pages_searchable, document.pages.size, document.pages.size),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -561,8 +584,16 @@ internal fun DocumentDetailScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                 }
-                PageThumbnail(currentPage.imagePath, Modifier.fillMaxWidth().height(400.dp), THUMBNAIL_LARGE, version = currentPage)
+                PageThumbnail(
+                    currentPage.imagePath,
+                    Modifier.fillMaxWidth().height(400.dp),
+                    THUMBNAIL_LARGE,
+                    version = currentPage,
+                    contentDescription = stringResource(R.string.viewer_page_of, currentIndex + 1, pages.size)
+                )
                 Spacer(Modifier.height(10.dp))
+                // In a right-to-left layout the strip runs right to left, so a drag to the right moves a page earlier.
+                val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
                         var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
@@ -570,7 +601,9 @@ internal fun DocumentDetailScreen(
                         val latestIndex by rememberUpdatedState(index)
                         val latestLast by rememberUpdatedState(pages.lastIndex)
                         val latestBusy by rememberUpdatedState(busy)
+                        val latestRtl by rememberUpdatedState(isRtl)
                         val isCurrent = item.id == currentPage.id
+                        val pageDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
                         Card(
                             modifier = Modifier
                                 .size(width = 52.dp, height = 70.dp)
@@ -584,7 +617,8 @@ internal fun DocumentDetailScreen(
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { dragDistance = 0f },
                                         onDragEnd = {
-                                            val target = (latestIndex + (dragDistance / slot).roundToInt()).coerceIn(0, latestLast)
+                                            val slots = (dragDistance / slot).roundToInt()
+                                            val target = (latestIndex + if (latestRtl) -slots else slots).coerceIn(0, latestLast)
                                             val delta = target - latestIndex
                                             dragDistance = 0f
                                             if (delta != 0 && !latestBusy) onMove(item.id, delta)
@@ -596,17 +630,18 @@ internal fun DocumentDetailScreen(
                                         }
                                     )
                                 }
-                                .clickable { selectedPageId = item.id },
+                                .clickable(role = Role.Tab) { selectedPageId = item.id }
+                                .semantics { selected = isCurrent },
                             shape = RoundedCornerShape(8.dp),
                             border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
                         ) {
-                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item)
+                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, contentDescription = pageDescription)
                         }
                     }
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    if (pages.size > 1) "Page ${currentIndex + 1} of ${pages.size} · long-press a page to reorder" else "Page 1 of 1",
+                    if (pages.size > 1) stringResource(R.string.doc_page_x_of_y_reorder, currentIndex + 1, pages.size) else stringResource(R.string.doc_page_1_of_1),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -637,7 +672,7 @@ internal fun DocumentDetailScreen(
             Spacer(Modifier.height(8.dp))
             PrimaryScrollableTabRow(selectedTabIndex = tab.ordinal, edgePadding = 0.dp) {
                 DetailTab.entries.forEach { entry ->
-                    Tab(selected = tab == entry, onClick = { tabName = entry.name }, text = { Text(entry.label) })
+                    Tab(selected = tab == entry, onClick = { tabName = entry.name }, text = { Text(stringResource(entry.labelRes)) })
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -646,16 +681,16 @@ internal fun DocumentDetailScreen(
                 DetailTab.TEXT -> {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            if (currentPage != null) "Page ${currentIndex + 1}" else "Recognized text",
+                            if (currentPage != null) stringResource(R.string.doc_page_n, currentIndex + 1) else stringResource(R.string.doc_recognized_text),
                             style = MaterialTheme.typography.titleSmall,
                             modifier = Modifier.weight(1f)
                         )
                         if (!currentPage?.ocrText.isNullOrBlank()) {
                             IconButton(onClick = { ocrEditOpen = true }, enabled = !busy) {
-                                Icon(Icons.Default.Edit, contentDescription = "Edit recognized text")
+                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.doc_edit_recognized_text))
                             }
                             IconButton(onClick = { copyText(context, currentPage!!.ocrText) }) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy text")
+                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.doc_copy_text))
                             }
                         }
                     }
@@ -666,7 +701,11 @@ internal fun DocumentDetailScreen(
                     ) {
                         SelectionContainer {
                             Text(
-                                currentPage?.ocrText?.ifBlank { "No text recognized on this page." } ?: "No page selected.",
+                                when {
+                                    currentPage == null -> stringResource(R.string.doc_no_page_selected)
+                                    currentPage.ocrText.isBlank() -> stringResource(R.string.doc_no_text_recognized)
+                                    else -> currentPage.ocrText
+                                },
                                 modifier = Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState()).padding(12.dp)
                             )
                         }
@@ -674,26 +713,26 @@ internal fun DocumentDetailScreen(
                     Spacer(Modifier.height(4.dp))
                     // Wraps on narrow phones instead of squeezing four buttons into one line.
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(onClick = { shareOcrText(context, document) }) { Text("Share text") }
-                        TextButton(onClick = onExportOcrTextFile, enabled = !busy && document.ocrText.isNotBlank()) { Text("TXT file") }
-                        TextButton(onClick = onExportWord, enabled = !busy && document.ocrText.isNotBlank()) { Text("Word file") }
-                        TextButton(onClick = onExportExcel, enabled = !busy && document.ocrText.isNotBlank()) { Text("Excel file") }
-                        TextButton(onClick = onReOcr, enabled = !busy) { Text("Re-run OCR") }
+                        TextButton(onClick = { shareOcrText(context, document) }) { Text(stringResource(R.string.doc_share_text)) }
+                        TextButton(onClick = onExportOcrTextFile, enabled = !busy && document.ocrText.isNotBlank()) { Text(stringResource(R.string.doc_txt_file)) }
+                        TextButton(onClick = onExportWord, enabled = !busy && document.ocrText.isNotBlank()) { Text(stringResource(R.string.doc_word_file)) }
+                        TextButton(onClick = onExportExcel, enabled = !busy && document.ocrText.isNotBlank()) { Text(stringResource(R.string.doc_excel_file)) }
+                        TextButton(onClick = onReOcr, enabled = !busy) { Text(stringResource(R.string.doc_rerun_ocr)) }
                     }
 
-                    SubHeader("OCR script")
+                    SubHeader(stringResource(R.string.doc_ocr_script))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(OcrScript.entries, key = { it.name }) { script ->
                             FilterChip(
                                 selected = document.ocrScript == script,
                                 enabled = !busy,
                                 onClick = { onOcrScript(script) },
-                                label = { Text(script.label) }
+                                label = { Text(stringResource(script.labelRes)) }
                             )
                         }
                     }
 
-                    SubHeader("Translate")
+                    SubHeader(stringResource(R.string.doc_translate))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(TranslationEngine.commonTargets, key = { it.languageTag }) { target ->
                             FilterChip(
@@ -708,13 +747,17 @@ internal fun DocumentDetailScreen(
                             detailScope.launch {
                                 translating = true
                                 translationResult = try {
-                                    TranslationEngine.translate(document.ocrText, translationTarget)
+                                    val translator = TranslationFeature.translator(context) { translationProgress = it }
+                                    translationProgress = null
+                                    translator.translate(document.ocrText, translationTarget)
                                 } catch (cancelled: CancellationException) {
                                     throw cancelled
                                 } catch (error: Exception) {
-                                    error.message ?: "Translation failed"
+                                    error.message ?: resources.getString(R.string.doc_translation_failed)
+                                } finally {
+                                    translating = false
+                                    translationProgress = null
                                 }
-                                translating = false
                             }
                         },
                         enabled = document.ocrText.isNotBlank() && !translating,
@@ -722,10 +765,17 @@ internal fun DocumentDetailScreen(
                     ) {
                         Icon(Icons.Default.Translate, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
-                        Text(if (translating) "Translating…" else "Translate")
+                        Text(
+                            when (val progress = translationProgress) {
+                                is TranslationFeature.Progress.Preparing -> stringResource(R.string.doc_preparing_translation)
+                                is TranslationFeature.Progress.Downloading -> stringResource(R.string.doc_downloading_translation, progress.percent)
+                                is TranslationFeature.Progress.Installing -> stringResource(R.string.doc_installing_translation)
+                                null -> if (translating) stringResource(R.string.doc_translating) else stringResource(R.string.doc_translate)
+                            }
+                        )
                     }
                     Text(
-                        "Runs on-device with ML Kit; the language model may download once.",
+                        stringResource(R.string.doc_translate_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -737,48 +787,48 @@ internal fun DocumentDetailScreen(
                 }
 
                 DetailTab.INSIGHTS -> {
-                    Text(insights.kind.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(insights.kind.labelRes), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(4.dp))
                     Text(insights.summary, style = MaterialTheme.typography.bodyMedium)
-                    if (insights.amounts.isNotEmpty()) Text("Amounts: ${insights.amounts.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-                    if (insights.dates.isNotEmpty()) Text("Dates: ${insights.dates.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
-                    if (insights.references.isNotEmpty()) Text("References: ${insights.references.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                    if (insights.amounts.isNotEmpty()) Text(stringResource(R.string.doc_amounts, insights.amounts.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
+                    if (insights.dates.isNotEmpty()) Text(stringResource(R.string.doc_dates, insights.dates.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
+                    if (insights.references.isNotEmpty()) Text(stringResource(R.string.doc_references, insights.references.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
                     businessCard?.let { card ->
-                        SubHeader("Contact details")
+                        SubHeader(stringResource(R.string.doc_contact_details))
                         listOfNotNull(card.name, card.jobTitle, card.company).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
                         (card.phones + card.emails + listOfNotNull(card.website, card.address)).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                        FilledTonalButton(onClick = { addContact(card) }, modifier = Modifier.padding(top = 4.dp)) { Text("Add to contacts") }
+                        FilledTonalButton(onClick = { addContact(card) }, modifier = Modifier.padding(top = 4.dp)) { Text(stringResource(R.string.doc_add_to_contacts)) }
                     }
                     if (insights.actionItems.isNotEmpty()) {
-                        SubHeader("Potential action items")
+                        SubHeader(stringResource(R.string.doc_potential_action_items))
                         insights.actionItems.forEach { item ->
-                            Text("• $item", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.doc_bullet_item, item), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     if (insights.suggestedTags.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
-                        Text("Suggested tags: ${insights.suggestedTags.joinToString(", ")}", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.doc_suggested_tags, insights.suggestedTags.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
                         TextButton(
                             enabled = !busy,
                             onClick = {
                                 val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
                                 onTags(merged.joinToString(", "))
                             }
-                        ) { Text("Apply suggested tags") }
+                        ) { Text(stringResource(R.string.doc_apply_suggested_tags)) }
                     }
-                    SubHeader("Ask about this scan")
+                    SubHeader(stringResource(R.string.doc_ask_about_scan))
                     OutlinedTextField(
                         value = assistantQuestion,
                         onValueChange = { assistantQuestion = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("e.g. What is the total?") },
-                        supportingText = { Text("Answers come only from OCR text; nothing is uploaded.") },
+                        placeholder = { Text(stringResource(R.string.doc_ask_placeholder)) },
+                        supportingText = { Text(stringResource(R.string.doc_ask_supporting)) },
                         maxLines = 3
                     )
                     FilledTonalButton(
                         onClick = { assistantAnswer = DocumentIntelligenceEngine.answer(assistantQuestion, document.ocrText) },
                         enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank()
-                    ) { Text("Find answer") }
+                    ) { Text(stringResource(R.string.doc_find_answer)) }
                     if (assistantAnswer.isNotBlank()) {
                         Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
                             Text(assistantAnswer, modifier = Modifier.padding(12.dp))
@@ -787,36 +837,36 @@ internal fun DocumentDetailScreen(
                 }
 
                 DetailTab.PDF -> {
-                    SubHeader("Quality")
+                    SubHeader(stringResource(R.string.doc_quality))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(PdfQuality.entries, key = { it.name }) { quality ->
-                            FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(quality.label) })
+                            FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(stringResource(quality.labelRes)) })
                         }
                     }
-                    SubHeader("Page size")
+                    SubHeader(stringResource(R.string.doc_page_size))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(PdfPageSize.entries, key = { it.name }) { size ->
-                            FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(size.label) })
+                            FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(stringResource(size.labelRes)) })
                         }
                     }
-                    SubHeader("Document mode")
+                    SubHeader(stringResource(R.string.doc_document_mode))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(ScanMode.entries.filter { it != ScanMode.TEXT }, key = { it.name }) { mode ->
-                            FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(mode.label) })
+                            FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(stringResource(mode.labelRes)) })
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    ToggleRow("Searchable PDF", "Embed recognized text so the PDF can be searched.", document.searchablePdf, !busy, onSearchablePdf)
-                    ToggleRow("Page numbers", "Print page x / total at the bottom of each page.", document.pageNumbers, !busy, onPageNumbers)
+                    ToggleRow(stringResource(R.string.doc_searchable_pdf), stringResource(R.string.doc_searchable_pdf_hint), document.searchablePdf, !busy, onSearchablePdf)
+                    ToggleRow(stringResource(R.string.doc_page_numbers), stringResource(R.string.doc_page_numbers_hint), document.pageNumbers, !busy, onPageNumbers)
                 }
             }
             Spacer(Modifier.height(32.dp))
         }
     }
 
-    if (renameOpen) TextInputDialog("Rename document", document.title, "Name", onDismiss = { renameOpen = false }) { onRename(it); renameOpen = false }
-    if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
-    if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
+    if (renameOpen) TextInputDialog(stringResource(R.string.doc_rename_document), document.title, stringResource(R.string.doc_name), onDismiss = { renameOpen = false }) { onRename(it); renameOpen = false }
+    if (tagsOpen) TextInputDialog(stringResource(R.string.doc_document_tags), document.tags.joinToString(", "), stringResource(R.string.doc_comma_separated_tags), allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
+    if (folderOpen) TextInputDialog(stringResource(R.string.doc_move_to_folder), document.folderName, stringResource(R.string.doc_folder_name), allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
     if (moreOpen) {
         ModalBottomSheet(onDismissRequest = { moreOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             // Each tool closes the sheet first, so its dialog or result isn't hidden behind it.
@@ -829,51 +879,51 @@ internal fun DocumentDetailScreen(
             ) {
                 val page = currentPage
                 if (page != null) {
-                    SubHeader("This page")
+                    SubHeader(stringResource(R.string.doc_this_page))
                     ToolGrid {
-                        ToolTile(Icons.AutoMirrored.Filled.RotateRight, "Rotate", !busy, run { onRotate(page.id) })
-                        ToolTile(Icons.Default.Tune, "Fine tune", !busy, run { adjustmentsOpen = true })
-                        ToolTile(Icons.Default.RestartAlt, "Reset", !busy, run { onResetPage(page.id) })
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Move left", !busy && currentIndex > 0, run { onMove(page.id, -1) })
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Move right", !busy && currentIndex < pages.lastIndex, run { onMove(page.id, 1) })
-                        ToolTile(Icons.Default.FileCopy, "Duplicate", !busy, run { onDuplicatePage(page.id) })
-                        ToolTile(Icons.Default.Output, "Extract", !busy, run { onExtractPage(page.id) })
-                        ToolTile(Icons.AutoMirrored.Filled.MenuBook, "Split book", !busy, run { bookSplitOpen = true })
-                        ToolTile(Icons.Default.Delete, "Delete page", !busy, run { deletePageOpen = true })
+                        ToolTile(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(page.id) })
+                        ToolTile(Icons.Default.Tune, stringResource(R.string.doc_fine_tune), !busy, run { adjustmentsOpen = true })
+                        ToolTile(Icons.Default.RestartAlt, stringResource(R.string.common_reset), !busy, run { onResetPage(page.id) })
+                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_left), !busy && currentIndex > 0, run { onMove(page.id, -1) })
+                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.doc_move_right), !busy && currentIndex < pages.lastIndex, run { onMove(page.id, 1) })
+                        ToolTile(Icons.Default.FileCopy, stringResource(R.string.doc_duplicate), !busy, run { onDuplicatePage(page.id) })
+                        ToolTile(Icons.Default.Output, stringResource(R.string.doc_extract), !busy, run { onExtractPage(page.id) })
+                        ToolTile(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.doc_split_book), !busy, run { bookSplitOpen = true })
+                        ToolTile(Icons.Default.Delete, stringResource(R.string.doc_delete_page), !busy, run { deletePageOpen = true })
                     }
-                    SubHeader("Mark up")
+                    SubHeader(stringResource(R.string.doc_mark_up))
                     ToolGrid {
-                        ToolTile(Icons.Default.EditNote, "Edit text", !busy, run { editTextOpen = true })
-                        ToolTile(Icons.Default.AutoFixOff, "Eraser", !busy, run { eraserOpen = true })
-                        ToolTile(Icons.Default.TextFields, "Add text", !busy, run { annotationTextOpen = true })
-                        ToolTile(Icons.Default.Highlight, "Highlight", !busy, run { onHighlight(page.id) })
-                        ToolTile(Icons.Default.VisibilityOff, "Redact", !busy, run { onRedact(page.id) })
-                        ToolTile(Icons.Default.BrandingWatermark, "Watermark", !busy, run { watermarkOpen = true })
-                        ToolTile(Icons.Default.Edit, "Edit markup", !busy && page.annotations.isNotEmpty(), run { markupOpen = true })
-                        ToolTile(Icons.Default.RemoveCircleOutline, "Remove last", !busy && page.annotations.isNotEmpty(), run { onUndoAnnotation(page.id) })
+                        ToolTile(Icons.Default.EditNote, stringResource(R.string.doc_edit_text), !busy, run { editTextOpen = true })
+                        ToolTile(Icons.Default.AutoFixOff, stringResource(R.string.doc_eraser), !busy, run { eraserOpen = true })
+                        ToolTile(Icons.Default.TextFields, stringResource(R.string.doc_add_text), !busy, run { annotationTextOpen = true })
+                        ToolTile(Icons.Default.Highlight, stringResource(R.string.doc_highlight), !busy, run { onHighlight(page.id) })
+                        ToolTile(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), !busy, run { onRedact(page.id) })
+                        ToolTile(Icons.Default.BrandingWatermark, stringResource(R.string.doc_watermark), !busy, run { watermarkOpen = true })
+                        ToolTile(Icons.Default.Edit, stringResource(R.string.doc_edit_markup), !busy && page.annotations.isNotEmpty(), run { markupOpen = true })
+                        ToolTile(Icons.Default.RemoveCircleOutline, stringResource(R.string.doc_remove_last), !busy && page.annotations.isNotEmpty(), run { onUndoAnnotation(page.id) })
                     }
                 }
-                SubHeader("Share and save")
+                SubHeader(stringResource(R.string.doc_share_and_save))
                 ToolGrid {
-                    ToolTile(Icons.Default.Image, "Share JPG", !busy, run { shareImages(context, document) })
-                    ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy, run { onWithFreshPdf({}) { openPdf(context, it) } })
-                    ToolTile(Icons.Default.Save, "Save PDF", !busy, run { savePdfLauncher.launch("${document.title}.pdf") })
-                    ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy, run { saveToDrive(document.title) })
-                    ToolTile(Icons.Default.Description, "Word (.docx)", !busy && document.ocrText.isNotBlank(), run { onExportWord() })
-                    ToolTile(Icons.Default.TableChart, "Excel (.xlsx)", !busy && document.ocrText.isNotBlank(), run { onExportExcel() })
-                    ToolTile(Icons.Default.Print, "Print", !busy, run { onWithFreshPdf({}) { printPdf(context, it) } })
-                    ToolTile(Icons.Default.Lock, "Protect PDF", !busy, run { passwordOpen = true })
-                    ToolTile(Icons.Default.Badge, "ID copy", !busy, run { onExportIdCopy() })
-                    ToolTile(Icons.Default.ViewDay, "Long image", !busy, run { onExportLongImage() })
-                    ToolTile(Icons.Default.Backup, "Encrypted backup", !busy, run { backupPasswordOpen = true })
+                    ToolTile(Icons.Default.Image, stringResource(R.string.doc_share_jpg), !busy, run { shareImages(context, document) })
+                    ToolTile(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.doc_open_pdf), !busy, run { onWithFreshPdf({}) { openPdf(context, it) } })
+                    ToolTile(Icons.Default.Save, stringResource(R.string.doc_save_pdf), !busy, run { savePdfLauncher.launch("${document.title}.pdf") })
+                    ToolTile(Icons.Default.AddToDrive, stringResource(R.string.doc_save_to_drive), !busy, run { saveToDrive(document.title) })
+                    ToolTile(Icons.Default.Description, stringResource(R.string.doc_word_docx), !busy && document.ocrText.isNotBlank(), run { onExportWord() })
+                    ToolTile(Icons.Default.TableChart, stringResource(R.string.doc_excel_xlsx), !busy && document.ocrText.isNotBlank(), run { onExportExcel() })
+                    ToolTile(Icons.Default.Print, stringResource(R.string.doc_print), !busy, run { onWithFreshPdf({}) { printPdf(context, it) } })
+                    ToolTile(Icons.Default.Lock, stringResource(R.string.doc_protect_pdf), !busy, run { passwordOpen = true })
+                    ToolTile(Icons.Default.Badge, stringResource(R.string.doc_id_copy), !busy, run { onExportIdCopy() })
+                    ToolTile(Icons.Default.ViewDay, stringResource(R.string.doc_long_image), !busy, run { onExportLongImage() })
+                    ToolTile(Icons.Default.Backup, stringResource(R.string.doc_encrypted_backup), !busy, run { backupPasswordOpen = true })
                 }
-                SubHeader("Organise")
+                SubHeader(stringResource(R.string.doc_organise))
                 ToolGrid {
-                    ToolTile(Icons.Default.AddPhotoAlternate, "Add pages", !busy, run {
+                    ToolTile(Icons.Default.AddPhotoAlternate, stringResource(R.string.doc_add_pages), !busy, run {
                         appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                     })
-                    ToolTile(Icons.Default.Layers, "Merge", !busy && otherDocuments.isNotEmpty(), run { mergeOpen = true })
-                    ToolTile(Icons.Default.ContentCut, "Split all", !busy && document.pageCount > 1, run { onSplitDocument() })
+                    ToolTile(Icons.Default.Layers, stringResource(R.string.doc_merge), !busy && otherDocuments.isNotEmpty(), run { mergeOpen = true })
+                    ToolTile(Icons.Default.ContentCut, stringResource(R.string.doc_split_all), !busy && document.pageCount > 1, run { onSplitDocument() })
                 }
             }
         }
@@ -881,25 +931,25 @@ internal fun DocumentDetailScreen(
 
     if (watermarkOpen) WatermarkDialog(onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }
     if (passwordOpen) PasswordInputDialog(
-        title = "Protect PDF copy",
-        message = "Create a password-protected PDF for sharing.",
+        title = stringResource(R.string.doc_protect_pdf_copy),
+        message = stringResource(R.string.doc_protect_pdf_message),
         minimumLength = PdfSecurity.MIN_PASSWORD_LENGTH,
-        confirmLabel = "Create",
+        confirmLabel = stringResource(R.string.doc_create),
         onDismiss = { passwordOpen = false }
     ) { onExportProtectedPdf(it); passwordOpen = false }
     if (backupPasswordOpen) PasswordInputDialog(
-        title = "Encrypted ScanPro backup",
-        message = "Backs up page images, OCR and document settings in an AES-GCM encrypted portable package.",
+        title = stringResource(R.string.doc_encrypted_backup_title),
+        message = stringResource(R.string.doc_encrypted_backup_message),
         minimumLength = 6,
-        confirmLabel = "Create backup",
+        confirmLabel = stringResource(R.string.doc_create_backup),
         onDismiss = { backupPasswordOpen = false }
     ) { onExportEncryptedBackup(it); backupPasswordOpen = false }
-    if (annotationTextOpen && currentPage != null) TextInputDialog("Add text to page", label = "Text", confirmLabel = "Add", maxLines = 3, onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
+    if (annotationTextOpen && currentPage != null) TextInputDialog(stringResource(R.string.doc_add_text_to_page), label = stringResource(R.string.doc_text), confirmLabel = stringResource(R.string.doc_add), maxLines = 3, onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
     if (ocrEditOpen && currentPage != null) TextInputDialog(
-        title = "Edit recognized text",
+        title = stringResource(R.string.doc_edit_recognized_text),
         initial = currentPage.ocrText,
-        label = "OCR text",
-        confirmLabel = "Save text",
+        label = stringResource(R.string.doc_ocr_text),
+        confirmLabel = stringResource(R.string.doc_save_text),
         maxLines = 12,
         onDismiss = { ocrEditOpen = false }
     ) { text -> onUpdateOcrText(currentPage.id, text); ocrEditOpen = false }
@@ -993,7 +1043,7 @@ internal fun DocumentDetailScreen(
     if (mergeOpen) {
         AlertDialog(
             onDismissRequest = { mergeOpen = false },
-            title = { Text("Merge with another document") },
+            title = { Text(stringResource(R.string.doc_merge_with_another)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     otherDocuments.take(12).forEach { other ->
@@ -1008,15 +1058,15 @@ internal fun DocumentDetailScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { mergeOpen = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { mergeOpen = false }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 
     if (deletePageOpen && currentPage != null) {
         ConfirmDialog(
-            title = "Delete this page?",
-            message = if (pages.size == 1) "This is the only page, so the document will move to the recycle bin." else "The page will be removed from this document.",
-            confirmLabel = "Delete",
+            title = stringResource(R.string.doc_delete_this_page),
+            message = if (pages.size == 1) stringResource(R.string.doc_delete_only_page_message) else stringResource(R.string.doc_delete_page_message),
+            confirmLabel = stringResource(R.string.common_delete),
             onDismiss = { deletePageOpen = false },
             onConfirm = {
                 deletePageOpen = false
@@ -1028,33 +1078,33 @@ internal fun DocumentDetailScreen(
     if (detailsOpen) {
         AlertDialog(
             onDismissRequest = { detailsOpen = false },
-            title = { Text("Details") },
+            title = { Text(stringResource(R.string.doc_details)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Pages: ${document.pageCount}")
-                    Text("PDF size: ${formatBytes(document.sizeBytes)}")
-                    Text("Updated: ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(document.updatedAt))}")
-                    if (document.folderName.isNotBlank()) Text("Folder: ${document.folderName}")
-                    if (document.tags.isNotEmpty()) Text("Tags: ${document.tags.joinToString(", ")}")
+                    Text(stringResource(R.string.doc_details_pages, document.pageCount))
+                    Text(stringResource(R.string.doc_details_pdf_size, formatBytes(document.sizeBytes)))
+                    Text(stringResource(R.string.doc_details_updated, DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(document.updatedAt))))
+                    if (document.folderName.isNotBlank()) Text(stringResource(R.string.doc_details_folder, document.folderName))
+                    if (document.tags.isNotEmpty()) Text(stringResource(R.string.doc_details_tags, document.tags.joinToString(", ")))
                 }
             },
-            confirmButton = { TextButton(onClick = { detailsOpen = false }) { Text("Close") } }
+            confirmButton = { TextButton(onClick = { detailsOpen = false }) { Text(stringResource(R.string.common_close)) } }
         )
     }
 
     if (deleteDocumentOpen) {
         ConfirmDialog(
-            title = "Move to recycle bin?",
-            message = "You can restore the document later or permanently delete it from the recycle bin.",
-            confirmLabel = "Move",
+            title = stringResource(R.string.doc_move_to_recycle_bin_question),
+            message = stringResource(R.string.doc_move_to_recycle_bin_message),
+            confirmLabel = stringResource(R.string.doc_move),
             onDismiss = { deleteDocumentOpen = false },
             onConfirm = { onDeleteDocument(); deleteDocumentOpen = false }
         )
     }
 }
 
-private enum class DetailTab(val label: String) {
-    TEXT("Text"), INSIGHTS("Insights"), PDF("PDF settings")
+private enum class DetailTab(val labelRes: Int) {
+    TEXT(R.string.doc_tab_text), INSIGHTS(R.string.doc_tab_insights), PDF(R.string.doc_tab_pdf_settings)
 }
 
 /** One button on the bottom toolbar: an icon over a short label, sharing the width equally. */
@@ -1121,7 +1171,7 @@ private fun ToolTile(icon: ImageVector, label: String, enabled: Boolean = true, 
         modifier = Modifier
             .width(78.dp)
             .clip(RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .alpha(if (enabled) 1f else 0.38f)
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -1148,14 +1198,18 @@ private fun ToggleRow(
     enabled: Boolean,
     onChange: (Boolean) -> Unit
 ) {
+    // The whole row is the switch, so a screen reader hears the title, hint and state as one control.
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, fontWeight = FontWeight.Medium)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, enabled = enabled, onCheckedChange = onChange)
+        Switch(checked = checked, enabled = enabled, onCheckedChange = null)
     }
 }

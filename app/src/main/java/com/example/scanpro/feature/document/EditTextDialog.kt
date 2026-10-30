@@ -38,11 +38,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.scanpro.R
 import com.example.scanpro.data.OcrWord
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.intelligence.OcrLayout
@@ -70,17 +74,18 @@ fun EditTextDialog(
     var selected by remember { mutableStateOf(-1) }
     var text by remember { mutableStateOf("") }
     val blue = MaterialTheme.colorScheme.primary
+    val pagePreview = stringResource(R.string.a11y_page_preview)
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close") }
-                    Text("Edit text", style = MaterialTheme.typography.titleLarge)
+                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
+                    Text(stringResource(R.string.doc_edit_text), style = MaterialTheme.typography.titleLarge)
                 }
                 Text(
-                    if (lines.isEmpty()) "No text was found on this page, so there is nothing to edit."
-                    else "Tap the line you want to change, then type the new words.",
+                    if (lines.isEmpty()) stringResource(R.string.doc_edit_text_empty)
+                    else stringResource(R.string.doc_edit_text_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp)
@@ -93,6 +98,7 @@ fun EditTextDialog(
                         Canvas(
                             Modifier
                                 .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                                .semantics { contentDescription = pagePreview }
                                 .pointerInput(lines) {
                                     detectTapGestures { tap ->
                                         val x = tap.x / size.width
@@ -131,7 +137,7 @@ fun EditTextDialog(
                     onValueChange = { text = it.replace('\n', ' ').take(400) },
                     enabled = line != null,
                     singleLine = true,
-                    label = { Text(if (line == null) "Tap a line on the page" else "New text") },
+                    label = { Text(if (line == null) stringResource(R.string.doc_tap_a_line) else stringResource(R.string.doc_new_text)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(
@@ -141,11 +147,11 @@ fun EditTextDialog(
                     OutlinedButton(
                         enabled = line != null,
                         onClick = { line?.let { onApply(TextEdit(it.left, it.top, it.right, it.bottom, "")) } }
-                    ) { Text("Remove line") }
+                    ) { Text(stringResource(R.string.doc_remove_line)) }
                     Button(
                         enabled = line != null && text.trim() != line.text,
                         onClick = { line?.let { onApply(TextEdit(it.left, it.top, it.right, it.bottom, text.trim())) } }
-                    ) { Text("Replace") }
+                    ) { Text(stringResource(R.string.doc_replace)) }
                 }
             }
         }

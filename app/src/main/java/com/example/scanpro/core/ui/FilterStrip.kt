@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -80,7 +81,7 @@ fun FilterStrip(
                     }
                 }
                 Text(
-                    filter.label,
+                    stringResource(filter.labelRes),
                     color = if (isSelected) accent else text,
                     style = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Center,
