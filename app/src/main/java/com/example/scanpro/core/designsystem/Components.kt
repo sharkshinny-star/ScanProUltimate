@@ -5,6 +5,7 @@ import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.ImeAction
@@ -238,11 +239,20 @@ fun PasswordInputDialog(
  * task never shifts the screen's content up or down.
  */
 @Composable
-fun TopBarWithProgress(busy: Boolean, topBar: @Composable () -> Unit) {
+fun TopBarWithProgress(busy: Boolean, onStop: (() -> Unit)? = null, topBar: @Composable () -> Unit) {
     androidx.compose.foundation.layout.Column {
         topBar()
         Box(Modifier.fillMaxWidth().height(4.dp)) {
             if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        // A long task (re-reading 300 pages, say) can be stopped from the screen that shows it running.
+        if (busy && onStop != null) {
+            androidx.compose.foundation.layout.Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+            ) {
+                TextButton(onClick = onStop) { Text("Stop") }
+            }
         }
     }
 }

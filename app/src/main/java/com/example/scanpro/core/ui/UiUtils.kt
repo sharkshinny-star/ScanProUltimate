@@ -163,8 +163,8 @@ fun formatBytes(bytes: Long): String {
     return if (group == 0) "$bytes B" else String.format(Locale.getDefault(), "%.1f %s", value, units[group])
 }
 
-fun formatTrashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis()): Pair<String, Boolean> {
-    val retentionMs = 7L * 24L * 60L * 60L * 1000L
+fun formatTrashCountdown(trashedAt: Long, nowMs: Long = System.currentTimeMillis(), retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS): Pair<String, Boolean> {
+    val retentionMs = retentionDays * 24L * 60L * 60L * 1000L
     val expirationMs = trashedAt + retentionMs
     val remainingMs = expirationMs - nowMs
 

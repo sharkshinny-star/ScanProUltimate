@@ -80,9 +80,12 @@ fun TrashRoute(
 ) {
     val documents by viewModel.documents.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val retentionDays by viewModel.retentionDays.collectAsStateWithLifecycle()
     TrashScreen(
         documents = documents,
         busy = busy,
+        retentionDays = retentionDays,
+        onRestoreAll = viewModel::restoreAll,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         onRestore = viewModel::restore,
@@ -100,7 +103,9 @@ internal fun TrashScreen(
     onBack: () -> Unit,
     onRestore: (String) -> Unit,
     onDeleteForever: (String) -> Unit,
-    onEmptyTrash: () -> Unit
+    onEmptyTrash: () -> Unit,
+    retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS,
+    onRestoreAll: () -> Unit = {}
 ) {
     var sortOption by remember { mutableStateOf(TrashSortOption.EXPIRY) }
     var showEmptyDialog by remember { mutableStateOf(false) }
@@ -116,7 +121,7 @@ internal fun TrashScreen(
     }
 
     val sortedDocuments = remember(documents, sortOption, nowMs) {
-        val retentionMs = 7L * 24L * 60L * 60L * 1000L
+        val retentionMs = retentionDays * 24L * 60L * 60L * 1000L
         when (sortOption) {
             TrashSortOption.EXPIRY -> documents.sortedBy { (it.trashedAt + retentionMs) - nowMs }
             TrashSortOption.DATE -> documents.sortedByDescending { it.trashedAt }
@@ -138,6 +143,7 @@ internal fun TrashScreen(
                 },
                 actions = {
                     if (documents.isNotEmpty()) {
+                        TextButton(enabled = !busy, onClick = onRestoreAll) { Text("Restore all") }
                         TextButton(enabled = !busy, onClick = { showEmptyDialog = true }) {
                             Text("Empty", color = MaterialTheme.colorScheme.error)
                         }
@@ -161,7 +167,7 @@ internal fun TrashScreen(
                 Text("The recycle bin is empty", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Deleted documents wait here for 7 days before they are removed for good.",
+                    "Deleted documents wait here for $retentionDays days before they are removed for good.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -192,7 +198,7 @@ internal fun TrashScreen(
                         )
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            "Documents are removed for good after 7 days.",
+                            "Documents are removed for good after $retentionDays days. Change this under Settings.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -265,7 +271,7 @@ internal fun TrashScreen(
                                     val pagesLabel = if (doc.pageCount == 1) "1 page" else "${doc.pageCount} pages"
                                     Text("$pagesLabel · ${formatBytes(doc.sizeBytes)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(Modifier.height(6.dp))
-                                    val (countdownText, isUrgent) = formatTrashCountdown(doc.trashedAt, nowMs)
+                                    val (countdownText, isUrgent) = formatTrashCountdown(doc.trashedAt, nowMs, retentionDays)
                                     // Time left as a small pill; it turns to the error colour in the last day.
                                     Surface(
                                         shape = CircleShape,

@@ -25,6 +25,11 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.SelectAll
+import androidx.compose.material.icons.rounded.FolderDelete
+import androidx.compose.foundation.layout.heightIn
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
@@ -102,6 +107,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.core.designsystem.BrandLockup
+import com.example.scanpro.core.designsystem.ConfirmDialog
 import com.example.scanpro.core.designsystem.Eyebrow
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.ScanProTheme
@@ -144,8 +150,19 @@ fun LibraryRoute(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
+    val savedSort by viewModel.librarySort.collectAsStateWithLifecycle()
+    val savedGrid by viewModel.libraryGrid.collectAsStateWithLifecycle()
     LibraryScreen(
         mode = mode,
+        savedSort = savedSort,
+        savedGrid = savedGrid,
+        onSortChange = viewModel::setLibrarySort,
+        onGridChange = viewModel::setLibraryGrid,
+        onStop = viewModel::stopCurrent,
+        onMoveToFolder = viewModel::moveToFolder,
+        onSetFavorite = viewModel::setFavorite,
+        onDeleteFolder = viewModel::deleteFolder,
+        folderExists = viewModel::folderExists,
         documents = documents,
         trashCount = trashCount,
         query = query,
@@ -188,6 +205,15 @@ internal fun LibraryScreen(
     onSearch: () -> Unit,
     onBack: () -> Unit,
     onBulkDelete: (Set<String>) -> Boolean,
+    savedSort: String = LibrarySort.UPDATED.name,
+    savedGrid: Boolean = true,
+    onSortChange: (String) -> Unit = {},
+    onGridChange: (Boolean) -> Unit = {},
+    onStop: () -> Unit = {},
+    onMoveToFolder: (Set<String>, String) -> Boolean = { _, _ -> true },
+    onSetFavorite: (Set<String>, Boolean) -> Boolean = { _, _ -> true },
+    onDeleteFolder: (String) -> Boolean = { true },
+    folderExists: suspend (String) -> Boolean = { false },
     onShareSelected: (Set<String>) -> Unit,
     onRenameFolder: (String, String) -> Boolean,
     onTab: (String) -> Unit,
@@ -196,14 +222,19 @@ internal fun LibraryScreen(
 ) {
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
-    var gridMode by rememberSaveable { mutableStateOf(mode == ScanProDestinations.FILES) }
-    var sortName by rememberSaveable { mutableStateOf(LibrarySort.UPDATED.name) }
+    // Files keeps the saved sort and layout; Search and Home have their own fixed look.
+    val gridMode = if (mode == ScanProDestinations.FILES) savedGrid else mode == ScanProDestinations.FILES
+    val sortName = if (mode == ScanProDestinations.FILES) savedSort else LibrarySort.UPDATED.name
     var folder by rememberSaveable { mutableStateOf("") }
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
+    var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
+    var deleteFolderOpen by rememberSaveable { mutableStateOf(false) }
+    var renameMergeTarget by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     var renameFolderSource by remember { mutableStateOf<String?>(null) }
     var sortMenuOpen by remember { mutableStateOf(false) }
     var moreMenuOpen by remember { mutableStateOf(false) }
-    val selected = remember { mutableStateListOf<String>() }
+    val selected = rememberSaveable(saver = androidx.compose.runtime.saveable.listSaver(save = { it.toList() }, restore = { mutableStateListOf(*it.toTypedArray()) })) { mutableStateListOf<String>() }
     val sort = runCatching { LibrarySort.valueOf(sortName) }.getOrDefault(LibrarySort.UPDATED)
     // One chip per folder whatever the case of its name; the first spelling seen is the one shown.
     val folders = remember(documents) { documents.map { it.folderName.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() } }
@@ -265,7 +296,7 @@ internal fun LibraryScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopBarWithProgress(busy) {
+            TopBarWithProgress(busy, onStop = onStop) {
                 TopAppBar(
                     colors = topBarColors,
                     scrollBehavior = scrollBehavior,
@@ -306,6 +337,39 @@ internal fun LibraryScreen(
                             }) {
                                 Icon(Icons.Rounded.Delete, contentDescription = "Move selected to trash")
                             }
+                            var selectionMenuOpen by remember { mutableStateOf(false) }
+                            Box {
+                                IconButton(onClick = { selectionMenuOpen = true }) {
+                                    Icon(Icons.Rounded.MoreVert, contentDescription = "More selection actions")
+                                }
+                                DropdownMenu(expanded = selectionMenuOpen, onDismissRequest = { selectionMenuOpen = false }) {
+                                    val allSelected = visible.all { it.id in selected }
+                                    DropdownMenuItem(
+                                        text = { Text(if (allSelected) "Clear selection" else "Select all (${visible.size})") },
+                                        leadingIcon = { Icon(Icons.Rounded.SelectAll, contentDescription = null) },
+                                        onClick = {
+                                            selectionMenuOpen = false
+                                            if (allSelected) selected.clear() else visible.forEach { if (it.id !in selected) selected.add(it.id) }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Move to folder") },
+                                        leadingIcon = { Icon(Icons.Rounded.Folder, contentDescription = null) },
+                                        enabled = !busy,
+                                        onClick = { selectionMenuOpen = false; moveToFolderOpen = true }
+                                    )
+                                    val anyUnstarred = visible.any { it.id in selected && !it.isFavorite }
+                                    DropdownMenuItem(
+                                        text = { Text(if (anyUnstarred) "Add to favourites" else "Remove from favourites") },
+                                        leadingIcon = { Icon(Icons.Rounded.Star, contentDescription = null) },
+                                        enabled = !busy,
+                                        onClick = {
+                                            selectionMenuOpen = false
+                                            if (onSetFavorite(selected.toSet(), anyUnstarred)) selected.clear()
+                                        }
+                                    )
+                                }
+                            }
                         } else {
                             if (!isSearch && !isHome) {
                                 IconButton(onClick = onSearch) {
@@ -322,14 +386,14 @@ internal fun LibraryScreen(
                                             text = { Text(option.label) },
                                             trailingIcon = { if (sort == option) Icon(Icons.Rounded.Check, contentDescription = "Selected") },
                                             onClick = {
-                                                sortName = option.name
+                                                onSortChange(option.name)
                                                 sortMenuOpen = false
                                             }
                                         )
                                     }
                                 }
                             }
-                            if (!isHome) IconButton(onClick = { gridMode = !gridMode }) {
+                            if (!isHome) IconButton(onClick = { onGridChange(!gridMode) }) {
                                 Icon(
                                     if (gridMode) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
                                     contentDescription = if (gridMode) "Show as list" else "Show as grid"
@@ -357,6 +421,12 @@ internal fun LibraryScreen(
                                             text = { Text("Rename folder") },
                                             leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                                             onClick = { moreMenuOpen = false; renameFolderSource = folder }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Remove folder") },
+                                            leadingIcon = { Icon(Icons.Rounded.FolderDelete, contentDescription = null) },
+                                            enabled = !busy,
+                                            onClick = { moreMenuOpen = false; deleteFolderOpen = true }
                                         )
                                     }
                                     DropdownMenuItem(
@@ -487,9 +557,56 @@ internal fun LibraryScreen(
             confirmLabel = "Rename",
             onDismiss = { renameFolderSource = null }
         ) { target ->
-            if (onRenameFolder(source, target)) folder = target.trim()
-            renameFolderSource = null
+            val clean = target.trim().take(80)
+            scope.launch {
+                val merges = !clean.equals(source, ignoreCase = true) && folderExists(clean)
+                if (merges) {
+                    renameMergeTarget = clean
+                } else {
+                    if (onRenameFolder(source, clean)) folder = clean
+                    renameFolderSource = null
+                }
+            }
         }
+    }
+    renameMergeTarget?.let { target ->
+        val source = renameFolderSource.orEmpty()
+        ConfirmDialog(
+            title = "Merge into \"$target\"?",
+            message = "A folder called \"$target\" already exists. The documents in \"$source\" will join it; this cannot be undone.",
+            confirmLabel = "Merge",
+            onDismiss = { renameMergeTarget = null },
+            onConfirm = {
+                renameMergeTarget = null
+                if (onRenameFolder(source, target)) folder = target
+                renameFolderSource = null
+            }
+        )
+    }
+    if (deleteFolderOpen && folder.isNotBlank()) {
+        val count = documents.count { it.folderName.equals(folder, ignoreCase = true) }
+        ConfirmDialog(
+            title = "Remove the folder \"$folder\"?",
+            message = "Its ${if (count == 1) "document goes" else "$count documents go"} back to the top level. Nothing is deleted.",
+            confirmLabel = "Remove folder",
+            onDismiss = { deleteFolderOpen = false },
+            onConfirm = {
+                deleteFolderOpen = false
+                val name = folder
+                if (onDeleteFolder(name)) folder = ""
+            }
+        )
+    }
+    if (moveToFolderOpen) {
+        MoveToFolderDialog(
+            folders = folders,
+            count = selected.size,
+            onDismiss = { moveToFolderOpen = false },
+            onConfirm = { target ->
+                moveToFolderOpen = false
+                if (onMoveToFolder(selected.toSet(), target)) selected.clear()
+            }
+        )
     }
 }
 
@@ -590,7 +707,7 @@ private fun EmptyLibrary(
                 when {
                     query.isNotBlank() -> "Search looks through titles, tags and every word recognised in your scans."
                     favoritesOnly -> "Star a document to keep it one tap away."
-                    folder.isNotBlank() -> "Move documents here from their details page."
+                    folder.isNotBlank() -> "Select documents on Files and choose Move to folder, or set the folder on a document's page."
                     else -> "Scan a page, or bring in photos or a PDF you already have."
                 },
                 style = MaterialTheme.typography.bodyMedium,
@@ -905,4 +1022,47 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>) {
             }
         }
     }
+}
+
+/** Picks an existing folder, types a new one, or takes the documents out of any folder. */
+@Composable
+private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Move ${if (count == 1) "document" else "$count documents"}") },
+        text = {
+            Column {
+                androidx.compose.material3.OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(80) },
+                    label = { Text("Folder name") },
+                    placeholder = { Text("New or existing folder") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (folders.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 240.dp)) {
+                        items(folders, key = { it }) { existing ->
+                            androidx.compose.material3.TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
+                                Icon(Icons.Rounded.Folder, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.Button(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text("Move") }
+        },
+        dismissButton = {
+            Row {
+                androidx.compose.material3.TextButton(onClick = { onConfirm("") }) { Text("No folder") }
+                androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
 }

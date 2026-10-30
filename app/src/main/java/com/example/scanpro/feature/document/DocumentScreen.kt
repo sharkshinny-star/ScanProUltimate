@@ -259,6 +259,7 @@ fun DocumentRoute(
         onAppendImages = viewModel::appendImages,
         onMergeWith = viewModel::mergeWith,
         onReOcr = { viewModel.reOcr() },
+        onStop = viewModel::stopCurrent,
         onUpdateOcrText = viewModel::updatePageOcrText,
         onOcrScript = { script -> viewModel.reOcr(script) },
         onExportIdCopy = viewModel::exportIdCopy,
@@ -332,6 +333,7 @@ internal fun DocumentDetailScreen(
     onAppendImages: (List<Uri>) -> Unit,
     onMergeWith: (String) -> Unit,
     onReOcr: () -> Unit,
+    onStop: () -> Unit = {},
     onUpdateOcrText: (String, String) -> Unit,
     onOcrScript: (OcrScript) -> Unit,
     onExportIdCopy: () -> Unit,
@@ -392,6 +394,9 @@ internal fun DocumentDetailScreen(
     var translating by remember { mutableStateOf(false) }
 
     var renameOpen by remember { mutableStateOf(false) }
+    // The action waiting for "replace your corrections?" to be answered.
+    var reOcrConfirm by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var splitAllOpen by remember { mutableStateOf(false) }
     var tagsOpen by remember { mutableStateOf(false) }
     var folderOpen by remember { mutableStateOf(false) }
     var signatureOpen by remember { mutableStateOf(false) }
@@ -442,7 +447,7 @@ internal fun DocumentDetailScreen(
         onWithFreshPdf({}) { fresh ->
             if (!saveToGoogleDrive(context, fresh.pdfPath, "application/pdf", "$title.pdf")) {
                 android.widget.Toast.makeText(context, "Google Drive isn't installed. Choose where to save.", android.widget.Toast.LENGTH_SHORT).show()
-                savePdfLauncher.launch("$title.pdf")
+                savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(title)}.pdf")
             }
         }
     }
@@ -454,7 +459,7 @@ internal fun DocumentDetailScreen(
             onRename = onRename,
             onSharePdf = { title -> onWithFreshPdf({}) { sharePdf(context, it.copy(title = title)) } },
             onShareJpg = { shareImages(context, document) },
-            onSaveToDevice = { title -> savePdfLauncher.launch("$title.pdf") },
+            onSaveToDevice = { title -> savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(title)}.pdf") },
             onSaveToDrive = saveToDrive,
             onPrint = { title -> onWithFreshPdf({}) { printPdf(context, it.copy(title = title)) } },
             onDismiss = onDismissScanSaved
@@ -478,7 +483,7 @@ internal fun DocumentDetailScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopBarWithProgress(busy) { TopAppBar(
+            TopBarWithProgress(busy, onStop = onStop) { TopAppBar(
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { TitleWithStatus(document.title, if (busy) busyLabel else null) },
                 navigationIcon = {
@@ -719,7 +724,7 @@ internal fun DocumentDetailScreen(
                         TextButton(onClick = onExportOcrTextFile, enabled = !busy && document.ocrText.isNotBlank()) { Text("TXT file") }
                         TextButton(onClick = onExportWord, enabled = !busy && document.ocrText.isNotBlank()) { Text("Word file") }
                         TextButton(onClick = onExportExcel, enabled = !busy && document.ocrText.isNotBlank()) { Text("Excel file") }
-                        TextButton(onClick = onReOcr, enabled = !busy) { Text("Re-run OCR") }
+                        TextButton(onClick = { if (pages.any { it.ocrEdited }) reOcrConfirm = { onReOcr() } else onReOcr() }, enabled = !busy) { Text("Re-run OCR") }
                     }
 
                     SubHeader("OCR script")
@@ -728,7 +733,7 @@ internal fun DocumentDetailScreen(
                             FilterChip(
                                 selected = document.ocrScript == script,
                                 enabled = !busy,
-                                onClick = { onOcrScript(script) },
+                                onClick = { if (pages.any { it.ocrEdited } && document.ocrScript != script) reOcrConfirm = { onOcrScript(script) } else { onOcrScript(script) } },
                                 label = { Text(script.label) }
                             )
                         }
@@ -855,7 +860,25 @@ internal fun DocumentDetailScreen(
         }
     }
 
-    if (renameOpen) TextInputDialog("Rename document", document.title, "Name", onDismiss = { renameOpen = false }) { onRename(it); renameOpen = false }
+    if (renameOpen) TextInputDialog("Rename document", document.title, "Name", onDismiss = { renameOpen = false }) { onRename(it.take(120)); renameOpen = false }
+    reOcrConfirm?.let { action ->
+        ConfirmDialog(
+            title = "Replace corrected text?",
+            message = "Some pages have text you corrected by hand. Reading the pages again replaces it; Undo can bring it back afterwards.",
+            confirmLabel = "Read again",
+            onDismiss = { reOcrConfirm = null },
+            onConfirm = { reOcrConfirm = null; action() }
+        )
+    }
+    if (splitAllOpen) {
+        ConfirmDialog(
+            title = "Split into ${document.pageCount} documents?",
+            message = "Each page becomes its own document named \"${document.title} - 1\", \"${document.title} - 2\" and so on. This document is kept.",
+            confirmLabel = "Split",
+            onDismiss = { splitAllOpen = false },
+            onConfirm = { splitAllOpen = false; onSplitDocument() }
+        )
+    }
     if (tagsOpen) TextInputDialog("Document tags", document.tags.joinToString(", "), "Comma-separated tags", allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
     if (folderOpen) TextInputDialog("Move to folder", document.folderName, "Folder name", allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
     if (moreOpen) {
@@ -900,8 +923,8 @@ internal fun DocumentDetailScreen(
                     ToolTile(Icons.Default.Image, "Share JPG", !busy, run { shareImages(context, document) })
                     ToolTile(Icons.Default.Image, "Share PNG", !busy, run { onExportPng() })
                     ToolTile(Icons.AutoMirrored.Filled.OpenInNew, "Open PDF", !busy, run { onWithFreshPdf({}) { openPdf(context, it) } })
-                    ToolTile(Icons.Default.Save, "Save PDF", !busy, run { savePdfLauncher.launch("${document.title}.pdf") })
-                    ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy, run { saveToDrive(document.title) })
+                    ToolTile(Icons.Default.Save, "Save PDF", !busy, run { savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(document.title)}.pdf") })
+                    ToolTile(Icons.Default.AddToDrive, "Save to Drive", !busy, run { saveToDrive(com.example.scanpro.data.fileSafeName(document.title)) })
                     ToolTile(Icons.Default.Description, "Word (.docx)", !busy && document.ocrText.isNotBlank(), run { onExportWord() })
                     ToolTile(Icons.Default.TableChart, "Excel (.xlsx)", !busy && document.ocrText.isNotBlank(), run { onExportExcel() })
                     ToolTile(Icons.Default.Print, "Print", !busy, run { onWithFreshPdf({}) { printPdf(context, it) } })
@@ -917,7 +940,7 @@ internal fun DocumentDetailScreen(
                     })
                     ToolTile(Icons.Default.Layers, "Merge", !busy && otherDocuments.isNotEmpty(), run { mergeOpen = true })
                     ToolTile(Icons.Default.FileCopy, "Duplicate doc", !busy, run { onDuplicateDocument() })
-                    ToolTile(Icons.Default.ContentCut, "Split all", !busy && document.pageCount > 1, run { onSplitDocument() })
+                    ToolTile(Icons.Default.ContentCut, "Split all", !busy && document.pageCount > 1, run { splitAllOpen = true })
                 }
             }
         }

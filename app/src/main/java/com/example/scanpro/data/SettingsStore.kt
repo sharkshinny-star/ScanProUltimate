@@ -102,6 +102,24 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.scanProSettings.edit { it[keyDynamicColor] = value }
     }
 
+    private val keyLibrarySort = stringPreferencesKey("library_sort")
+    private val keyLibraryGrid = booleanPreferencesKey("library_grid")
+    private val keyTrashRetentionDays = intPreferencesKey("trash_retention_days")
+    private val keyDefaultOcrScript = stringPreferencesKey("default_ocr_script")
+
+    /** How the Files tab is sorted; a [com.example.scanpro.feature.library.LibrarySort] name. */
+    val librarySort: Flow<String> = preferences.map { it[keyLibrarySort] ?: "UPDATED" }
+    val libraryGrid: Flow<Boolean> = preferences.map { it[keyLibraryGrid] ?: true }
+    /** Days a deleted document waits in the recycle bin before it is removed for good. */
+    val trashRetentionDays: Flow<Int> = preferences.map { it[keyTrashRetentionDays] ?: DEFAULT_TRASH_RETENTION_DAYS }
+    /** The OCR script new documents are read with. */
+    val defaultOcrScript: Flow<OcrScript> = preferences.map { runCatching { OcrScript.valueOf(it[keyDefaultOcrScript].orEmpty()) }.getOrDefault(OcrScript.LATIN) }
+
+    suspend fun setLibrarySort(value: String) { context.scanProSettings.edit { it[keyLibrarySort] = value } }
+    suspend fun setLibraryGrid(value: Boolean) { context.scanProSettings.edit { it[keyLibraryGrid] = value } }
+    suspend fun setTrashRetentionDays(value: Int) { context.scanProSettings.edit { it[keyTrashRetentionDays] = value.coerceIn(1, 365) } }
+    suspend fun setDefaultOcrScript(value: OcrScript) { context.scanProSettings.edit { it[keyDefaultOcrScript] = value.name } }
+
     private val keyCompletedScans = intPreferencesKey("completed_scans")
     private val keyReviewRequested = booleanPreferencesKey("review_requested")
     private val keyFeedbackPromptShown = booleanPreferencesKey("feedback_prompt_shown")
@@ -125,3 +143,7 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.scanProSettings.edit { it[keyFeedbackPromptShown] = true }
     }
 }
+
+const val DEFAULT_TRASH_RETENTION_DAYS = 7
+/** The recycle-bin retention choices offered in Settings. */
+val TRASH_RETENTION_CHOICES = listOf(7, 14, 30)

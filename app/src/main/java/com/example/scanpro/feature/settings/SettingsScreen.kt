@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Title
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -101,7 +102,13 @@ fun SettingsRoute(
     val documentCount by viewModel.documentCount.collectAsStateWithLifecycle()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
+    val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
+    val defaultOcrScript by viewModel.defaultOcrScript.collectAsStateWithLifecycle()
     SettingsScreen(
+        trashRetentionDays = trashRetentionDays,
+        defaultOcrScript = defaultOcrScript,
+        onTrashRetentionChange = viewModel::setTrashRetentionDays,
+        onDefaultOcrScriptChange = viewModel::setDefaultOcrScript,
         pdfQuality = pdfQuality,
         autoTitle = autoTitle,
         appLock = appLock,
@@ -139,6 +146,10 @@ fun SettingsScreen(
     onThemeModeChange: (ThemeMode) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit = {},
     onRestoreBackup: (android.net.Uri, String) -> Unit = { _, _ -> },
+    trashRetentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS,
+    defaultOcrScript: com.example.scanpro.data.OcrScript = com.example.scanpro.data.OcrScript.LATIN,
+    onTrashRetentionChange: (Int) -> Unit = {},
+    onDefaultOcrScriptChange: (com.example.scanpro.data.OcrScript) -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -269,6 +280,52 @@ fun SettingsScreen(
                         subtitle = "Name new scans from the text they contain",
                         trailing = { Switch(checked = autoTitle, onCheckedChange = onAutoTitleChange) },
                         onClick = { onAutoTitleChange(!autoTitle) }
+                    )
+                    InsetDivider()
+                    var scriptMenuOpen by remember { mutableStateOf(false) }
+                    SettingsRow(
+                        icon = Icons.Rounded.Translate,
+                        tone = TileTone.Violet,
+                        title = "Text recognition language",
+                        subtitle = "New scans are read as ${defaultOcrScript.label}; change it per document on its page",
+                        trailing = {
+                            Box {
+                                Text(defaultOcrScript.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                androidx.compose.material3.DropdownMenu(expanded = scriptMenuOpen, onDismissRequest = { scriptMenuOpen = false }) {
+                                    com.example.scanpro.data.OcrScript.entries.forEach { script ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(script.label) },
+                                            onClick = { scriptMenuOpen = false; onDefaultOcrScriptChange(script) }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { scriptMenuOpen = true }
+                    )
+                }
+
+                SettingsSection("Recycle bin") {
+                    var retentionMenuOpen by remember { mutableStateOf(false) }
+                    SettingsRow(
+                        icon = Icons.Rounded.Delete,
+                        tone = TileTone.Slate,
+                        title = "Keep deleted documents for",
+                        subtitle = "Then they are removed for good",
+                        trailing = {
+                            Box {
+                                Text("$trashRetentionDays days", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                androidx.compose.material3.DropdownMenu(expanded = retentionMenuOpen, onDismissRequest = { retentionMenuOpen = false }) {
+                                    com.example.scanpro.data.TRASH_RETENTION_CHOICES.forEach { days ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text("$days days") },
+                                            onClick = { retentionMenuOpen = false; onTrashRetentionChange(days) }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { retentionMenuOpen = true }
                     )
                 }
 

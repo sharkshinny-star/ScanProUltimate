@@ -46,4 +46,8 @@ class SettingsViewModel @Inject constructor(
     fun setAutoTitle(value: Boolean) { viewModelScope.launch { settings.setAutoTitle(value) } }
     fun setThemeMode(value: ThemeMode) { viewModelScope.launch { settings.setThemeMode(value) } }
     fun setDynamicColor(value: Boolean) { viewModelScope.launch { settings.setDynamicColor(value) } }
+    val trashRetentionDays = settings.trashRetentionDays.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS)
+    val defaultOcrScript = settings.defaultOcrScript.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.example.scanpro.data.OcrScript.LATIN)
+    fun setTrashRetentionDays(value: Int) { viewModelScope.launch { settings.setTrashRetentionDays(value) } }
+    fun setDefaultOcrScript(value: com.example.scanpro.data.OcrScript) { viewModelScope.launch { settings.setDefaultOcrScript(value) } }
 }

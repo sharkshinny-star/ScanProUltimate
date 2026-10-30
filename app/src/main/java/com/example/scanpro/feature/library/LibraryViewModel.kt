@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Backs the Home, Files and Search tabs. Each tab gets its own instance, so queries don't leak between them. */
@@ -29,8 +30,34 @@ import kotlinx.coroutines.withContext
 class LibraryViewModel @Inject constructor(
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
-    private val library: DocumentLibrary
+    private val library: DocumentLibrary,
+    private val settings: com.example.scanpro.data.SettingsStore
 ) : ViewModel() {
+    /** Sort and layout of the Files tab, kept across restarts. */
+    val librarySort: StateFlow<String> = settings.librarySort.stateIn(viewModelScope, SharingStarted.Eagerly, "UPDATED")
+    val libraryGrid: StateFlow<Boolean> = settings.libraryGrid.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+    fun setLibrarySort(value: String) { viewModelScope.launch { settings.setLibrarySort(value) } }
+    fun setLibraryGrid(value: Boolean) { viewModelScope.launch { settings.setLibraryGrid(value) } }
+
+    fun stopCurrent() = operations.cancelCurrent()
+
+    /** Moves the selected documents into [folder] (blank for the top level). False when the app was busy. */
+    fun moveToFolder(ids: Set<String>, folder: String): Boolean = operations.run(
+        "Moving ${ids.size} ${if (ids.size == 1) "document" else "documents"}…",
+        if (folder.isBlank()) "Moved out of the folder" else "Moved to \"${folder.trim()}\""
+    ) { ids.forEach { repository.setFolder(it, folder) } }
+
+    fun setFavorite(ids: Set<String>, favorite: Boolean): Boolean = operations.run(null, if (favorite) "Added to favourites" else "Removed from favourites") {
+        val current = library.documents.value.associateBy { it.id }
+        ids.forEach { id -> if (current[id]?.isFavorite != favorite) repository.toggleFavorite(id) }
+    }
+
+    /** Takes every document out of the folder; the folder is gone once it holds nothing. */
+    fun deleteFolder(name: String): Boolean = operations.run("Removing folder…", "Folder removed; its documents are back at the top level") {
+        repository.deleteFolder(name)
+    }
+
+    suspend fun folderExists(name: String): Boolean = repository.folderExists(name)
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 

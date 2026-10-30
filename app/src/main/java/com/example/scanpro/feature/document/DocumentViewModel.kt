@@ -70,7 +70,11 @@ class DocumentViewModel @Inject constructor(
     private fun run(label: String?, successMessage: String?, action: suspend () -> Unit) =
         operations.run(label, successMessage, action)
 
-    fun rename(title: String) = run(null, null) { repository.rename(id, title) }
+    fun rename(title: String) = run(null, null) {
+        if (repository.rename(id, title)) operations.showMessage("Renamed. Another document has the same name.")
+    }
+
+    fun stopCurrent() = operations.cancelCurrent()
     fun setTags(tags: String) = run(null, "Tags updated") { repository.setTags(id, tags) }
     fun setFolder(folder: String) = run(null, "Folder updated") { repository.setFolder(id, folder) }
     fun toggleFavorite() = run(null, null) { repository.toggleFavorite(id) }
@@ -201,10 +205,15 @@ class DocumentViewModel @Inject constructor(
     fun updatePageOcrText(pageId: String, text: String) =
         run("Updating OCR text and searchable PDF…", "OCR text updated") { repository.updatePageOcrText(id, pageId, text) }
 
-    fun reOcr() = run("Refreshing OCR on every page…", "OCR refreshed") { repository.reOcrDocument(id) }
+    fun reOcr() = run("Refreshing OCR on every page…", null) { reportOcr(repository.reOcrDocument(id), "OCR refreshed") }
 
     fun reOcr(script: OcrScript) =
-        run("Running ${script.label} OCR on every page…", "${script.label} OCR applied") { repository.reOcrDocument(id, script) }
+        run("Running ${script.label} OCR on every page…", null) { reportOcr(repository.reOcrDocument(id, script), "${script.label} OCR applied") }
+
+    private fun reportOcr(failed: Int, success: String) {
+        val total = document.value?.pages?.size ?: 0
+        operations.showMessage(if (failed == 0) success else "Text read on ${total - failed} of $total pages; the rest kept their old text")
+    }
 
     fun splitDocument() = run("Splitting document into individual page documents…", null) {
         val count = repository.splitIntoPageDocuments(id)

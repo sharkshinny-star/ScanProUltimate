@@ -71,6 +71,15 @@ class OperationRunner @Inject constructor(
     fun clearScanSaved(id: String) { _scanSaved.compareAndSet(id, null) }
 
     private val mutex = Mutex()
+    @Volatile private var current: kotlinx.coroutines.Job? = null
+
+    /**
+     * Stops the operation that is running now. Operations that loop over pages check for cancellation
+     * between pages; the document is left as it was before the operation.
+     */
+    fun cancelCurrent() {
+        current?.cancel()
+    }
     // Guards the pending count together with the busy flags: start() runs on Main and the finish runs
     // on a background thread, and without one lock a finishing job could clear busy just after a
     // new job set it.
@@ -145,9 +154,17 @@ class OperationRunner @Inject constructor(
             try {
                 mutex.withLock {
                     synchronized(stateLock) { _busyLabel.value = label }
-                    runCatching { action() }
-                        .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
-                        .onFailure { error -> _message.value = UiMessage(error.message ?: "Something went wrong") }
+                    current = coroutineContext[kotlinx.coroutines.Job]
+                    try {
+                        action()
+                        if (successMessage != null) _message.value = UiMessage(successMessage)
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        _message.value = UiMessage("Stopped")
+                    } catch (error: Throwable) {
+                        _message.value = UiMessage(error.message ?: "Something went wrong")
+                    } finally {
+                        current = null
+                    }
                     runCatching { library.refresh() }
                 }
             } finally {
