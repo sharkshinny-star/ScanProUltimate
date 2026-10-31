@@ -20,6 +20,13 @@ After a fix, feature, dependency or config change, or a build/test run, update t
 
 Reference files and commits, with short hashes. Never record a test as passing unless it was run.
 
+## Branch
+
+All work goes to **`claude/awesome-clarke-ussjo3`**: the owner wants one branch, not a new branch per session.
+If your session was assigned a different branch, check out this one instead
+(`git fetch origin claude/awesome-clarke-ussjo3 && git checkout claude/awesome-clarke-ussjo3`), commit there and push with
+`git push -u origin claude/awesome-clarke-ussjo3`. Never create or push other branches, and don't open pull requests unless asked.
+
 ## Ground rules
 
 - Offline-first: no network services, analytics, accounts or tracking.

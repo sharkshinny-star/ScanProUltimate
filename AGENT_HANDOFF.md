@@ -73,7 +73,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 - Never silently delete user data; don't weaken security for convenience; don't remove features without a reason.
 - Document architectural, destructive-migration, feature-removal and security-sensitive changes before making them.
 - Don't expose signing credentials.
-- Push only to `claude/awesome-clarke-ussjo3`; don't open a pull request unless asked.
+- Push only to `claude/awesome-clarke-ussjo3`, even if the session was assigned another branch (see `CLAUDE.md`); don't open a pull request unless asked.
 
 ## 6. Session environment notes
 
