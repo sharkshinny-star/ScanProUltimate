@@ -1360,7 +1360,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(id)
         if (doc.hasCurrentPdf()) return@synchronized doc
         val size = writePdf(doc)
-        // Only the size column changes. Writing the whole row would undo a rename, favorite or trash
+        // Only the size column changes. Writing the whole row would undo a rename, favourite or trash
         // made while this rebuild ran, and a deferred rebuild keeps the document's place in Recent.
         db.updateSize(doc.id, size)
         doc.copy(sizeBytes = size)

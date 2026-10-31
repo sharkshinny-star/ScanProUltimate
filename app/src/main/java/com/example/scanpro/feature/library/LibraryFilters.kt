@@ -5,7 +5,7 @@ import com.example.scanpro.data.LibrarySort
 
 /**
  * Applies the Files filters to an in-memory list, with the same meaning the paged database query gives them:
- * a folder matches ignoring case and surrounding spaces, "favorites only" keeps starred documents, and the
+ * a folder matches ignoring case and surrounding spaces, "favourites only" keeps starred documents, and the
  * sort orders the rest. Used for search results, which are a small list rather than a paged query.
  */
 internal fun List<DocumentSummary>.filteredAndSorted(folder: String, favoritesOnly: Boolean, sort: LibrarySort): List<DocumentSummary> {

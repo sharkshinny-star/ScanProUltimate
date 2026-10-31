@@ -1226,7 +1226,7 @@ private fun PdfPageOrganizerSheet(
     onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit
 ) {
     val context = LocalContext.current
-    // Extract starts with nothing chosen; Organize starts with every page kept (untick to delete one).
+    // Extract starts with nothing chosen; Organise starts with every page kept (untick to delete one).
     val defaultSelected = mode != "extract"
     // Page order, rotations and selections survive rotation and window changes; thumbnails are re-rendered on demand.
     val pages = rememberSaveable(
@@ -1339,7 +1339,7 @@ private fun PdfPageOrganizerSheet(
                     }
                     Button(
                         onClick = {
-                            // Organize drops the pages that were unticked; Rotate keeps every page.
+                            // Organise drops the pages that were unticked; Rotate keeps every page.
                             val specs = pages.filter { mode == "rotate" || it.selected }.map { PageSpec(it.index, it.rotation) }
                             val extracted = pages.filter { it.selected }.map { it.index }
                             val rotations = pages.associate { it.index to it.rotation }
@@ -1407,7 +1407,7 @@ private fun PdfPageOrganizerSheet(
     }
 }
 
-/** One page in the organizer. Its thumbnail is rendered only while the card is on screen. */
+/** One page in the organiser. Its thumbnail is rendered only while the card is on screen. */
 @Composable
 private fun OrganizerPageCard(
     item: ThumbnailPageModel,

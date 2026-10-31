@@ -31,8 +31,8 @@ The core product is **offline-first**: camera analysis, perspective correction, 
 - crop undo / redo / reset
 - perspective correction
 - 90° rotation
-- Original, Auto Clean, Magic Color, Gray, adaptive B&W, Whiteboard filters
-- OpenCV illumination normalization for uneven paper lighting
+- Original, Auto Clean, Magic Colour, Grey, adaptive B&W, Whiteboard filters
+- OpenCV illumination normalisation for uneven paper lighting
 - CLAHE local contrast enhancement
 - edge-preserving denoise
 - restrained unsharp sharpening
@@ -86,7 +86,7 @@ Features include:
 
 - asynchronous on-device OCR
 - per-document OCR script selection and re-indexing
-- editable recognized text
+- editable recognised text
 - copy / share / TXT export
 - smart OCR-derived titles
 - Room FTS-backed OCR search
@@ -113,7 +113,7 @@ The built-in assistant is deliberately deterministic and source-grounded. It doe
 - sort by name / size / date
 - folders and folder renaming
 - tags
-- favorites
+- favourites
 - metadata and file sizes
 - OCR full-text search
 - multi-select
@@ -249,13 +249,13 @@ This generation environment has Kotlin/JVM but **does not have Android SDK, Grad
 - static source consistency checks were executed
 - a full Android Gradle build was **not** executed here
 - APK/AAB was **not** produced here
-- CameraX/OpenCV behavior was **not** claimed as device-tested
+- CameraX/OpenCV behaviour was **not** claimed as device-tested
 
 See `BUILD_STATUS.md` for the exact status and first-device test plan.
 
 ## Product direction derived from current market research
 
-CamScanner's current Play listing still centers on scanning/enhancement, OCR, sync, ID/book modes, e-signatures, collaboration, and cloud features. Recent public reviews also repeatedly criticize aggressive ads, subscription friction, and previously free features moving behind paywalls. ScanPro is therefore designed around a simpler privacy-first core with no forced account and no ad dependency in the codebase.
+CamScanner's current Play listing still centres on scanning/enhancement, OCR, sync, ID/book modes, e-signatures, collaboration, and cloud features. Recent public reviews also repeatedly criticise aggressive ads, subscription friction, and previously free features moving behind paywalls. ScanPro is therefore designed around a simpler privacy-first core with no forced account and no ad dependency in the codebase.
 
 ## Intellectual property
 

@@ -24,7 +24,7 @@ object BusinessCardParser {
     private val phoneRegex = Regex("(?<![\\d])\\+?\\(?\\d[\\d ()./-]{6,}\\d(?![\\d])")
     private val webRegex = Regex("(?i)\\b(?:https?://)?(?:www\\.)?[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:com|in|net|org|io|co|biz|info|ai|app|dev|uk|us|de|ae|sg|au|ca)(?:/[^\\s]*)?\\b")
     // A label is a whole word followed by ":" or "." ("Mob:", "Tel.") or by a space and then a number; a single
-    // letter only counts with ":" or "." ("M: …"). Otherwise "Mark Taylor" would lose its "M".
+    // letter only counts with ":" or "." ("M: …"). Otherwise, "Mark Taylor" would lose its "M".
     private val labelRegex = Regex(
         "(?i)^(?:(?:tel|ph|phone|mob|mobile|cell|fax|off|office|email|e-mail|web|website)\\b\\s*(?:[.:]\\s*|(?=[+(\\d]))|[mtewpf]\\s*[.:]\\s*)"
     )

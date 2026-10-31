@@ -2,9 +2,9 @@
 <resources>
     <!-- Screen-reader only text (content descriptions and state descriptions); never shown on screen. -->
 
-    <!-- Document screen: state of the favorite toggle in the app bar -->
-    <string name="a11y_favorite_on">In favorites</string>
-    <string name="a11y_favorite_off">Not in favorites</string>
+    <!-- Document screen: state of the favourite toggle in the app bar -->
+    <string name="a11y_favorite_on">In favourites</string>
+    <string name="a11y_favorite_off">Not in favourites</string>
 
     <!-- Editing dialogs: the page image under crop handles, eraser strokes, mark-up boxes or the book-split line -->
     <string name="a11y_page_preview">Page preview</string>

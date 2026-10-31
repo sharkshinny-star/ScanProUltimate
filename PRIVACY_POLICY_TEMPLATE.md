@@ -19,13 +19,13 @@ Imported files and captured pages are processed for features such as cropping, p
 
 ## 3. On-device OCR and document features
 
-Supported OCR is performed on the device using Google ML Kit text-recognition components. Recognized text can be stored locally so that you can search documents, edit OCR text, export text, and create searchable PDFs.
+Supported OCR is performed on the device using Google ML Kit text-recognition components. Recognised text can be stored locally so that you can search documents, edit OCR text, export text, and create searchable PDFs.
 
-The app also includes deterministic offline document-insight features that can classify common document types and extract or summarize information already present in recognized text. These offline features are not a substitute for professional, legal, financial, or medical review and may contain recognition/extraction errors.
+The app also includes deterministic offline document-insight features that can classify common document types and extract or summarise information already present in recognised text. These offline features are not a substitute for professional, legal, financial, or medical review and may contain recognition/extraction errors.
 
 ## 4. Translation models
 
-If you use the optional translation feature, Google ML Kit may download the language model needed for translation. Translation then runs on the device. Network/model-download behavior is governed in part by the platform/library provider. Do not state that the application is completely network-free if this feature or other online dependencies remain enabled in the shipping build.
+If you use the optional translation feature, Google ML Kit may download the language model needed for translation. Translation then runs on the device. Network/model-download behaviour is governed in part by the platform/library provider. Do not state that the application is completely network-free if this feature or other online dependencies remain enabled in the shipping build.
 
 ## 5. Google document-scanner fallback
 

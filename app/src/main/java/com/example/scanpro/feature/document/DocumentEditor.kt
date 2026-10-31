@@ -5,6 +5,7 @@ import com.example.scanpro.R
 import com.example.scanpro.core.di.ApplicationScope
 import com.example.scanpro.core.operations.EditJournal
 import com.example.scanpro.core.operations.OperationRunner
+import com.example.scanpro.core.operations.OperationSkipped
 import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DocumentRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -70,14 +72,18 @@ class DocumentEditor @Inject constructor(
     private fun queue(documentId: String, edit: DocumentEdit, seq: () -> Long?) {
         val (label, success) = messages(edit)
         operations.run(label, success) {
-            // Same thread as the write, so this waits for the record to exist.
-            val number = withContext(journalThread) { seq()?.also { runCatching { journal.markStarted(it) } } }
+            // Same thread as the write, so this waits for the record to exist. NonCancellable: a Stop that lands
+            // here must not leave the record unmarked or, in finally, undeleted (it would be reported as interrupted).
+            var number: Long? = null
             try {
+                withContext(NonCancellable + journalThread) { number = seq()?.also { runCatching { journal.markStarted(it) } } }
                 // A document removed meanwhile (or before a restart) has nothing left to edit.
-                if (repository.loadDocument(documentId) == null) return@run
+                if (repository.loadDocument(documentId) == null) {
+                    throw OperationSkipped(context.getString(R.string.edits_msg_document_gone))
+                }
                 execute(documentId, edit)
             } finally {
-                if (number != null) withContext(journalThread) { runCatching { journal.remove(number) } }
+                number?.let { n -> withContext(NonCancellable + journalThread) { runCatching { journal.remove(n) } } }
             }
         }
     }

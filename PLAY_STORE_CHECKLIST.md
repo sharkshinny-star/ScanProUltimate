@@ -29,10 +29,10 @@ Current intended permissions are deliberately narrow. Re-check the merged releas
 - [ ] Gallery import uses Android Photo Picker/SAF instead of broad storage access.
 - [ ] File sharing uses `FileProvider`/content URIs with temporary grants.
 - [ ] App-private documents are not silently uploaded.
-- [ ] Translation model downloads and Google document-scanner fallback behavior are accurately disclosed in the privacy policy if shipped.
+- [ ] Translation model downloads and Google document-scanner fallback behaviour are accurately disclosed in the privacy policy if shipped.
 - [ ] Data Safety form matches the exact production build and any analytics/crash SDKs you add later.
 - [ ] Host the final privacy policy at a public HTTPS URL and link it in Play Console and the app where required.
-- [ ] Review encrypted `.scanpro` backup behavior and warn users that losing the password means losing access to that backup.
+- [ ] Review encrypted `.scanpro` backup behaviour and warn users that losing the password means losing access to that backup.
 
 ## 4. Scanner quality acceptance
 
@@ -45,7 +45,7 @@ Current intended permissions are deliberately narrow. Re-check the merged releas
 - [ ] Dark desk, light desk, patterned background, and low-contrast document edges.
 - [ ] Hard shadows, uneven lighting, glare, and low-light capture.
 - [ ] Motion blur and intentionally out-of-focus frames.
-- [ ] 1, 10, 50, and 100-page sessions for memory pressure and crash behavior.
+- [ ] 1, 10, 50, and 100-page sessions for memory pressure and crash behaviour.
 - [ ] Manual crop remains usable when automatic edge confidence is weak.
 - [ ] Auto-capture does not repeatedly fire while the page is moving.
 
@@ -59,7 +59,7 @@ See `SCAN_QUALITY_TEST_PLAN.md` for measurable acceptance criteria.
 - [ ] Search returns filename, tag/folder, and OCR-text matches as intended.
 - [ ] Correct OCR text manually, save it, then confirm search uses the correction.
 - [ ] Searchable PDF text is selectable/searchable in at least two external PDF viewers.
-- [ ] Offline document insights never invent facts outside recognized OCR text.
+- [ ] Offline document insights never invent facts outside recognised OCR text.
 - [ ] Translation clearly communicates that a model may need downloading and results may contain errors.
 
 ## 6. PDF/document workflows
@@ -78,7 +78,7 @@ See `SCAN_QUALITY_TEST_PLAN.md` for measurable acceptance criteria.
 ## 7. Library lifecycle and resilience
 
 - [ ] Create/rename folders; move documents between folders.
-- [ ] Favorites, tags, sorting, grid/list, multi-select, bulk share/delete.
+- [ ] Favourites, tags, sorting, grid/list, multi-select, bulk share/delete.
 - [ ] Trash restore, permanent delete, empty trash, and 30-day cleanup.
 - [ ] Kill/relaunch during OCR/export and confirm documents remain consistent.
 - [ ] Simulate low storage; fail safely without corrupting the original scan.
@@ -102,7 +102,7 @@ See `SCAN_QUALITY_TEST_PLAN.md` for measurable acceptance criteria.
 - [ ] 60 Hz interaction remains smooth; verify 90/120 Hz devices where available.
 - [ ] TalkBack traversal and labels make core actions understandable.
 - [ ] Test font scales 1.0, 1.3, 1.5, and 2.0; no clipped critical controls.
-- [ ] Verify touch targets, color contrast, dark theme, and dynamic color.
+- [ ] Verify touch targets, colour contrast, dark theme, and dynamic colour.
 
 ## 10. Automated/release checks
 
@@ -111,7 +111,7 @@ See `SCAN_QUALITY_TEST_PLAN.md` for measurable acceptance criteria.
 - [ ] `./gradlew assembleDebug`
 - [ ] `./gradlew connectedAndroidTest` on an emulator/device matrix.
 - [ ] `./gradlew bundleRelease`
-- [ ] Inspect release AAB/APK with APK Analyzer for size, permissions, native ABIs, and unexpected SDKs.
+- [ ] Inspect release AAB/APK with APK Analyser for size, permissions, native ABIs, and unexpected SDKs.
 - [ ] Run Play Console pre-launch report and address crashes/ANRs/accessibility findings.
 - [ ] Review Play Integrity/abuse controls only if future server-backed paid features require them.
 

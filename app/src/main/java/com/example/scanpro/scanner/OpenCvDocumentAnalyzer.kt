@@ -103,7 +103,7 @@ class OpenCvDocumentAnalyzer(
                 gray.release()
             }
         } catch (_: Throwable) {
-            // Analyzer failures should never kill the camera pipeline.
+            // Analyser failures should never kill the camera pipeline.
         } finally {
             image.close()
         }

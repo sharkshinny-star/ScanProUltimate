@@ -332,7 +332,7 @@ class DocumentDatabase @Inject constructor(
 
     fun loadDocument(id: String): ScanDocument? = dao.loadDocument(id)?.let(::hydrate)
 
-    /** Saves document-level fields only (title, tags, folder, favorite, mode, trash state); pages and PDF size are untouched. */
+    /** Saves document-level fields only (title, tags, folder, favourite, mode, trash state); pages and PDF size are untouched. */
     fun saveDocumentMetadata(document: ScanDocument) {
         val entity = document.toEntity()
         dao.updateMetadata(

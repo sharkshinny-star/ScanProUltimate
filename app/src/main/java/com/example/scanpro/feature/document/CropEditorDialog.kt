@@ -29,8 +29,8 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
-import androidx.compose.material.icons.filled.RotateLeft
-import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.Rotate90DegreesCcw
+import androidx.compose.material.icons.filled.Rotate90DegreesCw
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -80,11 +80,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.hypot
 
-/** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would). */
-@Suppress("DEPRECATION")
-private val RotateLeftIcon: ImageVector = Icons.Filled.RotateLeft
-@Suppress("DEPRECATION")
-private val RotateRightIcon: ImageVector = Icons.Filled.RotateRight
+/** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would); the 90° icons never flip and aren't deprecated. */
+private val RotateLeftIcon: ImageVector = Icons.Filled.Rotate90DegreesCcw
+private val RotateRightIcon: ImageVector = Icons.Filled.Rotate90DegreesCw
 
 @Composable
 fun CropEditorDialog(
@@ -146,7 +144,7 @@ fun CropEditorDialog(
                 }
             }
 
-            // Center Viewport with Document Canvas
+            // Centre Viewport with Document Canvas
             Box(
                 modifier = Modifier
                     .fillMaxSize()

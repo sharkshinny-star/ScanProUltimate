@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-10-31, after the "localize remaining strings" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-10-31, after the "localise remaining strings" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -46,14 +46,14 @@ The primary scanner is `scanner/CameraScannerScreen.kt`.
 ### Live path
 
 1. CameraX binds `Preview`, `ImageCapture`, and `ImageAnalysis` to the lifecycle.
-2. Analyzer receives YUV frames and extracts the Y plane into a grayscale OpenCV `Mat`.
+2. Analyser receives YUV frames and extracts the Y plane into a greyscale OpenCV `Mat`.
 3. Frames are rotated into display orientation.
 4. `DocumentEdgeDetector` bounds analysis to a long side of roughly 900 px.
 5. Gaussian smoothing + adaptive Canny + morphology produce edge candidates.
 6. Contours are approximated to convex quadrilaterals.
 7. Candidates are scored by area, rectangularity, and opposite-edge balance.
 8. Brightness and Laplacian variance supply low-light / blur guidance.
-9. The stability tracker compares normalized corners over successive frames.
+9. The stability tracker compares normalised corners over successive frames.
 10. A stable, high-enough-confidence document can auto-capture.
 
 ### Final capture path
@@ -64,7 +64,7 @@ This two-stage design keeps preview analysis fast while protecting final scan qu
 
 ## 3. Manual crop
 
-`CropEditorDialog.kt` stores four normalized corners. The editor includes:
+`CropEditorDialog.kt` stores four normalised corners. The editor includes:
 
 - draggable handles
 - a magnified loupe while dragging
@@ -72,7 +72,7 @@ This two-stage design keeps preview analysis fast while protecting final scan qu
 - undo / redo
 - perspective correction on commit
 
-Normalized coordinates allow the crop to survive preview-size changes and be reapplied to the retained source.
+Normalised coordinates allow the crop to survive preview-size changes and be reapplied to the retained source.
 
 ## 4. Non-destructive page model
 
@@ -99,12 +99,12 @@ Auto enhancement uses:
 
 - LAB luminance separation
 - large-radius illumination estimation to suppress shadows
-- luminance normalization
+- luminance normalisation
 - CLAHE
 - bilateral filtering
 - restrained unsharp masking
 
-Additional modes include enhanced grayscale, local adaptive B&W thresholding, and whiteboard cleanup. Manual tonal controls use a bounded color matrix after the named filter.
+Additional modes include enhanced greyscale, local adaptive B&W thresholding, and whiteboard cleanup. Manual tonal controls use a bounded colour matrix after the named filter.
 
 The adjustment dialog runs the same pipeline at a limited preview resolution and only applies full-resolution processing after confirmation.
 
@@ -128,7 +128,7 @@ The current searchable PDF implementation provides a page text layer for searcha
 
 ## 8. Markup
 
-Annotations are stored as normalized page objects rather than immediately overwriting the source:
+Annotations are stored as normalised page objects rather than immediately overwriting the source:
 
 - text
 - highlight
@@ -164,7 +164,7 @@ Security controls:
 - PDF password protection
 - encrypted `.scanpro` backups using AES-GCM
 - PBKDF2-HMAC-SHA256 password derivation, 210k iterations, random salt and IV
-- ZIP-slip/path traversal defense during backup restore
+- ZIP-slip/path traversal defence during backup restore
 - Android cloud backup disabled for private scan files
 
 A biometric UI gate should not be marketed as full at-rest encryption of every live library file. The encrypted portable-backup path is cryptographic; the main library relies on Android app-private storage unless a future per-document vault is added.
@@ -221,7 +221,7 @@ document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCa
 - **Trimmed OpenCV** built from unmodified upstream sources; don't edit the generated Java wrappers.
 - **BouncyCastle constraint** overrides PDFBox's vulnerable 1.72.
 - **targetSdk 37** (Android 17): no orientation or aspect-ratio locks, no reflection on platform internals, no background `IntentSender` launches; app lock relies on `FLAG_SECURE`, which also blocks Content Capture.
-- **Localized errors:** user-visible errors are `core/text/UserFacingException` (an `IllegalArgumentException`) carrying a string
+- **Localised errors:** user-visible errors are `core/text/UserFacingException` (an `IllegalArgumentException`) carrying a string
   resource; `message` resolves through `AppStrings` (application context, set in `ScanProApplication.onCreate`) each time it is
   read, so engines without a Context can throw translated errors and existing `error.message` call sites need no change.
 - **Shared IDE settings** (`.idea/scopes`, `.idea/inspectionProfiles`, `.idea/dictionaries`) are committed; the rest of `.idea/` stays ignored.

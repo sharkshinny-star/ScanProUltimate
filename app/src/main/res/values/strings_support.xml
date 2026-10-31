@@ -35,7 +35,7 @@
     <string name="export_err_long_image_encode">Couldn\'t save the long image</string>
 
     <!-- Document assistant (answers come from the page text only). -->
-    <string name="assistant_ask_specific">Ask a specific question about the recognized text.</string>
+    <string name="assistant_ask_specific">Ask a specific question about the recognised text.</string>
     <string name="assistant_no_match">I couldn\'t find a matching passage in the text.</string>
 
     <string name="print_err_failed">Couldn\'t print the PDF</string>

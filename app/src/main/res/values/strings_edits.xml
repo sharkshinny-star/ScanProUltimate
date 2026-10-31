@@ -5,4 +5,6 @@
         <item quantity="one">An edit was interrupted when ScanPro closed. Check the document and redo it if needed.</item>
         <item quantity="other">%1$d edits were interrupted when ScanPro closed. Check your documents and redo them if needed.</item>
     </plurals>
+    <!-- Shown instead of the edit's success message when its document was deleted before the edit's turn came. -->
+    <string name="edits_msg_document_gone">An edit was skipped because its document was deleted.</string>
 </resources>

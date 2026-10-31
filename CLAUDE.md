@@ -39,6 +39,9 @@ If your session was assigned a different branch, check out this one instead
 
 ## Ground rules
 
+- British English spelling in UI text, comments and docs (colour, centre, grey, organise, favourite, cancelled); never rename
+  code identifiers, APIs or resource names for spelling.
+
 - Offline-first: no network services, analytics, accounts or tracking.
 - Never silently delete user data or weaken security; document security-sensitive or architectural changes before making them.
 - Don't edit the generated OpenCV Java wrappers in `:opencv`.

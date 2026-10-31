@@ -3,7 +3,7 @@
     <string name="doc_unavailable">Document is unavailable</string>
     <string name="doc_could_not_save_pdf">Could not save PDF</string>
     <string name="doc_drive_not_installed">Google Drive isn\'t installed. Choose where to save.</string>
-    <string name="doc_favorite">Favorite</string>
+    <string name="doc_favorite">Favourite</string>
     <string name="doc_more_options">More options</string>
     <string name="doc_move_to_folder">Move to folder</string>
     <string name="doc_tags">Tags</string>
@@ -28,10 +28,10 @@
 
     <!-- Document screen: Text tab -->
     <string name="doc_page_n">Page %1$d</string>
-    <string name="doc_recognized_text">Recognized text</string>
-    <string name="doc_edit_recognized_text">Edit recognized text</string>
+    <string name="doc_recognized_text">Recognised text</string>
+    <string name="doc_edit_recognized_text">Edit recognised text</string>
     <string name="doc_copy_text">Copy text</string>
-    <string name="doc_no_text_recognized">No text recognized on this page.</string>
+    <string name="doc_no_text_recognized">No text recognised on this page.</string>
     <string name="doc_no_page_selected">No page selected.</string>
     <string name="doc_share_text">Share text</string>
     <string name="doc_txt_file">TXT file</string>
@@ -67,7 +67,7 @@
     <string name="doc_page_size">Page size</string>
     <string name="doc_document_mode">Document mode</string>
     <string name="doc_searchable_pdf">Searchable PDF</string>
-    <string name="doc_searchable_pdf_hint">Embed recognized text so the PDF can be searched.</string>
+    <string name="doc_searchable_pdf_hint">Embed recognised text so the PDF can be searched.</string>
     <string name="doc_page_numbers">Page numbers</string>
     <string name="doc_page_numbers_hint">Print page x / total at the bottom of each page.</string>
 

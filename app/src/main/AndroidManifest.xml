@@ -73,7 +73,7 @@
             android:foregroundServiceType="dataSync" />
 
         <!-- Custom Hilt WorkerFactory configuration requires WorkManager's default
-             AndroidX Startup initializer to be removed. -->
+             AndroidX Startup initialiser to be removed. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

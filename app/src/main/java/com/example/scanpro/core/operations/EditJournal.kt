@@ -25,8 +25,15 @@ class EditJournal(private val dir: File) {
         val seq = sequence.incrementAndGet()
         dir.mkdirs()
         val tmp = File(dir, "$seq.tmp")
-        tmp.writeText(payload.toString())
-        tmp.renameTo(File(dir, "$seq$QUEUED"))
+        // Synced before the rename, so a power cut can't leave a record whose name exists but whose content doesn't.
+        java.io.FileOutputStream(tmp).use { out ->
+            out.write(payload.toString().toByteArray(Charsets.UTF_8))
+            out.fd.sync()
+        }
+        if (!tmp.renameTo(File(dir, "$seq$QUEUED"))) {
+            tmp.delete()
+            throw java.io.IOException("Could not record edit $seq")
+        }
         return seq
     }
 

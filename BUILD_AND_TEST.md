@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after the "gallery pick message" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after the "edit queue, kept-scan, inspection report" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,13 +40,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-10-31, "gallery pick message" commit)
+## Latest results (2026-10-31, "edit queue, kept-scan, inspection report" commit)
 
 | Check | Result |
 |---|---|
 | `:app:compileDebugKotlin`, `:translate:compileDebugKotlin` | Passed, 0 warnings |
-| `:app:testDebugUnitTest` | 154 tests: 152 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
-| `:app:lintDebug` | 0 issues (targetSdk now 37) |
+| `:app:testDebugUnitTest` | 160 tests: 158 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
+| `:app:lintDebug` | 0 issues |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.3 MB |
 | Sideload `assembleRelease` | Passed; arm64 32.8 MB (budget 40) |

@@ -25,13 +25,14 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 data class OcrResult(val text: String, val words: List<OcrWord>)
 
 @Singleton
 class OcrEngine @Inject constructor(@ApplicationContext private val context: Context) {
-    // Each recognizer loads its own model, so create one only when its script is first used
+    // Each recogniser loads its own model, so create one only when its script is first used
     // instead of loading all five on the first OCR call.
     private val recognizers = ConcurrentHashMap<OcrScript, TextRecognizer>()
 
@@ -71,7 +72,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
             }
             requestedScripts += script
             runCatching { modules.installModules(ModuleInstallRequest.newBuilder().addApi(recognizer).build()).await() }
-            val ready = withTimeoutOrNull(MODEL_WAIT_MS) {
+            val ready = withTimeoutOrNull(MODEL_WAIT_MS.milliseconds) {
                 while (!runCatching { modules.areModulesAvailable(recognizer).await().areModulesAvailable() }.getOrDefault(false)) {
                     delay(1.seconds)
                 }

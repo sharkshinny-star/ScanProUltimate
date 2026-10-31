@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * An error whose message is shown to the user. It carries a string resource rather than English text, and its
@@ -28,11 +30,11 @@ class UserFacingPluralException(
     override val message: String get() = AppStrings.plural(pluralsRes, quantity, *args)
 }
 
-/** Throws a [UserFacingException]: the localized counterpart of `error("…")` / `require(…) { "…" }`. */
+/** Throws a [UserFacingException]: the localised counterpart of `error("…")` / `require(…) { "…" }`. */
 fun userError(@StringRes messageRes: Int, vararg args: Any, cause: Throwable? = null): Nothing =
     throw UserFacingException(messageRes, *args, cause = cause)
 
-/** Localized `require`: throws [UserFacingException] with [messageRes] when [condition] is false. */
+/** Localised `require`: throws [UserFacingException] with [messageRes] when [condition] is false. */
 inline fun userRequire(condition: Boolean, @StringRes messageRes: Int, vararg args: Any) {
     if (!condition) throw UserFacingException(messageRes, *args)
 }
@@ -56,4 +58,42 @@ object AppStrings {
         context?.resources?.getQuantityString(res, quantity, *args) ?: fallback(res, args)
 
     private fun fallback(res: Int, args: Array<out Any>) = "#$res " + args.joinToString(" ")
+
+    /**
+     * [error]'s message in a form that can be written to disk and shown later in whatever language the app uses then:
+     * the resource *name* (ids change between builds) plus arguments for a [UserFacingException], plain text otherwise.
+     */
+    fun storable(error: Throwable): String {
+        val ctx = context
+        val (kind, res, quantity, args) = when (error) {
+            is UserFacingException -> Stored("string", error.messageRes, null, error.args)
+            is UserFacingPluralException -> Stored("plurals", error.pluralsRes, error.quantity, error.args)
+            else -> return error.message.orEmpty()
+        }
+        val name = ctx?.let { runCatching { it.resources.getResourceEntryName(res) }.getOrNull() } ?: return error.message.orEmpty()
+        return JSONObject().put(STORED_KEY, name).put("kind", kind).put("fallback", error.message.orEmpty())
+            .apply { if (quantity != null) put("quantity", quantity) }
+            .put("args", JSONArray().apply { args.forEach { put(if (it is Number || it is Boolean) it else it.toString()) } })
+            .toString()
+    }
+
+    /** Reads back what [storable] wrote (or older plain text) in the current language. */
+    @SuppressLint("DiscouragedApi") // The id is looked up by name on purpose: stored ids would not survive an update.
+    fun fromStorable(stored: String): String {
+        val json = stored.takeIf { it.startsWith("{") }?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return stored
+        if (!json.has(STORED_KEY)) return stored
+        val fallback = json.optString("fallback")
+        val ctx = context ?: return fallback
+        return runCatching {
+            val kind = json.getString("kind")
+            val id = ctx.resources.getIdentifier(json.getString(STORED_KEY), kind, ctx.packageName)
+            if (id == 0) return fallback
+            val array = json.getJSONArray("args")
+            val args = Array<Any>(array.length()) { array.get(it) }
+            if (kind == "plurals") plural(id, json.getInt("quantity"), *args) else get(id, *args)
+        }.getOrDefault(fallback)
+    }
+
+    private data class Stored(val kind: String, val res: Int, val quantity: Int?, val args: Array<out Any>)
+    private const val STORED_KEY = "messageRes"
 }

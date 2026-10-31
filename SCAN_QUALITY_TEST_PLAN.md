@@ -10,7 +10,7 @@ Minimum suggested matrix:
 | --------------- | --------------------------------------- | ---------------------------------- |
 | Low/mid         | Android 10–12, 4 GB RAM, modest ISP/CPU | Memory/latency stress              |
 | Mainstream      | Android 13–15, 6–8 GB RAM               | Typical user experience            |
-| Flagship        | Android 15–16, 8+ GB, OIS, 90/120 Hz    | Best-quality/high-refresh behavior |
+| Flagship        | Android 15–16, 8+ GB, OIS, 90/120 Hz    | Best-quality/high-refresh behaviour |
 | Tablet/foldable | Large/adaptive window                   | Layout/editor usability            |
 
 Record exact device model, Android version, camera resolution, and build SHA for every run.
@@ -25,7 +25,7 @@ Create a private test corpus with at least 100 captures across:
 - Whiteboards
 - ID-sized synthetic test cards
 - Two-page book spreads
-- Colored/patterned surfaces
+- Coloured/patterned surfaces
 - Strong perspective angles
 - Low light and hard shadows
 - Glare/reflections
@@ -41,18 +41,18 @@ For a labelled subset, annotate true page corners and compute:
 
 - Detection success rate: valid quadrilateral found when a document is visible.
 - False-positive rate: quadrilateral produced when no document is present.
-- Mean corner error normalized by image diagonal.
+- Mean corner error normalised by image diagonal.
 - Perspective-corrected border retention: page content is not clipped.
 
 Suggested release targets for ordinary high-contrast pages under good light:
 
 - >= 95% valid document detection before manual correction.
-- Median normalized corner error <= 1.5% of image diagonal.
+- Median normalised corner error <= 1.5% of image diagonal.
 - < 2% false auto-captures in no-document/static-background trials.
 
 These are product targets, not claims that the current unprofiled build already achieves them.
 
-## Auto-capture behavior
+## Auto-capture behaviour
 
 Measure 20 attempts per device:
 
@@ -65,7 +65,7 @@ Suggested target: median stable-to-capture <= 1.2 s, with zero repeated captures
 
 ## Final image quality
 
-Compare Original / Auto / Clean / B&W / Grayscale / Color / Whiteboard on the same source image.
+Compare Original / Auto / Clean / B&W / Greyscale / Colour / Whiteboard on the same source image.
 
 Inspect:
 
@@ -73,7 +73,7 @@ Inspect:
 - Haloing from sharpening
 - Shadow flattening without text loss
 - White-balance neutrality
-- Color preservation for stamps/highlighters
+- Colour preservation for stamps/highlighters
 - B&W threshold continuity on faint text
 - Compression artifacts at each PDF quality tier
 

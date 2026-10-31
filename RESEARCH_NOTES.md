@@ -2,7 +2,7 @@
 
 ## Competitive baseline
 
-CamScanner's current Google Play listing emphasizes the same broad categories a competitive scanner needs to cover: high-quality scan/enhancement, OCR, PDF/document editing, platform sync, secured sharing, ID mode, book mode, e-signature and collaboration/cloud storage.
+CamScanner's current Google Play listing emphasises the same broad categories a competitive scanner needs to cover: high-quality scan/enhancement, OCR, PDF/document editing, platform sync, secured sharing, ID mode, book mode, e-signature and collaboration/cloud storage.
 
 Public Google Play reviews from 2026 still praise the core scanning capability, while repeated negative reviews focus on advertising volume, subscription friction, and features moving behind a paid tier. That informed a product principle for ScanPro: **core scanning should remain fast, direct and privacy-first; monetization should never interrupt an urgent scan flow.**
 
@@ -19,10 +19,10 @@ Google's document-scanner API is useful, but making it the only scanner would pr
 
 - live boundary UI
 - stability thresholds
-- auto-capture behavior
+- auto-capture behaviour
 - blur/lighting guidance
 - exposure/focus UX
-- fallback behavior
+- fallback behaviour
 - scan-quality experimentation
 
 Therefore ScanPro uses CameraX + OpenCV as the primary path and retains the Google scanner as a compatibility fallback.

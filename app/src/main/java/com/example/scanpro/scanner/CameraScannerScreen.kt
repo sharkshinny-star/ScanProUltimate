@@ -226,7 +226,7 @@ fun CameraScannerScreen(
     var exposureMax by remember { mutableIntStateOf(0) }
     var capturing by remember { mutableStateOf(false) }
     // `status` holds short-lived feedback (captured, errors); live detection guidance is kept separately
-    // so the per-frame analyzer callback cannot overwrite it.
+    // so the per-frame analyser callback cannot overwrite it.
     var status by remember { mutableStateOf<String?>(null) }
     var liveGuidance by remember { mutableStateOf(resources.getString(R.string.scan_guidance_point_at_document)) }
     val disposed = remember { AtomicBoolean(false) }
@@ -306,13 +306,17 @@ fun CameraScannerScreen(
                     sessionDir.mkdirs()
                     uris.take(remaining).map { uri -> copyPick(context, uri, sessionDir) }
                 }
-                val copied = picks.filterIsInstance<PickResult.Copied>().map { it.uri }
+                val allCopied = picks.filterIsInstance<PickResult.Copied>().map { it.uri }
+                // Camera shots taken while copying count too: re-check the limit now and drop the extra copies.
+                val room = (pageLimit - pages.size).coerceAtLeast(0)
+                val copied = allCopied.take(room)
+                allCopied.drop(room).forEach { uri -> uri.path?.let { File(it).delete() } }
                 // Say what was left out instead of dropping it silently.
                 skippedPicksMessage(
                     resources,
                     heic = picks.count { it == PickResult.Heic },
                     unreadable = picks.count { it == PickResult.Unreadable },
-                    overLimit = uris.size - uris.take(remaining).size,
+                    overLimit = uris.size - uris.take(remaining).size + (allCopied.size - copied.size),
                     limit = pageLimit
                 )?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                 pages.addAll(copied)
@@ -1479,7 +1483,9 @@ private fun copyPick(context: android.content.Context, uri: Uri, sessionDir: Fil
     android.graphics.BitmapFactory.decodeFile(target.absolutePath, bounds)
     if (bounds.outWidth > 0) return PickResult.Copied(Uri.fromFile(target))
     target.delete()
-    val heic = bounds.outMimeType?.contains("hei", ignoreCase = true) == true || uri.toString().contains(".hei", ignoreCase = true)
+    // Picker URIs carry no extension and old decoders leave outMimeType null, so ask the provider for the type too.
+    val type = runCatching { context.contentResolver.getType(uri) }.getOrNull()
+    val heic = listOfNotNull(bounds.outMimeType, type, uri.toString()).any { it.contains("hei", ignoreCase = true) }
     return if (heic) PickResult.Heic else PickResult.Unreadable
 }
 

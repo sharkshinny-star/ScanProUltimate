@@ -4,12 +4,12 @@
 
 - `MainActivity.kt` — root activity, fallback ML Kit scanner launcher, Photo Picker, biometric gate
 - `AppViewModel.kt` — activity-level state: theme, app lock, imports, app-wide messages/exports
-- `ScanProApplication.kt` — Hilt, PDFBox/OpenCV initialization, WorkManager setup
+- `ScanProApplication.kt` — Hilt, PDFBox/OpenCV initialisation, WorkManager setup
 
 ## Camera / CV
 
 - `scanner/CameraScannerScreen.kt` — CameraX preview/capture, torch, zoom, exposure, tap-focus, batch mode, live overlay
-- `scanner/OpenCvDocumentAnalyzer.kt` — YUV grayscale conversion, frame analysis, stability-based auto capture
+- `scanner/OpenCvDocumentAnalyzer.kt` — YUV greyscale conversion, frame analysis, stability-based auto capture
 - `scanner/DocumentEdgeDetector.kt` — OpenCV edge/contour/quadrilateral detection, blur/light quality signals
 - `scanner/OpenCvScanProcessor.kt` — full-resolution re-detection and perspective correction after capture
 

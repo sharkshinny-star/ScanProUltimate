@@ -61,7 +61,7 @@ internal object MatFilters {
     }
 
     /**
-     * Premium document enhancement: normalize uneven illumination in LAB luminance,
+     * Premium document enhancement: normalise uneven illumination in LAB luminance,
      * apply local contrast (CLAHE), edge-preserving denoise and a restrained unsharp mask.
      * This improves both visual output and OCR without sending pixels off-device.
      */
@@ -239,16 +239,15 @@ internal object MatFilters {
         val inv = 1f - saturation
         val r = 0.213f * inv; val g = 0.715f * inv; val b = 0.072f * inv
         val t = 128f * (1f - contrast) + brightness
-        val c = contrast
         val transform = Mat(3, 4, org.opencv.core.CvType.CV_32F)
         val out = Mat()
         try {
             transform.put(
                 0, 0,
                 floatArrayOf(
-                    c * (r + saturation), c * g, c * b, t,
-                    c * r, c * (g + saturation), c * b, t,
-                    c * r, c * g, c * (b + saturation), t
+                    contrast * (r + saturation), contrast * g, contrast * b, t,
+                    contrast * r, contrast * (g + saturation), contrast * b, t,
+                    contrast * r, contrast * g, contrast * (b + saturation), t
                 )
             )
             Core.transform(rgb, out, transform)

@@ -1,5 +1,6 @@
 package com.example.scanpro.work
 
+import com.example.scanpro.core.text.AppStrings
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -76,7 +77,7 @@ class ImportScanWorker @AssistedInject constructor(
             val input = inputData
             // The scan now shows under "Unsaved scans", with this reason, until it is saved or discarded.
             sessionDirOf(input)?.let { session ->
-                runCatching { File(session, SESSION_IMPORT_FAILED).writeText(error.message.orEmpty()) }
+                runCatching { File(session, SESSION_IMPORT_FAILED).writeText(AppStrings.storable(error)) }
             }
             notifications.taskFailed(context.getString(R.string.notify_scan_failed), MainActivity.ACTION_OPEN_KEPT_SCANS)
             operations.showMessage(
@@ -104,7 +105,7 @@ class ImportScanWorker @AssistedInject constructor(
         return Result.success()
     }
 
-    /** "Extract text" scans put the recognized text on the clipboard so it can be pasted straight away. */
+    /** "Extract text" scans put the recognised text on the clipboard so it can be pasted straight away. */
     private fun copyRecognizedText(document: ScanDocument) {
         val text = document.pages.sortedBy { it.position }.joinToString("\n\n") { it.ocrText.trim() }.trim()
         if (text.isBlank()) {

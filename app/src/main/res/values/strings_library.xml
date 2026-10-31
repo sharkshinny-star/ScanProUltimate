@@ -23,7 +23,7 @@
     <string name="lib_scan">Scan</string>
 
     <string name="lib_filter_all">All</string>
-    <string name="lib_filter_favorites">Favorites</string>
+    <string name="lib_filter_favorites">Favourites</string>
     <string name="lib_empty_no_matching">No matching documents</string>
     <string name="lib_empty_hint">Scan a page, or bring in photos or a PDF you already have.</string>
     <string name="lib_photos">Photos</string>
@@ -51,7 +51,7 @@
     <string name="lib_card_open">Open</string>
     <string name="lib_card_select">Select</string>
     <string name="lib_card_deselect">Deselect</string>
-    <string name="lib_cd_favorite">Favorite</string>
+    <string name="lib_cd_favorite">Favourite</string>
     <string name="lib_card_meta_three">%1$s · %2$s · %3$s</string>
     <string name="lib_card_meta_two">%1$s · %2$s</string>
 
@@ -119,8 +119,8 @@
         <item quantity="other">%1$d documents</item>
     </plurals>
     <plurals name="lib_favorite_count">
-        <item quantity="one">%1$d favorite</item>
-        <item quantity="other">%1$d favorites</item>
+        <item quantity="one">%1$d favourite</item>
+        <item quantity="other">%1$d favourites</item>
     </plurals>
     <plurals name="lib_move_documents_title">
         <item quantity="one">Move document</item>
@@ -139,7 +139,7 @@
     <string name="lib_menu_remove_from_favorites">Remove from favourites</string>
     <string name="lib_menu_remove_folder">Remove folder</string>
     <string name="lib_search_field_placeholder">Titles, tags, folders and text</string>
-    <string name="lib_empty_no_favorites_yet">No favorites yet</string>
+    <string name="lib_empty_no_favorites_yet">No favourites yet</string>
     <string name="lib_empty_folder_is_empty">This folder is empty</string>
     <string name="lib_empty_library_is_empty">Your library is empty</string>
     <string name="lib_empty_favorites_hint">Star a document to keep it one tap away.</string>

@@ -27,7 +27,7 @@
     <string name="err_erase_nothing_selected">Brush over what you want to erase</string>
     <string name="err_watermark_blank">Enter the watermark text</string>
     <string name="err_png_not_written">The PNG image couldn\'t be saved</string>
-    <string name="err_no_text_to_export">There\'s no recognized text to export</string>
+    <string name="err_no_text_to_export">There\'s no recognised text to export</string>
     <string name="err_text_blank">Enter some text</string>
     <string name="err_document_has_no_pages">The document has no pages</string>
     <string name="err_could_not_save_pdf">The PDF couldn\'t be saved</string>
@@ -75,7 +75,7 @@
     <string name="err_translation_access_denied">Google Play didn\'t allow the translation download.</string>
     <string name="err_translation_busy">Another download is in progress. Please try again in a moment.</string>
     <string name="err_translation_play_error">Translation couldn\'t be added (Google Play error %1$d).</string>
-    <string name="err_translation_no_text">There\'s no recognized text to translate</string>
+    <string name="err_translation_no_text">There\'s no recognised text to translate</string>
     <string name="err_translation_unknown_language">The language of the text couldn\'t be identified</string>
     <string name="err_translation_language_unsupported">Translation isn\'t available for the detected language (%1$s)</string>
     <string name="err_translation_target_unsupported">Translation into this language isn\'t available</string>

@@ -53,10 +53,10 @@
     <string name="core_jpg_not_available">JPG images are not available</string>
     <string name="core_share_jpg">Share JPG</string>
     <string name="core_share_jpg_pages">Share JPG pages</string>
-    <string name="core_no_text_to_share">No recognized text to share</string>
-    <string name="core_share_recognized_text">Share recognized text</string>
+    <string name="core_no_text_to_share">No recognised text to share</string>
+    <string name="core_share_recognized_text">Share recognised text</string>
     <string name="core_install_pdf_viewer">Install a PDF viewer to open this file</string>
-    <string name="core_clip_recognized_text">Recognized text</string>
+    <string name="core_clip_recognized_text">Recognised text</string>
     <string name="core_text_copied">Text copied</string>
     <string name="core_export_file_missing">Export file is missing</string>
     <string name="core_no_app_can_share">No app can share this file</string>

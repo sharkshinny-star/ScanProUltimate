@@ -3,8 +3,8 @@
     <!-- data/Models.kt: enum labels -->
     <string name="data_filter_original">Original</string>
     <string name="data_filter_auto">Auto Clean</string>
-    <string name="data_filter_color">Magic Color</string>
-    <string name="data_filter_gray">Gray</string>
+    <string name="data_filter_color">Magic Colour</string>
+    <string name="data_filter_gray">Grey</string>
     <string name="data_filter_bw">B&amp;W</string>
     <string name="data_filter_whiteboard">Whiteboard</string>
 

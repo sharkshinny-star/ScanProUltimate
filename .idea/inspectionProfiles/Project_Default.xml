@@ -150,5 +150,35 @@
     <inspection_tool class="ConditionalExpressionWithIdenticalBranches" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
     </inspection_tool>
+    <inspection_tool class="CallToPrintStackTrace" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="CanBeFinal" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="PointlessArithmeticExpression" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="StringConcatenationInLoops" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="DataFlowIssue" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="MissingSerialAnnotation" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="ManualMinMaxCalculation" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UseHashCodeMethodInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnnecessaryCallToStringValueOf" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="ObjectEqualsCanBeEquality" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
   </profile>
 </component>

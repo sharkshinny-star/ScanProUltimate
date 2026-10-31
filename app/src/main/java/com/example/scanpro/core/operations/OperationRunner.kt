@@ -9,12 +9,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /** A snackbar message, optionally with one action such as Undo. */
 data class UiMessage(
@@ -115,7 +118,9 @@ class OperationRunner @Inject constructor(
      * progress, message or library refresh. Failures are ignored.
      */
     fun enqueueQuiet(action: suspend () -> Unit) {
-        scope.launch { mutex.withLock { runCatching { action() } } }
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            mutex.withLock { withContext(Dispatchers.Default) { runCatching { action() } } }
+        }
     }
 
     /**
@@ -178,9 +183,12 @@ class OperationRunner @Inject constructor(
             // the new job asked for it.
             OperationForegroundService.show(context, label ?: _busyLabel.value)
         }
-        scope.launch {
+        // Undispatched, so the job joins the lock's first-come-first-served queue on the caller's thread before
+        // run() returns: two quick requests always run in the order they were made. The work itself then moves
+        // to a background thread.
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                mutex.withLock {
+                mutex.withLock { withContext(Dispatchers.Default) {
                     synchronized(stateLock) {
                         _busyLabel.value = label
                         OperationForegroundService.show(context, label)
@@ -192,6 +200,8 @@ class OperationRunner @Inject constructor(
                         if (successMessage != null) _message.value = UiMessage(successMessage)
                         // Only jobs long enough to show progress are worth a notice if the user left meanwhile.
                         if (label != null) notifications.taskFinished(_message.value.takeIf { it !== messageBefore }?.text)
+                    } catch (skipped: OperationSkipped) {
+                        skipped.message?.let { _message.value = UiMessage(it) }
                     } catch (cancelled: kotlinx.coroutines.CancellationException) {
                         _message.value = UiMessage(context.getString(R.string.common_stopped))
                     } catch (error: Throwable) {
@@ -202,7 +212,7 @@ class OperationRunner @Inject constructor(
                         current = null
                     }
                     runCatching { library.refresh() }
-                }
+                } }
             } finally {
                 synchronized(stateLock) {
                     pending--
@@ -216,3 +226,6 @@ class OperationRunner @Inject constructor(
         }
     }
 }
+
+/** Thrown by an action that found nothing to do: the runner shows [message] (if any) instead of the success message. */
+class OperationSkipped(message: String?) : Exception(message)

@@ -36,8 +36,11 @@ object SpecialExporters {
             selected.forEachIndexed { index, model ->
                 val bitmap = ImageProcessor.decodeScaled(model.imagePath, quality.maxImageDimension)
                     ?: userError(R.string.export_err_page_unreadable, index + 1)
-                drawFit(page.canvas, bitmap, slots[index])
-                bitmap.recycle()
+                try {
+                    drawFit(page.canvas, bitmap, slots[index])
+                } finally {
+                    bitmap.recycle()
+                }
             }
             val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.DKGRAY
@@ -87,9 +90,12 @@ object SpecialExporters {
             var y = 0f
             measured.forEachIndexed { index, (page, _, _) ->
                 val height = heights[index]
+                // Measured fine but can't be decoded now (low memory, a damaged file): stop rather than leave a blank gap.
                 val bitmap = ImageProcessor.decodeScaled(page.imagePath, maxOf(targetWidth, height))
-                if (bitmap != null) {
+                    ?: userError(R.string.export_err_page_unreadable, index + 1)
+                try {
                     canvas.drawBitmap(bitmap, null, RectF(0f, y, targetWidth.toFloat(), y + height), paint)
+                } finally {
                     bitmap.recycle()
                 }
                 y += height + gap

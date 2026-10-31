@@ -12,8 +12,8 @@ class EditHistoryTest {
     @Test
     fun undoAndRedoWalkThroughTheSteps() {
         val history = EditHistory()
-        history.record("d", pages(PageFilter.ORIGINAL))   // ORIGINAL -> GRAY
-        history.record("d", pages(PageFilter.GRAY))       // GRAY -> BW
+        history.record("d", pages(PageFilter.ORIGINAL))   // ORIGINAL -> GREY
+        history.record("d", pages(PageFilter.GRAY))       // GREY -> BW
         val current = pages(PageFilter.BW)
 
         val back1 = history.undo("d", current)

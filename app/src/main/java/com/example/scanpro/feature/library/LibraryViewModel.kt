@@ -53,7 +53,7 @@ class LibraryViewModel @Inject constructor(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    // Folder and favorites filters live here (saved with the screen's state) because they decide which pages
+    // Folder and favourites filters live here (saved with the screen's state) because they decide which pages
     // the database returns.
     val folder: StateFlow<String> = savedState.getStateFlow(KEY_FOLDER, "")
     val favoritesOnly: StateFlow<Boolean> = savedState.getStateFlow(KEY_FAVORITES, false)
@@ -73,7 +73,7 @@ class LibraryViewModel @Inject constructor(
 
     /**
      * The documents to list. Without a search this is the paged database query for the current folder,
-     * favorites and sort. A search returns its (small) result set, filtered and ordered the same way.
+     * favourites and sort. A search returns its (small) result set, filtered and ordered the same way.
      */
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val documents: Flow<PagingData<DocumentSummary>> =

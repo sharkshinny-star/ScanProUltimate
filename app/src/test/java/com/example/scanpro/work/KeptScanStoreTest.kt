@@ -86,4 +86,42 @@ class KeptScanStoreTest {
         assertNull(input.getStringArray(ImportScanWorker.KEY_CROPS))
         assertEquals(ScanMode.DOCUMENT.name, input.getString(ImportScanWorker.KEY_MODE))
     }
+
+    @Test
+    fun `photos moved from the old cache folder are found by name`() {
+        val legacy = temp.newFolder("cache_root")
+        val root = temp.newFolder("files_root")
+        val old = session(legacy, "s1", photos = 2)
+        val photos = old.listFiles()!!.filter { it.name.endsWith(".jpg") }.sortedBy { it.name }
+        request(old, photos, ScanMode.BOOK, listOf("c0", "c1"), listOf("f0", "f1"))
+
+        KeptScanStore.adoptLegacySessions(legacy, root, activeSessions = emptySet())
+
+        val moved = File(root, "s1")
+        assertTrue(moved.isDirectory && !old.exists())
+        val input = KeptScanStore.retryInput(moved, photos.map { File(moved, it.name) })
+        assertArrayEquals(photos.map { uri(File(moved, it.name)) }.toTypedArray(), input.getStringArray(ImportScanWorker.KEY_URIS))
+        assertArrayEquals(arrayOf("c0", "c1"), input.getStringArray(ImportScanWorker.KEY_CROPS))
+    }
+
+    @Test
+    fun `a running import's old session is not moved`() {
+        val legacy = temp.newFolder("cache_root")
+        val root = temp.newFolder("files_root")
+        session(legacy, "s1", photos = 1)
+        KeptScanStore.adoptLegacySessions(legacy, root, activeSessions = setOf("s1"))
+        assertTrue(File(legacy, "s1").isDirectory && !File(root, "s1").exists())
+    }
+
+    @Test
+    fun `when no recorded photo is left the photos present are sent in the recorded mode`() {
+        val dir = session(temp.root, "s1", photos = 1)
+        val gone = File(temp.root, "elsewhere/gone.jpg")
+        request(dir, listOf(gone), ScanMode.BOOK, listOf("c0"), listOf("f0"))
+        val photos = dir.listFiles()!!.filter { it.name.endsWith(".jpg") }
+        val input = KeptScanStore.retryInput(dir, photos)
+        assertArrayEquals(photos.map(::uri).toTypedArray(), input.getStringArray(ImportScanWorker.KEY_URIS))
+        assertEquals(0, input.getStringArray(ImportScanWorker.KEY_CROPS)!!.size)
+        assertEquals(ScanMode.BOOK.name, input.getString(ImportScanWorker.KEY_MODE))
+    }
 }

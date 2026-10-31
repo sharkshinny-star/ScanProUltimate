@@ -53,12 +53,12 @@
     <!-- Tools: split dialog -->
     <string name="tools_split_title">Split PDF Options</string>
 
-    <!-- Tools: page organizer (organize / extract / rotate) -->
+    <!-- Tools: page organiser (organise / extract / rotate) -->
     <string name="tools_organizer_protected">This PDF is password-protected. Unlock it first with the Unlock PDF tool.</string>
     <string name="tools_organizer_open_failed">Could not open this PDF</string>
     <string name="tools_organizer_extract_title">Select pages to extract</string>
     <string name="tools_organizer_rotate_title">Rotate pages</string>
-    <string name="tools_organizer_organize_title">Organize pages</string>
+    <string name="tools_organizer_organize_title">Organise pages</string>
     <string name="tools_organizer_extract_count">Extract (%1$d)</string>
     <string name="tools_organizer_save_count">Save (%1$d)</string>
     <string name="tools_organizer_save_pdf">Save PDF</string>

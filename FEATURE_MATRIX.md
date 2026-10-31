@@ -3,7 +3,7 @@
 | Area                                   | Status                          | Implementation                                               |
 | -------------------------------------- | ------------------------------- | ------------------------------------------------------------ |
 | CameraX preview                        | Implemented                     | Native CameraX                                               |
-| Live edge detection                    | Implemented                     | OpenCV grayscale contour/quadrilateral pipeline              |
+| Live edge detection                    | Implemented                     | OpenCV greyscale contour/quadrilateral pipeline              |
 | Auto capture                           | Implemented                     | Corner stability + quality gate                              |
 | Manual capture                         | Implemented                     | CameraX ImageCapture                                         |
 | Flash / zoom / focus / exposure        | Implemented                     | CameraControl                                                |
@@ -23,7 +23,7 @@
 | A4 / Letter / Auto                     | Implemented                     | PDF layout controls                                          |
 | Watermark                              | Implemented                     | non-destructive annotation pipeline                          |
 | Signature                              | Implemented                     | drawn signature overlay                                      |
-| Text / highlight / redaction           | Implemented                     | normalized page annotations                                  |
+| Text / highlight / redaction           | Implemented                     | normalised page annotations                                  |
 | Password-protected PDF                 | Implemented                     | PDFBox AES-256 policy                                        |
 | Print                                  | Implemented                     | Android Print Framework                                      |
 | JPG / long image / ID copy             | Implemented                     | special exporters                                            |
@@ -38,7 +38,7 @@
 | Action-item suggestions                | Implemented                     | source lines containing action markers                       |
 | Q&A                                    | Implemented                     | extracts best matching OCR passages, no generative invention |
 | Folders / rename folders               | Implemented                     | Room metadata                                                |
-| Favorites / tags                       | Implemented                     | Room metadata                                                |
+| Favourites / tags                       | Implemented                     | Room metadata                                                |
 | Grid / list / sort                     | Implemented                     | Compose library                                              |
 | Multi-select / bulk share/delete       | Implemented                     | Compose library                                              |
 | Trash / restore / cleanup              | Implemented                     | Room + WorkManager                                           |

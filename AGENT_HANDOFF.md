@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "gallery pick message" commit (newest in `git log`).
+Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit queue and kept-scan fixes" commit (newest in `git log`).
 
 ## 1. Current state
 
@@ -28,10 +28,12 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "gall
 
 | Commit | What |
 |---|---|
-| newest | Removed the unused `server/` placeholder and its README section (F20, closes R8). |
+| newest | IDE inspection report (F23): more OpenCV exclusions, non-deprecated rotate icons, `Duration` timeout, British spelling throughout (owner decision). |
+| same commit | Review fixes: edit queue order, Stop/journal cleanup, skipped-edit message, journal fsync (F21); HEIC detection, page limit, translatable kept-scan reasons, empty Retry, old cache sessions adopted, long-image/ID-copy export (F22). |
+| bd18aea | Removed the unused `server/` placeholder and its README section (F20, closes R8). |
 | `4d8947a` | Backup dialogs warn that backups keep unredacted originals (F19, closes R1). |
 | `ecc322b` | Gallery picks that are unreadable, HEIC on Android 8, or over the page limit are reported instead of dropped silently (F18, closes R10). |
-| `36cbaa2` | Remaining English strings localized: `UserFacingException` for errors, ~120 strings (F17, closes R5). |
+| `36cbaa2` | Remaining English strings localised: `UserFacingException` for errors, ~120 strings (F17, closes R5). |
 | `b165003` | Queued document edits written to a journal and replayed after a restart (F16, closes R3). |
 | `abdce28` | `CLAUDE.md`: every session works on this branch. |
 | `c62088d` | "Unsaved scans" recovery screen for scans whose import failed (F15, closes R4); Home banner, notification deep link, `KeptScanStoreTest`. |
@@ -61,11 +63,12 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 ## 4. Next steps
 
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
-2. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
-3. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
-4. Device-test the edit journal: queue several edits behind a long OCR, force-stop the app, reopen, check they run and that the interrupted one is reported.
-5. Add Compose UI/screenshot tests and run them on an emulator in CI.
-6. Device-test targetSdk 37 on Android 17 (R2).
+2. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.
+3. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
+4. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
+5. Device-test the edit journal: queue several edits behind a long OCR, force-stop the app, reopen, check they run and that the interrupted one is reported.
+6. Add Compose UI/screenshot tests and run them on an emulator in CI.
+7. Device-test targetSdk 37 on Android 17 (R2).
 
 ## 5. Rules carried over from the owner's audit brief
 

@@ -43,8 +43,8 @@ import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
-import androidx.compose.material.icons.filled.RotateLeft
-import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.Rotate90DegreesCcw
+import androidx.compose.material.icons.filled.Rotate90DegreesCw
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -107,11 +107,9 @@ private val Blue = Color(0xFF2FD6A6)
 private val Amber = Color(0xFFFFB95C)
 private val ReviewBackdrop = Color(0xFF0B0D14)
 
-/** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would). */
-@Suppress("DEPRECATION")
-private val RotateLeftIcon: ImageVector = Icons.Filled.RotateLeft
-@Suppress("DEPRECATION")
-private val RotateRightIcon: ImageVector = Icons.Filled.RotateRight
+/** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would); the 90° icons never flip and aren't deprecated. */
+private val RotateLeftIcon: ImageVector = Icons.Filled.Rotate90DegreesCcw
+private val RotateRightIcon: ImageVector = Icons.Filled.Rotate90DegreesCw
 
 /**
  * Full-screen review shown after capturing: swipe through pages with the pager, drag the corners, rotate,

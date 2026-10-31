@@ -90,7 +90,7 @@ object CompressPdfEngine {
                 }
             }
 
-            // Strategy B: Rasterize pages at downscaled target resolution & rebuild PDF
+            // Strategy B: Rasterise pages at downscaled target resolution & rebuild PDF
             rasterCompressPdf(context, tempInput, outputFile, preset)
 
             // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.

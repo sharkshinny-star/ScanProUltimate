@@ -279,7 +279,7 @@ internal fun LibraryScreen(
     LaunchedEffect(homeIds) {
         if (isHome) selected.removeAll { it !in homeIds }
     }
-    // A new folder, favorites filter or search shows different documents, so a selection made before it would
+    // A new folder, favourites filter or search shows different documents, so a selection made before it would
     // act on items no longer on screen. The last filters are saved with the selection, so a rotation keeps it.
     // (A new sort only reorders the same documents, and the saved sort loads asynchronously.)
     val filterKey = "$folder|$favoritesOnly|$query"
@@ -501,7 +501,7 @@ internal fun LibraryScreen(
                         )
                     }
 
-                    // Folder/favorite filters only earn their space once there is something to filter.
+                    // Folder/favourite filters only earn their space once there is something to filter.
                     if (overview.documentCount > 0 && (folders.isNotEmpty() || overview.favoriteCount > 0 || favoritesOnly)) {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),

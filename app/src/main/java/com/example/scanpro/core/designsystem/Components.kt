@@ -93,7 +93,7 @@ fun PageThumbnail(
     contentDescription: String? = stringResource(R.string.ui_scanned_page)
 ) {
     // The file's timestamp is part of the cache key, but reading it is disk I/O, so it happens on the
-    // IO thread. Meanwhile the last bitmap shown for this request is drawn straight away, so coming
+    // IO thread. Meanwhile, the last bitmap shown for this request is drawn straight away, so coming
     // back to a tab shows its thumbnails instantly instead of blank placeholders.
     val requestKey = remember(path, version, maxDimension) { path?.let { "$it|${version.hashCode()}|$maxDimension" } }
     val appContext = LocalContext.current.applicationContext
