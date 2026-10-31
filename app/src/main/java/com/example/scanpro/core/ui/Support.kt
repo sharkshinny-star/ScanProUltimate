@@ -3,9 +3,7 @@ package com.example.scanpro.core.ui
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import com.example.scanpro.BuildConfig
 import androidx.core.net.toUri
 
@@ -67,11 +65,3 @@ fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
     }
 }
 
-/** Opens a web link in the browser, or says so when none can. */
-fun openLink(context: Context, url: String) {
-    try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-    } catch (_: ActivityNotFoundException) {
-        Toast.makeText(context, "No browser found to open this link", Toast.LENGTH_SHORT).show()
-    }
-}

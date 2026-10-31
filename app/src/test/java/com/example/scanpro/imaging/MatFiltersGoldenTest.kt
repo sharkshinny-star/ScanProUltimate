@@ -109,7 +109,7 @@ class MatFiltersGoldenTest {
     private fun golden(name: String, actual: ByteArray) {
         val source = File("src/test/resources/golden/$name.png")
         if (System.getProperty("scanpro.updateGoldens") == "true") {
-            source.parentFile.mkdirs()
+            source.parentFile?.mkdirs()
             writePng(source, actual)
             return
         }

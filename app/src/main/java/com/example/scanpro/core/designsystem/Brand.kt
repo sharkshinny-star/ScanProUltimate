@@ -378,9 +378,6 @@ fun InsetDivider(startIndent: Dp = 68.dp) {
     )
 }
 
-/** Standard vertical rhythm between stacked content blocks. */
-val SectionGap = 20.dp
-
 /**
  * Chrome for the full-screen editors that sit on a dark canvas whatever the app theme (crop, markup,
  * scanner, review): the backdrop behind the page, the control panel below it, and a translucent "glass"
@@ -461,7 +458,7 @@ fun DarkTextButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
 
 /** An outlined button that reads on the dark editor chrome. */
 @Composable
-fun DarkOutlinedButton(text: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
+fun DarkOutlinedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     androidx.compose.material3.OutlinedButton(
         onClick = onClick,
         enabled = enabled,

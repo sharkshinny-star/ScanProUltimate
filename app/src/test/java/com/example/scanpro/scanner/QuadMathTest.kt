@@ -65,12 +65,12 @@ class QuadMathTest {
         // The top edge now faces right. Its bent midpoint must land exactly where the photo point went.
         val oldMid = NormalizedPoint(
             (bent.topLeft.x + bent.topRight.x) / 2f + bent.topBow!!.x,
-            (bent.topLeft.y + bent.topRight.y) / 2f + bent.topBow!!.y
+            (bent.topLeft.y + bent.topRight.y) / 2f + bent.topBow.y
         )
         val expected = NormalizedPoint(1f - oldMid.y, oldMid.x)
         val newMid = NormalizedPoint(
             (rotated.topRight.x + rotated.bottomRight.x) / 2f + rotated.rightBow!!.x,
-            (rotated.topRight.y + rotated.bottomRight.y) / 2f + rotated.rightBow!!.y
+            (rotated.topRight.y + rotated.bottomRight.y) / 2f + rotated.rightBow.y
         )
         assertEquals(expected.x, newMid.x, 1e-5f)
         assertEquals(expected.y, newMid.y, 1e-5f)
@@ -85,8 +85,8 @@ class QuadMathTest {
         assertEquals(bent.leftBow!!.x, back.leftBow!!.x, 1e-6f)
         var quad = bent
         repeat(4) { quad = rotateQuad(quad, clockwise = true) }
-        assertEquals(bent.topBow!!.x, quad.topBow!!.x, 1e-6f)
-        assertEquals(bent.leftBow!!.y, quad.leftBow!!.y, 1e-6f)
+        assertEquals(bent.topBow.x, quad.topBow!!.x, 1e-6f)
+        assertEquals(bent.leftBow.y, quad.leftBow!!.y, 1e-6f)
     }
 
     @Test

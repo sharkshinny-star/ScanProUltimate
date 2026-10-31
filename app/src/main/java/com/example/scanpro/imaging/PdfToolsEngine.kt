@@ -15,12 +15,13 @@ import com.tom_roush.pdfbox.pdmodel.PDPage
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import androidx.annotation.StringRes
+import com.example.scanpro.R
 
 data class PdfToolResult(
     val outputFile: File,
@@ -30,10 +31,10 @@ data class PdfToolResult(
     val message: String
 )
 
-enum class SplitMode(val label: String, val description: String) {
-    SINGLE_PAGES("Single Pages", "Split into individual 1-page PDF files"),
-    PAGE_RANGES("Page Ranges", "Split by specific ranges (e.g., 1-3, 4-6)"),
-    EVERY_N_PAGES("Fixed Chunks", "Split every N pages into separate PDFs")
+enum class SplitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes: Int) {
+    SINGLE_PAGES(R.string.tools_split_mode_single, R.string.tools_split_mode_single_desc),
+    PAGE_RANGES(R.string.tools_split_mode_ranges, R.string.tools_split_mode_ranges_desc),
+    EVERY_N_PAGES(R.string.tools_split_mode_chunks, R.string.tools_split_mode_chunks_desc)
 }
 
 data class PageSpec(
@@ -41,9 +42,9 @@ data class PageSpec(
     val rotationDegrees: Int = 0
 )
 
-enum class ImageExportFormat(val extension: String, val mimeType: String, val label: String) {
-    JPEG("jpg", "image/jpeg", "JPEG Image (.jpg)"),
-    PNG("png", "image/png", "PNG Image (.png)")
+enum class ImageExportFormat(val extension: String) {
+    JPEG("jpg"),
+    PNG("png")
 }
 
 /** How a PDF is protected, as far as opening and editing it goes. */

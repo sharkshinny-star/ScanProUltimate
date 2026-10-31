@@ -66,27 +66,6 @@ fun sharePdfs(context: Context, documents: List<ScanDocument>) {
     }
 }
 
-/** Prints a PDF given as any readable link; a content link is copied to the cache first, off the main thread. */
-fun printPdfUri(context: Context, uri: Uri, title: String) {
-    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate).launch {
-        val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            runCatching {
-                if (uri.scheme == "file") File(uri.path.orEmpty()).takeIf { it.isFile }
-                else File(context.cacheDir, "view_print_${System.currentTimeMillis()}.pdf").also { copy ->
-                    context.contentResolver.openInputStream(uri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
-                        ?: error("unreadable")
-                }
-            }.getOrNull()
-        }
-        if (file == null) {
-            Toast.makeText(context, context.getString(R.string.core_pdf_unreadable_for_printing), Toast.LENGTH_SHORT).show()
-            return@launch
-        }
-        val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-        manager.print(title, PdfFilePrintAdapter(file), android.print.PrintAttributes.Builder().build())
-    }
-}
-
 fun shareImages(context: Context, document: ScanDocument) {
     val uris = ArrayList<Uri>()
     document.pages.sortedBy { it.position }.forEach { page ->

@@ -62,11 +62,6 @@ class DocumentRepository @Inject constructor(
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
-    suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
-    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
-        purgeExpiredTrash()
-        db.loadTrash()
-    }
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
         purgeExpiredTrash()
         db.loadTrashSummaries()

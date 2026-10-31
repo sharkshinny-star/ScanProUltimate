@@ -218,7 +218,6 @@
     <string name="scan_flash_on">on</string>
     <string name="scan_flash_torch">torch</string>
     <string name="scan_permission_denied_body">Camera access was turned off for ScanPro. Turn it on under Permissions in the app\'s settings, then come back.</string>
-    <string name="core_pdf_unreadable_for_printing">This PDF could not be read for printing</string>
     <string name="core_recommend_app_subject">ScanPro</string>
     <string name="core_recommend_app_text">Scan documents to PDF with ScanPro: %1$s</string>
     <string name="core_share_app">Share ScanPro</string>

@@ -22,7 +22,6 @@ import java.io.FileOutputStream
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.Mat
-import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import kotlin.math.hypot
 import kotlin.math.max

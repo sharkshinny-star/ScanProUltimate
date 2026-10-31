@@ -240,7 +240,7 @@ class EncryptedDocumentPackage(private val context: Context) {
                         // ZipInputStream stops at the central directory; read the rest so the final
                         // chunk's tag and the "nothing after the end" check are verified too.
                         val drain = ByteArray(DEFAULT_BUFFER_SIZE)
-                        while (buffered.read(drain) >= 0) Unit
+                        while (buffered.read(drain) >= 0) { /* discard: only the authentication matters */ }
                         zip.close()
                     }
                 }

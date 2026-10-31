@@ -41,6 +41,7 @@ import com.example.scanpro.core.designsystem.AuroraBackground
 import com.example.scanpro.core.designsystem.BrandMark
 import com.example.scanpro.core.designsystem.GradientButton
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * The gate in front of a locked library. The system prompt opens on its own shortly after the screen
@@ -53,7 +54,7 @@ fun LockScreen(onUnlock: () -> Unit, snackbarHostState: SnackbarHostState) {
     LaunchedEffect(Unit) {
         if (!prompted) {
             prompted = true
-            delay(350)
+            delay(350.milliseconds)
             onUnlock()
         }
     }

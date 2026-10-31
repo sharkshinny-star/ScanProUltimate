@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -129,7 +128,6 @@ private fun cardColors(selected: Boolean): Pair<Color, Color> {
 }
 
 /** Full-width row: thumbnail, title and metadata. Used by Files in list mode and by the Home recents. */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun DocumentListCard(
     document: DocumentSummary,
@@ -196,7 +194,6 @@ internal fun DocumentListCard(
 }
 
 /** Grid tile: a tall thumbnail with the title underneath. */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun DocumentGridCard(
     document: DocumentSummary,
@@ -260,7 +257,6 @@ internal fun DocumentGridCard(
 }
 
 /** Compact card for the Home "Recent" row: a fixed-width tile with the thumbnail on top. */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun DocumentRecentCard(
     document: DocumentSummary,

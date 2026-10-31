@@ -6,7 +6,6 @@ import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint as AndroidPaint
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -71,7 +70,6 @@ private val InkColors = listOf(R.string.doc_ink_black to Color(0xFF111111), R.st
  * Draw a signature, or tap one saved earlier. New signatures are kept for next time unless unticked;
  * long-press a saved one to delete it.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SignaturePadDialog(
     saved: List<File> = emptyList(),
@@ -202,7 +200,6 @@ fun SignaturePadDialog(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SavedSignature(file: File, onClick: () -> Unit, onLongClick: () -> Unit) {
     val image by produceState<Bitmap?>(null, file) {

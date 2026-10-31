@@ -64,7 +64,7 @@ object DocumentIntelligenceEngine {
         val phones = phoneRegex.findAll(text).map { it.value.trim() }.filter { it.count(Char::isDigit) in 8..15 }.distinct().take(8).toList()
         val refs = referenceRegex.findAll(text).mapNotNull { it.groups[1]?.value?.trim() }.distinct().take(8).toList()
         val actionItems = extractActionItems(text)
-        val summary = structuredSummary(text, kind, amounts, dates) ?: extractiveSummary(text, kind, amounts, dates)
+        val summary = structuredSummary(text, kind, dates) ?: extractiveSummary(text, kind, amounts, dates)
         val tags = buildList {
             add(kind.label.lowercase(Locale.ROOT))
             if (amounts.isNotEmpty()) add("financial")
@@ -140,7 +140,7 @@ object DocumentIntelligenceEngine {
         ?.trim()?.trim(':', '-', '–', '|', '.', ',')?.trim()
 
     /** "Receipt from Blue Bottle Coffee · Total $8.37 · 03/10/2026" for receipts and invoices; null otherwise. */
-    private fun structuredSummary(text: String, kind: DocumentKind, amounts: List<String>, dates: List<String>): String? {
+    private fun structuredSummary(text: String, kind: DocumentKind, dates: List<String>): String? {
         if (kind != DocumentKind.RECEIPT && kind != DocumentKind.INVOICE) return null
         val from = issuer(text, kind.label)
         // The amount on the "Total" / "Amount due" line, not a subtotal or a single item.

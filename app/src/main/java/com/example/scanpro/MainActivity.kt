@@ -230,9 +230,19 @@ class MainActivity : FragmentActivity() {
         fun typeOf(uri: Uri): String = runCatching { contentResolver.getType(uri) }.getOrNull() ?: type
 
         when {
-            action == ACTION_SCAN_NOW -> viewModel.requestScan()
-            action == ACTION_REPORT_ISSUE -> com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.ISSUE)
-            action == ACTION_GIVE_FEEDBACK -> com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.FEEDBACK)
+            action == ACTION_SCAN_NOW -> {
+                // Launchers rank shortcuts by how often each is used.
+                ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
+                viewModel.requestScan()
+            }
+            action == ACTION_REPORT_ISSUE -> {
+                ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_REPORT_ISSUE)
+                com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.ISSUE)
+            }
+            action == ACTION_GIVE_FEEDBACK -> {
+                ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_GIVE_FEEDBACK)
+                com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.FEEDBACK)
+            }
             // Shortcuts pinned from an earlier build still carry the old single support action.
             action == ACTION_SUPPORT -> com.example.scanpro.core.ui.openPlayStoreListing(this)
             action == android.content.Intent.ACTION_SEND -> {
@@ -300,9 +310,9 @@ class MainActivity : FragmentActivity() {
             ShortcutManagerCompat.setDynamicShortcuts(
                 this,
                 listOf(
-                    shortcut("scan_now", R.string.shortcut_scan_short, R.string.shortcut_scan_long, ACTION_SCAN_NOW),
-                    shortcut("bugs_or_issues", R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, ACTION_REPORT_ISSUE),
-                    shortcut("dont_remove_app", R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, ACTION_GIVE_FEEDBACK)
+                    shortcut(SHORTCUT_SCAN_NOW, R.string.shortcut_scan_short, R.string.shortcut_scan_long, ACTION_SCAN_NOW),
+                    shortcut(SHORTCUT_REPORT_ISSUE, R.string.shortcut_bugs_short, R.string.shortcut_bugs_long, ACTION_REPORT_ISSUE),
+                    shortcut(SHORTCUT_GIVE_FEEDBACK, R.string.shortcut_dont_remove_short, R.string.shortcut_dont_remove_long, ACTION_GIVE_FEEDBACK)
                 )
             )
         }
@@ -386,6 +396,10 @@ class MainActivity : FragmentActivity() {
         const val LOCK_TIMEOUT_MS = 30_000L
         const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+        // Shortcut ids are stored by launchers (pinned shortcuts); never rename them.
+        private const val SHORTCUT_SCAN_NOW = "scan_now"
+        private const val SHORTCUT_REPORT_ISSUE = "bugs_or_issues"
+        private const val SHORTCUT_GIVE_FEEDBACK = "dont_remove_app"
         const val ACTION_REPORT_ISSUE = "com.example.scanpro.action.REPORT_ISSUE"
         const val ACTION_GIVE_FEEDBACK = "com.example.scanpro.action.GIVE_FEEDBACK"
         /** Superseded by the two actions above; still handled for shortcuts pinned before they existed. */

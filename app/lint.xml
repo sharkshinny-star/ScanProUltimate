@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- BouncyCastle ships a trust-everything TrustManager for its own TLS tooling. PDFBox uses BouncyCastle only for
+         certificate-encrypted PDFs, and the app makes no TLS connections through it, so the class is never reached. -->
+    <issue id="TrustAllX509TrustManager">
+        <ignore regexp="bcpkix-jdk15to18" />
+    </issue>
+</lint>

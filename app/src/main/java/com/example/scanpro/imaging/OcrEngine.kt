@@ -25,6 +25,7 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 data class OcrResult(val text: String, val words: List<OcrWord>)
 
@@ -72,7 +73,7 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
             runCatching { modules.installModules(ModuleInstallRequest.newBuilder().addApi(recognizer).build()).await() }
             val ready = withTimeoutOrNull(MODEL_WAIT_MS) {
                 while (!runCatching { modules.areModulesAvailable(recognizer).await().areModulesAvailable() }.getOrDefault(false)) {
-                    delay(1_000)
+                    delay(1.seconds)
                 }
                 true
             } ?: false
@@ -87,8 +88,6 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
 
     /** Makes sure [script]'s model is on the device, downloading it if needed; throws a readable error otherwise. */
     suspend fun prepare(script: OcrScript) = ensureModel(script, recognizerFor(script), waitForDownload = true)
-
-    suspend fun recognize(file: File, script: OcrScript = OcrScript.LATIN): String = recognizeDetailed(file, script).text
 
     /** Recognised text plus the position of every word, so a PDF text layer can sit under the printed words. */
     /**

@@ -27,7 +27,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -99,9 +98,7 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
@@ -736,7 +733,7 @@ internal fun DocumentDetailScreen(
                             IconButton(onClick = { ocrEditOpen = true }, enabled = !busy) {
                                 Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.doc_edit_recognized_text))
                             }
-                            IconButton(onClick = { copyText(context, currentPage!!.ocrText) }) {
+                            IconButton(onClick = { copyText(context, currentPage.ocrText) }) {
                                 Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.doc_copy_text))
                             }
                         }
@@ -1250,11 +1247,6 @@ private fun SubHeader(value: String) {
 }
 
 @Composable
-private fun EmptyHint(value: String) {
-    Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
-@Composable
 private fun MenuItem(label: String, icon: ImageVector, enabled: Boolean = true, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(label) },
@@ -1264,7 +1256,6 @@ private fun MenuItem(label: String, icon: ImageVector, enabled: Boolean = true, 
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ToolGrid(content: @Composable () -> Unit) {
     FlowRow(

@@ -139,13 +139,15 @@
     <string name="msg_tools_compressed_not_searchable">. Pages were converted to images, so the text is no longer selectable or searchable.</string>
     <string name="msg_tools_exporting_pages">Exporting pages…</string>
     <string name="msg_tools_export_failed">Export failed</string>
-    <plurals name="msg_tools_exported_page_images">
+    <!-- Used by PdfToolsViewModel through bundled(); lint misses the reference. -->
+    <plurals name="msg_tools_exported_page_images" tools:ignore="UnusedResources">
         <item quantity="one">Exported %1$d page image</item>
         <item quantity="other">Exported %1$d page images</item>
     </plurals>
     <string name="msg_tools_splitting">Splitting PDF…</string>
     <string name="msg_tools_split_failed">Split failed</string>
-    <plurals name="msg_tools_split_into_files">
+    <!-- Used by PdfToolsViewModel through bundled(); lint misses the reference. -->
+    <plurals name="msg_tools_split_into_files" tools:ignore="UnusedResources">
         <item quantity="one">Split PDF into %1$d file</item>
         <item quantity="other">Split PDF into %1$d files</item>
     </plurals>

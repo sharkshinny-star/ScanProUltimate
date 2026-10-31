@@ -3,7 +3,6 @@
 package com.example.scanpro.imaging
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -17,12 +16,12 @@ import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import kotlinx.coroutines.currentCoroutineContext
 
 enum class CompressionPreset(
     val label: String,
@@ -141,7 +140,7 @@ object CompressPdfEngine {
                 val resources = page.resources ?: continue
                 for (xObjectName in resources.xObjectNames) {
                     // Cancel stops at the next image rather than after the whole file.
-                    coroutineContext.ensureActive()
+                    currentCoroutineContext().ensureActive()
                     val xObject = resources.getXObject(xObjectName)
                     // Stencil masks (1-bit text layers of scanner PDFs, painted in the fill colour) are already tiny
                     // and cannot be expressed as a JPEG: re-encoding one paints an opaque picture over the page.
@@ -185,7 +184,7 @@ object CompressPdfEngine {
             ParcelFileDescriptor.open(inputPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
                 PdfRenderer(descriptor).use { renderer ->
                     for (index in 0 until renderer.pageCount) {
-                        coroutineContext.ensureActive()
+                        currentCoroutineContext().ensureActive()
                         renderer.openPage(index).use { page ->
                             val scale = preset.targetScale * 2.0f
                             val width = (page.width * scale).toInt().coerceAtLeast(1)

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,7 +29,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -41,7 +39,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.RotateRight
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.automirrored.filled.CallSplit
@@ -80,10 +77,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.AddToDrive
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.widthIn
@@ -106,7 +100,6 @@ import kotlinx.coroutines.isActive
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -131,19 +124,18 @@ import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
-import com.example.scanpro.core.ui.saveToGoogleDrive
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.imaging.CompressionPreset
 import com.example.scanpro.imaging.ImageExportFormat
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfToolResult
-import com.example.scanpro.imaging.PdfToolsEngine
 import com.example.scanpro.imaging.SplitMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import androidx.compose.ui.platform.LocalResources
 
 data class PdfToolCard(
     val id: String,
@@ -732,7 +724,6 @@ private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (Pdf
 }
 
 /** PDFs opened before, newest first: tap to read, long-press for the tools or to remove from the list. */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun RecentPdfsRow(
     items: List<RecentPdf>,
@@ -923,7 +914,6 @@ private fun ProcessingOverlay(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ResultDialog(
     result: PdfToolResult,
@@ -1124,6 +1114,7 @@ private fun SplitDialog(
     onConfirm: (SplitMode, String, Int) -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var mode by remember { mutableStateOf(SplitMode.SINGLE_PAGES) }
     var rangesText by remember { mutableStateOf("") }
     var chunkSizeText by remember { mutableStateOf("2") }
@@ -1161,8 +1152,8 @@ private fun SplitDialog(
                         RadioButton(selected = mode == item, onClick = { mode = item })
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
-                            Text(item.label, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Text(item.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(item.labelRes), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(item.descriptionRes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -1203,8 +1194,8 @@ private fun SplitDialog(
                             .onSuccess { onConfirm(mode, rangesText, 1) }
                             .onFailure { error = it.message }
                         SplitMode.EVERY_N_PAGES -> when {
-                            n == null || n < 1 -> error = context.getString(R.string.tools_split_enter_count)
-                            pageCount != null && n >= pageCount!! -> error = context.resources.getQuantityString(R.plurals.tools_split_whole_document, pageCount!!, pageCount!!)
+                            n == null || n < 1 -> error = resources.getString(R.string.tools_split_enter_count)
+                            pageCount != null && n >= pageCount!! -> error = resources.getQuantityString(R.plurals.tools_split_whole_document, pageCount!!, pageCount!!)
                             else -> onConfirm(mode, rangesText, n)
                         }
                         SplitMode.SINGLE_PAGES -> onConfirm(mode, rangesText, 1)

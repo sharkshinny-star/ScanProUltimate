@@ -99,9 +99,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.UUID
 import kotlin.math.hypot
 import androidx.compose.runtime.mutableFloatStateOf
+import kotlin.time.Duration.Companion.milliseconds
 
 private val Blue = Color(0xFF2FD6A6)
 private val Amber = Color(0xFFFFB95C)
@@ -125,7 +125,6 @@ fun ScanReviewScreen(
     defaultFilter: PageFilter,
     onDefaultFilterChange: (PageFilter) -> Unit,
     index: Int,
-    sessionDir: File,
     processing: Boolean,
     onIndexChange: (Int) -> Unit,
     onAdd: () -> Unit,
@@ -165,7 +164,7 @@ fun ScanReviewScreen(
     LaunchedEffect(bitmap, previewQuad) {
         val image = bitmap ?: return@LaunchedEffect
         val quad = previewQuad ?: return@LaunchedEffect
-        delay(350)
+        delay(350.milliseconds)
         withContext(Dispatchers.Default) { runCatching { ImageProcessor.filterPreviews(image, quad) }.getOrNull() }
             ?.let { previews = it }
     }

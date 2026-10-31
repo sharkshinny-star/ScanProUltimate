@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Backs the Home, Files and Search tabs. Each tab gets its own instance, so queries don't leak between them. */
 @HiltViewModel
@@ -74,7 +75,7 @@ class LibraryViewModel @Inject constructor(
      */
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val documents: Flow<PagingData<DocumentSummary>> =
-        combine(_query.debounce(180), folder, favoritesOnly, sort) { query, folder, favorites, sort -> Filters(query, folder, favorites, sort) }
+        combine(_query.debounce(180.milliseconds), folder, favoritesOnly, sort) { query, folder, favorites, sort -> Filters(query, folder, favorites, sort) }
             .flatMapLatest { f ->
                 if (f.query.isBlank()) {
                     repository.pagedSummaries(f.folder, f.favoritesOnly, f.sort)

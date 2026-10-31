@@ -8,7 +8,7 @@ import org.opencv.android.OpenCVLoader
  * [ensureLoaded] first and, if the load is still running, waits for it (always off the main thread).
  */
 object OpenCvRuntime {
-    private val loaded: Boolean by lazy { OpenCVLoader.initDebug() }
+    private val loaded: Boolean by lazy { OpenCVLoader.initLocal() }
 
     fun ensureLoaded(): Boolean = loaded
 
