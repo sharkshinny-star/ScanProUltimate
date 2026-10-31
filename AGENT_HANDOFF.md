@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Owner screenshot fixes (F24): animated launch icon, night greeting, smaller home scan card, no white band under the bottom bar, adaptive tool grid, filtered review preview, Done button no longer clipped. |
+| newest | Adaptive Auto Clean (F25); signature placement step (drag, pinch/corner resize, Save). |
+| c068e53 | Owner screenshot fixes (F24): animated launch icon, night greeting, smaller home scan card, no white band under the bottom bar, adaptive tool grid, filtered review preview, Done button no longer clipped. |
 | a merge | Merged owner commit `540a492` (older local copy): kept its version catalog (`gradle/libs.versions.toml`, used by `:translate`, `:baselineprofile`), `gradle.properties` parallel sync, `gradle-daemon-jvm.properties`, renamed scope file; undid its reverts (code, targetSdk 37, BouncyCastle pin, newer deps), removed `app/google-services.json` (offline-first) and the IDE report files; `.gitignore` now blocks both. |
 | 001b98a | IDE inspection report (F23): more OpenCV exclusions, non-deprecated rotate icons, `Duration` timeout, British spelling throughout (owner decision). |
 | same commit | Review fixes: edit queue order, Stop/journal cleanup, skipped-edit message, journal fsync (F21); HEIC detection, page limit, translatable kept-scan reasons, empty Retry, old cache sessions adopted, long-image/ID-copy export (F22). |

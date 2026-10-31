@@ -48,7 +48,7 @@ internal object MatFilters {
     /** Applies [filter] to a 3-channel RGB image; returns [source] itself for the original look. */
     internal fun applyNamedFilter(source: Mat, filter: PageFilter): Mat = when (filter) {
         PageFilter.ORIGINAL -> source
-        PageFilter.AUTO -> autoDocumentEnhance(source, colorBoost = false)
+        PageFilter.AUTO -> smartAuto(source)
         PageFilter.COLOR -> autoDocumentEnhance(source, colorBoost = true)
         PageFilter.GRAY -> enhancedGrayscale(source)
         PageFilter.BW -> adaptiveBlackWhite(source)
@@ -58,6 +58,152 @@ internal object MatFilters {
     internal fun applyUserAdjustments(source: Mat, adjustments: PageAdjustments): Mat {
         val a = adjustments.normalized()
         return colorMatrix(source, saturation = a.saturation, contrast = a.contrast, brightness = a.brightness * 92f)
+    }
+
+    /**
+     * Auto Clean: looks at the picture first. A page of paper gets its shadows and colour cast removed (paper turns
+     * white), its ink deepened and a gentle sharpen. Anything else (a whiteboard shot from afar, a photo, an object)
+     * is not flattened, which washed such pictures out: it gets white balance, automatic levels, a lift if it is
+     * underexposed and a light sharpen, like a camera app's auto-enhance.
+     */
+    internal fun smartAuto(rgb: Mat): Mat =
+        if (paperFraction(rgb) >= DOCUMENT_PAPER_FRACTION) autoDocument(rgb) else autoPhoto(rgb)
+
+    /** Share of the picture that looks like paper: low saturation and close to the brightest tones in it. */
+    internal fun paperFraction(rgb: Mat): Double {
+        val small = Mat(); val hsv = Mat()
+        try {
+            val scale = min(1.0, 256.0 / max(rgb.cols(), rgb.rows()))
+            Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
+            Imgproc.cvtColor(small, hsv, Imgproc.COLOR_RGB2HSV)
+            val bytes = ByteArray((hsv.total() * 3).toInt())
+            hsv.get(0, 0, bytes)
+            val values = IntArray(bytes.size / 3) { bytes[it * 3 + 2].toInt() and 0xFF }
+            val bright = percentile(values, 0.9)
+            var paper = 0
+            for (i in values.indices) {
+                val sat = bytes[i * 3 + 1].toInt() and 0xFF
+                if (sat < 45 && values[i] >= bright * 0.72) paper++
+            }
+            return paper.toDouble() / values.size.coerceAtLeast(1)
+        } finally {
+            small.release(); hsv.release()
+        }
+    }
+
+    private fun autoDocument(rgb: Mat): Mat {
+        val flat = removeShadows(rgb)
+        try {
+            // Ink: pull the darkest few percent to black so faint print reads clearly; paper is already white.
+            val ink = min(percentileOfGray(flat, 0.02), 110.0)
+            val lut = levelsLut(black = ink, white = 250.0, gains = doubleArrayOf(1.0, 1.0, 1.0), gamma = 1.0)
+            val leveled = Mat()
+            try {
+                Core.LUT(flat, lut, leveled)
+            } finally {
+                lut.release()
+            }
+            return unsharp(leveled, amount = 0.45)
+        } finally {
+            flat.release()
+        }
+    }
+
+    private fun autoPhoto(rgb: Mat): Mat {
+        val small = Mat()
+        try {
+            val scale = min(1.0, 512.0 / max(rgb.cols(), rgb.rows()))
+            Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
+            val bytes = ByteArray((small.total() * 3).toInt())
+            small.get(0, 0, bytes)
+            val n = bytes.size / 3
+            // Grey-world white balance from the mid-tones only, held to a gentle correction.
+            val sums = DoubleArray(3); var count = 0
+            for (i in 0 until n) {
+                val r = bytes[i * 3].toInt() and 0xFF; val g = bytes[i * 3 + 1].toInt() and 0xFF; val b = bytes[i * 3 + 2].toInt() and 0xFF
+                val l = (r + g + b) / 3
+                if (l in 24..232) { sums[0] += r.toDouble(); sums[1] += g.toDouble(); sums[2] += b.toDouble(); count++ }
+            }
+            val gains = if (count < n / 20) doubleArrayOf(1.0, 1.0, 1.0) else {
+                val grey = (sums[0] + sums[1] + sums[2]) / 3.0
+                DoubleArray(3) { c -> (1.0 + (grey / sums[c].coerceAtLeast(1.0) - 1.0) * 0.6).coerceIn(0.88, 1.15) }
+            }
+            // Levels from the luminance spread, without clipping more than a sliver at either end.
+            val luma = IntArray(n) { i ->
+                ((bytes[i * 3].toInt() and 0xFF) * 0.299 + (bytes[i * 3 + 1].toInt() and 0xFF) * 0.587 + (bytes[i * 3 + 2].toInt() and 0xFF) * 0.114).toInt()
+            }
+            val black = percentile(luma, 0.005).coerceAtMost(48.0)
+            val white = percentile(luma, 0.995).coerceAtLeast(200.0)
+            // Underexposed shots get a midtone lift (gamma), so a dim room reads like the eye saw it.
+            val mean = luma.average()
+            val stretchedMean = ((mean - black) / (white - black)).coerceIn(0.05, 0.95)
+            val gamma = if (stretchedMean < 0.42) (kotlin.math.ln(0.46) / kotlin.math.ln(stretchedMean)).coerceIn(0.6, 1.0) else 1.0
+            val lut = levelsLut(black, white, gains, gamma)
+            val leveled = Mat()
+            try {
+                Core.LUT(rgb, lut, leveled)
+            } finally {
+                lut.release()
+            }
+            val vivid = colorMatrix(leveled, saturation = 1.06f, contrast = 1.0f, brightness = 0f)
+            leveled.release()
+            return unsharp(vivid, amount = 0.3)
+        } finally {
+            small.release()
+        }
+    }
+
+    /** One table for all three channels: per-channel gain, then black/white points, then gamma. */
+    private fun levelsLut(black: Double, white: Double, gains: DoubleArray, gamma: Double): Mat {
+        val table = ByteArray(256 * 3)
+        val span = (white - black).coerceAtLeast(1.0)
+        for (v in 0 until 256) for (c in 0 until 3) {
+            val x = ((v * gains[c] - black) / span).coerceIn(0.0, 1.0)
+            table[v * 3 + c] = (Math.pow(x, gamma) * 255.0 + 0.5).toInt().coerceIn(0, 255).toByte()
+        }
+        return Mat(1, 256, org.opencv.core.CvType.CV_8UC3).also { it.put(0, 0, table) }
+    }
+
+    /** Unsharp mask scaled to the picture's size; consumes [rgb]. */
+    private fun unsharp(rgb: Mat, amount: Double): Mat {
+        val blurred = Mat(); val out = Mat()
+        try {
+            val sigma = max(1.0, max(rgb.cols(), rgb.rows()) / 1500.0)
+            Imgproc.GaussianBlur(rgb, blurred, Size(0.0, 0.0), sigma)
+            Core.addWeighted(rgb, 1.0 + amount, blurred, -amount, 0.0, out)
+            return out
+        } catch (error: Throwable) {
+            out.release(); throw error
+        } finally {
+            blurred.release(); rgb.release()
+        }
+    }
+
+    private fun percentileOfGray(rgb: Mat, q: Double): Double {
+        val small = Mat(); val gray = Mat()
+        try {
+            val scale = min(1.0, 512.0 / max(rgb.cols(), rgb.rows()))
+            Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
+            Imgproc.cvtColor(small, gray, Imgproc.COLOR_RGB2GRAY)
+            val bytes = ByteArray(gray.total().toInt())
+            gray.get(0, 0, bytes)
+            return percentile(IntArray(bytes.size) { bytes[it].toInt() and 0xFF }, q)
+        } finally {
+            small.release(); gray.release()
+        }
+    }
+
+    private fun percentile(values: IntArray, q: Double): Double {
+        if (values.isEmpty()) return 0.0
+        val histogram = IntArray(256)
+        values.forEach { histogram[it.coerceIn(0, 255)]++ }
+        val target = (q * values.size).toLong()
+        var seen = 0L
+        for (v in 0 until 256) {
+            seen += histogram[v]
+            if (seen > target) return v.toDouble()
+        }
+        return 255.0
     }
 
     /**
@@ -304,6 +450,9 @@ internal object MatFilters {
     }
 
     /** Runs one step on an OpenCV image and frees the input when the step produced a new one. */
+    /** Above this share of paper-like pixels, Auto Clean treats the picture as a document. */
+    internal const val DOCUMENT_PAPER_FRACTION = 0.45
+
     private inline fun Mat.then(step: (Mat) -> Mat): Mat {
         val result = step(this)
         if (result !== this) release()
