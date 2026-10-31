@@ -23,6 +23,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -167,6 +168,13 @@ fun ScanReviewScreen(
             ?.let { previews = it }
     }
     val pageFilter = filters[key] ?: defaultFilter
+    // The large view shows the chosen filter too (on the whole photo, so the outline still lines up). Until it is
+    // ready, and if it fails, the plain photo stays up.
+    val filteredView by produceState<Bitmap?>(initialValue = null, bitmap, pageFilter) {
+        value = null
+        val image = bitmap ?: return@produceState
+        value = withContext(Dispatchers.Default) { runCatching { ImageProcessor.filterUncropped(image, pageFilter) }.getOrNull() }
+    }
 
     // Pages that have not been outlined yet (imports, or captures not seen before) are detected on first view.
     LaunchedEffect(bitmap) {
@@ -264,7 +272,7 @@ fun ScanReviewScreen(
             if (image == null || quad == null) {
                 CircularProgressIndicator(color = Blue)
             } else {
-                CropCanvas(image = image, crop = quad, curveMode = curveMode, enabled = !blocked, onCropChange = { quads[key] = it })
+                CropCanvas(image = image, display = filteredView ?: image, crop = quad, curveMode = curveMode, enabled = !blocked, onCropChange = { quads[key] = it })
             }
         }
 
@@ -331,22 +339,36 @@ fun ScanReviewScreen(
                     Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_next_page), tint = Color.White.copy(alpha = if (current < pages.lastIndex) 1f else 0.35f))
                 }
             }
-            OutlinedButton(
-                enabled = !blocked,
-                onClick = onAdd,
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Color.White, disabledContentColor = Color.White.copy(alpha = 0.4f)),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
-            ) {
-                Icon(Icons.Default.AddAPhoto, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.scan_review_add))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    enabled = !blocked,
+                    onClick = onAdd,
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Color.White, disabledContentColor = Color.White.copy(alpha = 0.4f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
+                ) {
+                    Icon(Icons.Default.AddAPhoto, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.scan_review_add), maxLines = 1)
+                }
+                // Done sits here, not among the tools below: squeezed in beside five tools, large text cut its label
+                // down to a single letter.
+                Button(
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+                    enabled = !blocked,
+                    onClick = onDone,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Blue, contentColor = Color(0xFF04281E))
+                ) {
+                    if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color(0xFF04281E))
+                    else Text(stringResource(R.string.common_done), maxLines = 1, softWrap = false)
+                }
             }
         }
 
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             ReviewAction(Icons.Default.CropFree, stringResource(R.string.scan_review_auto_crop), !blocked && bitmap != null) {
                 val image = bitmap ?: return@ReviewAction
@@ -375,14 +397,6 @@ fun ScanReviewScreen(
             }
             ReviewAction(RotateLeftIcon, stringResource(R.string.scan_review_rotate_left), !blocked) { rotate(clockwise = false) }
             ReviewAction(RotateRightIcon, stringResource(R.string.scan_review_rotate_right), !blocked) { rotate(clockwise = true) }
-            Button(
-                enabled = !blocked,
-                onClick = onDone,
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Blue, contentColor = Color(0xFF04281E))
-            ) {
-                if (processing) CircularProgressIndicator(Modifier.width(18.dp), strokeWidth = 2.dp, color = Color(0xFF04281E))
-                else Text(stringResource(R.string.common_done), maxLines = 1, softWrap = false)
-            }
         }
     }
 }
@@ -406,7 +420,7 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(icon, contentDescription = null, tint = tint)
-        Text(label, color = tint, style = MaterialTheme.typography.labelMedium)
+        Text(label, color = tint, style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
     }
 }
 
@@ -415,7 +429,7 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
  * [curveMode] the handle in the middle of each edge bends that edge.
  */
 @Composable
-private fun CropCanvas(image: Bitmap, crop: CropQuad, curveMode: Boolean, enabled: Boolean, onCropChange: (CropQuad) -> Unit) {
+private fun CropCanvas(image: Bitmap, display: Bitmap = image, crop: CropQuad, curveMode: Boolean, enabled: Boolean, onCropChange: (CropQuad) -> Unit) {
     var active by remember { mutableIntStateOf(0) }
     var dragging by remember { mutableStateOf(false) }
     val latest by androidx.compose.runtime.rememberUpdatedState(crop)
@@ -457,7 +471,8 @@ private fun CropCanvas(image: Bitmap, crop: CropQuad, curveMode: Boolean, enable
                 }
             }
     ) {
-        drawImage(image.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
+        // The filtered view under the outline; the corner loupe below keeps the full-detail photo.
+        drawImage(display.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
         val all = handles(crop, curveMode = true).map { Offset(it.x * size.width, it.y * size.height) }
         val points = all.take(4)
         // Each edge as the curve it will be flattened along (a straight edge's midpoint gives a straight line).

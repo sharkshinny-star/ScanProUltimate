@@ -1264,26 +1264,45 @@ private fun MenuItem(label: String, icon: ImageVector, enabled: Boolean = true, 
     )
 }
 
+/**
+ * Tiles in equal columns that fill the sheet's width: as many as fit at [ToolTileMinWidth] (at least four, at most
+ * eight), so phones with large display or font sizes don't get three fixed-width tiles and an empty strip, and tablets
+ * don't get a sparse row. Each row is as tall as its tallest tile.
+ */
 @Composable
 private fun ToolGrid(content: @Composable () -> Unit) {
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) { content() }
+    androidx.compose.ui.layout.Layout(content = content, modifier = Modifier.fillMaxWidth()) { measurables, constraints ->
+        val gap = 8.dp.roundToPx()
+        val width = constraints.maxWidth
+        val columns = ((width + gap) / (ToolTileMinWidth.roundToPx() + gap)).coerceIn(4, 8)
+        val cell = ((width - gap * (columns - 1)) / columns).coerceAtLeast(0)
+        val placeables = measurables.map { it.measure(androidx.compose.ui.unit.Constraints.fixedWidth(cell)) }
+        val rows = placeables.chunked(columns)
+        val heights = rows.map { row -> row.maxOf { it.height } }
+        val total = heights.sum() + gap * (rows.size - 1).coerceAtLeast(0)
+        layout(width, total) {
+            var y = 0
+            rows.forEachIndexed { r, row ->
+                row.forEachIndexed { c, placeable -> placeable.placeRelative(c * (cell + gap), y) }
+                y += heights[r] + gap
+            }
+        }
+    }
 }
+
+private val ToolTileMinWidth = 76.dp
 
 @Composable
 private fun ToolTile(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
     // Same tile as the home screen's quick actions, so tools look the same everywhere.
     Column(
         modifier = Modifier
-            .width(80.dp)
+            .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .alpha(if (enabled) 1f else 0.38f)
-            .padding(vertical = 12.dp, horizontal = 4.dp),
+            .padding(vertical = 10.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         IconTile(icon, TileTone.Indigo, size = 44.dp, corner = 14.dp)

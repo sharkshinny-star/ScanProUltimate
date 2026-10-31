@@ -766,7 +766,9 @@ private fun greeting(): String = stringResource(
     when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
         in 5..11 -> R.string.lib_greeting_morning
         in 12..16 -> R.string.lib_greeting_afternoon
-        else -> R.string.lib_greeting_evening
+        in 17..21 -> R.string.lib_greeting_evening
+        // 10 pm to 5 am: "Good evening" read wrong in the small hours.
+        else -> R.string.lib_greeting_night
     }
 )
 
@@ -1001,8 +1003,9 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                         center = Offset(size.width * 0.1f, 0f)
                     )
                     // The brand glyph, large and faint, running off the right edge.
-                    val glyph = size.height * 1.35f
-                    translate(left = size.width - glyph * 0.78f, top = (size.height - glyph) / 2f) {
+                    // Kept to the right third so the faint glyph (and its scan line) never runs behind the text.
+                    val glyph = size.height * 1.05f
+                    translate(left = size.width - glyph * 0.62f, top = (size.height - glyph) / 2f) {
                         drawScanGlyph(
                             glyph,
                             paper = Color.White.copy(alpha = 0.16f),
@@ -1013,23 +1016,23 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     }
                 }
             }
-            .padding(20.dp)
+            .padding(horizontal = 18.dp, vertical = 16.dp)
     ) {
-        Column(Modifier.fillMaxWidth(0.72f)) {
+        Column(Modifier.fillMaxWidth(0.68f)) {
             Eyebrow(stringResource(R.string.lib_hero_eyebrow), color = brand.onGradientMuted)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.lib_hero_title),
-                style = MaterialTheme.typography.headlineSmall,
-                color = brand.onGradient
-            )
             Spacer(Modifier.height(6.dp))
             Text(
+                stringResource(R.string.lib_hero_title),
+                style = MaterialTheme.typography.titleLarge,
+                color = brand.onGradient
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
                 stringResource(R.string.lib_hero_body),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = brand.onGradientMuted
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             Button(
                 onClick = onStartScan,
                 enabled = enabled,
@@ -1040,7 +1043,7 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     disabledContainerColor = Color.White.copy(alpha = 0.6f),
                     disabledContentColor = brand.gradientStart.copy(alpha = 0.6f)
                 ),
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Icon(Icons.Rounded.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))

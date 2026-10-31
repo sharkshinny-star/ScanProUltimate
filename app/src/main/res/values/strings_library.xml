@@ -147,6 +147,8 @@
     <string name="lib_greeting_morning">Good morning</string>
     <string name="lib_greeting_afternoon">Good afternoon</string>
     <string name="lib_greeting_evening">Good evening</string>
+    <!-- Home greeting from 10 pm to 5 am -->
+    <string name="lib_greeting_night">Working late</string>
     <string name="lib_home_intro">Scan, clean up, recognise text and export your first document.</string>
     <plurals name="lib_in_bin_count">
         <item quantity="one">%1$d in bin</item>

@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Merged owner commit `540a492` (older local copy): kept its version catalog (`gradle/libs.versions.toml`, used by `:translate`, `:baselineprofile`), `gradle.properties` parallel sync, `gradle-daemon-jvm.properties`, renamed scope file; undid its reverts (code, targetSdk 37, BouncyCastle pin, newer deps), removed `app/google-services.json` (offline-first) and the IDE report files; `.gitignore` now blocks both. |
+| newest | Owner screenshot fixes (F24): animated launch icon, night greeting, smaller home scan card, no white band under the bottom bar, adaptive tool grid, filtered review preview, Done button no longer clipped. |
+| a merge | Merged owner commit `540a492` (older local copy): kept its version catalog (`gradle/libs.versions.toml`, used by `:translate`, `:baselineprofile`), `gradle.properties` parallel sync, `gradle-daemon-jvm.properties`, renamed scope file; undid its reverts (code, targetSdk 37, BouncyCastle pin, newer deps), removed `app/google-services.json` (offline-first) and the IDE report files; `.gitignore` now blocks both. |
 | 001b98a | IDE inspection report (F23): more OpenCV exclusions, non-deprecated rotate icons, `Duration` timeout, British spelling throughout (owner decision). |
 | same commit | Review fixes: edit queue order, Stop/journal cleanup, skipped-edit message, journal fsync (F21); HEIC detection, page limit, translatable kept-scan reasons, empty Retry, old cache sessions adopted, long-image/ID-copy export (F22). |
 | bd18aea | Removed the unused `server/` placeholder and its README section (F20, closes R8). |
@@ -64,7 +65,8 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 ## 4. Next steps
 
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
-2. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.
+2. Device-check F24 on the owner's phone (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
+3. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.
 3. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
 4. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
 5. Device-test the edit journal: queue several edits behind a long OCR, force-stop the app, reopen, check they run and that the interrupted one is reported.

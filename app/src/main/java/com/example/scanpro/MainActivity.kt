@@ -132,8 +132,13 @@ class MainActivity : FragmentActivity() {
             ThemeTransition(targetDark) { dark ->
                 // Status and navigation bar icons follow the app's theme, not the system's.
                 DisposableEffect(dark) {
-                    val style = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT) { dark }
+                    // Explicit light/dark styles: with SystemBarStyle.auto, enableEdgeToEdge turns the navigation-bar
+                    // contrast scrim back on, which draws a near-white band under the app's bottom bar on
+                    // three-button navigation.
+                    val transparent = android.graphics.Color.TRANSPARENT
+                    val style = if (dark) SystemBarStyle.dark(transparent) else SystemBarStyle.light(transparent, transparent)
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
                     onDispose { }
                 }
                 ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = dynamicColor) {
@@ -179,13 +184,19 @@ class MainActivity : FragmentActivity() {
     /**
      * Keeps the launch screen up until the saved theme and lock setting have loaded (normally a few
      * milliseconds, never longer than [LAUNCH_SCREEN_MAX_HOLD_MS]), so nothing flashes in the wrong theme.
-     * It then fades and grows away instead of cutting to the app.
+     * The animated icon is shown in full first. It then fades and grows away instead of cutting to the app.
      */
     private fun showLaunchScreenUntilReady(splash: androidx.core.splashscreen.SplashScreen) {
         val startedAt = SystemClock.uptimeMillis()
+        // The animated icon (ic_launcher_splash) plays once in full, unless the user turned animations off.
+        val animationsOn = android.provider.Settings.Global.getFloat(
+            contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+        ) > 0f
+        val minimumMs = if (animationsOn) LAUNCH_ANIMATION_MS else 0L
         splash.setKeepOnScreenCondition {
+            val elapsed = SystemClock.uptimeMillis() - startedAt
             val ready = viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null
-            !ready && SystemClock.uptimeMillis() - startedAt < LAUNCH_SCREEN_MAX_HOLD_MS
+            (!ready && elapsed < LAUNCH_SCREEN_MAX_HOLD_MS) || elapsed < minimumMs
         }
         splash.setOnExitAnimationListener { provider ->
             provider.view.animate()
@@ -414,6 +425,8 @@ class MainActivity : FragmentActivity() {
     companion object {
         private const val LOCK_TIMEOUT_MS = 30_000L
         private const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
+        /** Length of the animated launch icon; matches windowSplashScreenAnimationDuration in themes.xml. */
+        private const val LAUNCH_ANIMATION_MS = 1000L
         private const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
         /** From notifications: open a document ([EXTRA_DOCUMENT_ID]), the recycle bin or settings, after unlock. */
         const val ACTION_OPEN_DOCUMENT = "com.example.scanpro.action.OPEN_DOCUMENT"
