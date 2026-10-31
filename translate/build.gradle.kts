@@ -21,7 +21,7 @@ android {
 
 dependencies {
     implementation(project(":app"))
-    implementation("com.google.mlkit:translate:17.0.3")
-    implementation("com.google.mlkit:language-id:17.0.6")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
+    implementation(libs.translate)
+    implementation(libs.language.id)
+    implementation(libs.kotlinx.coroutines.play.services)
 }

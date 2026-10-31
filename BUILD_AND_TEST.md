@@ -57,6 +57,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 | IDE inspection with the shared profile | Not run: no Android Studio in the container |
 | Release signing | Not validated: no secrets available; outputs are unsigned |
 | Manual UI pass | Not done |
+| After merging `540a492` | Compile (app, translate, baselineprofile) and unit tests re-run: 160 tests, 0 failed. Release builds and lint were run on `001b98a`, not re-run on the merge |
 
 ## Unit test inventory
 

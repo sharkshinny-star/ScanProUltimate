@@ -11,3 +11,11 @@ build/
 *.iml
 .DS_Store
 .kotlin/
+
+# IDE "Inspect Code" exports (keep them outside the repo) and Firebase config (the app is offline-first; never commit it)
+/index.html
+/script.js
+/styles.css
+/.descriptions.xml
+/[A-Z]*.xml
+google-services.json
