@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "gall
 
 | Commit | What |
 |---|---|
-| newest | Backup dialogs warn that backups keep unredacted originals (F19, closes R1). |
+| newest | Removed the unused `server/` placeholder and its README section (F20, closes R8). |
+| `4d8947a` | Backup dialogs warn that backups keep unredacted originals (F19, closes R1). |
 | `ecc322b` | Gallery picks that are unreadable, HEIC on Android 8, or over the page limit are reported instead of dropped silently (F18, closes R10). |
 | `36cbaa2` | Remaining English strings localized: `UserFacingException` for errors, ~120 strings (F17, closes R5). |
 | `b165003` | Queued document edits written to a journal and replayed after a restart (F16, closes R3). |
@@ -56,7 +57,6 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed, not device-tested). Test on Android 17, including a tablet or foldable.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
-9. `server/` is an unrelated Node placeholder; remove if not needed (ask the owner first).
 
 ## 4. Next steps
 

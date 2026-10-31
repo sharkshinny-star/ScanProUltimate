@@ -260,15 +260,3 @@ CamScanner's current Play listing still centers on scanning/enhancement, OCR, sy
 ## Intellectual property
 
 This project is original code. Do **not** publish it using CamScanner's name, icon, screenshots, copy, or a confusingly similar visual identity. Functional competition is fine; copying proprietary source/assets or passing off another product's branding is not.
-
-## Local web server (port 3000)
-
-A small Node server lives in `server/`. It has no dependencies and needs Node 18 or newer.
-
-```bash
-cd server
-npm start            # or: PORT=3000 node index.js
-curl -I http://localhost:3000
-```
-
-Expected response: `HTTP/1.1 200 OK` with `Content-Type: text/html; charset=UTF-8`.
