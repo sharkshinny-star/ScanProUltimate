@@ -109,25 +109,27 @@ class OpenCvDocumentAnalyzer(
         }
     }
 
-    private var shownGuidance = ""
-    private var candidateGuidance = ""
+    private var shownGuidance: Guidance? = null
+    private var candidateGuidance: Guidance? = null
     private var candidateFrames = 0
 
     /**
      * The hint shown to the user changes only once the detector has said the same thing for a few frames,
      * so one blurry or dark frame doesn't flash "Hold steady" over a page that is about to be captured.
      */
-    private fun steadyGuidance(latest: String): String {
-        if (latest == shownGuidance) {
+    private fun steadyGuidance(latest: Guidance): Guidance {
+        val shown = shownGuidance
+        if (latest == shown) {
             candidateFrames = 0
-            return shownGuidance
+            return shown
         }
         if (latest == candidateGuidance) candidateFrames++ else { candidateGuidance = latest; candidateFrames = 1 }
-        if (candidateFrames >= 3 || shownGuidance.isEmpty()) {
+        if (candidateFrames >= 3 || shown == null) {
             shownGuidance = latest
             candidateFrames = 0
+            return latest
         }
-        return shownGuidance
+        return shown
     }
 
     private fun updateStability(result: DocumentDetection): Boolean {
