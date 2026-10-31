@@ -146,13 +146,12 @@ fun PdfViewerScreen(
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
     val closeScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again; evicted ones are recycled.
+    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again. Evicted pages are not
+    // recycled: a page on screen can be evicted while it is still drawn, and the garbage collector frees it once
+    // nothing shows it.
     val pageCache = remember {
         object : android.util.LruCache<Int, Bitmap>(24 * 1024 * 1024) {
             override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
-            override fun entryRemoved(evicted: Boolean, key: Int, oldValue: Bitmap, newValue: Bitmap?) {
-                if (evicted && oldValue !== newValue) oldValue.recycle()
-            }
         }
     }
     DisposableEffect(Unit) { onDispose { pageCache.evictAll() } }
@@ -180,6 +179,8 @@ fun PdfViewerScreen(
                     // Replace (and close) any renderer already open, e.g. after a second password attempt.
                     runCatching { pdfRenderer?.close() }
                     runCatching { pfd?.close() }
+                    // Pages rendered from the previous file must never show for this one.
+                    pageCache.evictAll()
                     false
                 }
             }
@@ -687,8 +688,10 @@ private fun PdfPageItem(
     var isPageLoading by remember { mutableStateOf(true) }
     var aspectRatio by remember { mutableFloatStateOf(0.707f) }
 
-    LaunchedEffect(pageIndex) {
-        pageCache.get(pageIndex)?.takeIf { !it.isRecycled }?.let { cached ->
+    // Keyed on the renderer too: after a password unlock the same page index belongs to a different file.
+    LaunchedEffect(renderer, pageIndex) {
+        bitmap = null
+        pageCache.get(pageIndex)?.let { cached ->
             bitmap = cached
             aspectRatio = cached.width.toFloat() / cached.height.toFloat()
             isPageLoading = false
