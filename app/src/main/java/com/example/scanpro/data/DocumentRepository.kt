@@ -64,11 +64,11 @@ class DocumentRepository @Inject constructor(
 
     suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
     suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
-        purgeExpiredTrash(maxAgeDays = settings.trashRetentionDays.first())
+        purgeExpiredTrash()
         db.loadTrash()
     }
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
-        purgeExpiredTrash(maxAgeDays = settings.trashRetentionDays.first())
+        purgeExpiredTrash()
         db.loadTrashSummaries()
     }
     /** The Files list as pages; see [DocumentDatabase.pagedSummaries]. */
@@ -835,7 +835,9 @@ class DocumentRepository @Inject constructor(
         db.loadTrash().forEach { deleteDocumentFilesAndRecord(it) }
     }
 
-    suspend fun purgeExpiredTrash(maxAgeDays: Int = 7): Int = withContext(Dispatchers.IO) {
+    /** Deletes recycle-bin documents older than the user's retention setting. */
+    suspend fun purgeExpiredTrash(): Int = withContext(Dispatchers.IO) {
+        val maxAgeDays = settings.trashRetentionDays.first()
         val cutoff = now() - maxAgeDays.coerceAtLeast(1) * 24L * 60L * 60L * 1000L
         val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
         expired.forEach { deleteDocumentFilesAndRecord(it) }
