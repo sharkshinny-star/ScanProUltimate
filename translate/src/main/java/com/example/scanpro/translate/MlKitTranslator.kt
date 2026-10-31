@@ -8,6 +8,9 @@ import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
 import kotlinx.coroutines.tasks.await
+import com.example.scanpro.R
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.userRequire
 
 /**
  * The on-device ML Kit translator. Lives in the on-demand `translate` module and is created by name from
@@ -18,16 +21,16 @@ import kotlinx.coroutines.tasks.await
 class MlKitTranslator : Translator {
 
     override suspend fun translate(text: String, targetTag: String): String {
-        require(text.isNotBlank()) { "No OCR text to translate" }
+        userRequire(text.isNotBlank(), R.string.err_translation_no_text)
         val detected = LanguageIdentification.getClient().use { identifier ->
             identifier.identifyLanguage(text.take(12000)).await()
         }
-        require(detected != "und") { "Could not identify the source language" }
+        userRequire(detected != "und", R.string.err_translation_unknown_language)
 
         val source = TranslateLanguage.fromLanguageTag(detected)
-            ?: error("Translation is not supported for detected language: $detected")
+            ?: userError(R.string.err_translation_language_unsupported, detected)
         val target = TranslateLanguage.fromLanguageTag(targetTag)
-            ?: error("Unsupported target language")
+            ?: userError(R.string.err_translation_target_unsupported)
         if (source == target) return text
 
         return Translation.getClient(

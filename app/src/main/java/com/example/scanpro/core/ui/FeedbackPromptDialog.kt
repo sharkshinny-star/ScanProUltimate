@@ -1,5 +1,7 @@
 package com.example.scanpro.core.ui
 
+import com.example.scanpro.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -13,9 +15,9 @@ import androidx.compose.runtime.Composable
 fun FeedbackPromptDialog(onShareFeedback: () -> Unit, onLater: () -> Unit) {
     AlertDialog(
         onDismissRequest = onLater,
-        title = { Text("How was your scanning experience? \uD83D\uDE0A") },
-        text = { Text("A line or two about what worked and what didn't helps make ScanPro better. It opens in your email app.") },
-        confirmButton = { TextButton(onClick = onShareFeedback) { Text("Share feedback") } },
-        dismissButton = { TextButton(onClick = onLater) { Text("Maybe later") } }
+        title = { Text(stringResource(R.string.feedback_prompt_title)) },
+        text = { Text(stringResource(R.string.feedback_prompt_body)) },
+        confirmButton = { TextButton(onClick = onShareFeedback) { Text(stringResource(R.string.feedback_prompt_share)) } },
+        dismissButton = { TextButton(onClick = onLater) { Text(stringResource(R.string.feedback_prompt_later)) } }
     )
 }

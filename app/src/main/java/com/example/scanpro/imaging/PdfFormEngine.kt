@@ -14,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
+import com.example.scanpro.R
+import com.example.scanpro.core.text.userError
 
 enum class FormFieldKind { TEXT, CHECKBOX, RADIO, CHOICE, MULTI_CHOICE }
 
@@ -95,7 +97,7 @@ object PdfFormEngine {
                 val form = document.documentCatalog.acroForm ?: return@use emptyList()
                 val fields = form.fieldTree.mapNotNull(::toModel)
                 if (fields.isEmpty() && form.xfa != null) {
-                    throw IllegalArgumentException("This form is built with XFA, which isn't supported. Try opening it in Adobe Acrobat.")
+                    userError(R.string.err_form_xfa_unsupported)
                 }
                 fields
             }
@@ -115,7 +117,7 @@ object PdfFormEngine {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "form_fill_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(input).use { document ->
-                val form = document.documentCatalog.acroForm ?: throw IllegalArgumentException("This PDF has no fillable fields")
+                val form = document.documentCatalog.acroForm ?: userError(R.string.err_form_no_fields)
                 var needAppearances = false
                 values.forEach { (name, value) ->
                     val field = form.getField(name) ?: return@forEach
@@ -128,7 +130,7 @@ object PdfFormEngine {
                     try {
                         form.flatten()
                     } catch (error: Exception) {
-                        throw IllegalStateException("The filled form couldn't be flattened. Save it without flattening instead.", error)
+                        userError(R.string.err_form_flatten_failed, cause = error)
                     }
                 } else if (needAppearances) {
                     // A value whose look couldn't be drawn here is drawn by the viewer that opens the file.

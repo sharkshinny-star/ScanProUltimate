@@ -17,6 +17,8 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
+import com.example.scanpro.R
+import com.example.scanpro.core.text.userRequire
 
 /** What "Make searchable" did, page by page. */
 data class PdfOcrOutcome(
@@ -51,7 +53,7 @@ object PdfOcrEngine {
         try {
             PdfToolsEngine.loadPdf(input).use { document ->
                 val total = document.numberOfPages
-                require(total > 0) { "This PDF has no pages" }
+                userRequire(total > 0, R.string.err_pdf_has_no_pages)
                 val stripper = PDFTextStripper()
                 val needsText = (0 until total).filter { index ->
                     coroutineContext.ensureActive()

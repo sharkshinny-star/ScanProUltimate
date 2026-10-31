@@ -26,6 +26,9 @@ import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
+import com.example.scanpro.R
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.userRequire
 
 object ImageProcessor {
     init { OpenCvRuntime.ensureLoaded() }
@@ -98,7 +101,7 @@ object ImageProcessor {
         maxDimension: Int
     ): Bitmap {
         var bitmap = decodeScaled(source.absolutePath, maxDimension)
-            ?: error("Unable to decode ${source.name}")
+            ?: userError(R.string.err_could_not_decode_image, source.name)
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
         if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
         if (!crop.isIdentity()) bitmap = bitmap.then { cropPage(it, crop) }
@@ -165,14 +168,12 @@ object ImageProcessor {
     fun saveSignature(bitmap: Bitmap, destination: File) {
         destination.parentFile?.mkdirs()
         FileOutputStream(destination).use { output ->
-            check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
-                "Could not encode signature"
-            }
+            userRequire(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output), R.string.err_could_not_save_signature)
         }
     }
 
     fun cropSourceToNewFile(source: File, destination: File, quad: CropQuad) {
-        var bitmap = decodeScaled(source.absolutePath, 4200) ?: error("Unable to decode source")
+        var bitmap = decodeScaled(source.absolutePath, 4200) ?: userError(R.string.err_could_not_decode_source)
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
         if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
         val cropped = bitmap.then { cropPage(it, quad) }
@@ -729,9 +730,7 @@ object ImageProcessor {
     private fun saveJpeg(bitmap: Bitmap, file: File, quality: Int) {
         file.parentFile?.mkdirs()
         FileOutputStream(file).use { output ->
-            check(bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output)) {
-                "Could not encode ${file.name}"
-            }
+            userRequire(bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output), R.string.err_could_not_save_image, file.name)
         }
     }
 }

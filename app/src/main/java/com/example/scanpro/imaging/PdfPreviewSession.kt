@@ -14,6 +14,8 @@ import java.io.Closeable
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import com.example.scanpro.R
+import com.example.scanpro.core.text.userError
 
 /**
  * Page previews for one PDF: the file is copied once and opened once, pages are rendered only when asked for,
@@ -68,7 +70,7 @@ class PdfPreviewSession private constructor(
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     FileOutputStream(copy).use { input.copyTo(it) }
-                } ?: error("Unable to read PDF file from selected location")
+                } ?: userError(R.string.err_could_not_read_pdf_location)
                 val descriptor = ParcelFileDescriptor.open(copy, ParcelFileDescriptor.MODE_READ_ONLY)
                 try {
                     PdfPreviewSession(copy, descriptor, PdfRenderer(descriptor))

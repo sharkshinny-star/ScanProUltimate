@@ -1,5 +1,7 @@
 package com.example.scanpro.core.designsystem
 
+import com.example.scanpro.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -71,10 +73,11 @@ fun BrandMark(
     bare: Boolean = false
 ) {
     val brand = ScanProTheme.colors
+    val name = stringResource(R.string.brand_wordmark)
     Canvas(
         modifier
             .size(size)
-            .semantics { contentDescription = "ScanPro" }
+            .semantics { contentDescription = name }
     ) {
         val s = this.size.minDimension
         if (!bare) {
@@ -142,7 +145,7 @@ internal fun DrawScope.drawScanGlyph(s: Float, paper: Color, ink: Color, line: C
 @Composable
 fun BrandWordmark(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.onSurface) {
     Text(
-        "ScanPro",
+        stringResource(R.string.brand_wordmark),
         modifier = modifier,
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.ExtraBold,

@@ -1,5 +1,6 @@
 package com.example.scanpro
 
+import com.example.scanpro.core.text.AppStrings
 import android.app.Application
 import android.content.Context
 import android.os.StrictMode
@@ -38,6 +39,8 @@ class ScanProApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        // Before anything can throw a user-facing error: engines without a Context read their messages through it.
+        AppStrings.init(this)
         if (BuildConfig.DEBUG) enableStrictMode()
         PDFBoxResourceLoader.init(this)
         // Maven OpenCV packages the native libraries in the app. Load them off the main thread so they

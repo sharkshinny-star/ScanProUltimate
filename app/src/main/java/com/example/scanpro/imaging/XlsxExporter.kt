@@ -1,5 +1,7 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.text.userRequire
+import com.example.scanpro.R
 import java.io.File
 import java.io.OutputStream
 import java.util.zip.ZipEntry
@@ -19,7 +21,7 @@ object XlsxExporter {
     }
 
     fun write(sheets: List<Sheet>, output: OutputStream) {
-        require(sheets.isNotEmpty()) { "Nothing to export" }
+        userRequire(sheets.isNotEmpty(), R.string.export_err_nothing)
         val names = uniqueNames(sheets.map { it.name })
         ZipOutputStream(output).use { zip ->
             zip.part("[Content_Types].xml", contentTypes(sheets.size))

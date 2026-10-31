@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Error messages shown in snackbars and notices when an operation fails. -->
+
+    <!-- Documents and pages -->
+    <string name="err_page_not_found">This page no longer exists</string>
+    <string name="err_document_not_found">This document no longer exists</string>
+    <string name="err_choose_different_document">Choose a different document</string>
+    <string name="err_could_not_decode_page">The page image couldn\'t be read</string>
+    <string name="err_page_too_narrow_to_split">The page is too narrow to split</string>
+    <plurals name="err_document_page_limit">
+        <item quantity="one">A document can hold up to %1$d page</item>
+        <item quantity="other">A document can hold up to %1$d pages</item>
+    </plurals>
+    <string name="err_page_could_not_be_read" tools:ignore="PluralsCandidate">Page %1$d couldn\'t be read</string>
+    <string name="err_no_scan_pages_returned">The scanner didn\'t return any pages</string>
+    <string name="err_change_cannot_be_undone">This change can no longer be undone</string>
+    <string name="err_could_not_open_selected_file">The selected file couldn\'t be opened</string>
+    <string name="err_file_too_large_to_import">This file is too large to import (limit %1$d MB)</string>
+    <string name="err_could_not_create_file_in_folder">Couldn\'t create a file in the chosen folder</string>
+    <string name="err_could_not_write_to_folder">Couldn\'t write to the chosen folder</string>
+    <string name="err_choose_at_least_one_image">Choose at least one image</string>
+    <string name="err_pdf_page_count_range" tools:ignore="PluralsCandidate">The PDF must have between %1$d and %2$d pages</string>
+    <string name="err_name_required">Enter a name</string>
+    <string name="err_folder_name_required">Enter a folder name</string>
+    <string name="err_new_folder_name_required">Enter a new folder name</string>
+    <string name="err_erase_nothing_selected">Brush over what you want to erase</string>
+    <string name="err_watermark_blank">Enter the watermark text</string>
+    <string name="err_png_not_written">The PNG image couldn\'t be saved</string>
+    <string name="err_no_text_to_export">There\'s no recognized text to export</string>
+    <string name="err_text_blank">Enter some text</string>
+    <string name="err_document_has_no_pages">The document has no pages</string>
+    <string name="err_could_not_save_pdf">The PDF couldn\'t be saved</string>
+    <string name="err_could_not_save_signature">The signature couldn\'t be saved</string>
+    <string name="err_could_not_save_image">The image %1$s couldn\'t be saved</string>
+
+    <!-- Encrypted backups -->
+    <string name="err_backup_password_too_short">Use a backup password with at least 6 characters</string>
+    <string name="err_could_not_open_backup">The backup couldn\'t be opened</string>
+    <string name="err_could_not_decrypt_backup">Couldn\'t decrypt the backup. Check the password and the file.</string>
+    <string name="err_backup_too_large">This backup is too large to restore</string>
+
+    <!-- Images and PDFs -->
+    <string name="err_could_not_decode_image">The image %1$s couldn\'t be read</string>
+    <string name="err_could_not_decode_source">The page\'s original image couldn\'t be read</string>
+    <string name="err_could_not_open_input_pdf">The PDF couldn\'t be opened</string>
+    <string name="err_could_not_read_pdf_page" tools:ignore="PluralsCandidate">Page %1$d couldn\'t be read</string>
+    <string name="err_page_range_empty" tools:ignore="TypographyDashes">Enter at least one page or range, such as 1-3</string>
+    <string name="err_page_range_backwards" tools:ignore="TypographyDashes">\"%1$s\" runs backwards; write it as %2$d-%3$d</string>
+    <string name="err_page_range_invalid" tools:ignore="TypographyDashes">\"%1$s\" is not a page number or a range like 2-4</string>
+    <string name="err_page_range_starts_at_one">Pages start at 1</string>
+    <plurals name="err_page_range_past_end">
+        <item quantity="one">\"%2$s\" goes past the last page; this PDF has %1$d page</item>
+        <item quantity="other">\"%2$s\" goes past the last page; this PDF has %1$d pages</item>
+    </plurals>
+    <string name="err_form_xfa_unsupported">This form is built with XFA, which isn\'t supported. Try opening it in Adobe Acrobat.</string>
+    <string name="err_form_no_fields">This PDF has no fillable fields</string>
+    <string name="err_form_flatten_failed">The filled form couldn\'t be flattened. Save it without flattening instead.</string>
+    <string name="err_pdf_has_no_pages">This PDF has no pages</string>
+    <string name="err_could_not_read_pdf_location">The PDF couldn\'t be read from the selected location</string>
+    <plurals name="err_pdf_password_too_short">
+        <item quantity="one">Use a password with at least %1$d character</item>
+        <item quantity="other">Use a password with at least %1$d characters</item>
+    </plurals>
+    <string name="err_could_not_protect_pdf">Couldn\'t protect this PDF: %1$s</string>
+    <string name="err_could_not_protect_pdf_unsupported">Couldn\'t protect this PDF: the file isn\'t supported</string>
+
+    <!-- Translation -->
+    <string name="err_translation_could_not_start">Translation is installed but couldn\'t start. Please restart the app.</string>
+    <string name="err_translation_download_cancelled">Translation download cancelled</string>
+    <string name="err_translation_needs_confirmation">Google Play needs your confirmation to download translation. Please try again on Wi-Fi.</string>
+    <string name="err_translation_network">Translation couldn\'t be downloaded. Check your connection and try again.</string>
+    <string name="err_translation_storage">Not enough storage to add translation.</string>
+    <string name="err_translation_play_unavailable">Translation is added through Google Play, which isn\'t available on this device or for this install.</string>
+    <string name="err_translation_access_denied">Google Play didn\'t allow the translation download.</string>
+    <string name="err_translation_busy">Another download is in progress. Please try again in a moment.</string>
+    <string name="err_translation_play_error">Translation couldn\'t be added (Google Play error %1$d).</string>
+    <string name="err_translation_no_text">There\'s no recognized text to translate</string>
+    <string name="err_translation_unknown_language">The language of the text couldn\'t be identified</string>
+    <string name="err_translation_language_unsupported">Translation isn\'t available for the detected language (%1$s)</string>
+    <string name="err_translation_target_unsupported">Translation into this language isn\'t available</string>
+</resources>

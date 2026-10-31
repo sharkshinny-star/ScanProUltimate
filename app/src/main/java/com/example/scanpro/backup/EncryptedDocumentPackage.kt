@@ -34,6 +34,10 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import org.json.JSONArray
 import org.json.JSONObject
+import com.example.scanpro.R
+import com.example.scanpro.core.text.UserFacingException
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.userRequire
 
 /**
  * Password-encrypted, portable ScanPro package. Stores each page's rendered output, OCR text, original source
@@ -76,10 +80,10 @@ class EncryptedDocumentPackage(private val context: Context) {
     }
 
     fun import(source: Uri, password: CharArray): RestoredDocument {
-        require(password.size >= 6) { "Backup password must be at least 6 characters" }
+        userRequire(password.size >= 6, R.string.err_backup_password_too_short)
         val encrypted = File(context.cacheDir, "import_${UUID.randomUUID()}.scanpro")
         context.contentResolver.openInputStream(source).use { input ->
-            requireNotNull(input) { "Could not open backup" }
+            if (input == null) userError(R.string.err_could_not_open_backup)
             FileOutputStream(encrypted).use { input.copyTo(it) }
         }
         val outDir = File(context.cacheDir, "restore_${UUID.randomUUID()}")
@@ -102,7 +106,7 @@ class EncryptedDocumentPackage(private val context: Context) {
         }
 
         private fun writePackage(document: ScanDocument, password: CharArray, destination: File) {
-            require(password.size >= 6) { "Use a backup password with at least 6 characters" }
+            userRequire(password.size >= 6, R.string.err_backup_password_too_short)
             destination.parentFile?.mkdirs()
             val salt = ByteArray(16).also(SecureRandom()::nextBytes)
             val noncePrefix = ByteArray(ChunkedAead.PREFIX_BYTES).also(SecureRandom()::nextBytes)
@@ -187,7 +191,7 @@ class EncryptedDocumentPackage(private val context: Context) {
          * run it directly. On any failure [outDir] is removed; [encrypted] is always deleted and [password] wiped.
          */
         fun read(encrypted: File, outDir: File, password: CharArray): RestoredDocument {
-            require(password.size >= 6) { "Backup password must be at least 6 characters" }
+            userRequire(password.size >= 6, R.string.err_backup_password_too_short)
             outDir.mkdirs()
             var rawInput: FileInputStream? = null
             try {
@@ -303,7 +307,7 @@ class EncryptedDocumentPackage(private val context: Context) {
                 throw error
             } catch (error: Throwable) {
                 outDir.deleteRecursively()
-                throw IllegalArgumentException("Could not decrypt backup. Check the password and file.", error)
+                throw UserFacingException(R.string.err_could_not_decrypt_backup, cause = error)
             } finally {
                 runCatching { rawInput?.close() }
                 encrypted.delete()
@@ -311,7 +315,7 @@ class EncryptedDocumentPackage(private val context: Context) {
             }
         }
 
-        private class BackupTooLargeException : IllegalArgumentException("Backup is too large to restore")
+        private class BackupTooLargeException : UserFacingException(R.string.err_backup_too_large)
 
         /** Resolves a manifest-relative path and refuses anything that escapes the restore directory. */
         private fun safeBackupFile(outDir: File, relative: String): File {

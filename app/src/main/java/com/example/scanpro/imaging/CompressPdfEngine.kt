@@ -22,6 +22,8 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 import kotlinx.coroutines.currentCoroutineContext
+import com.example.scanpro.R
+import com.example.scanpro.core.text.userError
 
 enum class CompressionPreset(
     val label: String,
@@ -64,7 +66,7 @@ object CompressPdfEngine {
         try {
             context.contentResolver.openInputStream(inputUri)?.use { input ->
                 FileOutputStream(tempInput).use { output -> input.copyTo(output) }
-            } ?: error("Could not open input PDF")
+            } ?: userError(R.string.err_could_not_open_input_pdf)
 
             val originalSize = tempInput.length()
             val pageTotal = runCatching { PDDocument.load(tempInput, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { it.numberOfPages } }.getOrDefault(1)

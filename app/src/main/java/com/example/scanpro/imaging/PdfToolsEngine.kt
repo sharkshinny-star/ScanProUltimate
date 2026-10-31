@@ -1,5 +1,10 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.text.userRequire
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.UserFacingPluralException
+import com.example.scanpro.core.text.UserFacingException
+import com.example.scanpro.core.text.AppStrings
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -98,7 +103,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): PdfToolResult = withContext(Dispatchers.IO) {
-        require(inputUris.size >= 2) { "Select at least 2 PDF files to merge" }
+        userRequire(inputUris.size >= 2, R.string.tools_err_merge_two)
         outputFile.parentFile?.mkdirs()
 
         val mergedDoc = PDDocument()
@@ -113,7 +118,7 @@ object PdfToolsEngine {
         try {
             inputUris.forEachIndexed { index, uri ->
                 if (!coroutineContext.isActive) throw InterruptedException("Merge operation cancelled")
-                onProgress(index + 1, inputUris.size, "Merging file ${index + 1} of ${inputUris.size}…")
+                onProgress(index + 1, inputUris.size, AppStrings.get(R.string.tools_progress_merging, index + 1, inputUris.size))
 
                 val tempFile = copyUriToTemp(context, uri, "merge_in_${UUID.randomUUID()}.pdf")
                 tempFiles += tempFile
@@ -121,9 +126,9 @@ object PdfToolsEngine {
                 val doc = try {
                     loadPdf(tempFile)
                 } catch (error: IllegalArgumentException) {
-                    throw IllegalArgumentException("File ${index + 1}: ${error.message}", error)
+                    throw UserFacingException(R.string.tools_err_file_reason, index + 1, error.message.orEmpty(), cause = error)
                 } catch (error: Exception) {
-                    throw IllegalArgumentException("File ${index + 1} could not be read as a PDF (it may be damaged or password protected)", error)
+                    throw UserFacingException(R.string.tools_err_file_unreadable, index + 1, cause = error)
                 }
                 sources += doc
                 for (i in 0 until doc.numberOfPages) {
@@ -131,16 +136,16 @@ object PdfToolsEngine {
                     totalPagesMerged++
                 }
             }
-            require(totalPagesMerged > 0) { "The selected PDFs contain no pages" }
+            userRequire(totalPagesMerged > 0, R.string.tools_err_merge_no_pages)
 
-            onProgress(inputUris.size, inputUris.size, "Saving merged PDF…")
+            onProgress(inputUris.size, inputUris.size, AppStrings.get(R.string.tools_progress_saving_merged))
             mergedDoc.save(outputFile)
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = totalPagesMerged,
                 originalSizeBytes = originalSizeSum,
                 outputSizeBytes = outputFile.length(),
-                message = "Merged ${inputUris.size} PDFs ($totalPagesMerged total pages)"
+                message = AppStrings.plural(R.plurals.tools_result_merged, totalPagesMerged, inputUris.size, totalPagesMerged)
             )
         } finally {
             runCatching { mergedDoc.close() }
@@ -165,13 +170,13 @@ object PdfToolsEngine {
         try {
             loadPdf(tempFile).use { doc ->
                 val totalPages = doc.numberOfPages
-                require(totalPages > 0) { "The PDF document contains no pages" }
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
 
                 when (mode) {
                     SplitMode.SINGLE_PAGES -> {
                         for (i in 0 until totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
-                            onProgress(i + 1, totalPages, "Splitting page ${i + 1} of $totalPages…")
+                            onProgress(i + 1, totalPages, AppStrings.get(R.string.tools_progress_splitting_page, i + 1, totalPages))
                             val outFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.pdf")
                             PDDocument().use { singleDoc ->
                                 singleDoc.addImportedPage(doc.getPage(i))
@@ -187,7 +192,7 @@ object PdfToolsEngine {
                         while (pageIndex < totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             val end = (pageIndex + chunkSize).coerceAtMost(totalPages)
-                            onProgress(chunkIndex, (totalPages + chunkSize - 1) / chunkSize, "Splitting chunk $chunkIndex…")
+                            onProgress(chunkIndex, (totalPages + chunkSize - 1) / chunkSize, AppStrings.get(R.string.tools_progress_splitting_chunk, chunkIndex))
                             val outFile = File(outputDir, "part_${chunkIndex}_pages_${pageIndex + 1}_to_$end.pdf")
                             PDDocument().use { chunkDoc ->
                                 for (i in pageIndex until end) chunkDoc.addImportedPage(doc.getPage(i))
@@ -200,10 +205,10 @@ object PdfToolsEngine {
                     }
                     SplitMode.PAGE_RANGES -> {
                         val ranges = parsePageRanges(customRangesText, totalPages)
-                        require(ranges.isNotEmpty()) { "No valid page ranges provided" }
+                        userRequire(ranges.isNotEmpty(), R.string.tools_err_no_ranges)
                         ranges.forEachIndexed { idx, range ->
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
-                            onProgress(idx + 1, ranges.size, "Extracting range ${idx + 1} of ${ranges.size}…")
+                            onProgress(idx + 1, ranges.size, AppStrings.get(R.string.tools_progress_extracting_range, idx + 1, ranges.size))
                             val outFile = File(outputDir, "range_${idx + 1}_pages_${range.first}_to_${range.last}.pdf")
                             PDDocument().use { rangeDoc ->
                                 for (pageNum in range) {
@@ -229,7 +234,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): PdfToolResult = withContext(Dispatchers.IO) {
-        require(selectedPageIndices.isNotEmpty()) { "Select at least one page to extract" }
+        userRequire(selectedPageIndices.isNotEmpty(), R.string.tools_err_extract_none)
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "extract_in_${UUID.randomUUID()}.pdf")
 
@@ -238,7 +243,7 @@ object PdfToolsEngine {
             PDDocument().use { extractedDoc -> loadPdf(tempFile).use { doc ->
                 selectedPageIndices.forEachIndexed { index, pageIdx ->
                     if (!coroutineContext.isActive) throw InterruptedException("Extract operation cancelled")
-                    onProgress(index + 1, selectedPageIndices.size, "Extracting page ${index + 1} of ${selectedPageIndices.size}…")
+                    onProgress(index + 1, selectedPageIndices.size, AppStrings.get(R.string.tools_progress_extracting_page, index + 1, selectedPageIndices.size))
                     if (pageIdx in 0 until doc.numberOfPages) {
                         extractedDoc.addImportedPage(doc.getPage(pageIdx))
                     }
@@ -250,7 +255,7 @@ object PdfToolsEngine {
                 pageCount = selectedPageIndices.size,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "Extracted ${selectedPageIndices.size} ${if (selectedPageIndices.size == 1) "page" else "pages"}"
+                message = AppStrings.plural(R.plurals.tools_result_extracted, selectedPageIndices.size, selectedPageIndices.size)
             )
         } finally {
             tempFile.delete()
@@ -274,7 +279,7 @@ object PdfToolsEngine {
                 totalPages = doc.numberOfPages
                 for (i in 0 until totalPages) {
                     if (!coroutineContext.isActive) throw InterruptedException("Rotation operation cancelled")
-                    onProgress(i + 1, totalPages, "Rotating page ${i + 1} of $totalPages…")
+                    onProgress(i + 1, totalPages, AppStrings.get(R.string.tools_progress_rotating, i + 1, totalPages))
                     val addDegrees = rotationsMap[i] ?: 0
                     if (addDegrees != 0) {
                         val page = doc.getPage(i)
@@ -288,7 +293,7 @@ object PdfToolsEngine {
                 pageCount = totalPages,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "Successfully rotated PDF pages"
+                message = AppStrings.get(R.string.tools_result_rotated)
             )
         } finally {
             tempFile.delete()
@@ -302,7 +307,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): PdfToolResult = withContext(Dispatchers.IO) {
-        require(pageSpecs.isNotEmpty()) { "At least one page must remain in the PDF" }
+        userRequire(pageSpecs.isNotEmpty(), R.string.tools_err_keep_one_page)
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "organize_in_${UUID.randomUUID()}.pdf")
 
@@ -311,7 +316,7 @@ object PdfToolsEngine {
             PDDocument().use { newDoc -> loadPdf(tempFile).use { doc ->
                 pageSpecs.forEachIndexed { index, spec ->
                     if (!coroutineContext.isActive) throw InterruptedException("Organize operation cancelled")
-                    onProgress(index + 1, pageSpecs.size, "Processing page ${index + 1} of ${pageSpecs.size}…")
+                    onProgress(index + 1, pageSpecs.size, AppStrings.get(R.string.tools_progress_processing_page, index + 1, pageSpecs.size))
                     if (spec.originalIndex in 0 until doc.numberOfPages) {
                         val page = doc.getPage(spec.originalIndex)
                         if (spec.rotationDegrees != 0) {
@@ -327,7 +332,7 @@ object PdfToolsEngine {
                 pageCount = pageSpecs.size,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "Successfully reordered and saved ${pageSpecs.size} pages"
+                message = AppStrings.plural(R.plurals.tools_result_organized, pageSpecs.size, pageSpecs.size)
             )
         } finally {
             tempFile.delete()
@@ -342,7 +347,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): PdfToolResult = withContext(Dispatchers.IO) {
-        require(imageUris.isNotEmpty()) { "Select at least one image" }
+        userRequire(imageUris.isNotEmpty(), R.string.tools_err_no_images)
         outputFile.parentFile?.mkdirs()
 
         val tempDir = File(context.cacheDir, "img2pdf_${UUID.randomUUID()}").apply { mkdirs() }
@@ -351,14 +356,14 @@ object PdfToolsEngine {
         try {
             imageUris.forEachIndexed { index, uri ->
                 if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
-                onProgress(index + 1, imageUris.size, "Loading image ${index + 1} of ${imageUris.size}…")
+                onProgress(index + 1, imageUris.size, AppStrings.get(R.string.tools_progress_loading_image, index + 1, imageUris.size))
                 val imgFile = File(tempDir, "img_$index.jpg")
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     FileOutputStream(imgFile).use { output -> input.copyTo(output) }
-                } ?: error("Could not read image file at position ${index + 1}")
+                } ?: userError(R.string.tools_err_image_unreadable, index + 1)
                 // Gallery photos carry their rotation in EXIF, which the PDF writer ignores; bake it in.
                 val oriented = ImageProcessor.decodeOrientedScaled(imgFile.absolutePath, 4200)
-                    ?: error("Image ${index + 1} could not be decoded")
+                    ?: userError(R.string.tools_err_image_undecodable, index + 1)
                 try {
                     ImageProcessor.saveBitmapJpeg(oriented, imgFile, 95)
                 } finally {
@@ -376,7 +381,7 @@ object PdfToolsEngine {
                 )
             }
 
-            onProgress(imageUris.size, imageUris.size, "Creating PDF document…")
+            onProgress(imageUris.size, imageUris.size, AppStrings.get(R.string.tools_progress_creating_pdf))
             PdfExporter.export(
                 pages = pages,
                 destination = outputFile,
@@ -391,7 +396,7 @@ object PdfToolsEngine {
                 pageCount = imageUris.size,
                 originalSizeBytes = pages.sumOf { File(it.imagePath).length() },
                 outputSizeBytes = outputFile.length(),
-                message = "Created PDF with ${imageUris.size} pages"
+                message = AppStrings.plural(R.plurals.tools_result_images_to_pdf, imageUris.size, imageUris.size)
             )
         } finally {
             tempDir.deleteRecursively()
@@ -418,11 +423,11 @@ object PdfToolsEngine {
                 PdfRenderer(pfd).use { renderer ->
                     val totalPages = renderer.pageCount
                     val chosen = pages?.filter { it in 1..totalPages }?.distinct()?.sorted() ?: (1..totalPages).toList()
-                    require(chosen.isNotEmpty()) { "None of the chosen pages exist in this PDF" }
+                    userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
                     chosen.forEachIndexed { step, pageNumber ->
                         val i = pageNumber - 1
                         if (!coroutineContext.isActive) throw InterruptedException("PDF to images operation cancelled")
-                        onProgress(step + 1, chosen.size, "Exporting page $pageNumber as ${format.extension.uppercase()}…")
+                        onProgress(step + 1, chosen.size, AppStrings.get(R.string.tools_progress_exporting_page, pageNumber, format.extension.uppercase()))
 
                         renderer.openPage(i).use { page ->
                             // Capped so a poster-sized page can't run out of memory.
@@ -464,7 +469,7 @@ object PdfToolsEngine {
         try {
             val originalSize = tempFile.length()
             if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
-                throw IllegalArgumentException("This PDF already needs a password to open. Unlock it first, then protect it with the new password.")
+                userError(R.string.tools_err_already_protected)
             }
             PdfSecurity.protect(tempFile, outputFile, password)
             var pageCount = 0
@@ -474,7 +479,7 @@ object PdfToolsEngine {
                 pageCount = pageCount,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = "PDF protected with password successfully"
+                message = AppStrings.get(R.string.tools_result_protected)
             )
         } finally {
             tempFile.delete()
@@ -499,8 +504,8 @@ object PdfToolsEngine {
                 pageCount = pageCount,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = if (before == PdfProtection.PASSWORD_REQUIRED) "The password was removed; the copy opens without one"
-                else "Editing and copying restrictions were removed; the file never needed a password to open"
+                message = if (before == PdfProtection.PASSWORD_REQUIRED) AppStrings.get(R.string.tools_result_password_removed)
+                else AppStrings.get(R.string.tools_result_restrictions_removed)
             )
         } finally {
             tempFile.delete()
@@ -542,7 +547,7 @@ object PdfToolsEngine {
         // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
         PDDocument.load(file, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
     } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
-        throw IllegalArgumentException("This PDF is password-protected. Unlock it first with the Unlock PDF tool.", error)
+        throw UserFacingException(R.string.tools_err_password_protected, cause = error)
     }
 
     /**
@@ -558,7 +563,7 @@ object PdfToolsEngine {
         try {
             context.contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(tempFile).use { output -> input.copyTo(output) }
-            } ?: error("Unable to read PDF file from selected location")
+            } ?: userError(R.string.tools_err_unreadable_location)
         } catch (error: Throwable) {
             // A copy that failed half way must not leave part of the user's file behind in the cache.
             tempFile.delete()
@@ -568,5 +573,9 @@ object PdfToolsEngine {
     }
 
     private fun parsePageRanges(rangeStr: String, maxPages: Int): List<IntRange> =
-        PageRanges.parse(rangeStr, maxPages).getOrElse { error(it.message ?: "Invalid page ranges") }
+        PageRanges.parse(rangeStr, maxPages).getOrElse {
+            // PageRanges explains what is wrong in the user's language; anything else gets the general message.
+            if (it is UserFacingException || it is UserFacingPluralException) throw it
+            userError(R.string.tools_err_invalid_ranges, cause = it)
+        }
 }

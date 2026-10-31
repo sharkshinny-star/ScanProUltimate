@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-10-31, after the "persist queued edits" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-10-31, after the "localize remaining strings" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -221,6 +221,9 @@ document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCa
 - **Trimmed OpenCV** built from unmodified upstream sources; don't edit the generated Java wrappers.
 - **BouncyCastle constraint** overrides PDFBox's vulnerable 1.72.
 - **targetSdk 37** (Android 17): no orientation or aspect-ratio locks, no reflection on platform internals, no background `IntentSender` launches; app lock relies on `FLAG_SECURE`, which also blocks Content Capture.
+- **Localized errors:** user-visible errors are `core/text/UserFacingException` (an `IllegalArgumentException`) carrying a string
+  resource; `message` resolves through `AppStrings` (application context, set in `ScanProApplication.onCreate`) each time it is
+  read, so engines without a Context can throw translated errors and existing `error.message` call sites need no change.
 - **Shared IDE settings** (`.idea/scopes`, `.idea/inspectionProfiles`, `.idea/dictionaries`) are committed; the rest of `.idea/` stays ignored.
 
 ## 15. External-service extension points

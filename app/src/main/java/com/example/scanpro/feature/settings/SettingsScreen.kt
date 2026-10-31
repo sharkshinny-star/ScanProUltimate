@@ -256,7 +256,7 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val contact: (SupportTopic) -> Unit = { topic ->
         val delivery = contactSupport(context, topic)
-        scope.launch { snackbarHostState.showSnackbar(delivery.confirmation) }
+        scope.launch { snackbarHostState.showSnackbar(delivery.confirmation(context)) }
     }
     if (privacyOpen) PrivacyDialog(onDismiss = { privacyOpen = false })
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()

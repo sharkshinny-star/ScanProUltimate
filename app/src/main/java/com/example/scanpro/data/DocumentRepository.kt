@@ -37,6 +37,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import com.example.scanpro.core.text.UserFacingPluralException
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.userRequire
+import com.example.scanpro.R
 
 /** The PDF is password-protected; [wrongPassword] is true when a password was given and did not work. */
 class PdfPasswordRequiredException(val wrongPassword: Boolean) :
@@ -108,7 +112,7 @@ class DocumentRepository @Inject constructor(
         crops: List<CropQuad> = emptyList(),
         filters: List<PageFilter> = emptyList(),
     ): ScanDocument = withContext(Dispatchers.IO) {
-        require(imageUris.isNotEmpty()) { "Choose at least one image" }
+        userRequire(imageUris.isNotEmpty(), R.string.err_choose_at_least_one_image)
         // Camera scans arrive with the outline the user confirmed; gallery and shared photos are outlined here.
         createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, detectCrops = crops.isEmpty())
     }
@@ -154,7 +158,7 @@ class DocumentRepository @Inject constructor(
                     throw PdfPasswordRequiredException(wrongPassword = false)
                 }
                 opened.use { renderer ->
-                    require(renderer.pageCount in (1..300)) { "PDF must contain between 1 and 300 pages" }
+                    userRequire(renderer.pageCount in (1..300), R.string.err_pdf_page_count_range, 1, 300)
                     for (index in 0 until renderer.pageCount) {
                         renderer.openPage(index).use { page ->
                             val maxDimension = 2400f
@@ -213,7 +217,7 @@ class DocumentRepository @Inject constructor(
     /** Renames the document. Returns true when another document already has this name, so the caller can say so. */
     suspend fun rename(id: String, title: String): Boolean = withContext(Dispatchers.IO) {
         val clean = title.trim().take(MAX_TITLE_LENGTH)
-        require(clean.isNotBlank()) { "A name is required" }
+        userRequire(clean.isNotBlank(), R.string.err_name_required)
         val clash = db.loadAll().any { it.id != id && it.title.equals(clean, ignoreCase = true) }
         mutateDocument(id) { doc -> doc.copy(title = clean, updatedAt = now()) }
         clash
@@ -222,7 +226,7 @@ class DocumentRepository @Inject constructor(
     /** Every document in the folder goes back to the top level; the folder then no longer exists. */
     suspend fun deleteFolder(name: String) = withContext(Dispatchers.IO) {
         val target = name.trim()
-        require(target.isNotBlank()) { "Folder name is required" }
+        userRequire(target.isNotBlank(), R.string.err_folder_name_required)
         db.loadAll(includeTrashed = true)
             .filter { doc -> doc.folderName.equals(target, ignoreCase = true) }
             .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = "", updatedAt = now())) }
@@ -256,8 +260,8 @@ class DocumentRepository @Inject constructor(
     suspend fun renameFolder(oldName: String, newName: String) = withContext(Dispatchers.IO) {
         val source = oldName.trim()
         val target = newName.trim().take(80)
-        require(source.isNotBlank()) { "Folder name is required" }
-        require(target.isNotBlank()) { "New folder name is required" }
+        userRequire(source.isNotBlank(), R.string.err_folder_name_required)
+        userRequire(target.isNotBlank(), R.string.err_new_folder_name_required)
         db.loadAll(includeTrashed = true)
             .filter { doc -> doc.folderName.equals(source, ignoreCase = true) }
             .forEach { doc -> db.saveDocumentMetadata(doc.copy(folderName = target, updatedAt = now())) }
@@ -361,7 +365,7 @@ class DocumentRepository @Inject constructor(
 
     /** The page as it looks without its markup, so the markup editor can show boxes over a clean image. */
     suspend fun markupBase(documentId: String, pageId: String): File = withContext(Dispatchers.IO) {
-        val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         val out = File(context.cacheDir, "markup_${page.id}.jpg")
         ImageProcessor.renderPage(File(page.sourcePath), out, page.filter, page.rotationDegrees, page.crop, page.adjustments, emptyList())
         out
@@ -433,7 +437,7 @@ class DocumentRepository @Inject constructor(
      * just removes the words.
      */
     suspend fun replaceText(documentId: String, pageId: String, left: Float, top: Float, right: Float, bottom: Float, text: String) {
-        val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         val colours = withContext(Dispatchers.IO) { sampleColours(File(page.imagePath), left, top, right, bottom) }
         val padX = (bottom - top) * 0.15f
         addAnnotation(
@@ -475,7 +479,7 @@ class DocumentRepository @Inject constructor(
      */
     suspend fun erase(documentId: String, pageId: String, strokesByBrush: Map<Float, List<List<NormalizedPoint>>>) {
         val erasers = strokesByBrush.entries.sortedBy { it.key }.mapNotNull { (size, strokes) -> eraser(strokes.filter { it.isNotEmpty() }, size) }
-        require(erasers.isNotEmpty()) { "Brush over what you want to erase" }
+        userRequire(erasers.isNotEmpty(), R.string.err_erase_nothing_selected)
         editSinglePage(documentId, pageId) { page ->
             renderAndOcr(page.copy(annotations = page.annotations + erasers), runOcr = true, redactionChanged = true)
         }
@@ -525,7 +529,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun addWatermark(documentId: String, style: WatermarkStyle) = withContext(Dispatchers.IO) {
         val clean = style.text.trim()
-        require(clean.isNotBlank()) { "Watermark cannot be blank" }
+        userRequire(clean.isNotBlank(), R.string.err_watermark_blank)
         val doc = requireDocument(documentId)
         val height = style.size.height
         val (y, rotation) = when (style.position) {
@@ -558,7 +562,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(documentId)
         val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val from = pages.indexOfFirst { it.id == pageId }
-        if (from == -1) error("Page not found")
+        if (from == -1) userError(R.string.err_page_not_found)
         val to = (from + delta).coerceIn(0, pages.lastIndex)
         if (to == from) return@withContext
         val moved = pages.removeAt(from)
@@ -570,7 +574,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(documentId)
         val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
-        require(index >= 0) { "Page not found" }
+        userRequire(index >= 0, R.string.err_page_not_found)
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val copy = copyFlattenedPage(pages[index], doc.id, folder, index + 1)
         pages.add(index + 1, copy)
@@ -585,7 +589,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun extractPage(documentId: String, pageId: String): ScanDocument = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val page = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val page = doc.pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         createFromPages(
             sourcePages = listOf(page),
             title = "${doc.title} - Page ${page.position + 1}",
@@ -599,7 +603,7 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun mergeDocuments(primaryId: String, secondaryId: String): ScanDocument = withContext(Dispatchers.IO) {
-        require(primaryId != secondaryId) { "Choose a different document" }
+        userRequire(primaryId != secondaryId, R.string.err_choose_different_document)
         val first = requireDocument(primaryId)
         val second = requireDocument(secondaryId)
         createFromPages(
@@ -619,10 +623,10 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(documentId)
         val pages = doc.pages.asSequence().sortedBy { it.position }.toMutableList()
         val index = pages.indexOfFirst { it.id == pageId }
-        require(index >= 0) { "Page not found" }
+        userRequire(index >= 0, R.string.err_page_not_found)
         val page = pages[index]
-        val bitmap = ImageProcessor.decodeScaled(page.imagePath, 3800) ?: error("Could not decode page")
-        require(bitmap.width >= 500) { "Page is too narrow to split" }
+        val bitmap = ImageProcessor.decodeScaled(page.imagePath, 3800) ?: userError(R.string.err_could_not_decode_page)
+        userRequire(bitmap.width >= 500, R.string.err_page_too_narrow_to_split)
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
@@ -659,7 +663,7 @@ class DocumentRepository @Inject constructor(
     suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
         if (imageUris.isEmpty()) return@withContext
         val doc = requireDocument(documentId)
-        require(doc.pages.size + imageUris.size <= MAX_PAGES) { "A document can hold up to $MAX_PAGES pages" }
+        if (doc.pages.size + imageUris.size > MAX_PAGES) throw UserFacingPluralException(R.plurals.err_document_page_limit, MAX_PAGES, MAX_PAGES)
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
@@ -700,7 +704,7 @@ class DocumentRepository @Inject constructor(
      */
     suspend fun replacePage(documentId: String, pageId: String, imageUri: Uri, crop: CropQuad, filter: PageFilter) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val old = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val old = doc.pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
@@ -750,7 +754,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(documentId)
         val sorted = doc.pages.sortedBy { it.position }
         val index = sorted.indexOfFirst { it.id == pageId }
-        if (index == -1) error("Page not found")
+        if (index == -1) userError(R.string.err_page_not_found)
         if (doc.pages.size == 1) {
             moveToTrash(documentId)
             return@withContext
@@ -810,11 +814,11 @@ class DocumentRepository @Inject constructor(
         val pages = doc.pages.sortedBy { it.position }
         val base = safeName(doc.title)
         pages.mapIndexed { index, page ->
-            val bitmap = ImageProcessor.decodeScaled(page.imagePath, 4000) ?: error("Page ${index + 1} could not be read")
+            val bitmap = ImageProcessor.decodeScaled(page.imagePath, 4000) ?: userError(R.string.err_page_could_not_be_read, index + 1)
             try {
                 val file = freshExportFile(if (pages.size == 1) base else "${base}_p${(index + 1).toString().padStart(2, '0')}", "png")
                 file.outputStream().buffered().use { out ->
-                    check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)) { "PNG could not be written" }
+                    userRequire(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out), R.string.err_png_not_written)
                 }
                 file
             } finally {
@@ -865,7 +869,7 @@ class DocumentRepository @Inject constructor(
 
     suspend fun exportOcrText(id: String): File = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
-        require(doc.ocrText.isNotBlank()) { "No recognized text to export" }
+        userRequire(doc.ocrText.isNotBlank(), R.string.err_no_text_to_export)
         val file = freshExportFile(safeName(doc.title), "txt")
         file.writeText(doc.ocrText, Charsets.UTF_8)
         file
@@ -874,7 +878,7 @@ class DocumentRepository @Inject constructor(
     /** The recognised text as an editable Word document, one Word page per scanned page. */
     suspend fun exportWord(id: String): File = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
-        require(doc.ocrText.isNotBlank()) { "No recognized text to export" }
+        userRequire(doc.ocrText.isNotBlank(), R.string.err_no_text_to_export)
         val file = freshExportFile(safeName(doc.title), "docx")
         DocxExporter.export(doc.title, doc.pages.sortedBy { it.position }.map { it.ocrText }, file)
         file
@@ -886,7 +890,7 @@ class DocumentRepository @Inject constructor(
      */
     suspend fun exportExcel(id: String): File = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
-        require(doc.ocrText.isNotBlank()) { "No recognized text to export" }
+        userRequire(doc.ocrText.isNotBlank(), R.string.err_no_text_to_export)
         val sheets = doc.pages.sortedBy { it.position }.mapIndexed { index, page ->
             val rows = if (!page.ocrEdited && page.ocrWords.isNotEmpty()) OcrLayout.table(page.ocrWords)
             else page.ocrText.lines().filter { it.isNotBlank() }.map { listOf(it.trim()) }
@@ -930,7 +934,7 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun exportEncryptedBackup(id: String, password: String): File = withContext(Dispatchers.IO) {
-        require(password.length >= 6) { "Use a backup password with at least 6 characters" }
+        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
         val doc = requireDocument(id)
         val file = freshExportFile("${safeName(doc.title)}_backup", "scanpro")
         encryptedPackages.export(doc, password.toCharArray(), file)
@@ -943,7 +947,7 @@ class DocumentRepository @Inject constructor(
      * staged whole. [onProgress] gets (done, total) after each document. Returns how many were written.
      */
     suspend fun backupAll(treeUri: Uri, password: String, onProgress: (Int, Int) -> Unit = { _, _ -> }): Int = withContext(Dispatchers.IO) {
-        require(password.length >= 6) { "Use a backup password with at least 6 characters" }
+        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
         val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
         val documents = db.loadAll()
         val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now()))
@@ -954,9 +958,9 @@ class DocumentRepository @Inject constructor(
                 encryptedPackages.export(doc, password.toCharArray(), temp)
                 val name = "${safeName(doc.title)}_$stamp.scanpro"
                 val target = DocumentsContract.createDocument(context.contentResolver, parent, "application/octet-stream", name)
-                    ?: error("Could not create a file in the chosen folder")
+                    ?: userError(R.string.err_could_not_create_file_in_folder)
                 context.contentResolver.openOutputStream(target, "wt")?.use { out -> temp.inputStream().use { it.copyTo(out) } }
-                    ?: error("Could not write to the chosen folder")
+                    ?: userError(R.string.err_could_not_write_to_folder)
                 written++
             } finally {
                 temp.delete()
@@ -967,7 +971,7 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun importEncryptedBackup(source: Uri, password: String): ScanDocument = withContext(Dispatchers.IO) {
-        require(password.length >= 6) { "Backup password must be at least 6 characters" }
+        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
         val restored = encryptedPackages.import(source, password.toCharArray())
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -1040,7 +1044,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(documentId)
         // Marked as hand-corrected so filters, crops and rotations afterwards do not read the page again and replace it.
         val pages = doc.pages.map { page -> if (page.id == pageId) page.copy(ocrText = text.trim(), ocrEdited = true) else page }
-        require(pages.any { it.id == pageId }) { "Page not found" }
+        userRequire(pages.any { it.id == pageId }, R.string.err_page_not_found)
         saveWithStalePdf(doc.copy(pages = pages, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
 
@@ -1065,7 +1069,7 @@ class DocumentRepository @Inject constructor(
     private suspend fun addAnnotation(documentId: String, pageId: String, annotation: PageAnnotation) =
         editSinglePage(documentId, pageId) { page ->
             // Replaced words may be blank (the words are just removed); added text may not.
-            require(annotation.type != AnnotationType.TEXT || annotation.text.isNotBlank() || annotation.background != null) { "Text cannot be blank" }
+            userRequire(annotation.type != AnnotationType.TEXT || annotation.text.isNotBlank() || annotation.background != null, R.string.err_text_blank)
             // A redaction re-reads the flattened page: the text it covers must not stay in search, copy or text export.
             val redacting = annotation.hidesContent
             renderAndOcr(page.copy(annotations = page.annotations + annotation), runOcr = redacting, redactionChanged = redacting)
@@ -1120,7 +1124,7 @@ class DocumentRepository @Inject constructor(
                 // PDF, import that instead: it renders a page per PDF page like any other PDF import.
                 folder.deleteRecursively()
                 if (fallbackPdfUri != null) return importPdf(fallbackPdfUri, quality, autoTitle)
-                error("No scan pages were returned")
+                userError(R.string.err_no_scan_pages_returned)
             }
             PdfExporter.export(pages, pdf, quality, PdfPageSize.A4, searchable = true, pageNumbers = false)
 
@@ -1159,7 +1163,7 @@ class DocumentRepository @Inject constructor(
         /** The document the pages come from: its folder, tags, favourite mark and OCR script carry over. */
         like: ScanDocument? = null
     ): ScanDocument {
-        require(sourcePages.isNotEmpty()) { "No pages" }
+        userRequire(sourcePages.isNotEmpty(), R.string.err_document_has_no_pages)
         val created = now()
         val id = UUID.randomUUID().toString()
         val folder = File(rootDir, id).apply { mkdirs() }
@@ -1205,7 +1209,7 @@ class DocumentRepository @Inject constructor(
         if (target.size != doc.pages.size || target.any { it.id !in current }) {
             // Pages were added or removed outside the history; its steps no longer fit this document.
             history.clear(documentId)
-            error("This change can no longer be undone")
+            userError(R.string.err_change_cannot_be_undone)
         }
         try {
             // Only pages whose look differs are drawn again; text, corrections and order come back as they were.
@@ -1276,7 +1280,7 @@ class DocumentRepository @Inject constructor(
         block: suspend (ScanPage) -> ScanPage
     ) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
-        val target = doc.pages.firstOrNull { it.id == pageId } ?: error("Page not found")
+        val target = doc.pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         allOrNothing { touched ->
             touched += target
             val updatedPage = block(target)
@@ -1331,7 +1335,7 @@ class DocumentRepository @Inject constructor(
      */
     private fun saveWithStalePdf(document: ScanDocument): ScanDocument {
         val sorted = document.pages.sortedBy { it.position }
-        require(sorted.isNotEmpty()) { "Document has no pages" }
+        userRequire(sorted.isNotEmpty(), R.string.err_document_has_no_pages)
         val final = document.copy(pages = sorted, updatedAt = now())
         // Under the document's lock so a concurrent rebuild can't finish after this and look current.
         synchronized(pdfLock(final.id)) {
@@ -1365,7 +1369,7 @@ class DocumentRepository @Inject constructor(
     /** Builds the PDF beside the real file and renames it into place; returns its size. */
     private fun writePdf(document: ScanDocument): Long {
         val sorted = document.pages.sortedBy { it.position }
-        require(sorted.isNotEmpty()) { "Document has no pages" }
+        userRequire(sorted.isNotEmpty(), R.string.err_document_has_no_pages)
         val pdf = File(document.pdfPath)
         // Write beside the real file and rename, so an interrupted build never leaves a partial
         // PDF that would later be mistaken for an up-to-date one.
@@ -1380,7 +1384,7 @@ class DocumentRepository @Inject constructor(
                 pageNumbers = document.pageNumbers
             )
             // rename() replaces the old file atomically, so there is never a moment with no PDF.
-            check(partial.renameTo(pdf)) { "Could not save the PDF" }
+            userRequire(partial.renameTo(pdf), R.string.err_could_not_save_pdf)
             document.stalePdfMarker.delete()
         } finally {
             partial.delete()
@@ -1474,7 +1478,7 @@ class DocumentRepository @Inject constructor(
             .forEach { File(it.assetPath).delete() }
     }
 
-    private fun requireDocument(id: String) = db.loadDocument(id) ?: error("Document not found")
+    private fun requireDocument(id: String) = db.loadDocument(id) ?: userError(R.string.err_document_not_found)
 
     private fun deleteDocumentFilesAndRecord(doc: ScanDocument) {
         File(doc.pdfPath).parentFile?.deleteRecursively()
@@ -1486,7 +1490,7 @@ class DocumentRepository @Inject constructor(
     private fun copyUri(source: Uri, destination: File) {
         destination.parentFile?.mkdirs()
         context.contentResolver.openInputStream(source).use { input ->
-            requireNotNull(input) { "Could not open the selected file" }
+            if (input == null) userError(R.string.err_could_not_open_selected_file)
             destination.outputStream().use { output ->
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                 var total = 0L
@@ -1497,7 +1501,7 @@ class DocumentRepository @Inject constructor(
                     if (total > MAX_IMPORT_BYTES) {
                         output.close()
                         destination.delete()
-                        throw IllegalArgumentException("File is too large to import (limit ${MAX_IMPORT_BYTES / (1024 * 1024)} MB)")
+                        userError(R.string.err_file_too_large_to_import, (MAX_IMPORT_BYTES / (1024 * 1024)).toInt())
                     }
                     output.write(buffer, 0, read)
                 }

@@ -4,13 +4,16 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
 import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import java.io.File
+import com.example.scanpro.R
+import com.example.scanpro.core.text.UserFacingPluralException
+import com.example.scanpro.core.text.userError
 
 object PdfSecurity {
     /** PDF passwords can be attacked offline, so very short ones offer little protection. */
     const val MIN_PASSWORD_LENGTH = 6
 
     fun protect(source: File, destination: File, password: String) {
-        require(password.length >= MIN_PASSWORD_LENGTH) { "Use a password with at least $MIN_PASSWORD_LENGTH characters" }
+        if (password.length < MIN_PASSWORD_LENGTH) throw UserFacingPluralException(R.plurals.err_pdf_password_too_short, MIN_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH)
         destination.parentFile?.mkdirs()
         // AES-256 first; a device whose crypto provider rejects it still gets AES-128 rather than a failure.
         var failure: Exception? = null
@@ -34,7 +37,8 @@ object PdfSecurity {
                 destination.delete()
             }
         }
-        throw IllegalStateException("Could not protect this PDF: ${failure?.localizedMessage ?: "unsupported file"}", failure)
+        failure?.localizedMessage?.let { userError(R.string.err_could_not_protect_pdf, it, cause = failure) }
+        userError(R.string.err_could_not_protect_pdf_unsupported, cause = failure)
     }
 
     /**

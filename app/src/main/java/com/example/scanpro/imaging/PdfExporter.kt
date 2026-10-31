@@ -11,6 +11,9 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.max
 import kotlin.math.min
+import com.example.scanpro.R
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.text.userRequire
 
 object PdfExporter {
     private const val A4_WIDTH = 595
@@ -30,7 +33,7 @@ object PdfExporter {
         searchable: Boolean,
         pageNumbers: Boolean
     ) {
-        require(pages.isNotEmpty()) { "Cannot create a PDF without pages" }
+        userRequire(pages.isNotEmpty(), R.string.err_document_has_no_pages)
         destination.parentFile?.mkdirs()
 
         val pdf = PdfDocument()
@@ -38,7 +41,7 @@ object PdfExporter {
             pages.sortedBy { it.position }.forEachIndexed { index, pageModel ->
                 // Fail loudly: silently skipping a page would produce a short PDF with wrong page numbers.
                 val bitmap = ImageProcessor.decodeScaled(pageModel.imagePath, quality.maxImageDimension)
-                    ?: error("Could not read page ${index + 1}")
+                    ?: userError(R.string.err_could_not_read_pdf_page, index + 1)
                 val (pageWidth, pageHeight) = pageDimensions(pageSize, bitmap.width, bitmap.height)
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
                 val page = pdf.startPage(info)

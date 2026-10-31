@@ -1,5 +1,6 @@
 package com.example.scanpro.core.ui
 
+import com.example.scanpro.core.text.AppStrings
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipDescription
@@ -319,7 +320,7 @@ private class PdfFilePrintAdapter(
         callback: WriteResultCallback
     ) {
         if (destination == null) {
-            callback.onWriteFailed("Missing print destination")
+            callback.onWriteFailed(AppStrings.get(R.string.print_err_failed))
             return
         }
         if (cancellationSignal?.isCanceled == true) {
@@ -336,7 +337,7 @@ private class PdfFilePrintAdapter(
             }
             mainHandler.post {
                 result.onSuccess { callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES)) }
-                    .onFailure { callback.onWriteFailed(it.message ?: "Could not print PDF") }
+                    .onFailure { callback.onWriteFailed(it.message ?: AppStrings.get(R.string.print_err_failed)) }
             }
         }.start()
     }

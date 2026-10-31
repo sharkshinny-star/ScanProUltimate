@@ -1,5 +1,6 @@
 package com.example.scanpro.intelligence
 
+import com.example.scanpro.core.text.AppStrings
 import androidx.annotation.StringRes
 import com.example.scanpro.R
 import java.util.Locale
@@ -79,7 +80,7 @@ object DocumentIntelligenceEngine {
         val text = normalize(raw)
         // Drop question words and filler so "What is the address?" matches on "address", not "the".
         val qTokens = tokens(question).filter { it.length >= 3 && it !in STOPWORDS }.toSet()
-        if (qTokens.isEmpty() || text.isBlank()) return "Ask a specific question about the recognized text."
+        if (qTokens.isEmpty() || text.isBlank()) return AppStrings.get(R.string.assistant_ask_specific)
 
         val chunks = text.split(Regex("\\n{2,}|(?<=[.!?])\\s+"))
             .map(String::trim)
@@ -94,7 +95,7 @@ object DocumentIntelligenceEngine {
             .sortedByDescending { it.second }
             .take(3)
 
-        if (ranked.isEmpty()) return "I couldn't find a matching passage in the OCR text."
+        if (ranked.isEmpty()) return AppStrings.get(R.string.assistant_no_match)
         return ranked.joinToString("\n\n") { it.first }.take(1200)
     }
 

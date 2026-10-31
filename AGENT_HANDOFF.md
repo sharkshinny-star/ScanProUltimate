@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "persist queued edits" commit (newest in `git log`).
+Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "localize remaining strings" commit (newest in `git log`).
 
 ## 1. Current state
 
@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "pers
 
 | Commit | What |
 |---|---|
-| newest | Queued document edits written to a journal and replayed after a restart (F16, closes R3). |
+| newest | Remaining English strings localized: `UserFacingException` for errors, ~120 strings (F17, closes R5). |
+| `b165003` | Queued document edits written to a journal and replayed after a restart (F16, closes R3). |
 | `abdce28` | `CLAUDE.md`: every session works on this branch. |
 | `c62088d` | "Unsaved scans" recovery screen for scans whose import failed (F15, closes R4); Home banner, notification deep link, `KeptScanStoreTest`. |
 | `fb9e745` | targetSdk 37 after an Android 17 code review; OpenCV excluded from lint and IDE inspections (shared `.idea` scopes, profile, dictionary); remaining Kotlin style hints applied. |
@@ -54,7 +55,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
    decision: a warning in the backup dialog, or a "flattened backup" option. Security-sensitive: document the change before making it.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed, not device-tested). Test on Android 17, including a tablet or foldable.
-7. **R5: remaining English literals** in `PdfToolsEngine` progress text, `Support.kt`, `Brand.kt`, `FeedbackPromptDialog.kt`.
+7. **R10/R11 (minor i18n/UX):** unreadable gallery photos are skipped without a reason; smart titles and suggested tags are English stored data.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 9. `server/` is an unrelated Node placeholder; remove if not needed (ask the owner first).
 

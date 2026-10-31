@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- PDF tools: progress while a tool runs. -->
+    <string name="tools_progress_merging">Merging file %1$d of %2$d…</string>
+    <string name="tools_progress_saving_merged">Saving merged PDF…</string>
+    <string name="tools_progress_splitting_page">Splitting page %1$d of %2$d…</string>
+    <string name="tools_progress_splitting_chunk">Splitting part %1$d…</string>
+    <string name="tools_progress_extracting_range">Extracting range %1$d of %2$d…</string>
+    <string name="tools_progress_extracting_page">Extracting page %1$d of %2$d…</string>
+    <string name="tools_progress_rotating">Rotating page %1$d of %2$d…</string>
+    <string name="tools_progress_processing_page">Processing page %1$d of %2$d…</string>
+    <string name="tools_progress_loading_image">Loading image %1$d of %2$d…</string>
+    <string name="tools_progress_creating_pdf">Creating PDF document…</string>
+    <string name="tools_progress_exporting_page">Exporting page %1$d as %2$s…</string>
+
+    <!-- PDF tools: results. -->
+    <plurals name="tools_result_merged">
+        <item quantity="one">Merged %1$d PDFs (%2$d page in total)</item>
+        <item quantity="other">Merged %1$d PDFs (%2$d pages in total)</item>
+    </plurals>
+    <plurals name="tools_result_extracted">
+        <item quantity="one">Extracted %1$d page</item>
+        <item quantity="other">Extracted %1$d pages</item>
+    </plurals>
+    <string name="tools_result_rotated">Pages rotated</string>
+    <plurals name="tools_result_organized">
+        <item quantity="one">Reordered and saved %1$d page</item>
+        <item quantity="other">Reordered and saved %1$d pages</item>
+    </plurals>
+    <plurals name="tools_result_images_to_pdf">
+        <item quantity="one">Created a PDF with %1$d page</item>
+        <item quantity="other">Created a PDF with %1$d pages</item>
+    </plurals>
+    <string name="tools_result_protected">PDF protected with a password</string>
+    <string name="tools_result_password_removed">The password was removed; the copy opens without one</string>
+    <string name="tools_result_restrictions_removed">Editing and copying restrictions were removed; the file never needed a password to open</string>
+
+    <!-- PDF tools: errors. -->
+    <string name="tools_err_merge_two">Select at least 2 PDF files to merge</string>
+    <string name="tools_err_file_reason">File %1$d: %2$s</string>
+    <string name="tools_err_file_unreadable" tools:ignore="PluralsCandidate">File %1$d couldn\'t be read as a PDF (it may be damaged or password protected)</string>
+    <string name="tools_err_merge_no_pages">The selected PDFs contain no pages</string>
+    <string name="tools_err_no_pages">The PDF contains no pages</string>
+    <string name="tools_err_no_ranges">No valid page ranges given</string>
+    <string name="tools_err_extract_none">Select at least one page to extract</string>
+    <string name="tools_err_keep_one_page">At least one page must remain in the PDF</string>
+    <string name="tools_err_no_images">Select at least one image</string>
+    <string name="tools_err_image_unreadable">Couldn\'t read the image at position %1$d</string>
+    <string name="tools_err_image_undecodable" tools:ignore="PluralsCandidate">Image %1$d couldn\'t be decoded</string>
+    <string name="tools_err_pages_missing">None of the chosen pages exist in this PDF</string>
+    <string name="tools_err_already_protected">This PDF already needs a password to open. Unlock it first, then protect it with the new password.</string>
+    <string name="tools_err_password_protected">This PDF is password-protected. Unlock it first with the Unlock PDF tool.</string>
+    <string name="tools_err_unreadable_location">Couldn\'t read the PDF from the selected location</string>
+    <string name="tools_err_invalid_ranges">Invalid page ranges</string>
+</resources>

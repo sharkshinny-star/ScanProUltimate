@@ -1,5 +1,7 @@
 package com.example.scanpro.intelligence
 
+import com.example.scanpro.core.text.AppStrings
+import com.example.scanpro.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -35,7 +37,8 @@ class DocumentIntelligenceEngineTest {
     fun `question answering refuses unsupported answers`() {
         val text = "Order 7128 ships on 08/10/2026. Total INR 900."
         val answer = DocumentIntelligenceEngine.answer("What is the customer address?", text)
-        assertTrue(answer.contains("couldn't find", ignoreCase = true))
+        // The refusal, not a passage: in the user's language on a device, the resource id in JVM tests.
+        assertEquals(AppStrings.get(R.string.assistant_no_match), answer)
     }
 
     @Test

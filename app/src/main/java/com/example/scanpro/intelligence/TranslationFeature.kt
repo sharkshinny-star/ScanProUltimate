@@ -12,6 +12,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import com.example.scanpro.R
+import androidx.annotation.StringRes
+import com.example.scanpro.core.text.AppStrings
+import com.example.scanpro.core.text.UserFacingException
+import com.example.scanpro.core.text.userError
 
 /**
  * Gets the translator from the on-demand `translate` module, fetching the module from Google Play the
@@ -38,7 +43,7 @@ object TranslationFeature {
         load()?.let { return it }
         val manager = SplitInstallManagerFactory.create(context.applicationContext)
         install(manager, onProgress)
-        return load() ?: throw IllegalStateException("Translation is installed but could not start. Please restart the app.")
+        return load() ?: userError(R.string.err_translation_could_not_start)
     }
 
     private fun load(): Translator? = try {
@@ -66,12 +71,12 @@ object TranslationFeature {
                     }
                     SplitInstallSessionStatus.DOWNLOADED, SplitInstallSessionStatus.INSTALLING -> onProgress(Progress.Installing)
                     SplitInstallSessionStatus.INSTALLED -> finish { continuation.resume(Unit) }
-                    SplitInstallSessionStatus.FAILED -> finish { continuation.resumeWithException(IllegalStateException(describe(state.errorCode()))) }
-                    SplitInstallSessionStatus.CANCELED -> finish { continuation.resumeWithException(CancellationException("Translation download cancelled")) }
+                    SplitInstallSessionStatus.FAILED -> finish { continuation.resumeWithException(UserFacingException(describe(state.errorCode()), state.errorCode())) }
+                    SplitInstallSessionStatus.CANCELED -> finish { continuation.resumeWithException(CancellationException(AppStrings.get(R.string.err_translation_download_cancelled))) }
                     // Play asks for confirmation only for very large modules over mobile data; this one is small,
                     // but if it ever happens the user has to confirm from Play's own dialog, which needs an Activity.
                     SplitInstallSessionStatus.REQUIRES_USER_CONFIRMATION ->
-                        finish { continuation.resumeWithException(IllegalStateException("Google Play needs your confirmation to download translation. Please try again on Wi-Fi.")) }
+                        finish { continuation.resumeWithException(UserFacingException(R.string.err_translation_needs_confirmation)) }
                     else -> Unit
                 }
             }
@@ -80,7 +85,7 @@ object TranslationFeature {
                 .addOnSuccessListener { id -> sessionId = id }
                 .addOnFailureListener { error ->
                     val code = (error as? SplitInstallException)?.errorCode ?: SplitInstallErrorCode.INTERNAL_ERROR
-                    finish { continuation.resumeWithException(IllegalStateException(describe(code), error)) }
+                    finish { continuation.resumeWithException(UserFacingException(describe(code), code, cause = error)) }
                 }
             continuation.invokeOnCancellation {
                 manager.unregisterListener(listener)
@@ -89,14 +94,16 @@ object TranslationFeature {
         }
     }
 
-    private fun describe(@SplitInstallErrorCode code: Int): String = when (code) {
-        SplitInstallErrorCode.NETWORK_ERROR -> "Translation could not be downloaded. Check your connection and try again."
-        SplitInstallErrorCode.INSUFFICIENT_STORAGE -> "Not enough storage to add translation."
+    /** The message for a failed install; the error code fills the generic one's placeholder (the others ignore it). */
+    @StringRes
+    private fun describe(@SplitInstallErrorCode code: Int): Int = when (code) {
+        SplitInstallErrorCode.NETWORK_ERROR -> R.string.err_translation_network
+        SplitInstallErrorCode.INSUFFICIENT_STORAGE -> R.string.err_translation_storage
         SplitInstallErrorCode.API_NOT_AVAILABLE, SplitInstallErrorCode.MODULE_UNAVAILABLE, SplitInstallErrorCode.PLAY_STORE_NOT_FOUND ->
-            "Translation is added through Google Play, which is not available on this device or for this install."
-        SplitInstallErrorCode.ACCESS_DENIED -> "Google Play did not allow the translation download."
+            R.string.err_translation_play_unavailable
+        SplitInstallErrorCode.ACCESS_DENIED -> R.string.err_translation_access_denied
         SplitInstallErrorCode.ACTIVE_SESSIONS_LIMIT_EXCEEDED, SplitInstallErrorCode.INCOMPATIBLE_WITH_EXISTING_SESSION ->
-            "Another download is in progress. Please try again in a moment."
-        else -> "Translation could not be added (Google Play error $code)."
+            R.string.err_translation_busy
+        else -> R.string.err_translation_play_error
     }
 }

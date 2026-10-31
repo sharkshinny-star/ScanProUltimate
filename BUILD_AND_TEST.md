@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after the "persist queued edits" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after the "localize remaining strings" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,7 +40,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-10-31, "persist queued edits" commit)
+## Latest results (2026-10-31, "localize remaining strings" commit)
 
 | Check | Result |
 |---|---|
@@ -49,7 +49,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 | `:app:lintDebug` | 0 issues (targetSdk now 37) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.3 MB |
-| Sideload `assembleRelease` | Passed; arm64 32.7 MB (budget 40), armv7 24.8, x86_64 38.6, universal 81.9 |
+| Sideload `assembleRelease` | Passed; arm64 32.8 MB (budget 40) |
 | 16 KB page alignment | arm64 and x86_64 `.so` aligned to `0x4000` (`readelf`) |
 | `-Pscanpro.bundledMl=true` build | Not run |
 | Instrumented tests (`AppSmokeTest`), screenshot, performance | Not run: no emulator or device in the container |
@@ -77,6 +77,7 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 | `SDK location not found` | Install platform 37 and write `local.properties`. |
 | `primaryClip = clip` fails to compile (`val cannot be reassigned`) | `ClipboardManager` getter is nullable and setter non-null, so Kotlin exposes no settable property; keep `setPrimaryClip(clip)` despite the IDE hint. |
 | IDE reports thousands of OpenCV warnings | Open the project so the shared profile in `.idea/inspectionProfiles/` loads, or run Inspect Code on the "App code" scope. |
+| JVM tests see `#<id> args` instead of text | `AppStrings` has no Context in JVM tests; assert against `AppStrings.get(R.string.x, …)` or the exception's `messageRes`/args. |
 | Lint `TrustAllX509TrustManager` in `bcpkix-jdk15to18` | Suppressed in `app/lint.xml`: BouncyCastle's TLS tooling is never reached (PDFBox uses it only for certificate-encrypted PDFs). |
 | Material3 `@OptIn` "unnecessary" hints in the IDE | Keep them in `DocumentScreen`, `LibraryScreen` and two `PdfToolsScreen` functions: the compiler needs them. |
 | OpenCV Java wrapper warnings | Ignore: generated from upstream by `scripts/opencv`; edits would be overwritten. |
