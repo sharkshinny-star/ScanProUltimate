@@ -225,7 +225,8 @@ fun SettingsScreen(
             title = stringResource(R.string.settings_backup_all),
             message = stringResource(R.string.settings_backup_password_message),
             confirmLabel = stringResource(R.string.settings_backup_start),
-            onDismiss = { backupFolder = null }
+            onDismiss = { backupFolder = null },
+            warning = stringResource(R.string.backup_warning_unredacted_all)
         ) { password ->
             backupFolder = null
             onBackupAll(folder, password)

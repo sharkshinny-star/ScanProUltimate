@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "gall
 
 | Commit | What |
 |---|---|
-| newest | Gallery picks that are unreadable, HEIC on Android 8, or over the page limit are reported instead of dropped silently (F18, closes R10). |
+| newest | Backup dialogs warn that backups keep unredacted originals (F19, closes R1). |
+| `ecc322b` | Gallery picks that are unreadable, HEIC on Android 8, or over the page limit are reported instead of dropped silently (F18, closes R10). |
 | `36cbaa2` | Remaining English strings localized: `UserFacingException` for errors, ~120 strings (F17, closes R5). |
 | `b165003` | Queued document edits written to a journal and replayed after a restart (F16, closes R3). |
 | `abdce28` | `CLAUDE.md`: every session works on this branch. |
@@ -52,8 +53,6 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 1. **Device testing (required before release).** Camera, every PDF tool, app lock, notifications, backup/restore, on at least one
    low-end and one recent phone.
-2. **R1: backups hold unredacted originals.** `.scanpro` backups keep the original photo so pages stay editable. Needs a product
-   decision: a warning in the backup dialog, or a "flattened backup" option. Security-sensitive: document the change before making it.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed, not device-tested). Test on Android 17, including a tablet or foldable.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
@@ -62,7 +61,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 ## 4. Next steps
 
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
-2. Ask the owner about R1, then implement the chosen option.
+2. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
 3. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
 4. Device-test the edit journal: queue several edits behind a long OCR, force-stop the app, reopen, check they run and that the interrupted one is reported.
 5. Add Compose UI/screenshot tests and run them on an emulator in CI.

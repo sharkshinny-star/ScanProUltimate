@@ -2,6 +2,7 @@
 
 package com.example.scanpro.feature.document
 
+import com.example.scanpro.data.AnnotationType
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -1017,7 +1018,9 @@ internal fun DocumentDetailScreen(
         message = stringResource(R.string.doc_encrypted_backup_message),
         minimumLength = 6,
         confirmLabel = stringResource(R.string.doc_create_backup),
-        onDismiss = { backupPasswordOpen = false }
+        onDismiss = { backupPasswordOpen = false },
+        // Backups keep each page's original photo so edits stay reversible, including what redaction or erasing hid.
+        warning = if (document.hidesContent()) stringResource(R.string.backup_warning_unredacted_document) else null
     ) { onExportEncryptedBackup(it); backupPasswordOpen = false }
     if (annotationTextOpen && currentPage != null) TextInputDialog(stringResource(R.string.doc_add_text_to_page), label = stringResource(R.string.doc_text), confirmLabel = stringResource(R.string.doc_add), maxLines = 3, onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
     if (ocrEditOpen && currentPage != null) TextInputDialog(
@@ -1310,5 +1313,12 @@ private fun ToggleRow(
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, enabled = enabled, onCheckedChange = null)
+    }
+}
+
+/** True when some page hides content of the original photo: redaction, erasing, or text typed over the old words. */
+internal fun ScanDocument.hidesContent(): Boolean = pages.any { page ->
+    page.annotations.any {
+        it.type == AnnotationType.REDACT || it.type == AnnotationType.ERASE || (it.type == AnnotationType.TEXT && it.background != null)
     }
 }

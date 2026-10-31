@@ -213,6 +213,8 @@ fun PasswordInputDialog(
     minimumLength: Int = 6,
     confirmLabel: String,
     onDismiss: () -> Unit,
+    /** Shown in the error colour below [message], for something the user must know before going ahead. */
+    warning: String? = null,
     onConfirm: (String) -> Unit
 ) {
     var value by remember { mutableStateOf("") }
@@ -222,6 +224,10 @@ fun PasswordInputDialog(
         text = {
             androidx.compose.foundation.layout.Column {
                 Text(message)
+                if (warning != null) {
+                    androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
+                    Text(warning, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                }
                 androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
                 OutlinedTextField(
                     value = value,

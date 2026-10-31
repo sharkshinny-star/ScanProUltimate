@@ -39,4 +39,8 @@
     <string name="assistant_no_match">I couldn\'t find a matching passage in the text.</string>
 
     <string name="print_err_failed">Couldn\'t print the PDF</string>
+
+    <!-- Encrypted backups keep each page's original photo, so redactions can be undone after a restore. -->
+    <string name="backup_warning_unredacted_document">This document has redacted or erased areas. The backup keeps the original photos, so anyone with the backup and its password can see what was hidden. To share a redacted copy, export a PDF instead.</string>
+    <string name="backup_warning_unredacted_all">Backups keep each page\'s original photo, including areas you redacted or erased. Anyone with a backup and its password can see what was hidden. To share redacted copies, export PDFs instead.</string>
 </resources>
