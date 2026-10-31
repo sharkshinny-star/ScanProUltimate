@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.PageThumbnail
 import com.example.scanpro.core.designsystem.THUMBNAIL_GRID
+import com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.pagesLabel
@@ -270,7 +272,6 @@ internal fun DocumentRecentCard(
     val shape = MaterialTheme.shapes.medium
     Column(
         modifier
-            .width(140.dp)
             .clip(shape)
             .background(container)
             .border(1.5.dp, border, shape)
@@ -283,15 +284,16 @@ internal fun DocumentRecentCard(
             .semantics { this.selected = selected }
             .padding(8.dp)
     ) {
+        // Sized by the caller (a grid cell on Home): the page scales with the card.
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(118.dp)
+                .aspectRatio(1.18f)
                 .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
         ) {
-            PaperThumbnail(document, Modifier.size(width = 72.dp, height = 96.dp).padding(top = 6.dp), THUMBNAIL_SMALL, corner = 6.dp)
+            PaperThumbnail(document, Modifier.fillMaxHeight(0.86f).aspectRatio(0.75f).padding(top = 4.dp), THUMBNAIL_MEDIUM, corner = 6.dp)
             if (document.isFavorite && !selected) FavoriteBadge(Modifier.align(Alignment.TopEnd).padding(5.dp), size = 20.dp)
             SelectionBadge(selected, Modifier.align(Alignment.TopEnd).padding(5.dp))
         }

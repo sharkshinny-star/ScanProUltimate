@@ -1,9 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- PDF Toolkit screen (feature/tools) and PDF viewer (feature/viewer). Shared words live in strings_common.xml. -->
 
-    <string name="tools_badge_new">New</string>
-    <string name="tools_fill_form_desc">Type into a PDF form\'s fields, tick boxes and save</string>
-    <string name="tools_make_searchable_desc">Add selectable, searchable text to scanned PDFs</string>
     <string name="tools_compress_pdf">Compress PDF</string>
     <string name="tools_split_pdf">Split PDF</string>
     <string name="tools_images_to_pdf">Images to PDF</string>
@@ -136,29 +133,24 @@
     <!-- Added by the compassionate-turing merge -->
     <string name="viewer_file_couldnt_open">This file couldn\'t be opened</string>
     <string name="tools_screen_title">PDF tools</string>
+    <string name="tools_section_edit">Edit</string>
+    <string name="tools_section_convert">Convert</string>
+    <string name="tools_section_secure">Secure</string>
+    <string name="tools_tile_organize">Organise</string>
+    <string name="tools_tile_rotate">Rotate</string>
+    <string name="tools_tile_extract">Extract</string>
     <string name="tools_card_fill">Fill form</string>
     <string name="tools_card_ocr">Make searchable</string>
     <string name="tools_card_compress">Compress</string>
-    <string name="tools_card_compress_desc">Reduce PDF size with quality presets</string>
     <string name="tools_card_merge">Merge</string>
-    <string name="tools_card_merge_desc">Combine several PDFs into one document</string>
     <string name="tools_card_split">Split</string>
-    <string name="tools_card_split_desc">Divide a PDF by pages, ranges or fixed chunks</string>
     <string name="tools_card_extract">Extract pages</string>
-    <string name="tools_card_extract_desc">Pick specific pages and save them as a new PDF</string>
     <string name="tools_card_rotate">Rotate pages</string>
-    <string name="tools_card_rotate_desc">Turn pages by 90°, 180° or 270°</string>
     <string name="tools_card_organize">Organise pages</string>
-    <string name="tools_card_organize_desc">Reorder, delete and manage pages</string>
-    <string name="tools_card_img2pdf_desc">Turn gallery photos into a tidy PDF</string>
     <string name="tools_card_pdf2img">PDF to images</string>
-    <string name="tools_card_pdf2img_desc">Export pages as JPEG or PNG</string>
     <string name="tools_card_protect">Protect</string>
-    <string name="tools_card_protect_desc">Make a copy that needs a password to open</string>
     <string name="tools_card_unlock">Unlock</string>
-    <string name="tools_card_unlock_desc">Remove the password from a protected PDF</string>
-    <string name="tools_card_viewer">Viewer</string>
-    <string name="tools_card_viewer_desc">Read with pinch to zoom and search</string>
+    <string name="tools_card_viewer">View PDF</string>
     <string name="tools_file_fallback_name">File</string>
     <string name="tools_images_pdf_name">Images %1$s</string>
     <string name="tools_order_merge_title">Merge order</string>

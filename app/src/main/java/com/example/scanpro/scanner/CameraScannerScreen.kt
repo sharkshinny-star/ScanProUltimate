@@ -1,5 +1,7 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.material.icons.filled.Check
 import android.widget.Toast
 import android.Manifest
 import android.content.Intent
@@ -44,7 +46,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -54,13 +55,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.Close
@@ -208,18 +206,14 @@ fun CameraScannerScreen(
         // Manual by default (owner decision): auto-capture surprised people; it is one tap away in the top menu.
         mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.MANUAL))
     }
-    var detectMenuOpen by remember { mutableStateOf(false) }
-    // A few tips the first time the camera opens; "Got it" hides them for good.
-    var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_seen", false)) }
-    fun dismissTips() {
-        showTips = false
-        prefs.edit { putBoolean("tips_seen", true) }
-    }
+    // Grid and spirit level are off unless switched on in the menu: the live outline is guidance enough.
+    var showGrid by remember { mutableStateOf(prefs.getBoolean("grid", false)) }
+    var showLevel by remember { mutableStateOf(prefs.getBoolean("level", false)) }
     var overflowOpen by remember { mutableStateOf(false) }
+    val onLabel = stringResource(R.string.common_on)
+    val offLabel = stringResource(R.string.common_off)
     var showAdjustments by remember { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
-    // Single finishes after one capture; Batch keeps the camera open for more pages.
-    var batch by rememberSaveable { mutableStateOf(prefs.getBoolean("batch", false)) }
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
     var zoom by remember { mutableFloatStateOf(0f) }
     var exposureIndex by remember { mutableIntStateOf(0) }
@@ -335,7 +329,7 @@ fun CameraScannerScreen(
     // Auto-capture is live only when it is switched on, nothing is in the way (tips, a capture in progress, the
     // review step, a full page list) and the mode shows the outline it fires on: ID cards are lined up in the
     // bracket by hand, with no outline or guidance, so firing the shutter there would come as a surprise.
-    val autoCaptureActive = autoCapture && !showTips && !barcodeMode && !capturing && !reviewing &&
+    val autoCaptureActive = autoCapture && !barcodeMode && !capturing && !reviewing &&
         (retaking || pages.size < pageLimit) && scanMode != ScanMode.ID_CARD
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
@@ -365,7 +359,6 @@ fun CameraScannerScreen(
         )
     }
     // Taking a page by hand while the tips show means they have done their job.
-    LaunchedEffect(pages.size) { if (showTips && pages.isNotEmpty()) dismissTips() }
 
     var foundCode by remember { mutableStateOf<com.google.mlkit.vision.barcode.common.Barcode?>(null) }
     var barcodeUnavailable by remember { mutableStateOf(false) }
@@ -511,7 +504,7 @@ fun CameraScannerScreen(
                         reviewIndex = retakeIndex
                         retakeIndex = -1
                         reviewing = true
-                    } else if (retakeOfPage != null || (!batch && scanMode != ScanMode.ID_CARD)) finishScan() else flyIntoCounter(raw)
+                    } else if (retakeOfPage != null) finishScan() else flyIntoCounter(raw)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -802,8 +795,8 @@ fun CameraScannerScreen(
             }
         )
 
-        ThirdsGrid()
-        if (!barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
+        if (showGrid) ThirdsGrid()
+        if (showLevel && !barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
             LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp))
         }
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
@@ -819,39 +812,6 @@ fun CameraScannerScreen(
                     .size(64.dp)
                     .border(2.dp, Color(0xFF22D3EE), RoundedCornerShape(4.dp))
             )
-        }
-
-        // Live guidance in the middle of the preview, where the eye already is.
-        if (showTips && !barcodeMode && pages.isEmpty()) {
-            // Kept clear of the controls at the bottom; on short screens the tips scroll and "Got it" stays visible.
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = 64.dp, start = 20.dp, end = 20.dp)
-                    .widthIn(max = 420.dp)
-                    .heightIn(max = 320.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.Black.copy(alpha = 0.8f)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(stringResource(R.string.scan_tips_title), color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                        listOf(
-                            R.string.scan_tip_hold_steady,
-                            R.string.scan_tip_tap_focus,
-                            R.string.scan_tip_batch,
-                            R.string.scan_tip_cleanup
-                        ).forEach { tip ->
-                            Text("• ${stringResource(tip)}", color = Color.White.copy(alpha = 0.92f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-                        }
-                    }
-                    TextButton(
-                        onClick = ::dismissTips,
-                        modifier = Modifier.align(Alignment.End)
-                    ) { Text(stringResource(R.string.scan_tips_got_it)) }
-                }
-            }
         }
 
         if (barcodeMode && foundCode == null) {
@@ -874,8 +834,12 @@ fun CameraScannerScreen(
             BarcodeResultSheet(code, onScanAgain = scanAgain, onDismiss = scanAgain)
         }
 
-        if (!showTips && !barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+        if (!barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+            // In low light the hint is the button: one tap turns the torch on.
+            val dark = detection?.isDark == true && !torchEnabled
             Surface(
+                onClick = { flashMode = FlashMode.TORCH },
+                enabled = dark,
                 modifier = Modifier.align(Alignment.Center),
                 shape = RoundedCornerShape(12.dp),
                 color = CameraGlass
@@ -906,22 +870,6 @@ fun CameraScannerScreen(
                             Text(text, color = if (ready) scanLine else Color.White, style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
                     }
-                    // Low light: one tap turns the torch on from the hint itself.
-                    if (detection?.isDark == true && !torchEnabled) {
-                        Spacer(Modifier.height(8.dp))
-                        Surface(
-                            onClick = { flashMode = FlashMode.TORCH },
-                            shape = RoundedCornerShape(50),
-                            color = scanLine,
-                            contentColor = Color(0xFF04281E)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                                Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.scan_turn_on_flash), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -941,7 +889,7 @@ fun CameraScannerScreen(
                 }
             }
         }
-        if (retakeOfPage != null && !showTips && status == null) {
+        if (retakeOfPage != null && status == null) {
             Surface(
                 modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 64.dp),
                 shape = RoundedCornerShape(50),
@@ -961,27 +909,6 @@ fun CameraScannerScreen(
             )
         }
 
-            if (scanMode != ScanMode.ID_CARD && !barcodeMode) {
-                Box(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp)) {
-                    Row(
-                        Modifier.clickable { detectMenuOpen = true }.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(stringResource(detectMode.label), color = Color.White, style = MaterialTheme.typography.titleMedium)
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = stringResource(R.string.scan_detection_mode), tint = scanLine)
-                    }
-                    DropdownMenu(expanded = detectMenuOpen, onDismissRequest = { detectMenuOpen = false }) {
-                        DetectMode.entries.forEach { option ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(stringResource(option.label), color = if (option == detectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                                },
-                                onClick = { detectMode = option; detectMenuOpen = false; prefs.edit { putString("detect", option.name) } }
-                            )
-                        }
-                    }
-                }
-            }
         Row(
             modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(top = 8.dp, start = 12.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -989,6 +916,29 @@ fun CameraScannerScreen(
         ) {
             Surface(shape = CircleShape, color = CameraGlass) {
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White) }
+            }
+            // Auto capture on/off, where the eye goes first. Off is Manual: the page is outlined, the shutter is yours.
+            if (!barcodeMode && scanMode != ScanMode.ID_CARD && detectMode != DetectMode.NO_DETECT) {
+                val modeDescription = stringResource(R.string.scan_detection_mode)
+                val stateLabel = stringResource(detectMode.label)
+                Surface(
+                    onClick = {
+                        detectMode = if (autoCapture) DetectMode.MANUAL else DetectMode.AUTO
+                        prefs.edit { putString("detect", detectMode.name) }
+                    },
+                    shape = CircleShape,
+                    color = if (autoCapture) scanLine else CameraGlass,
+                    contentColor = if (autoCapture) Color(0xFF04281E) else Color.White,
+                    modifier = Modifier.semantics { contentDescription = modeDescription; stateDescription = stateLabel }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        Icon(Icons.Default.CenterFocusWeak, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.scan_detect_auto), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            } else {
+                Spacer(Modifier.width(1.dp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Surface(shape = CircleShape, color = CameraGlass) {
@@ -1028,6 +978,23 @@ fun CameraScannerScreen(
                                 )
                             }
                         }
+                        @Composable
+                        fun SwitchItem(@StringRes label: Int, on: Boolean, onToggle: () -> Unit) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(label)) },
+                                trailingIcon = { if (on) Icon(Icons.Default.Check, contentDescription = null) },
+                                modifier = Modifier.semantics { stateDescription = if (on) onLabel else offLabel },
+                                onClick = onToggle
+                            )
+                        }
+                        if (!barcodeMode && scanMode != ScanMode.ID_CARD) {
+                            SwitchItem(R.string.scan_detect_edges, detectMode != DetectMode.NO_DETECT) {
+                                detectMode = if (detectMode == DetectMode.NO_DETECT) DetectMode.MANUAL else DetectMode.NO_DETECT
+                                prefs.edit { putString("detect", detectMode.name) }
+                            }
+                        }
+                        SwitchItem(R.string.scan_show_grid, showGrid) { showGrid = !showGrid; prefs.edit { putBoolean("grid", showGrid) } }
+                        SwitchItem(R.string.scan_show_level, showLevel) { showLevel = !showLevel; prefs.edit { putBoolean("level", showLevel) } }
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.scan_compat_scanner)) },
                             onClick = { overflowOpen = false; onFallbackScanner() }
@@ -1044,8 +1011,9 @@ fun CameraScannerScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Batch: the pages so far, newest last; tap one to check it in the review step.
-            if (pages.size > 1 || (batch && pages.isNotEmpty())) {
+            // The pages so far, newest last; tap one to check it in the review step. Every capture lands here and
+            // Done finishes, so there is no Single/Batch choice to make first.
+            if (pages.isNotEmpty()) {
                 CapturedStrip(
                     pages = pages,
                     onOpen = { index ->
@@ -1060,23 +1028,6 @@ fun CameraScannerScreen(
                     Text(status.orEmpty(), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
                 }
                 Spacer(Modifier.height(8.dp))
-            }
-
-            if (scanMode != ScanMode.ID_CARD) {
-                Row(
-                    Modifier.background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(3.dp)
-                ) {
-                    listOf(false to R.string.scan_mode_single, true to R.string.scan_mode_batch).forEach { (value, text) ->
-                        Surface(
-                            onClick = { batch = value; prefs.edit { putBoolean("batch", value) } },
-                            shape = RoundedCornerShape(50),
-                            color = if (batch == value) Color.White.copy(alpha = 0.28f) else Color.Transparent
-                        ) {
-                            Text(stringResource(text), color = Color.White, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp))
-                        }
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
             }
 
             if (showAdjustments) {

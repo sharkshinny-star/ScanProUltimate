@@ -213,13 +213,7 @@ fun ScanProApp(
                 androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(320), targetScale = 1.06f)
         ) {
             androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
-            WelcomeScreen(
-                onStartScanning = {
-                    viewModel.markWelcomeSeen()
-                    navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true }
-                },
-                onExplore = viewModel::markWelcomeSeen
-            )
+            WelcomeScreen(onGetStarted = viewModel::markWelcomeSeen)
         }
     }
 }

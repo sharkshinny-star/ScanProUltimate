@@ -51,12 +51,9 @@ import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PictureAsPdf
-import androidx.compose.material.icons.rounded.QrCodeScanner
-import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -131,7 +128,6 @@ import com.example.scanpro.data.LibrarySort
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.navigation.ScanProBottomBar
 import com.example.scanpro.navigation.ScanProDestinations
-import java.util.Calendar
 
 @Composable
 fun LibraryRoute(
@@ -761,18 +757,8 @@ private fun EmptyLibrary(
 // Home
 // ---------------------------------------------------------------------------------------------
 
-@Composable
-private fun greeting(): String = stringResource(
-    when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-        in 5..11 -> R.string.lib_greeting_morning
-        in 12..16 -> R.string.lib_greeting_afternoon
-        in 17..21 -> R.string.lib_greeting_evening
-        // 10 pm to 5 am: "Good evening" read wrong in the small hours.
-        else -> R.string.lib_greeting_night
-    }
-)
 
-/** Home tab: greeting, search, the scan hero, one-tap shortcuts and the most recent documents. */
+/** Home tab: search, four shortcuts and a grid of the most recent documents; the scan card only while the library is empty. */
 @Composable
 private fun HomeDashboard(
     overview: LibraryOverview,
@@ -793,92 +779,68 @@ private fun HomeDashboard(
 ) {
     val recent = overview.recent
     val documentCount = overview.documentCount
-    val favorites = overview.favoriteCount
+    val wide = com.example.scanpro.navigation.isWideWindow()
     LazyColumn(
-        modifier = Modifier.fillMaxSize().widthIn(max = if (com.example.scanpro.navigation.isWideWindow()) 1100.dp else 720.dp),
-        contentPadding = PaddingValues(top = 4.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        modifier = Modifier.fillMaxSize().widthIn(max = if (wide) 1100.dp else 720.dp),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Column(Modifier.padding(horizontal = 20.dp)) {
-                Eyebrow(greeting())
-                Spacer(Modifier.height(4.dp))
-                Text(stringResource(R.string.lib_home_headline), style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.height(10.dp))
-                if (documentCount == 0) {
-                    Text(
-                        stringResource(R.string.lib_home_intro),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        StatPill(Icons.Rounded.Description, pluralStringResource(R.plurals.lib_document_count, documentCount, documentCount))
-                        if (favorites > 0) StatPill(Icons.Rounded.Star, pluralStringResource(R.plurals.lib_favorite_count, favorites, favorites))
-                        if (trashCount > 0) StatPill(Icons.Rounded.DeleteOutline, pluralStringResource(R.plurals.lib_in_bin_count, trashCount, trashCount))
-                    }
-                }
-            }
+            SearchLauncher(onClick = onSearch, modifier = Modifier.padding(horizontal = 16.dp))
         }
         if (keptScanCount > 0) {
             item(key = "kept_scans") {
                 KeptScansBanner(count = keptScanCount, onClick = onKeptScans, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
-        item {
-            SearchLauncher(onClick = onSearch, modifier = Modifier.padding(horizontal = 16.dp))
-        }
-        item {
-            ScanHeroCard(onStartScan = onStartScan, enabled = !busy, modifier = Modifier.padding(horizontal = 16.dp))
-        }
-        item {
-            Column(Modifier.padding(horizontal = 16.dp)) {
-                SectionHeader(stringResource(R.string.lib_quick_actions), modifier = Modifier.padding(horizontal = 4.dp))
-                Spacer(Modifier.height(10.dp))
-                QuickActions(
-                    enabled = !busy,
-                    actions = listOf(
-                        QuickAction(Icons.Rounded.Badge, stringResource(R.string.lib_quick_id_card), TileTone.Indigo) { onQuickScan(ScanMode.ID_CARD.name) },
-                        QuickAction(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.lib_quick_book), TileTone.Amber) { onQuickScan(ScanMode.BOOK.name) },
-                        QuickAction(Icons.Rounded.TextFields, stringResource(R.string.lib_quick_extract_text), TileTone.Teal) { onQuickScan(ScanMode.TEXT.name) },
-                        QuickAction(Icons.Rounded.QrCodeScanner, stringResource(R.string.lib_quick_qr_code), TileTone.Violet) { onQuickScan(ScanProDestinations.CAMERA_QR) },
-                        QuickAction(Icons.AutoMirrored.Rounded.ReceiptLong, stringResource(R.string.lib_quick_receipt), TileTone.Rose) { onQuickScan(ScanMode.RECEIPT.name) },
-                        QuickAction(Icons.Rounded.Image, stringResource(R.string.lib_photos), TileTone.Sky) { onImportImages() },
-                        QuickAction(Icons.Rounded.PictureAsPdf, stringResource(R.string.lib_menu_import_pdf), TileTone.Coral) { onImportPdf() },
-                        QuickAction(Icons.Rounded.Handyman, stringResource(R.string.lib_quick_pdf_tools), TileTone.Slate) { onOpenTools() }
-                    )
-                )
+        // The promo card is the empty state only: once there are documents, the camera button is the call to action.
+        if (documentCount == 0) {
+            item {
+                ScanHeroCard(onStartScan = onStartScan, enabled = !busy, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
         item {
-            Column {
+            // Four shortcuts, one row. Text, QR, Receipt and Photos live in the camera's mode strip and the Files menu.
+            QuickActions(
+                enabled = !busy,
+                actions = listOf(
+                    QuickAction(Icons.Rounded.Badge, stringResource(R.string.lib_quick_id_card), TileTone.Indigo) { onQuickScan(ScanMode.ID_CARD.name) },
+                    QuickAction(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.lib_quick_book), TileTone.Amber) { onQuickScan(ScanMode.BOOK.name) },
+                    QuickAction(Icons.Rounded.PictureAsPdf, stringResource(R.string.lib_menu_import_pdf), TileTone.Coral) { onImportPdf() },
+                    QuickAction(Icons.Rounded.Handyman, stringResource(R.string.lib_quick_pdf_tools), TileTone.Slate) { onOpenTools() }
+                ),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+        if (recent.isNotEmpty()) {
+            item {
                 SectionHeader(
                     stringResource(R.string.lib_sort_recent),
                     modifier = Modifier.padding(horizontal = 20.dp),
                     actionLabel = if (documentCount > recent.size) stringResource(R.string.lib_see_all) else null,
                     onAction = onSeeAll
                 )
-                Spacer(Modifier.height(10.dp))
-                if (recent.isEmpty()) {
-                    EmptyRecentCard(Modifier.padding(horizontal = 16.dp))
-                } else {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(recent, key = { it.id }) { doc ->
-                            DocumentRecentCard(
-                                document = doc,
-                                selected = doc.id in selected,
-                                onClick = { if (selected.isNotEmpty()) onToggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                onLongClick = { onToggleSelection(doc.id) }
-                            )
-                        }
+            }
+            // A grid of large thumbnails, like the leading scanner apps' home screens: two columns on phones.
+            val columns = if (wide) 4 else 2
+            items(recent.chunked(columns), key = { row -> row.first().id }) { row ->
+                Row(
+                    Modifier.padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    row.forEach { doc ->
+                        DocumentRecentCard(
+                            document = doc,
+                            selected = doc.id in selected,
+                            onClick = { if (selected.isNotEmpty()) onToggleSelection(doc.id) else onOpenDocument(doc.id) },
+                            onLongClick = { onToggleSelection(doc.id) },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
-        item { PrivacyLine(Modifier.fillMaxWidth().padding(top = 2.dp)) }
     }
 }
 
@@ -912,16 +874,6 @@ private fun KeptScansBanner(count: Int, onClick: () -> Unit, modifier: Modifier 
     }
 }
 
-@Composable
-private fun StatPill(icon: ImageVector, text: String) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
 
 /** A search pill that opens the search screen. Looks like a field; acts like a button. */
 @Composable
@@ -958,27 +910,6 @@ private fun PrivacyLine(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-private fun EmptyRecentCard(modifier: Modifier = Modifier) {
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconTile(Icons.Rounded.Description, TileTone.Indigo, size = 48.dp, corner = 16.dp)
-            Spacer(Modifier.width(14.dp))
-            Column {
-                Text(stringResource(R.string.lib_home_empty_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(
-                    stringResource(R.string.lib_home_empty_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
 
 /** The hero: primary entry point on the home screen, on the brand gradient with the mark as a motif. */
 @Composable
@@ -1057,11 +988,10 @@ private class QuickAction(val icon: ImageVector, val label: String, val tone: Ti
 
 /** One-tap shortcuts for the jobs people do most, each opening the right mode or tool directly. */
 @Composable
-private fun QuickActions(enabled: Boolean, actions: List<QuickAction>) {
-    // Two rows of four on phones, all on screen: a sideways-scrolling row hid half the shortcuts with no
-    // hint they were there. Wide windows have room for a single row.
+private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier: Modifier = Modifier) {
+    // All on screen in rows of four (eight on wide windows): a sideways-scrolling row hid shortcuts with no hint.
     val perRow = if (com.example.scanpro.navigation.isWideWindow()) 8 else 4
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         actions.chunked(perRow).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { action ->

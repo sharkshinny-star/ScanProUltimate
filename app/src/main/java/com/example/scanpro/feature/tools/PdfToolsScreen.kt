@@ -24,11 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -111,6 +108,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -145,29 +143,49 @@ import kotlinx.coroutines.withContext
 
 data class PdfToolCard(
     val id: String,
+    /** Full tool name: read out by screen readers and shown in the "Use with a tool" menu. */
     @StringRes val title: Int,
-    @StringRes val description: Int,
     val icon: ImageVector,
-    @StringRes val badge: Int? = null,
     /** Colour family of the icon tile, so related tools share a hue. */
-    val tone: TileTone = TileTone.Indigo
+    val tone: TileTone = TileTone.Indigo,
+    /** Short label under the tile; the full [title] when no shorter word fits. */
+    @StringRes val label: Int = title
 )
 
-private val PDF_TOOLS = listOf(
-    PdfToolCard("fill", R.string.tools_card_fill, R.string.tools_fill_form_desc, Icons.Default.EditNote, badge = R.string.tools_badge_new, tone = TileTone.Violet),
-    PdfToolCard("ocr", R.string.tools_card_ocr, R.string.tools_make_searchable_desc, Icons.Default.FindInPage, badge = R.string.tools_badge_new, tone = TileTone.Teal),
-    PdfToolCard("compress", R.string.tools_card_compress, R.string.tools_card_compress_desc, Icons.Default.Compress, tone = TileTone.Amber),
-    PdfToolCard("merge", R.string.tools_card_merge, R.string.tools_card_merge_desc, Icons.Default.Merge, tone = TileTone.Indigo),
-    PdfToolCard("split", R.string.tools_card_split, R.string.tools_card_split_desc, Icons.AutoMirrored.Filled.CallSplit, tone = TileTone.Indigo),
-    PdfToolCard("extract", R.string.tools_card_extract, R.string.tools_card_extract_desc, Icons.AutoMirrored.Filled.DriveFileMove, tone = TileTone.Indigo),
-    PdfToolCard("rotate", R.string.tools_card_rotate, R.string.tools_card_rotate_desc, Icons.AutoMirrored.Filled.RotateRight, tone = TileTone.Sky),
-    PdfToolCard("organize", R.string.tools_card_organize, R.string.tools_card_organize_desc, Icons.Default.Description, tone = TileTone.Sky),
-    PdfToolCard("img2pdf", R.string.tools_images_to_pdf, R.string.tools_card_img2pdf_desc, Icons.Default.Image, tone = TileTone.Coral),
-    PdfToolCard("pdf2img", R.string.tools_card_pdf2img, R.string.tools_card_pdf2img_desc, Icons.Default.PictureAsPdf, tone = TileTone.Coral),
-    PdfToolCard("protect", R.string.tools_card_protect, R.string.tools_card_protect_desc, Icons.Default.Lock, tone = TileTone.Rose),
-    PdfToolCard("unlock", R.string.tools_card_unlock, R.string.tools_card_unlock_desc, Icons.Default.LockOpen, tone = TileTone.Rose),
-    PdfToolCard("viewer", R.string.tools_card_viewer, R.string.tools_card_viewer_desc, Icons.Default.Visibility, tone = TileTone.Slate)
+private class ToolSection(val id: String, @StringRes val title: Int, val tools: List<PdfToolCard>)
+
+/** Tiles grouped the way the leading scanners do: what you do to a PDF, what you turn it into, how you lock it. */
+private val TOOL_SECTIONS = listOf(
+    ToolSection(
+        "edit", R.string.tools_section_edit, listOf(
+            PdfToolCard("merge", R.string.tools_card_merge, Icons.Default.Merge, TileTone.Indigo),
+            PdfToolCard("split", R.string.tools_card_split, Icons.AutoMirrored.Filled.CallSplit, TileTone.Indigo),
+            PdfToolCard("organize", R.string.tools_card_organize, Icons.Default.Description, TileTone.Sky, label = R.string.tools_tile_organize),
+            PdfToolCard("rotate", R.string.tools_card_rotate, Icons.AutoMirrored.Filled.RotateRight, TileTone.Sky, label = R.string.tools_tile_rotate),
+            PdfToolCard("extract", R.string.tools_card_extract, Icons.AutoMirrored.Filled.DriveFileMove, TileTone.Indigo, label = R.string.tools_tile_extract),
+            PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber)
+        )
+    ),
+    ToolSection(
+        "convert", R.string.tools_section_convert, listOf(
+            PdfToolCard("img2pdf", R.string.tools_images_to_pdf, Icons.Default.Image, TileTone.Coral),
+            PdfToolCard("ocr", R.string.tools_card_ocr, Icons.Default.FindInPage, TileTone.Teal),
+            PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
+            PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral)
+        )
+    ),
+    ToolSection(
+        "secure", R.string.tools_section_secure, listOf(
+            PdfToolCard("protect", R.string.tools_card_protect, Icons.Default.Lock, TileTone.Rose),
+            PdfToolCard("unlock", R.string.tools_card_unlock, Icons.Default.LockOpen, TileTone.Rose)
+        )
+    )
 )
+
+private val VIEWER_TOOL = PdfToolCard("viewer", R.string.tools_card_viewer, Icons.Default.Visibility, TileTone.Slate)
+
+/** Every tool, for the "Use with a tool" menu on a recent PDF. */
+private val PDF_TOOLS = TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL
 
 private data class ThumbnailPageModel(
     val index: Int,
@@ -313,38 +331,41 @@ fun PdfToolsScreen(
                 .padding(padding),
             contentAlignment = Alignment.TopCenter
         ) {
-            LazyVerticalGrid(
-                // Cards keep a readable size: two columns on a 360 dp phone, more on wider windows, and the grid
-                // stops growing past a comfortable width on tablets instead of stretching cards across the screen.
-                columns = GridCells.Adaptive(minSize = 148.dp),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+            val launchTool: (PdfToolCard) -> Unit = { tool ->
+                selectedTool = tool.id
+                when (tool.id) {
+                    "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
+                    "img2pdf" -> imagesPicker.launch("image/*")
+                    else -> singlePdfPicker.launch(arrayOf("application/pdf"))
+                }
+            }
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
+                // The column stops growing past a comfortable width on tablets instead of stretching across the screen.
                 modifier = Modifier.fillMaxSize().widthIn(max = 1100.dp)
             ) {
-                if (recentPdfs.isNotEmpty()) {
-                    item(key = "recent", span = { GridItemSpan(maxLineSpan) }) {
-                        RecentPdfsRow(
-                            items = recentPdfs,
-                            onOpen = { onOpenPdfViewer(it.uri, it.name) },
-                            onUseWith = { pdf, tool -> startTool(tool, pdf.uri) },
-                            onRemove = { viewModel.forgetPdf(it.uri) },
-                            onClear = viewModel::clearRecentPdfs
-                        )
+                TOOL_SECTIONS.forEach { section ->
+                    item(key = "section-${section.id}") {
+                        SectionHeader(stringResource(section.title))
+                        ToolTileGrid(section.tools, onClick = launchTool)
                     }
                 }
-                items(PDF_TOOLS, key = { it.id }) { tool ->
-                    ToolCardItem(
-                        tool = tool,
-                        onClick = {
-                            selectedTool = tool.id
-                            when (tool.id) {
-                                "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
-                                "img2pdf" -> imagesPicker.launch("image/*")
-                                else -> singlePdfPicker.launch(arrayOf("application/pdf"))
-                            }
-                        }
-                    )
+                item(key = "viewer") {
+                    Spacer(Modifier.height(16.dp))
+                    PlainToolRow(VIEWER_TOOL, onClick = { launchTool(VIEWER_TOOL) })
+                }
+                if (recentPdfs.isNotEmpty()) {
+                    item(key = "recent-header") {
+                        RecentPdfsHeader(onClear = viewModel::clearRecentPdfs)
+                    }
+                    items(recentPdfs, key = { it.uri.toString() }) { pdf ->
+                        RecentPdfRow(
+                            pdf = pdf,
+                            onOpen = { onOpenPdfViewer(pdf.uri, pdf.name) },
+                            onUseWith = { tool -> startTool(tool, pdf.uri) },
+                            onRemove = { viewModel.forgetPdf(pdf.uri) }
+                        )
+                    }
                 }
             }
 
@@ -729,132 +750,148 @@ private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (Pdf
     )
 }
 
-/** PDFs opened before, newest first: tap to read, long-press for the tools or to remove from the list. */
+/** A small grey heading above each group of tiles. */
 @Composable
-private fun RecentPdfsRow(
-    items: List<RecentPdf>,
-    onOpen: (RecentPdf) -> Unit,
-    onUseWith: (RecentPdf, String) -> Unit,
-    onRemove: (RecentPdf) -> Unit,
-    onClear: () -> Unit
-) {
-    var removing by remember { mutableStateOf<RecentPdf?>(null) }
-    var menuFor by remember { mutableStateOf<RecentPdf?>(null) }
-    Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.tools_recent_pdfs), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            var confirmClear by remember { mutableStateOf(false) }
-            TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.tools_recent_clear)) }
-            if (confirmClear) {
-                AlertDialog(
-                    onDismissRequest = { confirmClear = false },
-                    title = { Text(stringResource(R.string.tools_recent_clear_title)) },
-                    text = { Text(stringResource(R.string.tools_recent_clear_body)) },
-                    confirmButton = { TextButton(onClick = { confirmClear = false; onClear() }) { Text(stringResource(R.string.tools_recent_clear)) } },
-                    dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.common_cancel)) } }
-                )
-            }
-        }
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(items, key = { it.uri.toString() }) { pdf ->
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier
-                        .width(160.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .combinedClickable(
-                            onClickLabel = stringResource(R.string.tools_recent_open),
-                            onLongClickLabel = stringResource(R.string.tools_recent_use_with_tool),
-                            onLongClick = { menuFor = pdf },
-                            onClick = { onOpen(pdf) }
+private fun SectionHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+    )
+}
+
+/**
+ * Icon tiles with one short label each, four to a row on a phone and eight on a wide window, every row
+ * the same width. Same shape as the shortcuts on the library screen.
+ */
+@Composable
+private fun ToolTileGrid(tools: List<PdfToolCard>, onClick: (PdfToolCard) -> Unit) {
+    val perRow = if (com.example.scanpro.navigation.isWideWindow()) 8 else 4
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        tools.chunked(perRow).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { tool ->
+                    val name = stringResource(tool.title)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .clickable(role = Role.Button, onClickLabel = name) { onClick(tool) }
+                            .semantics { contentDescription = name }
+                            .padding(vertical = 12.dp, horizontal = 4.dp)
+                    ) {
+                        IconTile(tool.icon, tool.tone, size = 44.dp, corner = 14.dp)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(tool.label),
+                            style = MaterialTheme.typography.labelMedium,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            minLines = 2,
+                            lineHeight = MaterialTheme.typography.labelMedium.lineHeight
                         )
-                ) {
-                    Box {
-                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            IconTile(Icons.Default.PictureAsPdf, TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
-                            Spacer(Modifier.width(10.dp))
-                            Text(pdf.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        }
-                        // Long-press: the same file straight into a tool, without picking it again.
-                        DropdownMenu(expanded = menuFor == pdf, onDismissRequest = { menuFor = null }) {
-                            PDF_TOOLS.filter { it.id !in setOf("merge", "img2pdf") }.forEach { tool ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(tool.title)) },
-                                    leadingIcon = { Icon(tool.icon, contentDescription = null) },
-                                    onClick = { menuFor = null; onUseWith(pdf, tool.id) }
-                                )
-                            }
-                            androidx.compose.material3.HorizontalDivider()
-                            DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_remove_from_recent)) }, onClick = { menuFor = null; removing = pdf })
-                        }
                     }
                 }
+                // A short last row keeps its cells the same width as the rows above.
+                repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
-    removing?.let { pdf ->
-        AlertDialog(
-            onDismissRequest = { removing = null },
-            title = { Text(stringResource(R.string.tools_recent_remove_title)) },
-            text = { Text(stringResource(R.string.tools_recent_remove_body, pdf.name)) },
-            confirmButton = { TextButton(onClick = { onRemove(pdf); removing = null }) { Text(stringResource(R.string.tools_recent_remove)) } },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.common_cancel)) } }
-        )
+}
+
+/** A tool that is not a job on a file so much as a way to read one: a single row rather than a tile. */
+@Composable
+private fun PlainToolRow(tool: PdfToolCard, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconTile(tool.icon, tool.tone, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+        Spacer(Modifier.width(12.dp))
+        Text(stringResource(tool.title), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
-private fun ToolCardItem(
-    tool: PdfToolCard,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+private fun RecentPdfsHeader(onClear: () -> Unit) {
+    var confirmClear by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.tools_recent_pdfs),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.tools_recent_clear)) }
+    }
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text(stringResource(R.string.tools_recent_clear_title)) },
+            text = { Text(stringResource(R.string.tools_recent_clear_body)) },
+            confirmButton = { TextButton(onClick = { confirmClear = false; onClear() }) { Text(stringResource(R.string.tools_recent_clear)) } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.common_cancel)) } }
+        )
+    }
+}
+
+/** One PDF opened before: tap to read; the overflow menu opens it, sends it straight into a tool, or removes it. */
+@Composable
+private fun RecentPdfRow(pdf: RecentPdf, onOpen: () -> Unit, onUseWith: (String) -> Unit, onRemove: () -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+    var toolsOpen by remember { mutableStateOf(false) }
+    var removing by remember { mutableStateOf(false) }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.tools_recent_open), onClick = onOpen)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                IconTile(tool.icon, tool.tone, size = 44.dp, corner = 14.dp)
-                Spacer(Modifier.weight(1f))
-                tool.badge?.let { badge ->
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-                        Text(
-                            stringResource(badge),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
+        IconTile(Icons.Default.PictureAsPdf, TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
+        Spacer(Modifier.width(12.dp))
+        Text(pdf.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Box {
+            IconButton(onClick = { menuOpen = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more))
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_open)) }, onClick = { menuOpen = false; onOpen() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_use_with_tool)) }, onClick = { menuOpen = false; toolsOpen = true })
+                androidx.compose.material3.HorizontalDivider()
+                DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_remove_from_recent)) }, onClick = { menuOpen = false; removing = true })
+            }
+            // The same file straight into a tool, without picking it again.
+            DropdownMenu(expanded = toolsOpen, onDismissRequest = { toolsOpen = false }) {
+                PDF_TOOLS.filter { it.id !in setOf("merge", "img2pdf") }.forEach { tool ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(tool.title)) },
+                        leadingIcon = { Icon(tool.icon, contentDescription = null) },
+                        onClick = { toolsOpen = false; onUseWith(tool.id) }
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = stringResource(tool.title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(tool.description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
         }
+    }
+    if (removing) {
+        AlertDialog(
+            onDismissRequest = { removing = false },
+            title = { Text(stringResource(R.string.tools_recent_remove_title)) },
+            text = { Text(stringResource(R.string.tools_recent_remove_body, pdf.name)) },
+            confirmButton = { TextButton(onClick = { removing = false; onRemove() }) { Text(stringResource(R.string.tools_recent_remove)) } },
+            dismissButton = { TextButton(onClick = { removing = false }) { Text(stringResource(R.string.common_cancel)) } }
+        )
     }
 }
 

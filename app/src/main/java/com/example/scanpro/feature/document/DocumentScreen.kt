@@ -621,10 +621,10 @@ internal fun DocumentDetailScreen(
                                 .padding(horizontal = 8.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            BarAction(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy) { cropOpen = true }
+                            // Four actions, as in the leading scanners; Text and the rest live under More.
                             BarAction(Icons.Default.AutoFixHigh, stringResource(R.string.doc_filters), !busy) { filtersOpen = true }
-                            BarAction(Icons.AutoMirrored.Filled.Notes, stringResource(R.string.doc_tab_text), true) { textOpen = true }
-                            BarAction(Icons.Default.Share, stringResource(R.string.doc_share_pdf), !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
+                            BarAction(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy) { cropOpen = true }
+                            BarAction(Icons.Default.Share, stringResource(R.string.common_share), !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
                             BarAction(Icons.Default.MoreHoriz, stringResource(R.string.common_more), true) { moreOpen = true }
                         }
                     }

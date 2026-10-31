@@ -15,26 +15,12 @@
     <string name="ui_pdf_password_import">Import</string>
 
     <!-- Welcome screen (first launch) -->
-    <string name="ui_welcome_privacy_title">Your documents stay on your phone</string>
-    <string name="ui_welcome_privacy_body">ScanPro works without an account. Nothing you scan is uploaded unless you choose to share it or save it somewhere.</string>
-    <string name="ui_welcome_privacy_point_account">No account or sign-in</string>
-    <string name="ui_welcome_privacy_point_offline">Scanning, OCR and PDF tools run on this phone</string>
-    <string name="ui_welcome_privacy_point_ads">No ads, and no watermark on your scans</string>
-    <string name="ui_welcome_scan_title">Scan like a pro</string>
-    <string name="ui_welcome_scan_body">Point the camera at a page and hold steady. ScanPro finds the edges, straightens the page and captures it for you.</string>
-    <string name="ui_welcome_scan_point_modes">Batch mode for many pages, ID cards and books</string>
-    <string name="ui_welcome_scan_point_cleanup">Clean up shadows and fingers, flatten curved pages</string>
-    <string name="ui_welcome_scan_point_codes">Read QR codes and barcodes</string>
-    <string name="ui_welcome_more_title">Do more with every page</string>
-    <string name="ui_welcome_more_body">Every scan becomes a searchable PDF, ready to share, sign or export.</string>
-    <string name="ui_welcome_more_point_search">Find any word you ever scanned</string>
-    <string name="ui_welcome_more_point_export">Export to PDF, Word, text or images</string>
-    <string name="ui_welcome_more_point_sign">Sign, redact, watermark and password-protect</string>
-    <string name="ui_welcome_more_point_contacts">Business cards straight to your contacts</string>
-    <string name="ui_welcome_skip">Skip</string>
-    <string name="ui_welcome_page_of" tools:ignore="PluralsCandidate">Page %1$d of %2$d</string>
-    <string name="ui_welcome_scan_first_page">Scan your first page</string>
-    <string name="ui_welcome_look_around">Look around first</string>
+    <string name="ui_welcome_title">Scan, clean, share.</string>
+    <string name="ui_welcome_tagline">Private by design: no account, nothing uploaded, works offline.</string>
+    <string name="ui_welcome_point_scan">Scan anything</string>
+    <string name="ui_welcome_point_clean">Clean up and make searchable</string>
+    <string name="ui_welcome_point_share">Sign and share</string>
+    <string name="ui_welcome_get_started">Get started</string>
 
     <!-- Design system components: thumbnails and shared dialogs -->
     <string name="ui_scanned_page">Scanned page</string>
@@ -124,7 +110,7 @@
     <string name="scan_detect_no_detect">No detect</string>
     <string name="scan_guidance_point_at_document">Point the camera at a document</string>
     <!-- DocumentEdgeDetector.Guidance -->
-    <string name="scan_guidance_more_light">Too dark · add light or turn on the flash</string>
+    <string name="scan_guidance_more_light">Too dark · tap for flash</string>
     <string name="scan_guidance_hold_steady">Hold steady · the image is blurry</string>
     <string name="scan_guidance_move_closer">Move closer and centre the page</string>
     <string name="scan_guidance_ready">Ready</string>
@@ -142,25 +128,21 @@
     <string name="scan_id_side_front">Front</string>
     <string name="scan_id_side_back">Back</string>
     <string name="scan_id_fit_inside">Fit it inside the borders</string>
-    <string name="scan_tips_title">Quick tips</string>
-    <string name="scan_tip_hold_steady">Hold steady over the page. Once it is outlined and still, it is captured for you.</string>
-    <string name="scan_tip_tap_focus">Tap to focus. Tap \"Auto\" at the top to capture by hand.</string>
-    <string name="scan_tip_batch">Many pages? Choose Batch above the shutter, then tap the page count to finish.</string>
-    <string name="scan_tip_cleanup">Later, Clean up removes shadows and fingers; Curve flattens book pages.</string>
-    <string name="scan_tips_got_it">Got it</string>
     <string name="scan_qr_downloading">The QR reader is still downloading. Connect to the internet, then try again.</string>
     <string name="scan_qr_point">Point at a QR code or barcode</string>
     <string name="scan_guidance_hold_capturing">Hold… capturing</string>
     <string name="scan_quit_title">Quit scanning?</string>
     <string name="scan_quit_body">If you quit now, the photos you took will be discarded.</string>
     <string name="scan_quit_discard">Discard</string>
-    <string name="scan_detection_mode">Detection mode</string>
+    <string name="scan_detection_mode">Auto capture</string>
+    <!-- Camera ⋮ menu switches -->
+    <string name="scan_detect_edges">Detect page edges</string>
+    <string name="scan_show_grid">Grid</string>
+    <string name="scan_show_level">Spirit level</string>
     <string name="scan_more_options">More options</string>
     <string name="scan_hide_zoom_exposure">Hide zoom &amp; exposure</string>
     <string name="scan_zoom_exposure">Zoom &amp; exposure</string>
     <string name="scan_compat_scanner">Compatibility scanner</string>
-    <string name="scan_mode_single">Single</string>
-    <string name="scan_mode_batch">Batch</string>
     <string name="scan_zoom_min">1×</string>
     <string name="scan_zoom">Zoom</string>
     <string name="scan_ev">EV</string>
@@ -189,10 +171,12 @@
     <string name="scan_review_previous_page">Previous page</string>
     <string name="scan_review_next_page">Next page</string>
     <string name="scan_review_add">Add</string>
+    <string name="scan_review_crop">Crop</string>
+    <string name="scan_review_rotate">Rotate</string>
     <string name="scan_review_auto_crop">Auto crop</string>
     <string name="scan_review_no_crop">No crop</string>
     <string name="scan_review_curve">Curve</string>
-    <string name="scan_review_rotate_left">Left</string>
+    <string name="scan_review_rotate_left">Rotate left</string>
     <string name="scan_review_rotate_right">Right</string>
     <string name="scan_review_state_on">On</string>
     <string name="scan_review_page_n">Page %1$d</string>
@@ -211,7 +195,6 @@
     <string name="scan_error_camera_dnd">Do Not Disturb is blocking the camera on this device.</string>
     <string name="scan_error_camera_stream">The camera could not start a preview on this device.</string>
     <string name="scan_error_camera_stopped">The camera stopped working. Try again or use the compatibility scanner.</string>
-    <string name="scan_turn_on_flash">Turn on flash</string>
     <string name="scan_flash_state">Flash: %1$s</string>
     <string name="scan_flash_off">off</string>
     <string name="scan_flash_auto">auto</string>
@@ -221,10 +204,6 @@
     <string name="core_recommend_app_subject">ScanPro</string>
     <string name="core_recommend_app_text">Scan documents to PDF with ScanPro: %1$s</string>
     <string name="core_share_app">Share ScanPro</string>
-    <string name="ui_welcome_privacy_eyebrow">Private by design</string>
-    <string name="ui_welcome_scan_eyebrow">Smart capture</string>
-    <string name="ui_welcome_more_eyebrow">Searchable PDFs</string>
-    <string name="ui_welcome_takes_seconds">Takes about 20 seconds</string>
     <!-- Photos picked from the gallery that were left out; shown together, one per line. -->
     <plurals name="scan_pick_skipped_heic">
         <item quantity="one">%1$d HEIC photo was left out: it needs Android 9 or newer. Choose a JPG or PNG instead.</item>

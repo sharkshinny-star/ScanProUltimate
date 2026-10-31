@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after the "sharper PDF viewer, organiser, Manual default, ScanPro" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after the "P1 declutter" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,7 +40,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-10-31, "sharper PDF viewer, organiser, Manual default, ScanPro" commit)
+## Latest results (2026-10-31, "P1 declutter" commit)
 
 | Check | Result |
 |---|---|

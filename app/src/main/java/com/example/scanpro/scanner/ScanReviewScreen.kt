@@ -1,5 +1,9 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.combinedClickable
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -44,7 +48,6 @@ import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
-import androidx.compose.material.icons.filled.Rotate90DegreesCcw
 import androidx.compose.material.icons.filled.Rotate90DegreesCw
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.Button
@@ -109,7 +112,6 @@ private val Amber = Color(0xFFFFB95C)
 private val ReviewBackdrop = Color(0xFF0B0D14)
 
 /** Rotation is a physical direction, so these icons must not flip in right-to-left layouts (the AutoMirrored ones would); the 90° icons never flip and aren't deprecated. */
-private val RotateLeftIcon: ImageVector = Icons.Filled.Rotate90DegreesCcw
 private val RotateRightIcon: ImageVector = Icons.Filled.Rotate90DegreesCw
 
 /**
@@ -365,44 +367,78 @@ fun ScanReviewScreen(
             }
         }
 
+        // Two tools, like the leading scanners: Crop (a menu: auto, none, curve) and Rotate. Five labelled tools in a
+        // row were the clutter under the page.
+        var cropMenu by remember { mutableStateOf(false) }
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ReviewAction(Icons.Default.CropFree, stringResource(R.string.scan_review_auto_crop), !blocked && bitmap != null) {
-                val image = bitmap ?: return@ReviewAction
-                scope.launch {
-                    quads[key] = withContext(Dispatchers.Default) { detectQuad(image) }
-                }
-            }
-            ReviewAction(Icons.Default.Fullscreen, stringResource(R.string.scan_review_no_crop), !blocked) { quads[key] = CropQuad.DEFAULT }
-            // Same label on or off (the colour shows the state): a longer label squeezed "Done" onto four lines.
-            ReviewAction(Icons.Default.Gesture, stringResource(R.string.scan_review_curve), !blocked && bitmap != null, highlighted = curveMode) {
-                val image = bitmap ?: return@ReviewAction
-                val start = quads[key] ?: return@ReviewAction
-                if (curveMode) {
-                    curveMode = false
-                    quads[key] = start.straightened()
-                } else {
-                    curveMode = true
-                    // Start from the page's own edges; the orange handles then fine-tune each bend.
-                    scope.launch {
-                        val estimated = withContext(Dispatchers.Default) {
-                            runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
+            Box {
+                ReviewAction(Icons.Default.CropFree, stringResource(R.string.scan_review_crop), !blocked && bitmap != null, highlighted = curveMode) { cropMenu = true }
+                DropdownMenu(expanded = cropMenu, onDismissRequest = { cropMenu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.scan_review_auto_crop)) },
+                        leadingIcon = { Icon(Icons.Default.CropFree, contentDescription = null) },
+                        onClick = {
+                            cropMenu = false
+                            val image = bitmap ?: return@DropdownMenuItem
+                            scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
                         }
-                        if (curveMode && quads[key] == start) quads[key] = estimated
-                    }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.scan_review_no_crop)) },
+                        leadingIcon = { Icon(Icons.Default.Fullscreen, contentDescription = null) },
+                        onClick = { cropMenu = false; quads[key] = CropQuad.DEFAULT }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.scan_review_curve)) },
+                        leadingIcon = { Icon(Icons.Default.Gesture, contentDescription = null) },
+                        trailingIcon = { if (curveMode) Icon(Icons.Default.Check, contentDescription = null) },
+                        onClick = {
+                            cropMenu = false
+                            val image = bitmap ?: return@DropdownMenuItem
+                            val start = quads[key] ?: return@DropdownMenuItem
+                            if (curveMode) {
+                                curveMode = false
+                                quads[key] = start.straightened()
+                            } else {
+                                curveMode = true
+                                // Start from the page's own edges; the orange handles then fine-tune each bend.
+                                scope.launch {
+                                    val estimated = withContext(Dispatchers.Default) {
+                                        runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
+                                    }
+                                    if (curveMode && quads[key] == start) quads[key] = estimated
+                                }
+                            }
+                        }
+                    )
                 }
             }
-            ReviewAction(RotateLeftIcon, stringResource(R.string.scan_review_rotate_left), !blocked) { rotate(clockwise = false) }
-            ReviewAction(RotateRightIcon, stringResource(R.string.scan_review_rotate_right), !blocked) { rotate(clockwise = true) }
+            // Tap turns the page clockwise; a long press turns it the other way.
+            ReviewAction(
+                RotateRightIcon,
+                stringResource(R.string.scan_review_rotate),
+                !blocked,
+                onLongClick = { rotate(clockwise = false) },
+                onLongClickLabel = stringResource(R.string.scan_review_rotate_left)
+            ) { rotate(clockwise = true) }
         }
     }
 }
 
 @Composable
-private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, highlighted: Boolean = false, onClick: () -> Unit) {
+private fun ReviewAction(
+    icon: ImageVector,
+    label: String,
+    enabled: Boolean,
+    highlighted: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
+    onClick: () -> Unit
+) {
     val tint = when {
         !enabled -> Color.White.copy(alpha = 0.35f)
         highlighted -> Amber
@@ -414,7 +450,7 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
             .minimumInteractiveComponentSize()
             .clip(RoundedCornerShape(12.dp))
             .background(if (highlighted) Amber.copy(alpha = 0.16f) else Color.Transparent)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .combinedClickable(enabled = enabled, role = Role.Button, onLongClickLabel = onLongClickLabel, onLongClick = onLongClick, onClick = onClick)
             .semantics { if (highlighted) stateDescription = onDescription }
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally

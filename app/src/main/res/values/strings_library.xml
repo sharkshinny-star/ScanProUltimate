@@ -31,16 +31,10 @@
     <string name="lib_search_hint">Search looks through titles, tags and every word recognised in your scans.</string>
     <string name="lib_rename_folder_label">Folder name</string>
 
-    <string name="lib_home_headline">A little less paper.</string>
     <string name="lib_quick_id_card">ID card</string>
     <string name="lib_quick_book">Book</string>
-    <string name="lib_quick_extract_text">Extract text</string>
-    <string name="lib_quick_qr_code">QR code</string>
-    <string name="lib_quick_receipt">Receipt</string>
     <string name="lib_quick_pdf_tools">PDF tools</string>
     <string name="lib_see_all">See all</string>
-    <string name="lib_home_empty_title">Your scans will appear here</string>
-    <string name="lib_home_empty_body">Each one becomes a searchable PDF you can share, sign or export to Word.</string>
     <string name="lib_privacy_line">Private by design: no account, nothing uploaded</string>
     <string name="lib_hero_eyebrow">SMART SCAN</string>
     <string name="lib_hero_title">Every detail.\nPerfectly captured.</string>
@@ -118,10 +112,6 @@
         <item quantity="one">%1$d document</item>
         <item quantity="other">%1$d documents</item>
     </plurals>
-    <plurals name="lib_favorite_count">
-        <item quantity="one">%1$d favourite</item>
-        <item quantity="other">%1$d favourites</item>
-    </plurals>
     <plurals name="lib_move_documents_title">
         <item quantity="one">Move document</item>
         <item quantity="other">Move %1$d documents</item>
@@ -144,18 +134,7 @@
     <string name="lib_empty_library_is_empty">Your library is empty</string>
     <string name="lib_empty_favorites_hint">Star a document to keep it one tap away.</string>
     <string name="lib_empty_folder_hint">Select documents on Files and choose Move to folder, or set the folder on a document\'s page.</string>
-    <string name="lib_greeting_morning">Good morning</string>
-    <string name="lib_greeting_afternoon">Good afternoon</string>
-    <string name="lib_greeting_evening">Good evening</string>
-    <!-- Home greeting from 10 pm to 5 am -->
-    <string name="lib_greeting_night">Working late</string>
-    <string name="lib_home_intro">Scan, clean up, recognise text and export your first document.</string>
-    <plurals name="lib_in_bin_count">
-        <item quantity="one">%1$d in bin</item>
-        <item quantity="other">%1$d in bin</item>
-    </plurals>
     <string name="lib_home_search_launcher">Search titles, tags and text</string>
-    <string name="lib_quick_actions">Quick actions</string>
     <string name="lib_merge_folder_title">Merge into \"%1$s\"?</string>
     <string name="lib_merge_folder_message">A folder called \"%1$s\" already exists. The documents in \"%2$s\" will join it; this cannot be undone.</string>
     <string name="lib_merge_folder_confirm">Merge</string>
