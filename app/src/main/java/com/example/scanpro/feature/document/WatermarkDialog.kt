@@ -33,8 +33,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.Eyebrow
 import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.data.WatermarkPosition
 import com.example.scanpro.data.WatermarkSize
@@ -89,7 +90,7 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                com.example.scanpro.core.designsystem.Eyebrow(stringResource(R.string.doc_size), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Eyebrow(stringResource(R.string.doc_size), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkSize.entries.forEach { option ->
                         FilterChip(selected = size == option, onClick = { size = option }, label = { Text(stringResource(option.labelRes)) }, colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
@@ -99,7 +100,7 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                         ), shape = androidx.compose.foundation.shape.CircleShape)
                     }
                 }
-                com.example.scanpro.core.designsystem.Eyebrow(stringResource(R.string.doc_position), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Eyebrow(stringResource(R.string.doc_position), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WatermarkPosition.entries.forEach { option ->
                         FilterChip(selected = position == option, onClick = { position = option }, label = { Text(stringResource(option.labelRes)) }, colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
@@ -109,7 +110,7 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                         ), shape = androidx.compose.foundation.shape.CircleShape)
                     }
                 }
-                com.example.scanpro.core.designsystem.Eyebrow(stringResource(R.string.doc_colour), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Eyebrow(stringResource(R.string.doc_colour), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 // Each 36dp swatch sits in a 48dp touch target; the targets touch, which keeps the row inside the dialog
                 // (12dp between swatches instead of 10dp).
                 Row {

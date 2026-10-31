@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="App code" pattern="file:*//*&amp;&amp;!file:opencv//*&amp;&amp;!file:*/build//*&amp;&amp;!file:build//*" />
+</component>

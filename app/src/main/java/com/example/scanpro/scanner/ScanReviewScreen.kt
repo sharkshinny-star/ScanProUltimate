@@ -565,7 +565,7 @@ private fun ThumbnailStrip(
             val key = uri.toString()
             // Decoded once per page and kept, so scrolling a long batch doesn't re-read every JPEG.
             val cacheKey = "$key#$rotationTick"
-            val thumb by produceState<Bitmap?>(initialValue = thumbCache[cacheKey], cacheKey) {
+            val thumb by produceState(initialValue = thumbCache[cacheKey], cacheKey) {
                 if (value == null) {
                     value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 220) }
                     value?.let { thumbCache[cacheKey] = it }

@@ -34,16 +34,16 @@ object OpenCvScanProcessor {
         if (!corrected) source.copyTo(destination, overwrite = true)
         return Result(destination, detection, corrected)
     }
-}
 
-/** Outline of the page in a captured photo, or the whole frame when nothing convincing is found. */
-fun OpenCvScanProcessor.detectCrop(source: File): CropQuad {
-    val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT
-    return try {
-        val detection = DocumentEdgeDetector.detect(bitmap)
-        val quad = detection.quad
-        if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
-    } finally {
-        if (!bitmap.isRecycled) bitmap.recycle()
+    /** Outline of the page in a captured photo, or the whole frame when nothing convincing is found. */
+    fun detectCrop(source: File): CropQuad {
+        val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT
+        return try {
+            val detection = DocumentEdgeDetector.detect(bitmap)
+            val quad = detection.quad
+            if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT
+        } finally {
+            if (!bitmap.isRecycled) bitmap.recycle()
+        }
     }
 }

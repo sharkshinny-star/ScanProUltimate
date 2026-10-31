@@ -1,52 +1,59 @@
 package com.example.scanpro
 
+import android.content.ContentResolver
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.KeyEvent
+import android.view.WindowManager
 import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.DisposableEffect
-import com.example.scanpro.core.crash.CrashReportPrompt
-import com.example.scanpro.core.designsystem.ThemeTransition
-import com.example.scanpro.data.ThemeMode
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
-import android.content.ContentResolver
-import android.view.WindowManager
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.launch
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
-import com.example.scanpro.ui.ScanProApp
+import com.example.scanpro.core.crash.CrashReportPrompt
 import com.example.scanpro.core.designsystem.ScanProTheme
+import com.example.scanpro.core.designsystem.ThemeTransition
+import com.example.scanpro.core.notifications.AppNotifications
+import com.example.scanpro.core.ui.SupportTopic
+import com.example.scanpro.core.ui.contactSupport
+import com.example.scanpro.core.ui.openPlayStoreListing
+import com.example.scanpro.data.ThemeMode
+import com.example.scanpro.navigation.ScanProDestinations
+import com.example.scanpro.scanner.HardwareShutter
+import com.example.scanpro.ui.ScanProApp
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import dagger.hilt.android.AndroidEntryPoint
-
-import android.net.Uri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
     private val viewModel: AppViewModel by viewModels()
-    @Inject lateinit var notifications: com.example.scanpro.core.notifications.AppNotifications
+    @Inject lateinit var notifications: AppNotifications
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -202,26 +209,24 @@ class MainActivity : FragmentActivity() {
         })
     }
 
-    override fun onNewIntent(intent: android.content.Intent) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
     }
 
     /** Either volume key takes a photo while the scanner is up, for one-handed batch scanning. */
-    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
-        val volume = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
-        if (volume && event?.repeatCount == 0 && com.example.scanpro.scanner.HardwareShutter.onVolumeKey()) return true
-        return super.onKeyDown(keyCode, event)
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        val volume = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+        return (volume && event?.repeatCount == 0 && HardwareShutter.onVolumeKey()) || super.onKeyDown(keyCode, event)
     }
 
-    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
-        val volume = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
-        if (volume && com.example.scanpro.scanner.HardwareShutter.active) return true
-        return super.onKeyUp(keyCode, event)
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        val volume = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+        return (volume && HardwareShutter.active) || super.onKeyUp(keyCode, event)
     }
 
-    private fun handleIntent(intent: android.content.Intent?) {
+    private fun handleIntent(intent: Intent?) {
         if (intent == null) return
         // Queued imports outlive this Activity (they wait in the ViewModel until unlock), so capture
         // the ViewModel itself rather than `this`, which would leak a rotated-away Activity.
@@ -231,31 +236,31 @@ class MainActivity : FragmentActivity() {
         val type = intent.type ?: intent.data?.let { runCatching { contentResolver.getType(it) }.getOrNull() }.orEmpty()
         fun typeOf(uri: Uri): String = runCatching { contentResolver.getType(uri) }.getOrNull() ?: type
 
-        when {
-            action == ACTION_OPEN_DOCUMENT -> intent.getStringExtra(EXTRA_DOCUMENT_ID)?.let(viewModel::requestOpenDocument)
-            action == ACTION_OPEN_TRASH -> viewModel.requestDestination(com.example.scanpro.navigation.ScanProDestinations.TRASH)
-            action == ACTION_OPEN_SETTINGS -> viewModel.requestDestination(com.example.scanpro.navigation.ScanProDestinations.SETTINGS)
-            action == ACTION_SCAN_NOW -> {
+        when (action) {
+            ACTION_OPEN_DOCUMENT -> intent.getStringExtra(EXTRA_DOCUMENT_ID)?.let(viewModel::requestOpenDocument)
+            ACTION_OPEN_TRASH -> viewModel.requestDestination(ScanProDestinations.TRASH)
+            ACTION_OPEN_SETTINGS -> viewModel.requestDestination(ScanProDestinations.SETTINGS)
+            ACTION_SCAN_NOW -> {
                 // Launchers rank shortcuts by how often each is used.
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
                 viewModel.requestScan()
             }
-            action == ACTION_REPORT_ISSUE -> {
+            ACTION_REPORT_ISSUE -> {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_REPORT_ISSUE)
-                com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.ISSUE)
+                contactSupport(this, SupportTopic.ISSUE)
             }
-            action == ACTION_GIVE_FEEDBACK -> {
+            ACTION_GIVE_FEEDBACK -> {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_GIVE_FEEDBACK)
-                com.example.scanpro.core.ui.contactSupport(this, com.example.scanpro.core.ui.SupportTopic.FEEDBACK)
+                contactSupport(this, SupportTopic.FEEDBACK)
             }
             // Shortcuts pinned from an earlier build still carry the old single support action.
-            action == ACTION_SUPPORT -> com.example.scanpro.core.ui.openPlayStoreListing(this)
-            action == android.content.Intent.ACTION_SEND -> {
+            ACTION_SUPPORT -> openPlayStoreListing(this)
+            Intent.ACTION_SEND -> {
                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM, Uri::class.java)
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
                 } else {
                     @Suppress("DEPRECATION")
-                    intent.getParcelableExtra(android.content.Intent.EXTRA_STREAM)
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 }
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf") {
@@ -265,12 +270,12 @@ class MainActivity : FragmentActivity() {
                     }
                 }
             }
-            action == android.content.Intent.ACTION_SEND_MULTIPLE -> {
+            Intent.ACTION_SEND_MULTIPLE -> {
                 val uris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
                 } else {
                     @Suppress("DEPRECATION")
-                    intent.getParcelableArrayListExtra<Uri>(android.content.Intent.EXTRA_STREAM).orEmpty()
+                    intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()
                 }.filter(::isAllowedExternalUri)
                 // Several PDFs arrive as one document each; images become the pages of one document.
                 val pdfs = uris.filter { typeOf(it) == "application/pdf" || it.toString().endsWith(".pdf", ignoreCase = true) }
@@ -280,7 +285,7 @@ class MainActivity : FragmentActivity() {
                     appViewModel.submitExternalImport { appViewModel.importImages(images) }
                 }
             }
-            action == android.content.Intent.ACTION_VIEW -> {
+            Intent.ACTION_VIEW -> {
                 val uri = intent.data
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
@@ -310,7 +315,7 @@ class MainActivity : FragmentActivity() {
                 .setShortLabel(getString(short))
                 .setLongLabel(getString(long))
                 .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
-                .setIntent(android.content.Intent(this, MainActivity::class.java).setAction(action))
+                .setIntent(Intent(this, MainActivity::class.java).setAction(action))
                 .build()
             ShortcutManagerCompat.setDynamicShortcuts(
                 this,

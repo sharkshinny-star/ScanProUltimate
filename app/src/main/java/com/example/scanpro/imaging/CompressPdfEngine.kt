@@ -93,7 +93,7 @@ object CompressPdfEngine {
 
             // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.
             // The original is untouched, so whatever text it had is still there.
-            val keptOriginal = outputFile.length() <= 0L || outputFile.length() >= originalSize
+            val keptOriginal = outputFile.length() !in 1L until originalSize
             if (keptOriginal) tempInput.copyTo(outputFile, overwrite = true)
             val finalSize = outputFile.length()
             return@withContext CompressionResult(

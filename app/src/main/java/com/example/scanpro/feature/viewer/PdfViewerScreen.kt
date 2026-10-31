@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -38,6 +37,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -78,22 +78,25 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import com.example.scanpro.R
-import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.text.PDFTextStripper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.TileTone
+import com.example.scanpro.core.ui.printPdfFile
+import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
-import com.example.scanpro.core.ui.printPdfFile
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.text.PDFTextStripper
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -209,12 +212,12 @@ fun PdfViewerScreen(
                     // Decoded at screen size and turned by its EXIF tag: a full 50 MP photo would need
                     // hundreds of megabytes and show sideways.
                     val bmp = if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                        com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
+                        ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
                     } else {
                         val copy = java.io.File(context.cacheDir, "view_${java.util.UUID.randomUUID()}.img")
                         try {
                             context.contentResolver.openInputStream(pdfUri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
-                            com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(copy.absolutePath, 2400)
+                            ImageProcessor.decodeOrientedScaled(copy.absolutePath, 2400)
                         } finally {
                             copy.delete()
                         }
@@ -513,9 +516,9 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        com.example.scanpro.core.designsystem.IconTile(
+                        IconTile(
                             androidx.compose.material.icons.Icons.Rounded.ErrorOutline,
-                            com.example.scanpro.core.designsystem.TileTone.Rose,
+                            TileTone.Rose,
                             size = 72.dp, corner = 24.dp, iconSize = 36.dp
                         )
                         Spacer(modifier = Modifier.height(16.dp))

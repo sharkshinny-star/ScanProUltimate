@@ -11,12 +11,13 @@ import android.os.Build
 import android.os.PersistableBundle
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import com.example.scanpro.R
+import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
 import com.example.scanpro.data.ScanDocument
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.launch
-import androidx.core.net.toUri
 
 /**
  * Every document's PDF is stored as "document.pdf", and the receiving app names the attachment after the
@@ -156,7 +157,7 @@ sealed class TrashCountdown(val isUrgent: Boolean) {
 fun trashCountdown(
     trashedAt: Long,
     nowMs: Long = System.currentTimeMillis(),
-    retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
+    retentionDays: Int = DEFAULT_TRASH_RETENTION_DAYS
 ): TrashCountdown {
     val retentionMs = retentionDays * 24L * 60L * 60L * 1000L
     val expirationMs = trashedAt + retentionMs
@@ -180,7 +181,7 @@ fun formatTrashCountdown(
     context: Context,
     trashedAt: Long,
     nowMs: Long = System.currentTimeMillis(),
-    retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
+    retentionDays: Int = DEFAULT_TRASH_RETENTION_DAYS
 ): Pair<String, Boolean> {
     val countdown = trashCountdown(trashedAt, nowMs, retentionDays)
     val resources = context.resources

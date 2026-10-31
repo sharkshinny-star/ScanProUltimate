@@ -353,10 +353,10 @@ class DocumentDatabase @Inject constructor(
         dao.loadOcrScript(id)?.let { runCatching { OcrScript.valueOf(it) }.getOrNull() }
 
     fun deleteDocument(id: String) {
-        room.runInTransaction(Runnable {
+        room.runInTransaction {
             dao.deleteFtsForDocument(id)
             dao.deleteDocument(id)
-        })
+        }
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import com.example.scanpro.data.CropQuad
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.hypot
@@ -35,7 +36,7 @@ internal object QuadGeometry {
     }
 
     /** Area of the outline as a share of the (normalised) frame, by the shoelace formula. */
-    fun area(quad: com.example.scanpro.data.CropQuad): Float {
+    fun area(quad: CropQuad): Float {
         val p = listOf(quad.topLeft, quad.topRight, quad.bottomRight, quad.bottomLeft)
         var sum = 0.0
         for (i in p.indices) {

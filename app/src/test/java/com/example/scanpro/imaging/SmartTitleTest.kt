@@ -20,7 +20,7 @@ class SmartTitleTest {
 
     @Test
     fun `receipt is named by kind, shop and date`() {
-        val text = "Receipt\nBlue Bottle Coffee\n12 Market St\nDate: 03/10/2026\nLatte 4.50\nTotal \$4.50\nCash 5.00\nChange 0.50\nThank you"
+        val text = "Receipt\nBlue Bottle Coffee\n12 Market St\nDate: 03/10/2026\nLatte 4.50\nTotal $4.50\nCash 5.00\nChange 0.50\nThank you"
         assertEquals("Receipt – Blue Bottle Coffee – 03-10-2026", SmartTitle.fromOcr(text, "Fallback"))
     }
 

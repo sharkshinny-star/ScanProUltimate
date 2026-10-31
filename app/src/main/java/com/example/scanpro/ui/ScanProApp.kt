@@ -5,29 +5,30 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.scanpro.AppViewModel
 import com.example.scanpro.R
@@ -39,8 +40,8 @@ import com.example.scanpro.core.ui.requestInAppReview
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
 import com.example.scanpro.navigation.ScanProDestinations
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.scanpro.navigation.ScanProNavHost
+import com.example.scanpro.navigation.ScanProNavigationRail
 import com.example.scanpro.navigation.navigateToTopLevel
 
 /** App shell: app lock gate, app-wide snackbar and share effects, and the navigation graph. */
@@ -184,7 +185,7 @@ fun ScanProApp(
                 .then(if (welcomeShowing) Modifier.clearAndSetSemantics { } else Modifier)
         ) {
             if (showRail) {
-                com.example.scanpro.navigation.ScanProNavigationRail(
+                ScanProNavigationRail(
                     selectedRoute = currentRoute.orEmpty(),
                     onTab = { route -> navController.navigateToTopLevel(route) }
                 )

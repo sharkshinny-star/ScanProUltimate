@@ -120,7 +120,7 @@ object CurvedPage {
         val chordLength = chord.length()
         if (chordLength < 20f || searchPx < 4f) return null
         var normal = Pt(-chord.y / chordLength, chord.x / chordLength)
-        if (normal.x * inward.x + normal.y * inward.y < 0f) normal = normal * -1f
+        if (normal.x * inward.x + normal.y * inward.y < 0f) normal *= -1f
         val step = 2f
         val estimates = mutableListOf<Float>()
         for (u in floatArrayOf(0.3f, 0.4f, 0.5f, 0.6f, 0.7f)) {

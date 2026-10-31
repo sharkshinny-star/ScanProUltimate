@@ -448,10 +448,9 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         ) {
             val l = 28f + (1f - lock) * 10f
             val stroke = 6f
-            val c = bracketColor
             fun corner(x: Float, y: Float, dx: Float, dy: Float) {
-                drawLine(c, Offset(x, y), Offset(x + dx * l, y), stroke, StrokeCap.Round)
-                drawLine(c, Offset(x, y), Offset(x, y + dy * l), stroke, StrokeCap.Round)
+                drawLine(bracketColor, Offset(x, y), Offset(x + dx * l, y), stroke, StrokeCap.Round)
+                drawLine(bracketColor, Offset(x, y), Offset(x, y + dy * l), stroke, StrokeCap.Round)
             }
             corner(0f, 0f, 1f, 1f)
             corner(size.width, 0f, -1f, 1f)

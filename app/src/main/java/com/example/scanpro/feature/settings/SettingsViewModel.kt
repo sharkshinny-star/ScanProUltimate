@@ -3,24 +3,26 @@ package com.example.scanpro.feature.settings
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.scanpro.R
+import com.example.scanpro.core.notifications.AppNotifications
 import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
-import com.example.scanpro.data.DocumentRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
-import androidx.lifecycle.viewModelScope
+import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
 import com.example.scanpro.data.DocumentLibrary
+import com.example.scanpro.data.DocumentRepository
+import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.example.scanpro.core.notifications.AppNotifications
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -72,10 +74,10 @@ class SettingsViewModel @Inject constructor(
     fun setAutoTitle(value: Boolean) { viewModelScope.launch { settings.setAutoTitle(value) } }
     fun setThemeMode(value: ThemeMode) { viewModelScope.launch { settings.setThemeMode(value) } }
     fun setDynamicColor(value: Boolean) { viewModelScope.launch { settings.setDynamicColor(value) } }
-    val trashRetentionDays = settings.trashRetentionDays.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS)
-    val defaultOcrScript = settings.defaultOcrScript.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.example.scanpro.data.OcrScript.LATIN)
+    val trashRetentionDays = settings.trashRetentionDays.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DEFAULT_TRASH_RETENTION_DAYS)
+    val defaultOcrScript = settings.defaultOcrScript.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OcrScript.LATIN)
     fun setTrashRetentionDays(value: Int) { viewModelScope.launch { settings.setTrashRetentionDays(value) } }
-    fun setDefaultOcrScript(value: com.example.scanpro.data.OcrScript) { viewModelScope.launch { settings.setDefaultOcrScript(value) } }
+    fun setDefaultOcrScript(value: OcrScript) { viewModelScope.launch { settings.setDefaultOcrScript(value) } }
 
     val notifyFinished = settings.notifyFinished.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val notifyFailures = settings.notifyFailures.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)

@@ -4,39 +4,39 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
-import android.os.ParcelFileDescriptor
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import androidx.core.graphics.createBitmap
 import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.AnnotationRemap
+import com.example.scanpro.imaging.DocxExporter
 import com.example.scanpro.imaging.ImageProcessor
-import com.example.scanpro.imaging.ThumbnailStore
-import com.example.scanpro.imaging.PaperColors
-import com.example.scanpro.imaging.XlsxExporter
-import com.example.scanpro.intelligence.OcrLayout
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.OcrResult
+import com.example.scanpro.imaging.PaperColors
 import com.example.scanpro.imaging.PdfExporter
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.SmartTitle
 import com.example.scanpro.imaging.SpecialExporters
-import com.example.scanpro.scanner.detectCrop
+import com.example.scanpro.imaging.ThumbnailStore
+import com.example.scanpro.imaging.XlsxExporter
+import com.example.scanpro.intelligence.OcrLayout
 import com.example.scanpro.scanner.OpenCvScanProcessor
-import kotlinx.coroutines.Dispatchers
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import androidx.core.graphics.createBitmap
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /** The PDF is password-protected; [wrongPassword] is true when a password was given and did not work. */
 class PdfPasswordRequiredException(val wrongPassword: Boolean) :
@@ -876,7 +876,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(id)
         require(doc.ocrText.isNotBlank()) { "No recognized text to export" }
         val file = freshExportFile(safeName(doc.title), "docx")
-        com.example.scanpro.imaging.DocxExporter.export(doc.title, doc.pages.sortedBy { it.position }.map { it.ocrText }, file)
+        DocxExporter.export(doc.title, doc.pages.sortedBy { it.position }.map { it.ocrText }, file)
         file
     }
 

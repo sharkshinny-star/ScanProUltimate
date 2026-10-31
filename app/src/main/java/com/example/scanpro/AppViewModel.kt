@@ -7,13 +7,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.scanpro.core.operations.ExportArtifact
 import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
+import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
+import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPasswordRequiredException
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.ThemeMode
+import com.example.scanpro.navigation.RetakeTarget
 import com.example.scanpro.scanner.SESSION_ROOT
+import com.example.scanpro.work.ImportScanWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -185,20 +189,20 @@ class AppViewModel @Inject constructor(
     fun importCameraSession(
         imageUris: List<Uri>,
         mode: ScanMode,
-        crops: List<com.example.scanpro.data.CropQuad> = emptyList(),
-        filters: List<com.example.scanpro.data.PageFilter> = emptyList()
+        crops: List<CropQuad> = emptyList(),
+        filters: List<PageFilter> = emptyList()
     ) {
         if (imageUris.isEmpty()) return
         // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
-        com.example.scanpro.work.ImportScanWorker.enqueue(context, com.example.scanpro.work.ImportScanWorker.inputFor(imageUris, mode, crops, filters))
+        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters))
     }
 
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */
     fun replacePageFromCamera(
-        target: com.example.scanpro.navigation.RetakeTarget,
+        target: RetakeTarget,
         imageUri: Uri,
-        crop: com.example.scanpro.data.CropQuad,
-        filter: com.example.scanpro.data.PageFilter
+        crop: CropQuad,
+        filter: PageFilter
     ) {
         val number = target.position + 1
         operations.enqueue(context.getString(R.string.msg_replacing_page, number), context.getString(R.string.msg_page_retaken, number)) {

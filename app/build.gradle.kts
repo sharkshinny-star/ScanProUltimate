@@ -21,7 +21,7 @@ android {
     defaultConfig {
         applicationId = "com.scanpro.app"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 7
         versionName = "4.2.0"
 

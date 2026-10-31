@@ -10,22 +10,22 @@ import android.graphics.RectF
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import androidx.core.graphics.withRotation
-import androidx.core.graphics.withRotation
 import androidx.exifinterface.media.ExifInterface
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
-import com.example.scanpro.data.PageAnnotation
+import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.PageAdjustments
+import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.data.PageFilter
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.hypot
+import kotlin.math.max
+import kotlin.math.min
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
-import kotlin.math.hypot
-import kotlin.math.max
-import kotlin.math.min
 
 object ImageProcessor {
     init { OpenCvRuntime.ensureLoaded() }
@@ -256,11 +256,11 @@ object ImageProcessor {
     private fun curvedCrop(source: Bitmap, crop: CropQuad): Bitmap {
         val w = source.width.toFloat()
         val h = source.height.toFloat()
-        fun pt(p: com.example.scanpro.data.NormalizedPoint) = CurvedPage.Pt(p.x.coerceIn(0f, 1f) * w, p.y.coerceIn(0f, 1f) * h)
+        fun pt(p: NormalizedPoint) = CurvedPage.Pt(p.x.coerceIn(0f, 1f) * w, p.y.coerceIn(0f, 1f) * h)
         val tl = pt(crop.topLeft); val tr = pt(crop.topRight); val br = pt(crop.bottomRight); val bl = pt(crop.bottomLeft)
         val corners = floatArrayOf(tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y)
         if (!isUsableQuad(corners, w * h)) return source
-        fun bowed(a: CurvedPage.Pt, b: CurvedPage.Pt, bow: com.example.scanpro.data.NormalizedPoint?): CurvedPage.Pt {
+        fun bowed(a: CurvedPage.Pt, b: CurvedPage.Pt, bow: NormalizedPoint?): CurvedPage.Pt {
             val mid = CurvedPage.Pt((a.x + b.x) / 2f + (bow?.x ?: 0f) * w, (a.y + b.y) / 2f + (bow?.y ?: 0f) * h)
             return CurvedPage.control(a, mid, b)
         }
@@ -344,13 +344,13 @@ object ImageProcessor {
                 val bottom = smooth[y1 * sw + x0] * (1 - ax) + smooth[y1 * sw + x1] * ax
                 top * (1 - ay) + bottom * ay
             }
-            fun pt(p: com.example.scanpro.data.NormalizedPoint) = CurvedPage.Pt(p.x * sw, p.y * sh)
+            fun pt(p: NormalizedPoint) = CurvedPage.Pt(p.x * sw, p.y * sh)
             val tl = pt(crop.topLeft); val tr = pt(crop.topRight); val br = pt(crop.bottomRight); val bl = pt(crop.bottomLeft)
             val topMid = (tl + tr) * 0.5f
             val bottomMid = (bl + br) * 0.5f
             val pageHeight = (bottomMid - topMid).length()
             val search = pageHeight * 0.12f
-            fun toBow(p: CurvedPage.Pt?) = p?.let { com.example.scanpro.data.NormalizedPoint(it.x / sw, it.y / sh) }
+            fun toBow(p: CurvedPage.Pt?) = p?.let { NormalizedPoint(it.x / sw, it.y / sh) }
             val leftMid = (tl + bl) * 0.5f
             val rightMid = (tr + br) * 0.5f
             val sideSearch = (rightMid - leftMid).length() * 0.12f

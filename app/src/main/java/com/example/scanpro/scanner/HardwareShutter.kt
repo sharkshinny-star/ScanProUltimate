@@ -15,7 +15,7 @@ object HardwareShutter {
     /** Returns true when the press was taken as a shutter. */
     fun onVolumeKey(): Boolean {
         if (!active) return false
-        presses.value = presses.value + 1
+        presses.value += 1
         return true
     }
 }

@@ -53,8 +53,7 @@ object BusinessCardParser {
         }.distinct()
         val website = lines.asSequence()
             .filter { '@' !in it }
-            .mapNotNull { webRegex.find(it)?.value }
-            .firstOrNull()
+            .firstNotNullOfOrNull { webRegex.find(it)?.value }
 
         // Drop contact-detail lines; a phone line may carry a short label ("Mob:") but no other words.
         val rest = lines.filterNot { line ->

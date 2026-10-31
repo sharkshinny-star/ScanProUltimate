@@ -1,0 +1,154 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <!-- Every inspection keeps its default everywhere else. Inside opencv/, which is generated from unmodified OpenCV
+         sources by scripts/opencv/build-opencv-android.sh, these are switched off: fixes there would be lost on rebuild. -->
+    <inspection_tool class="SpellCheckingInspection" enabled="true" level="TYPO" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="TYPO" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="GrazieInspection" enabled="true" level="GRAMMAR_ERROR" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="GRAMMAR_ERROR" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="LanguageDetectionInspection" enabled="true" level="INFORMATION" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="INFORMATION" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="CStyleArrayDeclaration" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnnecessaryLocalVariable" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="RedundantCast" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="JavadocLinkAsPlainText" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="JavadocBlankLines" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="JavadocDeclaration" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="JavadocReference" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="MethodDoesntCallSuperMethod" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="Convert2Diamond" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="FieldMayBeFinal" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="FinalMethodInFinalClass" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="FinalPrivateMethod" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="FinalStaticMethod" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnusedReturnValue" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UNUSED_IMPORT" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="NullableProblems" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="PatternVariableCanBeUsed" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="SameReturnValue" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="SameParameterValue" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="unused" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="ClassCanBeRecord" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="EnhancedSwitchMigration" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="ConstantValue" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="PointlessBitwiseExpression" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="RedundantIfStatement" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="BooleanMethodIsAlwaysInverted" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="NegativeIntConstantInLongContext" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="StringOperationCanBeSimplified" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="RedundantStringOperation" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnnecessaryToStringCall" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="Convert2Lambda" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="Anonymous2MethodRef" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="Java8ListSort" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="Java8MapApi" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="Java8CollectionRemoveIf" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="ManualArrayToCollectionCopy" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="ManualArrayCopy" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="SizeReplaceableByIsEmpty" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnnecessaryBoxing" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnnecessaryUnboxing" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnnecessaryReturn" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="RedundantArrayCreation" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="RedundantExplicitVariableType" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="UnstableApiUsage" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="SimplifiableConditionalExpression" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+    <inspection_tool class="ConditionalExpressionWithIdenticalBranches" enabled="true" level="WARNING" enabled_by_default="true">
+      <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
+    </inspection_tool>
+  </profile>
+</component>

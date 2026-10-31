@@ -97,7 +97,7 @@ fun CropEditorDialog(
     onAddPage: (() -> Unit)? = null,
     pageIndex: Int = 0,
     pageCount: Int = 1,
-    /** Moves to the page [delta] away, with the crop of the page being left; the editor stays open. */
+    /** Moves to the page `delta` away, with the crop of the page being left; the editor stays open. */
     onPage: ((delta: Int, crop: CropQuad) -> Unit)? = null
 ) {
     Dialog(

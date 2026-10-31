@@ -2,85 +2,27 @@
 
 package com.example.scanpro.feature.document
 
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.ModalBottomSheet
-import com.example.scanpro.core.ui.FilterStrip
-import com.example.scanpro.imaging.ImageProcessor
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.MoreHoriz
 import android.graphics.Bitmap
-import kotlinx.coroutines.CancellationException
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.mutableIntStateOf
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-import android.provider.DocumentsContract
-import kotlin.math.roundToInt
-import androidx.compose.ui.zIndex
-import androidx.compose.ui.graphics.graphicsLayer
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.filled.Crop
-import androidx.compose.material.icons.filled.FileCopy
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Highlight
-import androidx.compose.material3.Button
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Output
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.RemoveCircleOutline
-import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.AddToDrive
-import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material.icons.filled.TextFields
-import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.ViewDay
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.PrimaryScrollableTabRow
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -88,114 +30,178 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.AutoFixOff
-import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.AddToDrive
+import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.AutoFixOff
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.FileCopy
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Highlight
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Output
+import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ViewDay
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import com.example.scanpro.data.hasCurrentPdf
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.zIndex
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
-import com.example.scanpro.data.WatermarkStyle
+import com.example.scanpro.core.designsystem.ConfirmDialog
+import com.example.scanpro.core.designsystem.Eyebrow
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.PageThumbnail
+import com.example.scanpro.core.designsystem.PasswordInputDialog
+import com.example.scanpro.core.designsystem.THUMBNAIL_LARGE
+import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
+import com.example.scanpro.core.designsystem.TextInputDialog
+import com.example.scanpro.core.designsystem.TileTone
+import com.example.scanpro.core.designsystem.TitleWithStatus
+import com.example.scanpro.core.designsystem.TopBarWithProgress
+import com.example.scanpro.core.ui.ContactDraft
+import com.example.scanpro.core.ui.FilterStrip
+import com.example.scanpro.core.ui.copyFileToUri
+import com.example.scanpro.core.ui.copyText
+import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.openNewContactForm
+import com.example.scanpro.core.ui.openPdf
+import com.example.scanpro.core.ui.printPdf
+import com.example.scanpro.core.ui.saveToGoogleDrive
+import com.example.scanpro.core.ui.shareImages
+import com.example.scanpro.core.ui.shareOcrText
+import com.example.scanpro.core.ui.sharePdf
 import com.example.scanpro.data.CropQuad
-import com.example.scanpro.imaging.PdfSecurity
+import com.example.scanpro.data.DocumentSummary
+import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageAdjustments
+import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
-import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
+import com.example.scanpro.data.UndoState
+import com.example.scanpro.data.WatermarkStyle
+import com.example.scanpro.data.hasCurrentPdf
+import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.imaging.PdfSecurity
+import com.example.scanpro.intelligence.BusinessCard
+import com.example.scanpro.intelligence.BusinessCardParser
 import com.example.scanpro.intelligence.DocumentInsights
 import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.TranslationEngine
 import com.example.scanpro.intelligence.TranslationFeature
 import java.text.DateFormat
 import java.util.Date
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.scanpro.core.designsystem.ConfirmDialog
-import com.example.scanpro.core.designsystem.PageThumbnail
-import com.example.scanpro.core.designsystem.PasswordInputDialog
-import com.example.scanpro.core.designsystem.THUMBNAIL_LARGE
-import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
-import com.example.scanpro.core.designsystem.TextInputDialog
-import com.example.scanpro.core.ui.copyFileToUri
-import com.example.scanpro.core.ui.copyText
-import com.example.scanpro.core.ui.openPdf
-import com.example.scanpro.core.ui.printPdf
-import com.example.scanpro.core.ui.shareImages
-import com.example.scanpro.core.ui.shareOcrText
-import com.example.scanpro.core.ui.sharePdf
-import com.example.scanpro.core.ui.ContactDraft
-import com.example.scanpro.core.ui.openNewContactForm
-import com.example.scanpro.intelligence.BusinessCard
-import com.example.scanpro.intelligence.BusinessCardParser
-import com.example.scanpro.core.ui.saveToGoogleDrive
-import com.example.scanpro.core.ui.formatBytes
-import com.example.scanpro.core.designsystem.TitleWithStatus
-import com.example.scanpro.core.designsystem.TopBarWithProgress
+import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Rotation is a physical direction, so this icon must not flip in right-to-left layouts (the AutoMirrored one would). */
 @Suppress("DEPRECATION")
@@ -346,7 +352,7 @@ internal fun DocumentDetailScreen(
     onUndoAnnotation: (String) -> Unit,
     onWatermark: (WatermarkStyle) -> Unit,
     onLoadMarkupBase: suspend (String) -> java.io.File,
-    onApplyMarkup: (String, List<com.example.scanpro.data.PageAnnotation>) -> Unit,
+    onApplyMarkup: (String, List<PageAnnotation>) -> Unit,
     onAppendImages: (List<Uri>) -> Unit,
     onMergeWith: (String) -> Unit,
     onReOcr: () -> Unit,
@@ -359,7 +365,7 @@ internal fun DocumentDetailScreen(
     onExportWord: () -> Unit = {},
     onExportExcel: () -> Unit = {},
     onReplaceText: (String, TextEdit) -> Unit = { _, _ -> },
-    onErase: (String, Map<Float, List<List<com.example.scanpro.data.NormalizedPoint>>>) -> Unit = { _, _ -> },
+    onErase: (String, Map<Float, List<List<NormalizedPoint>>>) -> Unit = { _, _ -> },
     onSplitDocument: () -> Unit,
     onExportProtectedPdf: (String) -> Unit,
     onExportEncryptedBackup: (String) -> Unit,
@@ -367,7 +373,7 @@ internal fun DocumentDetailScreen(
     onWithFreshPdf: (onFailed: () -> Unit, onReady: (ScanDocument) -> Unit) -> Unit,
     /** True right after this document was scanned: offer share, save and rename straight away. */
     scanSaved: Boolean = false,
-    undoState: com.example.scanpro.data.UndoState = com.example.scanpro.data.UndoState(),
+    undoState: UndoState = UndoState(),
     onUndo: () -> Unit = {},
     onRedo: () -> Unit = {},
     onDismissScanSaved: () -> Unit = {},
@@ -944,31 +950,30 @@ internal fun DocumentDetailScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
             ) {
-                val page = currentPage
-                if (page != null) {
+                if (currentPage != null) {
                     SubHeader(stringResource(R.string.doc_this_page))
                     ToolGrid {
-                        ToolTile(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(page.id) })
+                        ToolTile(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(currentPage.id) })
                         ToolTile(Icons.Default.Tune, stringResource(R.string.doc_fine_tune), !busy, run { adjustmentsOpen = true })
-                        ToolTile(Icons.Default.RestartAlt, stringResource(R.string.common_reset), !busy, run { onResetPage(page.id) })
-                        ToolTile(Icons.Default.Replay, stringResource(R.string.doc_retake), !busy, run { onRetakePage(page.id, currentIndex) })
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_left), !busy && currentIndex > 0, run { onMove(page.id, -1) })
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.doc_move_right), !busy && currentIndex < pages.lastIndex, run { onMove(page.id, 1) })
-                        ToolTile(Icons.Default.FileCopy, stringResource(R.string.doc_duplicate), !busy, run { onDuplicatePage(page.id) })
-                        ToolTile(Icons.Default.Output, stringResource(R.string.doc_extract), !busy, run { onExtractPage(page.id) })
+                        ToolTile(Icons.Default.RestartAlt, stringResource(R.string.common_reset), !busy, run { onResetPage(currentPage.id) })
+                        ToolTile(Icons.Default.Replay, stringResource(R.string.doc_retake), !busy, run { onRetakePage(currentPage.id, currentIndex) })
+                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_left), !busy && currentIndex > 0, run { onMove(currentPage.id, -1) })
+                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.doc_move_right), !busy && currentIndex < pages.lastIndex, run { onMove(currentPage.id, 1) })
+                        ToolTile(Icons.Default.FileCopy, stringResource(R.string.doc_duplicate), !busy, run { onDuplicatePage(currentPage.id) })
+                        ToolTile(Icons.Default.Output, stringResource(R.string.doc_extract), !busy, run { onExtractPage(currentPage.id) })
                         ToolTile(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.doc_split_book), !busy, run { bookSplitOpen = true })
-                        ToolTile(Icons.Default.Delete, stringResource(R.string.doc_delete_page), !busy, run { if (pages.size == 1) deletePageOpen = true else onDeletePage(page.id) })
+                        ToolTile(Icons.Default.Delete, stringResource(R.string.doc_delete_page), !busy, run { if (pages.size == 1) deletePageOpen = true else onDeletePage(currentPage.id) })
                     }
                     SubHeader(stringResource(R.string.doc_mark_up))
                     ToolGrid {
                         ToolTile(Icons.Default.EditNote, stringResource(R.string.doc_edit_text), !busy, run { editTextOpen = true })
                         ToolTile(Icons.Default.AutoFixOff, stringResource(R.string.doc_eraser), !busy, run { eraserOpen = true })
                         ToolTile(Icons.Default.TextFields, stringResource(R.string.doc_add_text), !busy, run { annotationTextOpen = true })
-                        ToolTile(Icons.Default.Highlight, stringResource(R.string.doc_highlight), !busy, run { onHighlight(page.id) })
-                        ToolTile(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), !busy, run { onRedact(page.id) })
+                        ToolTile(Icons.Default.Highlight, stringResource(R.string.doc_highlight), !busy, run { onHighlight(currentPage.id) })
+                        ToolTile(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), !busy, run { onRedact(currentPage.id) })
                         ToolTile(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), !busy, run { watermarkOpen = true })
-                        ToolTile(Icons.Default.Edit, stringResource(R.string.doc_edit_markup), !busy && page.annotations.isNotEmpty(), run { markupOpen = true })
-                        ToolTile(Icons.Default.RemoveCircleOutline, stringResource(R.string.doc_remove_last), !busy && page.annotations.isNotEmpty(), run { onUndoAnnotation(page.id) })
+                        ToolTile(Icons.Default.Edit, stringResource(R.string.doc_edit_markup), !busy && currentPage.annotations.isNotEmpty(), run { markupOpen = true })
+                        ToolTile(Icons.Default.RemoveCircleOutline, stringResource(R.string.doc_remove_last), !busy && currentPage.annotations.isNotEmpty(), run { onUndoAnnotation(currentPage.id) })
                     }
                 }
                 SubHeader(stringResource(R.string.doc_share_and_save))
@@ -1242,7 +1247,7 @@ private fun RowScope.BarAction(icon: ImageVector, label: String, enabled: Boolea
 @Composable
 private fun SubHeader(value: String) {
     Spacer(Modifier.height(16.dp))
-    com.example.scanpro.core.designsystem.Eyebrow(value, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Eyebrow(value, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Spacer(Modifier.height(8.dp))
 }
 
@@ -1278,7 +1283,7 @@ private fun ToolTile(icon: ImageVector, label: String, enabled: Boolean = true, 
             .padding(vertical = 12.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        com.example.scanpro.core.designsystem.IconTile(icon, com.example.scanpro.core.designsystem.TileTone.Indigo, size = 44.dp, corner = 14.dp)
+        IconTile(icon, TileTone.Indigo, size = 44.dp, corner = 14.dp)
         Spacer(Modifier.height(8.dp))
         Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, minLines = 2)
     }

@@ -7,9 +7,9 @@ class PdfTextLayerMathTest {
     // A 600 x 800 pt crop box starting at (10, 20).
     private fun map(u: Float, v: Float, rotation: Int) = PdfTextLayerMath.toPageSpace(u, v, rotation, 10f, 20f, 600f, 800f)
 
-    private fun assertPoint(x: Float, y: Float, actual: PagePoint) {
-        assertEquals(x, actual.x, 0.01f)
-        assertEquals(y, actual.y, 0.01f)
+    private fun assertPoint(expectedX: Float, expectedY: Float, actual: PagePoint) {
+        assertEquals(expectedX, actual.x, 0.01f)
+        assertEquals(expectedY, actual.y, 0.01f)
     }
 
     @Test

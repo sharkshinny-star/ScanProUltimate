@@ -1,5 +1,10 @@
 .gradle/
-.idea/
+.idea/*
+# Shared IDE settings: the inspection profile and scopes that keep generated OpenCV code out of inspections,
+# and the project dictionary.
+!.idea/inspectionProfiles/
+!.idea/scopes/
+!.idea/dictionaries/
 local.properties
 build/
 */build/

@@ -9,13 +9,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.navigation.NavBackStackEntry
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -23,17 +24,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.scanpro.R
+import com.example.scanpro.core.ui.shareFile
+import com.example.scanpro.core.ui.shareUri
+import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.feature.document.DocumentRoute
 import com.example.scanpro.feature.library.LibraryRoute
-import com.example.scanpro.core.ui.shareFile
-import com.example.scanpro.core.ui.shareUri
 import com.example.scanpro.feature.settings.SettingsRoute
 import com.example.scanpro.feature.tools.PdfToolsScreen
-import com.example.scanpro.feature.viewer.PdfViewerScreen
 import com.example.scanpro.feature.trash.TrashRoute
+import com.example.scanpro.feature.viewer.PdfViewerScreen
 import com.example.scanpro.scanner.CameraScannerScreen
-import androidx.core.net.toUri
 
 /** Back handlers use dropUnlessResumed so a double tap during the exit animation can't pop two screens. */
 @Composable
@@ -42,8 +44,8 @@ fun ScanProNavHost(
     snackbarHostState: SnackbarHostState,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
-    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<com.example.scanpro.data.CropQuad>, List<com.example.scanpro.data.PageFilter>) -> Unit,
-    onCameraRetakeComplete: (RetakeTarget, android.net.Uri, com.example.scanpro.data.CropQuad, com.example.scanpro.data.PageFilter) -> Unit,
+    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>) -> Unit,
+    onCameraRetakeComplete: (RetakeTarget, android.net.Uri, CropQuad, PageFilter) -> Unit,
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit
 ) {

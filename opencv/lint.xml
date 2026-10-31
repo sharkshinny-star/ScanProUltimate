@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- OpenCV's Java bindings are generated from unmodified upstream sources by scripts/opencv/build-opencv-android.sh.
+     Fixes made here would be lost on the next rebuild, so lint does not report on this module at all. -->
+<lint>
+    <issue id="all" severity="ignore" />
+</lint>

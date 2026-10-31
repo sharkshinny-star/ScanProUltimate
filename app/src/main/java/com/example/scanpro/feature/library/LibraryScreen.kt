@@ -611,8 +611,7 @@ internal fun LibraryScreen(
             onDismiss = { deleteFolderOpen = false },
             onConfirm = {
                 deleteFolderOpen = false
-                val name = folder
-                onDeleteFolder(name); onFolderChange("")
+                onDeleteFolder(folder); onFolderChange("")
             }
         )
     }

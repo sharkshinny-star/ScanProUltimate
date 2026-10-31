@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.trash
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,20 +55,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.annotation.StringRes
-import com.example.scanpro.R
-import com.example.scanpro.data.DocumentSummary
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.ConfirmDialog
 import com.example.scanpro.core.designsystem.IconTile
-import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.PageThumbnail
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
-import com.example.scanpro.core.ui.formatTrashCountdown
+import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.formatTrashCountdown
+import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
+import com.example.scanpro.data.DocumentSummary
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 
 private enum class TrashSortOption(@StringRes val label: Int) {
     EXPIRY(R.string.trash_sort_expiry),
@@ -108,7 +109,7 @@ internal fun TrashScreen(
     onRestore: (String) -> Unit,
     onDeleteForever: (String) -> Unit,
     onEmptyTrash: () -> Unit,
-    retentionDays: Int = com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS,
+    retentionDays: Int = DEFAULT_TRASH_RETENTION_DAYS,
     onRestoreAll: () -> Unit = {}
 ) {
     var sortOption by remember { mutableStateOf(TrashSortOption.EXPIRY) }

@@ -6,12 +6,12 @@ This plan converts "premium scanner quality" into measurable release gates. Do n
 
 Minimum suggested matrix:
 
-| Class | Example characteristics | Why |
-|---|---|---|
-| Low/mid | Android 10–12, 4 GB RAM, modest ISP/CPU | Memory/latency stress |
-| Mainstream | Android 13–15, 6–8 GB RAM | Typical user experience |
-| Flagship | Android 15–16, 8+ GB, OIS, 90/120 Hz | Best-quality/high-refresh behavior |
-| Tablet/foldable | Large/adaptive window | Layout/editor usability |
+| Class           | Example characteristics                 | Why                                |
+| --------------- | --------------------------------------- | ---------------------------------- |
+| Low/mid         | Android 10–12, 4 GB RAM, modest ISP/CPU | Memory/latency stress              |
+| Mainstream      | Android 13–15, 6–8 GB RAM               | Typical user experience            |
+| Flagship        | Android 15–16, 8+ GB, OIS, 90/120 Hz    | Best-quality/high-refresh behavior |
+| Tablet/foldable | Large/adaptive window                   | Layout/editor usability            |
 
 Record exact device model, Android version, camera resolution, and build SHA for every run.
 

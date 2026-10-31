@@ -9,11 +9,13 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.scanpro.core.crash.CrashReporter
+import com.example.scanpro.core.notifications.AppNotifications
+import com.example.scanpro.imaging.OpenCvRuntime
+import com.example.scanpro.work.CacheCleaner
 import com.example.scanpro.work.CleanupWorker
 import com.google.android.play.core.splitcompat.SplitCompat
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import dagger.hilt.android.HiltAndroidApp
-import com.example.scanpro.imaging.OpenCvRuntime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -21,7 +23,7 @@ import javax.inject.Inject
 class ScanProApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
-    @Inject lateinit var notifications: com.example.scanpro.core.notifications.AppNotifications
+    @Inject lateinit var notifications: AppNotifications
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -46,7 +48,7 @@ class ScanProApplication : Application(), Configuration.Provider {
         // copies of documents that a crash may have left behind. Neither should delay the first frame.
         Thread {
             runCatching { scheduleMaintenance() }
-            runCatching { com.example.scanpro.work.CacheCleaner.purge(this) }
+            runCatching { CacheCleaner.purge(this) }
             // Channels exist from the start, so Android's notification settings list them before the first notice.
             runCatching { notifications.ensureChannels() }
         }.apply { priority = Thread.MIN_PRIORITY }.start()

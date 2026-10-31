@@ -21,7 +21,8 @@ android {
     }
 
     lint {
-        // Generated bindings: not code the app's lint rules are meant for.
+        // Generated bindings: not code the app's lint rules are meant for. opencv/lint.xml silences every check here.
+        lintConfig = file("lint.xml")
         abortOnError = false
         checkDependencies = false
     }

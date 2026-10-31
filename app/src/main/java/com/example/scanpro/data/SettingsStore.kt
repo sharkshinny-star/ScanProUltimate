@@ -108,7 +108,7 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     private val keyTrashRetentionDays = intPreferencesKey("trash_retention_days")
     private val keyDefaultOcrScript = stringPreferencesKey("default_ocr_script")
 
-    /** How the Files tab is sorted; a [com.example.scanpro.feature.library.LibrarySort] name. */
+    /** How the Files tab is sorted; a [LibrarySort] name. */
     val librarySort: Flow<String> = preferences.map { it[keyLibrarySort] ?: "UPDATED" }
     val libraryGrid: Flow<Boolean> = preferences.map { it[keyLibraryGrid] ?: true }
     /** Days a deleted document waits in the recycle bin before it is removed for good. */

@@ -1,6 +1,7 @@
 package com.example.scanpro.imaging
 
 import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.PageAnnotation
 import kotlin.math.abs
 import kotlin.math.max
@@ -12,7 +13,7 @@ import kotlin.math.min
  * the photo (x, y). [aspect] is the photo's width divided by its height, needed because curved crops are
  * spaced by real length along the bent edges.
  */
-class CropMapping(private val crop: CropQuad, private val aspect: Float) {
+class CropMapping(crop: CropQuad, private val aspect: Float) {
     private val straight = Homography.squareToQuad(
         crop.topLeft.x, crop.topLeft.y, crop.topRight.x, crop.topRight.y,
         crop.bottomRight.x, crop.bottomRight.y, crop.bottomLeft.x, crop.bottomLeft.y
@@ -27,8 +28,8 @@ class CropMapping(private val crop: CropQuad, private val aspect: Float) {
 
     init {
         if (crop.isCurved) {
-            fun pt(p: com.example.scanpro.data.NormalizedPoint) = CurvedPage.Pt(p.x * aspect, p.y)
-            fun edge(a: CurvedPage.Pt, b: CurvedPage.Pt, bow: com.example.scanpro.data.NormalizedPoint?): Array<CurvedPage.Pt> {
+            fun pt(p: NormalizedPoint) = CurvedPage.Pt(p.x * aspect, p.y)
+            fun edge(a: CurvedPage.Pt, b: CurvedPage.Pt, bow: NormalizedPoint?): Array<CurvedPage.Pt> {
                 val mid = CurvedPage.Pt((a.x + b.x) / 2f + (bow?.x ?: 0f) * aspect, (a.y + b.y) / 2f + (bow?.y ?: 0f))
                 return CurvedPage.evenlySpaced(a, CurvedPage.control(a, mid, b), b, SAMPLES)
             }

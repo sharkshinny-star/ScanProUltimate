@@ -76,7 +76,7 @@ fun MarkupEditorDialog(
     onApply: (List<PageAnnotation>) -> Unit
 ) {
     val items = remember { mutableStateListOf<PageAnnotation>().apply { addAll(initial) } }
-    var selectedId by remember { mutableStateOf<String?>(initial.lastOrNull()?.id) }
+    var selectedId by remember { mutableStateOf(initial.lastOrNull()?.id) }
     val base by produceState<Bitmap?>(initialValue = null) {
         value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeScaled(loadBase().absolutePath, 1600) }.getOrNull() }
     }

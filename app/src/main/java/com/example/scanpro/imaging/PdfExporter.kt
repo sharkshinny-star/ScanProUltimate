@@ -148,15 +148,8 @@ object PdfExporter {
             PdfPageSize.AUTO -> {
                 val longSide = 842
                 val aspect = imageWidth.toFloat() / imageHeight.toFloat()
-                if (aspect >= 1f) {
-                    val width = longSide
-                    val height = max(200, (longSide / aspect).toInt())
-                    width to height
-                } else {
-                    val height = longSide
-                    val width = max(200, (longSide * aspect).toInt())
-                    width to height
-                }
+                if (aspect >= 1f) longSide to max(200, (longSide / aspect).toInt())
+                else max(200, (longSide * aspect).toInt()) to longSide
             }
         }
     }

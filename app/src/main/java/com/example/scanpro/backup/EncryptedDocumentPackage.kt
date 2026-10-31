@@ -5,16 +5,15 @@ import android.net.Uri
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.JsonCodec
+import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
-import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
-import org.json.JSONArray
-import org.json.JSONObject
+import com.example.scanpro.data.ScanPage
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -33,6 +32,8 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Password-encrypted, portable ScanPro package. Stores each page's rendered output, OCR text, original source
@@ -112,7 +113,7 @@ class EncryptedDocumentPackage(private val context: Context) {
             fun sourceEntry(index: Int) = "sources/${index.toString().padStart(4, '0')}"
             fun assetEntry(index: Int, annotation: Int) = "assets/${index.toString().padStart(4, '0')}_$annotation.png"
             // Signature images live in app storage, so annotations are rewritten to point at the package entries.
-            fun portableAnnotations(index: Int, page: com.example.scanpro.data.ScanPage): List<PageAnnotation> =
+            fun portableAnnotations(index: Int, page: ScanPage): List<PageAnnotation> =
                 page.annotations.mapIndexedNotNull { k, annotation ->
                     if (annotation.type != AnnotationType.SIGNATURE) annotation
                     else if (File(annotation.assetPath).isFile) annotation.copy(assetPath = assetEntry(index, k))
@@ -220,7 +221,9 @@ class EncryptedDocumentPackage(private val context: Context) {
                         while (entry != null) {
                             val safe = File(outDir, entry.name).canonicalFile
                             require(safe.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup entry" }
-                            if (entry.isDirectory) safe.mkdirs() else {
+                            if (entry.isDirectory) {
+                                safe.mkdirs()
+                            } else {
                                 safe.parentFile?.mkdirs()
                                 FileOutputStream(safe).use { out ->
                                     // Cap total unpacked size so a crafted backup cannot fill the device (zip bomb).

@@ -11,9 +11,7 @@ import android.os.PersistableBundle
 import android.provider.CalendarContract
 import android.provider.Settings
 import android.widget.Toast
-import androidx.core.net.toUri
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,7 +49,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.ContactDraft
 import com.example.scanpro.core.ui.openNewContactForm
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -170,7 +172,7 @@ private fun Action(icon: ImageVector, title: String, detail: String?, onClick: (
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            com.example.scanpro.core.designsystem.IconTile(icon, com.example.scanpro.core.designsystem.TileTone.Indigo, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+            IconTile(icon, TileTone.Indigo, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)

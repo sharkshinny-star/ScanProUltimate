@@ -13,30 +13,35 @@ import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentLibrary
+import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.DocumentStamp
 import com.example.scanpro.data.DocumentSummary
-import com.example.scanpro.data.DocumentRepository
+import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageAdjustments
+import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
+import com.example.scanpro.data.SignatureLibrary
+import com.example.scanpro.data.UndoState
+import com.example.scanpro.data.WatermarkStyle
 import com.example.scanpro.data.hasCurrentPdf
-import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.imaging.ImageProcessor
-import kotlinx.coroutines.launch
+import com.example.scanpro.navigation.ScanProDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class DocumentViewModel @Inject constructor(
@@ -45,7 +50,7 @@ class DocumentViewModel @Inject constructor(
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
     private val library: DocumentLibrary,
-    private val signatures: com.example.scanpro.data.SignatureLibrary
+    private val signatures: SignatureLibrary
 ) : ViewModel() {
     private val id: String = checkNotNull(savedStateHandle[ScanProDestinations.DOCUMENT_ID_ARG])
 
@@ -79,9 +84,9 @@ class DocumentViewModel @Inject constructor(
     fun dismissScanSaved() = operations.clearScanSaved(id)
 
     /** Whether this document has edits to undo or redo in this session. */
-    val undoState: StateFlow<com.example.scanpro.data.UndoState> = repository.undoState
-        .map { it[id] ?: com.example.scanpro.data.UndoState() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), repository.undoState.value[id] ?: com.example.scanpro.data.UndoState())
+    val undoState: StateFlow<UndoState> = repository.undoState
+        .map { it[id] ?: UndoState() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), repository.undoState.value[id] ?: UndoState())
 
     fun undo() = run(R.string.msg_undoing, null) { repository.undo(id) }
     fun redo() = run(R.string.msg_redoing, null) { repository.redo(id) }
@@ -216,10 +221,10 @@ class DocumentViewModel @Inject constructor(
 
     suspend fun markupBase(pageId: String) = repository.markupBase(id, pageId)
 
-    fun applyMarkup(pageId: String, annotations: List<com.example.scanpro.data.PageAnnotation>) =
+    fun applyMarkup(pageId: String, annotations: List<PageAnnotation>) =
         run(R.string.msg_updating_markup, R.string.msg_markup_updated) { repository.replaceAnnotations(id, pageId, annotations) }
 
-    fun addWatermark(style: com.example.scanpro.data.WatermarkStyle) =
+    fun addWatermark(style: WatermarkStyle) =
         run(R.string.msg_adding_watermark, R.string.msg_watermark_added) { repository.addWatermark(id, style) }
 
     fun appendImages(imageUris: List<Uri>) {
@@ -280,7 +285,7 @@ class DocumentViewModel @Inject constructor(
             repository.replaceText(id, pageId, edit.left, edit.top, edit.right, edit.bottom, edit.text)
         }
 
-    fun erase(pageId: String, strokesByBrush: Map<Float, List<List<com.example.scanpro.data.NormalizedPoint>>>) =
+    fun erase(pageId: String, strokesByBrush: Map<Float, List<List<NormalizedPoint>>>) =
         run(R.string.msg_erasing, R.string.msg_erased) { repository.erase(id, pageId, strokesByBrush) }
 
     fun exportPasswordProtectedPdf(password: String) = run(R.string.msg_encrypting_pdf, null) {

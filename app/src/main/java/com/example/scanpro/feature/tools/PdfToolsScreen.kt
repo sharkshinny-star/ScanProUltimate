@@ -2,12 +2,13 @@ package com.example.scanpro.feature.tools
 
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.annotation.StringRes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,40 +18,51 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import com.example.scanpro.data.RecentPdf
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.RotateRight
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.FindInPage
-import androidx.compose.material.icons.automirrored.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Merge
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -59,6 +71,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -75,36 +89,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
-import kotlinx.coroutines.isActive
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,29 +107,41 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
+import com.example.scanpro.data.RecentPdf
 import com.example.scanpro.imaging.CompressionPreset
 import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.PageRanges
 import com.example.scanpro.imaging.PageSpec
+import com.example.scanpro.imaging.PdfPreviewSession
+import com.example.scanpro.imaging.PdfProtection
+import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.PdfToolResult
 import com.example.scanpro.imaging.SplitMode
+import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import androidx.compose.ui.platform.LocalResources
 
 data class PdfToolCard(
     val id: String,
@@ -144,23 +150,23 @@ data class PdfToolCard(
     val icon: ImageVector,
     @StringRes val badge: Int? = null,
     /** Colour family of the icon tile, so related tools share a hue. */
-    val tone: com.example.scanpro.core.designsystem.TileTone = com.example.scanpro.core.designsystem.TileTone.Indigo
+    val tone: TileTone = TileTone.Indigo
 )
 
 private val PDF_TOOLS = listOf(
-    PdfToolCard("fill", R.string.tools_card_fill, R.string.tools_fill_form_desc, Icons.Default.EditNote, badge = R.string.tools_badge_new, tone = com.example.scanpro.core.designsystem.TileTone.Violet),
-    PdfToolCard("ocr", R.string.tools_card_ocr, R.string.tools_make_searchable_desc, Icons.Default.FindInPage, badge = R.string.tools_badge_new, tone = com.example.scanpro.core.designsystem.TileTone.Teal),
-    PdfToolCard("compress", R.string.tools_card_compress, R.string.tools_card_compress_desc, Icons.Default.Compress, tone = com.example.scanpro.core.designsystem.TileTone.Amber),
-    PdfToolCard("merge", R.string.tools_card_merge, R.string.tools_card_merge_desc, Icons.Default.Merge, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
-    PdfToolCard("split", R.string.tools_card_split, R.string.tools_card_split_desc, Icons.AutoMirrored.Filled.CallSplit, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
-    PdfToolCard("extract", R.string.tools_card_extract, R.string.tools_card_extract_desc, Icons.AutoMirrored.Filled.DriveFileMove, tone = com.example.scanpro.core.designsystem.TileTone.Indigo),
-    PdfToolCard("rotate", R.string.tools_card_rotate, R.string.tools_card_rotate_desc, Icons.AutoMirrored.Filled.RotateRight, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
-    PdfToolCard("organize", R.string.tools_card_organize, R.string.tools_card_organize_desc, Icons.Default.Description, tone = com.example.scanpro.core.designsystem.TileTone.Sky),
-    PdfToolCard("img2pdf", R.string.tools_images_to_pdf, R.string.tools_card_img2pdf_desc, Icons.Default.Image, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
-    PdfToolCard("pdf2img", R.string.tools_card_pdf2img, R.string.tools_card_pdf2img_desc, Icons.Default.PictureAsPdf, tone = com.example.scanpro.core.designsystem.TileTone.Coral),
-    PdfToolCard("protect", R.string.tools_card_protect, R.string.tools_card_protect_desc, Icons.Default.Lock, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
-    PdfToolCard("unlock", R.string.tools_card_unlock, R.string.tools_card_unlock_desc, Icons.Default.LockOpen, tone = com.example.scanpro.core.designsystem.TileTone.Rose),
-    PdfToolCard("viewer", R.string.tools_card_viewer, R.string.tools_card_viewer_desc, Icons.Default.Visibility, tone = com.example.scanpro.core.designsystem.TileTone.Slate)
+    PdfToolCard("fill", R.string.tools_card_fill, R.string.tools_fill_form_desc, Icons.Default.EditNote, badge = R.string.tools_badge_new, tone = TileTone.Violet),
+    PdfToolCard("ocr", R.string.tools_card_ocr, R.string.tools_make_searchable_desc, Icons.Default.FindInPage, badge = R.string.tools_badge_new, tone = TileTone.Teal),
+    PdfToolCard("compress", R.string.tools_card_compress, R.string.tools_card_compress_desc, Icons.Default.Compress, tone = TileTone.Amber),
+    PdfToolCard("merge", R.string.tools_card_merge, R.string.tools_card_merge_desc, Icons.Default.Merge, tone = TileTone.Indigo),
+    PdfToolCard("split", R.string.tools_card_split, R.string.tools_card_split_desc, Icons.AutoMirrored.Filled.CallSplit, tone = TileTone.Indigo),
+    PdfToolCard("extract", R.string.tools_card_extract, R.string.tools_card_extract_desc, Icons.AutoMirrored.Filled.DriveFileMove, tone = TileTone.Indigo),
+    PdfToolCard("rotate", R.string.tools_card_rotate, R.string.tools_card_rotate_desc, Icons.AutoMirrored.Filled.RotateRight, tone = TileTone.Sky),
+    PdfToolCard("organize", R.string.tools_card_organize, R.string.tools_card_organize_desc, Icons.Default.Description, tone = TileTone.Sky),
+    PdfToolCard("img2pdf", R.string.tools_images_to_pdf, R.string.tools_card_img2pdf_desc, Icons.Default.Image, tone = TileTone.Coral),
+    PdfToolCard("pdf2img", R.string.tools_card_pdf2img, R.string.tools_card_pdf2img_desc, Icons.Default.PictureAsPdf, tone = TileTone.Coral),
+    PdfToolCard("protect", R.string.tools_card_protect, R.string.tools_card_protect_desc, Icons.Default.Lock, tone = TileTone.Rose),
+    PdfToolCard("unlock", R.string.tools_card_unlock, R.string.tools_card_unlock_desc, Icons.Default.LockOpen, tone = TileTone.Rose),
+    PdfToolCard("viewer", R.string.tools_card_viewer, R.string.tools_card_viewer_desc, Icons.Default.Visibility, tone = TileTone.Slate)
 )
 
 private data class ThumbnailPageModel(
@@ -400,7 +406,7 @@ fun PdfToolsScreen(
             }
 
             unlockNotice?.let { (noticeUri, protection) ->
-                val restricted = protection == com.example.scanpro.imaging.PdfProtection.RESTRICTED_ONLY
+                val restricted = protection == PdfProtection.RESTRICTED_ONLY
                 AlertDialog(
                     onDismissRequest = viewModel::clearUnlockNotice,
                     icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
@@ -641,7 +647,7 @@ private fun PdfToImagesDialog(
         confirmButton = {
             Button(onClick = {
                 if (allPages) onConfirm(format, null, scale)
-                else com.example.scanpro.imaging.PageRanges.parse(rangesText, pageCount ?: Int.MAX_VALUE)
+                else PageRanges.parse(rangesText, pageCount ?: Int.MAX_VALUE)
                     .onSuccess { ranges -> onConfirm(format, ranges.flatMap { it.toList() }, scale) }
                     .onFailure { error = it.message }
             }) { Text(stringResource(R.string.tools_pdf2img_export_button)) }
@@ -766,7 +772,7 @@ private fun RecentPdfsRow(
                 ) {
                     Box {
                         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            com.example.scanpro.core.designsystem.IconTile(Icons.Default.PictureAsPdf, com.example.scanpro.core.designsystem.TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
+                            IconTile(Icons.Default.PictureAsPdf, TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
                             Spacer(Modifier.width(10.dp))
                             Text(pdf.name, style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
@@ -818,7 +824,7 @@ private fun ToolCardItem(
                 .fillMaxWidth()
         ) {
             Row(verticalAlignment = Alignment.Top) {
-                com.example.scanpro.core.designsystem.IconTile(tool.icon, tool.tone, size = 44.dp, corner = 14.dp)
+                IconTile(tool.icon, tool.tone, size = 44.dp, corner = 14.dp)
                 Spacer(Modifier.weight(1f))
                 tool.badge?.let { badge ->
                     Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
@@ -1030,7 +1036,7 @@ private fun PasswordDialog(
     var passwordVisible by remember { mutableStateOf(false) }
     var errorText by remember(initialError) { mutableStateOf(initialError) }
     // Unlocking must accept whatever password the file already has, however short.
-    val minimum = if (isProtect) com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH else 1
+    val minimum = if (isProtect) PdfSecurity.MIN_PASSWORD_LENGTH else 1
     // Read here: the confirm button's onClick is not a composable scope.
     val tooShortError = pluralStringResource(R.plurals.tools_password_too_short, minimum, minimum)
     val enterPasswordError = stringResource(R.string.tools_password_enter)
@@ -1042,7 +1048,7 @@ private fun PasswordDialog(
         text = {
             Column {
                 Text(
-                    if (isProtect) pluralStringResource(R.plurals.tools_password_protect_warning, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH)
+                    if (isProtect) pluralStringResource(R.plurals.tools_password_protect_warning, PdfSecurity.MIN_PASSWORD_LENGTH, PdfSecurity.MIN_PASSWORD_LENGTH)
                     else stringResource(R.string.tools_password_unlock_prompt),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -1190,7 +1196,7 @@ private fun SplitDialog(
                     val n = chunkSizeText.toIntOrNull()
                     val pages = pageCount ?: Int.MAX_VALUE
                     when (mode) {
-                        SplitMode.PAGE_RANGES -> com.example.scanpro.imaging.PageRanges.parse(rangesText, pages)
+                        SplitMode.PAGE_RANGES -> PageRanges.parse(rangesText, pages)
                             .onSuccess { onConfirm(mode, rangesText, 1) }
                             .onFailure { error = it.message }
                         SplitMode.EVERY_N_PAGES -> when {
@@ -1231,7 +1237,7 @@ private fun PdfPageOrganizerSheet(
         )
     ) { mutableStateListOf<ThumbnailPageModel>() }
     val scope = rememberCoroutineScope()
-    var session by remember { mutableStateOf<com.example.scanpro.imaging.PdfPreviewSession?>(null) }
+    var session by remember { mutableStateOf<PdfPreviewSession?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
     // Read here: the loading coroutine below is not a composable scope.
     val protectedError = stringResource(R.string.tools_organizer_protected)
@@ -1250,10 +1256,10 @@ private fun PdfPageOrganizerSheet(
     }
 
     androidx.compose.runtime.DisposableEffect(uri) {
-        var opened: com.example.scanpro.imaging.PdfPreviewSession? = null
+        var opened: PdfPreviewSession? = null
         val job = scope.launch {
             try {
-                val preview = com.example.scanpro.imaging.PdfPreviewSession.open(context, uri)
+                val preview = PdfPreviewSession.open(context, uri)
                 if (!isActive) {
                     // The sheet closed while the file was opening; nothing will close this later.
                     preview.close()
@@ -1405,7 +1411,7 @@ private fun PdfPageOrganizerSheet(
 @Composable
 private fun OrganizerPageCard(
     item: ThumbnailPageModel,
-    session: com.example.scanpro.imaging.PdfPreviewSession?,
+    session: PdfPreviewSession?,
     showCheckbox: Boolean,
     canMoveLeft: Boolean,
     canMoveRight: Boolean,

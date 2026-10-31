@@ -19,11 +19,8 @@ class MlKitTranslator : Translator {
 
     override suspend fun translate(text: String, targetTag: String): String {
         require(text.isNotBlank()) { "No OCR text to translate" }
-        val identifier = LanguageIdentification.getClient()
-        val detected = try {
+        val detected = LanguageIdentification.getClient().use { identifier ->
             identifier.identifyLanguage(text.take(12000)).await()
-        } finally {
-            identifier.close()
         }
         require(detected != "und") { "Could not identify the source language" }
 
@@ -33,13 +30,12 @@ class MlKitTranslator : Translator {
             ?: error("Unsupported target language")
         if (source == target) return text
 
-        val translator = Translation.getClient(
+        return Translation.getClient(
             TranslatorOptions.Builder()
                 .setSourceLanguage(source)
                 .setTargetLanguage(target)
                 .build()
-        )
-        return try {
+        ).use { translator ->
             translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
             // Translate in chunks so long documents are not silently truncated.
             val translatedChunks = mutableListOf<String>()
@@ -47,8 +43,6 @@ class MlKitTranslator : Translator {
                 translatedChunks.add(translator.translate(chunk).await())
             }
             translatedChunks.joinToString("")
-        } finally {
-            translator.close()
         }
     }
 }
