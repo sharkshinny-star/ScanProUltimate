@@ -40,11 +40,13 @@ import dagger.hilt.android.AndroidEntryPoint
 
 import android.net.Uri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
     private val viewModel: AppViewModel by viewModels()
+    @Inject lateinit var notifications: com.example.scanpro.core.notifications.AppNotifications
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -230,6 +232,9 @@ class MainActivity : FragmentActivity() {
         fun typeOf(uri: Uri): String = runCatching { contentResolver.getType(uri) }.getOrNull() ?: type
 
         when {
+            action == ACTION_OPEN_DOCUMENT -> intent.getStringExtra(EXTRA_DOCUMENT_ID)?.let(viewModel::requestOpenDocument)
+            action == ACTION_OPEN_TRASH -> viewModel.requestDestination(com.example.scanpro.navigation.ScanProDestinations.TRASH)
+            action == ACTION_OPEN_SETTINGS -> viewModel.requestDestination(com.example.scanpro.navigation.ScanProDestinations.SETTINGS)
             action == ACTION_SCAN_NOW -> {
                 // Launchers rank shortcuts by how often each is used.
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
@@ -321,11 +326,15 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         super.onStop()
         viewModel.onAppStopped(SystemClock.elapsedRealtime())
+        notifications.appVisible = false
     }
 
     override fun onStart() {
         super.onStart()
         viewModel.onAppStarted(SystemClock.elapsedRealtime(), LOCK_TIMEOUT_MS)
+        // Back in the app: finished and failed jobs speak through the snackbar again, and old notices are stale.
+        notifications.appVisible = true
+        notifications.clearTaskNotices()
     }
 
     private fun startCompatibilityScanner() {
@@ -392,17 +401,22 @@ class MainActivity : FragmentActivity() {
         prompt.authenticate(infoBuilder.build())
     }
 
-    private companion object {
-        const val LOCK_TIMEOUT_MS = 30_000L
-        const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
-        const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+    companion object {
+        private const val LOCK_TIMEOUT_MS = 30_000L
+        private const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
+        private const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+        /** From notifications: open a document ([EXTRA_DOCUMENT_ID]), the recycle bin or settings, after unlock. */
+        const val ACTION_OPEN_DOCUMENT = "com.example.scanpro.action.OPEN_DOCUMENT"
+        const val ACTION_OPEN_TRASH = "com.example.scanpro.action.OPEN_TRASH"
+        const val ACTION_OPEN_SETTINGS = "com.example.scanpro.action.OPEN_SETTINGS"
+        const val EXTRA_DOCUMENT_ID = "documentId"
         // Shortcut ids are stored by launchers (pinned shortcuts); never rename them.
         private const val SHORTCUT_SCAN_NOW = "scan_now"
         private const val SHORTCUT_REPORT_ISSUE = "bugs_or_issues"
         private const val SHORTCUT_GIVE_FEEDBACK = "dont_remove_app"
-        const val ACTION_REPORT_ISSUE = "com.example.scanpro.action.REPORT_ISSUE"
-        const val ACTION_GIVE_FEEDBACK = "com.example.scanpro.action.GIVE_FEEDBACK"
+        private const val ACTION_REPORT_ISSUE = "com.example.scanpro.action.REPORT_ISSUE"
+        private const val ACTION_GIVE_FEEDBACK = "com.example.scanpro.action.GIVE_FEEDBACK"
         /** Superseded by the two actions above; still handled for shortcuts pinned before they existed. */
-        const val ACTION_SUPPORT = "com.example.scanpro.action.SUPPORT"
+        private const val ACTION_SUPPORT = "com.example.scanpro.action.SUPPORT"
     }
 }

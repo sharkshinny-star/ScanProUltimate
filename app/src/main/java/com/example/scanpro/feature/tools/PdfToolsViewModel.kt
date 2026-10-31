@@ -40,6 +40,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.annotation.PluralsRes
+import com.example.scanpro.core.operations.OperationRunner
+import com.example.scanpro.core.notifications.AppNotifications
 
 /** A form being filled in: its fields as read from the file, and what the user has typed or picked so far. */
 data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Map<String, String>) {
@@ -57,7 +59,9 @@ data class ToolProgress(val label: String, val current: Int = 0, val total: Int 
 class PdfToolsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val recents: RecentPdfStore,
-    private val ocr: OcrEngine
+    private val ocr: OcrEngine,
+    private val operations: OperationRunner,
+    private val notifications: AppNotifications
 ) : ViewModel() {
     /** PDFs picked from the device or a cloud app, newest first, to reopen with one tap. */
     val recentPdfs: StateFlow<List<RecentPdf>> = recents.items
@@ -142,16 +146,23 @@ class PdfToolsViewModel @Inject constructor(
         _progress.value = ToolProgress(label)
         job = viewModelScope.launch {
             try {
-                _result.value = work()
+                // Held alive by the foreground service: a long merge or compression must survive the user switching apps.
+                val result = operations.keepAlive(label) { work() }
+                _result.value = result
+                notifications.taskFinished(result?.message)
             } catch (cancelled: CancellationException) {
                 _message.value = context.getString(R.string.msg_tools_operation_cancelled)
                 throw cancelled
             } catch (error: Exception) {
                 // The engines stop with an InterruptedException when cancelled mid-way; report that as a cancel.
-                _message.value = if (error is InterruptedException) context.getString(R.string.msg_tools_operation_cancelled) else error.localizedMessage ?: failure
+                val cancelledMidWay = error is InterruptedException
+                val text = if (cancelledMidWay) context.getString(R.string.msg_tools_operation_cancelled) else error.localizedMessage ?: failure
+                _message.value = text
+                if (!cancelledMidWay) notifications.taskFailed(text)
             } catch (memory: OutOfMemoryError) {
                 // A huge page image is a failed tool run, not a reason to lose the app.
                 _message.value = context.getString(R.string.msg_tools_out_of_memory)
+                notifications.taskFailed(_message.value)
             } finally {
                 _progress.value = null
             }

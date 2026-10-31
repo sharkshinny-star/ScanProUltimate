@@ -2,6 +2,7 @@ package com.example.scanpro.core.operations
 
 import android.content.Context
 import com.example.scanpro.R
+import com.example.scanpro.core.notifications.AppNotifications
 import com.example.scanpro.core.di.ApplicationScope
 import com.example.scanpro.data.DocumentLibrary
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,7 +42,8 @@ data class ExportArtifact(
 class OperationRunner @Inject constructor(
     @ApplicationContext private val context: Context,
     private val library: DocumentLibrary,
-    @ApplicationScope private val scope: CoroutineScope
+    @ApplicationScope private val scope: CoroutineScope,
+    private val notifications: AppNotifications
 ) {
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
@@ -89,6 +91,8 @@ class OperationRunner @Inject constructor(
     // new job set it.
     private val stateLock = Any()
     private var pending = 0
+    // Jobs outside the queue (the PDF tools) that also need the process kept alive while they run.
+    private var keptAlive = 0
 
     /**
      * Runs an edit the user triggered from a screen, then reloads the library. Requests made while
@@ -144,6 +148,26 @@ class OperationRunner @Inject constructor(
         }
     }
 
+    /**
+     * Keeps the process alive (the foreground service) while [block] runs, without queueing it behind document
+     * edits: the PDF tools work on their own files and show their own progress, but would otherwise be lost if the
+     * user switched apps during a long compression or merge.
+     */
+    suspend fun <T> keepAlive(label: String?, block: suspend () -> T): T {
+        synchronized(stateLock) {
+            keptAlive++
+            OperationForegroundService.show(context, label ?: _busyLabel.value)
+        }
+        try {
+            return block()
+        } finally {
+            synchronized(stateLock) {
+                keptAlive--
+                if (keptAlive == 0 && pending == 0) OperationForegroundService.stop(context)
+            }
+        }
+    }
+
     private fun start(label: String?, successMessage: String?, action: suspend () -> Unit) {
         synchronized(stateLock) {
             pending++
@@ -162,13 +186,18 @@ class OperationRunner @Inject constructor(
                         OperationForegroundService.show(context, label)
                     }
                     current = coroutineContext[kotlinx.coroutines.Job]
+                    val messageBefore = _message.value
                     try {
                         action()
                         if (successMessage != null) _message.value = UiMessage(successMessage)
+                        // Only jobs long enough to show progress are worth a notice if the user left meanwhile.
+                        if (label != null) notifications.taskFinished(_message.value.takeIf { it !== messageBefore }?.text)
                     } catch (cancelled: kotlinx.coroutines.CancellationException) {
                         _message.value = UiMessage(context.getString(R.string.common_stopped))
                     } catch (error: Throwable) {
-                        _message.value = UiMessage(error.message ?: context.getString(R.string.common_something_went_wrong))
+                        val text = error.message ?: context.getString(R.string.common_something_went_wrong)
+                        _message.value = UiMessage(text)
+                        if (label != null) runCatching { notifications.taskFailed(text) }
                     } finally {
                         current = null
                     }
@@ -180,7 +209,7 @@ class OperationRunner @Inject constructor(
                     if (pending == 0) {
                         _busyLabel.value = null
                         _busy.value = false
-                        OperationForegroundService.stop(context)
+                        if (keptAlive == 0) OperationForegroundService.stop(context)
                     }
                 }
             }

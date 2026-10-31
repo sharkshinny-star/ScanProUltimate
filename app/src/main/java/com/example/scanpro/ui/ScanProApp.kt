@@ -60,6 +60,7 @@ fun ScanProApp(
     val openDocumentRequest by viewModel.openDocumentRequest.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
+    val destinationRequest by viewModel.destinationRequest.collectAsStateWithLifecycle()
     val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
     val reviewDue by viewModel.reviewDue.collectAsStateWithLifecycle()
@@ -125,6 +126,13 @@ fun ScanProApp(
             navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true }
             viewModel.clearScanRequest()
         }
+    }
+
+    // A reminder notification's screen (recycle bin, settings), also only once the library is unlocked.
+    LaunchedEffect(destinationRequest) {
+        val route = destinationRequest ?: return@LaunchedEffect
+        navController.navigate(route) { launchSingleTop = true }
+        viewModel.clearDestinationRequest()
     }
 
     // A finished camera scan opens its new document once the library has picked it up. This sits

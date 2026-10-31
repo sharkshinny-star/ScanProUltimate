@@ -100,6 +100,13 @@ import com.example.scanpro.core.ui.sharePlayStoreListing
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ThemeMode
 import androidx.core.net.toUri
+import androidx.compose.material.icons.rounded.NotificationsOff
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.AutoDelete
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import android.Manifest
 
 @Composable
 fun SettingsRoute(
@@ -119,8 +126,31 @@ fun SettingsRoute(
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
     val defaultOcrScript by viewModel.defaultOcrScript.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val notifyFinished by viewModel.notifyFinished.collectAsStateWithLifecycle()
+    val notifyFailures by viewModel.notifyFailures.collectAsStateWithLifecycle()
+    val notifyTrash by viewModel.notifyTrash.collectAsStateWithLifecycle()
+    val notifyBackup by viewModel.notifyBackup.collectAsStateWithLifecycle()
+    // Re-read on every return to the screen: the permission or the system switch may have changed meanwhile.
+    var canNotify by remember { mutableStateOf(viewModel.canPostNotifications()) }
+    LifecycleResumeEffect(Unit) {
+        canNotify = viewModel.canPostNotifications()
+        onPauseOrDispose { }
+    }
     SettingsScreen(
         busy = busy,
+        notifications = NotificationSettings(
+            canPost = canNotify,
+            finished = notifyFinished,
+            failures = notifyFailures,
+            trash = notifyTrash,
+            backup = notifyBackup,
+            onFinishedChange = viewModel::setNotifyFinished,
+            onFailuresChange = viewModel::setNotifyFailures,
+            onTrashChange = viewModel::setNotifyTrash,
+            onBackupChange = viewModel::setNotifyBackup,
+            onPermissionResult = { canNotify = viewModel.canPostNotifications() },
+            systemSettingsIntent = viewModel::notificationSettingsIntent
+        ),
         onBackupAll = viewModel::backupAll,
         trashRetentionDays = trashRetentionDays,
         defaultOcrScript = defaultOcrScript,
@@ -149,6 +179,7 @@ fun SettingsRoute(
 @Composable
 fun SettingsScreen(
     busy: Boolean = false,
+    notifications: NotificationSettings = NotificationSettings(),
     onBackupAll: (Uri, String) -> Unit = { _, _ -> },
     pdfQuality: PdfQuality,
     autoTitle: Boolean,
@@ -448,6 +479,8 @@ fun SettingsScreen(
                     }
                 }
 
+                NotificationsSection(notifications)
+
                 SettingsSection(stringResource(R.string.settings_section_support)) {
                     SettingsRow(
                         icon = Icons.Rounded.Star,
@@ -616,6 +649,103 @@ private fun SettingsRow(
             subtitle = subtitle,
             trailing = { Switch(checked = checked, onCheckedChange = null) }
         )
+    }
+}
+
+/** The Notifications section's state and actions, gathered so the screen's signature stays readable. */
+data class NotificationSettings(
+    val canPost: Boolean = true,
+    val finished: Boolean = true,
+    val failures: Boolean = true,
+    val trash: Boolean = false,
+    val backup: Boolean = false,
+    val onFinishedChange: (Boolean) -> Unit = {},
+    val onFailuresChange: (Boolean) -> Unit = {},
+    val onTrashChange: (Boolean) -> Unit = {},
+    val onBackupChange: (Boolean) -> Unit = {},
+    val onPermissionResult: () -> Unit = {},
+    val systemSettingsIntent: (() -> Intent)? = null
+)
+
+@Composable
+private fun NotificationsSection(state: NotificationSettings) {
+    val context = LocalContext.current
+    val openSystemSettings: () -> Unit = {
+        state.systemSettingsIntent?.let { runCatching { context.startActivity(it()) } }
+    }
+    // Asked only here, when the user turns a notice on, never at launch.
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        state.onPermissionResult()
+        // Refused before: Android won't ask again, so its own settings page is the only way to allow them.
+        if (!granted) openSystemSettings()
+    }
+    val requestPermission: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= 33) permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        else openSystemSettings()
+    }
+    // Turning a notice on is the moment to ask for permission, if Android does not allow notifications yet.
+    fun enabling(change: (Boolean) -> Unit): (Boolean) -> Unit = { on ->
+        change(on)
+        if (on && !state.canPost) requestPermission()
+    }
+    SettingsSection(stringResource(R.string.settings_section_notifications)) {
+        if (!state.canPost) {
+            SettingsRow(
+                icon = Icons.Rounded.NotificationsOff,
+                tone = TileTone.Rose,
+                title = stringResource(R.string.settings_notifications_off_title),
+                subtitle = stringResource(R.string.settings_notifications_off_body),
+                trailing = { Chevron() },
+                onClick = requestPermission
+            )
+            InsetDivider()
+        }
+        SettingsRow(
+            icon = Icons.Rounded.TaskAlt,
+            tone = TileTone.Teal,
+            title = stringResource(R.string.settings_notify_finished_title),
+            subtitle = stringResource(R.string.settings_notify_finished_body),
+            checked = state.finished,
+            onCheckedChange = enabling(state.onFinishedChange)
+        )
+        InsetDivider()
+        SettingsRow(
+            icon = Icons.Rounded.ErrorOutline,
+            tone = TileTone.Rose,
+            title = stringResource(R.string.settings_notify_failures_title),
+            subtitle = stringResource(R.string.settings_notify_failures_body),
+            checked = state.failures,
+            onCheckedChange = enabling(state.onFailuresChange)
+        )
+        InsetDivider()
+        SettingsRow(
+            icon = Icons.Rounded.AutoDelete,
+            tone = TileTone.Amber,
+            title = stringResource(R.string.settings_notify_trash_title),
+            subtitle = stringResource(R.string.settings_notify_trash_body),
+            checked = state.trash,
+            onCheckedChange = enabling(state.onTrashChange)
+        )
+        InsetDivider()
+        SettingsRow(
+            icon = Icons.Rounded.Backup,
+            tone = TileTone.Indigo,
+            title = stringResource(R.string.settings_notify_backup_title),
+            subtitle = stringResource(R.string.settings_notify_backup_body),
+            checked = state.backup,
+            onCheckedChange = enabling(state.onBackupChange)
+        )
+        if (state.systemSettingsIntent != null) {
+            InsetDivider()
+            SettingsRow(
+                icon = Icons.Rounded.Notifications,
+                tone = TileTone.Slate,
+                title = stringResource(R.string.settings_notifications_system_title),
+                subtitle = stringResource(R.string.settings_notifications_system_body),
+                trailing = { Chevron() },
+                onClick = openSystemSettings
+            )
+        }
     }
 }
 

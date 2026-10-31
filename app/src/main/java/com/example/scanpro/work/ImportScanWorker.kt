@@ -30,6 +30,7 @@ import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import androidx.core.net.toUri
+import com.example.scanpro.core.notifications.AppNotifications
 
 /**
  * Turns a finished camera session into a document. It runs as WorkManager work rather than in the app's
@@ -42,7 +43,8 @@ class ImportScanWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val repository: DocumentRepository,
     private val settings: SettingsStore,
-    private val operations: OperationRunner
+    private val operations: OperationRunner,
+    private val notifications: AppNotifications
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
@@ -69,6 +71,7 @@ class ImportScanWorker @AssistedInject constructor(
             if (runAttemptCount < MAX_AUTOMATIC_ATTEMPTS - 1) return Result.retry()
             val context = applicationContext
             val input = inputData
+            notifications.taskFailed(context.getString(R.string.notify_scan_failed))
             operations.showMessage(
                 UiMessage(
                     context.getString(R.string.msg_could_not_save_scan, error.message ?: context.getString(R.string.msg_unknown_error)),
@@ -83,6 +86,7 @@ class ImportScanWorker @AssistedInject constructor(
         // Text scans copy their text instead; every other scan offers share/save straight away.
         if (mode == ScanMode.TEXT) copyRecognizedText(document) else operations.offerScanSaved(document.id)
         operations.requestOpenDocument(document.id)
+        notifications.taskFinished(applicationContext.getString(R.string.notify_scan_saved), document.id)
         // The document now holds its own copies; drop the scanner session's temporary captures.
         uris.asSequence()
             .filter { it.scheme == "file" }

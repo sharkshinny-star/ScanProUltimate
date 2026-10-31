@@ -3,6 +3,7 @@ package com.example.scanpro.data
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -142,6 +143,38 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     suspend fun setFeedbackPromptShown() {
         context.scanProSettings.edit { it[keyFeedbackPromptShown] = true }
     }
+
+    private val keyNotifyFinished = booleanPreferencesKey("notify_finished")
+    private val keyNotifyFailures = booleanPreferencesKey("notify_failures")
+    private val keyNotifyTrash = booleanPreferencesKey("notify_trash")
+    private val keyNotifyBackup = booleanPreferencesKey("notify_backup")
+    private val keyLastBackupAt = longPreferencesKey("last_backup_at")
+    private val keyLastBackupReminderAt = longPreferencesKey("last_backup_reminder_at")
+
+    /** A job that finished while the app was out of sight. On by default: it answers the user's own request. */
+    val notifyFinished: Flow<Boolean> = preferences.map { it[keyNotifyFinished] ?: true }
+    /** A job that failed while the app was out of sight. On by default, for the same reason. */
+    val notifyFailures: Flow<Boolean> = preferences.map { it[keyNotifyFailures] ?: true }
+    /** A day before documents leave the recycle bin for good. Off until the user asks for it. */
+    val notifyTrash: Flow<Boolean> = preferences.map { it[keyNotifyTrash] ?: false }
+    /** A reminder when no backup was made for a month. Off until the user asks for it. */
+    val notifyBackup: Flow<Boolean> = preferences.map { it[keyNotifyBackup] ?: false }
+    /** When the last backup was written (0 when never), and when the last reminder about it was shown. */
+    val lastBackupAt: Flow<Long> = preferences.map { it[keyLastBackupAt] ?: 0L }
+    val lastBackupReminderAt: Flow<Long> = preferences.map { it[keyLastBackupReminderAt] ?: 0L }
+
+    suspend fun setNotifyFinished(value: Boolean) { context.scanProSettings.edit { it[keyNotifyFinished] = value } }
+    suspend fun setNotifyFailures(value: Boolean) { context.scanProSettings.edit { it[keyNotifyFailures] = value } }
+    suspend fun setNotifyTrash(value: Boolean) { context.scanProSettings.edit { it[keyNotifyTrash] = value } }
+    suspend fun setNotifyBackup(value: Boolean, now: Long = System.currentTimeMillis()) {
+        context.scanProSettings.edit {
+            it[keyNotifyBackup] = value
+            // The month is counted from when the reminder was switched on, not from a backup made long ago.
+            if (value) it[keyLastBackupReminderAt] = now
+        }
+    }
+    suspend fun recordBackup(now: Long = System.currentTimeMillis()) { context.scanProSettings.edit { it[keyLastBackupAt] = now } }
+    suspend fun recordBackupReminder(now: Long = System.currentTimeMillis()) { context.scanProSettings.edit { it[keyLastBackupReminderAt] = now } }
 }
 
 const val DEFAULT_TRASH_RETENTION_DAYS = 7

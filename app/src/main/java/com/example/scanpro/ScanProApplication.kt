@@ -21,6 +21,7 @@ import javax.inject.Inject
 class ScanProApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var notifications: com.example.scanpro.core.notifications.AppNotifications
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -46,6 +47,8 @@ class ScanProApplication : Application(), Configuration.Provider {
         Thread {
             runCatching { scheduleMaintenance() }
             runCatching { com.example.scanpro.work.CacheCleaner.purge(this) }
+            // Channels exist from the start, so Android's notification settings list them before the first notice.
+            runCatching { notifications.ensureChannels() }
         }.apply { priority = Thread.MIN_PRIORITY }.start()
     }
 

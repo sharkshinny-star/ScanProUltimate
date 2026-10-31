@@ -124,6 +124,14 @@ class AppViewModel @Inject constructor(
     fun requestScan() { _scanRequested.value = true }
     fun clearScanRequest() { _scanRequested.value = false }
 
+    private val _destinationRequest = MutableStateFlow<String?>(null)
+    /** A screen a notification asked to open; shown once the library is unlocked. */
+    val destinationRequest: StateFlow<String?> = _destinationRequest.asStateFlow()
+    fun requestDestination(route: String) { _destinationRequest.value = route }
+    fun clearDestinationRequest() { _destinationRequest.value = null }
+    /** A notification asked to open this document; it opens below the lock gate like a finished scan does. */
+    fun requestOpenDocument(id: String) = operations.requestOpenDocument(id)
+
     /** Runs an import that came from another app now, or after unlock if the library is locked. */
     fun submitExternalImport(import: () -> Unit) {
         if (isLibraryOpen()) import() else synchronized(pendingExternalImports) { pendingExternalImports += import }

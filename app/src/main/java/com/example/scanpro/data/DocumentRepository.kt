@@ -62,6 +62,16 @@ class DocumentRepository @Inject constructor(
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
+    /** How many recycle-bin documents are deleted for good within the next [withinMs], under the retention setting. */
+    suspend fun trashExpiringWithin(withinMs: Long): Int = withContext(Dispatchers.IO) {
+        val retentionMs = settings.trashRetentionDays.first().coerceAtLeast(1) * 24L * 60L * 60L * 1000L
+        val now = now()
+        db.loadTrashSummaries().count { it.trashedAt > 0 && it.trashedAt + retentionMs - now in 1..withinMs }
+    }
+
+    /** Documents in the library (not in the recycle bin). */
+    suspend fun activeDocumentCount(): Int = withContext(Dispatchers.IO) { db.loadOverview(recentLimit = 0).documentCount }
+
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
         purgeExpiredTrash()
         db.loadTrashSummaries()

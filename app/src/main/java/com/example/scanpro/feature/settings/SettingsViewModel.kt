@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.scanpro.core.notifications.AppNotifications
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -27,6 +28,7 @@ class SettingsViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
+    private val notifications: AppNotifications,
     library: DocumentLibrary
 ) : ViewModel() {
     val busy: StateFlow<Boolean> = operations.busy
@@ -35,6 +37,7 @@ class SettingsViewModel @Inject constructor(
     fun backupAll(folder: Uri, password: String) {
         operations.enqueue(context.getString(R.string.settings_backup_running), null) {
             val count = repository.backupAll(folder, password)
+            settings.recordBackup()
             operations.showMessage(context.resources.getQuantityString(R.plurals.settings_backup_done, count, count))
         }
     }
@@ -73,4 +76,16 @@ class SettingsViewModel @Inject constructor(
     val defaultOcrScript = settings.defaultOcrScript.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.example.scanpro.data.OcrScript.LATIN)
     fun setTrashRetentionDays(value: Int) { viewModelScope.launch { settings.setTrashRetentionDays(value) } }
     fun setDefaultOcrScript(value: com.example.scanpro.data.OcrScript) { viewModelScope.launch { settings.setDefaultOcrScript(value) } }
+
+    val notifyFinished = settings.notifyFinished.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    val notifyFailures = settings.notifyFailures.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    val notifyTrash = settings.notifyTrash.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    val notifyBackup = settings.notifyBackup.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    fun setNotifyFinished(value: Boolean) { viewModelScope.launch { settings.setNotifyFinished(value) } }
+    fun setNotifyFailures(value: Boolean) { viewModelScope.launch { settings.setNotifyFailures(value) } }
+    fun setNotifyTrash(value: Boolean) { viewModelScope.launch { settings.setNotifyTrash(value) } }
+    fun setNotifyBackup(value: Boolean) { viewModelScope.launch { settings.setNotifyBackup(value) } }
+    /** Whether Android lets the app post notifications at all (permission and the app-wide switch). */
+    fun canPostNotifications(): Boolean = notifications.canPost()
+    fun notificationSettingsIntent() = notifications.systemSettingsIntent()
 }

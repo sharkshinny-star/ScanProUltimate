@@ -4,7 +4,6 @@ import android.content.Context
 import com.example.scanpro.imaging.ThumbnailStore
 import com.example.scanpro.scanner.SESSION_PENDING_IMPORT
 import com.example.scanpro.scanner.SESSION_ROOT
-import com.example.scanpro.scanner.scannerSessionRoot
 import java.io.File
 
 /**
@@ -26,14 +25,19 @@ object CacheCleaner {
     private const val EXPORT_MAX_AGE_MS = 24L * 60 * 60 * 1000
 
     fun purge(context: Context, now: Long = System.currentTimeMillis()) {
-        val cache = context.cacheDir
+        purgeFolders(context.cacheDir, context.filesDir, now)
+        ThumbnailStore.trim(context)
+    }
+
+    /** The sweep itself, on plain folders so it can be tested without a device. */
+    internal fun purgeFolders(cache: File, files: File, now: Long) {
         cache.listFiles()?.forEach { file ->
             val isTemp = TEMP_PREFIXES.any { file.name.startsWith(it) }
             if (isTemp && now - file.lastModified() > TEMP_MAX_AGE_MS) file.deleteRecursively()
         }
         // Scanner sessions nobody came back to (the scanner itself cleans them only when it is opened again).
         // Sessions moved from the cache to the app's files; the cache folder only holds ones from older versions.
-        listOf(File(cache, SESSION_ROOT), scannerSessionRoot(context)).forEach { root ->
+        listOf(File(cache, SESSION_ROOT), File(files, SESSION_ROOT)).forEach { root ->
             root.listFiles()?.forEach { session ->
                 val maxAge = if (File(session, SESSION_PENDING_IMPORT).exists()) PENDING_SESSION_MAX_AGE_MS else SESSION_MAX_AGE_MS
                 if (now - session.lastModified() > maxAge) session.deleteRecursively()
@@ -44,6 +48,5 @@ object CacheCleaner {
             val isTemp = file.name.startsWith("temp_in_")
             if (now - file.lastModified() > (if (isTemp) TEMP_MAX_AGE_MS else EXPORT_MAX_AGE_MS)) file.deleteRecursively()
         }
-        ThumbnailStore.trim(context)
     }
 }

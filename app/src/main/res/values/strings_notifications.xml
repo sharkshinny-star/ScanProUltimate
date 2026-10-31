@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notification channels, as Android lists them in the app's notification settings. -->
+    <string name="notify_channel_results">Finished tasks</string>
+    <string name="notify_channel_results_description">A scan, export or PDF tool finished while you were in another app</string>
+    <string name="notify_channel_failures">Failed tasks</string>
+    <string name="notify_channel_failures_description">A scan, export or PDF tool could not finish while you were in another app</string>
+    <string name="notify_channel_reminders">Reminders</string>
+    <string name="notify_channel_reminders_description">Recycle bin and backup reminders you turned on in Settings</string>
+
+    <!-- Notices. They never name a document. -->
+    <string name="notify_finished_title">Done</string>
+    <string name="notify_failed_title">Couldn\'t finish</string>
+    <string name="notify_scan_saved">Your scan is saved. Tap to open it.</string>
+    <string name="notify_scan_failed">Your scan wasn\'t saved yet. Open ScanPro to try again; the photos are kept.</string>
+    <string name="notify_open_to_see">Open ScanPro to see the details</string>
+    <string name="notify_public_text">Open ScanPro for details</string>
+    <string name="notify_trash_title">Recycle bin</string>
+    <plurals name="notify_trash_body">
+        <item quantity="one">%1$d document will be deleted for good within a day</item>
+        <item quantity="other">%1$d documents will be deleted for good within a day</item>
+    </plurals>
+    <string name="notify_backup_title">Time for a backup</string>
+    <string name="notify_backup_body">You haven\'t backed up your documents for a month</string>
+
+    <!-- Settings, Notifications section. -->
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_notifications_off_title">Notifications are off</string>
+    <string name="settings_notifications_off_body">Tap to allow them, so ScanPro can tell you when a task finishes</string>
+    <string name="settings_notify_finished_title">Finished tasks</string>
+    <string name="settings_notify_finished_body">When a scan, export or PDF tool finishes while you\'re in another app</string>
+    <string name="settings_notify_failures_title">Failed tasks</string>
+    <string name="settings_notify_failures_body">When a task couldn\'t finish while you\'re in another app</string>
+    <string name="settings_notify_trash_title">Recycle bin reminder</string>
+    <string name="settings_notify_trash_body">The day before deleted documents are removed for good</string>
+    <string name="settings_notify_backup_title">Backup reminder</string>
+    <string name="settings_notify_backup_body">When you haven\'t made a backup for a month</string>
+    <string name="settings_notifications_system_title">System notification settings</string>
+    <string name="settings_notifications_system_body">Sounds, lock screen and more, per kind of notice</string>
+</resources>
