@@ -35,6 +35,7 @@ import com.example.scanpro.core.crash.CrashReportPrompt
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.designsystem.ThemeTransition
 import com.example.scanpro.core.notifications.AppNotifications
+import com.example.scanpro.feature.document.DocumentEditor
 import com.example.scanpro.core.ui.SupportTopic
 import com.example.scanpro.core.ui.contactSupport
 import com.example.scanpro.core.ui.openPlayStoreListing
@@ -54,6 +55,7 @@ class MainActivity : FragmentActivity() {
 
     private val viewModel: AppViewModel by viewModels()
     @Inject lateinit var notifications: AppNotifications
+    @Inject lateinit var documentEditor: DocumentEditor
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -94,6 +96,8 @@ class MainActivity : FragmentActivity() {
         val splash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) installSplashScreen() else null
         super.onCreate(savedInstanceState)
         if (splash != null) showLaunchScreenUntilReady(splash) else holdFirstFrameUntilReady()
+        // Edits that were still waiting when the app was last stopped run now, once per process.
+        documentEditor.resumeInterrupted()
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
         if (savedInstanceState == null) handleIntent(intent)
         enableEdgeToEdge()

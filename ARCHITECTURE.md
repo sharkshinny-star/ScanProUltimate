@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-10-31, after the "Unsaved scans" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-10-31, after the "persist queued edits" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -181,7 +181,13 @@ A biometric UI gate should not be marketed as full at-rest encryption of every l
   `getWorkInfosByTagFlow`. Save again re-enqueues the recorded request; Discard deletes only after confirmation.
 - `core/operations/OperationRunner`: one long document job at a time on an application scope, promoted to
   `OperationForegroundService` (type `dataSync`) while running. `keepAlive(label) { }` lets other callers (PDF tools) hold the
-  service. Queued jobs are in memory only (open item R3).
+  service.
+- **Edit journal** (`core/operations/EditJournal`, `feature/document/DocumentEdit`, `DocumentEditor`): document edits are
+  data, not lambdas. `DocumentEditor.submit` writes `filesDir/edit_journal/<seq>.json` (on one serial IO thread), then
+  queues the edit in `OperationRunner`. When its turn comes the file becomes `<seq>.started`; it is deleted when the edit
+  finishes, fails or is stopped. `MainActivity.onCreate` calls `resumeInterrupted()` once per process: `.json` files run
+  again in order, `.started` ones are only reported (never replayed: they may be half applied). Exports, password
+  exports, signatures, pages from other apps, undo/redo and library bulk actions still run in memory only.
 
 ## 12. Notifications
 

@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after the "Unsaved scans" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after the "persist queued edits" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,16 +40,16 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-10-31, "Unsaved scans" commit; release builds below are from `fb9e745`)
+## Latest results (2026-10-31, "persist queued edits" commit)
 
 | Check | Result |
 |---|---|
 | `:app:compileDebugKotlin`, `:translate:compileDebugKotlin` | Passed, 0 warnings |
-| `:app:testDebugUnitTest` | 146 tests: 144 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
+| `:app:testDebugUnitTest` | 154 tests: 152 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
 | `:app:lintDebug` | 0 issues (targetSdk now 37) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
-| `:app:bundleRelease` | Passed; AAB 45.2 MB |
-| Sideload `assembleRelease` | Passed; arm64 32.7 MB (budget 40), armv7 24.7, x86_64 38.6, universal 81.9 |
+| `:app:bundleRelease` | Passed; AAB 45.3 MB |
+| Sideload `assembleRelease` | Passed; arm64 32.7 MB (budget 40), armv7 24.8, x86_64 38.6, universal 81.9 |
 | 16 KB page alignment | arm64 and x86_64 `.so` aligned to `0x4000` (`readelf`) |
 | `-Pscanpro.bundledMl=true` build | Not run |
 | Instrumented tests (`AppSmokeTest`), screenshot, performance | Not run: no emulator or device in the container |
@@ -65,7 +65,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `FormFieldRulesTest`, `AnnotationRemapTest`,
 `DocxExporterTest`, `XlsxExporterTest`, `EditHistoryTest`, `FileSafeNameTest`, `SmartTitleTest`), intelligence
 (`DocumentIntelligenceEngineTest`, `BusinessCardParserTest`, `OcrLayoutTest`), library (`LibraryFiltersTest`,
-`TrashCountdownTest`), backup (`EncryptedDocumentPackageTest`, 12 tests), crash (`CrashReporterTest`), work (`CacheCleanerTest`, 4 tests; `KeptScanStoreTest`, 4 tests).
+`TrashCountdownTest`), backup (`EncryptedDocumentPackageTest`, 12 tests), crash (`CrashReporterTest`), work (`CacheCleanerTest`, 4 tests; `KeptScanStoreTest`, 4 tests), edit queue (`EditJournalTest`, 5; `DocumentEditTest`, 3).
 
 `app/src/androidTest`: `AppSmokeTest` (needs a device).
 

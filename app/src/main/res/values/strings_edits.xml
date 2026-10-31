@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown after a restart when edits had started but not finished when the app was stopped. -->
+    <plurals name="edits_msg_interrupted">
+        <item quantity="one">An edit was interrupted when ScanPro closed. Check the document and redo it if needed.</item>
+        <item quantity="other">%1$d edits were interrupted when ScanPro closed. Check your documents and redo them if needed.</item>
+    </plurals>
+</resources>

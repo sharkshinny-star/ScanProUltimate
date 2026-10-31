@@ -50,7 +50,8 @@ class DocumentViewModel @Inject constructor(
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
     private val library: DocumentLibrary,
-    private val signatures: SignatureLibrary
+    private val signatures: SignatureLibrary,
+    private val editor: DocumentEditor
 ) : ViewModel() {
     private val id: String = checkNotNull(savedStateHandle[ScanProDestinations.DOCUMENT_ID_ARG])
 
@@ -97,85 +98,46 @@ class DocumentViewModel @Inject constructor(
     private fun run(@StringRes label: Int?, @StringRes successMessage: Int?, action: suspend () -> Unit) =
         operations.run(label?.let { context.getString(it) }, successMessage?.let { context.getString(it) }, action)
 
-    fun rename(title: String) = run(null, null) {
-        if (repository.rename(id, title)) operations.showMessage(context.getString(R.string.msg_renamed_duplicate_name))
-    }
+    fun rename(title: String) = editor.submit(id, DocumentEdit.Rename(title))
 
     fun stopCurrent() = operations.cancelCurrent()
-    fun setTags(tags: String) = run(null, R.string.msg_tags_updated) { repository.setTags(id, tags) }
-    fun setFolder(folder: String) = run(null, R.string.msg_folder_updated) { repository.setFolder(id, folder) }
-    fun toggleFavorite() = run(null, null) { repository.toggleFavorite(id) }
+    fun setTags(tags: String) = editor.submit(id, DocumentEdit.SetTags(tags))
+    fun setFolder(folder: String) = editor.submit(id, DocumentEdit.SetFolder(folder))
+    fun toggleFavorite() = editor.submit(id, DocumentEdit.ToggleFavorite)
 
-    fun setPdfQuality(quality: PdfQuality) =
-        operations.run(context.getString(R.string.msg_rebuilding_pdf_quality, context.getString(quality.labelRes)), context.getString(R.string.msg_pdf_quality_updated)) { repository.setPdfQuality(id, quality) }
+    fun setPdfQuality(quality: PdfQuality) = editor.submit(id, DocumentEdit.SetPdfQuality(quality))
 
-    fun setPdfPageSize(size: PdfPageSize) =
-        operations.run(context.getString(R.string.msg_rebuilding_pdf_page_size, context.getString(size.labelRes)), context.getString(R.string.msg_pdf_page_size_updated)) { repository.setPdfPageSize(id, size) }
+    fun setPdfPageSize(size: PdfPageSize) = editor.submit(id, DocumentEdit.SetPdfPageSize(size))
 
-    fun setSearchablePdf(enabled: Boolean) =
-        run(R.string.msg_rebuilding_ocr_layer, if (enabled) R.string.msg_searchable_pdf_enabled else R.string.msg_searchable_layer_disabled) {
-            repository.setSearchablePdf(id, enabled)
-        }
+    fun setSearchablePdf(enabled: Boolean) = editor.submit(id, DocumentEdit.SetSearchablePdf(enabled))
 
-    fun setPageNumbers(enabled: Boolean) =
-        run(R.string.msg_updating_page_numbers, null) { repository.setPageNumbers(id, enabled) }
+    fun setPageNumbers(enabled: Boolean) = editor.submit(id, DocumentEdit.SetPageNumbers(enabled))
 
-    fun setScanMode(mode: ScanMode) =
-        operations.run(null, context.getString(R.string.msg_mode_set_to, context.getString(mode.labelRes))) { repository.setScanMode(id, mode) }
+    fun setScanMode(mode: ScanMode) = editor.submit(id, DocumentEdit.SetScanMode(mode))
 
-    fun applyFilter(pageId: String, filter: PageFilter) =
-        operations.run(context.getString(R.string.msg_applying_filter, context.getString(filter.labelRes)), null) { repository.applyFilter(id, pageId, filter) }
+    fun applyFilter(pageId: String, filter: PageFilter) = editor.submit(id, DocumentEdit.ApplyFilter(pageId, filter))
 
-    fun rotatePage(pageId: String) =
-        run(R.string.msg_rotating_page, null) { repository.rotatePage(id, pageId) }
+    fun rotatePage(pageId: String) = editor.submit(id, DocumentEdit.RotatePage(pageId))
 
-    fun applyCrop(pageId: String, crop: CropQuad) =
-        run(R.string.msg_perspective_correcting, R.string.msg_crop_applied) { repository.applyCrop(id, pageId, crop) }
+    fun applyCrop(pageId: String, crop: CropQuad) = editor.submit(id, DocumentEdit.ApplyCrop(pageId, crop))
 
     fun applyAdjustments(pageId: String, adjustments: PageAdjustments, allPages: Boolean = false) =
-        if (allPages) run(R.string.msg_cleaning_up_every_page, R.string.msg_cleanup_applied_all) { repository.applyAdjustmentsToAll(id, pageId, adjustments) }
-        else run(R.string.msg_applying_adjustments, R.string.msg_adjustments_applied) { repository.applyAdjustments(id, pageId, adjustments) }
+        editor.submit(id, DocumentEdit.ApplyAdjustments(pageId, adjustments, allPages))
 
-    fun resetPage(pageId: String) =
-        run(R.string.msg_restoring_original_page, R.string.msg_page_reset) { repository.resetPage(id, pageId) }
+    fun resetPage(pageId: String) = editor.submit(id, DocumentEdit.ResetPage(pageId))
 
-    fun movePage(pageId: String, delta: Int) =
-        run(R.string.msg_reordering_pages, null) { repository.movePage(id, pageId, delta) }
+    fun movePage(pageId: String, delta: Int) = editor.submit(id, DocumentEdit.MovePage(pageId, delta))
 
-    fun duplicatePage(pageId: String) =
-        run(R.string.msg_duplicating_page, R.string.msg_page_duplicated) { repository.duplicatePage(id, pageId) }
+    fun duplicatePage(pageId: String) = editor.submit(id, DocumentEdit.DuplicatePage(pageId))
 
-    fun extractPage(pageId: String) =
-        run(R.string.msg_extracting_page, R.string.msg_page_extracted) { repository.extractPage(id, pageId) }
+    fun extractPage(pageId: String) = editor.submit(id, DocumentEdit.ExtractPage(pageId))
 
-    fun splitBookSpread(pageId: String, splitFraction: Float) =
-        run(R.string.msg_splitting_book_spread, R.string.msg_book_spread_split) { repository.splitBookSpread(id, pageId, splitFraction) }
+    fun splitBookSpread(pageId: String, splitFraction: Float) = editor.submit(id, DocumentEdit.SplitBookSpread(pageId, splitFraction))
 
     /** Removes the page and offers Undo; the page's files go only once the message is gone. */
-    fun deletePage(pageId: String) = run(R.string.msg_removing_page, null) {
-        repository.deletePage(id, pageId)
-        operations.showMessage(
-            UiMessage(
-                context.getString(R.string.msg_page_removed),
-                actionLabel = context.getString(R.string.common_undo),
-                onAction = { undoDeletePage() },
-                onDismiss = { repository.purgeRemovedPage(id, pageId) }
-            )
-        )
-    }
+    fun deletePage(pageId: String) = editor.submit(id, DocumentEdit.DeletePage(pageId))
 
-    private fun undoDeletePage() = operations.enqueue(context.getString(R.string.msg_restoring_page), null) {
-        if (!repository.restoreRemovedPage(id)) operations.showMessage(context.getString(R.string.msg_page_restore_failed))
-    }
-
-    fun duplicateDocument() = run(R.string.msg_duplicating_document, null) {
-        val copy = repository.duplicateDocument(id)
-        operations.showMessage(
-            UiMessage(context.getString(R.string.msg_copy_saved_as, copy.title), actionLabel = context.getString(R.string.msg_open), onAction = {
-                operations.requestOpenDocument(copy.id)
-            })
-        )
-    }
+    fun duplicateDocument() = editor.submit(id, DocumentEdit.DuplicateDocument)
 
     fun exportPng() = run(R.string.msg_converting_to_png, null) {
         val files = repository.exportPng(id)
@@ -207,53 +169,34 @@ class DocumentViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) { signatures.delete(file) }
     }
 
-    fun addTextAnnotation(pageId: String, text: String) =
-        run(R.string.msg_adding_text_annotation, R.string.msg_text_added) { repository.addTextAnnotation(id, pageId, text) }
+    fun addTextAnnotation(pageId: String, text: String) = editor.submit(id, DocumentEdit.AddTextAnnotation(pageId, text))
 
-    fun addHighlight(pageId: String) =
-        run(R.string.msg_adding_highlight, R.string.msg_highlight_added) { repository.addHighlight(id, pageId) }
+    fun addHighlight(pageId: String) = editor.submit(id, DocumentEdit.AddHighlight(pageId))
 
-    fun addRedaction(pageId: String) =
-        run(R.string.msg_applying_redaction, R.string.msg_redaction_added) { repository.addRedaction(id, pageId) }
+    fun addRedaction(pageId: String) = editor.submit(id, DocumentEdit.AddRedaction(pageId))
 
-    fun undoLastAnnotation(pageId: String) =
-        run(R.string.msg_removing_last_annotation, R.string.msg_annotation_removed) { repository.removeLastAnnotation(id, pageId) }
+    fun undoLastAnnotation(pageId: String) = editor.submit(id, DocumentEdit.RemoveLastAnnotation(pageId))
 
     suspend fun markupBase(pageId: String) = repository.markupBase(id, pageId)
 
-    fun applyMarkup(pageId: String, annotations: List<PageAnnotation>) =
-        run(R.string.msg_updating_markup, R.string.msg_markup_updated) { repository.replaceAnnotations(id, pageId, annotations) }
+    fun applyMarkup(pageId: String, annotations: List<PageAnnotation>) = editor.submit(id, DocumentEdit.ReplaceAnnotations(pageId, annotations))
 
-    fun addWatermark(style: WatermarkStyle) =
-        run(R.string.msg_adding_watermark, R.string.msg_watermark_added) { repository.addWatermark(id, style) }
+    fun addWatermark(style: WatermarkStyle) = editor.submit(id, DocumentEdit.AddWatermark(style))
 
     fun appendImages(imageUris: List<Uri>) {
         if (imageUris.isEmpty()) return
         run(R.string.msg_adding_pages, R.string.msg_pages_added) { repository.appendImages(id, imageUris) }
     }
 
-    fun mergeWith(otherId: String) =
-        run(R.string.msg_merging_documents, R.string.msg_merged_copy_created) { repository.mergeDocuments(id, otherId) }
+    fun mergeWith(otherId: String) = editor.submit(id, DocumentEdit.MergeWith(otherId))
 
-    fun updatePageOcrText(pageId: String, text: String) =
-        run(R.string.msg_updating_ocr_text, R.string.msg_ocr_text_updated) { repository.updatePageOcrText(id, pageId, text) }
+    fun updatePageOcrText(pageId: String, text: String) = editor.submit(id, DocumentEdit.UpdatePageOcrText(pageId, text))
 
-    fun reOcr() = run(R.string.msg_refreshing_ocr, null) { reportOcr(repository.reOcrDocument(id), context.getString(R.string.msg_ocr_refreshed)) }
+    fun reOcr() = editor.submit(id, DocumentEdit.ReOcr(null))
 
-    fun reOcr(script: OcrScript) =
-        operations.run(context.getString(R.string.msg_running_script_ocr, context.getString(script.labelRes)), null) {
-            reportOcr(repository.reOcrDocument(id, script), context.getString(R.string.msg_script_ocr_applied, context.getString(script.labelRes)))
-        }
+    fun reOcr(script: OcrScript) = editor.submit(id, DocumentEdit.ReOcr(script))
 
-    private fun reportOcr(failed: Int, success: String) {
-        val total = document.value?.pages?.size ?: 0
-        operations.showMessage(if (failed == 0) success else context.resources.getQuantityString(R.plurals.msg_ocr_partial, total, total - failed, total))
-    }
-
-    fun splitDocument() = run(R.string.msg_splitting_document, null) {
-        val count = repository.splitIntoPageDocuments(id)
-        operations.showMessage(context.resources.getQuantityString(R.plurals.msg_page_documents_created, count, count))
-    }
+    fun splitDocument() = editor.submit(id, DocumentEdit.SplitDocument)
 
     fun exportIdCopy() = run(R.string.msg_creating_id_copy, null) {
         val file = repository.exportIdCopy(id)
@@ -280,13 +223,9 @@ class DocumentViewModel @Inject constructor(
         operations.publishExport(ExportArtifact(file.absolutePath, XLSX_MIME, context.getString(R.string.msg_share_excel_workbook)))
     }
 
-    fun replaceText(pageId: String, edit: TextEdit) =
-        run(R.string.msg_replacing_text, if (edit.text.isBlank()) R.string.msg_text_removed else R.string.msg_text_replaced) {
-            repository.replaceText(id, pageId, edit.left, edit.top, edit.right, edit.bottom, edit.text)
-        }
+    fun replaceText(pageId: String, edit: TextEdit) = editor.submit(id, DocumentEdit.ReplaceText(pageId, edit))
 
-    fun erase(pageId: String, strokesByBrush: Map<Float, List<List<NormalizedPoint>>>) =
-        run(R.string.msg_erasing, R.string.msg_erased) { repository.erase(id, pageId, strokesByBrush) }
+    fun erase(pageId: String, strokesByBrush: Map<Float, List<List<NormalizedPoint>>>) = editor.submit(id, DocumentEdit.Erase(pageId, strokesByBrush))
 
     fun exportPasswordProtectedPdf(password: String) = run(R.string.msg_encrypting_pdf, null) {
         val file = repository.exportPasswordProtectedPdf(id, password)

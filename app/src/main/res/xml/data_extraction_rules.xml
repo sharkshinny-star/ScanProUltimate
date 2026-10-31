@@ -13,5 +13,7 @@
     <device-transfer>
         <!-- Unfinished scanner sessions belong to this phone; the cache is never transferred anyway. -->
         <exclude domain="file" path="pro_scanner_session/" />
+        <!-- Edits waiting to run refer to this phone's queue; replaying them on another phone would surprise. -->
+        <exclude domain="file" path="edit_journal/" />
     </device-transfer>
 </data-extraction-rules>
