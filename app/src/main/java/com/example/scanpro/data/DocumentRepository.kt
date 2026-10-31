@@ -505,7 +505,8 @@ class DocumentRepository @Inject constructor(
         )
     }
 
-    suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap) =
+    /** Stamps [signature] on the page, fitted into [placement] (fractions of the page) or, without one, the lower right. */
+    suspend fun stampSignature(documentId: String, pageId: String, signature: Bitmap, placement: com.example.scanpro.feature.document.SignaturePlacement? = null) =
         editSinglePage(documentId, pageId) { page ->
             val folder = File(page.imagePath).parentFile?.parentFile ?: error("Invalid page folder")
             val signatureDir = File(folder, "signatures").apply { mkdirs() }
@@ -513,10 +514,10 @@ class DocumentRepository @Inject constructor(
             ImageProcessor.saveSignature(signature, asset)
             val annotation = PageAnnotation(
                 type = AnnotationType.SIGNATURE,
-                x = 0.56f,
-                y = 0.78f,
-                width = 0.34f,
-                height = 0.12f,
+                x = placement?.x?.coerceIn(0f, 0.99f) ?: 0.56f,
+                y = placement?.y?.coerceIn(0f, 0.99f) ?: 0.78f,
+                width = placement?.width?.coerceIn(0.01f, 1f) ?: 0.34f,
+                height = placement?.height?.coerceIn(0.01f, 1f) ?: 0.12f,
                 assetPath = asset.absolutePath
             )
             try {

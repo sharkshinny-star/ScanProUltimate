@@ -149,17 +149,17 @@ class DocumentViewModel @Inject constructor(
     /** Saved signatures, newest first, offered in the signature dialog. */
     val savedSignatures: StateFlow<List<java.io.File>> = signatures.items
 
-    fun stampSignature(pageId: String, signature: Bitmap, keep: Boolean = false) =
+    fun stampSignature(pageId: String, signature: Bitmap, keep: Boolean = false, placement: SignaturePlacement? = null) =
         run(R.string.msg_adding_signature, R.string.msg_signature_added) {
             if (keep) runCatching { signatures.save(signature) }
-            repository.stampSignature(id, pageId, signature)
+            repository.stampSignature(id, pageId, signature, placement)
         }
 
-    fun stampSavedSignature(pageId: String, file: java.io.File) =
+    fun stampSavedSignature(pageId: String, file: java.io.File, placement: SignaturePlacement? = null) =
         run(R.string.msg_adding_signature, R.string.msg_signature_added) {
             val bitmap = ImageProcessor.decodeScaled(file.absolutePath, 1600) ?: error(context.getString(R.string.msg_saved_signature_unreadable))
             try {
-                repository.stampSignature(id, pageId, bitmap)
+                repository.stampSignature(id, pageId, bitmap, placement)
             } finally {
                 bitmap.recycle()
             }

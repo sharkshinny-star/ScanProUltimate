@@ -343,9 +343,9 @@ internal fun DocumentDetailScreen(
     onExportPng: () -> Unit = {},
     onDuplicateDocument: () -> Unit = {},
     onRetakePage: (String, Int) -> Unit = { _, _ -> },
-    onSign: (String, Bitmap, Boolean) -> Unit,
+    onSign: (String, Bitmap, Boolean, SignaturePlacement?) -> Unit,
     savedSignatures: List<java.io.File> = emptyList(),
-    onSignSaved: (String, java.io.File) -> Unit = { _, _ -> },
+    onSignSaved: (String, java.io.File, SignaturePlacement?) -> Unit = { _, _, _ -> },
     onDeleteSignature: (java.io.File) -> Unit = {},
     onTextAnnotation: (String, String) -> Unit,
     onHighlight: (String) -> Unit,
@@ -428,6 +428,7 @@ internal fun DocumentDetailScreen(
     var tagsOpen by remember { mutableStateOf(false) }
     var folderOpen by remember { mutableStateOf(false) }
     var signatureOpen by remember { mutableStateOf(false) }
+    var pendingSignature by remember { mutableStateOf<PendingSignature?>(null) }
     var watermarkOpen by remember { mutableStateOf(false) }
     var annotationTextOpen by remember { mutableStateOf(false) }
     var cropOpen by remember { mutableStateOf(false) }
@@ -1036,15 +1037,37 @@ internal fun DocumentDetailScreen(
         SignaturePadDialog(
             saved = savedSignatures,
             onUseSaved = { file ->
-                onSignSaved(currentPage.id, file)
                 signatureOpen = false
+                pendingSignature = PendingSignature.Saved(file)
             },
             onDeleteSaved = onDeleteSignature,
             onDismiss = { signatureOpen = false }
         ) { bitmap, keep ->
-            onSign(currentPage.id, bitmap, keep)
             signatureOpen = false
+            pendingSignature = PendingSignature.Drawn(bitmap, keep)
         }
+    }
+    // Second step: put the signature where it belongs on the page, then Save.
+    val pending = pendingSignature
+    if (pending != null && currentPage != null) {
+        val pageId = currentPage.id
+        SignaturePlacementDialog(
+            loadPage = { onLoadMarkupBase(pageId) },
+            loadSignature = {
+                when (pending) {
+                    is PendingSignature.Drawn -> pending.bitmap
+                    is PendingSignature.Saved -> com.example.scanpro.imaging.ImageProcessor.decodeScaled(pending.file.absolutePath, 1600)
+                }
+            },
+            onDismiss = { pendingSignature = null },
+            onSave = { placement ->
+                pendingSignature = null
+                when (pending) {
+                    is PendingSignature.Drawn -> onSign(pageId, pending.bitmap, pending.keep, placement)
+                    is PendingSignature.Saved -> onSignSaved(pageId, pending.file, placement)
+                }
+            }
+        )
     }
 
     if (markupOpen && currentPage != null) {
@@ -1340,4 +1363,10 @@ internal fun ScanDocument.hidesContent(): Boolean = pages.any { page ->
     page.annotations.any {
         it.type == AnnotationType.REDACT || it.type == AnnotationType.ERASE || (it.type == AnnotationType.TEXT && it.background != null)
     }
+}
+
+/** A signature waiting to be placed: freshly drawn (and maybe to be kept), or one of the saved ones. */
+private sealed interface PendingSignature {
+    class Drawn(val bitmap: Bitmap, val keep: Boolean) : PendingSignature
+    class Saved(val file: java.io.File) : PendingSignature
 }

@@ -218,6 +218,9 @@
     <string name="doc_or_draw_new">Or draw a new one below.</string>
     <string name="doc_save_for_next_time">Save for next time</string>
     <string name="doc_place_signature">Place signature</string>
+    <!-- Placement screen shown after drawing or choosing a signature -->
+    <string name="doc_place_signature_hint">Drag to move. Pinch or drag the corner to resize.</string>
+    <string name="doc_signature_resize">Resize signature</string>
     <string name="doc_clear">Clear</string>
     <string name="doc_delete_saved_signature">Delete saved signature?</string>
     <string name="doc_delete_saved_signature_message">Pages already signed keep their signature.</string>
