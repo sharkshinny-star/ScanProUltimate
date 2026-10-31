@@ -159,6 +159,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
+import androidx.core.content.edit
 
 /** How the live preview helps: Auto captures by itself, Manual only outlines the page, No detect does neither. */
 private enum class DetectMode(@StringRes val label: Int) { AUTO(R.string.scan_detect_auto), MANUAL(R.string.scan_detect_manual), NO_DETECT(R.string.scan_detect_no_detect) }
@@ -217,7 +218,7 @@ fun CameraScannerScreen(
     var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_seen", false)) }
     fun dismissTips() {
         showTips = false
-        prefs.edit().putBoolean("tips_seen", true).apply()
+        prefs.edit { putBoolean("tips_seen", true) }
     }
     var overflowOpen by remember { mutableStateOf(false) }
     var showAdjustments by remember { mutableStateOf(false) }
@@ -246,7 +247,7 @@ fun CameraScannerScreen(
     // Each scanner session writes to its own folder, so closing one never deletes files another
     // session's import is still reading.
     val sessionId = rememberSaveable { UUID.randomUUID().toString() }
-    val sessionDir = remember(sessionId) { File(File(context.cacheDir, SESSION_ROOT), sessionId) }
+    val sessionDir = remember(sessionId) { File(scannerSessionRoot(context), sessionId) }
     var completed by remember { mutableStateOf(false) }
     // The review step after capture: crop, rotate, reorder and add pages before saving.
     var reviewing by rememberSaveable { mutableStateOf(false) }
@@ -330,7 +331,7 @@ fun CameraScannerScreen(
                 pages.addAll(copied)
                 status = when {
                     scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> resources.getString(R.string.scan_status_front_ready)
-                    pages.isNotEmpty() -> resources.getString(R.string.scan_status_pages_ready, pages.size)
+                    pages.isNotEmpty() -> resources.getQuantityString(R.plurals.scan_status_pages_ready, pages.size, pages.size)
                     else -> resources.getString(R.string.scan_status_select_document)
                 }
             }
@@ -610,8 +611,7 @@ fun CameraScannerScreen(
                 // Errors after binding (another app took the camera, device policy, a fold closing) arrive here.
                 camera.cameraInfo.cameraState.observe(lifecycleOwner) { state ->
                     val error = state.error
-                    cameraError = when (error?.code) {
-                        null -> null
+                    cameraError = if (error == null) null else when (error.code) {
                         androidx.camera.core.CameraState.ERROR_CAMERA_IN_USE,
                         androidx.camera.core.CameraState.ERROR_MAX_CAMERAS_IN_USE -> resources.getString(R.string.scan_error_camera_in_use)
                         androidx.camera.core.CameraState.ERROR_CAMERA_DISABLED -> resources.getString(R.string.scan_error_camera_disabled)
@@ -691,8 +691,8 @@ fun CameraScannerScreen(
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             val cutoff = System.currentTimeMillis() - 24L * 60 * 60 * 1000
-            File(context.cacheDir, SESSION_ROOT).listFiles()
-                ?.filter { it.name != sessionId && it.lastModified() < cutoff }
+            scannerSessionRoot(context).listFiles()
+                ?.filter { it.name != sessionId && it.lastModified() < cutoff && !File(it, SESSION_PENDING_IMPORT).exists() }
                 ?.forEach { it.deleteRecursively() }
         }
     }
@@ -968,7 +968,7 @@ fun CameraScannerScreen(
                                 text = {
                                     Text(stringResource(option.label), color = if (option == detectMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                                 },
-                                onClick = { detectMode = option; detectMenuOpen = false; prefs.edit().putString("detect", option.name).apply() }
+                                onClick = { detectMode = option; detectMenuOpen = false; prefs.edit { putString("detect", option.name) } }
                             )
                         }
                     }
@@ -1060,7 +1060,7 @@ fun CameraScannerScreen(
                 ) {
                     listOf(false to R.string.scan_mode_single, true to R.string.scan_mode_batch).forEach { (value, text) ->
                         Surface(
-                            onClick = { batch = value; prefs.edit().putBoolean("batch", value).apply() },
+                            onClick = { batch = value; prefs.edit { putBoolean("batch", value) } },
                             shape = RoundedCornerShape(50),
                             color = if (batch == value) Color.White.copy(alpha = 0.28f) else Color.Transparent
                         ) {
@@ -1467,5 +1467,14 @@ private fun CropQuad.towards(target: CropQuad, fraction: Float): CropQuad {
 
 private fun CropQuad.asList() = listOf(topLeft, topRight, bottomRight, bottomLeft)
 
-/** Cache sub-folder holding one folder per scanner session; cleaned after import or when abandoned. */
+/** Sub-folder holding one folder per scanner session; cleaned after import or when abandoned. */
 internal const val SESSION_ROOT = "pro_scanner_session"
+
+/** Marker in a session folder whose photos are queued for import: cleanup must leave the folder alone. */
+internal const val SESSION_PENDING_IMPORT = ".pending_import"
+
+/**
+ * Where scanner sessions live: in the app's files, not its cache. Android may clear the cache whenever storage
+ * runs low, and a finished scan waiting for its import exists nowhere else.
+ */
+internal fun scannerSessionRoot(context: android.content.Context) = File(context.filesDir, SESSION_ROOT)

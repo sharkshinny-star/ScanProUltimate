@@ -2,6 +2,9 @@ package com.example.scanpro.work
 
 import android.content.Context
 import com.example.scanpro.imaging.ThumbnailStore
+import com.example.scanpro.scanner.SESSION_PENDING_IMPORT
+import com.example.scanpro.scanner.SESSION_ROOT
+import com.example.scanpro.scanner.scannerSessionRoot
 import java.io.File
 
 /**
@@ -17,6 +20,8 @@ object CacheCleaner {
         "ocr_in_", "ocr_page_", "form_read_", "form_fill_", "view_"
     )
     private const val SESSION_MAX_AGE_MS = 24L * 60 * 60 * 1000
+    // A scan whose import never finished is kept this long, so a later retry can still save it.
+    private const val PENDING_SESSION_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
     private const val TEMP_MAX_AGE_MS = 60L * 60 * 1000
     private const val EXPORT_MAX_AGE_MS = 24L * 60 * 60 * 1000
 
@@ -27,8 +32,12 @@ object CacheCleaner {
             if (isTemp && now - file.lastModified() > TEMP_MAX_AGE_MS) file.deleteRecursively()
         }
         // Scanner sessions nobody came back to (the scanner itself cleans them only when it is opened again).
-        File(cache, com.example.scanpro.scanner.SESSION_ROOT).listFiles()?.forEach { session ->
-            if (now - session.lastModified() > SESSION_MAX_AGE_MS) session.deleteRecursively()
+        // Sessions moved from the cache to the app's files; the cache folder only holds ones from older versions.
+        listOf(File(cache, SESSION_ROOT), scannerSessionRoot(context)).forEach { root ->
+            root.listFiles()?.forEach { session ->
+                val maxAge = if (File(session, SESSION_PENDING_IMPORT).exists()) PENDING_SESSION_MAX_AGE_MS else SESSION_MAX_AGE_MS
+                if (now - session.lastModified() > maxAge) session.deleteRecursively()
+            }
         }
         // Results of the PDF tools (including unlocked copies) are shareable for a day, then go.
         File(cache, "exports").listFiles()?.forEach { file ->

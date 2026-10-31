@@ -22,12 +22,14 @@ import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
+import com.example.scanpro.scanner.SESSION_PENDING_IMPORT
 import com.example.scanpro.scanner.SESSION_ROOT
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
+import androidx.core.net.toUri
 
 /**
  * Turns a finished camera session into a document. It runs as WorkManager work rather than in the app's
@@ -44,11 +46,11 @@ class ImportScanWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
-        val uris = inputData.getStringArray(KEY_URIS)?.map(Uri::parse).orEmpty()
+        val uris = inputData.getNullableStringArray(KEY_URIS)?.filterNotNull()?.map(Uri::parse).orEmpty()
         if (uris.isEmpty()) return Result.success()
         val mode = runCatching { ScanMode.valueOf(inputData.getString(KEY_MODE).orEmpty()) }.getOrDefault(ScanMode.DOCUMENT)
-        val crops = inputData.getStringArray(KEY_CROPS)?.map(JsonCodec::decodeCrop).orEmpty()
-        val filters = inputData.getStringArray(KEY_FILTERS)?.map { runCatching { PageFilter.valueOf(it) }.getOrDefault(PageFilter.ORIGINAL) }.orEmpty()
+        val crops = inputData.getNullableStringArray(KEY_CROPS)?.filterNotNull()?.map(JsonCodec::decodeCrop).orEmpty()
+        val filters = inputData.getNullableStringArray(KEY_FILTERS)?.filterNotNull()?.map { runCatching { PageFilter.valueOf(it) }.getOrDefault(PageFilter.ORIGINAL) }.orEmpty()
         // Photos the scanner already discarded (for instance after a long time in the background) can't be imported.
         if (uris.any { it.scheme == "file" && !File(it.path.orEmpty()).isFile }) {
             operations.showMessage(applicationContext.getString(R.string.msg_scan_photos_unavailable))
@@ -62,7 +64,9 @@ class ImportScanWorker @AssistedInject constructor(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
-            // Keep the photos: they exist nowhere else. Retry runs the same work again.
+            // Keep the photos: they exist nowhere else. A passing failure (low memory, a busy disk) gets
+            // two more automatic tries; after that the message offers Retry, which runs the same work again.
+            if (runAttemptCount < MAX_AUTOMATIC_ATTEMPTS - 1) return Result.retry()
             val context = applicationContext
             val input = inputData
             operations.showMessage(
@@ -115,6 +119,7 @@ class ImportScanWorker @AssistedInject constructor(
         private const val KEY_MODE = "mode"
         private const val KEY_CROPS = "crops"
         private const val KEY_FILTERS = "filters"
+        private const val MAX_AUTOMATIC_ATTEMPTS = 3
 
         fun inputFor(uris: List<Uri>, mode: ScanMode, crops: List<CropQuad>, filters: List<PageFilter>): Data = workDataOf(
             KEY_URIS to uris.map(Uri::toString).toTypedArray(),
@@ -125,7 +130,10 @@ class ImportScanWorker @AssistedInject constructor(
 
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */
         fun enqueue(context: Context, input: Data) {
-            val sessionKey = input.getStringArray(KEY_URIS)?.firstOrNull()?.let { File(Uri.parse(it).path.orEmpty()).parentFile?.name } ?: "scan"
+            val sessionDir = input.getNullableStringArray(KEY_URIS)?.firstOrNull()?.let { File(it.toUri().path.orEmpty()).parentFile }
+            val sessionKey = sessionDir?.name ?: "scan"
+            // Cleanup leaves a session with this marker alone until its import is done.
+            if (sessionDir?.parentFile?.name == SESSION_ROOT) runCatching { File(sessionDir, SESSION_PENDING_IMPORT).createNewFile() }
             val request = OneTimeWorkRequestBuilder<ImportScanWorker>().setInputData(input).build()
             WorkManager.getInstance(context).enqueueUniqueWork("import-scan-$sessionKey", ExistingWorkPolicy.KEEP, request)
         }
