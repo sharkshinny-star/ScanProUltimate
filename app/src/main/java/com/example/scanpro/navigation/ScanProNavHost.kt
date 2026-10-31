@@ -33,6 +33,7 @@ import com.example.scanpro.feature.document.DocumentRoute
 import com.example.scanpro.feature.library.LibraryRoute
 import com.example.scanpro.feature.settings.SettingsRoute
 import com.example.scanpro.feature.tools.PdfToolsScreen
+import com.example.scanpro.feature.kept.KeptScansRoute
 import com.example.scanpro.feature.trash.TrashRoute
 import com.example.scanpro.feature.viewer.PdfViewerScreen
 import com.example.scanpro.scanner.CameraScannerScreen
@@ -81,6 +82,7 @@ fun ScanProNavHost(
                     onImportImages = onImportImages,
                     onImportPdf = onImportPdf,
                     onTrash = { navController.navigate(ScanProDestinations.TRASH) },
+                    onKeptScans = { navController.navigate(ScanProDestinations.KEPT_SCANS) { launchSingleTop = true } },
                     onSearch = { navController.navigate(ScanProDestinations.SEARCH) { launchSingleTop = true } },
                     onBack = dropUnlessResumed { navController.popBackStack() },
                     onTab = onTab
@@ -148,6 +150,12 @@ fun ScanProNavHost(
                         onFallbackScanner()
                     }
                 }
+            )
+        }
+        composable(ScanProDestinations.KEPT_SCANS) {
+            KeptScansRoute(
+                snackbarHostState = snackbarHostState,
+                onBack = dropUnlessResumed { navController.popBackStack() }
             )
         }
         composable(ScanProDestinations.TRASH) {

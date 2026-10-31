@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.heightIn
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.Sort
@@ -145,6 +147,7 @@ fun LibraryRoute(
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {},
+    onKeptScans: () -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -155,6 +158,7 @@ fun LibraryRoute(
     // Home shows the few newest documents from the overview; only the Files and Search lists page the database.
     val items = if (mode == ScanProDestinations.HOME) null else viewModel.documents.collectAsLazyPagingItems()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
+    val keptScanCount by viewModel.keptScanCount.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
@@ -177,6 +181,8 @@ fun LibraryRoute(
         onDeleteFolder = viewModel::deleteFolder,
         folderExists = viewModel::folderExists,
         trashCount = trashCount,
+        keptScanCount = keptScanCount,
+        onKeptScans = onKeptScans,
         query = query,
         busy = busy,
         busyLabel = busyLabel,
@@ -235,7 +241,9 @@ internal fun LibraryScreen(
     onRenameFolder: (String, String) -> Unit,
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
-    onOpenTools: () -> Unit = {}
+    onOpenTools: () -> Unit = {},
+    keptScanCount: Int = 0,
+    onKeptScans: () -> Unit = {}
 ) {
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
@@ -468,6 +476,8 @@ internal fun LibraryScreen(
                 HomeDashboard(
                     overview = overview,
                     trashCount = trashCount,
+                    keptScanCount = keptScanCount,
+                    onKeptScans = onKeptScans,
                     busy = busy,
                     selected = selected,
                     onStartScan = onStartScan,
@@ -775,7 +785,9 @@ private fun HomeDashboard(
     onSearch: () -> Unit,
     onSeeAll: () -> Unit,
     onOpenDocument: (String) -> Unit,
-    onToggleSelection: (String) -> Unit
+    onToggleSelection: (String) -> Unit,
+    keptScanCount: Int = 0,
+    onKeptScans: () -> Unit = {}
 ) {
     val recent = overview.recent
     val documentCount = overview.documentCount
@@ -804,6 +816,11 @@ private fun HomeDashboard(
                         if (trashCount > 0) StatPill(Icons.Rounded.DeleteOutline, pluralStringResource(R.plurals.lib_in_bin_count, trashCount, trashCount))
                     }
                 }
+            }
+        }
+        if (keptScanCount > 0) {
+            item(key = "kept_scans") {
+                KeptScansBanner(count = keptScanCount, onClick = onKeptScans, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
         item {
@@ -860,6 +877,36 @@ private fun HomeDashboard(
             }
         }
         item { PrivacyLine(Modifier.fillMaxWidth().padding(top = 2.dp)) }
+    }
+}
+
+/** Shown on Home while a camera scan could not be saved; its photos wait under "Unsaved scans". */
+@Composable
+private fun KeptScansBanner(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.errorContainer,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    pluralStringResource(R.plurals.kept_banner_title, count, count),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    stringResource(R.string.kept_banner_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+        }
     }
 }
 

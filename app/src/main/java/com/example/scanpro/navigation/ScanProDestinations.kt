@@ -24,6 +24,8 @@ object ScanProDestinations {
         return RetakeTarget(parts[0], parts[1], parts[2].toIntOrNull() ?: 0)
     }
     const val TRASH = "trash"
+    /** Camera scans whose import failed, kept so they can be saved again or discarded. */
+    const val KEPT_SCANS = "kept_scans"
 
     const val DOCUMENT_ID_ARG = "documentId"
     const val DOCUMENT = "detail/{$DOCUMENT_ID_ARG}"

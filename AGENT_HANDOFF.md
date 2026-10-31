@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after commit `fb9e745`.
+Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "Unsaved scans" commit (newest in `git log`).
 
 ## 1. Current state
 
@@ -28,6 +28,7 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after commit `f
 
 | Commit | What |
 |---|---|
+| newest | "Unsaved scans" recovery screen for scans whose import failed (F15, closes R4); Home banner, notification deep link, `KeptScanStoreTest`. |
 | `fb9e745` | targetSdk 37 after an Android 17 code review; OpenCV excluded from lint and IDE inspections (shared `.idea` scopes, profile, dictionary); remaining Kotlin style hints applied. |
 | `8b9cc77` | These reference docs and `CLAUDE.md`. |
 | `65d2c5c` | Local notifications (finished/failed tasks, optional recycle-bin and backup reminders, Settings > Notifications). PDF tools held alive by the foreground service via `OperationRunner.keepAlive`. |
@@ -50,7 +51,6 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 2. **R1: backups hold unredacted originals.** `.scanpro` backups keep the original photo so pages stay editable. Needs a product
    decision: a warning in the backup dialog, or a "flattened backup" option. Security-sensitive: document the change before making it.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
-4. **R4: no recovery screen** for scans whose import failed three times (photos are kept 30 days in `filesDir/pro_scanner_session/`).
 5. **R3: queued document edits live in memory** in `OperationRunner`; process death loses edits that had not started.
 6. **R2: targetSdk is now 37** (code-reviewed, not device-tested). Test on Android 17, including a tablet or foldable.
 7. **R5: remaining English literals** in `PdfToolsEngine` progress text, `Support.kt`, `Brand.kt`, `FeedbackPromptDialog.kt`.
@@ -61,7 +61,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
 2. Ask the owner about R1, then implement the chosen option.
-3. Build the R4 recovery screen (list kept sessions, re-import or discard).
+3. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
 4. Persist queued edits (R3), for example as WorkManager jobs like `ImportScanWorker`.
 5. Add Compose UI/screenshot tests and run them on an emulator in CI.
 6. Device-test targetSdk 37 on Android 17 (R2).

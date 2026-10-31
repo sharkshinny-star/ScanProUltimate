@@ -55,15 +55,18 @@ class AppNotifications @Inject constructor(
         )
     }
 
-    /** A job the user started could not finish while they were elsewhere; opening the app shows the reason again. */
-    suspend fun taskFailed(detail: String?) {
+    /**
+     * A job the user started could not finish while they were elsewhere; opening the app shows the reason again.
+     * [action] is one of the `MainActivity.ACTION_OPEN_*` screens to open on tap, or null for the app itself.
+     */
+    suspend fun taskFailed(detail: String?, action: String? = null) {
         if (appVisible || !settings.notifyFailures.first()) return
         post(
             id = ID_FAILED,
             channel = CHANNEL_FAILURES,
             title = context.getString(R.string.notify_failed_title),
             detail = detail,
-            tap = openAppIntent()
+            tap = openAppIntent(action)
         )
     }
 

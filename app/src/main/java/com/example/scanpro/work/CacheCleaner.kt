@@ -19,8 +19,8 @@ object CacheCleaner {
         "ocr_in_", "ocr_page_", "form_read_", "form_fill_", "view_"
     )
     private const val SESSION_MAX_AGE_MS = 24L * 60 * 60 * 1000
-    // A scan whose import never finished is kept this long, so a later retry can still save it.
-    private const val PENDING_SESSION_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
+    // A scan whose import never finished is kept this long, so it can still be saved from "Unsaved scans".
+    private const val PENDING_SESSION_MAX_AGE_MS = KEPT_SCAN_MAX_AGE_MS
     private const val TEMP_MAX_AGE_MS = 60L * 60 * 1000
     private const val EXPORT_MAX_AGE_MS = 24L * 60 * 60 * 1000
 

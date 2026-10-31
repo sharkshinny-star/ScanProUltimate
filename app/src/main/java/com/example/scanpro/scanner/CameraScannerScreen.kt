@@ -1464,6 +1464,10 @@ internal const val SESSION_ROOT = "pro_scanner_session"
 
 /** Marker in a session folder whose photos are queued for import: cleanup must leave the folder alone. */
 internal const val SESSION_PENDING_IMPORT = ".pending_import"
+/** The import request as WorkManager data, so a kept scan can be saved again with the user's edits. */
+internal const val SESSION_IMPORT_REQUEST = ".import_request"
+/** Written when every automatic import attempt failed; holds the last error message. */
+internal const val SESSION_IMPORT_FAILED = ".import_failed"
 
 /**
  * Where scanner sessions live: in the app's files, not its cache. Android may clear the cache whenever storage

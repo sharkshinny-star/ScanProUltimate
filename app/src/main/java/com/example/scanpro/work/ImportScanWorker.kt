@@ -12,6 +12,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.example.scanpro.MainActivity
 import com.example.scanpro.R
 import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
@@ -22,6 +23,8 @@ import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
+import com.example.scanpro.scanner.SESSION_IMPORT_FAILED
+import com.example.scanpro.scanner.SESSION_IMPORT_REQUEST
 import com.example.scanpro.scanner.SESSION_PENDING_IMPORT
 import com.example.scanpro.scanner.SESSION_ROOT
 import dagger.assisted.Assisted
@@ -71,7 +74,11 @@ class ImportScanWorker @AssistedInject constructor(
             if (runAttemptCount < MAX_AUTOMATIC_ATTEMPTS - 1) return Result.retry()
             val context = applicationContext
             val input = inputData
-            notifications.taskFailed(context.getString(R.string.notify_scan_failed))
+            // The scan now shows under "Unsaved scans", with this reason, until it is saved or discarded.
+            sessionDirOf(input)?.let { session ->
+                runCatching { File(session, SESSION_IMPORT_FAILED).writeText(error.message.orEmpty()) }
+            }
+            notifications.taskFailed(context.getString(R.string.notify_scan_failed), MainActivity.ACTION_OPEN_KEPT_SCANS)
             operations.showMessage(
                 UiMessage(
                     context.getString(R.string.msg_could_not_save_scan, error.message ?: context.getString(R.string.msg_unknown_error)),
@@ -119,11 +126,17 @@ class ImportScanWorker @AssistedInject constructor(
     }
 
     companion object {
-        private const val KEY_URIS = "uris"
-        private const val KEY_MODE = "mode"
-        private const val KEY_CROPS = "crops"
-        private const val KEY_FILTERS = "filters"
+        internal const val KEY_URIS = "uris"
+        internal const val KEY_MODE = "mode"
+        internal const val KEY_CROPS = "crops"
+        internal const val KEY_FILTERS = "filters"
         private const val MAX_AUTOMATIC_ATTEMPTS = 3
+        /** Every import carries this tag, plus [SESSION_TAG_PREFIX] and its session folder's name. */
+        const val TAG = "import-scan"
+        const val SESSION_TAG_PREFIX = "import-scan-session:"
+
+        private fun sessionDirOf(input: Data): File? =
+            input.getNullableStringArray(KEY_URIS)?.firstOrNull()?.let { File(it.toUri().path.orEmpty()).parentFile }
 
         fun inputFor(uris: List<Uri>, mode: ScanMode, crops: List<CropQuad>, filters: List<PageFilter>): Data = workDataOf(
             KEY_URIS to uris.map(Uri::toString).toTypedArray(),
@@ -134,11 +147,21 @@ class ImportScanWorker @AssistedInject constructor(
 
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */
         fun enqueue(context: Context, input: Data) {
-            val sessionDir = input.getNullableStringArray(KEY_URIS)?.firstOrNull()?.let { File(it.toUri().path.orEmpty()).parentFile }
+            val sessionDir = sessionDirOf(input)
             val sessionKey = sessionDir?.name ?: "scan"
-            // Cleanup leaves a session with this marker alone until its import is done.
-            if (sessionDir?.parentFile?.name == SESSION_ROOT) runCatching { File(sessionDir, SESSION_PENDING_IMPORT).createNewFile() }
-            val request = OneTimeWorkRequestBuilder<ImportScanWorker>().setInputData(input).build()
+            if (sessionDir?.parentFile?.name == SESSION_ROOT) runCatching {
+                // Cleanup leaves a session with this marker alone until its import is done, and the request
+                // itself is kept beside the photos so the scan can be saved again from "Unsaved scans".
+                File(sessionDir, SESSION_PENDING_IMPORT).createNewFile()
+                File(sessionDir, SESSION_IMPORT_REQUEST).writeBytes(input.toByteArray())
+                // A new attempt: the scan leaves "Unsaved scans" until this one fails too.
+                File(sessionDir, SESSION_IMPORT_FAILED).delete()
+            }
+            val request = OneTimeWorkRequestBuilder<ImportScanWorker>()
+                .setInputData(input)
+                .addTag(TAG)
+                .addTag(SESSION_TAG_PREFIX + sessionKey)
+                .build()
             WorkManager.getInstance(context).enqueueUniqueWork("import-scan-$sessionKey", ExistingWorkPolicy.KEEP, request)
         }
     }

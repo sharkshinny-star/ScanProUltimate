@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- "Unsaved scans": camera scans whose import failed, kept so they can be saved again. -->
+    <string name="kept_title">Unsaved scans</string>
+    <string name="kept_intro">These scans couldn\'t be saved as documents. Their photos are kept for 30 days so you can try again.</string>
+    <string name="kept_item_title">%1$s scan</string>
+    <plurals name="kept_item_meta">
+        <item quantity="one">%1$d photo · %2$s</item>
+        <item quantity="other">%1$d photos · %2$s</item>
+    </plurals>
+    <string name="kept_item_expires">Kept until %1$s</string>
+    <string name="kept_item_failure">Last error: %1$s</string>
+    <string name="kept_retry">Save again</string>
+    <string name="kept_share_photos">Share photos</string>
+    <string name="kept_share_title">Share scan photos</string>
+    <string name="kept_discard">Discard</string>
+    <string name="kept_cd_more_actions">More actions</string>
+    <string name="kept_discard_dialog_title">Discard this scan?</string>
+    <plurals name="kept_discard_dialog_message">
+        <item quantity="one">Its photo will be deleted. It isn\'t saved anywhere else, so this can\'t be undone.</item>
+        <item quantity="other">Its %1$d photos will be deleted. They aren\'t saved anywhere else, so this can\'t be undone.</item>
+    </plurals>
+    <string name="kept_empty_title">Nothing to save</string>
+    <string name="kept_empty_body">Every scan was saved as a document.</string>
+    <string name="kept_msg_saving_again">Saving the scan again…</string>
+    <string name="kept_msg_discarded">Scan discarded</string>
+    <!-- Home banner. -->
+    <plurals name="kept_banner_title">
+        <item quantity="one">%1$d scan wasn\'t saved</item>
+        <item quantity="other">%1$d scans weren\'t saved</item>
+    </plurals>
+    <string name="kept_banner_body">The photos are kept. Tap to try again.</string>
+</resources>

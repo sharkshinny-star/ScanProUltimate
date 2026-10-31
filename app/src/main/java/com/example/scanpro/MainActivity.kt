@@ -240,6 +240,7 @@ class MainActivity : FragmentActivity() {
             ACTION_OPEN_DOCUMENT -> intent.getStringExtra(EXTRA_DOCUMENT_ID)?.let(viewModel::requestOpenDocument)
             ACTION_OPEN_TRASH -> viewModel.requestDestination(ScanProDestinations.TRASH)
             ACTION_OPEN_SETTINGS -> viewModel.requestDestination(ScanProDestinations.SETTINGS)
+            ACTION_OPEN_KEPT_SCANS -> viewModel.requestDestination(ScanProDestinations.KEPT_SCANS)
             ACTION_SCAN_NOW -> {
                 // Launchers rank shortcuts by how often each is used.
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
@@ -414,6 +415,7 @@ class MainActivity : FragmentActivity() {
         const val ACTION_OPEN_DOCUMENT = "com.example.scanpro.action.OPEN_DOCUMENT"
         const val ACTION_OPEN_TRASH = "com.example.scanpro.action.OPEN_TRASH"
         const val ACTION_OPEN_SETTINGS = "com.example.scanpro.action.OPEN_SETTINGS"
+        const val ACTION_OPEN_KEPT_SCANS = "com.example.scanpro.action.OPEN_KEPT_SCANS"
         const val EXTRA_DOCUMENT_ID = "documentId"
         // Shortcut ids are stored by launchers (pinned shortcuts); never rename them.
         private const val SHORTCUT_SCAN_NOW = "scan_now"

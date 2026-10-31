@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-10-31, after commit `fb9e745`. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-10-31, after the "Unsaved scans" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -175,7 +175,10 @@ A biometric UI gate should not be marketed as full at-rest encryption of every l
   runs `CacheCleaner`, and posts the optional recycle-bin and backup reminders.
 - `work/ImportScanWorker` (one-time, `@HiltWorker`): imports a finished camera session. The session lives in
   `filesDir/pro_scanner_session/<id>/` with a `.pending_import` marker; the worker retries up to 3 attempts. `CacheCleaner`
-  removes abandoned sessions after a day, pending ones after 30 days.
+  removes abandoned sessions after a day, pending ones after 30 days. `enqueue` also writes the request (`.import_request`,
+  WorkManager `Data` bytes) and tags the work `import-scan` + `import-scan-session:<id>`; a final failure writes `.import_failed`.
+- `work/KeptScanStore` + `feature/kept/` ("Unsaved scans"): pending sessions with no active import, from
+  `getWorkInfosByTagFlow`. Save again re-enqueues the recorded request; Discard deletes only after confirmation.
 - `core/operations/OperationRunner`: one long document job at a time on an application scope, promoted to
   `OperationForegroundService` (type `dataSync`) while running. `keepAlive(label) { }` lets other callers (PDF tools) hold the
   service. Queued jobs are in memory only (open item R3).

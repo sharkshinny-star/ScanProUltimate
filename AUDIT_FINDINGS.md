@@ -1,6 +1,6 @@
 # Audit findings
 
-Last updated: 2026-10-31, after commit `fb9e745`. Priorities: P0 data loss or build break, P1 crash/security/reliability,
+Last updated: 2026-10-31, kept-scans recovery screen. Priorities: P0 data loss or build break, P1 crash/security/reliability,
 P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; never reuse an ID.
 
 ## Open
@@ -10,7 +10,6 @@ P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; neve
 | R1 | P1 | Security | `backup/EncryptedDocumentPackage.kt` | `.scanpro` backups contain the original, unredacted photo so pages stay editable. Anyone with the backup and its password sees redacted content. By design so far. | Owner decides: warn in the backup dialog, or add a "flattened backup" option. Document before changing. |
 | R2 | P1 | Compat | `app/build.gradle.kts` `targetSdk = 37` | Raised to 37 (Android 17) after a code review against the Android 17 behaviour changes (see F12). Still needs a run on an Android 17 device or emulator before release: camera and editor on a tablet or foldable (orientation and aspect-ratio locks are ignored there), the foreground service during long jobs, notifications and app lock. | Device-test on Android 17, including a large screen. |
 | R3 | P2 | Reliability | `core/operations/OperationRunner.kt` | Queued document edits are held in memory; process death loses edits that hadn't started. Imports are durable (WorkManager). | Persist queued edits as WorkManager jobs. |
-| R4 | P2 | UX | `work/ImportScanWorker.kt`, `work/CacheCleaner.kt` | After three failed import attempts, photos are kept 30 days but there's no screen to recover them. | Recovery screen: list kept sessions, re-import or discard. |
 | R5 | P2 | i18n | `imaging/PdfToolsEngine.kt` progress text, `core/ui/Support.kt`, `core/designsystem/Brand.kt`, `core/ui/FeedbackPromptDialog.kt` | Hard-coded English strings. | Move to resources. |
 | R6 | P2 | Security | `backup/ChunkedAead.kt`, `backup/EncryptedDocumentPackage.kt` | Not re-audited this round (12 unit tests pass: tampering, truncation, wrong password, path traversal, iteration bounds). | Independent review of AES-GCM chunking, PBKDF2 (210k iterations) and header parsing. |
 | R7 | P1 | Testing | whole app | Nothing verified on a device; no screenshot or Compose UI tests. | Device pass; add UI tests in CI on an emulator. |
@@ -21,6 +20,7 @@ P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; neve
 
 | ID | Priority | Category | Location | Problem → fix | Commit | Evidence |
 |---|---|---|---|---|---|---|
+| F15 | P2 | UX / data safety | `work/KeptScans.kt`, `feature/kept/`, `work/ImportScanWorker.kt`, `feature/library/LibraryScreen.kt`, `res/xml/file_paths.xml` | R4: scans whose import failed were kept 30 days with no way back to them. New "Unsaved scans" screen lists kept sessions (pending marker, no import queued or running) with photo count, mode, date, expiry and last error. Actions: Save again (re-enqueues with the recorded mode, outlines and filters, limited to photos still on disk), Share photos, Discard (confirm dialog; the only delete path besides the 30-day cleanup). The worker now stores the request (`.import_request`) and last error (`.import_failed`) in the session. Entry points: a Home banner while any exist, and the failed-scan notification. FileProvider gains `pro_scanner_session/`, shared only when the user asks. | see `AGENT_HANDOFF.md` | `KeptScanStoreTest` (4 tests); full suite 146 run, 0 failed; lint 0; not device-tested |
 | F1 | P0 | Build | `scanner/OpenCvDocumentAnalyzer.kt` `steadyGuidance` | Merge left smoothing on `String` while the detector returns `Guidance`; app didn't compile. Now uses the enum. | `cb748f2` | Compiles, tests pass |
 | F2 | P0 | Data loss | `scanner/CameraScannerScreen.kt`, `work/ImportScanWorker.kt`, `work/CacheCleaner.kt` | Camera sessions, including scans waiting to import, were in `cacheDir` (evictable); failed imports kept 24 h with an in-memory Retry. Now in `filesDir/pro_scanner_session/`, `.pending_import` marker keeps them 30 days, worker retries automatically (3 attempts), legacy cache sessions still cleaned. | `bfe815d` | `CacheCleanerTest` (4 tests) |
 | F3 | P0 | Data loss | `work/CleanupWorker.kt` | Purge always used 7 days, ignoring a 30-day setting. Reads `settings.trashRetentionDays`. | `7e543d5` | Compiles; reviewed |

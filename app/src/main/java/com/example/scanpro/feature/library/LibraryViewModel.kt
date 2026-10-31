@@ -16,6 +16,7 @@ import com.example.scanpro.data.LibraryOverview
 import com.example.scanpro.data.LibrarySort
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.SettingsStore
+import com.example.scanpro.work.KeptScanStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -46,7 +47,8 @@ class LibraryViewModel @Inject constructor(
     private val operations: OperationRunner,
     private val library: DocumentLibrary,
     private val settings: SettingsStore,
-    private val savedState: SavedStateHandle
+    private val savedState: SavedStateHandle,
+    keptScans: KeptScanStore
 ) : ViewModel() {
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -102,6 +104,11 @@ class LibraryViewModel @Inject constructor(
     val trashCount: StateFlow<Int> = library.trash
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.trash.value.size)
+
+    /** Camera scans that couldn't be saved; Home points to them while there are any. */
+    val keptScanCount: StateFlow<Int> = keptScans.scans
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     val busy: StateFlow<Boolean> = operations.busy
     val busyLabel: StateFlow<String?> = operations.busyLabel
