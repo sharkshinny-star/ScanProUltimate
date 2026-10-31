@@ -65,8 +65,8 @@ import androidx.compose.runtime.rememberUpdatedState
  */
 @Composable
 fun BrandMark(
-    size: Dp = 40.dp,
     modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
     /** Draw the mark on a transparent background (for use on the gradient itself). */
     bare: Boolean = false
 ) {

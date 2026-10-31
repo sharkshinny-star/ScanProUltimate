@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- MainActivity: app lock, compatibility scanner -->
     <string name="main_compat_scanner_no_pages">The compatibility scanner did not return any pages</string>
     <string name="main_screen_lock_removed">This device no longer has a screen lock, so app lock was turned off</string>
@@ -32,15 +32,17 @@
     <string name="ui_welcome_more_point_sign">Sign, redact, watermark and password-protect</string>
     <string name="ui_welcome_more_point_contacts">Business cards straight to your contacts</string>
     <string name="ui_welcome_skip">Skip</string>
-    <string name="ui_welcome_page_of">Page %1$d of %2$d</string>
+    <string name="ui_welcome_page_of" tools:ignore="PluralsCandidate">Page %1$d of %2$d</string>
     <string name="ui_welcome_scan_first_page">Scan your first page</string>
-    <string name="ui_welcome_next">Next</string>
     <string name="ui_welcome_look_around">Look around first</string>
 
     <!-- Design system components: thumbnails and shared dialogs -->
     <string name="ui_scanned_page">Scanned page</string>
     <string name="ui_password_label">Password</string>
-    <string name="ui_password_minimum_chars">Minimum %1$d characters</string>
+    <plurals name="ui_password_minimum_chars">
+        <item quantity="one">Minimum %1$d character</item>
+        <item quantity="other">Minimum %1$d characters</item>
+    </plurals>
 
     <!-- core/ui: contact form, share sheets, print, Play Store -->
     <string name="core_no_contacts_app">No contacts app found</string>
@@ -127,14 +129,15 @@
     <string name="scan_guidance_move_closer">Move closer and centre the page</string>
     <string name="scan_guidance_ready">Ready</string>
     <string name="scan_status_front_ready">Front ready · capture the back</string>
-    <string name="scan_status_pages_ready">%1$d page(s) ready</string>
+    <plurals name="scan_status_pages_ready">
+        <item quantity="one">%1$d page ready</item>
+        <item quantity="other">%1$d pages ready</item>
+    </plurals>
     <string name="scan_status_select_document">Select a document to scan</string>
     <string name="scan_status_capturing">Capturing…</string>
     <string name="scan_status_front_saved">Front saved · now capture the back</string>
     <string name="scan_status_id_ready">ID capture ready · tap Done</string>
-    <string name="scan_status_page_captured">Page %1$d captured</string>
-    <string name="scan_error_capture">Could not capture page</string>
-    <string name="scan_guidance_camera_unavailable">Camera unavailable. Use compatibility scanner.</string>
+    <string name="scan_status_page_captured" tools:ignore="PluralsCandidate">Page %1$d captured</string>
     <!-- Side of an ID card, not the navigation "Back" -->
     <string name="scan_id_side_front">Front</string>
     <string name="scan_id_side_back">Back</string>
@@ -152,7 +155,6 @@
     <string name="scan_quit_body">If you quit now, the photos you took will be discarded.</string>
     <string name="scan_quit_discard">Discard</string>
     <string name="scan_detection_mode">Detection mode</string>
-    <string name="scan_flash">Flash</string>
     <string name="scan_more_options">More options</string>
     <string name="scan_hide_zoom_exposure">Hide zoom &amp; exposure</string>
     <string name="scan_zoom_exposure">Zoom &amp; exposure</string>
@@ -196,7 +198,7 @@
     <string name="scan_review_page_n">Page %1$d</string>
     <!-- Added by the compassionate-turing merge -->
     <string name="scan_review_retake_page">Retake page</string>
-    <string name="scan_status_page_retaken">Page %1$d retaken</string>
+    <string name="scan_status_page_retaken" tools:ignore="PluralsCandidate">Page %1$d retaken</string>
     <string name="scan_status_retaking_page">Retaking page %1$d · the next shot replaces it</string>
     <string name="scan_retaking_page">Retaking page %1$d · the shot replaces it</string>
     <string name="scan_error_save_photo">Could not save the photo. Check free space and try again.</string>

@@ -16,6 +16,7 @@ import com.example.scanpro.data.ScanDocument
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 /**
  * Every document's PDF is stored as "document.pdf", and the receiving app names the attachment after the
@@ -380,9 +381,9 @@ fun sharePlayStoreListing(context: Context) {
 
 /** Opens ScanPro's listing in the Play Store app, or on the Play website if the Store isn't installed. */
 fun openPlayStoreListing(context: Context) {
-    val storeApp = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$PLAY_STORE_PACKAGE"))
+    val storeApp = Intent(Intent.ACTION_VIEW, "market://details?id=$PLAY_STORE_PACKAGE".toUri())
         .setPackage("com.android.vending")
-    val website = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$PLAY_STORE_PACKAGE"))
+    val website = Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$PLAY_STORE_PACKAGE".toUri())
     try {
         context.startActivity(storeApp)
     } catch (_: ActivityNotFoundException) {

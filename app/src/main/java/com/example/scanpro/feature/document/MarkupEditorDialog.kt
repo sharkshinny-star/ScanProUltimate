@@ -63,6 +63,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.hypot
+import androidx.compose.runtime.mutableIntStateOf
 
 private val Blue = Color(0xFF2FD6A6)
 private const val MIN_SIZE = 0.03f
@@ -116,7 +117,7 @@ fun MarkupEditorDialog(
                     } else {
                         val latestItems by rememberUpdatedState(items.toList())
                         val latestSelected by rememberUpdatedState(selectedId)
-                        var mode by remember { mutableStateOf(0) } // 0 none, 1 move, 2 resize
+                        var mode by remember { mutableIntStateOf(0) } // 0 none, 1 move, 2 resize
                         Canvas(
                             Modifier
                                 .aspectRatio(image.width.toFloat() / image.height.toFloat())

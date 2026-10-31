@@ -137,13 +137,13 @@ object ImageProcessor {
     ): Map<PageFilter, Bitmap> {
         val scale = min(1f, maxDimension * 2f / max(source.width, source.height))
         var page = if (scale < 1f) {
-            Bitmap.createScaledBitmap(source, (source.width * scale).toInt().coerceAtLeast(1), (source.height * scale).toInt().coerceAtLeast(1), true)
+            source.scale((source.width * scale).toInt().coerceAtLeast(1), (source.height * scale).toInt().coerceAtLeast(1))
         } else {
             source.copy(Bitmap.Config.ARGB_8888, false)
         }
         if (!crop.isIdentity()) page = page.then { cropPage(it, crop) }
         val fit = min(1f, maxDimension.toFloat() / max(page.width, page.height))
-        if (fit < 1f) page = page.then { Bitmap.createScaledBitmap(it, (it.width * fit).toInt().coerceAtLeast(1), (it.height * fit).toInt().coerceAtLeast(1), true) }
+        if (fit < 1f) page = page.then { it.scale((it.width * fit).toInt().coerceAtLeast(1), (it.height * fit).toInt().coerceAtLeast(1)) }
         val turn = ((rotationDegrees % 360) + 360) % 360
         if (turn != 0) page = page.then { rotate(it, turn) }
         var base = page.toRgb()
@@ -611,7 +611,7 @@ object ImageProcessor {
         val sh = max(2, (roiH * scale).toInt())
 
         val region = Bitmap.createBitmap(output, left, top, roiW, roiH)
-        val small = if (scale < 1f) Bitmap.createScaledBitmap(region, sw, sh, true) else region
+        val small = if (scale < 1f) region.scale(sw, sh) else region
         val rgba = Mat()
         val rgb = Mat()
         val mask = Mat.zeros(sh, sw, org.opencv.core.CvType.CV_8UC1)
@@ -627,7 +627,7 @@ object ImageProcessor {
             org.opencv.photo.Photo.inpaint(rgb, mask, filled, radius, org.opencv.photo.Photo.INPAINT_TELEA)
             Imgproc.cvtColor(filled, filledRgba, Imgproc.COLOR_RGB2RGBA)
             patch = createBitmap(sw, sh).also { Utils.matToBitmap(filledRgba, it) }
-            patchFull = if (scale < 1f) Bitmap.createScaledBitmap(patch, roiW, roiH, true) else patch
+            patchFull = if (scale < 1f) patch.scale(roiW, roiH) else patch
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 shader = android.graphics.BitmapShader(patchFull, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP)
                     .apply { setLocalMatrix(Matrix().apply { setTranslate(left.toFloat(), top.toFloat()) }) }

@@ -1042,7 +1042,7 @@ private fun PasswordDialog(
     // Unlocking must accept whatever password the file already has, however short.
     val minimum = if (isProtect) com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH else 1
     // Read here: the confirm button's onClick is not a composable scope.
-    val tooShortError = stringResource(R.string.tools_password_too_short, minimum)
+    val tooShortError = pluralStringResource(R.plurals.tools_password_too_short, minimum, minimum)
     val enterPasswordError = stringResource(R.string.tools_password_enter)
     val mismatchError = stringResource(R.string.tools_password_mismatch)
 
@@ -1052,7 +1052,7 @@ private fun PasswordDialog(
         text = {
             Column {
                 Text(
-                    if (isProtect) stringResource(R.string.tools_password_protect_warning, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH)
+                    if (isProtect) pluralStringResource(R.plurals.tools_password_protect_warning, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH, com.example.scanpro.imaging.PdfSecurity.MIN_PASSWORD_LENGTH)
                     else stringResource(R.string.tools_password_unlock_prompt),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -1204,7 +1204,7 @@ private fun SplitDialog(
                             .onFailure { error = it.message }
                         SplitMode.EVERY_N_PAGES -> when {
                             n == null || n < 1 -> error = context.getString(R.string.tools_split_enter_count)
-                            pageCount != null && n >= pageCount!! -> error = context.getString(R.string.tools_split_whole_document, pageCount!!)
+                            pageCount != null && n >= pageCount!! -> error = context.resources.getQuantityString(R.plurals.tools_split_whole_document, pageCount!!, pageCount!!)
                             else -> onConfirm(mode, rangesText, n)
                         }
                         SplitMode.SINGLE_PAGES -> onConfirm(mode, rangesText, 1)

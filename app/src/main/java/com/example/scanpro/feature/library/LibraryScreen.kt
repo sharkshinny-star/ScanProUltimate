@@ -228,12 +228,12 @@ internal fun LibraryScreen(
     onSortChange: (LibrarySort) -> Unit = {},
     onGridChange: (Boolean) -> Unit = {},
     onStop: () -> Unit = {},
-    onMoveToFolder: (Set<String>, String) -> Boolean = { _, _ -> true },
-    onSetFavorite: (Set<String>, Boolean) -> Boolean = { _, _ -> true },
-    onDeleteFolder: (String) -> Boolean = { true },
+    onMoveToFolder: (Set<String>, String) -> Unit = { _, _ -> },
+    onSetFavorite: (Set<String>, Boolean) -> Unit = { _, _ -> },
+    onDeleteFolder: (String) -> Unit = {},
     folderExists: suspend (String) -> Boolean = { false },
     onShareSelected: (Set<String>) -> Unit,
-    onRenameFolder: (String, String) -> Boolean,
+    onRenameFolder: (String, String) -> Unit,
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {}
@@ -315,7 +315,7 @@ internal fun LibraryScreen(
                     scrollBehavior = scrollBehavior,
                     title = {
                         when {
-                            selecting -> TitleWithStatus(stringResource(R.string.lib_title_selected_count, selected.size), if (busy) busyLabel else null)
+                            selecting -> TitleWithStatus(pluralStringResource(R.plurals.lib_title_selected_count, selected.size, selected.size), if (busy) busyLabel else null)
                             isHome -> BrandLockup()
                             isSearch -> Text(stringResource(R.string.common_search))
                             else -> TitleWithStatus(
@@ -380,7 +380,7 @@ internal fun LibraryScreen(
                                         enabled = !busy,
                                         onClick = {
                                             selectionMenuOpen = false
-                                            if (onSetFavorite(selected.toSet(), anyUnstarred)) selected.clear()
+                                            onSetFavorite(selected.toSet(), anyUnstarred); selected.clear()
                                         }
                                     )
                                 }
@@ -584,7 +584,7 @@ internal fun LibraryScreen(
                 if (merges) {
                     renameMergeTarget = clean
                 } else {
-                    if (onRenameFolder(source, clean)) onFolderChange(clean)
+                    onRenameFolder(source, clean); onFolderChange(clean)
                     renameFolderSource = null
                 }
             }
@@ -599,7 +599,7 @@ internal fun LibraryScreen(
             onDismiss = { renameMergeTarget = null },
             onConfirm = {
                 renameMergeTarget = null
-                if (onRenameFolder(source, target)) onFolderChange(target)
+                onRenameFolder(source, target); onFolderChange(target)
                 renameFolderSource = null
             }
         )
@@ -613,7 +613,7 @@ internal fun LibraryScreen(
             onConfirm = {
                 deleteFolderOpen = false
                 val name = folder
-                if (onDeleteFolder(name)) onFolderChange("")
+                onDeleteFolder(name); onFolderChange("")
             }
         )
     }
@@ -624,7 +624,7 @@ internal fun LibraryScreen(
             onDismiss = { moveToFolderOpen = false },
             onConfirm = { target ->
                 moveToFolderOpen = false
-                if (onMoveToFolder(selected.toSet(), target)) selected.clear()
+                onMoveToFolder(selected.toSet(), target); selected.clear()
             }
         )
     }
@@ -803,7 +803,7 @@ private fun HomeDashboard(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         StatPill(Icons.Rounded.Description, pluralStringResource(R.plurals.lib_document_count, documentCount, documentCount))
                         if (favorites > 0) StatPill(Icons.Rounded.Star, pluralStringResource(R.plurals.lib_favorite_count, favorites, favorites))
-                        if (trashCount > 0) StatPill(Icons.Rounded.DeleteOutline, stringResource(R.string.lib_in_bin_count, trashCount))
+                        if (trashCount > 0) StatPill(Icons.Rounded.DeleteOutline, pluralStringResource(R.plurals.lib_in_bin_count, trashCount, trashCount))
                     }
                 }
             }

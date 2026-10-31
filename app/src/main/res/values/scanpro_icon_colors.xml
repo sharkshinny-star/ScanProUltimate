@@ -3,9 +3,6 @@
     <!-- Brand colours shared by the launcher icon, the launch screen and the window background.
          They mirror the palette in core/designsystem/Theme.kt. -->
     <color name="scanpro_brand">#3346D3</color>
-    <color name="scanpro_brand_end">#6E5BE6</color>
-    <color name="scanpro_scan_line">#2FD6A6</color>
     <color name="scanpro_window_light">#F7F8FC</color>
     <color name="scanpro_window_dark">#0F1118</color>
-    <color name="scanpro_icon_background">#3346D3</color>
 </resources>

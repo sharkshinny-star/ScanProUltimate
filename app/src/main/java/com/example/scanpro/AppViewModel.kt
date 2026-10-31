@@ -147,7 +147,7 @@ class AppViewModel @Inject constructor(
     fun importImages(imageUris: List<Uri>) {
         if (imageUris.isEmpty()) return
         if (imageUris.size > MAX_IMPORT_IMAGES) {
-            operations.showMessage(context.getString(R.string.msg_import_images_limit, MAX_IMPORT_IMAGES))
+            operations.showMessage(context.resources.getQuantityString(R.plurals.msg_import_images_limit, MAX_IMPORT_IMAGES, MAX_IMPORT_IMAGES))
             return
         }
         operations.enqueue(context.getString(R.string.msg_import_images_progress), context.getString(R.string.msg_document_saved)) {

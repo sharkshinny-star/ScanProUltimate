@@ -49,7 +49,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -58,12 +57,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.ScanProTheme
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalDensity
 
 /** Windows at least this wide (tablets, unfolded foldables, split-screen on a large display) get a side rail. */
 const val WIDE_WINDOW_DP = 600
 
 @Composable
-fun isWideWindow(): Boolean = LocalConfiguration.current.screenWidthDp >= WIDE_WINDOW_DP
+fun isWideWindow(): Boolean {
+    // The app's own window, not the whole screen: split-screen and freeform windows count by their real width.
+    val widthPx = LocalWindowInfo.current.containerSize.width
+    return with(LocalDensity.current) { widthPx.toDp() } >= WIDE_WINDOW_DP.dp
+}
 
 private class Tab(val route: String, @androidx.annotation.StringRes val label: Int, val icon: ImageVector, val selectedIcon: ImageVector)
 

@@ -61,7 +61,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.annotation.StringRes
 import com.example.scanpro.R
 import com.example.scanpro.data.DocumentSummary
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.scanpro.core.designsystem.ConfirmDialog
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.TileTone

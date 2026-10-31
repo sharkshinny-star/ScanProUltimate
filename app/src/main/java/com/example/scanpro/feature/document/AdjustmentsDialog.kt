@@ -44,6 +44,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.pluralStringResource
 
 /** Low-resolution live preview; full-resolution processing is committed only on Apply. */
 @Composable
@@ -117,7 +118,7 @@ fun AdjustmentsDialog(
                 CleanupSwitch(stringResource(R.string.doc_remove_shadows), stringResource(R.string.doc_remove_shadows_hint), removeShadows) { removeShadows = it }
                 CleanupSwitch(stringResource(R.string.doc_remove_fingers), stringResource(R.string.doc_remove_fingers_hint), removeFingers) { removeFingers = it }
                 if (pageCount > 1) {
-                    CleanupSwitch(stringResource(R.string.doc_clean_up_all_pages, pageCount), stringResource(R.string.doc_clean_up_all_pages_hint), allPages) { allPages = it }
+                    CleanupSwitch(pluralStringResource(R.plurals.doc_clean_up_all_pages, pageCount, pageCount), stringResource(R.string.doc_clean_up_all_pages_hint), allPages) { allPages = it }
                 }
                 AdjustmentSlider(stringResource(R.string.doc_brightness), false, brightness, -1f..1f) { brightness = it }
                 AdjustmentSlider(stringResource(R.string.doc_contrast), true, contrast, 0.6f..1.6f) { contrast = it }

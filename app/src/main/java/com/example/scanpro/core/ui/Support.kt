@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import com.example.scanpro.BuildConfig
+import androidx.core.net.toUri
 
 /**
  * Where feedback goes. Fill these in before release: the address receives "Give feedback", "Report an
@@ -42,7 +43,7 @@ enum class SupportDelivery(val confirmation: String) {
 
 fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
     val body = "${topic.prompt}\n\n\n—\n${supportDetails()}"
-    val email = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
+    val email = Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
         putExtra(Intent.EXTRA_EMAIL, arrayOf(SupportLinks.EMAIL))
         putExtra(Intent.EXTRA_SUBJECT, topic.subject)
         putExtra(Intent.EXTRA_TEXT, body)
@@ -69,7 +70,7 @@ fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
 /** Opens a web link in the browser, or says so when none can. */
 fun openLink(context: Context, url: String) {
     try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
     } catch (_: ActivityNotFoundException) {
         Toast.makeText(context, "No browser found to open this link", Toast.LENGTH_SHORT).show()
     }

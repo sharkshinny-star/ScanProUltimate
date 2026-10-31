@@ -49,6 +49,7 @@ import com.example.scanpro.imaging.ThumbnailStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import androidx.compose.ui.res.pluralStringResource
 
 // Decoded thumbnails keyed by path, file version and decode size, so scrolling back
 // through the library reuses bitmaps instead of hitting the disk again.
@@ -230,7 +231,7 @@ fun PasswordInputDialog(
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    supportingText = { Text(stringResource(R.string.ui_password_minimum_chars, minimumLength)) }
+                    supportingText = { Text(pluralStringResource(R.plurals.ui_password_minimum_chars, minimumLength, minimumLength)) }
                 )
             }
         },

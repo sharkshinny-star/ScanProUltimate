@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.core.net.toUri
 
 /** A PDF from the device or a cloud app that the user opened in ScanPro. */
 data class RecentPdf(val uri: Uri, val name: String, val openedAt: Long)
@@ -83,7 +84,7 @@ class RecentPdfStore @Inject constructor(@ApplicationContext private val context
         return (0 until array.length()).mapNotNull { index ->
             runCatching {
                 val item = array.getJSONObject(index)
-                RecentPdf(Uri.parse(item.getString("uri")), item.optString("name", "PDF document"), item.optLong("at"))
+                RecentPdf(item.getString("uri").toUri(), item.optString("name", "PDF document"), item.optLong("at"))
             }.getOrNull()
         }
     }

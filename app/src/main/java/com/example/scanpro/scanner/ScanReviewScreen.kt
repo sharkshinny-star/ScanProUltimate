@@ -101,6 +101,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import kotlin.math.hypot
+import androidx.compose.runtime.mutableFloatStateOf
 
 private val Blue = Color(0xFF2FD6A6)
 private val Amber = Color(0xFFFFB95C)
@@ -239,7 +240,7 @@ fun ScanReviewScreen(
             ) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page), tint = Color.White) }
         }
 
-        var swipe by remember { mutableStateOf(0f) }
+        var swipe by remember { mutableFloatStateOf(0f) }
         // Pages follow the reading direction: swiping towards the end of the row (left in LTR, right in RTL) goes forward.
         val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
         Box(
@@ -418,7 +419,7 @@ private fun ReviewAction(icon: ImageVector, label: String, enabled: Boolean, hig
  */
 @Composable
 private fun CropCanvas(image: Bitmap, crop: CropQuad, curveMode: Boolean, enabled: Boolean, onCropChange: (CropQuad) -> Unit) {
-    var active by remember { mutableStateOf(0) }
+    var active by remember { mutableIntStateOf(0) }
     var dragging by remember { mutableStateOf(false) }
     val latest by androidx.compose.runtime.rememberUpdatedState(crop)
     val latestEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
@@ -554,7 +555,7 @@ private fun ThumbnailStrip(
     val latestOnMoved by androidx.compose.runtime.rememberUpdatedState(onMoved)
     val latestOnSelect by androidx.compose.runtime.rememberUpdatedState(onSelect)
     var draggingKey by remember { mutableStateOf<String?>(null) }
-    var dragOffset by remember { mutableStateOf(0f) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
     // The strip runs right to left in a right-to-left layout, so a drag to the right then moves a page earlier.
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     LazyRow(

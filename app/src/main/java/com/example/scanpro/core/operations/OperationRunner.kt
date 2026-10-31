@@ -95,10 +95,8 @@ class OperationRunner @Inject constructor(
      * another operation is running are queued, never dropped: each action reads the document afresh
      * when its turn comes, so running after the earlier edit is the same as the user tapping later.
      */
-    fun run(label: String?, successMessage: String?, action: suspend () -> Unit): Boolean {
+    fun run(label: String?, successMessage: String?, action: suspend () -> Unit) {
         start(label, successMessage, action)
-        // Always accepted, since requests are queued; callers that clear a selection on success can rely on it.
-        return true
     }
 
     /**

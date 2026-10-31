@@ -99,6 +99,7 @@ import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.core.ui.sharePlayStoreListing
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ThemeMode
+import androidx.core.net.toUri
 
 @Composable
 fun SettingsRoute(
@@ -210,7 +211,7 @@ fun SettingsScreen(
     val linkUnavailable = stringResource(R.string.settings_link_unavailable)
     val openLink: (String) -> Unit = { url ->
         try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
         } catch (_: ActivityNotFoundException) {
             Toast.makeText(context, linkUnavailable, Toast.LENGTH_SHORT).show()
         }

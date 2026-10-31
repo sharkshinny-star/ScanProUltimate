@@ -9,6 +9,7 @@ import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.content.edit
 
 /**
  * Keeps the last few crash reports in the app's private files, so the next launch can offer to share
@@ -35,7 +36,7 @@ object CrashReporter {
 
     /** Marks [report] as offered, so the prompt is shown once per crash whether or not it was shared. */
     fun markOffered(context: Context, report: File) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_OFFERED, report.name).apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY_OFFERED, report.name) }
     }
 
     private fun files(context: Context) = CrashReportFiles(File(context.filesDir, DIR))

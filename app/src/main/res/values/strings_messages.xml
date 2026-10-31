@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Snackbar, progress and export messages produced by the ViewModels -->
 
     <!-- Shared -->
@@ -10,9 +10,18 @@
     <string name="msg_encrypting_pdf">Encrypting PDF…</string>
 
     <!-- LibraryViewModel -->
-    <string name="msg_documents_moved_to_recycle_bin">%1$d documents moved to recycle bin</string>
-    <string name="msg_moving_documents_to_recycle_bin">Moving %1$d documents to recycle bin…</string>
-    <string name="msg_documents_restored">%1$d documents restored</string>
+    <plurals name="msg_documents_moved_to_recycle_bin">
+        <item quantity="one">%1$d document moved to recycle bin</item>
+        <item quantity="other">%1$d documents moved to recycle bin</item>
+    </plurals>
+    <plurals name="msg_moving_documents_to_recycle_bin">
+        <item quantity="one">Moving %1$d document to recycle bin…</item>
+        <item quantity="other">Moving %1$d documents to recycle bin…</item>
+    </plurals>
+    <plurals name="msg_documents_restored">
+        <item quantity="one">%1$d document restored</item>
+        <item quantity="other">%1$d documents restored</item>
+    </plurals>
     <string name="msg_renaming_folder">Renaming folder…</string>
     <string name="msg_folder_renamed">Folder renamed</string>
 
@@ -24,7 +33,10 @@
 
     <!-- AppViewModel -->
     <string name="msg_import_scan_progress">Enhancing pages, generating OCR, and building searchable PDF…</string>
-    <string name="msg_import_images_limit">Import up to %1$d images at a time</string>
+    <plurals name="msg_import_images_limit">
+        <item quantity="one">Import up to %1$d image at a time</item>
+        <item quantity="other">Import up to %1$d images at a time</item>
+    </plurals>
     <string name="msg_import_images_progress">Importing pages, enhancing them, and running OCR…</string>
     <string name="msg_document_saved">Document saved</string>
     <string name="msg_import_pdf_progress">Importing PDF pages and building OCR index…</string>
@@ -95,7 +107,10 @@
     <string name="msg_running_script_ocr">Running %1$s OCR on every page…</string>
     <string name="msg_script_ocr_applied">%1$s OCR applied</string>
     <string name="msg_splitting_document">Splitting document into individual page documents…</string>
-    <string name="msg_page_documents_created">%1$d page documents created</string>
+    <plurals name="msg_page_documents_created">
+        <item quantity="one">%1$d page document created</item>
+        <item quantity="other">%1$d page documents created</item>
+    </plurals>
     <string name="msg_creating_id_copy">Creating printable ID copy…</string>
     <string name="msg_share_id_copy">Share ID copy</string>
     <string name="msg_creating_long_image">Creating long image…</string>
@@ -124,10 +139,16 @@
     <string name="msg_tools_compressed_not_searchable">. Pages were converted to images, so the text is no longer selectable or searchable.</string>
     <string name="msg_tools_exporting_pages">Exporting pages…</string>
     <string name="msg_tools_export_failed">Export failed</string>
-    <string name="msg_tools_exported_page_images">Exported %1$d page images</string>
+    <plurals name="msg_tools_exported_page_images">
+        <item quantity="one">Exported %1$d page image</item>
+        <item quantity="other">Exported %1$d page images</item>
+    </plurals>
     <string name="msg_tools_splitting">Splitting PDF…</string>
     <string name="msg_tools_split_failed">Split failed</string>
-    <string name="msg_tools_split_into_files">Split PDF into %1$d files</string>
+    <plurals name="msg_tools_split_into_files">
+        <item quantity="one">Split PDF into %1$d file</item>
+        <item quantity="other">Split PDF into %1$d files</item>
+    </plurals>
     <string name="msg_tools_protect_failed">Could not protect the PDF</string>
     <string name="msg_tools_unlocking">Unlocking PDF…</string>
     <string name="msg_tools_unlock_failed">Could not unlock the PDF</string>
@@ -135,7 +156,10 @@
     <string name="msg_tools_read_failed">Could not read this PDF</string>
     <string name="msg_tools_saving_pages">Saving PDF pages…</string>
     <string name="msg_tools_page_operation_failed">Page operation failed</string>
-    <string name="msg_tools_merging">Merging %1$d PDFs…</string>
+    <plurals name="msg_tools_merging">
+        <item quantity="one">Merging %1$d PDF…</item>
+        <item quantity="other">Merging %1$d PDFs…</item>
+    </plurals>
     <string name="msg_tools_merge_failed">Failed to merge PDFs</string>
     <string name="msg_tools_reading_form_fields">Reading form fields…</string>
     <string name="msg_tools_read_form_failed">Could not read this PDF\'s form</string>
@@ -150,17 +174,29 @@
         <item quantity="one">Made %1$d page searchable</item>
         <item quantity="other">Made %1$d pages searchable</item>
     </plurals>
-    <string name="msg_tools_already_had_text">%1$d already had text</string>
-    <string name="msg_tools_had_no_readable_text">%1$d had no readable text</string>
+    <plurals name="msg_tools_already_had_text">
+        <item quantity="one">%1$d already had text</item>
+        <item quantity="other">%1$d already had text</item>
+    </plurals>
+    <plurals name="msg_tools_had_no_readable_text">
+        <item quantity="one">%1$d had no readable text</item>
+        <item quantity="other">%1$d had no readable text</item>
+    </plurals>
     <string name="msg_tools_with_extras">%1$s (%2$s)</string>
-    <string name="msg_tools_converting_images">Converting %1$d images…</string>
+    <plurals name="msg_tools_converting_images">
+        <item quantity="one">Converting %1$d image…</item>
+        <item quantity="other">Converting %1$d images…</item>
+    </plurals>
     <string name="msg_tools_convert_images_failed">Failed to convert images</string>
 
     <!-- OcrEngine: failure shown when a text model is not on the device yet -->
     <string name="msg_ocr_model_downloading">The %1$s text model is still downloading.</string>
     <string name="msg_ocr_model_downloading_retry">The %1$s text model is still downloading. Connect to the internet, then run OCR again.</string>
     <!-- Added by the compassionate-turing merge -->
-    <string name="msg_ocr_partial">Text read on %1$d of %2$d pages; the rest kept their old text</string>
+    <plurals name="msg_ocr_partial">
+        <item quantity="one">Text read on %1$d of %2$d page; the rest kept their old text</item>
+        <item quantity="other">Text read on %1$d of %2$d pages; the rest kept their old text</item>
+    </plurals>
     <string name="msg_restoring_page">Restoring page…</string>
     <string name="msg_page_restore_failed">The page could not be restored</string>
     <string name="msg_duplicating_document">Duplicating document…</string>
@@ -170,7 +206,7 @@
     <string name="msg_share_png">Share PNG</string>
     <string name="msg_renamed_duplicate_name">Renamed. Another document has the same name.</string>
     <string name="msg_replacing_page">Replacing page %1$d…</string>
-    <string name="msg_page_retaken">Page %1$d retaken</string>
+    <string name="msg_page_retaken" tools:ignore="PluralsCandidate">Page %1$d retaken</string>
     <string name="msg_scan_photos_unavailable">The photos from an unfinished scan are no longer available</string>
     <string name="msg_tools_out_of_memory">Not enough memory for this PDF. Try a smaller file or fewer pages.</string>
     <string name="msg_tools_form_nothing_changed">Nothing has been changed yet</string>

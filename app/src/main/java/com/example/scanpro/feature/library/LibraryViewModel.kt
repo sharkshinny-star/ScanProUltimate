@@ -109,15 +109,15 @@ class LibraryViewModel @Inject constructor(
 
     fun stopCurrent() = operations.cancelCurrent()
 
-    /** Moves the selected documents into [folder] (blank for the top level). False when the app was busy. */
-    fun moveToFolder(ids: Set<String>, folder: String): Boolean = operations.run(
+    /** Moves the selected documents into [folder] (blank for the top level). Queued if another job is running. */
+    fun moveToFolder(ids: Set<String>, folder: String) = operations.run(
         context.resources.getQuantityString(R.plurals.lib_msg_moving_documents, ids.size, ids.size),
         if (folder.isBlank()) context.getString(R.string.lib_msg_moved_out_of_folder)
         else context.getString(R.string.lib_msg_moved_to_folder, folder.trim())
     ) { ids.forEach { repository.setFolder(it, folder) } }
 
-    /** Stars or unstars the selected documents. False when the app was busy. */
-    fun setFavorite(ids: Set<String>, favorite: Boolean): Boolean = operations.run(
+    /** Stars or unstars the selected documents. Queued if another job is running. */
+    fun setFavorite(ids: Set<String>, favorite: Boolean) = operations.run(
         null,
         context.getString(if (favorite) R.string.lib_msg_added_to_favorites else R.string.lib_msg_removed_from_favorites)
     ) {
@@ -125,25 +125,26 @@ class LibraryViewModel @Inject constructor(
     }
 
     /** Takes every document out of the folder; the folder is gone once it holds nothing. */
-    fun deleteFolder(name: String): Boolean = operations.run(
+    fun deleteFolder(name: String) = operations.run(
         context.getString(R.string.lib_msg_removing_folder),
         context.getString(R.string.lib_msg_folder_removed)
     ) { repository.deleteFolder(name) }
 
     suspend fun folderExists(name: String): Boolean = repository.folderExists(name)
 
-    /** False when the app was busy and nothing was done, so the caller keeps its selection. */
+    /** False when nothing was selected, so the caller keeps its selection. */
     fun moveManyToTrash(ids: Set<String>): Boolean {
         if (ids.isEmpty()) return false
-        val label = if (ids.size == 1) context.getString(R.string.msg_moved_to_recycle_bin) else context.getString(R.string.msg_documents_moved_to_recycle_bin, ids.size)
-        return operations.run(context.getString(R.string.msg_moving_documents_to_recycle_bin, ids.size), null) {
+        val label = if (ids.size == 1) context.getString(R.string.msg_moved_to_recycle_bin) else context.resources.getQuantityString(R.plurals.msg_documents_moved_to_recycle_bin, ids.size, ids.size)
+        operations.run(context.resources.getQuantityString(R.plurals.msg_moving_documents_to_recycle_bin, ids.size, ids.size), null) {
             ids.forEach { repository.moveToTrash(it) }
             operations.showMessage(UiMessage(label, actionLabel = context.getString(R.string.common_undo), onAction = { restore(ids) }))
         }
+        return true
     }
 
     private fun restore(ids: Set<String>) =
-        operations.enqueue(null, if (ids.size == 1) context.getString(R.string.msg_document_restored) else context.getString(R.string.msg_documents_restored, ids.size)) {
+        operations.enqueue(null, if (ids.size == 1) context.getString(R.string.msg_document_restored) else context.resources.getQuantityString(R.plurals.msg_documents_restored, ids.size, ids.size)) {
             ids.forEach { repository.restore(it) }
         }
 
@@ -154,15 +155,15 @@ class LibraryViewModel @Inject constructor(
             if (fresh.failed > 0) {
                 operations.showMessage(
                     if (fresh.documents.isEmpty()) context.getString(R.string.lib_msg_pdf_not_prepared)
-                    else context.getString(R.string.lib_msg_pdfs_left_out, fresh.failed, ids.size)
+                    else context.resources.getQuantityString(R.plurals.lib_msg_pdfs_left_out, ids.size, fresh.failed, ids.size)
                 )
             }
             if (fresh.documents.isNotEmpty()) withContext(Dispatchers.Main) { onReady(fresh.documents) }
         }
     }
 
-    /** False when the app was busy and the folder was not renamed. */
-    fun renameFolder(oldName: String, newName: String): Boolean =
+    /** Renames the folder; queued if another job is running. */
+    fun renameFolder(oldName: String, newName: String) =
         operations.run(context.getString(R.string.msg_renaming_folder), context.getString(R.string.msg_folder_renamed)) { repository.renameFolder(oldName, newName) }
 
     private companion object {

@@ -242,12 +242,12 @@ class DocumentViewModel @Inject constructor(
 
     private fun reportOcr(failed: Int, success: String) {
         val total = document.value?.pages?.size ?: 0
-        operations.showMessage(if (failed == 0) success else context.getString(R.string.msg_ocr_partial, total - failed, total))
+        operations.showMessage(if (failed == 0) success else context.resources.getQuantityString(R.plurals.msg_ocr_partial, total, total - failed, total))
     }
 
     fun splitDocument() = run(R.string.msg_splitting_document, null) {
         val count = repository.splitIntoPageDocuments(id)
-        operations.showMessage(context.getString(R.string.msg_page_documents_created, count))
+        operations.showMessage(context.resources.getQuantityString(R.plurals.msg_page_documents_created, count, count))
     }
 
     fun exportIdCopy() = run(R.string.msg_creating_id_copy, null) {
@@ -294,12 +294,9 @@ class DocumentViewModel @Inject constructor(
     }
 
     // Queued, not rejected while busy: the screen closes as soon as this is tapped, so a dropped request would
-    // leave the document in the library with nothing but a "still working" message to show for it. Always true,
-    // so the screen can close straight away.
-    fun moveToTrash(): Boolean {
-        moveToTrashQueued()
-        return true
-    }
+    // leave the document in the library with nothing but a "still working" message to show for it, so the screen
+    // can close straight away.
+    fun moveToTrash() = moveToTrashQueued()
 
     private fun moveToTrashQueued() = operations.enqueue(null, null) {
         repository.moveToTrash(id)

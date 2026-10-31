@@ -33,6 +33,7 @@ import com.example.scanpro.feature.tools.PdfToolsScreen
 import com.example.scanpro.feature.viewer.PdfViewerScreen
 import com.example.scanpro.feature.trash.TrashRoute
 import com.example.scanpro.scanner.CameraScannerScreen
+import androidx.core.net.toUri
 
 /** Back handlers use dropUnlessResumed so a double tap during the exit animation can't pop two screens. */
 @Composable
@@ -104,7 +105,7 @@ fun ScanProNavHost(
                 navArgument(ScanProDestinations.PDF_TITLE_ARG) { type = NavType.StringType; defaultValue = pdfDocumentTitle }
             )
         ) { entry ->
-            val pdfUri = android.net.Uri.parse(entry.arguments?.getString(ScanProDestinations.PDF_URI_ARG).orEmpty())
+            val pdfUri = entry.arguments?.getString(ScanProDestinations.PDF_URI_ARG).orEmpty().toUri()
             val title = entry.arguments?.getString(ScanProDestinations.PDF_TITLE_ARG) ?: pdfDocumentTitle
             PdfViewerScreen(
                 title = title,

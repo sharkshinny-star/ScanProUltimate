@@ -36,7 +36,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.BrandingWatermark
+import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.FileCopy
@@ -176,7 +176,7 @@ import com.example.scanpro.intelligence.TranslationEngine
 import com.example.scanpro.intelligence.TranslationFeature
 import java.text.DateFormat
 import java.util.Date
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.core.designsystem.ConfirmDialog
 import com.example.scanpro.core.designsystem.PageThumbnail
@@ -303,7 +303,7 @@ fun DocumentRoute(
         onDismissScanSaved = viewModel::dismissScanSaved,
         onDeleteDocument = {
             // The move is queued, never dropped, so the screen can close straight away.
-            if (viewModel.moveToTrash()) onBack()
+            viewModel.moveToTrash(); onBack()
         }
     )
 }
@@ -928,7 +928,7 @@ internal fun DocumentDetailScreen(
     }
     if (splitAllOpen) {
         ConfirmDialog(
-            title = stringResource(R.string.doc_split_into_title, document.pageCount),
+            title = pluralStringResource(R.plurals.doc_split_into_title, document.pageCount, document.pageCount),
             message = stringResource(R.string.doc_split_into_message, document.title),
             confirmLabel = stringResource(R.string.doc_split),
             onDismiss = { splitAllOpen = false },
@@ -969,7 +969,7 @@ internal fun DocumentDetailScreen(
                         ToolTile(Icons.Default.TextFields, stringResource(R.string.doc_add_text), !busy, run { annotationTextOpen = true })
                         ToolTile(Icons.Default.Highlight, stringResource(R.string.doc_highlight), !busy, run { onHighlight(page.id) })
                         ToolTile(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), !busy, run { onRedact(page.id) })
-                        ToolTile(Icons.Default.BrandingWatermark, stringResource(R.string.doc_watermark), !busy, run { watermarkOpen = true })
+                        ToolTile(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), !busy, run { watermarkOpen = true })
                         ToolTile(Icons.Default.Edit, stringResource(R.string.doc_edit_markup), !busy && page.annotations.isNotEmpty(), run { markupOpen = true })
                         ToolTile(Icons.Default.RemoveCircleOutline, stringResource(R.string.doc_remove_last), !busy && page.annotations.isNotEmpty(), run { onUndoAnnotation(page.id) })
                     }

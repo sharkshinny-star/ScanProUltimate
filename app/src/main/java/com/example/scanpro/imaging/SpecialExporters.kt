@@ -12,6 +12,7 @@ import com.example.scanpro.data.ScanPage
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.min
+import androidx.core.graphics.createBitmap
 
 object SpecialExporters {
     /** Creates a printable one-page ID copy using the first two pages as front/back. */
@@ -76,7 +77,7 @@ object SpecialExporters {
             "Document is too long for a single image. Export fewer pages."
         }
 
-        val output = Bitmap.createBitmap(targetWidth, totalHeight, Bitmap.Config.RGB_565)
+        val output = createBitmap(targetWidth, totalHeight, Bitmap.Config.RGB_565)
         try {
             val canvas = Canvas(output)
             canvas.drawColor(Color.WHITE)

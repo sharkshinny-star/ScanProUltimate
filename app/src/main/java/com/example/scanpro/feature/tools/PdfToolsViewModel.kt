@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import androidx.annotation.PluralsRes
 
 /** A form being filled in: its fields as read from the file, and what the user has typed or picked so far. */
 data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Map<String, String>) {
@@ -157,14 +158,14 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    private fun bundled(files: List<java.io.File>, prefix: String, @StringRes message: Int): suspend () -> PdfToolResult? = {
+    private fun bundled(files: List<java.io.File>, prefix: String, @PluralsRes message: Int): suspend () -> PdfToolResult? = {
         if (files.isEmpty()) null
         else PdfToolResult(
             outputFile = PdfToolsEngine.bundleOutputs(context, files, "${prefix}_${System.currentTimeMillis()}"),
             pageCount = files.size,
             originalSizeBytes = 0,
             outputSizeBytes = files.sumOf { it.length() },
-            message = context.getString(message, files.size)
+            message = context.resources.getQuantityString(message, files.size, files.size)
         )
     }
 
@@ -199,7 +200,7 @@ class PdfToolsViewModel @Inject constructor(
             val base = PdfToolsEngine.sourceBaseName(context, uri)
             inScratchDir("$base pages") { dir ->
                 val files = PdfToolsEngine.pdfToImages(context, uri, format, dir, ::report, pages, scale)
-                bundled(files, "$base pages", R.string.msg_tools_exported_page_images)()
+                bundled(files, "$base pages", R.plurals.msg_tools_exported_page_images)()
             }
     }
 
@@ -207,7 +208,7 @@ class PdfToolsViewModel @Inject constructor(
         val base = PdfToolsEngine.sourceBaseName(context, uri)
         inScratchDir("$base split") { dir ->
             val files = PdfToolsEngine.splitPdf(context, uri, mode, ranges, everyN, dir, ::report)
-            bundled(files, "$base split", R.string.msg_tools_split_into_files)()
+            bundled(files, "$base split", R.plurals.msg_tools_split_into_files)()
         }
     }
 
@@ -245,7 +246,7 @@ class PdfToolsViewModel @Inject constructor(
             }
         }
 
-    fun merge(uris: List<Uri>) = launchTool(context.getString(R.string.msg_tools_merging, uris.size), context.getString(R.string.msg_tools_merge_failed)) {
+    fun merge(uris: List<Uri>) = launchTool(context.resources.getQuantityString(R.plurals.msg_tools_merging, uris.size, uris.size), context.getString(R.string.msg_tools_merge_failed)) {
         PdfToolsEngine.mergePdfs(context, uris, named(uris.first(), "merged"), ::report)
     }
 
@@ -310,8 +311,8 @@ class PdfToolsViewModel @Inject constructor(
         } else {
             val made = context.resources.getQuantityString(R.plurals.msg_tools_made_pages_searchable, outcome.madeSearchable, outcome.madeSearchable)
             val extras = listOfNotNull(
-                outcome.alreadyHadText.takeIf { it > 0 }?.let { context.getString(R.string.msg_tools_already_had_text, it) },
-                outcome.noTextFound.takeIf { it > 0 }?.let { context.getString(R.string.msg_tools_had_no_readable_text, it) }
+                outcome.alreadyHadText.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.msg_tools_already_had_text, it, it) },
+                outcome.noTextFound.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.msg_tools_had_no_readable_text, it, it) }
             )
             PdfToolResult(
                 outputFile = output,
@@ -324,7 +325,7 @@ class PdfToolsViewModel @Inject constructor(
     }
 
     fun imagesToPdf(uris: List<Uri>, pageSize: PdfPageSize = PdfPageSize.AUTO, quality: PdfQuality = PdfQuality.BALANCED) =
-        launchTool(context.getString(R.string.msg_tools_converting_images, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
+        launchTool(context.resources.getQuantityString(R.plurals.msg_tools_converting_images, uris.size, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
             val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm", java.util.Locale.getDefault()).format(java.util.Date())
             PdfToolsEngine.imagesToPdf(
                 context, uris, pageSize, quality,

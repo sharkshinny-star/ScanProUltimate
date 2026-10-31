@@ -16,11 +16,4 @@
         <item name="android:windowActionModeOverlay">true</item>
     </style>
 
-    <!-- Shown by the system while the app starts, then swapped for Theme.ScanPro (see installSplashScreen). -->
-    <style name="Theme.ScanPro.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/scanpro_window_light</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_splash</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/scanpro_brand</item>
-        <item name="postSplashScreenTheme">@style/Theme.ScanPro</item>
-    </style>
 </resources>

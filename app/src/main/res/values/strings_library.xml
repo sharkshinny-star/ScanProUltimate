@@ -1,14 +1,15 @@
 <resources>
     <!-- Library (Home / Files / Search tabs): top bar, menus and selection mode -->
-    <string name="lib_title_selected_count">%1$d selected</string>
+    <plurals name="lib_title_selected_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
     <string name="lib_title_files">My files</string>
-    <string name="lib_title_home">ScanPro</string>
     <string name="lib_cd_clear_selection">Clear selection</string>
     <string name="lib_cd_share_selected">Share selected</string>
     <string name="lib_cd_move_selected_to_trash">Move selected to trash</string>
     <string name="lib_cd_sort">Sort</string>
     <string name="lib_cd_selected">Selected</string>
-    <string name="lib_cd_toggle_layout">Toggle layout</string>
     <string name="lib_cd_more_options">More options</string>
     <string name="lib_cd_clear_search">Clear search</string>
     <string name="lib_sort_recent">Recent</string>
@@ -21,26 +22,16 @@
     <string name="lib_menu_recycle_bin_count">Recycle bin (%1$d)</string>
     <string name="lib_scan">Scan</string>
 
-    <!-- Library: search field, filter chips and empty states -->
-    <string name="lib_search_placeholder">Search titles, tags, folders and text</string>
     <string name="lib_filter_all">All</string>
     <string name="lib_filter_favorites">Favorites</string>
     <string name="lib_empty_no_matching">No matching documents</string>
-    <string name="lib_empty_no_favorites">No favorite documents yet</string>
-    <string name="lib_empty_no_documents_in_folder">No documents in this folder</string>
-    <string name="lib_empty_no_documents">No documents yet</string>
     <string name="lib_empty_hint">Scan a page, or bring in photos or a PDF you already have.</string>
     <string name="lib_photos">Photos</string>
     <string name="lib_pdf">PDF</string>
     <string name="lib_search_hint">Search looks through titles, tags and every word recognised in your scans.</string>
     <string name="lib_rename_folder_label">Folder name</string>
 
-    <!-- Library: home dashboard -->
-    <string name="lib_home_eyebrow">YOUR DOCUMENT WORKSPACE</string>
     <string name="lib_home_headline">A little less paper.</string>
-    <string name="lib_home_first_document">Scan, clean, OCR and export your first document.</string>
-    <string name="lib_home_stats">%1$d documents · %2$d favorites</string>
-    <string name="lib_home_stats_with_trash">%1$d documents · %2$d favorites · %3$d in trash</string>
     <string name="lib_quick_id_card">ID card</string>
     <string name="lib_quick_book">Book</string>
     <string name="lib_quick_extract_text">Extract text</string>
@@ -67,9 +58,6 @@
     <!-- Trash (Recycle Bin) screen -->
     <string name="trash_title">Recycle Bin</string>
     <string name="trash_empty_action">Empty</string>
-    <string name="trash_empty_title">Recycle Bin is Empty</string>
-    <string name="trash_empty_body">Deleted files will appear here for 7 days before being permanently removed.</string>
-    <string name="trash_auto_delete_notice">Files are automatically deleted after 7 days.</string>
     <string name="trash_sort_expiry">Soonest to expire</string>
     <string name="trash_sort_date">Deletion date</string>
     <string name="trash_sort_name">File name</string>
@@ -92,7 +80,6 @@
     <string name="settings_request_features">Suggest a feature</string>
     <string name="settings_pdf_quality_title">Default PDF quality</string>
     <string name="settings_pdf_quality_body">High keeps every detail. Small makes lighter files.</string>
-    <string name="settings_app_theme">App Theme</string>
     <string name="settings_app_language">App language</string>
     <string name="settings_app_language_subtitle">Choose the language ScanPro uses</string>
     <string name="settings_app_language_unavailable">Language settings aren\'t available on this device</string>
@@ -104,7 +91,6 @@
     <string name="settings_share_with_friends">Share ScanPro</string>
     <string name="settings_privacy_policy">Privacy policy</string>
     <string name="settings_terms_of_use">Terms of use</string>
-    <string name="settings_storage_summary">%1$d active documents · %2$d in trash · %3$s used</string>
     <string name="settings_version">Version %1$s</string>
 
     <!-- Lock screen -->
@@ -162,7 +148,10 @@
     <string name="lib_greeting_afternoon">Good afternoon</string>
     <string name="lib_greeting_evening">Good evening</string>
     <string name="lib_home_intro">Scan, clean up, recognise text and export your first document.</string>
-    <string name="lib_in_bin_count">%1$d in bin</string>
+    <plurals name="lib_in_bin_count">
+        <item quantity="one">%1$d in bin</item>
+        <item quantity="other">%1$d in bin</item>
+    </plurals>
     <string name="lib_home_search_launcher">Search titles, tags and text</string>
     <string name="lib_quick_actions">Quick actions</string>
     <string name="lib_merge_folder_title">Merge into \"%1$s\"?</string>
@@ -180,7 +169,10 @@
     <string name="lib_msg_removing_folder">Removing folder…</string>
     <string name="lib_msg_folder_removed">Folder removed; its documents are back at the top level</string>
     <string name="lib_msg_pdf_not_prepared">The PDF could not be prepared</string>
-    <string name="lib_msg_pdfs_left_out">%1$d of %2$d documents could not be prepared and were left out</string>
+    <plurals name="lib_msg_pdfs_left_out">
+        <item quantity="one">%1$d of %2$d document could not be prepared and was left out</item>
+        <item quantity="other">%1$d of %2$d documents could not be prepared and were left out</item>
+    </plurals>
     <string name="trash_restore_all">Restore all</string>
     <string name="trash_empty_state_title">The recycle bin is empty</string>
     <plurals name="trash_empty_state_body">

@@ -96,6 +96,7 @@ import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.rememberMotionEnabled
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
+import androidx.compose.runtime.derivedStateOf
 
 private class WelcomePage(
     val icon: ImageVector,
@@ -202,18 +203,23 @@ fun WelcomeScreen(onStartScanning: () -> Unit, onExplore: () -> Unit) {
                     modifier = Modifier.weight(1f).enter(1),
                     beyondViewportPageCount = 1
                 ) { index ->
-                    // Pages slide with a touch of depth: the one leaving fades and shrinks a little.
-                    val offset = ((pagerState.currentPage - index) + pagerState.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f)
+                    // Pages slide with a touch of depth: the one leaving fades and shrinks a little. The swipe position
+                    // changes every frame, so it is read in the drawing layer rather than in composition.
+                    val offset = { ((pagerState.currentPage - index) + pagerState.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f) }
+                    val current by remember(index) {
+                        derivedStateOf { index == pagerState.currentPage && pagerState.currentPageOffsetFraction.absoluteValue < 0.5f }
+                    }
                     PageContent(
                         page = pages[index],
                         modifier = Modifier.graphicsLayer {
-                            alpha = lerp(1f, 0.35f, offset)
-                            val scale = lerp(1f, 0.94f, offset)
+                            val fraction = offset()
+                            alpha = lerp(1f, 0.35f, fraction)
+                            val scale = lerp(1f, 0.94f, fraction)
                             scaleX = scale
                             scaleY = scale
                         },
                         offset = offset,
-                        current = index == pagerState.currentPage && pagerState.currentPageOffsetFraction.absoluteValue < 0.5f
+                        current = current
                     )
                 }
                 PageIndicator(count = pages.size, current = pagerState.currentPage, Modifier.padding(vertical = 14.dp).enter(2))
@@ -277,7 +283,7 @@ private fun PageIndicator(count: Int, current: Int, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset: Float, current: Boolean) {
+private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset: () -> Float, current: Boolean) {
     val motion = rememberMotionEnabled()
     Column(
         modifier
@@ -294,7 +300,7 @@ private fun PageContent(page: WelcomePage, modifier: Modifier = Modifier, offset
                 .fillMaxWidth()
                 .height(236.dp)
                 // Parallax: the illustration moves a little slower than the text as pages slide.
-                .graphicsLayer { translationX = offset * 40f },
+                .graphicsLayer { translationX = offset() * 40f },
             current = current
         )
         Spacer(Modifier.height(26.dp))
