@@ -27,6 +27,16 @@ If your session was assigned a different branch, check out this one instead
 (`git fetch origin claude/awesome-clarke-ussjo3 && git checkout claude/awesome-clarke-ussjo3`), commit there and push with
 `git push -u origin claude/awesome-clarke-ussjo3`. Never create or push other branches, and don't open pull requests unless asked.
 
+## Working efficiently (owner's request: keep token use low)
+
+- Release builds (`bundleRelease`, sideload `assembleRelease`) only once, right before pushing; while working, compile and
+  run unit tests.
+- Use helper agents only for large, independent pieces of work; do small and medium tasks directly.
+- Keep command output short: print totals and failures, never full Gradle or test logs.
+- Read only the parts of files you need (targeted `grep`, line ranges), not whole large files.
+- Docs updates: change only the affected lines in the four reference files.
+- One task per session: start from `AGENT_HANDOFF.md` rather than re-exploring the codebase.
+
 ## Ground rules
 
 - Offline-first: no network services, analytics, accounts or tracking.
