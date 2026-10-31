@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after the "edit queue, kept-scan, inspection report" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after the "sharper PDF viewer, organiser, Manual default, ScanPro" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,13 +40,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-10-31, "edit queue, kept-scan, inspection report" commit)
+## Latest results (2026-10-31, "sharper PDF viewer, organiser, Manual default, ScanPro" commit)
 
 | Check | Result |
 |---|---|
 | `:app:compileDebugKotlin`, `:translate:compileDebugKotlin` | Passed, 0 warnings |
 | `:app:testDebugUnitTest` | 164 tests: 162 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
-| `:app:lintDebug` | 0 issues |
+| `:app:lintDebug` | 0 issues (`UseTomlInstead` ignored, see R10) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.3 MB |
 | Sideload `assembleRelease` | Passed; arm64 32.8 MB (budget 40) |
@@ -57,7 +57,6 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 | IDE inspection with the shared profile | Not run: no Android Studio in the container |
 | Release signing | Not validated: no secrets available; outputs are unsigned |
 | Manual UI pass | Not done |
-| After merging `540a492` | Compile (app, translate, baselineprofile) and unit tests re-run: 160 tests, 0 failed. Release builds and lint were run on `001b98a`, not re-run on the merge |
 
 ## Unit test inventory
 

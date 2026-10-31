@@ -1286,12 +1286,19 @@ private fun PdfPageOrganizerSheet(
     val isLoading = session == null && loadError == null
     val keptCount = pages.count { it.selected }
 
+    // Shown inside the Tools tab, which already keeps clear of the status bar and the bottom bar: taking those insets
+    // again here left a dark band under the pages and a gap above the title.
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
                 title = {
                     Text(
-                        stringResource(
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium,
+                        text = stringResource(
                             when (mode) {
                                 "extract" -> R.string.tools_organizer_extract_title
                                 "rotate" -> R.string.tools_organizer_rotate_title
@@ -1381,8 +1388,9 @@ private fun PdfPageOrganizerSheet(
                     columns = GridCells.Adaptive(minSize = 140.dp),
                     modifier = Modifier
                         .fillMaxSize()
-                        .widthIn(max = 1200.dp)
-                        .padding(12.dp),
+                        .widthIn(max = 1200.dp),
+                    // Content padding, not a padded box: the pages scroll right up to the edges instead of being cut off.
+                    contentPadding = PaddingValues(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {

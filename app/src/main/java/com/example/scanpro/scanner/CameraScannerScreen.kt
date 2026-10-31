@@ -205,7 +205,8 @@ fun CameraScannerScreen(
     var cameraError by remember { mutableStateOf<String?>(null) }
     val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
     var detectMode by rememberSaveable {
-        mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.AUTO))
+        // Manual by default (owner decision): auto-capture surprised people; it is one tap away in the top menu.
+        mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.MANUAL))
     }
     var detectMenuOpen by remember { mutableStateOf(false) }
     // A few tips the first time the camera opens; "Got it" hides them for good.
@@ -481,7 +482,7 @@ fun CameraScannerScreen(
                     // review screen opens ready.
                     val viewW = previewView.width.toFloat()
                     val viewH = previewView.height.toFloat()
-                    val density = context.resources.displayMetrics.density
+                    val density = previewView.resources.displayMetrics.density
                     val idMode = scanMode == ScanMode.ID_CARD
                     scope.launch {
                         val quad = withContext(Dispatchers.Default) {

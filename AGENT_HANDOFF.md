@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Document screen decluttered, instant document opening, ID card guide crops to the card (F26). |
+| newest | Sharper PDF viewer, organiser layout, Manual capture default, app name ScanPro (F27). |
+| feaf266 | Document screen decluttered, instant document opening, ID card guide crops to the card (F26). |
 | 9bb0629 | Adaptive Auto Clean (F25); signature placement step (drag, pinch/corner resize, Save). |
 | c068e53 | Owner screenshot fixes (F24): animated launch icon, night greeting, smaller home scan card, no white band under the bottom bar, adaptive tool grid, filtered review preview, Done button no longer clipped. |
 | a merge | Merged owner commit `540a492` (older local copy): kept its version catalog (`gradle/libs.versions.toml`, used by `:translate`, `:baselineprofile`), `gradle.properties` parallel sync, `gradle-daemon-jvm.properties`, renamed scope file; undid its reverts (code, targetSdk 37, BouncyCastle pin, newer deps), removed `app/google-services.json` (offline-first) and the IDE report files; `.gitignore` now blocks both. |

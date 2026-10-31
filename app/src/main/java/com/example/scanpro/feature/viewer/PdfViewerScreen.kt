@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.viewer
 
+import androidx.compose.ui.layout.onSizeChanged
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
@@ -133,6 +134,12 @@ fun PdfViewerScreen(
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
+    // The zoom once the fingers have stopped: pages are redrawn sharp at this level (not on every frame of a pinch).
+    var settledScale by remember { mutableFloatStateOf(1f) }
+    LaunchedEffect(scale) {
+        kotlinx.coroutines.delay(250)
+        settledScale = scale
+    }
 
     val currentPage by remember {
         derivedStateOf {
@@ -599,6 +606,7 @@ fun PdfViewerScreen(
                         ) {
                             items(pageCount) { index ->
                                 PdfPageItem(
+                                    zoom = settledScale,
                                     renderer = pdfRenderer!!,
                                     renderLock = renderLock,
                                     pageCache = pageCache,
@@ -676,6 +684,7 @@ fun PdfViewerScreen(
 
 @Composable
 private fun PdfPageItem(
+    zoom: Float,
     renderer: PdfRenderer,
     renderLock: Mutex,
     pageCache: android.util.LruCache<Int, Bitmap>,
@@ -683,13 +692,17 @@ private fun PdfPageItem(
     pageCount: Int
 ) {
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var sharp by remember { mutableStateOf<Bitmap?>(null) }
     var isPageLoading by remember { mutableStateOf(true) }
     var aspectRatio by remember { mutableFloatStateOf(0.707f) }
+    var widthPx by remember { mutableIntStateOf(0) }
 
     // Keyed on the renderer too: after a password unlock the same page index belongs to a different file.
-    LaunchedEffect(renderer, pageIndex) {
-        bitmap = null
-        pageCache.get(pageIndex)?.let { cached ->
+    // Drawn at 1.5x the page's width on screen (a fixed 1440 px left small print soft on high-density phones).
+    LaunchedEffect(renderer, pageIndex, widthPx) {
+        if (widthPx == 0) return@LaunchedEffect
+        val targetW = (widthPx * 1.5f).toInt().coerceIn(720, 2400)
+        pageCache.get(pageIndex)?.takeIf { it.width >= targetW }?.let { cached ->
             bitmap = cached
             aspectRatio = cached.width.toFloat() / cached.height.toFloat()
             isPageLoading = false
@@ -697,26 +710,38 @@ private fun PdfPageItem(
         }
         withContext(Dispatchers.IO) {
             try {
-                isPageLoading = true
+                isPageLoading = bitmap == null
                 // One page at a time: PdfRenderer throws if a second page is opened before the first is closed,
                 // which is what left most pages blank when several were on screen.
-                renderLock.withLock {
-                    renderer.openPage(pageIndex).use { page ->
-                        aspectRatio = page.width.toFloat() / page.height.toFloat()
-                        val targetW = 1440
-                        val targetH = (targetW / aspectRatio).toInt().coerceAtLeast(1)
-                        val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
-                        bmp.eraseColor(android.graphics.Color.WHITE)
-                        page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        pageCache.put(pageIndex, bmp)
-                        bitmap = bmp
-                    }
+                val bmp = renderPage(renderer, renderLock, pageIndex, targetW) { aspectRatio = it }
+                if (bmp != null) {
+                    pageCache.put(pageIndex, bmp)
+                    bitmap = bmp
                 }
             } catch (e: Exception) {
                 bitmap = null
             } finally {
                 isPageLoading = false
             }
+        }
+    }
+
+    // Zoomed in: redraw this page at the zoomed resolution so text stays crisp, within a memory budget. Not cached;
+    // dropped again when zoomed back out or the page scrolls away.
+    LaunchedEffect(renderer, pageIndex, widthPx, zoom) {
+        if (zoom < 1.2f || widthPx == 0) {
+            sharp = null
+            return@LaunchedEffect
+        }
+        val wanted = (widthPx * zoom * 1.25f).toInt()
+        val maxW = kotlin.math.sqrt(ZOOM_PIXEL_BUDGET * aspectRatio).toInt()
+        val targetW = minOf(wanted, maxW)
+        if (targetW <= (bitmap?.width ?: 0)) {
+            sharp = null
+            return@LaunchedEffect
+        }
+        sharp = withContext(Dispatchers.IO) {
+            runCatching { renderPage(renderer, renderLock, pageIndex, targetW) {} }.getOrNull()
         }
     }
 
@@ -731,12 +756,14 @@ private fun PdfPageItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(aspectRatio)
-                .background(Color.White),
+                .background(Color.White)
+                .onSizeChanged { widthPx = it.width },
             contentAlignment = Alignment.Center
         ) {
-            if (bitmap != null) {
+            val shown = sharp ?: bitmap
+            if (shown != null) {
                 Image(
-                    bitmap = bitmap!!.asImageBitmap(),
+                    bitmap = shown.asImageBitmap(),
                     contentDescription = stringResource(R.string.viewer_page_of, pageIndex + 1, pageCount),
                     modifier = Modifier.fillMaxSize(),
                     filterQuality = FilterQuality.High
@@ -747,6 +774,23 @@ private fun PdfPageItem(
         }
     }
 }
+
+/** Largest zoomed page bitmap, in pixels (about 40 MB as ARGB). */
+private const val ZOOM_PIXEL_BUDGET = 10_000_000f
+
+/** Renders one page [targetW] px wide on white; reports the page's aspect ratio. */
+private suspend fun renderPage(renderer: PdfRenderer, renderLock: Mutex, pageIndex: Int, targetW: Int, onAspect: (Float) -> Unit): Bitmap? =
+    renderLock.withLock {
+        renderer.openPage(pageIndex).use { page ->
+            val aspect = page.width.toFloat() / page.height.toFloat()
+            onAspect(aspect)
+            val targetH = (targetW / aspect).toInt().coerceAtLeast(1)
+            val bmp = createBitmap(targetW, targetH, Bitmap.Config.ARGB_8888)
+            bmp.eraseColor(android.graphics.Color.WHITE)
+            page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            bmp
+        }
+    }
 
 @Composable
 private fun JumpToPageDialog(

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PDF Scanner - Scan Pro</string>
+    <string name="app_name">ScanPro</string>
     <!-- Name Google Play shows for the on-demand translation module. -->
     <string name="translate_module_title">Translation</string>
     <string name="shortcut_scan_short">Scan now</string>
