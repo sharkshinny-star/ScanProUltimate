@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Rating sheet from the owner's design (F29): once, after the first saved document; Play listing for 4–5 stars, feedback email below. |
+| newest | Scanner, Crop-and-filters and Document screens rebuilt to the owner's second design artifact (F30); per-page brightness/contrast/saturation now travel from the review into the import. |
+| 0344fbd | Rating sheet from the owner's design (F29): once, after the first saved document; Play listing for 4–5 stars, feedback email below. |
 | 89f0eae | P1 declutter after the Play Store comparison (F28): Home, Camera, Review, Tools, Welcome, Document bar. |
 | 6101b4e | Sharper PDF viewer, organiser layout, Manual capture default, app name ScanPro (F27). |
 | feaf266 | Document screen decluttered, instant document opening, ID card guide crops to the card (F26). |
@@ -71,7 +72,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 0. P2/P3 from the owner's Play Store comparison, in order: Indian-language UI (Hindi, Tamil, Telugu, Kannada, Marathi, Gujarati, Bengali, Malayalam, Punjabi; strings are ready, `locales_config.xml` lists only `en`), freehand pen in Mark up, per-folder PIN, PPT export, Office/web → PDF via the print framework, default scan mode and filter in Settings.
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
-2. Device-check F29 (rating sheet after the first scan: stars, emoji, both buttons) and F28 (every screen changed) and F24–F26 on the owner's phone: document screen sheets and pager, opening from Recent, ID card capture crop, Auto Clean on real documents, signature placement; and F24 (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
+2. Device-check F30 on the owner's phone: scanner chrome (zoom, torch, mode strip, Auto/count pill), the Adjust page screen (handles, sliders, Save page), the Document tabs, per-page sheet and Export sheet; then F29 (rating sheet after the first scan: stars, emoji, both buttons) and F28 (every screen changed) and F24–F26 on the owner's phone: document screen sheets and pager, opening from Recent, ID card capture crop, Auto Clean on real documents, signature placement; and F24 (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
 3. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.
 3. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
 4. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.

@@ -1,5 +1,11 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material.icons.filled.Check
 import android.widget.Toast
@@ -58,7 +64,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.Close
@@ -72,7 +77,6 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -121,6 +125,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -138,6 +143,7 @@ import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.ui.findActivity
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
+import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.defaultFilter
@@ -163,7 +169,7 @@ fun CameraScannerScreen(
     /** Position of the saved page this session replaces; the session then takes exactly one photo. */
     retakeOfPage: Int? = null,
     onClose: () -> Unit,
-    onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>) -> Unit,
+    onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>) -> Unit,
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
@@ -198,7 +204,9 @@ fun CameraScannerScreen(
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     // Off, auto, on (fires with the shutter) or torch (steady light for dark rooms).
     var flashMode by rememberSaveable { mutableStateOf(FlashMode.OFF) }
-    val torchEnabled = flashMode == FlashMode.TORCH
+    // The torch is its own switch (the top-right button); flashMode is the flash for the photo itself.
+    var torchOn by rememberSaveable { mutableStateOf(false) }
+    val torchEnabled = torchOn
     // A camera problem the user has to act on (camera busy, disabled, failed to open); shown in every mode.
     var cameraError by remember { mutableStateOf<String?>(null) }
     val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
@@ -215,7 +223,8 @@ fun CameraScannerScreen(
     var showAdjustments by remember { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
-    var zoom by remember { mutableFloatStateOf(0f) }
+    var zoomRatio by remember { mutableFloatStateOf(1f) }
+    var maxZoomRatio by remember { mutableFloatStateOf(1f) }
     var exposureIndex by remember { mutableIntStateOf(0) }
     var exposureMin by remember { mutableIntStateOf(0) }
     var exposureMax by remember { mutableIntStateOf(0) }
@@ -264,6 +273,9 @@ fun CameraScannerScreen(
             }
         )
     ) { mutableStateMapOf<String, PageFilter>() }
+    // Brightness / contrast / saturation chosen on the review screen, per page (keyed like filters). Not saved across
+    // process death: the sliders start at zero again, which is what they show.
+    val adjustments = remember { mutableStateMapOf<String, PageAdjustments>() }
     // Starts from the mode's usual look; the last filter picked becomes the default for the rest of the session.
     var sessionFilter by rememberSaveable { mutableStateOf<PageFilter?>(null) }
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
@@ -405,7 +417,7 @@ fun CameraScannerScreen(
             }
             completed = true
             processing = false
-            onComplete(inputs.map { it.first }, scanMode, crops, chosen)
+            onComplete(inputs.map { it.first }, scanMode, crops, chosen, inputs.map { (uri, _) -> adjustments[uri.toString()] })
         }
     }
 
@@ -466,6 +478,7 @@ fun CameraScannerScreen(
                         pages[retakeIndex] = captured
                         quads.remove(old.toString())
                         filters.remove(old.toString())
+                        adjustments.remove(old.toString())
                         if (old.scheme == "file") deleteInBackground(File(old.path.orEmpty()))
                     } else {
                         pages.add(captured)
@@ -622,7 +635,7 @@ fun CameraScannerScreen(
                         else -> if (error.type == androidx.camera.core.CameraState.ErrorType.CRITICAL) resources.getString(R.string.scan_error_camera_stopped) else null
                     }
                 }
-                camera.cameraInfo.zoomState.value?.let { zoom = it.linearZoom }
+                camera.cameraInfo.zoomState.value?.let { maxZoomRatio = it.maxZoomRatio }
                 val exposureState = camera.cameraInfo.exposureState
                 if (exposureState.isExposureCompensationSupported) {
                     exposureMin = exposureState.exposureCompensationRange.lower
@@ -720,8 +733,8 @@ fun CameraScannerScreen(
         }
     }
 
-    LaunchedEffect(zoom, boundCamera, resumeCount) {
-        boundCamera?.cameraControl?.setLinearZoom(zoom.coerceIn(0f, 1f))
+    LaunchedEffect(zoomRatio, maxZoomRatio, boundCamera, resumeCount) {
+        boundCamera?.cameraControl?.setZoomRatio(zoomRatio.coerceIn(1f, maxZoomRatio))
     }
 
     LaunchedEffect(exposureIndex, exposureMin, exposureMax, boundCamera, resumeCount) {
@@ -750,6 +763,7 @@ fun CameraScannerScreen(
             pages = pages,
             quads = quads,
             filters = filters,
+            adjustments = adjustments,
             defaultFilter = sessionFilter ?: scanMode.defaultFilter,
             onDefaultFilterChange = { sessionFilter = it },
             index = reviewIndex,
@@ -796,6 +810,29 @@ fun CameraScannerScreen(
         )
 
         if (showGrid) ThirdsGrid()
+        if (!reviewing && maxZoomRatio > 1.05f) {
+            Column(
+                Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                listOf(1f, 2f, 5f).filter { it <= maxZoomRatio + 0.01f || it == 1f }.forEach { ratio ->
+                    val on = kotlin.math.abs(zoomRatio - ratio) < 0.01f
+                    val label = "${ratio.toInt()}x"
+                    val description = stringResource(R.string.scan_zoom_level, label)
+                    Surface(
+                        onClick = { zoomRatio = ratio },
+                        shape = CircleShape,
+                        color = if (on) Color.White else Color.Black.copy(alpha = 0.45f),
+                        contentColor = if (on) Color(0xFF111111) else Color.White,
+                        modifier = Modifier.size(34.dp).semantics { contentDescription = description; selected = on }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                        }
+                    }
+                }
+            }
+        }
         if (showLevel && !barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
             LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp))
         }
@@ -837,14 +874,15 @@ fun CameraScannerScreen(
         if (!barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             // In low light the hint is the button: one tap turns the torch on.
             val dark = detection?.isDark == true && !torchEnabled
+            val found = stable && detection?.isReady == true
             Surface(
-                onClick = { flashMode = FlashMode.TORCH },
+                onClick = { torchOn = true },
                 enabled = dark,
-                modifier = Modifier.align(Alignment.Center),
-                shape = RoundedCornerShape(12.dp),
-                color = CameraGlass
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 62.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = if (found) HintFound else Color.Black.copy(alpha = 0.6f)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)) {
                     val state = detection
                     // "Capturing" only when the shutter really is about to fire on its own; in Manual mode the page is just outlined.
                     val guidance = if (stable && state?.isReady == true && autoCaptureActive) stringResource(R.string.scan_guidance_hold_capturing) else liveGuidance
@@ -857,8 +895,8 @@ fun CameraScannerScreen(
                         else -> Icons.Default.DocumentScanner
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(hintIcon, contentDescription = null, tint = if (ready) scanLine else Color.White, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(10.dp))
+                        Icon(hintIcon, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
                         androidx.compose.animation.AnimatedContent(
                             targetState = guidance,
                             transitionSpec = {
@@ -867,7 +905,7 @@ fun CameraScannerScreen(
                             },
                             label = "guidance"
                         ) { text ->
-                            Text(text, color = if (ready) scanLine else Color.White, style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text(text, color = Color.White, style = MaterialTheme.typography.labelLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         }
                     }
                 }
@@ -917,46 +955,26 @@ fun CameraScannerScreen(
             Surface(shape = CircleShape, color = CameraGlass) {
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White) }
             }
-            // Auto capture on/off, where the eye goes first. Off is Manual: the page is outlined, the shutter is yours.
-            if (!barcodeMode && scanMode != ScanMode.ID_CARD && detectMode != DetectMode.NO_DETECT) {
-                val modeDescription = stringResource(R.string.scan_detection_mode)
-                val stateLabel = stringResource(detectMode.label)
-                Surface(
-                    onClick = {
-                        detectMode = if (autoCapture) DetectMode.MANUAL else DetectMode.AUTO
-                        prefs.edit { putString("detect", detectMode.name) }
-                    },
-                    shape = CircleShape,
-                    color = if (autoCapture) scanLine else CameraGlass,
-                    contentColor = if (autoCapture) Color(0xFF04281E) else Color.White,
-                    modifier = Modifier.semantics { contentDescription = modeDescription; stateDescription = stateLabel }
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                        Icon(Icons.Default.CenterFocusWeak, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.scan_detect_auto), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    }
-                }
+            if (pages.isNotEmpty()) {
+                Text(
+                    pluralStringResource(R.plurals.scan_pages_in_batch, pages.size, pages.size),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
             } else {
                 Spacer(Modifier.width(1.dp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Surface(shape = CircleShape, color = CameraGlass) {
-                    // Each tap moves to the next flash mode; a short label under the icon says which.
-                    IconButton(onClick = {
-                        flashMode = FlashMode.entries[(flashMode.ordinal + 1) % FlashMode.entries.size]
-                        status = resources.getString(R.string.scan_flash_state, resources.getString(flashMode.labelRes))
-                    }) {
-                        Icon(
-                            when (flashMode) {
-                                FlashMode.OFF -> Icons.Default.FlashOff
-                                FlashMode.AUTO -> Icons.Default.FlashAuto
-                                FlashMode.ON -> Icons.Default.FlashOn
-                                FlashMode.TORCH -> Icons.Default.Bolt
-                            },
-                            contentDescription = stringResource(R.string.scan_flash_state, stringResource(flashMode.labelRes)),
-                            tint = if (flashMode == FlashMode.OFF) Color.White else scanLine
-                        )
+                val torchLabel = stringResource(R.string.scan_torch)
+                Surface(
+                    shape = CircleShape,
+                    color = if (torchOn) TorchOn else CameraGlass,
+                    contentColor = if (torchOn) Color(0xFF222222) else Color.White,
+                    modifier = Modifier.semantics { stateDescription = if (torchOn) onLabel else offLabel }
+                ) {
+                    IconButton(onClick = { torchOn = !torchOn }) {
+                        Icon(Icons.Default.Bolt, contentDescription = torchLabel)
                     }
                 }
                 Box {
@@ -967,17 +985,26 @@ fun CameraScannerScreen(
                     }
                     DropdownMenu(expanded = overflowOpen, onDismissRequest = { overflowOpen = false }) {
                         DropdownMenuItem(
+                            text = { Text(stringResource(R.string.scan_flash_state, stringResource(flashMode.labelRes))) },
+                            leadingIcon = {
+                                Icon(
+                                    when (flashMode) {
+                                        FlashMode.AUTO -> Icons.Default.FlashAuto
+                                        FlashMode.ON -> Icons.Default.FlashOn
+                                        else -> Icons.Default.FlashOff
+                                    },
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                val cycle = listOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON)
+                                flashMode = cycle[(cycle.indexOf(flashMode) + 1) % cycle.size]
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text(stringResource(if (showAdjustments) R.string.scan_hide_zoom_exposure else R.string.scan_zoom_exposure)) },
                             onClick = { showAdjustments = !showAdjustments; overflowOpen = false }
                         )
-                        if (pages.isEmpty() && scanMode != ScanMode.ID_CARD && scanMode != ScanMode.TEXT) {
-                            listOf(ScanMode.DOCUMENT, ScanMode.RECEIPT, ScanMode.WHITEBOARD, ScanMode.BOOK).forEach { type ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(type.labelRes), color = if (scanMode == type) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
-                                    onClick = { scanMode = type; overflowOpen = false }
-                                )
-                            }
-                        }
                         @Composable
                         fun SwitchItem(@StringRes label: Int, on: Boolean, onToggle: () -> Unit) {
                             DropdownMenuItem(
@@ -1031,11 +1058,6 @@ fun CameraScannerScreen(
             }
 
             if (showAdjustments) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.scan_zoom_min), color = Color.White, style = MaterialTheme.typography.labelSmall)
-                    Slider(value = zoom, onValueChange = { zoom = it }, modifier = Modifier.weight(1f).padding(horizontal = 10.dp))
-                    Text(stringResource(R.string.scan_zoom), color = Color.White, style = MaterialTheme.typography.labelSmall)
-                }
                 if (exposureMin < exposureMax) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.scan_ev), color = Color.White, style = MaterialTheme.typography.labelSmall)
@@ -1065,20 +1087,23 @@ fun CameraScannerScreen(
                     }
                 }
             }
+            // Every mode in one strip that scrolls sideways; the chosen one is underlined.
+            val modesEnabled = pages.isEmpty() && retakeOfPage == null
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                listOf(ScanMode.TEXT to R.string.scan_tab_text, null to R.string.scan_tab_docs, ScanMode.ID_CARD to R.string.scan_tab_id_cards).forEach { (target, text) ->
-                    val selected = !barcodeMode &&
-                        if (target == null) scanMode != ScanMode.TEXT && scanMode != ScanMode.ID_CARD else scanMode == target
-                    ModeTab(stringResource(text), selected = selected, enabled = pages.isEmpty() && retakeOfPage == null) {
+                listOf(ScanMode.DOCUMENT, ScanMode.RECEIPT, ScanMode.WHITEBOARD, ScanMode.ID_CARD, ScanMode.BOOK, ScanMode.TEXT).forEach { mode ->
+                    ModeTab(stringResource(mode.labelRes), selected = !barcodeMode && scanMode == mode, enabled = modesEnabled) {
                         barcodeMode = false
-                        scanMode = target ?: ScanMode.DOCUMENT
+                        scanMode = mode
                         scanBothSides = false
                     }
                 }
-                ModeTab(stringResource(R.string.scan_qr_code), selected = barcodeMode, enabled = pages.isEmpty() && retakeOfPage == null) {
+                ModeTab(stringResource(R.string.scan_qr_code), selected = barcodeMode, enabled = modesEnabled) {
                     barcodeMode = true
                     scanMode = ScanMode.DOCUMENT
                     scanBothSides = false
@@ -1092,14 +1117,12 @@ fun CameraScannerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
-                    if (pages.isNotEmpty()) {
-                        Column(
-                            Modifier.clickable { pages.removeLastOrNull()?.let { uri -> if (uri.scheme == "file") deleteInBackground(File(uri.path.orEmpty())) } }.padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.scan_remove_last_page), tint = Color.White)
-                            Text(stringResource(R.string.common_back), color = Color.White, style = MaterialTheme.typography.labelSmall)
-                        }
+                    if (!barcodeMode) {
+                        val importLabel = stringResource(R.string.scan_import_photos)
+                        BottomPill(
+                            onClick = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                            modifier = Modifier.semantics { contentDescription = importLabel }
+                        ) { Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color.White) }
                     }
                 }
 
@@ -1113,7 +1136,7 @@ fun CameraScannerScreen(
                 val shutterScale by androidx.compose.animation.core.animateFloatAsState(if (capturing) 0.86f else 1f, spring(stiffness = 900f), label = "shutter")
                 Box(
                     Modifier
-                        .size(84.dp)
+                        .size(72.dp)
                         .graphicsLayer { scaleX = shutterScale; scaleY = shutterScale }
                         .drawBehind {
                             val strokeWidth = 4.dp.toPx()
@@ -1149,27 +1172,31 @@ fun CameraScannerScreen(
                 }
 
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
-                    if (pages.isEmpty() && !barcodeMode) {
-                        Column(
-                            Modifier.clickable { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }.padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.scan_import_photos), tint = Color.White)
-                            Text(stringResource(R.string.scan_import_images), color = Color.White, style = MaterialTheme.typography.labelSmall)
-                        }
-                    } else if (pages.isNotEmpty()) {
-                        Button(
-                            enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
+                    if (pages.isNotEmpty()) {
+                        // The page count; tapping it finishes the scan.
+                        val doneLabel = stringResource(R.string.common_done)
+                        BottomPill(
                             onClick = { finishScan() },
-                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = scanLine, contentColor = Color(0xFF04281E)),
+                            enabled = !capturing && (scanMode != ScanMode.ID_CARD || pages.size == pageLimit),
+                            color = scanLine,
+                            contentColor = Color(0xFF04281E),
                             modifier = Modifier
                                 .onGloballyPositioned { counterCenter = it.boundsInRoot().center }
                                 .graphicsLayer { scaleX = counterPulse.value; scaleY = counterPulse.value }
-                        ) {
-                            Icon(Icons.Default.TaskAlt, contentDescription = null)
-                            Spacer(Modifier.width(5.dp))
-                            Text("${pages.size}")
-                        }
+                                .semantics { contentDescription = doneLabel }
+                        ) { Text("${pages.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+                    } else if (!barcodeMode && scanMode != ScanMode.ID_CARD && detectMode != DetectMode.NO_DETECT) {
+                        // Auto capture on or off (off is Manual: the page is outlined, the shutter is yours).
+                        val modeDescription = stringResource(R.string.scan_detection_mode)
+                        BottomPill(
+                            onClick = {
+                                detectMode = if (autoCapture) DetectMode.MANUAL else DetectMode.AUTO
+                                prefs.edit { putString("detect", detectMode.name) }
+                            },
+                            color = if (autoCapture) TorchOn else Color.White.copy(alpha = 0.1f),
+                            contentColor = if (autoCapture) Color(0xFF222222) else Color.White,
+                            modifier = Modifier.semantics { contentDescription = modeDescription; stateDescription = if (autoCapture) onLabel else offLabel }
+                        ) { Text(stringResource(R.string.scan_detect_auto), style = MaterialTheme.typography.labelLarge, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) }
                     }
                 }
             }
@@ -1206,23 +1233,53 @@ fun CameraScannerScreen(
 private val CameraBackdrop = Color(0xFF0B0D14)
 private val CameraPanel = Color(0xFF14161F)
 private val CameraGlass = Color(0xFF0F1118).copy(alpha = 0.72f)
+/** The design's accents: amber for the torch, the underline and Auto; green for "document found". */
+private val TorchOn = Color(0xFFFFD54A)
+private val HintFound = Color(0xFF14804F)
+
+/** The square pills either side of the shutter (gallery; Auto or the page count). */
+@Composable
+private fun BottomPill(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    color: Color = Color.White.copy(alpha = 0.1f),
+    contentColor: Color = Color.White,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(10.dp),
+        color = color,
+        contentColor = contentColor,
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White.copy(alpha = if (color == Color.White.copy(alpha = 0.1f)) 0.5f else 0f)),
+        modifier = modifier.sizeIn(minWidth = 46.dp, minHeight = 46.dp).alpha(if (enabled) 1f else 0.5f)
+    ) {
+        Box(Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) { content() }
+    }
+}
 
 /** One of the mode pills above the shutter. */
 @Composable
 private fun ModeTab(text: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = CircleShape,
-        color = if (selected) Color.White.copy(alpha = 0.18f) else Color.Transparent,
-        contentColor = if (selected) Color.White else Color.White.copy(alpha = 0.7f)
+    Column(
+        Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(enabled = enabled, role = Role.Tab, onClick = onClick)
+            .semantics { this.selected = selected }
+            .padding(horizontal = 2.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text,
+            color = if (selected) Color.White else Color.White.copy(alpha = if (enabled) 0.6f else 0.3f),
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1
         )
+        Spacer(Modifier.height(3.dp))
+        Box(Modifier.height(2.dp).fillMaxWidth().background(if (selected) TorchOn else Color.Transparent))
     }
 }
 

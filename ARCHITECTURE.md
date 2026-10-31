@@ -41,6 +41,8 @@ Hilt supplies repository/database/settings/work dependencies. WorkManager is use
 
 ## 2. Scanner pipeline
 
+The review screen ("Adjust page n") lets the user set a crop, a filter and brightness/contrast/saturation per page; all three travel with the photo URIs into `ImportScanWorker` (`KEY_CROPS`, `KEY_FILTERS`, `KEY_ADJUSTMENTS`) and are stored on the page by `DocumentRepository.importImages`, so the originals stay untouched and every choice can be changed later.
+
 The primary scanner is `scanner/CameraScannerScreen.kt`.
 
 ### Live path

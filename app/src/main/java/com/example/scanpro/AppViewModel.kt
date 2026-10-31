@@ -10,6 +10,7 @@ import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
+import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPasswordRequiredException
 import com.example.scanpro.data.ScanMode
@@ -185,11 +186,12 @@ class AppViewModel @Inject constructor(
         imageUris: List<Uri>,
         mode: ScanMode,
         crops: List<CropQuad> = emptyList(),
-        filters: List<PageFilter> = emptyList()
+        filters: List<PageFilter> = emptyList(),
+        adjustments: List<PageAdjustments?> = emptyList()
     ) {
         if (imageUris.isEmpty()) return
         // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
-        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters))
+        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments))
     }
 
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */

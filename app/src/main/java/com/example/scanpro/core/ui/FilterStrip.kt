@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,7 +68,7 @@ fun FilterStrip(
                 Box(
                     Modifier
                         .size(width = 62.dp, height = 78.dp)
-                        .border(if (isSelected) 2.5.dp else 1.dp, if (isSelected) accent else frame, RoundedCornerShape(8.dp))
+                        .border(if (isSelected) 2.dp else 1.dp, if (isSelected) accent else frame, RoundedCornerShape(8.dp))
                         .padding(3.dp)
                         .clip(RoundedCornerShape(5.dp))
                         .background(if (onDark) Color.White.copy(alpha = 0.06f) else MaterialTheme.colorScheme.surfaceContainerHighest),
@@ -84,6 +85,7 @@ fun FilterStrip(
                     stringResource(filter.labelRes),
                     color = if (isSelected) accent else text,
                     style = MaterialTheme.typography.labelSmall,
+                    fontWeight = if (isSelected) FontWeight.Bold else null,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

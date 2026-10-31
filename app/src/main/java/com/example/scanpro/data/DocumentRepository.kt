@@ -111,10 +111,12 @@ class DocumentRepository @Inject constructor(
         mode: ScanMode = ScanMode.DOCUMENT,
         crops: List<CropQuad> = emptyList(),
         filters: List<PageFilter> = emptyList(),
+        /** The review screen's brightness, contrast and saturation for each page; null or missing keeps the page as is. */
+        adjustments: List<PageAdjustments?> = emptyList(),
     ): ScanDocument = withContext(Dispatchers.IO) {
         userRequire(imageUris.isNotEmpty(), R.string.err_choose_at_least_one_image)
         // Camera scans arrive with the outline the user confirmed; gallery and shared photos are outlined here.
-        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, detectCrops = crops.isEmpty())
+        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, adjustments, detectCrops = crops.isEmpty())
     }
 
     suspend fun importPdf(
@@ -1085,6 +1087,8 @@ class DocumentRepository @Inject constructor(
         crops: List<CropQuad> = emptyList(),
         /** The look chosen for each page on the review screen; pages without one stay as photographed. */
         filters: List<PageFilter> = emptyList(),
+        /** The review sliders for each page, when they were moved. */
+        adjustments: List<PageAdjustments?> = emptyList(),
         /** Find the page in each photo, as the camera does, when no outline was given. */
         detectCrops: Boolean = false
     ): ScanDocument {
@@ -1115,7 +1119,8 @@ class DocumentRepository @Inject constructor(
                         imagePath = rendered.absolutePath,
                         // The original stays untouched; the crop is an instruction that can be widened later.
                         crop = crop,
-                        filter = filters.getOrNull(index) ?: PageFilter.ORIGINAL
+                        filter = filters.getOrNull(index) ?: PageFilter.ORIGINAL,
+                        adjustments = adjustments.getOrNull(index)?.normalized() ?: PageAdjustments.DEFAULT
                     )
                 )
             }

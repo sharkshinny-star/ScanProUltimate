@@ -2,37 +2,46 @@
 
 package com.example.scanpro.feature.document
 
-import com.example.scanpro.data.AnnotationType
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -41,49 +50,43 @@ import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.IosShare
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddToDrive
-import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoFixOff
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Highlight
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Output
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.TextFields
@@ -92,9 +95,9 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,26 +108,28 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -132,25 +137,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
@@ -159,11 +163,9 @@ import com.example.scanpro.core.designsystem.Eyebrow
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.PageThumbnail
 import com.example.scanpro.core.designsystem.PasswordInputDialog
-import com.example.scanpro.core.designsystem.THUMBNAIL_LARGE
-import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
+import com.example.scanpro.core.designsystem.THUMBNAIL_GRID
 import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.core.designsystem.TileTone
-import com.example.scanpro.core.designsystem.TitleWithStatus
 import com.example.scanpro.core.designsystem.TopBarWithProgress
 import com.example.scanpro.core.ui.ContactDraft
 import com.example.scanpro.core.ui.FilterStrip
@@ -177,6 +179,7 @@ import com.example.scanpro.core.ui.saveToGoogleDrive
 import com.example.scanpro.core.ui.shareImages
 import com.example.scanpro.core.ui.shareOcrText
 import com.example.scanpro.core.ui.sharePdf
+import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.NormalizedPoint
@@ -188,9 +191,9 @@ import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
+import com.example.scanpro.data.ScanPage
 import com.example.scanpro.data.UndoState
 import com.example.scanpro.data.WatermarkStyle
-import com.example.scanpro.data.hasCurrentPdf
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.intelligence.BusinessCard
@@ -199,9 +202,9 @@ import com.example.scanpro.intelligence.DocumentInsights
 import com.example.scanpro.intelligence.DocumentIntelligenceEngine
 import com.example.scanpro.intelligence.TranslationEngine
 import com.example.scanpro.intelligence.TranslationFeature
+import com.example.scanpro.navigation.isWideWindow
 import java.text.DateFormat
 import java.util.Date
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -210,6 +213,16 @@ import kotlinx.coroutines.withContext
 /** Rotation is a physical direction, so this icon must not flip in right-to-left layouts (the AutoMirrored one would). */
 @Suppress("DEPRECATION")
 private val RotateRightIcon: ImageVector = Icons.Filled.RotateRight
+
+/** The star's fill once the document is a favourite, from the owner's design. */
+private val FavouriteGold = Color(0xFFC47A00)
+
+/** The tabs under the top bar, in order. */
+private enum class DocumentTab(@StringRes val labelRes: Int) {
+    PAGES(R.string.doc_tab_pages),
+    TEXT(R.string.doc_tab_text),
+    INSIGHTS(R.string.doc_tab_insights)
+}
 
 @Composable
 fun DocumentRoute(
@@ -392,9 +405,11 @@ internal fun DocumentDetailScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val pages = remember(document.pages) { document.pages.sortedBy { it.position } }
+    // The page the chip row and the per-page tools act on: the last page tapped or long-pressed, page 1 at first.
     var selectedPageId by rememberSaveable(document.id) { mutableStateOf(pages.firstOrNull()?.id) }
     val currentPage = pages.firstOrNull { it.id == selectedPageId } ?: pages.firstOrNull()
     val currentIndex = pages.indexOfFirst { it.id == currentPage?.id }.coerceAtLeast(0)
+    val hasText = document.ocrText.isNotBlank()
     // ~40 regex passes over the whole OCR text; off the main thread so long documents don't jank.
     val insights: DocumentInsights by produceState(initialValue = remember { DocumentIntelligenceEngine.analyze("") }, document.ocrText) {
         value = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.analyze(document.ocrText) }
@@ -430,6 +445,9 @@ internal fun DocumentDetailScreen(
     // Set while the on-demand translation module is being fetched from Google Play.
     var translationProgress by remember { mutableStateOf<TranslationFeature.Progress?>(null) }
 
+    var tab by rememberSaveable(document.id) { mutableIntStateOf(DocumentTab.PAGES.ordinal) }
+    // The translate controls unfold under the Text tab's chips only when asked for.
+    var translateOpen by rememberSaveable(document.id) { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }
     // The action waiting for "replace your corrections?" to be answered.
     var reOcrConfirm by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -454,15 +472,11 @@ internal fun DocumentDetailScreen(
     var ocrEditOpen by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var detailsOpen by remember { mutableStateOf(false) }
-    // Text, insights and PDF settings each open in their own sheet, so the page itself fills the screen.
-    var textOpen by rememberSaveable { mutableStateOf(false) }
-    var insightsOpen by rememberSaveable { mutableStateOf(false) }
     var pdfSettingsOpen by rememberSaveable { mutableStateOf(false) }
-    // Filters replace the bottom toolbar while open, so the page above stays visible and undimmed.
-    var filtersOpen by rememberSaveable { mutableStateOf(false) }
-    androidx.activity.compose.BackHandler(enabled = filtersOpen) { filtersOpen = false }
-    // Everything that isn't on the bottom toolbar lives in the "More" sheet.
-    var moreOpen by rememberSaveable { mutableStateOf(false) }
+    // Every way of getting the document out of the app, from the share icon in the top bar.
+    var exportOpen by rememberSaveable { mutableStateOf(false) }
+    // The rest of the per-page tools, from a long press on a page.
+    var pageSheetOpen by rememberSaveable { mutableStateOf(false) }
 
     val appendLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
         if (uris.isNotEmpty()) onAppendImages(uris)
@@ -494,6 +508,7 @@ internal fun DocumentDetailScreen(
             }
         }
     }
+    val sharePdfNow: () -> Unit = { onWithFreshPdf({}) { sharePdf(context, it) } }
 
     if (scanSaved) {
         ScanSavedSheet(
@@ -523,542 +538,498 @@ internal fun DocumentDetailScreen(
         }
     }
 
+    val wide = isWideWindow()
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopBarWithProgress(busy, onStop = onStop) { TopAppBar(
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { TitleWithStatus(document.title, if (busy) busyLabel else null) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back)) }
-                },
-                actions = {
-                    // Undo and redo cover page edits made in this session (filters, crop, clean-up, mark-up, text, order).
-                    IconButton(onClick = onUndo, enabled = !busy && undoState.canUndo) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.common_undo))
-                    }
-                    if (undoState.canRedo) {
-                        IconButton(onClick = onRedo, enabled = !busy) {
-                            Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.common_redo))
-                        }
-                    }
-                    val favoriteState = stringResource(if (document.isFavorite) R.string.a11y_favorite_on else R.string.a11y_favorite_off)
-                    IconButton(onClick = onToggleFavorite, enabled = !busy, modifier = Modifier.semantics { stateDescription = favoriteState }) {
-                        Icon(if (document.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = stringResource(R.string.doc_favorite))
-                    }
-                    Box {
-                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.doc_more_options)) }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            MenuItem(stringResource(R.string.common_rename), Icons.Default.Edit, !busy) { menuOpen = false; renameOpen = true }
-                            MenuItem(stringResource(R.string.doc_move_to_folder), Icons.Default.Folder, !busy) { menuOpen = false; folderOpen = true }
-                            MenuItem(stringResource(R.string.doc_tags), Icons.Default.Tag, !busy) { menuOpen = false; tagsOpen = true }
-                            MenuItem(stringResource(R.string.doc_tab_pdf_settings), Icons.Default.PictureAsPdf) { menuOpen = false; pdfSettingsOpen = true }
-                            MenuItem(stringResource(R.string.doc_details), Icons.Default.Info) { menuOpen = false; detailsOpen = true }
-                            HorizontalDivider()
-                            MenuItem(stringResource(R.string.doc_move_to_recycle_bin), Icons.Default.Delete, !busy) { menuOpen = false; deleteDocumentOpen = true }
-                        }
-                    }
-                }
-            ) }
-        },
-        bottomBar = {
-            // The most-used tools sit in a fixed bottom toolbar; the rest are one tap away under More.
-            if (currentPage != null) {
-                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-                    if (filtersOpen) {
-                        // The filter strip takes the toolbar's place for the page on screen, as in the camera.
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .navigationBarsPadding()
-                                .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 12.dp)
-                        ) {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    stringResource(R.string.doc_filters_for_page, currentIndex + 1, pages.size),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                // Brightness, contrast and the other clean-up controls, with their own "all pages" option.
-                                TextButton(onClick = { filtersOpen = false; adjustmentsOpen = true }, enabled = !busy) {
-                                    Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(stringResource(R.string.doc_clean_up), maxLines = 1)
-                                }
-                                IconButton(onClick = { filtersOpen = false }) {
-                                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.doc_close_filters))
-                                }
-                            }
-                            // Each filter previewed on this page, made from the original photo so every look can be compared.
-                            val previews by produceState<Map<PageFilter, android.graphics.Bitmap>>(
-                                emptyMap(), currentPage.id, currentPage.sourcePath, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments
-                            ) {
-                                value = withContext(Dispatchers.Default) {
-                                    runCatching {
-                                        val photo = ImageProcessor.decodeOrientedScaled(currentPage.sourcePath, 900) ?: return@runCatching emptyMap()
-                                        try {
-                                            ImageProcessor.filterPreviews(photo, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments)
-                                        } finally {
-                                            photo.recycle()
-                                        }
-                                    }.getOrDefault(emptyMap())
-                                }
-                            }
-                            FilterStrip(
-                                previews = previews,
-                                selected = currentPage.filter,
-                                enabled = !busy,
-                                onSelect = { filter -> if (filter != currentPage.filter) onApplyFilter(currentPage.id, filter) }
+            TopBarWithProgress(busy, onStop = onStop) {
+                Column {
+                    DocumentTopBar(title = document.title, status = if (busy) busyLabel else null, onBack = onBack) {
+                        val favoriteState = stringResource(if (document.isFavorite) R.string.a11y_favorite_on else R.string.a11y_favorite_off)
+                        IconButton(onClick = onToggleFavorite, enabled = !busy, modifier = Modifier.semantics { stateDescription = favoriteState }) {
+                            Icon(
+                                if (document.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = stringResource(R.string.doc_favorite),
+                                tint = if (document.isFavorite) FavouriteGold else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .navigationBarsPadding()
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Four actions, as in the leading scanners; Text and the rest live under More.
-                            BarAction(Icons.Default.AutoFixHigh, stringResource(R.string.doc_filters), !busy) { filtersOpen = true }
-                            BarAction(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy) { cropOpen = true }
-                            BarAction(Icons.Default.Share, stringResource(R.string.common_share), !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
-                            BarAction(Icons.Default.MoreHoriz, stringResource(R.string.common_more), true) { moreOpen = true }
+                        IconButton(onClick = { exportOpen = true }, enabled = !busy) {
+                            Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.doc_export))
+                        }
+                        Box {
+                            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.doc_more_options)) }
+                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                                MenuItem(stringResource(R.string.common_rename), Icons.Default.Edit, !busy) { menuOpen = false; renameOpen = true }
+                                MenuItem(stringResource(R.string.doc_tags), Icons.Default.Tag, !busy) { menuOpen = false; tagsOpen = true }
+                                MenuItem(stringResource(R.string.doc_move_to_folder), Icons.Default.Folder, !busy) { menuOpen = false; folderOpen = true }
+                                MenuItem(stringResource(R.string.doc_details), Icons.Default.Info) { menuOpen = false; detailsOpen = true }
+                                MenuItem(stringResource(R.string.doc_tab_pdf_settings), Icons.Default.PictureAsPdf) { menuOpen = false; pdfSettingsOpen = true }
+                                HorizontalDivider()
+                                // Undo and redo cover page edits made in this session (filters, crop, clean-up, mark-up, text, order).
+                                MenuItem(stringResource(R.string.common_undo), Icons.AutoMirrored.Filled.Undo, !busy && undoState.canUndo) { menuOpen = false; onUndo() }
+                                if (undoState.canRedo) {
+                                    MenuItem(stringResource(R.string.common_redo), Icons.AutoMirrored.Filled.Redo, !busy) { menuOpen = false; onRedo() }
+                                }
+                                HorizontalDivider()
+                                MenuItem(stringResource(R.string.doc_open_pdf), Icons.AutoMirrored.Filled.OpenInNew, !busy) { menuOpen = false; onWithFreshPdf({}) { openPdf(context, it) } }
+                                MenuItem(stringResource(R.string.doc_share_png), Icons.Default.Image, !busy) { menuOpen = false; onExportPng() }
+                                MenuItem(stringResource(R.string.doc_duplicate_doc), Icons.Default.FileCopy, !busy) { menuOpen = false; onDuplicateDocument() }
+                                HorizontalDivider()
+                                MenuItem(stringResource(R.string.doc_move_to_recycle_bin), Icons.Default.Delete, !busy) { menuOpen = false; deleteDocumentOpen = true }
+                            }
                         }
                     }
+                    DocumentTabs(selected = tab, onSelect = { tab = it })
                 }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        androidx.compose.foundation.layout.BoxWithConstraints(
+        Box(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // The page fills whatever height is left. Only when that would leave it too small to see (a phone on
-            // its side, or very large text) does the screen scroll, with the page at a fixed height instead.
-            val roomy = maxHeight >= 420.dp
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(if (roomy) Modifier else Modifier.verticalScroll(rememberScrollState()))
-                    .padding(horizontal = 16.dp)
-            ) {
-                Spacer(Modifier.height(4.dp))
-                if (currentPage == null) {
-                    Text(
-                        stringResource(R.string.doc_no_page_selected),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 24.dp)
-                    )
-                } else {
-                    // Status and shortcuts: whether the PDF is current (opens PDF settings), the kind of document
-                    // (opens insights) and the page count. Wraps rather than squeezes with large text.
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        val openPdfSettings = stringResource(R.string.doc_open_pdf_settings)
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable(onClickLabel = openPdfSettings, role = Role.Button) { pdfSettingsOpen = true }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    stringResource(if (document.hasCurrentPdf()) R.string.doc_ready_to_export else R.string.doc_pdf_updates_on_export),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            }
+            when (DocumentTab.entries[tab]) {
+                DocumentTab.PAGES -> LazyVerticalGrid(
+                    columns = GridCells.Fixed(if (wide) 4 else 2),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item(key = "markup", span = { GridItemSpan(maxLineSpan) }) {
+                        // Mark-up for the current page; the watermark covers every page, as before.
+                        val canMark = !busy && currentPage != null
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item { ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true } }
+                            item { ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true } }
+                            item { ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } } }
+                            item { ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } } }
+                            item { ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true } }
                         }
-                        if (document.ocrText.isNotBlank()) {
-                            val openInsights = stringResource(R.string.doc_open_insights)
-                            Surface(
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                                    .clip(MaterialTheme.shapes.small)
-                                    .clickable(onClickLabel = openInsights, role = Role.Button) { insightsOpen = true }
+                    }
+                    itemsIndexed(pages, key = { _, page -> page.id }) { index, page ->
+                        PageCell(
+                            page = page,
+                            index = index,
+                            count = pages.size,
+                            current = page.id == currentPage?.id,
+                            enabled = !busy,
+                            onOpen = { selectedPageId = page.id; cropOpen = true },
+                            onOptions = { selectedPageId = page.id; pageSheetOpen = true },
+                            onMoveEarlier = if (index > 0) ({ onMove(page.id, -1) }) else null,
+                            onMoveLater = if (index < pages.lastIndex) ({ onMove(page.id, 1) }) else null,
+                            modifier = Modifier.animateItem()
+                        )
+                    }
+                    item(key = "organise", span = { GridItemSpan(maxLineSpan) }) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            FilledTonalButton(
+                                onClick = { appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                                enabled = !busy
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(insights.kind.labelRes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.doc_add_page))
+                            }
+                            OutlinedButton(onClick = { splitAllOpen = true }, enabled = !busy && document.pageCount > 1) { Text(stringResource(R.string.doc_split)) }
+                            OutlinedButton(onClick = { mergeOpen = true }, enabled = !busy && otherDocuments.isNotEmpty()) { Text(stringResource(R.string.doc_merge)) }
+                        }
+                    }
+                }
+
+                DocumentTab.TEXT -> Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)
+                ) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        item { ActionChip(Icons.Default.ContentCopy, stringResource(R.string.doc_copy), hasText) { copyText(context, document.ocrText) } }
+                        item {
+                            var exportMenuOpen by remember { mutableStateOf(false) }
+                            Box {
+                                ActionChip(Icons.Default.IosShare, stringResource(R.string.doc_export_txt), true, trailing = Icons.Default.ArrowDropDown) { exportMenuOpen = true }
+                                DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
+                                    val canExport = !busy && hasText
+                                    MenuItem(stringResource(R.string.doc_txt_file), Icons.Default.TextFields, canExport) { exportMenuOpen = false; onExportOcrTextFile() }
+                                    MenuItem(stringResource(R.string.doc_word_file), Icons.Default.Description, canExport) { exportMenuOpen = false; onExportWord() }
+                                    MenuItem(stringResource(R.string.doc_excel_file), Icons.Default.TableChart, canExport) { exportMenuOpen = false; onExportExcel() }
+                                    MenuItem(stringResource(R.string.doc_share_text), Icons.Default.Share) { exportMenuOpen = false; shareOcrText(context, document) }
                                 }
                             }
                         }
-                        Text(
-                            if (document.searchablePdf) pluralStringResource(R.plurals.doc_pages_searchable, document.pages.size, document.pages.size)
-                            else pluralStringResource(R.plurals.doc_page_count, document.pages.size, document.pages.size),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 6.dp)
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    // The page as a sheet on a tonal desk, matching the library's thumbnails. Swipe for the next page.
-                    val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = currentIndex) { pages.size }
-                    // Keep the pager and the selected page in step both ways: a tap in the strip scrolls the pager,
-                    // a swipe selects the page.
-                    LaunchedEffect(currentIndex, pages.size) {
-                        if (pagerState.currentPage != currentIndex && currentIndex < pagerState.pageCount) pagerState.animateScrollToPage(currentIndex)
-                    }
-                    LaunchedEffect(pagerState.settledPage) {
-                        pages.getOrNull(pagerState.settledPage)?.let { if (it.id != selectedPageId) selectedPageId = it.id }
-                    }
-                    androidx.compose.foundation.pager.HorizontalPager(
-                        state = pagerState,
-                        key = { pages.getOrNull(it)?.id ?: it },
-                        pageSpacing = 16.dp,
-                        modifier = (if (roomy) Modifier.weight(1f) else Modifier.height(360.dp))
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.large)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    ) { index ->
-                        val page = pages.getOrNull(index)
-                        PageThumbnail(
-                            page?.imagePath,
-                            Modifier.fillMaxSize().padding(14.dp),
-                            THUMBNAIL_LARGE,
-                            version = page,
-                            shape = RoundedCornerShape(10.dp),
-                            background = Color.Transparent,
-                            contentDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
-                        )
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    // In a right-to-left layout the strip runs right to left, so a drag to the right moves a page earlier.
-                    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
-                            var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
-                            // The gesture block outlives reorders, so read the live position instead of the captured one.
-                            val latestIndex by rememberUpdatedState(index)
-                            val latestLast by rememberUpdatedState(pages.lastIndex)
-                            val latestBusy by rememberUpdatedState(busy)
-                            val latestRtl by rememberUpdatedState(isRtl)
-                            val isCurrent = item.id == currentPage.id
-                            val pageDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
-                            Card(
-                                modifier = Modifier
-                                    .size(width = 52.dp, height = 70.dp)
-                                    // The thumbnail follows the finger while dragging.
-                                    .graphicsLayer { translationX = dragDistance }
-                                    .zIndex(if (dragDistance != 0f) 1f else 0f)
-                                    .pointerInput(item.id) {
-                                        // One move per gesture, applied on release. Moving on every slot
-                                        // crossing raced the one-operation-at-a-time rule and dropped moves.
-                                        val slot = 60.dp.toPx() // thumbnail width plus spacing
-                                        detectDragGesturesAfterLongPress(
-                                            onDragStart = { dragDistance = 0f },
-                                            onDragEnd = {
-                                                val slots = (dragDistance / slot).roundToInt()
-                                                val target = (latestIndex + if (latestRtl) -slots else slots).coerceIn(0, latestLast)
-                                                val delta = target - latestIndex
-                                                dragDistance = 0f
-                                                if (delta != 0 && !latestBusy) onMove(item.id, delta)
+                        item {
+                            FilterChip(
+                                selected = translateOpen,
+                                onClick = { translateOpen = !translateOpen },
+                                label = { Text(stringResource(R.string.doc_translate)) },
+                                leadingIcon = { Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize)) }
+                            )
+                        }
+                        item {
+                            // The script the pages were read in; the menu switches script (reading again) or re-runs OCR.
+                            var scriptMenuOpen by remember { mutableStateOf(false) }
+                            val scriptLabel = stringResource(document.ocrScript.labelRes)
+                            val scriptDescription = stringResource(R.string.doc_ocr_script_current, scriptLabel)
+                            Box {
+                                FilterChip(
+                                    selected = true,
+                                    onClick = { scriptMenuOpen = true },
+                                    label = { Text(scriptLabel) },
+                                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                                    modifier = Modifier.semantics { contentDescription = scriptDescription }
+                                )
+                                DropdownMenu(expanded = scriptMenuOpen, onDismissRequest = { scriptMenuOpen = false }) {
+                                    Text(
+                                        stringResource(R.string.doc_ocr_script),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                    )
+                                    OcrScript.entries.forEach { script ->
+                                        val isSelected = document.ocrScript == script
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(script.labelRes)) },
+                                            // Reading again in another script replaces corrections, so it asks first.
+                                            onClick = {
+                                                scriptMenuOpen = false
+                                                if (pages.any { it.ocrEdited } && !isSelected) reOcrConfirm = { onOcrScript(script) } else onOcrScript(script)
                                             },
-                                            onDragCancel = { dragDistance = 0f },
-                                            onDrag = { change, amount ->
-                                                change.consume()
-                                                dragDistance += amount.x
-                                            }
+                                            enabled = !busy,
+                                            trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
+                                            modifier = Modifier.semantics { selected = isSelected }
                                         )
                                     }
-                                    .clickable(role = Role.Tab) { selectedPageId = item.id }
-                                    // One announcement per card: its number and whether it is the page being edited.
-                                    .semantics(mergeDescendants = true) {
-                                        contentDescription = pageDescription
-                                        selected = isCurrent
-                                    },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                                border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.secondary)
-                                else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                            ) {
-                                PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, shape = RoundedCornerShape(9.dp), background = Color.Transparent, contentDescription = null)
+                                    HorizontalDivider()
+                                    MenuItem(stringResource(R.string.doc_rerun_ocr), Icons.Default.Replay, !busy) {
+                                        scriptMenuOpen = false
+                                        if (pages.any { it.ocrEdited }) reOcrConfirm = { onReOcr() } else onReOcr()
+                                    }
+                                }
                             }
                         }
                     }
-                    Spacer(Modifier.height(4.dp))
+                    if (translateOpen) {
+                        Spacer(Modifier.height(10.dp))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
+                            var languageMenuOpen by remember { mutableStateOf(false) }
+                            val targetLabel = TranslationEngine.commonTargets.firstOrNull { it.languageTag == translationTarget }?.label ?: translationTarget
+                            Box {
+                                val translateTo = stringResource(R.string.doc_translate_to_language, targetLabel)
+                                OutlinedButton(
+                                    onClick = { languageMenuOpen = true },
+                                    modifier = Modifier.semantics { contentDescription = translateTo }
+                                ) {
+                                    Text(targetLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                }
+                                DropdownMenu(expanded = languageMenuOpen, onDismissRequest = { languageMenuOpen = false }) {
+                                    Text(
+                                        stringResource(R.string.doc_translate_to),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                    )
+                                    TranslationEngine.commonTargets.forEach { target ->
+                                        val isSelected = translationTarget == target.languageTag
+                                        DropdownMenuItem(
+                                            text = { Text(target.label) },
+                                            onClick = { languageMenuOpen = false; translationTarget = target.languageTag },
+                                            trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
+                                            modifier = Modifier.semantics { selected = isSelected }
+                                        )
+                                    }
+                                }
+                            }
+                            FilledTonalButton(
+                                onClick = {
+                                    detailScope.launch {
+                                        translating = true
+                                        translationResult = try {
+                                            val translator = TranslationFeature.translator(context) { translationProgress = it }
+                                            translationProgress = null
+                                            translator.translate(document.ocrText, translationTarget)
+                                        } catch (cancelled: CancellationException) {
+                                            throw cancelled
+                                        } catch (error: Exception) {
+                                            error.message ?: resources.getString(R.string.doc_translation_failed)
+                                        } finally {
+                                            translating = false
+                                            translationProgress = null
+                                        }
+                                    }
+                                },
+                                enabled = hasText && !translating
+                            ) {
+                                Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    when (val progress = translationProgress) {
+                                        is TranslationFeature.Progress.Preparing -> stringResource(R.string.doc_preparing_translation)
+                                        is TranslationFeature.Progress.Downloading -> stringResource(R.string.doc_downloading_translation, progress.percent)
+                                        is TranslationFeature.Progress.Installing -> stringResource(R.string.doc_installing_translation)
+                                        null -> if (translating) stringResource(R.string.doc_translating) else stringResource(R.string.doc_translate)
+                                    }
+                                )
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.doc_translate_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        if (translationResult.isNotBlank()) {
+                            Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                                SelectionContainer { Text(translationResult, modifier = Modifier.padding(12.dp)) }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    // The whole document, page by page. Tapping a page's text (or its pencil) opens the editor
+                    // for that page; the saved text is what search indexes.
+                    val editLabel = stringResource(R.string.doc_edit_recognized_text)
+                    pages.forEachIndexed { index, page ->
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            MonoHeader(stringResource(R.string.doc_page_n, index + 1), modifier = Modifier.weight(1f))
+                            IconButton(onClick = { selectedPageId = page.id; ocrEditOpen = true }, enabled = !busy) {
+                                Icon(Icons.Default.Edit, contentDescription = editLabel, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            shape = MaterialTheme.shapes.medium,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.medium)
+                                .clickable(enabled = !busy, role = Role.Button, onClickLabel = editLabel) { selectedPageId = page.id; ocrEditOpen = true }
+                        ) {
+                            val blank = page.ocrText.isBlank()
+                            Text(
+                                if (blank) stringResource(R.string.doc_no_text_recognized) else page.ocrText,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = if (blank) null else FontFamily.Monospace,
+                                lineHeight = 20.sp,
+                                color = if (blank) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                    }
                     Text(
-                        if (pages.size > 1) stringResource(R.string.doc_page_x_of_y_reorder, currentIndex + 1, pages.size) else stringResource(R.string.doc_page_1_of_1),
-                        style = MaterialTheme.typography.labelSmall,
+                        stringResource(R.string.doc_text_editable_hint),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(Modifier.height(8.dp))
                 }
-            }
-        }
-    }
 
-    if (textOpen) {
-        ModalBottomSheet(onDismissRequest = { textOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
-            ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.doc_recognized_text), style = MaterialTheme.typography.titleLarge)
-                        if (currentPage != null) {
-                            Text(stringResource(R.string.doc_page_n, currentIndex + 1), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    if (!currentPage?.ocrText.isNullOrBlank()) {
-                        IconButton(onClick = { ocrEditOpen = true }, enabled = !busy) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.doc_edit_recognized_text))
-                        }
-                        IconButton(onClick = { copyText(context, currentPage.ocrText) }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.doc_copy_text))
-                        }
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = MaterialTheme.shapes.medium,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                    modifier = Modifier.fillMaxWidth()
+                DocumentTab.INSIGHTS -> Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    SelectionContainer {
-                        Text(
-                            when {
-                                currentPage == null -> stringResource(R.string.doc_no_page_selected)
-                                currentPage.ocrText.isBlank() -> stringResource(R.string.doc_no_text_recognized)
-                                else -> currentPage.ocrText
+                    if (!hasText) {
+                        InsightCard(stringResource(R.string.doc_detected_as)) {
+                            Text(stringResource(R.string.doc_insights_no_text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    } else {
+                        InsightCard(stringResource(R.string.doc_detected_as)) {
+                            Text(stringResource(insights.kind.labelRes), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        }
+                        val card = businessCard
+                        val facts = buildList {
+                            insights.amounts.forEach { add(R.string.doc_fact_label_amount to it) }
+                            insights.dates.forEach { add(R.string.doc_fact_label_date to it) }
+                            insights.references.forEach { add(R.string.doc_fact_label_reference to it) }
+                            if (card != null) {
+                                card.name?.let { add(R.string.doc_fact_label_name to it) }
+                                card.jobTitle?.let { add(R.string.doc_fact_label_role to it) }
+                                card.company?.let { add(R.string.doc_fact_label_company to it) }
+                                card.phones.forEach { add(R.string.doc_fact_label_phone to it) }
+                                card.emails.forEach { add(R.string.doc_fact_label_email to it) }
+                                card.website?.let { add(R.string.doc_fact_label_website to it) }
+                                card.address?.let { add(R.string.doc_fact_label_address to it) }
+                            }
+                        }
+                        if (facts.isNotEmpty()) {
+                            InsightCard(stringResource(R.string.doc_found_in_text)) {
+                                facts.forEach { (labelRes, value) -> FactRow(stringResource(labelRes), value) }
+                                if (card != null) {
+                                    FilledTonalButton(onClick = { addContact(card) }, modifier = Modifier.padding(top = 6.dp)) {
+                                        Text(stringResource(R.string.doc_add_to_contacts))
+                                    }
+                                }
+                            }
+                        }
+                        InsightCard(stringResource(R.string.doc_summary)) {
+                            SelectionContainer { Text(insights.summary, style = MaterialTheme.typography.bodyMedium, lineHeight = 21.sp) }
+                        }
+                        if (insights.actionItems.isNotEmpty()) {
+                            InsightCard(stringResource(R.string.doc_potential_action_items)) {
+                                insights.actionItems.forEach { item ->
+                                    Text(stringResource(R.string.doc_bullet_item, item), style = MaterialTheme.typography.bodySmall, lineHeight = 19.sp, modifier = Modifier.padding(vertical = 2.dp))
+                                }
+                            }
+                        }
+                    }
+                    InsightCard(stringResource(R.string.doc_ask_about_scan)) {
+                        val ask = {
+                            val question = assistantQuestion
+                            val text = document.ocrText
+                            if (question.isNotBlank() && text.isNotBlank()) {
+                                scope.launch { assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(question, text) } }
+                            }
+                        }
+                        OutlinedTextField(
+                            value = assistantQuestion,
+                            onValueChange = { assistantQuestion = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text(stringResource(R.string.doc_ask_placeholder)) },
+                            trailingIcon = {
+                                IconButton(onClick = ask, enabled = assistantQuestion.isNotBlank() && hasText) {
+                                    Icon(Icons.Default.Search, contentDescription = stringResource(R.string.doc_find_answer))
+                                }
                             },
-                            modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(12.dp)
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { ask() }),
+                            maxLines = 3
                         )
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                // One Export menu instead of a row of file buttons; re-reading and its script choice sit beside it.
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
-                    var exportMenuOpen by remember { mutableStateOf(false) }
-                    Box {
-                        val exportOptions = stringResource(R.string.doc_export_text_options)
-                        FilledTonalButton(
-                            onClick = { exportMenuOpen = true },
-                            modifier = Modifier.semantics { contentDescription = exportOptions }
-                        ) {
-                            Icon(Icons.Default.IosShare, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.doc_export))
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                        }
-                        DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
-                            val hasText = !busy && document.ocrText.isNotBlank()
-                            MenuItem(stringResource(R.string.doc_share_text), Icons.Default.Share) { exportMenuOpen = false; shareOcrText(context, document) }
-                            MenuItem(stringResource(R.string.doc_txt_file), Icons.Default.TextFields, hasText) { exportMenuOpen = false; onExportOcrTextFile() }
-                            MenuItem(stringResource(R.string.doc_word_file), Icons.Default.Description, hasText) { exportMenuOpen = false; onExportWord() }
-                            MenuItem(stringResource(R.string.doc_excel_file), Icons.Default.TableChart, hasText) { exportMenuOpen = false; onExportExcel() }
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { if (pages.any { it.ocrEdited }) reOcrConfirm = { onReOcr() } else onReOcr() }, enabled = !busy) {
-                            Icon(Icons.Default.Replay, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.doc_rerun_ocr))
-                        }
-                        var scriptMenuOpen by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { scriptMenuOpen = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.doc_ocr_options))
-                            }
-                            DropdownMenu(expanded = scriptMenuOpen, onDismissRequest = { scriptMenuOpen = false }) {
-                                Text(
-                                    stringResource(R.string.doc_ocr_script),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                                )
-                                OcrScript.entries.forEach { script ->
-                                    val isSelected = document.ocrScript == script
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(script.labelRes)) },
-                                        // Reading again in another script replaces corrections, so it asks first, as before.
-                                        onClick = {
-                                            scriptMenuOpen = false
-                                            if (pages.any { it.ocrEdited } && !isSelected) reOcrConfirm = { onOcrScript(script) } else onOcrScript(script)
-                                        },
-                                        enabled = !busy,
-                                        trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
-                                        modifier = Modifier.semantics { selected = isSelected }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                Text(
-                    stringResource(R.string.doc_ocr_script_current, stringResource(document.ocrScript.labelRes)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                SubHeader(stringResource(R.string.doc_translate))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
-                    var languageMenuOpen by remember { mutableStateOf(false) }
-                    val targetLabel = TranslationEngine.commonTargets.firstOrNull { it.languageTag == translationTarget }?.label ?: translationTarget
-                    Box {
-                        val translateTo = stringResource(R.string.doc_translate_to_language, targetLabel)
-                        androidx.compose.material3.OutlinedButton(
-                            onClick = { languageMenuOpen = true },
-                            modifier = Modifier.semantics { contentDescription = translateTo }
-                        ) {
-                            Text(targetLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                        }
-                        DropdownMenu(expanded = languageMenuOpen, onDismissRequest = { languageMenuOpen = false }) {
+                        // Answers are passages of the recognised text, so they read in the same mono as the text tab.
+                        SelectionContainer {
                             Text(
-                                stringResource(R.string.doc_translate_to),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                assistantAnswer.ifBlank { stringResource(R.string.doc_ask_supporting) },
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                lineHeight = 19.sp,
+                                color = if (assistantAnswer.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(top = 10.dp)
                             )
-                            TranslationEngine.commonTargets.forEach { target ->
-                                val isSelected = translationTarget == target.languageTag
-                                DropdownMenuItem(
-                                    text = { Text(target.label) },
-                                    onClick = { languageMenuOpen = false; translationTarget = target.languageTag },
-                                    trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
-                                    modifier = Modifier.semantics { selected = isSelected }
-                                )
-                            }
                         }
                     }
-                    FilledTonalButton(
-                        onClick = {
-                            detailScope.launch {
-                                translating = true
-                                translationResult = try {
-                                    val translator = TranslationFeature.translator(context) { translationProgress = it }
-                                    translationProgress = null
-                                    translator.translate(document.ocrText, translationTarget)
-                                } catch (cancelled: CancellationException) {
-                                    throw cancelled
-                                } catch (error: Exception) {
-                                    error.message ?: resources.getString(R.string.doc_translation_failed)
-                                } finally {
-                                    translating = false
-                                    translationProgress = null
+                    if (insights.suggestedTags.isNotEmpty()) {
+                        InsightCard(stringResource(R.string.doc_suggested_tags)) {
+                            Text(insights.suggestedTags.joinToString(", "), style = MaterialTheme.typography.bodyMedium)
+                            TextButton(
+                                enabled = !busy,
+                                onClick = {
+                                    val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
+                                    onTags(merged.joinToString(", "))
                                 }
-                            }
-                        },
-                        enabled = document.ocrText.isNotBlank() && !translating
-                    ) {
-                        Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            when (val progress = translationProgress) {
-                                is TranslationFeature.Progress.Preparing -> stringResource(R.string.doc_preparing_translation)
-                                is TranslationFeature.Progress.Downloading -> stringResource(R.string.doc_downloading_translation, progress.percent)
-                                is TranslationFeature.Progress.Installing -> stringResource(R.string.doc_installing_translation)
-                                null -> if (translating) stringResource(R.string.doc_translating) else stringResource(R.string.doc_translate)
-                            }
-                        )
-                    }
-                }
-                Text(
-                    stringResource(R.string.doc_translate_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                if (translationResult.isNotBlank()) {
-                    Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                        SelectionContainer { Text(translationResult, modifier = Modifier.padding(12.dp)) }
+                            ) { Text(stringResource(R.string.doc_apply_suggested_tags)) }
+                        }
                     }
                 }
             }
         }
     }
 
-    if (insightsOpen) {
-        ModalBottomSheet(onDismissRequest = { insightsOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    if (exportOpen) {
+        ModalBottomSheet(onDismissRequest = { exportOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            // Each row closes the sheet first, so the share dialog or password prompt isn't hidden behind it.
+            fun run(action: () -> Unit): () -> Unit = { exportOpen = false; action() }
             Column(
                 Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
+                    .padding(bottom = 24.dp)
             ) {
-                Text(stringResource(R.string.doc_tab_insights), style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(12.dp))
-                if (document.ocrText.isBlank()) {
-                    Text(stringResource(R.string.doc_no_text_recognized), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    SummaryCard(documentId = document.id, insights = insights, card = businessCard, onAddContact = addContact)
-                }
-                Spacer(Modifier.height(4.dp))
-                if (insights.amounts.isNotEmpty()) Text(stringResource(R.string.doc_amounts, insights.amounts.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                if (insights.dates.isNotEmpty()) Text(stringResource(R.string.doc_dates, insights.dates.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                if (insights.references.isNotEmpty()) Text(stringResource(R.string.doc_references, insights.references.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                businessCard?.let { card ->
-                    SubHeader(stringResource(R.string.doc_contact_details))
-                    listOfNotNull(card.name, card.jobTitle, card.company).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                    (card.phones + card.emails + listOfNotNull(card.website, card.address)).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                    FilledTonalButton(onClick = { addContact(card) }, modifier = Modifier.padding(top = 4.dp)) { Text(stringResource(R.string.doc_add_to_contacts)) }
-                }
-                if (insights.actionItems.isNotEmpty()) {
-                    SubHeader(stringResource(R.string.doc_potential_action_items))
-                    insights.actionItems.forEach { item ->
-                        Text(stringResource(R.string.doc_bullet_item, item), style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                if (insights.suggestedTags.isNotEmpty()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(stringResource(R.string.doc_suggested_tags, insights.suggestedTags.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                    TextButton(
-                        enabled = !busy,
-                        onClick = {
-                            val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
-                            onTags(merged.joinToString(", "))
-                        }
-                    ) { Text(stringResource(R.string.doc_apply_suggested_tags)) }
-                }
-                SubHeader(stringResource(R.string.doc_ask_about_scan))
-                OutlinedTextField(
-                    value = assistantQuestion,
-                    onValueChange = { assistantQuestion = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.doc_ask_placeholder)) },
-                    supportingText = { Text(stringResource(R.string.doc_ask_supporting)) },
-                    maxLines = 3
+                Text(
+                    stringResource(R.string.doc_export_title, document.title),
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
-                FilledTonalButton(
-                    onClick = {
-                        val question = assistantQuestion
-                        val text = document.ocrText
-                        scope.launch { assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(question, text) } }
-                    },
-                    enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank()
-                ) { Text(stringResource(R.string.doc_find_answer)) }
-                if (assistantAnswer.isNotBlank()) {
-                    Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                        Text(assistantAnswer, modifier = Modifier.padding(12.dp))
+                val quality = stringResource(document.pdfQuality.labelRes)
+                val pageSize = stringResource(document.pdfPageSize.labelRes)
+                ExportRow(
+                    Icons.Default.PictureAsPdf,
+                    stringResource(R.string.doc_export_pdf),
+                    if (document.searchablePdf) stringResource(R.string.doc_export_pdf_hint_searchable, quality, pageSize) else stringResource(R.string.doc_export_pdf_hint, quality, pageSize),
+                    !busy,
+                    run(sharePdfNow)
+                )
+                ExportRow(Icons.Default.Lock, stringResource(R.string.doc_protected_pdf), stringResource(R.string.doc_protected_pdf_hint), !busy, run { passwordOpen = true })
+                ExportRow(Icons.Default.Image, stringResource(R.string.doc_share_as_images), stringResource(R.string.doc_share_as_images_hint), !busy, run { shareImages(context, document) })
+                ExportRow(Icons.Default.ViewDay, stringResource(R.string.doc_long_image), stringResource(R.string.doc_long_image_hint), !busy, run(onExportLongImage))
+                ExportRow(Icons.Default.Badge, stringResource(R.string.doc_id_copy_sheet), stringResource(R.string.doc_id_copy_sheet_hint), !busy, run(onExportIdCopy))
+                ExportRow(Icons.Default.Print, stringResource(R.string.doc_print), stringResource(R.string.doc_print_hint), !busy, run { onWithFreshPdf({}) { printPdf(context, it) } })
+                HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
+                ExportRow(Icons.Default.Save, stringResource(R.string.doc_save_pdf), stringResource(R.string.doc_save_to_device_hint), !busy, run { savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(document.title)}.pdf") })
+                ExportRow(Icons.Default.AddToDrive, stringResource(R.string.doc_save_to_drive), stringResource(R.string.doc_save_to_google_drive_hint), !busy, run { saveToDrive(com.example.scanpro.data.fileSafeName(document.title)) })
+                ExportRow(Icons.Default.Description, stringResource(R.string.doc_word_docx), stringResource(R.string.doc_word_docx_hint), !busy && hasText, run(onExportWord))
+                ExportRow(Icons.Default.TableChart, stringResource(R.string.doc_excel_xlsx), stringResource(R.string.doc_excel_xlsx_hint), !busy && hasText, run(onExportExcel))
+                ExportRow(Icons.Default.Backup, stringResource(R.string.doc_encrypted_backup), stringResource(R.string.doc_encrypted_backup_hint), !busy, run { backupPasswordOpen = true })
+            }
+        }
+    }
+
+    if (pageSheetOpen && currentPage != null) {
+        ModalBottomSheet(onDismissRequest = { pageSheetOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            // Each tool closes the sheet first, so its dialog or result isn't hidden behind it.
+            fun run(action: () -> Unit): () -> Unit = { pageSheetOpen = false; action() }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 24.dp)
+            ) {
+                Text(
+                    stringResource(R.string.viewer_page_of, currentIndex + 1, pages.size),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(Modifier.height(12.dp))
+                Eyebrow(stringResource(R.string.doc_filters), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
+                Spacer(Modifier.height(8.dp))
+                // Each filter previewed on this page, made from the original photo so every look can be compared.
+                val previews by produceState<Map<PageFilter, Bitmap>>(
+                    emptyMap(), currentPage.id, currentPage.sourcePath, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments
+                ) {
+                    value = withContext(Dispatchers.Default) {
+                        runCatching {
+                            val photo = ImageProcessor.decodeOrientedScaled(currentPage.sourcePath, 900) ?: return@runCatching emptyMap()
+                            try {
+                                ImageProcessor.filterPreviews(photo, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments)
+                            } finally {
+                                photo.recycle()
+                            }
+                        }.getOrDefault(emptyMap())
                     }
                 }
+                FilterStrip(
+                    previews = previews,
+                    selected = currentPage.filter,
+                    enabled = !busy,
+                    onSelect = { filter -> if (filter != currentPage.filter) onApplyFilter(currentPage.id, filter) },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                val hasMarkup = currentPage.annotations.isNotEmpty()
+                SheetRow(Icons.Default.Tune, stringResource(R.string.doc_clean_up), !busy, run { adjustmentsOpen = true })
+                SheetRow(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(currentPage.id) })
+                SheetRow(Icons.Default.Replay, stringResource(R.string.doc_retake), !busy, run { onRetakePage(currentPage.id, currentIndex) })
+                SheetRow(Icons.Default.RestartAlt, stringResource(R.string.common_reset), !busy, run { onResetPage(currentPage.id) })
+                SheetRow(Icons.Default.FileCopy, stringResource(R.string.doc_duplicate), !busy, run { onDuplicatePage(currentPage.id) })
+                SheetRow(Icons.Default.Output, stringResource(R.string.doc_extract), !busy, run { onExtractPage(currentPage.id) })
+                SheetRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.doc_split_book), !busy, run { bookSplitOpen = true })
+                SheetRow(Icons.Default.AutoFixOff, stringResource(R.string.doc_eraser), !busy, run { eraserOpen = true })
+                SheetRow(Icons.Default.EditNote, stringResource(R.string.doc_edit_text), !busy, run { editTextOpen = true })
+                SheetRow(Icons.Default.Edit, stringResource(R.string.doc_edit_markup), !busy && hasMarkup, run { markupOpen = true })
+                SheetRow(Icons.AutoMirrored.Filled.Notes, stringResource(R.string.doc_edit_recognized_text), !busy, run { ocrEditOpen = true })
+                SheetRow(Icons.Default.RemoveCircleOutline, stringResource(R.string.doc_remove_last), !busy && hasMarkup, run { onUndoAnnotation(currentPage.id) })
+                HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
+                SheetRow(Icons.Default.Delete, stringResource(R.string.doc_delete_page), !busy, run { if (pages.size == 1) deletePageOpen = true else onDeletePage(currentPage.id) }, tint = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -1095,7 +1066,7 @@ internal fun DocumentDetailScreen(
                 ToggleRow(stringResource(R.string.doc_page_numbers), stringResource(R.string.doc_page_numbers_hint), document.pageNumbers, !busy, onPageNumbers)
                 // Settings chosen here apply to the next share, so it is offered straight from here.
                 FilledTonalButton(
-                    onClick = { pdfSettingsOpen = false; onWithFreshPdf({}) { sharePdf(context, it) } },
+                    onClick = { pdfSettingsOpen = false; sharePdfNow() },
                     enabled = !busy,
                     modifier = Modifier.padding(top = 8.dp)
                 ) {
@@ -1128,78 +1099,6 @@ internal fun DocumentDetailScreen(
     }
     if (tagsOpen) TextInputDialog(stringResource(R.string.doc_document_tags), document.tags.joinToString(", "), stringResource(R.string.doc_comma_separated_tags), allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
     if (folderOpen) TextInputDialog(stringResource(R.string.doc_move_to_folder), document.folderName, stringResource(R.string.doc_folder_name), allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
-    if (moreOpen) {
-        ModalBottomSheet(onDismissRequest = { moreOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            // Each tool closes the sheet first, so its dialog or result isn't hidden behind it.
-            fun run(action: () -> Unit): () -> Unit = { moreOpen = false; action() }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
-            ) {
-                SubHeader(stringResource(R.string.doc_document_group))
-                ToolGrid {
-                    ToolTile(Icons.AutoMirrored.Filled.Notes, stringResource(R.string.doc_tab_text), true, run { textOpen = true })
-                    ToolTile(Icons.Default.AutoAwesome, stringResource(R.string.doc_tab_insights), true, run { insightsOpen = true })
-                    ToolTile(Icons.Default.PictureAsPdf, stringResource(R.string.doc_tab_pdf_settings), true, run { pdfSettingsOpen = true })
-                    ToolTile(Icons.Default.Info, stringResource(R.string.doc_details), true, run { detailsOpen = true })
-                }
-                if (currentPage != null) {
-                    SubHeader(stringResource(R.string.doc_this_page))
-                    ToolGrid {
-                        ToolTile(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(currentPage.id) })
-                        ToolTile(Icons.Default.AutoFixHigh, stringResource(R.string.doc_filters), !busy, run { filtersOpen = true })
-                        ToolTile(Icons.Default.Tune, stringResource(R.string.doc_fine_tune), !busy, run { adjustmentsOpen = true })
-                        ToolTile(Icons.Default.RestartAlt, stringResource(R.string.common_reset), !busy, run { onResetPage(currentPage.id) })
-                        ToolTile(Icons.Default.Replay, stringResource(R.string.doc_retake), !busy, run { onRetakePage(currentPage.id, currentIndex) })
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_left), !busy && currentIndex > 0, run { onMove(currentPage.id, -1) })
-                        ToolTile(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.doc_move_right), !busy && currentIndex < pages.lastIndex, run { onMove(currentPage.id, 1) })
-                        ToolTile(Icons.Default.FileCopy, stringResource(R.string.doc_duplicate), !busy, run { onDuplicatePage(currentPage.id) })
-                        ToolTile(Icons.Default.Output, stringResource(R.string.doc_extract), !busy, run { onExtractPage(currentPage.id) })
-                        ToolTile(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.doc_split_book), !busy, run { bookSplitOpen = true })
-                        ToolTile(Icons.Default.Delete, stringResource(R.string.doc_delete_page), !busy, run { if (pages.size == 1) deletePageOpen = true else onDeletePage(currentPage.id) })
-                    }
-                    SubHeader(stringResource(R.string.doc_mark_up))
-                    ToolGrid {
-                        ToolTile(Icons.Default.Draw, stringResource(R.string.doc_sign), !busy, run { signatureOpen = true })
-                        ToolTile(Icons.Default.EditNote, stringResource(R.string.doc_edit_text), !busy, run { editTextOpen = true })
-                        ToolTile(Icons.Default.AutoFixOff, stringResource(R.string.doc_eraser), !busy, run { eraserOpen = true })
-                        ToolTile(Icons.Default.TextFields, stringResource(R.string.doc_add_text), !busy, run { annotationTextOpen = true })
-                        ToolTile(Icons.Default.Highlight, stringResource(R.string.doc_highlight), !busy, run { onHighlight(currentPage.id) })
-                        ToolTile(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), !busy, run { onRedact(currentPage.id) })
-                        ToolTile(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), !busy, run { watermarkOpen = true })
-                        ToolTile(Icons.Default.Edit, stringResource(R.string.doc_edit_markup), !busy && currentPage.annotations.isNotEmpty(), run { markupOpen = true })
-                        ToolTile(Icons.Default.RemoveCircleOutline, stringResource(R.string.doc_remove_last), !busy && currentPage.annotations.isNotEmpty(), run { onUndoAnnotation(currentPage.id) })
-                    }
-                }
-                SubHeader(stringResource(R.string.doc_share_and_save))
-                ToolGrid {
-                    ToolTile(Icons.Default.Image, stringResource(R.string.doc_share_jpg), !busy, run { shareImages(context, document) })
-                    ToolTile(Icons.Default.Image, stringResource(R.string.doc_share_png), !busy, run { onExportPng() })
-                    ToolTile(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.doc_open_pdf), !busy, run { onWithFreshPdf({}) { openPdf(context, it) } })
-                    ToolTile(Icons.Default.Save, stringResource(R.string.doc_save_pdf), !busy, run { savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(document.title)}.pdf") })
-                    ToolTile(Icons.Default.AddToDrive, stringResource(R.string.doc_save_to_drive), !busy, run { saveToDrive(com.example.scanpro.data.fileSafeName(document.title)) })
-                    ToolTile(Icons.Default.Description, stringResource(R.string.doc_word_docx), !busy && document.ocrText.isNotBlank(), run { onExportWord() })
-                    ToolTile(Icons.Default.TableChart, stringResource(R.string.doc_excel_xlsx), !busy && document.ocrText.isNotBlank(), run { onExportExcel() })
-                    ToolTile(Icons.Default.Print, stringResource(R.string.doc_print), !busy, run { onWithFreshPdf({}) { printPdf(context, it) } })
-                    ToolTile(Icons.Default.Lock, stringResource(R.string.doc_protect_pdf), !busy, run { passwordOpen = true })
-                    ToolTile(Icons.Default.Badge, stringResource(R.string.doc_id_copy), !busy, run { onExportIdCopy() })
-                    ToolTile(Icons.Default.ViewDay, stringResource(R.string.doc_long_image), !busy, run { onExportLongImage() })
-                    ToolTile(Icons.Default.Backup, stringResource(R.string.doc_encrypted_backup), !busy, run { backupPasswordOpen = true })
-                }
-                SubHeader(stringResource(R.string.doc_organise))
-                ToolGrid {
-                    ToolTile(Icons.Default.AddPhotoAlternate, stringResource(R.string.doc_add_pages), !busy, run {
-                        appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    })
-                    ToolTile(Icons.Default.Layers, stringResource(R.string.doc_merge), !busy && otherDocuments.isNotEmpty(), run { mergeOpen = true })
-                    ToolTile(Icons.Default.FileCopy, stringResource(R.string.doc_duplicate_doc), !busy, run { onDuplicateDocument() })
-                    ToolTile(Icons.Default.ContentCut, stringResource(R.string.doc_split_all), !busy && document.pageCount > 1, run { splitAllOpen = true })
-                }
-            }
-        }
-    }
 
     if (watermarkOpen) WatermarkDialog(onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }
     if (passwordOpen) PasswordInputDialog(
@@ -1251,7 +1150,7 @@ internal fun DocumentDetailScreen(
             loadSignature = {
                 when (pending) {
                     is PendingSignature.Drawn -> pending.bitmap
-                    is PendingSignature.Saved -> com.example.scanpro.imaging.ImageProcessor.decodeScaled(pending.file.absolutePath, 1600)
+                    is PendingSignature.Saved -> ImageProcessor.decodeScaled(pending.file.absolutePath, 1600)
                 }
             },
             onDismiss = { pendingSignature = null },
@@ -1424,40 +1323,239 @@ internal fun DocumentDetailScreen(
     }
 }
 
-/** One button on the bottom toolbar: an icon over a short label, sharing the width equally. */
+/** The 52 dp bar from the design: back, the title (with the running task under it while busy) and the actions. */
 @Composable
-private fun RowScope.BarAction(icon: ImageVector, label: String, enabled: Boolean, primary: Boolean = false, onClick: () -> Unit) {
-    val tint = if (primary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    Column(
-        modifier = Modifier
-            .weight(1f)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled, role = Role.Button) {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.ContextClick)
-                onClick()
-            }
-            .alpha(if (enabled) 1f else 0.38f)
-            .padding(vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+private fun DocumentTopBar(title: String, status: String?, onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .height(52.dp)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // The primary action sits in a filled pill so it reads as the default at a glance.
-        androidx.compose.foundation.layout.Box(
+        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back)) }
+        Column(
             Modifier
-                .size(width = 48.dp, height = 30.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(if (primary) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent),
-            contentAlignment = Alignment.Center
-        ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
-        Spacer(Modifier.height(3.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = tint,
-            fontWeight = if (primary) FontWeight.SemiBold else null,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+                .weight(1f)
+                .padding(end = 4.dp)
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.semantics { heading() }
+            )
+            if (!status.isNullOrBlank()) {
+                Text(status, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        actions()
+    }
+}
+
+/** Pages · Text · Insights, with the design's 3 dp underline on the selected tab. */
+@Composable
+private fun DocumentTabs(selected: Int, onSelect: (Int) -> Unit) {
+    TabRow(
+        selectedTabIndex = selected,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.primary,
+        indicator = { positions ->
+            TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(positions[selected]),
+                height = 3.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)) }
+    ) {
+        DocumentTab.entries.forEachIndexed { index, item ->
+            val isSelected = index == selected
+            Tab(
+                selected = isSelected,
+                onClick = { onSelect(index) },
+                text = { Text(stringResource(item.labelRes), fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium) },
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * One page in the grid: the thumbnail, its number under it and the earlier/later buttons. A tap opens the
+ * crop editor; a long press the rest of the page's tools. The current page (the one the chip row acts on)
+ * has a primary border.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PageCell(
+    page: ScanPage,
+    index: Int,
+    count: Int,
+    current: Boolean,
+    enabled: Boolean,
+    onOpen: () -> Unit,
+    onOptions: () -> Unit,
+    onMoveEarlier: (() -> Unit)?,
+    onMoveLater: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(10.dp)
+    val description = stringResource(R.string.viewer_page_of, index + 1, count)
+    val editLabel = stringResource(R.string.doc_edit_page, index + 1)
+    val optionsLabel = stringResource(R.string.doc_page_options)
+    Column(
+        modifier
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .border(2.dp, if (current) MaterialTheme.colorScheme.primary else Color.Transparent, shape)
+            .combinedClickable(
+                enabled = enabled,
+                role = Role.Button,
+                onClickLabel = editLabel,
+                onLongClickLabel = optionsLabel,
+                onClick = onOpen,
+                onLongClick = onOptions
+            )
+            .semantics { selected = current }
+            .padding(start = 8.dp, end = 8.dp, top = 8.dp)
+    ) {
+        PageThumbnail(
+            page.imagePath,
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(210f / 297f),
+            THUMBNAIL_GRID,
+            version = page,
+            shape = RoundedCornerShape(4.dp),
+            background = MaterialTheme.colorScheme.surfaceContainerLowest,
+            contentDescription = description
         )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(26.dp)
+        ) {
+            Text(
+                "${index + 1}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.Center)
+            )
+            Row(Modifier.align(Alignment.CenterEnd)) {
+                MoveButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_earlier), enabled, onMoveEarlier)
+                MoveButton(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.doc_move_later), enabled, onMoveLater)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoveButton(icon: ImageVector, label: String, enabled: Boolean, onClick: (() -> Unit)?) {
+    IconButton(onClick = onClick ?: {}, enabled = enabled && onClick != null, modifier = Modifier.size(26.dp)) {
+        Icon(icon, contentDescription = label, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** A tool chip: an icon and a short label, with an optional trailing icon for chips that open a menu. */
+@Composable
+private fun ActionChip(icon: ImageVector, label: String, enabled: Boolean, trailing: ImageVector? = null, onClick: () -> Unit) {
+    AssistChip(
+        onClick = onClick,
+        enabled = enabled,
+        label = { Text(label) },
+        leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize)) },
+        trailingIcon = trailing?.let { { Icon(it, contentDescription = null, modifier = Modifier.size(18.dp)) } }
+    )
+}
+
+/** One way out of the app in the export sheet: what it makes and, under it, what that is. */
+@Composable
+private fun ExportRow(icon: ImageVector, title: String, subtitle: String, enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .alpha(if (enabled) 1f else 0.38f)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconTile(icon, TileTone.Indigo, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** One tool in the per-page sheet. */
+@Composable
+private fun SheetRow(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit, tint: Color = MaterialTheme.colorScheme.onSurface) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .alpha(if (enabled) 1f else 0.38f)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(16.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = tint)
+    }
+}
+
+/** A card on the Insights tab: a small uppercase mono header over its content. */
+@Composable
+private fun InsightCard(header: String, content: @Composable () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 13.dp)) {
+            MonoHeader(header)
+            Spacer(Modifier.height(6.dp))
+            content()
+        }
+    }
+}
+
+/** Small uppercase mono label, as the design uses over cards and page headers. */
+@Composable
+private fun MonoHeader(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Medium,
+        letterSpacing = 1.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.semantics { heading() }
+    )
+}
+
+/** "Label · value" in the Found in the text card; the value in mono so numbers line up. */
+@Composable
+private fun FactRow(label: String, value: String) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(88.dp))
+        SelectionContainer(Modifier.weight(1f)) {
+            Text(value, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
+        }
     }
 }
 
@@ -1476,53 +1574,6 @@ private fun MenuItem(label: String, icon: ImageVector, enabled: Boolean = true, 
         enabled = enabled,
         onClick = onClick
     )
-}
-
-/**
- * Tiles in equal columns that fill the sheet's width: as many as fit at [ToolTileMinWidth] (at least four, at most
- * eight), so phones with large display or font sizes don't get three fixed-width tiles and an empty strip, and tablets
- * don't get a sparse row. Each row is as tall as its tallest tile.
- */
-@Composable
-private fun ToolGrid(content: @Composable () -> Unit) {
-    androidx.compose.ui.layout.Layout(content = content, modifier = Modifier.fillMaxWidth()) { measurables, constraints ->
-        val gap = 8.dp.roundToPx()
-        val width = constraints.maxWidth
-        val columns = ((width + gap) / (ToolTileMinWidth.roundToPx() + gap)).coerceIn(4, 8)
-        val cell = ((width - gap * (columns - 1)) / columns).coerceAtLeast(0)
-        val placeables = measurables.map { it.measure(androidx.compose.ui.unit.Constraints.fixedWidth(cell)) }
-        val rows = placeables.chunked(columns)
-        val heights = rows.map { row -> row.maxOf { it.height } }
-        val total = heights.sum() + gap * (rows.size - 1).coerceAtLeast(0)
-        layout(width, total) {
-            var y = 0
-            rows.forEachIndexed { r, row ->
-                row.forEachIndexed { c, placeable -> placeable.placeRelative(c * (cell + gap), y) }
-                y += heights[r] + gap
-            }
-        }
-    }
-}
-
-private val ToolTileMinWidth = 76.dp
-
-@Composable
-private fun ToolTile(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
-    // Same tile as the home screen's quick actions, so tools look the same everywhere.
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .alpha(if (enabled) 1f else 0.38f)
-            .padding(vertical = 10.dp, horizontal = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        IconTile(icon, TileTone.Indigo, size = 44.dp, corner = 14.dp)
-        Spacer(Modifier.height(8.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, minLines = 2)
-    }
 }
 
 @Composable
@@ -1563,78 +1614,84 @@ private sealed interface PendingSignature {
 }
 
 /**
- * What the document screen shows while its pages are read: the same frame as the loaded screen, on the normal
- * background, with the title and cover the library already had (when it had them), so opening a document from
- * Recent feels instant instead of sliding in a blank page.
+ * What the document screen shows while its pages are read: the same bar and tabs as the loaded screen, on the
+ * normal background, with the title and cover the library already had (when it had them), so opening a document
+ * from Recent feels instant instead of sliding in a blank page.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersion: Any?, unavailable: Boolean, onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(title.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back)) }
-                }
-            )
+            Column {
+                DocumentTopBar(title = title.orEmpty(), status = null, onBack = onBack)
+                DocumentTabs(selected = DocumentTab.PAGES.ordinal, onSelect = {})
+            }
         }
     ) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
         ) {
             if (unavailable) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.doc_unavailable)) }
                 return@Column
             }
             val opening = stringResource(R.string.doc_opening_document)
-            Spacer(Modifier.height(4.dp))
-            // Stands in for the status row, so the page doesn't jump when the document arrives.
-            Box(
-                Modifier
-                    .size(width = 112.dp, height = 26.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            )
-            Spacer(Modifier.height(8.dp))
-            Box(
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.large)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .semantics { contentDescription = opening },
-                contentAlignment = Alignment.Center
-            ) {
-                if (coverPath != null) {
-                    PageThumbnail(
-                        coverPath,
-                        Modifier.fillMaxSize().padding(14.dp),
-                        com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM,
-                        version = coverVersion,
-                        shape = RoundedCornerShape(10.dp),
-                        background = Color.Transparent,
-                        contentDescription = null
-                    )
-                }
-            }
-            Spacer(Modifier.height(10.dp))
+            // Stands in for the chip row, so nothing jumps when the document arrives.
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(3) {
                     Box(
                         Modifier
-                            .size(width = 52.dp, height = 70.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(width = 84.dp, height = 32.dp)
+                            .clip(RoundedCornerShape(9.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     )
                 }
             }
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(12.dp))
+            // The first row of the grid: the cover where the first page will be, blank cells beside it.
+            val columns = if (isWideWindow()) 4 else 2
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = opening },
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                repeat(columns) { index ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 26.dp)
+                    ) {
+                        if (index == 0 && coverPath != null) {
+                            PageThumbnail(
+                                coverPath,
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(210f / 297f),
+                                THUMBNAIL_GRID,
+                                version = coverVersion,
+                                shape = RoundedCornerShape(4.dp),
+                                background = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                contentDescription = null
+                            )
+                        } else {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(210f / 297f)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

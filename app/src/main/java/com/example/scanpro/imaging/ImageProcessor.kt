@@ -170,7 +170,12 @@ object ImageProcessor {
      * screen's crop editor: the outline is drawn in the photo's own coordinates, so the image under it must not be
      * cropped, but it should still look like the page will.
      */
-    fun filterUncropped(source: Bitmap, filter: PageFilter, maxDimension: Int = 1400): Bitmap {
+    fun filterUncropped(
+        source: Bitmap,
+        filter: PageFilter,
+        adjustments: PageAdjustments = PageAdjustments.DEFAULT,
+        maxDimension: Int = 1400
+    ): Bitmap {
         val fit = min(1f, maxDimension.toFloat() / max(source.width, source.height))
         val page = if (fit < 1f) {
             source.scale((source.width * fit).toInt().coerceAtLeast(1), (source.height * fit).toInt().coerceAtLeast(1))
@@ -180,8 +185,8 @@ object ImageProcessor {
         var base = page.toRgb()
         page.recycle()
         try {
-            base = MatFilters.cleanUp(base, PageAdjustments.DEFAULT)
-            val styled = MatFilters.style(base.clone(), filter, PageAdjustments.DEFAULT)
+            base = MatFilters.cleanUp(base, adjustments)
+            val styled = MatFilters.style(base.clone(), filter, adjustments)
             try {
                 return styled.toBitmap()
             } finally {

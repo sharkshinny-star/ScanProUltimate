@@ -31,6 +31,7 @@ import com.example.scanpro.core.designsystem.rememberMotionEnabled
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.core.ui.shareUri
 import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.feature.document.DocumentRoute
@@ -49,7 +50,7 @@ fun ScanProNavHost(
     snackbarHostState: SnackbarHostState,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
-    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>) -> Unit,
+    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>) -> Unit,
     onCameraRetakeComplete: (RetakeTarget, android.net.Uri, CropQuad, PageFilter) -> Unit,
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit
@@ -145,10 +146,10 @@ fun ScanProNavHost(
                 initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty(),
                 retakeOfPage = retake?.position,
                 onClose = dropUnlessResumed { navController.popBackStack() },
-                onComplete = { uris, mode, crops, filters ->
+                onComplete = { uris, mode, crops, filters, adjustments ->
                     if (resumed()) {
                         if (retake != null) onCameraRetakeComplete(retake, uris.first(), crops.first(), filters.first())
-                        else onCameraScanComplete(uris, mode, crops, filters)
+                        else onCameraScanComplete(uris, mode, crops, filters, adjustments)
                         navController.popBackStack()
                     }
                 },

@@ -140,21 +140,14 @@
     <string name="scan_show_grid">Grid</string>
     <string name="scan_show_level">Spirit level</string>
     <string name="scan_more_options">More options</string>
-    <string name="scan_hide_zoom_exposure">Hide zoom &amp; exposure</string>
-    <string name="scan_zoom_exposure">Zoom &amp; exposure</string>
+    <string name="scan_hide_zoom_exposure">Hide exposure</string>
+    <string name="scan_zoom_exposure">Exposure</string>
     <string name="scan_compat_scanner">Compatibility scanner</string>
-    <string name="scan_zoom_min">1×</string>
-    <string name="scan_zoom">Zoom</string>
     <string name="scan_ev">EV</string>
     <string name="scan_id_front_only">Front only</string>
     <string name="scan_id_both_sides">Both sides</string>
-    <string name="scan_tab_text">Text</string>
-    <string name="scan_tab_docs">Docs</string>
-    <string name="scan_tab_id_cards">ID cards</string>
-    <string name="scan_remove_last_page">Remove last page</string>
     <string name="scan_take_photo">Take photo</string>
     <string name="scan_import_photos">Import photos</string>
-    <string name="scan_import_images">Import images</string>
     <string name="scan_permission_title">Camera permission</string>
     <string name="scan_permission_body">The Pro scanner needs camera access only while you scan. Your documents stay on this device by default.</string>
     <string name="scan_permission_allow">Allow camera</string>
@@ -170,15 +163,19 @@
     <string name="scan_review_use_on_all">Use %1$s on all pages</string>
     <string name="scan_review_previous_page">Previous page</string>
     <string name="scan_review_next_page">Next page</string>
-    <string name="scan_review_add">Add</string>
-    <string name="scan_review_crop">Crop</string>
     <string name="scan_review_rotate">Rotate</string>
-    <string name="scan_review_auto_crop">Auto crop</string>
     <string name="scan_review_no_crop">No crop</string>
     <string name="scan_review_curve">Curve</string>
     <string name="scan_review_rotate_left">Rotate left</string>
     <string name="scan_review_state_on">On</string>
     <string name="scan_review_page_n">Page %1$d</string>
+    <string name="scan_review_adjust_page">Adjust page %1$d</string>
+    <string name="scan_review_adjust_page_single">Adjust page</string>
+    <string name="scan_review_undo">Undo</string>
+    <string name="scan_review_more">More options</string>
+    <string name="scan_review_auto_detect">Auto detect</string>
+    <string name="scan_review_save_page">Save page</string>
+    <string name="scan_review_add_another_page">Add another page</string>
     <!-- Added by the compassionate-turing merge -->
     <string name="scan_review_retake_page">Retake page</string>
     <string name="scan_status_page_retaken" tools:ignore="PluralsCandidate">Page %1$d retaken</string>
@@ -195,6 +192,12 @@
     <string name="scan_error_camera_stream">The camera could not start a preview on this device.</string>
     <string name="scan_error_camera_stopped">The camera stopped working. Try again or use the compatibility scanner.</string>
     <string name="scan_flash_state">Flash: %1$s</string>
+    <string name="scan_torch">Torch</string>
+    <string name="scan_zoom_level">Zoom %1$s</string>
+    <plurals name="scan_pages_in_batch">
+        <item quantity="one">%1$d page in batch</item>
+        <item quantity="other">%1$d pages in batch</item>
+    </plurals>
     <string name="scan_flash_off">off</string>
     <string name="scan_flash_auto">auto</string>
     <string name="scan_flash_on">on</string>

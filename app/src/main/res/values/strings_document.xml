@@ -15,24 +15,14 @@
     <string name="doc_share_pdf">Share PDF</string>
 
     <!-- Document screen: page header, thumbnails and tabs -->
-    <string name="doc_ready_to_export">Ready to export</string>
-    <plurals name="doc_pages_searchable">
-        <item quantity="one">%1$d page · searchable</item>
-        <item quantity="other">%1$d pages · searchable</item>
-    </plurals>
-    <string name="doc_page_x_of_y_reorder" tools:ignore="PluralsCandidate">Page %1$d of %2$d · long-press a page to reorder</string>
-    <string name="doc_page_1_of_1">Page 1 of 1</string>
     <string name="doc_tab_text">Text</string>
     <string name="doc_tab_insights">Insights</string>
     <string name="doc_tab_pdf_settings">PDF settings</string>
 
     <!-- Document screen: Text tab -->
     <string name="doc_page_n">Page %1$d</string>
-    <string name="doc_recognized_text">Recognised text</string>
     <string name="doc_edit_recognized_text">Edit recognised text</string>
-    <string name="doc_copy_text">Copy text</string>
     <string name="doc_no_text_recognized">No text recognised on this page.</string>
-    <string name="doc_no_page_selected">No page selected.</string>
     <string name="doc_share_text">Share text</string>
     <string name="doc_txt_file">TXT file</string>
     <string name="doc_word_file">Word file</string>
@@ -48,18 +38,14 @@
     <string name="doc_translate_hint">Runs on-device with ML Kit; the translation feature and its language model download once.</string>
 
     <!-- Document screen: Insights tab -->
-    <string name="doc_amounts">Amounts: %1$s</string>
-    <string name="doc_dates">Dates: %1$s</string>
-    <string name="doc_references">References: %1$s</string>
-    <string name="doc_contact_details">Contact details</string>
     <string name="doc_add_to_contacts">Add to contacts</string>
-    <string name="doc_potential_action_items">Potential action items</string>
+    <string name="doc_potential_action_items">Possible action items</string>
     <string name="doc_bullet_item">• %1$s</string>
-    <string name="doc_suggested_tags">Suggested tags: %1$s</string>
+    <string name="doc_suggested_tags">Suggested tags</string>
     <string name="doc_apply_suggested_tags">Apply suggested tags</string>
-    <string name="doc_ask_about_scan">Ask about this scan</string>
-    <string name="doc_ask_placeholder">e.g. What is the total?</string>
-    <string name="doc_ask_supporting">Answers come only from OCR text; nothing is uploaded.</string>
+    <string name="doc_ask_about_scan">Ask this document</string>
+    <string name="doc_ask_placeholder">e.g. when is it due?</string>
+    <string name="doc_ask_supporting">Answers quote the matching text. Nothing is generated or sent anywhere.</string>
     <string name="doc_find_answer">Find answer</string>
 
     <!-- Document screen: PDF settings tab -->
@@ -79,40 +65,29 @@
     <string name="doc_folder_name">Folder name</string>
 
     <!-- Document screen: More sheet -->
-    <string name="doc_this_page">This page</string>
     <string name="doc_rotate">Rotate</string>
-    <string name="doc_fine_tune">Fine tune</string>
     <string name="doc_move_left">Move left</string>
     <string name="doc_move_right">Move right</string>
     <string name="doc_duplicate">Duplicate</string>
     <string name="doc_extract">Extract</string>
     <string name="doc_split_book">Split book</string>
     <string name="doc_delete_page">Delete page</string>
-    <string name="doc_mark_up">Mark up</string>
     <string name="doc_edit_text">Edit text</string>
     <string name="doc_eraser">Eraser</string>
-    <string name="doc_add_text">Add text</string>
     <string name="doc_highlight">Highlight</string>
     <string name="doc_redact">Redact</string>
     <string name="doc_watermark">Watermark</string>
-    <string name="doc_edit_markup">Edit markup</string>
-    <string name="doc_remove_last">Remove last</string>
-    <string name="doc_share_and_save">Share and save</string>
-    <string name="doc_share_jpg">Share JPG</string>
+    <string name="doc_edit_markup">Edit mark-up</string>
+    <string name="doc_remove_last">Remove last mark-up</string>
     <string name="doc_open_pdf">Open PDF</string>
     <string name="doc_save_pdf">Save PDF</string>
     <string name="doc_save_to_drive">Save to Drive</string>
     <string name="doc_word_docx">Word (.docx)</string>
     <string name="doc_excel_xlsx">Excel (.xlsx)</string>
     <string name="doc_print">Print</string>
-    <string name="doc_protect_pdf">Protect PDF</string>
-    <string name="doc_id_copy">ID copy</string>
     <string name="doc_long_image">Long image</string>
     <string name="doc_encrypted_backup">Encrypted backup</string>
-    <string name="doc_organise">Organise</string>
-    <string name="doc_add_pages">Add pages</string>
     <string name="doc_merge">Merge</string>
-    <string name="doc_split_all">Split all</string>
 
     <!-- Document screen: password, annotation and OCR edit dialogs -->
     <string name="doc_protect_pdf_copy">Protect PDF copy</string>
@@ -229,15 +204,6 @@
 
     <!-- Summary card -->
     <string name="doc_summary">Summary</string>
-    <string name="doc_show_less">Show less</string>
-    <string name="doc_show_all">Show all</string>
-    <string name="doc_fact_amount">Amount %1$s</string>
-    <string name="doc_fact_date">Date %1$s</string>
-    <plurals name="doc_action_items">
-        <item quantity="one">%1$d action item</item>
-        <item quantity="other">%1$d action items</item>
-    </plurals>
-    <string name="doc_open_insights">Open insights</string>
 
     <!-- Watermark dialog -->
     <string name="doc_watermark_color_grey">Grey</string>
@@ -256,7 +222,6 @@
     <string name="doc_crop_page_x_of_y" tools:ignore="PluralsCandidate">%1$d of %2$d</string>
     <string name="doc_crop_hint_corners">Drag the corners to the page edges</string>
     <string name="doc_crop_hint_curve">Drag the middle handles to follow the page\'s curve</string>
-    <string name="doc_pdf_updates_on_export">PDF updates on export</string>
     <string name="doc_replace_corrected_title">Replace corrected text?</string>
     <string name="doc_replace_corrected_message">Some pages have text you corrected by hand. Reading the pages again replaces it; Undo can bring it back afterwards.</string>
     <string name="doc_read_again">Read again</string>
@@ -272,15 +237,47 @@
     <string name="doc_no_documents_match">No documents match</string>
     <!-- Decluttered document screen: filters bar, text, insights and PDF settings sheets -->
     <string name="doc_filters">Filters</string>
-    <string name="doc_filters_for_page">Filters · page %1$d of %2$d</string>
-    <string name="doc_close_filters">Close filters</string>
     <string name="doc_export">Export</string>
-    <string name="doc_export_text_options">Export recognised text</string>
-    <string name="doc_ocr_options">Text recognition options</string>
     <string name="doc_ocr_script_current">OCR script: %1$s</string>
     <string name="doc_translate_to">Translate to</string>
     <string name="doc_translate_to_language">Translate to %1$s</string>
-    <string name="doc_document_group">Document</string>
     <string name="doc_opening_document">Opening document</string>
-    <string name="doc_open_pdf_settings">Open PDF settings</string>
+    <!-- Document screen rebuilt from the owner's "Document" design: bar, tabs, page grid, export sheet -->
+    <string name="doc_tab_pages">Pages</string>
+    <string name="doc_edit_page">Edit page %1$d</string>
+    <string name="doc_page_options">Page options</string>
+    <string name="doc_move_earlier">Move earlier</string>
+    <string name="doc_move_later">Move later</string>
+    <string name="doc_add_page">Add page</string>
+    <string name="doc_copy">Copy</string>
+    <string name="doc_export_txt">Export TXT</string>
+    <string name="doc_text_editable_hint">Text is editable. Edits update search.</string>
+    <string name="doc_detected_as">Detected as</string>
+    <string name="doc_found_in_text">Found in the text</string>
+    <string name="doc_fact_label_amount">Amount</string>
+    <string name="doc_fact_label_date">Date</string>
+    <string name="doc_fact_label_reference">Reference</string>
+    <string name="doc_fact_label_name">Name</string>
+    <string name="doc_fact_label_role">Role</string>
+    <string name="doc_fact_label_company">Company</string>
+    <string name="doc_fact_label_phone">Phone</string>
+    <string name="doc_fact_label_email">Email</string>
+    <string name="doc_fact_label_website">Website</string>
+    <string name="doc_fact_label_address">Address</string>
+    <string name="doc_insights_no_text">No text has been recognised yet, so there is nothing to analyse.</string>
+    <string name="doc_export_title">Export “%1$s”</string>
+    <string name="doc_export_pdf">PDF</string>
+    <string name="doc_export_pdf_hint_searchable">Searchable · %1$s · %2$s</string>
+    <string name="doc_export_pdf_hint">%1$s · %2$s</string>
+    <string name="doc_protected_pdf">Password-protected PDF</string>
+    <string name="doc_protected_pdf_hint">Encrypted copy</string>
+    <string name="doc_share_as_images">Share as images</string>
+    <string name="doc_share_as_images_hint">JPEG, one per page</string>
+    <string name="doc_long_image_hint">Pages stacked in one picture</string>
+    <string name="doc_id_copy_sheet">ID copy sheet</string>
+    <string name="doc_id_copy_sheet_hint">Front and back on one page</string>
+    <string name="doc_print_hint">Android print dialogue</string>
+    <string name="doc_word_docx_hint">Recognised text as a Word document</string>
+    <string name="doc_excel_xlsx_hint">Recognised text as a spreadsheet</string>
+    <string name="doc_encrypted_backup_hint">Pages, text and settings in one password-protected file</string>
 </resources>

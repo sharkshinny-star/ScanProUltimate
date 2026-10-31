@@ -20,6 +20,7 @@ import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.JsonCodec
+import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
@@ -57,6 +58,9 @@ class ImportScanWorker @AssistedInject constructor(
         val mode = runCatching { ScanMode.valueOf(inputData.getString(KEY_MODE).orEmpty()) }.getOrDefault(ScanMode.DOCUMENT)
         val crops = inputData.getNullableStringArray(KEY_CROPS)?.filterNotNull()?.map(JsonCodec::decodeCrop).orEmpty()
         val filters = inputData.getNullableStringArray(KEY_FILTERS)?.filterNotNull()?.map { runCatching { PageFilter.valueOf(it) }.getOrDefault(PageFilter.ORIGINAL) }.orEmpty()
+        // One entry per photo; an empty entry means the review sliders were left alone for that page.
+        val adjustments: List<PageAdjustments?> = inputData.getNullableStringArray(KEY_ADJUSTMENTS)
+            ?.map { raw -> raw?.takeIf { it.isNotBlank() }?.let(JsonCodec::decodeAdjustments) }.orEmpty()
         // Photos the scanner already discarded (for instance after a long time in the background) can't be imported.
         if (uris.any { it.scheme == "file" && !File(it.path.orEmpty()).isFile }) {
             operations.showMessage(applicationContext.getString(R.string.msg_scan_photos_unavailable))
@@ -65,7 +69,7 @@ class ImportScanWorker @AssistedInject constructor(
 
         val document = try {
             operations.perform(applicationContext.getString(R.string.msg_finishing_scan_progress, applicationContext.getString(mode.labelRes).lowercase())) {
-                repository.importImages(uris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters)
+                repository.importImages(uris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters, adjustments)
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -131,6 +135,8 @@ class ImportScanWorker @AssistedInject constructor(
         internal const val KEY_MODE = "mode"
         internal const val KEY_CROPS = "crops"
         internal const val KEY_FILTERS = "filters"
+        /** Parallel to [KEY_URIS]: each page's review-slider adjustments as JSON, or an empty string for none. */
+        internal const val KEY_ADJUSTMENTS = "adjustments"
         private const val MAX_AUTOMATIC_ATTEMPTS = 3
         /** Every import carries this tag, plus [SESSION_TAG_PREFIX] and its session folder's name. */
         const val TAG = "import-scan"
@@ -139,11 +145,18 @@ class ImportScanWorker @AssistedInject constructor(
         private fun sessionDirOf(input: Data): File? =
             input.getNullableStringArray(KEY_URIS)?.firstOrNull()?.let { File(it.toUri().path.orEmpty()).parentFile }
 
-        fun inputFor(uris: List<Uri>, mode: ScanMode, crops: List<CropQuad>, filters: List<PageFilter>): Data = workDataOf(
+        fun inputFor(
+            uris: List<Uri>,
+            mode: ScanMode,
+            crops: List<CropQuad>,
+            filters: List<PageFilter>,
+            adjustments: List<PageAdjustments?> = emptyList()
+        ): Data = workDataOf(
             KEY_URIS to uris.map(Uri::toString).toTypedArray(),
             KEY_MODE to mode.name,
             KEY_CROPS to crops.map(JsonCodec::encodeCrop).toTypedArray(),
-            KEY_FILTERS to filters.map { it.name }.toTypedArray()
+            KEY_FILTERS to filters.map { it.name }.toTypedArray(),
+            KEY_ADJUSTMENTS to adjustments.map { it?.let(JsonCodec::encodeAdjustments) ?: "" }.toTypedArray()
         )
 
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */

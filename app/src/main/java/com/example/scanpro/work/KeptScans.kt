@@ -117,6 +117,7 @@ class KeptScanStore @Inject constructor(@ApplicationContext private val context:
                         if (request != null) putAll(request)
                             .putStringArray(ImportScanWorker.KEY_CROPS, emptyArray())
                             .putStringArray(ImportScanWorker.KEY_FILTERS, emptyArray())
+                            .putStringArray(ImportScanWorker.KEY_ADJUSTMENTS, emptyArray())
                     }
                     .putStringArray(ImportScanWorker.KEY_URIS, photos.map { "file://${it.absolutePath}" }.toTypedArray())
                     .putString(ImportScanWorker.KEY_MODE, request?.getString(ImportScanWorker.KEY_MODE) ?: ScanMode.DOCUMENT.name)
@@ -124,12 +125,14 @@ class KeptScanStore @Inject constructor(@ApplicationContext private val context:
             }
             val crops = request.getNullableStringArray(ImportScanWorker.KEY_CROPS)?.toList().orEmpty()
             val filters = request.getNullableStringArray(ImportScanWorker.KEY_FILTERS)?.toList().orEmpty()
+            val adjustments = request.getNullableStringArray(ImportScanWorker.KEY_ADJUSTMENTS)?.toList().orEmpty()
             fun List<String?>.pick() = if (size == recorded.size) keep.map { this[it] }.toTypedArray() else emptyArray()
             return Data.Builder()
                 .putAll(request)
                 .putStringArray(ImportScanWorker.KEY_URIS, keep.map { "file://${resolved.orEmpty()[it]!!.absolutePath}" }.toTypedArray())
                 .putStringArray(ImportScanWorker.KEY_CROPS, crops.pick())
                 .putStringArray(ImportScanWorker.KEY_FILTERS, filters.pick())
+                .putStringArray(ImportScanWorker.KEY_ADJUSTMENTS, adjustments.pick())
                 .build()
         }
 
