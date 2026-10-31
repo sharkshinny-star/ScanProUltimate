@@ -1,0 +1,16 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/CameraScannerScreen.kt</file>
+  <line>311</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.scanner</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/CameraScannerScreen.kt" />
+  <problem_class id="AndroidLintClickableViewAccessibility" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Accessibility in Custom Views</problem_class>
+  <hints />
+  <description>&lt;html&gt;&lt;code&gt;onTouch&lt;/code&gt; lambda should call &lt;code&gt;View#performClick&lt;/code&gt; when a click is detected&lt;/html&gt;</description>
+  <highlighted_element>{ _, event -&gt; if (event.action == android.view.MotionEvent.ACTION_UP) { ...</highlighted_element>
+  <language>kotlin</language>
+  <offset>40</offset>
+  <length>494</length>
+</problem>
+</problems>

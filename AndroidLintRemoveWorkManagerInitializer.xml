@@ -1,0 +1,15 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml</file>
+  <line>15</line>
+  <module>ScanProUltimate.app.main</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
+  <problem_class id="AndroidLintRemoveWorkManagerInitializer" severity="ERROR" attribute_key="ERRORS_ATTRIBUTES">Remove androidx.work.WorkManagerInitializer from your AndroidManifest.xml when using on-demand initialization.</problem_class>
+  <hints />
+  <description>&lt;html&gt;Remove androidx.work.WorkManagerInitializer from your AndroidManifest.xml when using on-demand initialization.&lt;/html&gt;</description>
+  <highlighted_element>&lt;application android:name=&quot;.ScanProApplication&quot; android:allowBackup=&quot;false&quot; ...</highlighted_element>
+  <language>XML</language>
+  <offset>4</offset>
+  <length>2690</length>
+</problem>
+</problems>

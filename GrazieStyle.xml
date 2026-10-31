@@ -1,0 +1,26 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/BUILD_STATUS.md</file>
+  <line>71</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/BUILD_STATUS.md" />
+  <problem_class id="GrazieStyle" severity="STYLE_SUGGESTION" attribute_key="TEXT_STYLE_SUGGESTION">Style</problem_class>
+  <description>American English does not double '-l-' in suffixes</description>
+  <highlighted_element>labelled</highlighted_element>
+  <language>Markdown</language>
+  <offset>58</offset>
+  <length>8</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/SCAN_QUALITY_TEST_PLAN.md</file>
+  <line>40</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/SCAN_QUALITY_TEST_PLAN.md" />
+  <problem_class id="GrazieStyle" severity="STYLE_SUGGESTION" attribute_key="TEXT_STYLE_SUGGESTION">Style</problem_class>
+  <description>American English does not double '-l-' in suffixes</description>
+  <highlighted_element>labelled</highlighted_element>
+  <language>Markdown</language>
+  <offset>6</offset>
+  <length>8</length>
+</problem>
+</problems>

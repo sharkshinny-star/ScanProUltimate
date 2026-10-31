@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "194590980909",
+    "project_id": "scanproultimate",
+    "storage_bucket": "scanproultimate.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:194590980909:android:d37ab81c0d8d6cb19f71a4",
+        "android_client_info": {
+          "package_name": "com.example.scanpro.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUyRmLqrUJEUJBhNSg26o-MGVbcmJ448I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:194590980909:android:6b798da4e045c4089f71a4",
+        "android_client_info": {
+          "package_name": "com.scanpro.app.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUyRmLqrUJEUJBhNSg26o-MGVbcmJ448I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

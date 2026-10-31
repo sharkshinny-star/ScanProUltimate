@@ -1,0 +1,194 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/ARCHITECTURE.md</file>
+  <line>98</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/ARCHITECTURE.md" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>Modal verbs like 'can' or 'will' require the following verb to be in its base form.</description>
+  <highlighted_element>using</highlighted_element>
+  <language>Markdown</language>
+  <offset>75</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/BUILD_STATUS.md</file>
+  <line>44</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/BUILD_STATUS.md" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>A comma may be missing after the conjunctive/linking adverb 'Therefore'.</description>
+  <highlighted_element>Therefore</highlighted_element>
+  <language>Markdown</language>
+  <offset>0</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/README.md</file>
+  <line>22</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/README.md" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>This word is normally spelled as one.</description>
+  <highlighted_element>multi-page</highlighted_element>
+  <language>Markdown</language>
+  <offset>10</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/README.md</file>
+  <line>45</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/README.md" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>This word is normally spelled as one.</description>
+  <highlighted_element>multi-page</highlighted_element>
+  <language>Markdown</language>
+  <offset>2</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/RESEARCH_NOTES.md</file>
+  <line>28</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/RESEARCH_NOTES.md" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>A comma may be missing after the conjunctive/linking adverb 'Therefore'.</description>
+  <highlighted_element>Therefore</highlighted_element>
+  <language>Markdown</language>
+  <offset>0</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/SOURCE_MAP.md</file>
+  <line>28</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/SOURCE_MAP.md" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>This word is normally spelled as one.</description>
+  <highlighted_element>multi-page</highlighted_element>
+  <language>Markdown</language>
+  <offset>29</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>758</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>768</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>780</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>790</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>802</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>812</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>824</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>834</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>846</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/index.html</file>
+  <line>856</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/index.html" />
+  <problem_class id="GrazieInspection" severity="GRAMMAR_ERROR" attribute_key="GRAMMAR_ERROR">Grammar</problem_class>
+  <description>The usual preposition to use after &quot;fill&quot; is &quot;with&quot;, not &quot;every&quot;. Did you mean 'fill every pixel with'?</description>
+  <highlighted_element>fill every pixel of</highlighted_element>
+  <language>HTML</language>
+  <offset>30</offset>
+  <length>19</length>
+</problem>
+</problems>

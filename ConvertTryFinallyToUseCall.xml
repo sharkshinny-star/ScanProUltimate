@@ -1,0 +1,28 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/intelligence/TranslationEngine.kt</file>
+  <line>25</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.intelligence</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.intelligence.TranslationEngine java.lang.Object translate(java.lang.String text, java.lang.String targetTag, kotlin.coroutines.Continuation&lt;? super java.lang.String&gt; $completion)" />
+  <problem_class id="ConvertTryFinallyToUseCall" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Convert try / finally to use() call</problem_class>
+  <description>try-finally can be replaced with 'use()'</description>
+  <highlighted_element>try {</highlighted_element>
+  <language>kotlin</language>
+  <offset>23</offset>
+  <length>5</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/intelligence/TranslationEngine.kt</file>
+  <line>44</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.intelligence</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.intelligence.TranslationEngine java.lang.Object translate(java.lang.String text, java.lang.String targetTag, kotlin.coroutines.Continuation&lt;? super java.lang.String&gt; $completion)" />
+  <problem_class id="ConvertTryFinallyToUseCall" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Convert try / finally to use() call</problem_class>
+  <description>try-finally can be replaced with 'use()'</description>
+  <highlighted_element>try {</highlighted_element>
+  <language>kotlin</language>
+  <offset>15</offset>
+  <length>5</length>
+</problem>
+</problems>

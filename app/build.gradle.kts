@@ -21,7 +21,7 @@ android {
     defaultConfig {
         applicationId = "com.scanpro.app"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 7
         versionName = "4.2.0"
 
@@ -165,7 +165,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.navigation:navigation-compose:2.10.2")
-    implementation("androidx.datastore:datastore-preferences:1.3.0")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.exifinterface:exifinterface:1.4.2")
 
@@ -216,7 +216,7 @@ dependencies {
         implementation("com.google.mlkit:translate:17.0.3")
         implementation("com.google.mlkit:language-id:17.0.6")
     }
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
     // Google Play In-App Review: asked for once, quietly, after a few successful scans.
     implementation("com.google.android.play:review-ktx:2.0.2")
 
@@ -239,19 +239,11 @@ dependencies {
 
     // Apache-2.0 PDF engine for merge/split/import and password protection.
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
-    constraints {
-        // PDFBox-Android pins BouncyCastle 1.72, which has published vulnerabilities; the current release is
-        // API-compatible for the certificate (public-key) security handler PDFBox uses it for.
-        val bouncyCastle = "1.86"
-        implementation("org.bouncycastle:bcprov-jdk15to18:$bouncyCastle")
-        implementation("org.bouncycastle:bcpkix-jdk15to18:$bouncyCastle")
-        implementation("org.bouncycastle:bcutil-jdk15to18:$bouncyCastle")
-    }
 
     testImplementation("junit:junit:4.13.2")
     // The real org.json: the Android jar's version only has stubs, and the backup format is JSON.
-    testImplementation("org.json:json:20260814")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("org.json:json:20240303")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

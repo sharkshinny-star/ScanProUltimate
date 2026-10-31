@@ -1,0 +1,15 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/MainActivity.kt</file>
+  <line>109</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.MainActivity void handleIntent(android.content.Intent intent)" />
+  <problem_class id="IntroduceWhenSubject" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">'when' that can be simplified by introducing an argument</problem_class>
+  <description>Introduce 'action' as subject of 'when'</description>
+  <highlighted_element>when</highlighted_element>
+  <language>kotlin</language>
+  <offset>8</offset>
+  <length>4</length>
+</problem>
+</problems>

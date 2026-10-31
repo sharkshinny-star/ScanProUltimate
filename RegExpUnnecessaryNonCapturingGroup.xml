@@ -1,0 +1,15 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/intelligence/DocumentIntelligenceEngine.kt</file>
+  <line>38</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.intelligence</package>
+  <entry_point TYPE="field" FQNAME="com.example.scanpro.intelligence.DocumentIntelligenceEngine phoneRegex" />
+  <problem_class id="RegExpUnnecessaryNonCapturingGroup" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unnecessary non-capturing group</problem_class>
+  <description>Unnecessary non-capturing group &lt;code&gt;(?:\\+?\\d[\\d .()-]{7,}\\d)&lt;/code&gt;</description>
+  <highlighted_element>(?:</highlighted_element>
+  <language>RegExp</language>
+  <offset>44</offset>
+  <length>3</length>
+</problem>
+</problems>

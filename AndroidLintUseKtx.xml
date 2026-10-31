@@ -1,0 +1,44 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/imaging/ImageProcessor.kt</file>
+  <line>239</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.imaging</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/imaging/ImageProcessor.kt" />
+  <problem_class id="AndroidLintUseKtx" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Use KTX extension function</problem_class>
+  <hints />
+  <description>&lt;html&gt;Use the KTX extension function &lt;code&gt;Canvas.withRotation&lt;/code&gt; instead?&lt;/html&gt;</description>
+  <highlighted_element>canvas.save()</highlighted_element>
+  <language>kotlin</language>
+  <offset>12</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/imaging/SpecialExporters.kt</file>
+  <line>58</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.imaging</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/imaging/SpecialExporters.kt" />
+  <problem_class id="AndroidLintUseKtx" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Use KTX extension function</problem_class>
+  <hints />
+  <description>&lt;html&gt;Use the KTX extension function &lt;code&gt;Bitmap.scale&lt;/code&gt; instead?&lt;/html&gt;</description>
+  <highlighted_element>Bitmap.createScaledBitmap(bitmap, targetWidth, h, true)</highlighted_element>
+  <language>kotlin</language>
+  <offset>16</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/imaging/SpecialExporters.kt</file>
+  <line>64</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.imaging</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/imaging/SpecialExporters.kt" />
+  <problem_class id="AndroidLintUseKtx" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Use KTX extension function</problem_class>
+  <hints />
+  <description>&lt;html&gt;Use the KTX function &lt;code&gt;createBitmap&lt;/code&gt; instead?&lt;/html&gt;</description>
+  <highlighted_element>Bitmap.createBitmap(targetWidth, totalHeight, Bitmap.Config.ARGB_8888)</highlighted_element>
+  <language>kotlin</language>
+  <offset>21</offset>
+  <length>70</length>
+</problem>
+</problems>

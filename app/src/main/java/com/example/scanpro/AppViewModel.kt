@@ -7,17 +7,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.scanpro.core.operations.ExportArtifact
 import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
-import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
-import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPasswordRequiredException
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.ThemeMode
-import com.example.scanpro.navigation.RetakeTarget
 import com.example.scanpro.scanner.SESSION_ROOT
-import com.example.scanpro.work.ImportScanWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -95,6 +91,14 @@ class AppViewModel @Inject constructor(
         .map { it.revision }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0L)
 
+    private val _destinationRequest = MutableStateFlow<String?>(null)
+    /** Set by shortcuts/notifications (trash, settings, etc.); cleared once navigated. */
+    val destinationRequest: StateFlow<String?> = _destinationRequest.asStateFlow()
+
+    fun requestDestination(route: String) { _destinationRequest.value = route }
+    fun clearDestinationRequest() { _destinationRequest.value = null }
+    fun requestOpenDocument(id: String) = operations.requestOpenDocument(id)
+
     suspend fun documentExists(id: String): Boolean = library.exists(id)
     val message: StateFlow<UiMessage?> = operations.message
     val exportArtifact: StateFlow<ExportArtifact?> = operations.exportArtifact
@@ -127,14 +131,6 @@ class AppViewModel @Inject constructor(
 
     fun requestScan() { _scanRequested.value = true }
     fun clearScanRequest() { _scanRequested.value = false }
-
-    private val _destinationRequest = MutableStateFlow<String?>(null)
-    /** A screen a notification asked to open; shown once the library is unlocked. */
-    val destinationRequest: StateFlow<String?> = _destinationRequest.asStateFlow()
-    fun requestDestination(route: String) { _destinationRequest.value = route }
-    fun clearDestinationRequest() { _destinationRequest.value = null }
-    /** A notification asked to open this document; it opens below the lock gate like a finished scan does. */
-    fun requestOpenDocument(id: String) = operations.requestOpenDocument(id)
 
     /** Runs an import that came from another app now, or after unlock if the library is locked. */
     fun submitExternalImport(import: () -> Unit) {
@@ -189,20 +185,20 @@ class AppViewModel @Inject constructor(
     fun importCameraSession(
         imageUris: List<Uri>,
         mode: ScanMode,
-        crops: List<CropQuad> = emptyList(),
-        filters: List<PageFilter> = emptyList()
+        crops: List<com.example.scanpro.data.CropQuad> = emptyList(),
+        filters: List<com.example.scanpro.data.PageFilter> = emptyList()
     ) {
         if (imageUris.isEmpty()) return
         // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
-        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters))
+        com.example.scanpro.work.ImportScanWorker.enqueue(context, com.example.scanpro.work.ImportScanWorker.inputFor(imageUris, mode, crops, filters))
     }
 
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */
     fun replacePageFromCamera(
-        target: RetakeTarget,
+        target: com.example.scanpro.navigation.RetakeTarget,
         imageUri: Uri,
-        crop: CropQuad,
-        filter: PageFilter
+        crop: com.example.scanpro.data.CropQuad,
+        filter: com.example.scanpro.data.PageFilter
     ) {
         val number = target.position + 1
         operations.enqueue(context.getString(R.string.msg_replacing_page, number), context.getString(R.string.msg_page_retaken, number)) {

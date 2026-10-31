@@ -1,0 +1,14 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/proguard-rules.pro</file>
+  <line>13</line>
+  <module>ScanProUltimate.app</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/proguard-rules.pro" />
+  <problem_class id="ExpensiveKeepRuleInspection" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">An inspection that identifies expensive keep rules</problem_class>
+  <description>Overly broad keep rule affecting more than 100 classes. Scope rules using annotations, specific classes, or using specific field/method selectors</description>
+  <highlighted_element>-keep class org.opencv.** { native &lt;methods&gt;; &lt;fields&gt;; &lt;methods&gt;; }</highlighted_element>
+  <language>SHRINKER_CONFIG</language>
+  <offset>0</offset>
+  <length>80</length>
+</problem>
+</problems>

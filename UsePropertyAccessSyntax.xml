@@ -1,0 +1,15 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/UiUtils.kt</file>
+  <line>109</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.UiUtilsKt void copyText(android.content.Context context, java.lang.String text)" />
+  <problem_class id="UsePropertyAccessSyntax" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Accessor call that can be replaced with property access syntax</problem_class>
+  <description>Use of setter method instead of property access syntax</description>
+  <highlighted_element>setPrimaryClip(ClipData.newPlainText(&quot;Recognized text&quot;, text))</highlighted_element>
+  <language>kotlin</language>
+  <offset>14</offset>
+  <length>62</length>
+</problem>
+</problems>

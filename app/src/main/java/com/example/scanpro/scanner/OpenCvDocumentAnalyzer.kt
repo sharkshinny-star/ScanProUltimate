@@ -118,18 +118,16 @@ class OpenCvDocumentAnalyzer(
      * so one blurry or dark frame doesn't flash "Hold steady" over a page that is about to be captured.
      */
     private fun steadyGuidance(latest: Guidance): Guidance {
-        val shown = shownGuidance
-        if (latest == shown) {
-            candidateFrames = 0
-            return shown
-        }
-        if (latest == candidateGuidance) candidateFrames++ else { candidateGuidance = latest; candidateFrames = 1 }
-        if (candidateFrames >= 3 || shown == null) {
-            shownGuidance = latest
+        if (latest == shownGuidance) {
             candidateFrames = 0
             return latest
         }
-        return shown
+        if (latest == candidateGuidance) candidateFrames++ else { candidateGuidance = latest; candidateFrames = 1 }
+        if (candidateFrames >= 3 || shownGuidance == null) {
+            shownGuidance = latest
+            candidateFrames = 0
+        }
+        return shownGuidance ?: latest
     }
 
     private fun updateStability(result: DocumentDetection): Boolean {

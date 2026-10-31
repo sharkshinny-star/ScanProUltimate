@@ -1,0 +1,38 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/FEATURE_MATRIX.md</file>
+  <line>3</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/FEATURE_MATRIX.md" />
+  <problem_class id="MarkdownIncorrectTableFormatting" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Incorrect table formatting</problem_class>
+  <description>Table is not correctly formatted</description>
+  <highlighted_element>| Area | Status | Implementation | |---|---|---| | CameraX preview | Implemented | Native CameraX | ...</highlighted_element>
+  <language>Markdown</language>
+  <offset>0</offset>
+  <length>3412</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/SCAN_QUALITY_TEST_PLAN.md</file>
+  <line>9</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/SCAN_QUALITY_TEST_PLAN.md" />
+  <problem_class id="MarkdownIncorrectTableFormatting" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Incorrect table formatting</problem_class>
+  <description>Table is not correctly formatted</description>
+  <highlighted_element>| Class | Example characteristics | Why | |---|---|---| | Low/mid | Android 10–12, 4 GB RAM, modest ...</highlighted_element>
+  <language>Markdown</language>
+  <offset>0</offset>
+  <length>361</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/THIRD_PARTY_NOTICES.md</file>
+  <line>7</line>
+  <module>ScanProUltimate</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/THIRD_PARTY_NOTICES.md" />
+  <problem_class id="MarkdownIncorrectTableFormatting" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Incorrect table formatting</problem_class>
+  <description>Table is not correctly formatted</description>
+  <highlighted_element>| Component | Project use | License / distribution note | |---|---|---| | AndroidX / Jetpack | Compo...</highlighted_element>
+  <language>Markdown</language>
+  <offset>0</offset>
+  <length>934</length>
+</problem>
+</problems>

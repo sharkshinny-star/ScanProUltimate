@@ -1,0 +1,67 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/MainViewModel.kt</file>
+  <line>285</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.MainViewModel void importEncryptedBackup(android.net.Uri uri, java.lang.String password)" />
+  <problem_class id="UnusedSymbol" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unused symbol</problem_class>
+  <description>Function &quot;importEncryptedBackup&quot; is never used</description>
+  <highlighted_element>importEncryptedBackup</highlighted_element>
+  <language>kotlin</language>
+  <offset>8</offset>
+  <length>21</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/MainViewModel.kt</file>
+  <line>294</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.MainViewModel void setThemeMode(com.example.scanpro.data.ThemeMode value)" />
+  <problem_class id="UnusedSymbol" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unused symbol</problem_class>
+  <description>Function &quot;setThemeMode&quot; is never used</description>
+  <highlighted_element>setThemeMode</highlighted_element>
+  <language>kotlin</language>
+  <offset>8</offset>
+  <length>12</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/data/Models.kt</file>
+  <line>14</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.data</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.data.PdfQuality PdfQuality(java.lang.String label, int maxImageDimension, int jpegQuality)" />
+  <problem_class id="UnusedSymbol" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unused symbol</problem_class>
+  <description>Property &quot;jpegQuality&quot; is never used</description>
+  <highlighted_element>jpegQuality</highlighted_element>
+  <language>kotlin</language>
+  <offset>73</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/imaging/PdfSecurity.kt</file>
+  <line>31</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.imaging</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.imaging.PdfSecurity void unlock(java.io.File source, java.io.File destination, java.lang.String password)" />
+  <problem_class id="UnusedSymbol" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unused symbol</problem_class>
+  <description>Function &quot;unlock&quot; is never used</description>
+  <highlighted_element>unlock</highlighted_element>
+  <language>kotlin</language>
+  <offset>8</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/DocumentEdgeDetector.kt</file>
+  <line>31</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.scanner</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.scanner.DocumentDetection boolean getHasDocument()" />
+  <problem_class id="UnusedSymbol" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Unused symbol</problem_class>
+  <description>Property &quot;hasDocument&quot; is never used</description>
+  <highlighted_element>hasDocument</highlighted_element>
+  <language>kotlin</language>
+  <offset>8</offset>
+  <length>11</length>
+</problem>
+</problems>

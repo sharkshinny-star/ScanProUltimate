@@ -3,7 +3,6 @@ package com.example.scanpro.data
 import androidx.annotation.StringRes
 import com.example.scanpro.R
 import java.io.File
-
 import java.util.UUID
 
 enum class PageFilter(@StringRes val labelRes: Int) {
@@ -58,6 +57,12 @@ enum class OcrScript(@StringRes val labelRes: Int) {
     CHINESE(R.string.data_ocr_script_chinese),
     JAPANESE(R.string.data_ocr_script_japanese),
     KOREAN(R.string.data_ocr_script_korean)
+}
+
+/** Sanitize titles for use in output file names, preserving script characters while stripping unsafe symbols. */
+fun fileSafeName(raw: String): String {
+    val cleaned = raw.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]+"), "_").trim().trim('.').take(80)
+    return cleaned.ifBlank { "Document" }
 }
 
 enum class AnnotationType {

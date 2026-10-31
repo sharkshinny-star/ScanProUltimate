@@ -16,7 +16,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
-import kotlin.coroutines.coroutineContext
 import com.example.scanpro.R
 import com.example.scanpro.core.text.userRequire
 

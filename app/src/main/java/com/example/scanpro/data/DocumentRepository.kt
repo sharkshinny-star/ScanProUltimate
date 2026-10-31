@@ -4,39 +4,37 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
-import android.net.Uri
 import android.os.ParcelFileDescriptor
+import android.net.Uri
 import android.provider.DocumentsContract
-import androidx.core.graphics.createBitmap
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.imaging.AnnotationRemap
-import com.example.scanpro.imaging.DocxExporter
 import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.imaging.ThumbnailStore
+import com.example.scanpro.imaging.PaperColors
+import com.example.scanpro.imaging.XlsxExporter
+import com.example.scanpro.intelligence.OcrLayout
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.OcrResult
-import com.example.scanpro.imaging.PaperColors
 import com.example.scanpro.imaging.PdfExporter
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.SmartTitle
 import com.example.scanpro.imaging.SpecialExporters
-import com.example.scanpro.imaging.ThumbnailStore
-import com.example.scanpro.imaging.XlsxExporter
-import com.example.scanpro.intelligence.OcrLayout
 import com.example.scanpro.scanner.OpenCvScanProcessor
-import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
+import androidx.core.graphics.createBitmap
 import com.example.scanpro.core.text.UserFacingPluralException
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.userRequire
@@ -66,19 +64,23 @@ class DocumentRepository @Inject constructor(
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
-    /** How many recycle-bin documents are deleted for good within the next [withinMs], under the retention setting. */
-    suspend fun trashExpiringWithin(withinMs: Long): Int = withContext(Dispatchers.IO) {
-        val retentionMs = settings.trashRetentionDays.first().coerceAtLeast(1) * 24L * 60L * 60L * 1000L
-        val now = now()
-        db.loadTrashSummaries().count { it.trashedAt > 0 && it.trashedAt + retentionMs - now in 1..withinMs }
+    suspend fun loadAll(): List<ScanDocument> = withContext(Dispatchers.IO) { db.loadAll() }
+    suspend fun loadTrash(): List<ScanDocument> = withContext(Dispatchers.IO) {
+        purgeExpiredTrash(maxAgeDays = settings.trashRetentionDays.first())
+        db.loadTrash()
     }
-
-    /** Documents in the library (not in the recycle bin). */
-    suspend fun activeDocumentCount(): Int = withContext(Dispatchers.IO) { db.loadOverview(recentLimit = 0).documentCount }
-
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
-        purgeExpiredTrash()
+        purgeExpiredTrash(maxAgeDays = settings.trashRetentionDays.first())
         db.loadTrashSummaries()
+    }
+    suspend fun activeDocumentCount(): Int = withContext(Dispatchers.IO) { db.loadOverview(0).documentCount }
+    suspend fun trashExpiringWithin(withinMs: Long): Int = withContext(Dispatchers.IO) {
+        val retentionMs = settings.trashRetentionDays.first() * 24L * 60L * 60L * 1000L
+        val now = System.currentTimeMillis()
+        db.loadTrash().count { doc ->
+            val remaining = (doc.trashedAt + retentionMs) - now
+            remaining in (1..withinMs)
+        }
     }
     /** The Files list as pages; see [DocumentDatabase.pagedSummaries]. */
     fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort) = db.pagedSummaries(folder, favoritesOnly, sort)
@@ -137,7 +139,7 @@ class DocumentRepository @Inject constructor(
             val readable = if (password != null) {
                 try {
                     PdfSecurity.unlock(tempPdf, unlockedPdf, password)
-                } catch (error: Exception) {
+                } catch (_: Exception) {
                     throw PdfPasswordRequiredException(wrongPassword = true)
                 }
                 unlockedPdf
@@ -154,7 +156,7 @@ class DocumentRepository @Inject constructor(
             ParcelFileDescriptor.open(readable, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
                 val opened = try {
                     PdfRenderer(descriptor)
-                } catch (error: SecurityException) {
+                } catch (_: SecurityException) {
                     throw PdfPasswordRequiredException(wrongPassword = false)
                 }
                 opened.use { renderer ->
@@ -252,7 +254,7 @@ class DocumentRepository @Inject constructor(
         val wanted = folder.trim().take(80)
         // "bills" joins an existing "Bills" rather than starting a second folder that differs only in case.
         val existing = if (wanted.isBlank()) "" else db.loadAll(includeTrashed = true)
-            .map { it.folderName }
+            .asSequence().map { it.folderName }
             .firstOrNull { it.isNotBlank() && it.equals(wanted, ignoreCase = true) } ?: wanted
         mutateDocument(id) { doc -> doc.copy(folderName = existing, updatedAt = now()) }
     }
@@ -681,7 +683,7 @@ class DocumentRepository @Inject constructor(
                     documentId = doc.id,
                     position = position,
                     sourcePath = source.absolutePath,
-                    imagePath = rendered.absolutePath
+                    imagePath = rendered.absolutePath,
                 )
                 // Listed before copying, so a photo that fails half-way is cleaned up with the rest.
                 newPages += page
@@ -739,7 +741,7 @@ class DocumentRepository @Inject constructor(
     }
 
     /** A page removed from a document whose files are still on disk, so the removal can be undone. */
-    private class RemovedPage(val documentId: String, val page: ScanPage, val index: Int)
+    private class RemovedPage(val page: ScanPage, val index: Int)
 
     // At most one removed page per document is kept; removing another page, or the "Page removed"
     // message going away, purges the earlier one.
@@ -765,7 +767,7 @@ class DocumentRepository @Inject constructor(
         history.clear(doc.id)
         // The page's files stay until the undo window closes; see purgeRemovedPage.
         purgeRemovedPage(documentId)
-        removedPages[documentId] = RemovedPage(documentId, sorted[index], index)
+        removedPages[documentId] = RemovedPage(sorted[index], index)
         saved
     }
 
@@ -818,7 +820,7 @@ class DocumentRepository @Inject constructor(
             try {
                 val file = freshExportFile(if (pages.size == 1) base else "${base}_p${(index + 1).toString().padStart(2, '0')}", "png")
                 file.outputStream().buffered().use { out ->
-                    userRequire(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out), R.string.err_png_not_written)
+                    userRequire(bitmap.compress(Bitmap.CompressFormat.PNG, 100, out), R.string.err_png_not_written)
                 }
                 file
             } finally {
@@ -844,9 +846,7 @@ class DocumentRepository @Inject constructor(
         db.loadTrash().forEach { deleteDocumentFilesAndRecord(it) }
     }
 
-    /** Deletes recycle-bin documents older than the user's retention setting. */
-    suspend fun purgeExpiredTrash(): Int = withContext(Dispatchers.IO) {
-        val maxAgeDays = settings.trashRetentionDays.first()
+    suspend fun purgeExpiredTrash(maxAgeDays: Int = 7): Int = withContext(Dispatchers.IO) {
         val cutoff = now() - maxAgeDays.coerceAtLeast(1) * 24L * 60L * 60L * 1000L
         val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
         expired.forEach { deleteDocumentFilesAndRecord(it) }
@@ -880,7 +880,7 @@ class DocumentRepository @Inject constructor(
         val doc = requireDocument(id)
         userRequire(doc.ocrText.isNotBlank(), R.string.err_no_text_to_export)
         val file = freshExportFile(safeName(doc.title), "docx")
-        DocxExporter.export(doc.title, doc.pages.sortedBy { it.position }.map { it.ocrText }, file)
+        com.example.scanpro.imaging.DocxExporter.export(doc.title, doc.pages.sortedBy { it.position }.map { it.ocrText }, file)
         file
     }
 
@@ -1123,7 +1123,7 @@ class DocumentRepository @Inject constructor(
                 // A document without pages can't be opened or edited. When the fallback scanner returned only a
                 // PDF, import that instead: it renders a page per PDF page like any other PDF import.
                 folder.deleteRecursively()
-                if (fallbackPdfUri != null) return importPdf(fallbackPdfUri, quality, autoTitle)
+                fallbackPdfUri?.let { return importPdf(it, quality, autoTitle) }
                 userError(R.string.err_no_scan_pages_returned)
             }
             PdfExporter.export(pages, pdf, quality, PdfPageSize.A4, searchable = true, pageNumbers = false)
@@ -1528,13 +1528,4 @@ class DocumentRepository @Inject constructor(
 
     private fun safeName(value: String): String = fileSafeName(value)
     private fun now() = System.currentTimeMillis()
-}
-
-/**
- * A title as a file name: only the characters file systems and share targets reject are replaced, so
- * titles in any script survive the trip.
- */
-fun fileSafeName(value: String): String {
-    val cleaned = value.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]+"), "_").trim().trim('.').take(80)
-    return cleaned.ifBlank { "Document" }
 }

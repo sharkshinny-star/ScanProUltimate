@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -37,14 +39,16 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
-import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -65,6 +69,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
@@ -78,25 +83,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import com.example.scanpro.R
-import com.example.scanpro.core.designsystem.IconTile
-import com.example.scanpro.core.designsystem.TileTone
-import com.example.scanpro.core.ui.printPdfFile
-import com.example.scanpro.imaging.ImageProcessor
-import com.example.scanpro.imaging.PdfProtection
-import com.example.scanpro.imaging.PdfSecurity
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
-import java.io.File
-import java.io.FileOutputStream
-import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import com.example.scanpro.imaging.PdfProtection
+import com.example.scanpro.imaging.PdfSecurity
+import com.example.scanpro.core.ui.printPdfFile
+import com.example.scanpro.core.ui.shareFile
+import java.io.File
+import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,7 +113,7 @@ fun PdfViewerScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
-    var pageCount by remember { mutableIntStateOf(0) }
+    var pageCount by remember { mutableStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var pfd by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
@@ -144,12 +146,13 @@ fun PdfViewerScreen(
     // PdfRenderer can have only one page open at a time, so every page render and the final close share this lock.
     val renderLock = remember { Mutex() }
     val closeScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
-    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again. Evicted pages are not
-    // recycled: a page on screen can be evicted while it is still drawn, and the garbage collector frees it once
-    // nothing shows it.
+    // Rendered pages, about 24 MB of them, kept so scrolling back doesn't render again; evicted ones are recycled.
     val pageCache = remember {
         object : android.util.LruCache<Int, Bitmap>(24 * 1024 * 1024) {
             override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
+            override fun entryRemoved(evicted: Boolean, key: Int, oldValue: Bitmap, newValue: Bitmap?) {
+                if (evicted && oldValue !== newValue) oldValue.recycle()
+            }
         }
     }
     DisposableEffect(Unit) { onDispose { pageCache.evictAll() } }
@@ -177,8 +180,6 @@ fun PdfViewerScreen(
                     // Replace (and close) any renderer already open, e.g. after a second password attempt.
                     runCatching { pdfRenderer?.close() }
                     runCatching { pfd?.close() }
-                    // Pages rendered from the previous file must never show for this one.
-                    pageCache.evictAll()
                     false
                 }
             }
@@ -212,12 +213,12 @@ fun PdfViewerScreen(
                     // Decoded at screen size and turned by its EXIF tag: a full 50 MP photo would need
                     // hundreds of megabytes and show sideways.
                     val bmp = if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                        ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
+                        com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
                     } else {
                         val copy = java.io.File(context.cacheDir, "view_${java.util.UUID.randomUUID()}.img")
                         try {
                             context.contentResolver.openInputStream(pdfUri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
-                            ImageProcessor.decodeOrientedScaled(copy.absolutePath, 2400)
+                            com.example.scanpro.imaging.ImageProcessor.decodeOrientedScaled(copy.absolutePath, 2400)
                         } finally {
                             copy.delete()
                         }
@@ -292,7 +293,7 @@ fun PdfViewerScreen(
         }
 
         // Wait until typing pauses; a new keystroke cancels this effect before any work starts.
-        kotlinx.coroutines.delay(350.milliseconds)
+        kotlinx.coroutines.delay(350)
         isSearchingText = true
         try {
             val query = searchQuery
@@ -516,9 +517,9 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        IconTile(
+                        com.example.scanpro.core.designsystem.IconTile(
                             androidx.compose.material.icons.Icons.Rounded.ErrorOutline,
-                            TileTone.Rose,
+                            com.example.scanpro.core.designsystem.TileTone.Rose,
                             size = 72.dp, corner = 24.dp, iconSize = 36.dp
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -686,10 +687,8 @@ private fun PdfPageItem(
     var isPageLoading by remember { mutableStateOf(true) }
     var aspectRatio by remember { mutableFloatStateOf(0.707f) }
 
-    // Keyed on the renderer too: after a password unlock the same page index belongs to a different file.
-    LaunchedEffect(renderer, pageIndex) {
-        bitmap = null
-        pageCache.get(pageIndex)?.let { cached ->
+    LaunchedEffect(pageIndex) {
+        pageCache.get(pageIndex)?.takeIf { !it.isRecycled }?.let { cached ->
             bitmap = cached
             aspectRatio = cached.width.toFloat() / cached.height.toFloat()
             isPageLoading = false

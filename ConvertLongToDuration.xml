@@ -1,0 +1,54 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/MainViewModel.kt</file>
+  <line>94</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.MainViewModel void setQuery(java.lang.String value)" />
+  <problem_class id="ConvertLongToDuration" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Long overload to Duration conversion</problem_class>
+  <description>Legacy Long overload can be converted to Duration</description>
+  <highlighted_element>delay(180)</highlighted_element>
+  <language>kotlin</language>
+  <offset>12</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/CameraScannerScreen.kt</file>
+  <line>217</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.scanner</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.scanner.CameraScannerScreenKt void CameraScannerScreen(kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onClose, kotlin.jvm.functions.Function2&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onComplete, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onFallbackScanner)" />
+  <problem_class id="ConvertLongToDuration" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Long overload to Duration conversion</problem_class>
+  <description>Legacy Long overload can be converted to Duration</description>
+  <highlighted_element>delay(3000)</highlighted_element>
+  <language>kotlin</language>
+  <offset>12</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/AdjustmentsDialog.kt</file>
+  <line>57</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.AdjustmentsDialogKt void AdjustmentsDialog(com.example.scanpro.data.ScanPage page, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onDismiss, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PageAdjustments,kotlin.Unit&gt; onConfirm)" />
+  <problem_class id="ConvertLongToDuration" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Long overload to Duration conversion</problem_class>
+  <description>Legacy Long overload can be converted to Duration</description>
+  <highlighted_element>delay(70)</highlighted_element>
+  <language>kotlin</language>
+  <offset>8</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>724</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.ScanProAppKt void TrashScreen(java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; documents, boolean busy, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRestore, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeleteForever, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onEmptyTrash)" />
+  <problem_class id="ConvertLongToDuration" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Long overload to Duration conversion</problem_class>
+  <description>Legacy Long overload can be converted to Duration</description>
+  <highlighted_element>delay(1000L)</highlighted_element>
+  <language>kotlin</language>
+  <offset>139</offset>
+  <length>12</length>
+</problem>
+</problems>

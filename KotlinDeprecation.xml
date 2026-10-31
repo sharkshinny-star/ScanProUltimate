@@ -1,0 +1,275 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/data/DocumentDatabase.kt</file>
+  <line>156</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.data</package>
+  <entry_point TYPE="field" FQNAME="com.example.scanpro.data.DocumentDatabase room" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'fun fallbackToDestructiveMigrationOnDowngrade(): RoomDatabase.Builder&lt;ScanRoomDatabase&gt;' is deprecated. Replace by overloaded version with parameter to indicate if all tables should be dropped or not.</description>
+  <highlighted_element>fallbackToDestructiveMigrationOnDowngrade</highlighted_element>
+  <language>kotlin</language>
+  <offset>9</offset>
+  <length>41</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/CameraScannerScreen.kt</file>
+  <line>77</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.scanner</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/CameraScannerScreen.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.ui.platform.LocalLifecycleOwner</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/CameraScannerScreen.kt</file>
+  <line>100</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.scanner</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.scanner.CameraScannerScreenKt void CameraScannerScreen(kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onClose, kotlin.jvm.functions.Function2&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onComplete, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onFallbackScanner)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val LocalLifecycleOwner: ProvidableCompositionLocal&lt;LifecycleOwner&gt;' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.</description>
+  <highlighted_element>LocalLifecycleOwner</highlighted_element>
+  <language>kotlin</language>
+  <offset>25</offset>
+  <length>19</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/scanner/DocumentEdgeDetector.kt</file>
+  <line>110</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.scanner</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.scanner.DocumentEdgeDetector com.example.scanpro.scanner.DocumentDetection detect(org.opencv.core.Mat grayInput)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Unnecessary non-null assertion (!!) on a non-null receiver of type 'DocumentEdgeDetector.Candidate'.</description>
+  <highlighted_element>best!!</highlighted_element>
+  <language>kotlin</language>
+  <offset>52</offset>
+  <length>6</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>28</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.ArrowBack</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>29</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.ArrowLeft</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>30</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.ArrowRight</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>56</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>37</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.OpenInNew</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>38</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.RotateRight</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>57</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>183</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.DocumentDetailScreenKt void DocumentDetailScreen(com.example.scanpro.data.ScanDocument document, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; otherDocuments, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRename, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTags, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onFolder, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onToggleFavorite, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfQuality,kotlin.Unit&gt; onPdfQuality, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfPageSize,kotlin.Unit&gt; onPdfPageSize, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onSearchablePdf, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onPageNumbers, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onScanMode, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageFilter,kotlin.Unit&gt; onApplyFilter, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRotate, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.CropQuad,kotlin.Unit&gt; onCrop, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageAdjustments,kotlin.Unit&gt; onAdjustments, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onResetPage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.Integer,kotlin.Unit&gt; onMove, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDuplicatePage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExtractPage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onSplitBook, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeletePage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super android.graphics.Bitmap,kotlin.Unit&gt; onSign, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onTextAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onHighlight, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRedact, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onUndoAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onWatermark, kotlin.jvm.functions.Function1&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,kotlin.Unit&gt; onAppendImages, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onMergeWith, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onReOcr, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onUpdateOcrText, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.OcrScript,kotlin.Unit&gt; onOcrScript, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportIdCopy, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportLongImage, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportOcrTextFile, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onSplitDocument, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportProtectedPdf, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportEncryptedBackup, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onDeleteDocument)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.</description>
+  <highlighted_element>ArrowBack</highlighted_element>
+  <language>kotlin</language>
+  <offset>70</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>290</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.DocumentDetailScreenKt void DocumentDetailScreen(com.example.scanpro.data.ScanDocument document, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; otherDocuments, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRename, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTags, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onFolder, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onToggleFavorite, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfQuality,kotlin.Unit&gt; onPdfQuality, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfPageSize,kotlin.Unit&gt; onPdfPageSize, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onSearchablePdf, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onPageNumbers, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onScanMode, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageFilter,kotlin.Unit&gt; onApplyFilter, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRotate, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.CropQuad,kotlin.Unit&gt; onCrop, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageAdjustments,kotlin.Unit&gt; onAdjustments, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onResetPage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.Integer,kotlin.Unit&gt; onMove, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDuplicatePage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExtractPage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onSplitBook, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeletePage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super android.graphics.Bitmap,kotlin.Unit&gt; onSign, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onTextAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onHighlight, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRedact, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onUndoAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onWatermark, kotlin.jvm.functions.Function1&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,kotlin.Unit&gt; onAppendImages, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onMergeWith, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onReOcr, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onUpdateOcrText, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.OcrScript,kotlin.Unit&gt; onOcrScript, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportIdCopy, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportLongImage, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportOcrTextFile, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onSplitDocument, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportProtectedPdf, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportEncryptedBackup, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onDeleteDocument)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.RotateRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.RotateRight.</description>
+  <highlighted_element>RotateRight</highlighted_element>
+  <language>kotlin</language>
+  <offset>47</offset>
+  <length>11</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>297</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.DocumentDetailScreenKt void DocumentDetailScreen(com.example.scanpro.data.ScanDocument document, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; otherDocuments, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRename, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTags, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onFolder, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onToggleFavorite, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfQuality,kotlin.Unit&gt; onPdfQuality, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfPageSize,kotlin.Unit&gt; onPdfPageSize, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onSearchablePdf, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onPageNumbers, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onScanMode, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageFilter,kotlin.Unit&gt; onApplyFilter, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRotate, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.CropQuad,kotlin.Unit&gt; onCrop, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageAdjustments,kotlin.Unit&gt; onAdjustments, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onResetPage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.Integer,kotlin.Unit&gt; onMove, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDuplicatePage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExtractPage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onSplitBook, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeletePage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super android.graphics.Bitmap,kotlin.Unit&gt; onSign, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onTextAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onHighlight, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRedact, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onUndoAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onWatermark, kotlin.jvm.functions.Function1&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,kotlin.Unit&gt; onAppendImages, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onMergeWith, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onReOcr, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onUpdateOcrText, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.OcrScript,kotlin.Unit&gt; onOcrScript, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportIdCopy, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportLongImage, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportOcrTextFile, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onSplitDocument, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportProtectedPdf, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportEncryptedBackup, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onDeleteDocument)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.ArrowLeft: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowLeft.</description>
+  <highlighted_element>ArrowLeft</highlighted_element>
+  <language>kotlin</language>
+  <offset>47</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>302</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.DocumentDetailScreenKt void DocumentDetailScreen(com.example.scanpro.data.ScanDocument document, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; otherDocuments, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRename, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTags, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onFolder, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onToggleFavorite, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfQuality,kotlin.Unit&gt; onPdfQuality, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfPageSize,kotlin.Unit&gt; onPdfPageSize, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onSearchablePdf, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onPageNumbers, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onScanMode, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageFilter,kotlin.Unit&gt; onApplyFilter, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRotate, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.CropQuad,kotlin.Unit&gt; onCrop, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageAdjustments,kotlin.Unit&gt; onAdjustments, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onResetPage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.Integer,kotlin.Unit&gt; onMove, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDuplicatePage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExtractPage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onSplitBook, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeletePage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super android.graphics.Bitmap,kotlin.Unit&gt; onSign, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onTextAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onHighlight, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRedact, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onUndoAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onWatermark, kotlin.jvm.functions.Function1&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,kotlin.Unit&gt; onAppendImages, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onMergeWith, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onReOcr, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onUpdateOcrText, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.OcrScript,kotlin.Unit&gt; onOcrScript, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportIdCopy, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportLongImage, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportOcrTextFile, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onSplitDocument, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportProtectedPdf, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportEncryptedBackup, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onDeleteDocument)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.ArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowRight.</description>
+  <highlighted_element>ArrowRight</highlighted_element>
+  <language>kotlin</language>
+  <offset>62</offset>
+  <length>10</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>330</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.DocumentDetailScreenKt void DocumentDetailScreen(com.example.scanpro.data.ScanDocument document, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; otherDocuments, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRename, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTags, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onFolder, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onToggleFavorite, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfQuality,kotlin.Unit&gt; onPdfQuality, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfPageSize,kotlin.Unit&gt; onPdfPageSize, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onSearchablePdf, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onPageNumbers, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onScanMode, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageFilter,kotlin.Unit&gt; onApplyFilter, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRotate, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.CropQuad,kotlin.Unit&gt; onCrop, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageAdjustments,kotlin.Unit&gt; onAdjustments, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onResetPage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.Integer,kotlin.Unit&gt; onMove, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDuplicatePage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExtractPage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onSplitBook, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeletePage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super android.graphics.Bitmap,kotlin.Unit&gt; onSign, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onTextAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onHighlight, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRedact, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onUndoAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onWatermark, kotlin.jvm.functions.Function1&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,kotlin.Unit&gt; onAppendImages, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onMergeWith, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onReOcr, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onUpdateOcrText, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.OcrScript,kotlin.Unit&gt; onOcrScript, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportIdCopy, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportLongImage, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportOcrTextFile, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onSplitDocument, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportProtectedPdf, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportEncryptedBackup, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onDeleteDocument)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.OpenInNew.</description>
+  <highlighted_element>OpenInNew</highlighted_element>
+  <language>kotlin</language>
+  <offset>43</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/DocumentDetailScreen.kt</file>
+  <line>474</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.DocumentDetailScreenKt void DocumentDetailScreen(com.example.scanpro.data.ScanDocument document, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; otherDocuments, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRename, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTags, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onFolder, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onToggleFavorite, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfQuality,kotlin.Unit&gt; onPdfQuality, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfPageSize,kotlin.Unit&gt; onPdfPageSize, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onSearchablePdf, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onPageNumbers, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.ScanMode,kotlin.Unit&gt; onScanMode, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageFilter,kotlin.Unit&gt; onApplyFilter, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRotate, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.CropQuad,kotlin.Unit&gt; onCrop, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super com.example.scanpro.data.PageAdjustments,kotlin.Unit&gt; onAdjustments, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onResetPage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.Integer,kotlin.Unit&gt; onMove, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDuplicatePage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExtractPage, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onSplitBook, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeletePage, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super android.graphics.Bitmap,kotlin.Unit&gt; onSign, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onTextAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onHighlight, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRedact, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onUndoAnnotation, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onWatermark, kotlin.jvm.functions.Function1&lt;? super java.util.List&lt;? extends android.net.Uri&gt;,kotlin.Unit&gt; onAppendImages, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onMergeWith, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onReOcr, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onUpdateOcrText, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.OcrScript,kotlin.Unit&gt; onOcrScript, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportIdCopy, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportLongImage, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onExportOcrTextFile, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onSplitDocument, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportProtectedPdf, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onExportEncryptedBackup, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onDeleteDocument)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Unnecessary non-null assertion (!!) on a non-null receiver of type 'ScanPage'.</description>
+  <highlighted_element>currentPage!!</highlighted_element>
+  <language>kotlin</language>
+  <offset>61</offset>
+  <length>13</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>27</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.ArrowBack</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>39</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.List</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>50</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>430</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.ScanProAppKt void LibraryScreen(java.lang.String mode, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; documents, int trashCount, java.lang.String query, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onQueryChange, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onOpenDocument, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onStartScan, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onImportImages, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onImportPdf, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onTrash, kotlin.jvm.functions.Function1&lt;? super java.util.Set&lt;java.lang.String&gt;,kotlin.Unit&gt; onBulkDelete, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onRenameFolder, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTab)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List.</description>
+  <highlighted_element>List</highlighted_element>
+  <language>kotlin</language>
+  <offset>189</offset>
+  <length>4</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>745</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.ScanProAppKt void TrashScreen(java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; documents, boolean busy, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onRestore, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onDeleteForever, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onEmptyTrash)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.</description>
+  <highlighted_element>ArrowBack</highlighted_element>
+  <language>kotlin</language>
+  <offset>178</offset>
+  <length>9</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/SettingsScreen.kt</file>
+  <line>19</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/SettingsScreen.kt" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>Remove deprecated symbol import</description>
+  <highlighted_element>import androidx.compose.material.icons.filled.ArrowBack</highlighted_element>
+  <language>kotlin</language>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/SettingsScreen.kt</file>
+  <line>68</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.SettingsScreenKt void SettingsScreen(com.example.scanpro.data.PdfQuality pdfQuality, boolean autoTitle, boolean appLock, com.example.scanpro.data.ThemeMode themeMode, int documentCount, int trashCount, long storageBytes, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onBack, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.PdfQuality,kotlin.Unit&gt; onPdfQualityChange, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onAutoTitleChange, kotlin.jvm.functions.Function1&lt;? super java.lang.Boolean,kotlin.Unit&gt; onAppLockChange, kotlin.jvm.functions.Function1&lt;? super com.example.scanpro.data.ThemeMode,kotlin.Unit&gt; onThemeModeChange, androidx.compose.runtime.internal.ComposableFunction0&lt;kotlin.Unit&gt; bottomBar)" />
+  <problem_class id="KotlinDeprecation" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Usage of redundant or deprecated syntax or deprecated symbols</problem_class>
+  <description>'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.</description>
+  <highlighted_element>ArrowBack</highlighted_element>
+  <language>kotlin</language>
+  <offset>43</offset>
+  <length>9</length>
+</problem>
+</problems>

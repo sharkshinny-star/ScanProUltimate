@@ -1,0 +1,41 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>350</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.ScanProAppKt void LibraryScreen(java.lang.String mode, java.util.List&lt;com.example.scanpro.data.ScanDocument&gt; documents, int trashCount, java.lang.String query, boolean busy, java.lang.String busyLabel, androidx.compose.material3.SnackbarHostState snackbarHostState, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onQueryChange, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onOpenDocument, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onStartScan, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onImportImages, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onImportPdf, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onTrash, kotlin.jvm.functions.Function1&lt;? super java.util.Set&lt;java.lang.String&gt;,kotlin.Unit&gt; onBulkDelete, kotlin.jvm.functions.Function2&lt;? super java.lang.String,? super java.lang.String,kotlin.Unit&gt; onRenameFolder, kotlin.jvm.functions.Function1&lt;? super java.lang.String,kotlin.Unit&gt; onTab)" />
+  <problem_class id="UnnecessaryOptInAnnotation" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unnecessary '@OptIn' annotation</problem_class>
+  <description>The opt-in marker is redundant: no experimental API marked with 'ExperimentalFoundationApi' is used</description>
+  <highlighted_element>ExperimentalFoundationApi::class</highlighted_element>
+  <language>kotlin</language>
+  <offset>49</offset>
+  <length>32</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>617</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.ScanProAppKt void DocumentListCard(com.example.scanpro.data.ScanDocument document, boolean selected, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onClick, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onLongClick)" />
+  <problem_class id="UnnecessaryOptInAnnotation" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unnecessary '@OptIn' annotation</problem_class>
+  <description>The opt-in annotation is redundant: no matching experimental API is used</description>
+  <highlighted_element>@OptIn(ExperimentalFoundationApi::class)</highlighted_element>
+  <language>kotlin</language>
+  <offset>9</offset>
+  <length>40</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/java/com/example/scanpro/ui/ScanProApp.kt</file>
+  <line>650</line>
+  <module>ScanProUltimate.app.main</module>
+  <package>com.example.scanpro.ui</package>
+  <entry_point TYPE="method" FQNAME="com.example.scanpro.ui.ScanProAppKt void DocumentGridCard(com.example.scanpro.data.ScanDocument document, boolean selected, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onClick, kotlin.jvm.functions.Function0&lt;kotlin.Unit&gt; onLongClick)" />
+  <problem_class id="UnnecessaryOptInAnnotation" severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Unnecessary '@OptIn' annotation</problem_class>
+  <description>The opt-in annotation is redundant: no matching experimental API is used</description>
+  <highlighted_element>@OptIn(ExperimentalFoundationApi::class)</highlighted_element>
+  <language>kotlin</language>
+  <offset>9</offset>
+  <length>40</length>
+</problem>
+</problems>

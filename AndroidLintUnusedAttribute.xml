@@ -1,0 +1,41 @@
+<problems>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/res/xml/shortcuts.xml</file>
+  <line>4</line>
+  <module>ScanProUltimate.app.main</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/res/xml/shortcuts.xml" />
+  <problem_class id="AndroidLintUnusedAttribute" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attribute unused on older versions</problem_class>
+  <hints />
+  <description>&lt;html&gt;Attribute &lt;code&gt;shortcutId&lt;/code&gt; is only used in API level 25 and higher (current min is 24)&lt;/html&gt;</description>
+  <highlighted_element>android:shortcutId=&quot;scan_now&quot;</highlighted_element>
+  <language>XML</language>
+  <offset>48</offset>
+  <length>29</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/res/xml/shortcuts.xml</file>
+  <line>7</line>
+  <module>ScanProUltimate.app.main</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/res/xml/shortcuts.xml" />
+  <problem_class id="AndroidLintUnusedAttribute" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attribute unused on older versions</problem_class>
+  <hints />
+  <description>&lt;html&gt;Attribute &lt;code&gt;shortcutShortLabel&lt;/code&gt; is only used in API level 25 and higher (current min is 24)&lt;/html&gt;</description>
+  <highlighted_element>android:shortcutShortLabel=&quot;@string/shortcut_scan_short&quot;</highlighted_element>
+  <language>XML</language>
+  <offset>82</offset>
+  <length>56</length>
+</problem>
+<problem>
+  <file>file://$PROJECT_DIR$/app/src/main/res/xml/shortcuts.xml</file>
+  <line>8</line>
+  <module>ScanProUltimate.app.main</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/app/src/main/res/xml/shortcuts.xml" />
+  <problem_class id="AndroidLintUnusedAttribute" severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Attribute unused on older versions</problem_class>
+  <hints />
+  <description>&lt;html&gt;Attribute &lt;code&gt;shortcutLongLabel&lt;/code&gt; is only used in API level 25 and higher (current min is 24)&lt;/html&gt;</description>
+  <highlighted_element>android:shortcutLongLabel=&quot;@string/shortcut_scan_long&quot;</highlighted_element>
+  <language>XML</language>
+  <offset>116</offset>
+  <length>54</length>
+</problem>
+</problems>

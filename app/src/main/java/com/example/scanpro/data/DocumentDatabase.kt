@@ -349,6 +349,8 @@ class DocumentDatabase @Inject constructor(
 
     fun updateSize(id: String, sizeBytes: Long) = dao.updateSize(id, sizeBytes)
 
+    fun loadFolderNames(): List<String> = dao.loadFolderNames()
+
     fun loadOcrScript(id: String): OcrScript? =
         dao.loadOcrScript(id)?.let { runCatching { OcrScript.valueOf(it) }.getOrNull() }
 
