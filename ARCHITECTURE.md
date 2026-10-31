@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-10-31, after commit `65d2c5c`. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-10-31, after commit `fb9e745`. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -211,6 +211,8 @@ document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCa
 - **Play-services ML by default** to keep the APK under the 40 MB arm64 budget; bundled models are opt-in.
 - **Trimmed OpenCV** built from unmodified upstream sources; don't edit the generated Java wrappers.
 - **BouncyCastle constraint** overrides PDFBox's vulnerable 1.72.
+- **targetSdk 37** (Android 17): no orientation or aspect-ratio locks, no reflection on platform internals, no background `IntentSender` launches; app lock relies on `FLAG_SECURE`, which also blocks Content Capture.
+- **Shared IDE settings** (`.idea/scopes`, `.idea/inspectionProfiles`, `.idea/dictionaries`) are committed; the rest of `.idea/` stays ignored.
 
 ## 15. External-service extension points
 

@@ -12,22 +12,24 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after commit `65d2c5c`.
+Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after commit `fb9e745`.
 
 ## 1. Current state
 
 - **Branch:** `claude/awesome-clarke-ussjo3` on `codingking155/ScanProUltimate`. Work is pushed; no pull request is open.
 - **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`.
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
-- **Builds:** debug and release compile with 0 warnings. Unit tests, lint and release builds pass (see `BUILD_AND_TEST.md`).
+- **Builds:** debug and release compile with 0 warnings; lint reports 0 issues. Unit tests, lint and release builds pass (see `BUILD_AND_TEST.md`).
 - **Not verified:** nothing has run on a device or emulator. Camera, PDF tools, app lock, notifications and backup/restore
   are untested in practice. There are no instrumented or screenshot tests beyond `AppSmokeTest`.
-- **App version:** 4.2.0 (versionCode 7), `applicationId com.scanpro.app`, minSdk 24, targetSdk 36, compileSdk 37.
+- **App version:** 4.2.0 (versionCode 7), `applicationId com.scanpro.app`, minSdk 24, targetSdk 37, compileSdk 37.
 
 ## 2. Completed work (newest first)
 
 | Commit | What |
 |---|---|
+| `fb9e745` | targetSdk 37 after an Android 17 code review; OpenCV excluded from lint and IDE inspections (shared `.idea` scopes, profile, dictionary); remaining Kotlin style hints applied. |
+| `8b9cc77` | These reference docs and `CLAUDE.md`. |
 | `65d2c5c` | Local notifications (finished/failed tasks, optional recycle-bin and backup reminders, Settings > Notifications). PDF tools held alive by the foreground service via `OperationRunner.keepAlive`. |
 | `b3b7613` | Dependency updates (AGP 9.5.0, Kotlin 2.4.21, KSP 2.3.13, Gradle 9.8.2, DataStore 1.3.0, coroutines 1.11.0). BouncyCastle constrained to 1.86. Dead code and compiler warnings removed. |
 | `f4d2483` | Lint: ~30 strings to plurals, 80 unused resources removed, Compose primitive state, `LocalWindowInfo` window size, KTX helpers. |
@@ -50,7 +52,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 4. **R4: no recovery screen** for scans whose import failed three times (photos are kept 30 days in `filesDir/pro_scanner_session/`).
 5. **R3: queued document edits live in memory** in `OperationRunner`; process death loses edits that had not started.
-6. **R2: targetSdk 36 → 37** turns on Android 17 behaviour changes; do it after device testing. Lint's only warning.
+6. **R2: targetSdk is now 37** (code-reviewed, not device-tested). Test on Android 17, including a tablet or foldable.
 7. **R5: remaining English literals** in `PdfToolsEngine` progress text, `Support.kt`, `Brand.kt`, `FeedbackPromptDialog.kt`.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 9. `server/` is an unrelated Node placeholder; remove if not needed (ask the owner first).
@@ -62,7 +64,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 3. Build the R4 recovery screen (list kept sessions, re-import or discard).
 4. Persist queued edits (R3), for example as WorkManager jobs like `ImportScanWorker`.
 5. Add Compose UI/screenshot tests and run them on an emulator in CI.
-6. Raise targetSdk to 37 once device-tested.
+6. Device-test targetSdk 37 on Android 17 (R2).
 
 ## 5. Rules carried over from the owner's audit brief
 

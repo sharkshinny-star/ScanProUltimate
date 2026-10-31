@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after commit `65d2c5c`. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after commit `fb9e745`. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -12,7 +12,7 @@ had ever been built).
 | Android Gradle Plugin | 9.5.0 |
 | Kotlin / Compose compiler | 2.4.21 |
 | KSP | 2.3.13 |
-| Android SDK | platform 37 (`compileSdk 37`), `targetSdk 36`, `minSdk 24` |
+| Android SDK | platform 37 (`compileSdk 37`), `targetSdk 37`, `minSdk 24` |
 
 `local.properties` (gitignored) must contain `sdk.dir=<path to Android SDK>`.
 
@@ -40,18 +40,21 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-10-31, commit `65d2c5c`)
+## Latest results (2026-10-31, commit `fb9e745`)
 
 | Check | Result |
 |---|---|
-| `:app:compileDebugKotlin` | Passed, 0 warnings |
+| `:app:compileDebugKotlin`, `:translate:compileDebugKotlin` | Passed, 0 warnings |
 | `:app:testDebugUnitTest` | 142 tests: 140 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
-| `:app:lintDebug` | 0 errors, 1 warning (`OldTargetApi`, targetSdk 36; deliberate, see R2) |
+| `:app:lintDebug` | 0 issues (targetSdk now 37) |
+| `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.2 MB |
 | Sideload `assembleRelease` | Passed; arm64 32.7 MB (budget 40), armv7 24.7, x86_64 38.6, universal 81.9 |
 | 16 KB page alignment | arm64 and x86_64 `.so` aligned to `0x4000` (`readelf`) |
 | `-Pscanpro.bundledMl=true` build | Not run |
 | Instrumented tests (`AppSmokeTest`), screenshot, performance | Not run: no emulator or device in the container |
+| Android 17 (targetSdk 37) on a device | Not run (see R2) |
+| IDE inspection with the shared profile | Not run: no Android Studio in the container |
 | Release signing | Not validated: no secrets available; outputs are unsigned |
 | Manual UI pass | Not done |
 
@@ -72,6 +75,8 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 |---|---|
 | Maven Central HTTP 429 in cloud containers | Add `~/.gradle/init.d/central-mirror.gradle` that replaces `mavenCentral()` with `https://maven-central.storage-download.googleapis.com/maven2/`. Local only; never commit it. |
 | `SDK location not found` | Install platform 37 and write `local.properties`. |
+| `primaryClip = clip` fails to compile (`val cannot be reassigned`) | `ClipboardManager` getter is nullable and setter non-null, so Kotlin exposes no settable property; keep `setPrimaryClip(clip)` despite the IDE hint. |
+| IDE reports thousands of OpenCV warnings | Open the project so the shared profile in `.idea/inspectionProfiles/` loads, or run Inspect Code on the "App code" scope. |
 | Lint `TrustAllX509TrustManager` in `bcpkix-jdk15to18` | Suppressed in `app/lint.xml`: BouncyCastle's TLS tooling is never reached (PDFBox uses it only for certificate-encrypted PDFs). |
 | Material3 `@OptIn` "unnecessary" hints in the IDE | Keep them in `DocumentScreen`, `LibraryScreen` and two `PdfToolsScreen` functions: the compiler needs them. |
 | OpenCV Java wrapper warnings | Ignore: generated from upstream by `scripts/opencv`; edits would be overwritten. |
