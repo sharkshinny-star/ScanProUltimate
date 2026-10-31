@@ -225,4 +225,17 @@
     <string name="ui_welcome_scan_eyebrow">Smart capture</string>
     <string name="ui_welcome_more_eyebrow">Searchable PDFs</string>
     <string name="ui_welcome_takes_seconds">Takes about 20 seconds</string>
+    <!-- Photos picked from the gallery that were left out; shown together, one per line. -->
+    <plurals name="scan_pick_skipped_heic">
+        <item quantity="one">%1$d HEIC photo was left out: it needs Android 9 or newer. Choose a JPG or PNG instead.</item>
+        <item quantity="other">%1$d HEIC photos were left out: they need Android 9 or newer. Choose JPGs or PNGs instead.</item>
+    </plurals>
+    <plurals name="scan_pick_skipped_unreadable">
+        <item quantity="one">%1$d photo couldn\'t be read and was left out</item>
+        <item quantity="other">%1$d photos couldn\'t be read and were left out</item>
+    </plurals>
+    <plurals name="scan_pick_skipped_limit">
+        <item quantity="one">%1$d photo was left out: a scan holds up to %2$d pages</item>
+        <item quantity="other">%1$d photos were left out: a scan holds up to %2$d pages</item>
+    </plurals>
 </resources>

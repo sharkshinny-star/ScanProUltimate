@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import android.widget.Toast
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -301,26 +302,19 @@ fun CameraScannerScreen(
             scope.launch {
                 // Copy picks into the session folder: the picker's read grant ends with the process,
                 // so pages restored after process death would otherwise be unreadable.
-                val copied = withContext(Dispatchers.IO) {
+                val picks = withContext(Dispatchers.IO) {
                     sessionDir.mkdirs()
-                    uris.take(remaining).mapNotNull { uri ->
-                        runCatching {
-                            val target = File(sessionDir, "pick_${UUID.randomUUID()}.jpg")
-                            context.contentResolver.openInputStream(uri)?.use { input ->
-                                target.outputStream().use { input.copyTo(it) }
-                            } ?: error("Could not open image")
-                            // Android 8 and older cannot decode HEIC; a page that can't be read is left out with a reason.
-                            val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                            android.graphics.BitmapFactory.decodeFile(target.absolutePath, bounds)
-                            if (bounds.outWidth <= 0) {
-                                target.delete()
-                                val heic = bounds.outMimeType?.contains("hei", ignoreCase = true) == true || uri.toString().contains(".hei", ignoreCase = true)
-                                error(if (heic) "HEIC photos need Android 9 or newer; choose a JPG or PNG" else "This image could not be read")
-                            }
-                            Uri.fromFile(target)
-                        }.getOrNull()
-                    }
+                    uris.take(remaining).map { uri -> copyPick(context, uri, sessionDir) }
                 }
+                val copied = picks.filterIsInstance<PickResult.Copied>().map { it.uri }
+                // Say what was left out instead of dropping it silently.
+                skippedPicksMessage(
+                    resources,
+                    heic = picks.count { it == PickResult.Heic },
+                    unreadable = picks.count { it == PickResult.Unreadable },
+                    overLimit = uris.size - uris.take(remaining).size,
+                    limit = pageLimit
+                )?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                 pages.addAll(copied)
                 status = when {
                     scanMode == ScanMode.ID_CARD && scanBothSides && pages.size == 1 -> resources.getString(R.string.scan_status_front_ready)
@@ -1458,6 +1452,46 @@ private fun CropQuad.towards(target: CropQuad, fraction: Float): CropQuad {
 }
 
 private fun CropQuad.asList() = listOf(topLeft, topRight, bottomRight, bottomLeft)
+
+/** What became of one photo picked from the gallery. */
+internal sealed interface PickResult {
+    data class Copied(val uri: Uri) : PickResult
+    /** HEIC on Android 8 or older, which can't decode it. */
+    data object Heic : PickResult
+    /** Missing, unreadable or not an image. */
+    data object Unreadable : PickResult
+}
+
+/**
+ * Copies a pick into the session folder: the picker's read grant ends with the process, so pages restored after
+ * process death would otherwise be unreadable. A photo that can't be decoded is removed again and reported.
+ */
+private fun copyPick(context: android.content.Context, uri: Uri, sessionDir: File): PickResult {
+    val target = File(sessionDir, "pick_${UUID.randomUUID()}.jpg")
+    val opened = runCatching {
+        context.contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } }
+    }.getOrNull()
+    if (opened == null) {
+        target.delete()
+        return PickResult.Unreadable
+    }
+    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    android.graphics.BitmapFactory.decodeFile(target.absolutePath, bounds)
+    if (bounds.outWidth > 0) return PickResult.Copied(Uri.fromFile(target))
+    target.delete()
+    val heic = bounds.outMimeType?.contains("hei", ignoreCase = true) == true || uri.toString().contains(".hei", ignoreCase = true)
+    return if (heic) PickResult.Heic else PickResult.Unreadable
+}
+
+/** One line on the photos that were left out of a gallery pick, or null when every photo was added. */
+internal fun skippedPicksMessage(resources: android.content.res.Resources, heic: Int, unreadable: Int, overLimit: Int, limit: Int): String? {
+    val parts = buildList {
+        if (heic > 0) add(resources.getQuantityString(R.plurals.scan_pick_skipped_heic, heic, heic))
+        if (unreadable > 0) add(resources.getQuantityString(R.plurals.scan_pick_skipped_unreadable, unreadable, unreadable))
+        if (overLimit > 0) add(resources.getQuantityString(R.plurals.scan_pick_skipped_limit, overLimit, overLimit, limit))
+    }
+    return parts.takeIf { it.isNotEmpty() }?.joinToString("\n")
+}
 
 /** Sub-folder holding one folder per scanner session; cleaned after import or when abandoned. */
 internal const val SESSION_ROOT = "pro_scanner_session"
