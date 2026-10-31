@@ -1,5 +1,7 @@
 # Build / validation status
 
+> Superseded by `BUILD_AND_TEST.md`, which has the current build commands and results. Kept for history.
+
 Prepared and re-checked on **8 October 2026**.
 
 ## Executed successfully in this environment

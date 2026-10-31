@@ -1,5 +1,7 @@
 # ScanPro Ultimate architecture
 
+Last updated: 2026-10-31, after commit `65d2c5c`. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+
 ## 1. Product architecture
 
 The app is deliberately offline-first. Network access is not required for the core scan-to-PDF path.
@@ -108,7 +110,9 @@ The adjustment dialog runs the same pipeline at a limited preview resolution and
 
 ## 6. OCR and indexing
 
-`OcrEngine` wraps bundled ML Kit Text Recognition models for Latin, Devanagari, Chinese, Japanese, and Korean scripts.
+`OcrEngine` wraps ML Kit Text Recognition for Latin, Devanagari, Chinese, Japanese, and Korean scripts. By default the
+models come from Google Play services (downloaded on demand, smaller APK); `-Pscanpro.bundledMl=true` ships them inside the
+APK instead (`BuildConfig.BUNDLED_ML`).
 
 OCR text is persisted per page. `DocumentDatabase` mirrors OCR content into a Room FTS4 table for prefix full-text search. Search combines FTS hits with title/folder/tag metadata matches.
 
@@ -167,10 +171,47 @@ A biometric UI gate should not be marketed as full at-rest encryption of every l
 
 ## 11. Background work
 
-A unique periodic WorkManager task permanently removes documents that have remained in the recycle bin for 30 days.
+- `work/CleanupWorker` (daily, unique periodic): purges recycle-bin documents older than the user's retention setting,
+  runs `CacheCleaner`, and posts the optional recycle-bin and backup reminders.
+- `work/ImportScanWorker` (one-time, `@HiltWorker`): imports a finished camera session. The session lives in
+  `filesDir/pro_scanner_session/<id>/` with a `.pending_import` marker; the worker retries up to 3 attempts. `CacheCleaner`
+  removes abandoned sessions after a day, pending ones after 30 days.
+- `core/operations/OperationRunner`: one long document job at a time on an application scope, promoted to
+  `OperationForegroundService` (type `dataSync`) while running. `keepAlive(label) { }` lets other callers (PDF tools) hold the
+  service. Queued jobs are in memory only (open item R3).
 
-Long OCR/PDF/edit operations run through repository suspend functions on `Dispatchers.IO` / background dispatchers rather than the main thread. Extremely large documents can be moved to a persistent WorkManager processing queue in a future production-hardening pass.
+## 12. Notifications
 
-## 12. External-service extension points
+`core/notifications/AppNotifications` (Hilt singleton) posts local notices only: finished/failed task while the app is out of
+sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional reminders. Channels `results`, `failures`,
+`reminders`; one fixed id per kind. Preferences in `SettingsStore` (`notify_finished`, `notify_failures` default on;
+`notify_trash`, `notify_backup` default off). Taps use explicit immutable PendingIntents with `MainActivity.ACTION_OPEN_*`,
+routed by `AppViewModel.destinationRequest` below the app-lock gate. No document names; neutral text when app lock is on.
+
+## 13. Modules and dependencies
+
+| Module | Purpose |
+|---|---|
+| `:app` | The application (`com.scanpro.app`), package `com.example.scanpro` |
+| `:opencv` | Trimmed OpenCV build (Java wrappers + native libs), built by `scripts/opencv` |
+| `:translate` | Play Feature Delivery on-demand module for ML Kit translation (built into the APK when `scanpro.sideload=true`) |
+| `:baselineprofile` | Baseline profile generator |
+
+Main libraries: Jetpack Compose (BOM 2026.09.00) + Material3, Navigation Compose 2.10.2, Hilt 2.60.1, Room 2.8.5 (FTS4,
+schema v3, schemas in `app/schemas`), DataStore 1.3.0, WorkManager 2.12.0, CameraX, ML Kit (text recognition, barcode,
+document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCastle forced to 1.86, coroutines 1.11.0.
+
+## 14. Key decisions
+
+- **Offline only.** No accounts, analytics, FCM or remote services; notifications are local.
+- **Scans in `filesDir`, not `cacheDir`.** Android may clear the cache under storage pressure; unimported scans must survive.
+- **Redaction is destructive in exports, reversible in backups.** Exports burn redaction in and rerun OCR; `.scanpro` backups
+  keep originals for editability (open item R1).
+- **Two release shapes.** Play bundle with an on-demand translate module, or per-ABI sideload APKs; Android forbids both at once.
+- **Play-services ML by default** to keep the APK under the 40 MB arm64 budget; bundled models are opt-in.
+- **Trimmed OpenCV** built from unmodified upstream sources; don't edit the generated Java wrappers.
+- **BouncyCastle constraint** overrides PDFBox's vulnerable 1.72.
+
+## 15. External-service extension points
 
 Cloud sync, accounts, collaboration, subscription entitlements, and server AI are intentionally not mocked. They require real product decisions around authentication, backend storage, key management, privacy consent, billing products, conflict resolution and operational monitoring.
