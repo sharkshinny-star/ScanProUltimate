@@ -177,7 +177,6 @@
     <string name="scan_review_no_crop">No crop</string>
     <string name="scan_review_curve">Curve</string>
     <string name="scan_review_rotate_left">Rotate left</string>
-    <string name="scan_review_rotate_right">Right</string>
     <string name="scan_review_state_on">On</string>
     <string name="scan_review_page_n">Page %1$d</string>
     <!-- Added by the compassionate-turing merge -->

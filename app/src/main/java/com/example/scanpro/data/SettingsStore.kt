@@ -122,22 +122,15 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     suspend fun setDefaultOcrScript(value: OcrScript) { context.scanProSettings.edit { it[keyDefaultOcrScript] = value.name } }
 
     private val keyCompletedScans = intPreferencesKey("completed_scans")
-    private val keyReviewRequested = booleanPreferencesKey("review_requested")
     private val keyFeedbackPromptShown = booleanPreferencesKey("feedback_prompt_shown")
 
     /** Camera scans saved as documents, for deciding when to ask about the experience. */
     val completedScans: Flow<Int> = preferences.map { it[keyCompletedScans] ?: 0 }
-    /** True once the Play in-app review flow has been requested; it is requested only once. */
-    val reviewRequested: Flow<Boolean> = preferences.map { it[keyReviewRequested] ?: false }
-    /** True once the "How was your scanning experience?" prompt has been shown; it is shown only once. */
+    /** True once the rating sheet has been shown; it is shown only once. */
     val feedbackPromptShown: Flow<Boolean> = preferences.map { it[keyFeedbackPromptShown] ?: false }
 
     suspend fun recordCompletedScan() {
         context.scanProSettings.edit { it[keyCompletedScans] = (it[keyCompletedScans] ?: 0) + 1 }
-    }
-
-    suspend fun setReviewRequested() {
-        context.scanProSettings.edit { it[keyReviewRequested] = true }
     }
 
     suspend fun setFeedbackPromptShown() {

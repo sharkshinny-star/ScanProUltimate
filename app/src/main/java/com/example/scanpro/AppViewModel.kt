@@ -52,17 +52,12 @@ class AppViewModel @Inject constructor(
      * The Play in-app review flow is due once, after the third saved scan, when the app is in a calm place
      * (the document screen). Google decides whether a card is shown; nothing in the app promises one.
      */
-    val reviewDue: StateFlow<Boolean> = combine(settings.completedScans, settings.reviewRequested) { scans, requested ->
-        scans >= REVIEW_AFTER_SCANS && !requested
+    /** The one-time rating sheet, due after the first saved scan (the owner's "New Look" design). */
+    val ratingDue: StateFlow<Boolean> = combine(settings.completedScans, settings.feedbackPromptShown) { scans, shown ->
+        scans >= RATING_AFTER_SCANS && !shown
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    /** The one-time "How was your scanning experience?" prompt, due after the fifth saved scan. */
-    val feedbackPromptDue: StateFlow<Boolean> = combine(settings.completedScans, settings.feedbackPromptShown) { scans, shown ->
-        scans >= FEEDBACK_PROMPT_AFTER_SCANS && !shown
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
-    fun markReviewRequested() { viewModelScope.launch { settings.setReviewRequested() } }
-    fun markFeedbackPromptShown() { viewModelScope.launch { settings.setFeedbackPromptShown() } }
+    fun markRatingShown() { viewModelScope.launch { settings.setFeedbackPromptShown() } }
 
     /** Wallpaper-derived colours (Android 12+); applied as soon as it is known, false until then. */
     val dynamicColor: StateFlow<Boolean> = settings.dynamicColor
@@ -220,7 +215,5 @@ class AppViewModel @Inject constructor(
 private const val MAX_IMPORT_IMAGES = 100
 
 
-/** Saved scans before the Play in-app review flow is requested, once. */
-const val REVIEW_AFTER_SCANS = 3
-/** Saved scans before the one-time feedback prompt; later than the review so the two never meet. */
-const val FEEDBACK_PROMPT_AFTER_SCANS = 5
+/** Saved camera scans before the rating sheet appears (once). */
+const val RATING_AFTER_SCANS = 1

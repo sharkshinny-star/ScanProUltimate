@@ -32,11 +32,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.scanpro.AppViewModel
 import com.example.scanpro.R
-import com.example.scanpro.core.ui.FeedbackPromptDialog
+import com.example.scanpro.core.ui.RatingSheet
+import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.core.ui.SupportTopic
 import com.example.scanpro.core.ui.contactSupport
-import com.example.scanpro.core.ui.findActivity
-import com.example.scanpro.core.ui.requestInAppReview
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
 import com.example.scanpro.navigation.ScanProDestinations
@@ -64,24 +63,22 @@ fun ScanProApp(
     val destinationRequest by viewModel.destinationRequest.collectAsStateWithLifecycle()
     val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
-    val reviewDue by viewModel.reviewDue.collectAsStateWithLifecycle()
-    val feedbackPromptDue by viewModel.feedbackPromptDue.collectAsStateWithLifecycle()
+    val ratingDue by viewModel.ratingDue.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Requested once, after the third saved scan, from the screen the scan lands on; marked as requested
-    // before the call so a crash or a quota-limited answer never leads to a second ask.
-    LaunchedEffect(reviewDue, sessionUnlocked) {
-        if (!reviewDue || !sessionUnlocked) return@LaunchedEffect
-        viewModel.markReviewRequested()
-        context.findActivity()?.let { requestInAppReview(it) }
-    }
-    if (feedbackPromptDue && sessionUnlocked) {
-        FeedbackPromptDialog(
-            onShareFeedback = {
-                viewModel.markFeedbackPromptShown()
-                contactSupport(context, SupportTopic.FEEDBACK)
+    // Once, after the first saved document and never over the welcome or lock screens. Marked as shown on every
+    // way out, so it cannot come back.
+    if (ratingDue && sessionUnlocked && welcomeSeen == true) {
+        RatingSheet(
+            onNotNow = viewModel::markRatingShown,
+            onRateOnPlay = {
+                viewModel.markRatingShown()
+                openPlayStoreListing(context)
             },
-            onLater = viewModel::markFeedbackPromptShown
+            onSendFeedback = {
+                viewModel.markRatingShown()
+                contactSupport(context, SupportTopic.FEEDBACK)
+            }
         )
     }
     val navController = rememberNavController()
