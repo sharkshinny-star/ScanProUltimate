@@ -9,8 +9,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
@@ -24,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.rememberMotionEnabled
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.core.ui.shareUri
 import com.example.scanpro.data.CropQuad
@@ -58,16 +62,20 @@ fun ScanProNavHost(
         navController.navigate(ScanProDestinations.pdfViewer(uri, title))
     }
 
+    // With animations turned off in system settings, screens change at once.
+    val motion = rememberMotionEnabled()
     NavHost(
         navController = navController,
         startDestination = ScanProDestinations.HOME,
+        // The theme background behind every screen, so nothing during a transition shows the darker window.
+        modifier = Modifier.background(MaterialTheme.colorScheme.background),
         // Tab switches use Material "fade through"; screens pushed on top slide in from the end edge
         // (shared axis X) and slide back out when popped. The camera and full-screen editors rise from
         // the bottom like a sheet. Navigation's own default is a 700ms crossfade, which feels like a hang.
-        enterTransition = { enterFor(targetState, pop = false) },
-        exitTransition = { exitFor(targetState, pop = false) },
-        popEnterTransition = { enterFor(initialState, pop = true) },
-        popExitTransition = { exitFor(initialState, pop = true) }
+        enterTransition = { if (motion) enterFor(targetState, pop = false) else EnterTransition.None },
+        exitTransition = { if (motion) exitFor(targetState, pop = false) else ExitTransition.None },
+        popEnterTransition = { if (motion) enterFor(initialState, pop = true) else EnterTransition.None },
+        popExitTransition = { if (motion) exitFor(initialState, pop = true) else ExitTransition.None }
     ) {
         // Search shares the library screen but is pushed on top of a tab rather than being one.
         listOf(ScanProDestinations.HOME, ScanProDestinations.FILES, ScanProDestinations.SEARCH).forEach { route ->
@@ -179,7 +187,7 @@ fun ScanProNavHost(
     }
 }
 
-private const val PushDuration = 320
+private const val PushDuration = 260
 private const val FadeThroughDuration = 210
 
 private fun NavBackStackEntry.isTopLevel() = destination.route in ScanProDestinations.topLevel
@@ -194,8 +202,9 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(entry: Na
     else slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(PushDuration, easing = FastOutSlowInEasing)) + fadeIn(tween(PushDuration / 2))
     pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it / 4 }) +
         fadeIn(tween(PushDuration / 2))
-    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it }) +
-        fadeIn(tween(PushDuration / 2))
+    // The pushed screen draws its own background, so it slides in opaque: fading it in showed the screen
+    // underneath through it, which read as a dark scrim.
+    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it })
 }
 
 /** The transition for the screen going out, mirroring [enterFor]. */

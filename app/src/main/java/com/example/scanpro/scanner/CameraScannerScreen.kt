@@ -477,9 +477,26 @@ fun CameraScannerScreen(
                         pages.add(captured)
                     }
                     capturing = false
-                    // Outline the page in the background so the review screen opens ready.
+                    // ID cards keep only what was inside the guide; other pages are outlined in the background so the
+                    // review screen opens ready.
+                    val viewW = previewView.width.toFloat()
+                    val viewH = previewView.height.toFloat()
+                    val density = context.resources.displayMetrics.density
+                    val idMode = scanMode == ScanMode.ID_CARD
                     scope.launch {
-                        val quad = withContext(Dispatchers.Default) { runCatching { OpenCvScanProcessor.detectCrop(raw) }.getOrNull() }
+                        val quad = withContext(Dispatchers.Default) {
+                            runCatching {
+                                if (idMode) {
+                                    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                                    android.graphics.BitmapFactory.decodeFile(raw.absolutePath, bounds)
+                                    val turned = androidx.exifinterface.media.ExifInterface(raw.absolutePath).rotationDegrees % 180 != 0
+                                    val (w, h) = if (turned) bounds.outHeight to bounds.outWidth else bounds.outWidth to bounds.outHeight
+                                    idCardCrop(viewW, viewH, w, h, density) ?: OpenCvScanProcessor.detectCrop(raw)
+                                } else {
+                                    OpenCvScanProcessor.detectCrop(raw)
+                                }
+                            }.getOrNull()
+                        }
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                     }
                     status = when {
@@ -1286,15 +1303,59 @@ private fun PermissionPanel(askable: Boolean, onRequest: () -> Unit, onFallback:
     }
 }
 
-/** Credit-card shaped guide with corner brackets, plus a Front/Back label. */
+/** The ID card guide's rectangle in a camera area of [width] x [height] px: card-shaped, a little above centre. */
+internal fun idCardFrame(width: Float, height: Float, density: Float): FrameRect {
+    val w = width * 0.88f
+    val h = w * 0.63f
+    val left = (width - w) / 2f
+    val top = (height - h) / 2f - 40f * density
+    return FrameRect(left, top, left + w, top + h)
+}
+
+internal data class FrameRect(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+    fun width() = right - left
+    fun height() = bottom - top
+}
+
+/**
+ * Where the ID card guide lies in a photo of [imageWidth] x [imageHeight] (already upright) shown fitted and centred
+ * in a [viewWidth] x [viewHeight] camera area, as the photo's crop: only the card inside the guide is kept.
+ */
+internal fun idCardCrop(viewWidth: Float, viewHeight: Float, imageWidth: Int, imageHeight: Int, density: Float): CropQuad? {
+    if (viewWidth <= 0f || viewHeight <= 0f || imageWidth <= 0 || imageHeight <= 0) return null
+    val scale = minOf(viewWidth / imageWidth, viewHeight / imageHeight)
+    val shownW = imageWidth * scale
+    val shownH = imageHeight * scale
+    val offX = (viewWidth - shownW) / 2f
+    val offY = (viewHeight - shownH) / 2f
+    val frame = idCardFrame(viewWidth, viewHeight, density)
+    fun nx(x: Float) = ((x - offX) / shownW).coerceIn(0f, 1f)
+    fun ny(y: Float) = ((y - offY) / shownH).coerceIn(0f, 1f)
+    val l = nx(frame.left); val r = nx(frame.right); val t = ny(frame.top); val b = ny(frame.bottom)
+    if (r - l < 0.05f || b - t < 0.05f) return null
+    return CropQuad(
+        topLeft = NormalizedPoint(l, t), topRight = NormalizedPoint(r, t),
+        bottomRight = NormalizedPoint(r, b), bottomLeft = NormalizedPoint(l, b)
+    )
+}
+
+/**
+ * Credit-card shaped guide with corner brackets, plus a Front/Back label. Everything outside the guide is blacked
+ * out, since only what is inside it is kept (see [idCardCrop]).
+ */
 @Composable
 private fun IdCardFrame(label: String) {
     Box(Modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
-            val width = size.width * 0.88f
-            val height = width * 0.63f
-            val left = (size.width - width) / 2f
-            val top = (size.height - height) / 2f - 40.dp.toPx()
+            val frame = idCardFrame(size.width, size.height, density)
+            val left = frame.left; val top = frame.top; val width = frame.width(); val height = frame.height()
+            val radius = 14.dp.toPx()
+            val outside = Path().apply {
+                fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+                addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+                addRoundRect(androidx.compose.ui.geometry.RoundRect(left, top, left + width, top + height, radius, radius))
+            }
+            drawPath(outside, Color.Black.copy(alpha = 0.88f))
             val arm = 28.dp.toPx()
             val stroke = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             fun corner(x: Float, y: Float, dx: Float, dy: Float) {

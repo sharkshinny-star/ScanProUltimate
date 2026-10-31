@@ -73,6 +73,15 @@ class DocumentViewModel @Inject constructor(
         .map { current -> if (current == null || current === UNKNOWN) null else repository.loadDocument(id) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /**
+     * The library's summary of this document when Home already holds it (its Recent list), so the screen can
+     * show the title and cover the moment it opens, while the pages are still being read.
+     */
+    val preview: StateFlow<DocumentSummary?> = library.overview
+        .map { overview -> overview.recent.firstOrNull { it.id == id } }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.overview.value.recent.firstOrNull { it.id == id })
+
     val otherDocuments: StateFlow<List<DocumentSummary>> = library.overview
         .map { repository.loadOtherSummaries(id, OTHER_DOCUMENT_LIMIT) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

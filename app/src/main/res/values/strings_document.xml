@@ -270,4 +270,17 @@
     <string name="doc_duplicate_doc">Duplicate doc</string>
     <string name="doc_search_documents">Search documents</string>
     <string name="doc_no_documents_match">No documents match</string>
+    <!-- Decluttered document screen: filters bar, text, insights and PDF settings sheets -->
+    <string name="doc_filters">Filters</string>
+    <string name="doc_filters_for_page">Filters · page %1$d of %2$d</string>
+    <string name="doc_close_filters">Close filters</string>
+    <string name="doc_export">Export</string>
+    <string name="doc_export_text_options">Export recognised text</string>
+    <string name="doc_ocr_options">Text recognition options</string>
+    <string name="doc_ocr_script_current">OCR script: %1$s</string>
+    <string name="doc_translate_to">Translate to</string>
+    <string name="doc_translate_to_language">Translate to %1$s</string>
+    <string name="doc_document_group">Document</string>
+    <string name="doc_opening_document">Opening document</string>
+    <string name="doc_open_pdf_settings">Open PDF settings</string>
 </resources>

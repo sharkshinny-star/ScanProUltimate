@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Adaptive Auto Clean (F25); signature placement step (drag, pinch/corner resize, Save). |
+| newest | Document screen decluttered, instant document opening, ID card guide crops to the card (F26). |
+| 9bb0629 | Adaptive Auto Clean (F25); signature placement step (drag, pinch/corner resize, Save). |
 | c068e53 | Owner screenshot fixes (F24): animated launch icon, night greeting, smaller home scan card, no white band under the bottom bar, adaptive tool grid, filtered review preview, Done button no longer clipped. |
 | a merge | Merged owner commit `540a492` (older local copy): kept its version catalog (`gradle/libs.versions.toml`, used by `:translate`, `:baselineprofile`), `gradle.properties` parallel sync, `gradle-daemon-jvm.properties`, renamed scope file; undid its reverts (code, targetSdk 37, BouncyCastle pin, newer deps), removed `app/google-services.json` (offline-first) and the IDE report files; `.gitignore` now blocks both. |
 | 001b98a | IDE inspection report (F23): more OpenCV exclusions, non-deprecated rotate icons, `Duration` timeout, British spelling throughout (owner decision). |
@@ -66,7 +67,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 ## 4. Next steps
 
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
-2. Device-check F24 on the owner's phone (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
+2. Device-check F24–F26 on the owner's phone: document screen sheets and pager, opening from Recent, ID card capture crop, Auto Clean on real documents, signature placement; and F24 (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
 3. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.
 3. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
 4. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.

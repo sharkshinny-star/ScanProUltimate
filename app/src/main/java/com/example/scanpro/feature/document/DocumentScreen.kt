@@ -45,6 +45,12 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.AddToDrive
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.AutoFixOff
@@ -97,17 +103,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -232,14 +235,20 @@ fun DocumentRoute(
         if (document != null) hadDocument = true else if (missing && hadDocument) onBack()
     }
 
+    val preview by viewModel.preview.collectAsStateWithLifecycle()
+
     val current = document
     if (current == null) {
         // Pages are read from the database after the screen opens; only a document the library no
-        // longer lists is really unavailable.
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (busy || !missing) LinearProgressIndicator(Modifier.fillMaxWidth().padding(48.dp))
-            else Text(stringResource(R.string.doc_unavailable))
-        }
+        // longer lists is really unavailable. Until then the screen is already laid out, with the title
+        // and cover Home had, so it slides in looking ready rather than as a blank page.
+        DocumentLoadingScreen(
+            title = preview?.title,
+            coverPath = preview?.coverPath,
+            coverVersion = preview?.updatedAt,
+            unavailable = missing && !busy,
+            onBack = onBack
+        )
         return
     }
 
@@ -445,8 +454,13 @@ internal fun DocumentDetailScreen(
     var ocrEditOpen by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var detailsOpen by remember { mutableStateOf(false) }
-    var tabName by rememberSaveable { mutableStateOf(DetailTab.TEXT.name) }
-    val tab = runCatching { DetailTab.valueOf(tabName) }.getOrDefault(DetailTab.TEXT)
+    // Text, insights and PDF settings each open in their own sheet, so the page itself fills the screen.
+    var textOpen by rememberSaveable { mutableStateOf(false) }
+    var insightsOpen by rememberSaveable { mutableStateOf(false) }
+    var pdfSettingsOpen by rememberSaveable { mutableStateOf(false) }
+    // Filters replace the bottom toolbar while open, so the page above stays visible and undimmed.
+    var filtersOpen by rememberSaveable { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler(enabled = filtersOpen) { filtersOpen = false }
     // Everything that isn't on the bottom toolbar lives in the "More" sheet.
     var moreOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -538,6 +552,7 @@ internal fun DocumentDetailScreen(
                             MenuItem(stringResource(R.string.common_rename), Icons.Default.Edit, !busy) { menuOpen = false; renameOpen = true }
                             MenuItem(stringResource(R.string.doc_move_to_folder), Icons.Default.Folder, !busy) { menuOpen = false; folderOpen = true }
                             MenuItem(stringResource(R.string.doc_tags), Icons.Default.Tag, !busy) { menuOpen = false; tagsOpen = true }
+                            MenuItem(stringResource(R.string.doc_tab_pdf_settings), Icons.Default.PictureAsPdf) { menuOpen = false; pdfSettingsOpen = true }
                             MenuItem(stringResource(R.string.doc_details), Icons.Default.Info) { menuOpen = false; detailsOpen = true }
                             HorizontalDivider()
                             MenuItem(stringResource(R.string.doc_move_to_recycle_bin), Icons.Default.Delete, !busy) { menuOpen = false; deleteDocumentOpen = true }
@@ -550,249 +565,387 @@ internal fun DocumentDetailScreen(
             // The most-used tools sit in a fixed bottom toolbar; the rest are one tap away under More.
             if (currentPage != null) {
                 Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        BarAction(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy) { cropOpen = true }
-                        BarAction(Icons.Default.AutoFixHigh, stringResource(R.string.doc_clean_up), !busy) { adjustmentsOpen = true }
-                        BarAction(Icons.Default.Draw, stringResource(R.string.doc_sign), !busy) { signatureOpen = true }
-                        BarAction(Icons.Default.Share, stringResource(R.string.doc_share_pdf), !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
-                        BarAction(Icons.Default.MoreHoriz, stringResource(R.string.common_more), true) { moreOpen = true }
+                    if (filtersOpen) {
+                        // The filter strip takes the toolbar's place for the page on screen, as in the camera.
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 12.dp)
+                        ) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    stringResource(R.string.doc_filters_for_page, currentIndex + 1, pages.size),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                // Brightness, contrast and the other clean-up controls, with their own "all pages" option.
+                                TextButton(onClick = { filtersOpen = false; adjustmentsOpen = true }, enabled = !busy) {
+                                    Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(stringResource(R.string.doc_clean_up), maxLines = 1)
+                                }
+                                IconButton(onClick = { filtersOpen = false }) {
+                                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.doc_close_filters))
+                                }
+                            }
+                            // Each filter previewed on this page, made from the original photo so every look can be compared.
+                            val previews by produceState<Map<PageFilter, android.graphics.Bitmap>>(
+                                emptyMap(), currentPage.id, currentPage.sourcePath, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments
+                            ) {
+                                value = withContext(Dispatchers.Default) {
+                                    runCatching {
+                                        val photo = ImageProcessor.decodeOrientedScaled(currentPage.sourcePath, 900) ?: return@runCatching emptyMap()
+                                        try {
+                                            ImageProcessor.filterPreviews(photo, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments)
+                                        } finally {
+                                            photo.recycle()
+                                        }
+                                    }.getOrDefault(emptyMap())
+                                }
+                            }
+                            FilterStrip(
+                                previews = previews,
+                                selected = currentPage.filter,
+                                enabled = !busy,
+                                onSelect = { filter -> if (filter != currentPage.filter) onApplyFilter(currentPage.id, filter) }
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            BarAction(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy) { cropOpen = true }
+                            BarAction(Icons.Default.AutoFixHigh, stringResource(R.string.doc_filters), !busy) { filtersOpen = true }
+                            BarAction(Icons.AutoMirrored.Filled.Notes, stringResource(R.string.doc_tab_text), true) { textOpen = true }
+                            BarAction(Icons.Default.Share, stringResource(R.string.doc_share_pdf), !busy, primary = true) { onWithFreshPdf({}) { sharePdf(context, it) } }
+                            BarAction(Icons.Default.MoreHoriz, stringResource(R.string.common_more), true) { moreOpen = true }
+                        }
                     }
                 }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
-            modifier = Modifier
+        androidx.compose.foundation.layout.BoxWithConstraints(
+            Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
-
-            if (currentPage != null) {
-                // "Ready to export" status row, as in the viewer design. Export actions are in the bottom bar.
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                stringResource(if (document.hasCurrentPdf()) R.string.doc_ready_to_export else R.string.doc_pdf_updates_on_export),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    }
+            // The page fills whatever height is left. Only when that would leave it too small to see (a phone on
+            // its side, or very large text) does the screen scroll, with the page at a fixed height instead.
+            val roomy = maxHeight >= 420.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (roomy) Modifier else Modifier.verticalScroll(rememberScrollState()))
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(Modifier.height(4.dp))
+                if (currentPage == null) {
                     Text(
-                        if (document.searchablePdf) pluralStringResource(R.plurals.doc_pages_searchable, document.pages.size, document.pages.size)
-                        else pluralStringResource(R.plurals.doc_page_count, document.pages.size, document.pages.size),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        stringResource(R.string.doc_no_page_selected),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 24.dp)
                     )
-                }
-                Spacer(Modifier.height(12.dp))
-                if (document.ocrText.isNotBlank()) {
-                    SummaryCard(
-                        documentId = document.id,
-                        insights = insights,
-                        card = businessCard,
-                        onAddContact = addContact,
-                        onMore = { tabName = DetailTab.INSIGHTS.name }
-                    )
-                    Spacer(Modifier.height(12.dp))
-                }
-                // The page as a sheet on a tonal desk, matching the library's thumbnails.
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.large)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .padding(14.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceContainerLowest, shadowElevation = 6.dp) {
+                } else {
+                    // Status and shortcuts: whether the PDF is current (opens PDF settings), the kind of document
+                    // (opens insights) and the page count. Wraps rather than squeezes with large text.
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        val openPdfSettings = stringResource(R.string.doc_open_pdf_settings)
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .clip(MaterialTheme.shapes.small)
+                                .clickable(onClickLabel = openPdfSettings, role = Role.Button) { pdfSettingsOpen = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    stringResource(if (document.hasCurrentPdf()) R.string.doc_ready_to_export else R.string.doc_pdf_updates_on_export),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                        if (document.ocrText.isNotBlank()) {
+                            val openInsights = stringResource(R.string.doc_open_insights)
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier
+                                    .align(Alignment.CenterVertically)
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable(onClickLabel = openInsights, role = Role.Button) { insightsOpen = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(stringResource(insights.kind.labelRes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                                }
+                            }
+                        }
+                        Text(
+                            if (document.searchablePdf) pluralStringResource(R.plurals.doc_pages_searchable, document.pages.size, document.pages.size)
+                            else pluralStringResource(R.plurals.doc_page_count, document.pages.size, document.pages.size),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 6.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    // The page as a sheet on a tonal desk, matching the library's thumbnails. Swipe for the next page.
+                    val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = currentIndex) { pages.size }
+                    // Keep the pager and the selected page in step both ways: a tap in the strip scrolls the pager,
+                    // a swipe selects the page.
+                    LaunchedEffect(currentIndex, pages.size) {
+                        if (pagerState.currentPage != currentIndex && currentIndex < pagerState.pageCount) pagerState.animateScrollToPage(currentIndex)
+                    }
+                    LaunchedEffect(pagerState.settledPage) {
+                        pages.getOrNull(pagerState.settledPage)?.let { if (it.id != selectedPageId) selectedPageId = it.id }
+                    }
+                    androidx.compose.foundation.pager.HorizontalPager(
+                        state = pagerState,
+                        key = { pages.getOrNull(it)?.id ?: it },
+                        pageSpacing = 16.dp,
+                        modifier = (if (roomy) Modifier.weight(1f) else Modifier.height(360.dp))
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.large)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    ) { index ->
+                        val page = pages.getOrNull(index)
                         PageThumbnail(
-                            currentPage.imagePath,
-                            Modifier.fillMaxWidth().height(380.dp),
+                            page?.imagePath,
+                            Modifier.fillMaxSize().padding(14.dp),
                             THUMBNAIL_LARGE,
-                            version = currentPage,
+                            version = page,
                             shape = RoundedCornerShape(10.dp),
                             background = Color.Transparent,
-                            contentDescription = stringResource(R.string.viewer_page_of, currentIndex + 1, pages.size)
+                            contentDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
                         )
                     }
-                }
-                Spacer(Modifier.height(12.dp))
-                // In a right-to-left layout the strip runs right to left, so a drag to the right moves a page earlier.
-                val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
-                        var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
-                        // The gesture block outlives reorders, so read the live position instead of the captured one.
-                        val latestIndex by rememberUpdatedState(index)
-                        val latestLast by rememberUpdatedState(pages.lastIndex)
-                        val latestBusy by rememberUpdatedState(busy)
-                        val latestRtl by rememberUpdatedState(isRtl)
-                        val isCurrent = item.id == currentPage.id
-                        val pageDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
-                        Card(
-                            modifier = Modifier
-                                .size(width = 52.dp, height = 70.dp)
-                                // The thumbnail follows the finger while dragging.
-                                .graphicsLayer { translationX = dragDistance }
-                                .zIndex(if (dragDistance != 0f) 1f else 0f)
-                                .pointerInput(item.id) {
-                                    // One move per gesture, applied on release. Moving on every slot
-                                    // crossing raced the one-operation-at-a-time rule and dropped moves.
-                                    val slot = 60.dp.toPx() // thumbnail width plus spacing
-                                    detectDragGesturesAfterLongPress(
-                                        onDragStart = { dragDistance = 0f },
-                                        onDragEnd = {
-                                            val slots = (dragDistance / slot).roundToInt()
-                                            val target = (latestIndex + if (latestRtl) -slots else slots).coerceIn(0, latestLast)
-                                            val delta = target - latestIndex
-                                            dragDistance = 0f
-                                            if (delta != 0 && !latestBusy) onMove(item.id, delta)
-                                        },
-                                        onDragCancel = { dragDistance = 0f },
-                                        onDrag = { change, amount ->
-                                            change.consume()
-                                            dragDistance += amount.x
-                                        }
-                                    )
-                                }
-                                .clickable(role = Role.Tab) { selectedPageId = item.id }
-                                // One announcement per card: its number and whether it is the page being edited.
-                                .semantics(mergeDescendants = true) {
-                                    contentDescription = pageDescription
-                                    selected = isCurrent
-                                },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                            border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.secondary)
-                            else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                        ) {
-                            PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, shape = RoundedCornerShape(9.dp), background = Color.Transparent, contentDescription = null)
-                        }
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    if (pages.size > 1) stringResource(R.string.doc_page_x_of_y_reorder, currentIndex + 1, pages.size) else stringResource(R.string.doc_page_1_of_1),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(12.dp))
-                // Each filter previewed on this page, made from the original photo so every look can be compared.
-                val previews by produceState<Map<PageFilter, android.graphics.Bitmap>>(
-                    emptyMap(), currentPage.id, currentPage.sourcePath, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments
-                ) {
-                    value = withContext(Dispatchers.Default) {
-                        runCatching {
-                            val photo = ImageProcessor.decodeOrientedScaled(currentPage.sourcePath, 900) ?: return@runCatching emptyMap()
-                            try {
-                                ImageProcessor.filterPreviews(photo, currentPage.crop, currentPage.rotationDegrees, currentPage.adjustments)
-                            } finally {
-                                photo.recycle()
+                    Spacer(Modifier.height(10.dp))
+                    // In a right-to-left layout the strip runs right to left, so a drag to the right moves a page earlier.
+                    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        itemsIndexed(pages, key = { _, item -> item.id }) { index, item ->
+                            var dragDistance by remember(item.id) { mutableFloatStateOf(0f) }
+                            // The gesture block outlives reorders, so read the live position instead of the captured one.
+                            val latestIndex by rememberUpdatedState(index)
+                            val latestLast by rememberUpdatedState(pages.lastIndex)
+                            val latestBusy by rememberUpdatedState(busy)
+                            val latestRtl by rememberUpdatedState(isRtl)
+                            val isCurrent = item.id == currentPage.id
+                            val pageDescription = stringResource(R.string.viewer_page_of, index + 1, pages.size)
+                            Card(
+                                modifier = Modifier
+                                    .size(width = 52.dp, height = 70.dp)
+                                    // The thumbnail follows the finger while dragging.
+                                    .graphicsLayer { translationX = dragDistance }
+                                    .zIndex(if (dragDistance != 0f) 1f else 0f)
+                                    .pointerInput(item.id) {
+                                        // One move per gesture, applied on release. Moving on every slot
+                                        // crossing raced the one-operation-at-a-time rule and dropped moves.
+                                        val slot = 60.dp.toPx() // thumbnail width plus spacing
+                                        detectDragGesturesAfterLongPress(
+                                            onDragStart = { dragDistance = 0f },
+                                            onDragEnd = {
+                                                val slots = (dragDistance / slot).roundToInt()
+                                                val target = (latestIndex + if (latestRtl) -slots else slots).coerceIn(0, latestLast)
+                                                val delta = target - latestIndex
+                                                dragDistance = 0f
+                                                if (delta != 0 && !latestBusy) onMove(item.id, delta)
+                                            },
+                                            onDragCancel = { dragDistance = 0f },
+                                            onDrag = { change, amount ->
+                                                change.consume()
+                                                dragDistance += amount.x
+                                            }
+                                        )
+                                    }
+                                    .clickable(role = Role.Tab) { selectedPageId = item.id }
+                                    // One announcement per card: its number and whether it is the page being edited.
+                                    .semantics(mergeDescendants = true) {
+                                        contentDescription = pageDescription
+                                        selected = isCurrent
+                                    },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                                border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.secondary)
+                                else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                            ) {
+                                PageThumbnail(item.imagePath, Modifier.fillMaxSize(), THUMBNAIL_SMALL, version = item, shape = RoundedCornerShape(9.dp), background = Color.Transparent, contentDescription = null)
                             }
-                        }.getOrDefault(emptyMap())
-                    }
-                }
-                FilterStrip(
-                    previews = previews,
-                    selected = currentPage.filter,
-                    enabled = !busy,
-                    onSelect = { filter -> if (filter != currentPage.filter) onApplyFilter(currentPage.id, filter) }
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-            PrimaryScrollableTabRow(selectedTabIndex = tab.ordinal, edgePadding = 0.dp) {
-                DetailTab.entries.forEach { entry ->
-                    Tab(selected = tab == entry, onClick = { tabName = entry.name }, text = { Text(stringResource(entry.labelRes)) })
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-
-            when (tab) {
-                DetailTab.TEXT -> {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            if (currentPage != null) stringResource(R.string.doc_page_n, currentIndex + 1) else stringResource(R.string.doc_recognized_text),
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (!currentPage?.ocrText.isNullOrBlank()) {
-                            IconButton(onClick = { ocrEditOpen = true }, enabled = !busy) {
-                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.doc_edit_recognized_text))
-                            }
-                            IconButton(onClick = { copyText(context, currentPage.ocrText) }) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.doc_copy_text))
-                            }
-                        }
-                    }
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = MaterialTheme.shapes.medium,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        SelectionContainer {
-                            Text(
-                                when {
-                                    currentPage == null -> stringResource(R.string.doc_no_page_selected)
-                                    currentPage.ocrText.isBlank() -> stringResource(R.string.doc_no_text_recognized)
-                                    else -> currentPage.ocrText
-                                },
-                                modifier = Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState()).padding(12.dp)
-                            )
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    // Wraps on narrow phones instead of squeezing four buttons into one line.
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(onClick = { shareOcrText(context, document) }) { Text(stringResource(R.string.doc_share_text)) }
-                        TextButton(onClick = onExportOcrTextFile, enabled = !busy && document.ocrText.isNotBlank()) { Text(stringResource(R.string.doc_txt_file)) }
-                        TextButton(onClick = onExportWord, enabled = !busy && document.ocrText.isNotBlank()) { Text(stringResource(R.string.doc_word_file)) }
-                        TextButton(onClick = onExportExcel, enabled = !busy && document.ocrText.isNotBlank()) { Text(stringResource(R.string.doc_excel_file)) }
-                        TextButton(onClick = { if (pages.any { it.ocrEdited }) reOcrConfirm = { onReOcr() } else onReOcr() }, enabled = !busy) { Text(stringResource(R.string.doc_rerun_ocr)) }
-                    }
+                    Text(
+                        if (pages.size > 1) stringResource(R.string.doc_page_x_of_y_reorder, currentIndex + 1, pages.size) else stringResource(R.string.doc_page_1_of_1),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        }
+    }
 
-                    SubHeader(stringResource(R.string.doc_ocr_script))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(OcrScript.entries, key = { it.name }) { script ->
-                            FilterChip(
-                                selected = document.ocrScript == script,
-                                enabled = !busy,
-                                onClick = { if (pages.any { it.ocrEdited } && document.ocrScript != script) reOcrConfirm = { onOcrScript(script) } else { onOcrScript(script) } },
-                                label = { Text(stringResource(script.labelRes)) }
-                            )
+    if (textOpen) {
+        ModalBottomSheet(onDismissRequest = { textOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.doc_recognized_text), style = MaterialTheme.typography.titleLarge)
+                        if (currentPage != null) {
+                            Text(stringResource(R.string.doc_page_n, currentIndex + 1), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                    if (!currentPage?.ocrText.isNullOrBlank()) {
+                        IconButton(onClick = { ocrEditOpen = true }, enabled = !busy) {
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.doc_edit_recognized_text))
+                        }
+                        IconButton(onClick = { copyText(context, currentPage.ocrText) }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.doc_copy_text))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SelectionContainer {
+                        Text(
+                            when {
+                                currentPage == null -> stringResource(R.string.doc_no_page_selected)
+                                currentPage.ocrText.isBlank() -> stringResource(R.string.doc_no_text_recognized)
+                                else -> currentPage.ocrText
+                            },
+                            modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(12.dp)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                // One Export menu instead of a row of file buttons; re-reading and its script choice sit beside it.
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
+                    var exportMenuOpen by remember { mutableStateOf(false) }
+                    Box {
+                        val exportOptions = stringResource(R.string.doc_export_text_options)
+                        FilledTonalButton(
+                            onClick = { exportMenuOpen = true },
+                            modifier = Modifier.semantics { contentDescription = exportOptions }
+                        ) {
+                            Icon(Icons.Default.IosShare, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.doc_export))
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                        DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
+                            val hasText = !busy && document.ocrText.isNotBlank()
+                            MenuItem(stringResource(R.string.doc_share_text), Icons.Default.Share) { exportMenuOpen = false; shareOcrText(context, document) }
+                            MenuItem(stringResource(R.string.doc_txt_file), Icons.Default.TextFields, hasText) { exportMenuOpen = false; onExportOcrTextFile() }
+                            MenuItem(stringResource(R.string.doc_word_file), Icons.Default.Description, hasText) { exportMenuOpen = false; onExportWord() }
+                            MenuItem(stringResource(R.string.doc_excel_file), Icons.Default.TableChart, hasText) { exportMenuOpen = false; onExportExcel() }
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { if (pages.any { it.ocrEdited }) reOcrConfirm = { onReOcr() } else onReOcr() }, enabled = !busy) {
+                            Icon(Icons.Default.Replay, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.doc_rerun_ocr))
+                        }
+                        var scriptMenuOpen by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { scriptMenuOpen = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.doc_ocr_options))
+                            }
+                            DropdownMenu(expanded = scriptMenuOpen, onDismissRequest = { scriptMenuOpen = false }) {
+                                Text(
+                                    stringResource(R.string.doc_ocr_script),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                                OcrScript.entries.forEach { script ->
+                                    val isSelected = document.ocrScript == script
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(script.labelRes)) },
+                                        // Reading again in another script replaces corrections, so it asks first, as before.
+                                        onClick = {
+                                            scriptMenuOpen = false
+                                            if (pages.any { it.ocrEdited } && !isSelected) reOcrConfirm = { onOcrScript(script) } else onOcrScript(script)
+                                        },
+                                        enabled = !busy,
+                                        trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
+                                        modifier = Modifier.semantics { selected = isSelected }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Text(
+                    stringResource(R.string.doc_ocr_script_current, stringResource(document.ocrScript.labelRes)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-                    SubHeader(stringResource(R.string.doc_translate))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(TranslationEngine.commonTargets, key = { it.languageTag }) { target ->
-                            FilterChip(
-                                selected = translationTarget == target.languageTag,
-                                onClick = { translationTarget = target.languageTag },
-                                label = { Text(target.label) }
+                SubHeader(stringResource(R.string.doc_translate))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
+                    var languageMenuOpen by remember { mutableStateOf(false) }
+                    val targetLabel = TranslationEngine.commonTargets.firstOrNull { it.languageTag == translationTarget }?.label ?: translationTarget
+                    Box {
+                        val translateTo = stringResource(R.string.doc_translate_to_language, targetLabel)
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = { languageMenuOpen = true },
+                            modifier = Modifier.semantics { contentDescription = translateTo }
+                        ) {
+                            Text(targetLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                        DropdownMenu(expanded = languageMenuOpen, onDismissRequest = { languageMenuOpen = false }) {
+                            Text(
+                                stringResource(R.string.doc_translate_to),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             )
+                            TranslationEngine.commonTargets.forEach { target ->
+                                val isSelected = translationTarget == target.languageTag
+                                DropdownMenuItem(
+                                    text = { Text(target.label) },
+                                    onClick = { languageMenuOpen = false; translationTarget = target.languageTag },
+                                    trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
+                                    modifier = Modifier.semantics { selected = isSelected }
+                                )
+                            }
                         }
                     }
                     FilledTonalButton(
@@ -813,10 +966,9 @@ internal fun DocumentDetailScreen(
                                 }
                             }
                         },
-                        enabled = document.ocrText.isNotBlank() && !translating,
-                        modifier = Modifier.padding(top = 8.dp)
+                        enabled = document.ocrText.isNotBlank() && !translating
                     ) {
-                        Icon(Icons.Default.Translate, contentDescription = null)
+                        Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(
                             when (val progress = translationProgress) {
@@ -827,97 +979,131 @@ internal fun DocumentDetailScreen(
                             }
                         )
                     }
-                    Text(
-                        stringResource(R.string.doc_translate_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (translationResult.isNotBlank()) {
-                        Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                            SelectionContainer { Text(translationResult, modifier = Modifier.padding(12.dp)) }
-                        }
-                    }
                 }
-
-                DetailTab.INSIGHTS -> {
-                    Text(stringResource(insights.kind.labelRes), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.height(4.dp))
-                    Text(insights.summary, style = MaterialTheme.typography.bodyMedium)
-                    if (insights.amounts.isNotEmpty()) Text(stringResource(R.string.doc_amounts, insights.amounts.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                    if (insights.dates.isNotEmpty()) Text(stringResource(R.string.doc_dates, insights.dates.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                    if (insights.references.isNotEmpty()) Text(stringResource(R.string.doc_references, insights.references.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                    businessCard?.let { card ->
-                        SubHeader(stringResource(R.string.doc_contact_details))
-                        listOfNotNull(card.name, card.jobTitle, card.company).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                        (card.phones + card.emails + listOfNotNull(card.website, card.address)).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
-                        FilledTonalButton(onClick = { addContact(card) }, modifier = Modifier.padding(top = 4.dp)) { Text(stringResource(R.string.doc_add_to_contacts)) }
+                Text(
+                    stringResource(R.string.doc_translate_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                if (translationResult.isNotBlank()) {
+                    Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        SelectionContainer { Text(translationResult, modifier = Modifier.padding(12.dp)) }
                     }
-                    if (insights.actionItems.isNotEmpty()) {
-                        SubHeader(stringResource(R.string.doc_potential_action_items))
-                        insights.actionItems.forEach { item ->
-                            Text(stringResource(R.string.doc_bullet_item, item), style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    if (insights.suggestedTags.isNotEmpty()) {
-                        Spacer(Modifier.height(6.dp))
-                        Text(stringResource(R.string.doc_suggested_tags, insights.suggestedTags.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
-                        TextButton(
-                            enabled = !busy,
-                            onClick = {
-                                val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
-                                onTags(merged.joinToString(", "))
-                            }
-                        ) { Text(stringResource(R.string.doc_apply_suggested_tags)) }
-                    }
-                    SubHeader(stringResource(R.string.doc_ask_about_scan))
-                    OutlinedTextField(
-                        value = assistantQuestion,
-                        onValueChange = { assistantQuestion = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(stringResource(R.string.doc_ask_placeholder)) },
-                        supportingText = { Text(stringResource(R.string.doc_ask_supporting)) },
-                        maxLines = 3
-                    )
-                    FilledTonalButton(
-                        onClick = {
-                            val question = assistantQuestion
-                            val text = document.ocrText
-                            scope.launch { assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(question, text) } }
-                        },
-                        enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank()
-                    ) { Text(stringResource(R.string.doc_find_answer)) }
-                    if (assistantAnswer.isNotBlank()) {
-                        Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                            Text(assistantAnswer, modifier = Modifier.padding(12.dp))
-                        }
-                    }
-                }
-
-                DetailTab.PDF -> {
-                    SubHeader(stringResource(R.string.doc_quality))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(PdfQuality.entries, key = { it.name }) { quality ->
-                            FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(stringResource(quality.labelRes)) })
-                        }
-                    }
-                    SubHeader(stringResource(R.string.doc_page_size))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(PdfPageSize.entries, key = { it.name }) { size ->
-                            FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(stringResource(size.labelRes)) })
-                        }
-                    }
-                    SubHeader(stringResource(R.string.doc_document_mode))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(ScanMode.entries.filter { it != ScanMode.TEXT }, key = { it.name }) { mode ->
-                            FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(stringResource(mode.labelRes)) })
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    ToggleRow(stringResource(R.string.doc_searchable_pdf), stringResource(R.string.doc_searchable_pdf_hint), document.searchablePdf, !busy, onSearchablePdf)
-                    ToggleRow(stringResource(R.string.doc_page_numbers), stringResource(R.string.doc_page_numbers_hint), document.pageNumbers, !busy, onPageNumbers)
                 }
             }
-            Spacer(Modifier.height(32.dp))
+        }
+    }
+
+    if (insightsOpen) {
+        ModalBottomSheet(onDismissRequest = { insightsOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
+            ) {
+                Text(stringResource(R.string.doc_tab_insights), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(12.dp))
+                if (document.ocrText.isBlank()) {
+                    Text(stringResource(R.string.doc_no_text_recognized), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    SummaryCard(documentId = document.id, insights = insights, card = businessCard, onAddContact = addContact)
+                }
+                Spacer(Modifier.height(4.dp))
+                if (insights.amounts.isNotEmpty()) Text(stringResource(R.string.doc_amounts, insights.amounts.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
+                if (insights.dates.isNotEmpty()) Text(stringResource(R.string.doc_dates, insights.dates.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
+                if (insights.references.isNotEmpty()) Text(stringResource(R.string.doc_references, insights.references.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
+                businessCard?.let { card ->
+                    SubHeader(stringResource(R.string.doc_contact_details))
+                    listOfNotNull(card.name, card.jobTitle, card.company).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    (card.phones + card.emails + listOfNotNull(card.website, card.address)).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    FilledTonalButton(onClick = { addContact(card) }, modifier = Modifier.padding(top = 4.dp)) { Text(stringResource(R.string.doc_add_to_contacts)) }
+                }
+                if (insights.actionItems.isNotEmpty()) {
+                    SubHeader(stringResource(R.string.doc_potential_action_items))
+                    insights.actionItems.forEach { item ->
+                        Text(stringResource(R.string.doc_bullet_item, item), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                if (insights.suggestedTags.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(stringResource(R.string.doc_suggested_tags, insights.suggestedTags.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
+                    TextButton(
+                        enabled = !busy,
+                        onClick = {
+                            val merged = (document.tags + insights.suggestedTags).distinctBy { it.lowercase() }
+                            onTags(merged.joinToString(", "))
+                        }
+                    ) { Text(stringResource(R.string.doc_apply_suggested_tags)) }
+                }
+                SubHeader(stringResource(R.string.doc_ask_about_scan))
+                OutlinedTextField(
+                    value = assistantQuestion,
+                    onValueChange = { assistantQuestion = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.doc_ask_placeholder)) },
+                    supportingText = { Text(stringResource(R.string.doc_ask_supporting)) },
+                    maxLines = 3
+                )
+                FilledTonalButton(
+                    onClick = {
+                        val question = assistantQuestion
+                        val text = document.ocrText
+                        scope.launch { assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(question, text) } }
+                    },
+                    enabled = assistantQuestion.isNotBlank() && document.ocrText.isNotBlank()
+                ) { Text(stringResource(R.string.doc_find_answer)) }
+                if (assistantAnswer.isNotBlank()) {
+                    Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        Text(assistantAnswer, modifier = Modifier.padding(12.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    if (pdfSettingsOpen) {
+        ModalBottomSheet(onDismissRequest = { pdfSettingsOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
+            ) {
+                Text(stringResource(R.string.doc_tab_pdf_settings), style = MaterialTheme.typography.titleLarge)
+                SubHeader(stringResource(R.string.doc_quality))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PdfQuality.entries.forEach { quality ->
+                        FilterChip(selected = document.pdfQuality == quality, enabled = !busy, onClick = { onPdfQuality(quality) }, label = { Text(stringResource(quality.labelRes)) })
+                    }
+                }
+                SubHeader(stringResource(R.string.doc_page_size))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PdfPageSize.entries.forEach { size ->
+                        FilterChip(selected = document.pdfPageSize == size, enabled = !busy, onClick = { onPdfPageSize(size) }, label = { Text(stringResource(size.labelRes)) })
+                    }
+                }
+                SubHeader(stringResource(R.string.doc_document_mode))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ScanMode.entries.filter { it != ScanMode.TEXT }.forEach { mode ->
+                        FilterChip(selected = document.scanMode == mode, enabled = !busy, onClick = { onScanMode(mode) }, label = { Text(stringResource(mode.labelRes)) })
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                ToggleRow(stringResource(R.string.doc_searchable_pdf), stringResource(R.string.doc_searchable_pdf_hint), document.searchablePdf, !busy, onSearchablePdf)
+                ToggleRow(stringResource(R.string.doc_page_numbers), stringResource(R.string.doc_page_numbers_hint), document.pageNumbers, !busy, onPageNumbers)
+                // Settings chosen here apply to the next share, so it is offered straight from here.
+                FilledTonalButton(
+                    onClick = { pdfSettingsOpen = false; onWithFreshPdf({}) { sharePdf(context, it) } },
+                    enabled = !busy,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.doc_share_pdf))
+                }
+            }
         }
     }
 
@@ -952,10 +1138,18 @@ internal fun DocumentDetailScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
             ) {
+                SubHeader(stringResource(R.string.doc_document_group))
+                ToolGrid {
+                    ToolTile(Icons.AutoMirrored.Filled.Notes, stringResource(R.string.doc_tab_text), true, run { textOpen = true })
+                    ToolTile(Icons.Default.AutoAwesome, stringResource(R.string.doc_tab_insights), true, run { insightsOpen = true })
+                    ToolTile(Icons.Default.PictureAsPdf, stringResource(R.string.doc_tab_pdf_settings), true, run { pdfSettingsOpen = true })
+                    ToolTile(Icons.Default.Info, stringResource(R.string.doc_details), true, run { detailsOpen = true })
+                }
                 if (currentPage != null) {
                     SubHeader(stringResource(R.string.doc_this_page))
                     ToolGrid {
                         ToolTile(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(currentPage.id) })
+                        ToolTile(Icons.Default.AutoFixHigh, stringResource(R.string.doc_filters), !busy, run { filtersOpen = true })
                         ToolTile(Icons.Default.Tune, stringResource(R.string.doc_fine_tune), !busy, run { adjustmentsOpen = true })
                         ToolTile(Icons.Default.RestartAlt, stringResource(R.string.common_reset), !busy, run { onResetPage(currentPage.id) })
                         ToolTile(Icons.Default.Replay, stringResource(R.string.doc_retake), !busy, run { onRetakePage(currentPage.id, currentIndex) })
@@ -968,6 +1162,7 @@ internal fun DocumentDetailScreen(
                     }
                     SubHeader(stringResource(R.string.doc_mark_up))
                     ToolGrid {
+                        ToolTile(Icons.Default.Draw, stringResource(R.string.doc_sign), !busy, run { signatureOpen = true })
                         ToolTile(Icons.Default.EditNote, stringResource(R.string.doc_edit_text), !busy, run { editTextOpen = true })
                         ToolTile(Icons.Default.AutoFixOff, stringResource(R.string.doc_eraser), !busy, run { eraserOpen = true })
                         ToolTile(Icons.Default.TextFields, stringResource(R.string.doc_add_text), !busy, run { annotationTextOpen = true })
@@ -1229,10 +1424,6 @@ internal fun DocumentDetailScreen(
     }
 }
 
-private enum class DetailTab(val labelRes: Int) {
-    TEXT(R.string.doc_tab_text), INSIGHTS(R.string.doc_tab_insights), PDF(R.string.doc_tab_pdf_settings)
-}
-
 /** One button on the bottom toolbar: an icon over a short label, sharing the width equally. */
 @Composable
 private fun RowScope.BarAction(icon: ImageVector, label: String, enabled: Boolean, primary: Boolean = false, onClick: () -> Unit) {
@@ -1369,4 +1560,81 @@ internal fun ScanDocument.hidesContent(): Boolean = pages.any { page ->
 private sealed interface PendingSignature {
     class Drawn(val bitmap: Bitmap, val keep: Boolean) : PendingSignature
     class Saved(val file: java.io.File) : PendingSignature
+}
+
+/**
+ * What the document screen shows while its pages are read: the same frame as the loaded screen, on the normal
+ * background, with the title and cover the library already had (when it had them), so opening a document from
+ * Recent feels instant instead of sliding in a blank page.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersion: Any?, unavailable: Boolean, onBack: () -> Unit) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                title = { Text(title.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back)) }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+        ) {
+            if (unavailable) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(R.string.doc_unavailable)) }
+                return@Column
+            }
+            val opening = stringResource(R.string.doc_opening_document)
+            Spacer(Modifier.height(4.dp))
+            // Stands in for the status row, so the page doesn't jump when the document arrives.
+            Box(
+                Modifier
+                    .size(width = 112.dp, height = 26.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            )
+            Spacer(Modifier.height(8.dp))
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .semantics { contentDescription = opening },
+                contentAlignment = Alignment.Center
+            ) {
+                if (coverPath != null) {
+                    PageThumbnail(
+                        coverPath,
+                        Modifier.fillMaxSize().padding(14.dp),
+                        com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM,
+                        version = coverVersion,
+                        shape = RoundedCornerShape(10.dp),
+                        background = Color.Transparent,
+                        contentDescription = null
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(3) {
+                    Box(
+                        Modifier
+                            .size(width = 52.dp, height = 70.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    )
+                }
+            }
+            Spacer(Modifier.height(28.dp))
+        }
+    }
 }

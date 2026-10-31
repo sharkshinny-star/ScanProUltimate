@@ -52,7 +52,8 @@ fun SummaryCard(
     insights: DocumentInsights,
     card: BusinessCard?,
     onAddContact: (BusinessCard) -> Unit,
-    onMore: () -> Unit
+    /** Opens the full insights; null where they are already shown (the Insights sheet), which hides the link. */
+    onMore: (() -> Unit)? = null
 ) {
     var expanded by rememberSaveable(documentId) { mutableStateOf(false) }
     Card(
@@ -86,7 +87,17 @@ fun SummaryCard(
             )
             if (facts.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 6.dp)) {
-                    facts.forEach { fact -> AssistChip(onClick = onMore, label = { Text(fact, maxLines = 1) }) }
+                    facts.forEach { fact ->
+                        if (onMore != null) AssistChip(onClick = onMore, label = { Text(fact, maxLines = 1) })
+                        // Where there is nothing further to open, a fact is a plain label rather than a dead button.
+                        else androidx.compose.material3.Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        ) {
+                            Text(fact, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                        }
+                    }
                 }
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -100,8 +111,10 @@ fun SummaryCard(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                val openInsights = stringResource(R.string.doc_open_insights)
-                TextButton(onClick = onMore, modifier = Modifier.semantics { onClick(label = openInsights) { onMore(); true } }) { Text(stringResource(R.string.doc_details)) }
+                if (onMore != null) {
+                    val openInsights = stringResource(R.string.doc_open_insights)
+                    TextButton(onClick = onMore, modifier = Modifier.semantics { onClick(label = openInsights) { onMore(); true } }) { Text(stringResource(R.string.doc_details)) }
+                }
             }
         }
     }
