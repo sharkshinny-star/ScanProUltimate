@@ -56,7 +56,6 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
    decision: a warning in the backup dialog, or a "flattened backup" option. Security-sensitive: document the change before making it.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed, not device-tested). Test on Android 17, including a tablet or foldable.
-7. **R11 (minor i18n):** smart titles and suggested tags are English stored data; needs a product decision.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 9. `server/` is an unrelated Node placeholder; remove if not needed (ask the owner first).
 

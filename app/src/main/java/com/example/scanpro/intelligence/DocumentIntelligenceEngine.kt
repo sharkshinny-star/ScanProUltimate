@@ -10,6 +10,7 @@ import kotlin.math.min
  * [label] is the English keyword the engine's own logic works with (suggested tags, issuer matching, summary
  * text, smart titles); [labelRes] is what the screens show for the kind.
  */
+// [label] stays English on purpose (owner decision): it feeds smart titles and tags, which are stored and searched.
 enum class DocumentKind(val label: String, @StringRes val labelRes: Int) {
     INVOICE("Invoice", R.string.data_kind_invoice),
     RECEIPT("Receipt", R.string.data_kind_receipt),

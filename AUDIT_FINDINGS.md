@@ -13,7 +13,6 @@ P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; neve
 | R7 | P1 | Testing | whole app | Nothing verified on a device; no screenshot or Compose UI tests. | Device pass; add UI tests in CI on an emulator. |
 | R8 | P3 | Cleanup | `server/` | Unrelated Node "local HTTP server" placeholder. | Remove if unused (ask owner). |
 | R9 | P3 | Maintainability | `data/DocumentRepository.kt` (~1,500 lines) | One class does most data work. | Split by use case. |
-| R11 | P3 | i18n | `intelligence/DocumentIntelligenceEngine.kt` (`DocumentKind.label`, smart titles, suggested tags) | Smart titles ("Receipt from …") and suggested tags are English. They become stored document data and search tags, so translating them changes data, not just display. | Decide per product: localize at creation time, or keep English tags. |
 
 ## Fixed
 
@@ -50,6 +49,8 @@ P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; neve
 
 ## Deliberately not changed
 
+- Smart titles ("Receipt from …") and suggested tags stay English (owner decision, 2026-10-31, closes R11): they are stored
+  document data and search tags, so one language keeps search and folders consistent across language changes.
 - OpenCV Java wrappers (generated from upstream by `scripts/opencv`).
 - OpenCV 5.0 upgrade (major version, needs native rebuild).
 - IDE-only style hints and false positives (argument order, "unused" symbols that are used).
