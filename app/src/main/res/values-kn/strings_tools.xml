@@ -204,4 +204,14 @@
     <string name="tools_split_mode_ranges_desc" tools:ignore="TypographyDashes">ನೀವು ನೀಡುವ ಪ್ರತಿ ಶ್ರೇಣಿಗೆ ಒಂದು PDF, ಉದಾ. 1-3, 4-6</string>
     <string name="tools_split_mode_chunks">ನಿಗದಿತ ಭಾಗಗಳು</string>
     <string name="tools_split_mode_chunks_desc">ಪ್ರತಿ N ಪುಟಗಳಿಗೆ ಒಂದು ಹೊಸ PDF</string>
+    <string name="tools_card_office">Office ನಿಂದ PDF</string>
+    <string name="tools_tile_office">Office</string>
+    <string name="msg_tools_converting_office">PDF ಗೆ ಬದಲಾಯಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="msg_tools_office_failed">ಈ ಫೈಲ್ ಬದಲಾಯಿಸಲಾಗಲಿಲ್ಲ</string>
+    <string name="tools_err_office_unsupported">ಈ ರೀತಿಯ ಫೈಲ್ ಬದಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ. Word (.docx), Excel (.xlsx), ಪಠ್ಯ ಅಥವಾ CSV ಫೈಲ್, ಅಥವಾ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಉಳಿಸಿದ ವೆಬ್ ಪುಟ (.html ಅಥವಾ .mhtml) ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="tools_err_office_unreadable">ಈ ಫೈಲ್ ಓದಲಾಗಲಿಲ್ಲ. ಇದು ಹಾಳಾಗಿರಬಹುದು ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ರಕ್ಷಿತವಾಗಿರಬಹುದು.</string>
+    <plurals name="msg_tools_office_done">
+        <item quantity="one">%1$d ಪುಟಗಳ PDF ಆಗಿ ಬದಲಾಯಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳ PDF ಆಗಿ ಬದಲಾಯಿಸಲಾಗಿದೆ</item>
+    </plurals>
 </resources>

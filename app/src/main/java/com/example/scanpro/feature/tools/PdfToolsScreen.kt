@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import androidx.compose.material.icons.filled.Article
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -169,6 +170,7 @@ private val TOOL_SECTIONS = listOf(
     ToolSection(
         "convert", R.string.tools_section_convert, listOf(
             PdfToolCard("img2pdf", R.string.tools_images_to_pdf, Icons.Default.Image, TileTone.Coral),
+            PdfToolCard("office", R.string.tools_card_office, Icons.Default.Article, TileTone.Sky, label = R.string.tools_tile_office),
             PdfToolCard("ocr", R.string.tools_card_ocr, Icons.Default.FindInPage, TileTone.Teal),
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
             PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral)
@@ -180,6 +182,14 @@ private val TOOL_SECTIONS = listOf(
             PdfToolCard("unlock", R.string.tools_card_unlock, Icons.Default.LockOpen, TileTone.Rose)
         )
     )
+)
+
+/** What the Office to PDF picker offers; the converter checks the file itself too. */
+private val OFFICE_MIME_TYPES = arrayOf(
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain", "text/csv", "text/comma-separated-values", "text/html",
+    "multipart/related", "message/rfc822", "application/x-mimearchive"
 )
 
 private val VIEWER_TOOL = PdfToolCard("viewer", R.string.tools_card_viewer, Icons.Default.Visibility, TileTone.Slate)
@@ -270,6 +280,17 @@ fun PdfToolsScreen(
             "ocr" -> showOcrDialog = true
         }
     }
+    // Office to PDF: Word, Excel, text, CSV and web pages saved from a browser.
+    val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) viewModel.officeToPdf(uri)
+    }
+    val printFallback by viewModel.printFallback.collectAsStateWithLifecycle()
+    val activityContext = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(printFallback) {
+        val (html, name) = printFallback ?: return@LaunchedEffect
+        viewModel.clearPrintFallback()
+        com.example.scanpro.imaging.HtmlToPdf.printWithDialog(activityContext, html, name)
+    }
     val singlePdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val tool = selectedTool
         if (uri == null || tool == null) return@rememberLauncherForActivityResult
@@ -336,6 +357,7 @@ fun PdfToolsScreen(
                 when (tool.id) {
                     "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
                     "img2pdf" -> imagesPicker.launch("image/*")
+                    "office" -> officePicker.launch(OFFICE_MIME_TYPES)
                     else -> singlePdfPicker.launch(arrayOf("application/pdf"))
                 }
             }

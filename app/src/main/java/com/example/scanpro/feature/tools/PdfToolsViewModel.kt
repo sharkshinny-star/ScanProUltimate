@@ -1,5 +1,10 @@
 package com.example.scanpro.feature.tools
 
+import kotlinx.coroutines.withContext
+import com.example.scanpro.core.text.userError
+import com.example.scanpro.imaging.HtmlToPdf
+import com.example.scanpro.imaging.OfficeConversionException
+import com.example.scanpro.imaging.OfficeToHtml
 import android.content.Context
 import android.net.Uri
 import androidx.annotation.StringRes
@@ -343,6 +348,50 @@ class PdfToolsViewModel @Inject constructor(
                 PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report
             )
         }
+
+    private val _printFallback = MutableStateFlow<Pair<String, String>?>(null)
+    /** HTML and a name to hand to the system print dialogue, when the PDF could not be written directly. */
+    val printFallback: StateFlow<Pair<String, String>?> = _printFallback.asStateFlow()
+    fun clearPrintFallback() { _printFallback.value = null }
+
+    /**
+     * Office to PDF: a Word, Excel, text, CSV or saved web page file becomes a PDF, entirely on the phone
+     * ([OfficeToHtml], then the print engine via [HtmlToPdf]).
+     */
+    fun officeToPdf(uri: Uri) = launchTool(R.string.msg_tools_converting_office, R.string.msg_tools_office_failed) {
+        val resolver = context.contentResolver
+        val fileName = runCatching {
+            resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull()
+        val kind = OfficeToHtml.kindOf(resolver.getType(uri), fileName) ?: userError(R.string.tools_err_office_unsupported)
+        val name = PdfToolsEngine.sourceBaseName(context, uri, context.getString(R.string.tools_file_fallback_name))
+        val html = withContext(Dispatchers.IO) {
+            try {
+                resolver.openInputStream(uri)?.use { OfficeToHtml.convert(kind, it, name) }
+            } catch (error: OfficeConversionException) {
+                userError(R.string.tools_err_office_unreadable, cause = error)
+            }
+        } ?: userError(R.string.tools_err_office_unreadable)
+        val output = PdfToolsEngine.outputLocation(context, "$name.pdf")
+        try {
+            HtmlToPdf.write(context, html, output)
+        } catch (unavailable: HtmlToPdf.DirectPrintUnavailable) {
+            // This Android won't let the app drive the print engine itself: the user saves from the print dialogue.
+            _printFallback.value = html to name
+            return@launchTool null
+        }
+        val pages = withContext(Dispatchers.IO) {
+            runCatching {
+                android.os.ParcelFileDescriptor.open(output, android.os.ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                    android.graphics.pdf.PdfRenderer(pfd).use { it.pageCount }
+                }
+            }.getOrDefault(0)
+        }
+        val sourceSize = runCatching {
+            resolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
+        }.getOrNull() ?: 0L
+        PdfToolResult(output, pages, sourceSize, output.length(), context.resources.getQuantityString(R.plurals.msg_tools_office_done, pages, pages))
+    }
 
     /** A picked file's name, for the ordering step before Merge and Images to PDF. */
     fun displayName(uri: Uri): String = PdfToolsEngine.sourceBaseName(context, uri, context.getString(R.string.tools_file_fallback_name))

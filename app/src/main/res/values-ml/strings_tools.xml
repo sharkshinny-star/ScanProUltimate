@@ -204,4 +204,14 @@
     <string name="tools_split_mode_ranges_desc" tools:ignore="TypographyDashes">നിങ്ങൾ നൽകുന്ന ഓരോ റേഞ്ചിനും ഒരു PDF, ഉദാ. 1-3, 4-6</string>
     <string name="tools_split_mode_chunks">നിശ്ചിത ഭാഗങ്ങൾ</string>
     <string name="tools_split_mode_chunks_desc">ഓരോ N പേജിലും പുതിയ PDF</string>
+    <string name="tools_card_office">Office-ൽ നിന്ന് PDF</string>
+    <string name="tools_tile_office">Office</string>
+    <string name="msg_tools_converting_office">PDF ആക്കി മാറ്റുന്നു…</string>
+    <string name="msg_tools_office_failed">ഈ ഫയൽ മാറ്റാനായില്ല</string>
+    <string name="tools_err_office_unsupported">ഈ തരം ഫയൽ മാറ്റാനാവില്ല. Word (.docx), Excel (.xlsx), ടെക്സ്റ്റ് അല്ലെങ്കിൽ CSV ഫയൽ, അല്ലെങ്കിൽ ബ്രൗസറിൽ സേവ് ചെയ്ത വെബ് പേജ് (.html അല്ലെങ്കിൽ .mhtml) തിരഞ്ഞെടുക്കുക.</string>
+    <string name="tools_err_office_unreadable">ഈ ഫയൽ വായിക്കാനായില്ല. ഇത് കേടായതോ പാസ്‌വേഡ് സംരക്ഷിതമോ ആകാം.</string>
+    <plurals name="msg_tools_office_done">
+        <item quantity="one">%1$d പേജ് PDF ആക്കി മാറ്റി</item>
+        <item quantity="other">%1$d പേജ് PDF ആക്കി മാറ്റി</item>
+    </plurals>
 </resources>

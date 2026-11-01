@@ -204,4 +204,14 @@
     <string name="tools_split_mode_ranges_desc" tools:ignore="TypographyDashes">आपकी दी गई हर रेंज के लिए एक PDF, जैसे 1-3, 4-6</string>
     <string name="tools_split_mode_chunks">तय हिस्से</string>
     <string name="tools_split_mode_chunks_desc">हर N पेज पर एक नई PDF</string>
+    <string name="tools_card_office">Office से PDF</string>
+    <string name="tools_tile_office">Office</string>
+    <string name="msg_tools_converting_office">PDF में बदल रहे हैं…</string>
+    <string name="msg_tools_office_failed">यह फ़ाइल नहीं बदल सकी</string>
+    <string name="tools_err_office_unsupported">इस प्रकार की फ़ाइल नहीं बदली जा सकती। Word (.docx), Excel (.xlsx), टेक्स्ट या CSV फ़ाइल, या ब्राउज़र से सेव किया गया वेब पेज (.html या .mhtml) चुनें।</string>
+    <string name="tools_err_office_unreadable">यह फ़ाइल पढ़ी नहीं जा सकी। हो सकता है यह ख़राब हो या पासवर्ड से सुरक्षित हो।</string>
+    <plurals name="msg_tools_office_done">
+        <item quantity="one">PDF %1$d पेज का बना</item>
+        <item quantity="other">PDF %1$d पेज का बना</item>
+    </plurals>
 </resources>

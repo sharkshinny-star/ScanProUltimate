@@ -128,6 +128,8 @@ The current searchable PDF implementation provides a page text layer for searcha
 
 `PdfSecurity` uses PDFBox Android for password-protected exports. `PdfRenderer` is used to ingest existing PDFs into the editable image/OCR workflow.
 
+**Office to PDF.** `imaging/OfficeToHtml` (pure JVM: DOCX/XLSX/CSV/text/HTML/MHTML → sanitised HTML with a CSP) → `imaging/HtmlToPdf` (offscreen WebView, scripts and network off) → `android.print.ScanProPdfPrinter` writes the print adapter's output to a file; fallback is the system print dialogue.
+
 ## 8. Markup
 
 Annotations are stored as normalised page objects rather than immediately overwriting the source:

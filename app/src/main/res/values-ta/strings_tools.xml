@@ -204,4 +204,14 @@
     <string name="tools_split_mode_ranges_desc" tools:ignore="TypographyDashes">நீங்கள் கொடுக்கும் ஒவ்வொரு வரம்புக்கும் ஒரு PDF, எ.கா. 1-3, 4-6</string>
     <string name="tools_split_mode_chunks">நிலையான பகுதிகள்</string>
     <string name="tools_split_mode_chunks_desc">ஒவ்வொரு N பக்கங்களுக்கும் ஒரு புதிய PDF</string>
+    <string name="tools_card_office">Office-இலிருந்து PDF</string>
+    <string name="tools_tile_office">Office</string>
+    <string name="msg_tools_converting_office">PDF ஆக மாற்றுகிறது…</string>
+    <string name="msg_tools_office_failed">இந்த ஃபைலை மாற்ற முடியவில்லை</string>
+    <string name="tools_err_office_unsupported">இந்த வகை ஃபைலை மாற்ற முடியாது. Word (.docx), Excel (.xlsx), டெக்ஸ்ட் அல்லது CSV ஃபைல், அல்லது பிரவுசரில் சேமித்த வலைப்பக்கம் (.html அல்லது .mhtml) தேர்வு செய்யவும்.</string>
+    <string name="tools_err_office_unreadable">இந்த ஃபைலைப் படிக்க முடியவில்லை. இது சேதமடைந்திருக்கலாம் அல்லது கடவுச்சொல்லால் பாதுகாக்கப்பட்டிருக்கலாம்.</string>
+    <plurals name="msg_tools_office_done">
+        <item quantity="one">%1$d பக்க PDF ஆக மாற்றப்பட்டது</item>
+        <item quantity="other">%1$d பக்க PDF ஆக மாற்றப்பட்டது</item>
+    </plurals>
 </resources>
