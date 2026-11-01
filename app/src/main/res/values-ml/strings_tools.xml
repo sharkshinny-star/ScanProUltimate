@@ -214,4 +214,10 @@
         <item quantity="one">%1$d പേജ് PDF ആക്കി മാറ്റി</item>
         <item quantity="other">%1$d പേജ് PDF ആക്കി മാറ്റി</item>
     </plurals>
+    <string name="tools_office_note_image">[ചിത്രം കാണിച്ചിട്ടില്ല]</string>
+    <string name="tools_office_note_workbook_empty">ഈ വർക്ക്ബുക്കിൽ ഡാറ്റയൊന്നുമില്ല.</string>
+    <string name="tools_office_note_file_empty">ഈ ഫയലിൽ ഡാറ്റയൊന്നുമില്ല.</string>
+    <string name="tools_office_note_too_long">ഫയൽ വളരെ വലുതായിരുന്നു; ആദ്യത്തെ 20 MB മാത്രം കാണിക്കുന്നു.</string>
+    <string name="tools_office_note_workbook_truncated">ആദ്യത്തെ %1$s സെല്ലുകൾ മാത്രം കാണിക്കുന്നു; വർക്ക്ബുക്കിന്റെ ബാക്കി ഭാഗം പരിവർത്തനം ചെയ്തിട്ടില്ല.</string>
+    <string name="tools_office_note_file_truncated">ഫയൽ വളരെ വലുതായിരുന്നു; ആദ്യത്തെ %1$s സെല്ലുകൾ മാത്രം കാണിക്കുന്നു.</string>
 </resources>

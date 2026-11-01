@@ -244,4 +244,10 @@
     </plurals>
     <string name="tools_err_office_unsupported">This file type can\'t be converted. Choose a Word (.docx), Excel (.xlsx), text or CSV file, or a web page saved from your browser (.html or .mhtml).</string>
     <string name="tools_err_office_unreadable">This file couldn\'t be read. It may be damaged or password-protected.</string>
+    <string name="tools_office_note_image">[Image not shown]</string>
+    <string name="tools_office_note_workbook_empty">The workbook has no data.</string>
+    <string name="tools_office_note_file_empty">The file has no data.</string>
+    <string name="tools_office_note_too_long">The file was too long; only the first 20 MB are shown.</string>
+    <string name="tools_office_note_workbook_truncated">Only the first %1$s cells are shown; the rest of the workbook was not converted.</string>
+    <string name="tools_office_note_file_truncated">The file was too large; only the first %1$s cells are shown.</string>
 </resources>

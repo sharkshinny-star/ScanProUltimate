@@ -227,4 +227,6 @@
     <string name="doc_discard_edits_body">Your changes to this page haven\'t been applied. They will be lost.</string>
     <string name="scan_review_delete_confirm">Delete this page from the scan? It can\'t be brought back.</string>
     <string name="scan_review_save_all">Save all (%1$d)</string>
+    <string name="doc_title_imported">Imported %1$s</string>
+    <string name="doc_title_scan">Scan %1$s</string>
 </resources>

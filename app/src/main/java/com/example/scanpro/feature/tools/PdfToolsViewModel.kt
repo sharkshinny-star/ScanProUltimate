@@ -206,7 +206,7 @@ class PdfToolsViewModel @Inject constructor(
             pageCount = res.pageCount,
             originalSizeBytes = res.originalSizeBytes,
             outputSizeBytes = res.compressedSizeBytes,
-            message = context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(res.originalSizeBytes), formatBytes(res.compressedSizeBytes)) +
+            message = context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(context, res.originalSizeBytes), formatBytes(context, res.compressedSizeBytes)) +
                 if (res.isSearchablePreserved) "" else context.getString(R.string.msg_tools_compressed_not_searchable)
         )
     }
@@ -365,9 +365,18 @@ class PdfToolsViewModel @Inject constructor(
         }.getOrNull()
         val kind = OfficeToHtml.kindOf(resolver.getType(uri), fileName) ?: userError(R.string.tools_err_office_unsupported)
         val name = PdfToolsEngine.sourceBaseName(context, uri, context.getString(R.string.tools_file_fallback_name))
+        // The sentences the converter writes into the page are in the user's language.
+        val notes = OfficeToHtml.Notes(
+            imageNotShown = context.getString(R.string.tools_office_note_image),
+            workbookEmpty = context.getString(R.string.tools_office_note_workbook_empty),
+            fileEmpty = context.getString(R.string.tools_office_note_file_empty),
+            fileTooLong = context.getString(R.string.tools_office_note_too_long),
+            workbookTruncated = { cells -> context.getString(R.string.tools_office_note_workbook_truncated, cells) },
+            fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) }
+        )
         val html = withContext(Dispatchers.IO) {
             try {
-                resolver.openInputStream(uri)?.use { OfficeToHtml.convert(kind, it, name) }
+                resolver.openInputStream(uri)?.use { OfficeToHtml.convert(kind, it, name, notes) }
             } catch (error: OfficeConversionException) {
                 userError(R.string.tools_err_office_unreadable, cause = error)
             }

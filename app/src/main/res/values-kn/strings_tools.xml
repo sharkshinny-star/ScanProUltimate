@@ -214,4 +214,10 @@
         <item quantity="one">%1$d ಪುಟಗಳ PDF ಆಗಿ ಬದಲಾಯಿಸಲಾಗಿದೆ</item>
         <item quantity="other">%1$d ಪುಟಗಳ PDF ಆಗಿ ಬದಲಾಯಿಸಲಾಗಿದೆ</item>
     </plurals>
+    <string name="tools_office_note_image">[ಚಿತ್ರವನ್ನು ತೋರಿಸಲಾಗಿಲ್ಲ]</string>
+    <string name="tools_office_note_workbook_empty">ಈ ವರ್ಕ್‌ಬುಕ್‌ನಲ್ಲಿ ಡೇಟಾ ಇಲ್ಲ.</string>
+    <string name="tools_office_note_file_empty">ಈ ಫೈಲ್‌ನಲ್ಲಿ ಡೇಟಾ ಇಲ್ಲ.</string>
+    <string name="tools_office_note_too_long">ಫೈಲ್ ತುಂಬಾ ಉದ್ದವಾಗಿತ್ತು; ಮೊದಲ 20 MB ಮಾತ್ರ ತೋರಿಸಲಾಗಿದೆ.</string>
+    <string name="tools_office_note_workbook_truncated">ಮೊದಲ %1$s ಸೆಲ್‌ಗಳನ್ನು ಮಾತ್ರ ತೋರಿಸಲಾಗಿದೆ; ವರ್ಕ್‌ಬುಕ್‌ನ ಉಳಿದ ಭಾಗವನ್ನು ಪರಿವರ್ತಿಸಲಾಗಿಲ್ಲ.</string>
+    <string name="tools_office_note_file_truncated">ಫೈಲ್ ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು; ಮೊದಲ %1$s ಸೆಲ್‌ಗಳನ್ನು ಮಾತ್ರ ತೋರಿಸಲಾಗಿದೆ.</string>
 </resources>

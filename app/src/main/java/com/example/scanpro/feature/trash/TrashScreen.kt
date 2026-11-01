@@ -275,7 +275,7 @@ internal fun TrashScreen(
                                     Text(doc.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Spacer(Modifier.height(3.dp))
                                     val pagesLabel = pluralStringResource(R.plurals.trash_pages, doc.pageCount, doc.pageCount)
-                                    Text(stringResource(R.string.trash_doc_meta, pagesLabel, formatBytes(doc.sizeBytes)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.trash_doc_meta, pagesLabel, formatBytes(LocalContext.current, doc.sizeBytes)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(Modifier.height(6.dp))
                                     val (countdownText, isUrgent) = formatTrashCountdown(LocalContext.current, doc.trashedAt, nowMs, retentionDays)
                                     // Time left as a small pill; it turns to the error colour in the last day.

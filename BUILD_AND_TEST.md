@@ -42,7 +42,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 
 ## Latest results (2026-11-01, "fix start-up bugs" commit)
 
-**Not re-run after F38** (editor discard dialogs, scan review and camera changes, post-save opening): the session had no Android SDK. The table below is for the commit before F38.
+**Not re-run after F38 and F39** (editor discard dialogs, scan review and camera changes, post-save opening, localised titles and notes, file sizes, landscape layouts): the session had no Android SDK. The table below is for the commit before F38.
 
 | Check | Result |
 |---|---|

@@ -1327,7 +1327,7 @@ internal fun DocumentDetailScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.doc_details_pages, document.pageCount))
-                    Text(stringResource(R.string.doc_details_pdf_size, formatBytes(document.sizeBytes)))
+                    Text(stringResource(R.string.doc_details_pdf_size, formatBytes(LocalContext.current, document.sizeBytes)))
                     Text(stringResource(R.string.doc_details_updated, DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(document.updatedAt))))
                     if (document.folderName.isNotBlank()) Text(stringResource(R.string.doc_details_folder, document.folderName))
                     if (document.tags.isNotEmpty()) Text(stringResource(R.string.doc_details_tags, document.tags.joinToString(", ")))

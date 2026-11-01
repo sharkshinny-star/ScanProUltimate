@@ -58,8 +58,50 @@ object OfficeToHtml {
         }
     }
 
+    /**
+     * The few sentences the converter writes into the page itself. The caller passes them in the user's language;
+     * [ENGLISH][Notes.ENGLISH] is the default (used by the unit tests).
+     */
+    class Notes(
+        val imageNotShown: String,
+        val workbookEmpty: String,
+        val fileEmpty: String,
+        val fileTooLong: String,
+        /** Takes the cell limit already formatted, for example "20,000". */
+        val workbookTruncated: (cells: String) -> String,
+        val fileTruncated: (cells: String) -> String
+    ) {
+        companion object {
+            val ENGLISH = Notes(
+                imageNotShown = "[Image not shown]",
+                workbookEmpty = "The workbook has no data.",
+                fileEmpty = "The file has no data.",
+                fileTooLong = "The file was too long; only the first 20 MB are shown.",
+                workbookTruncated = { "Only the first $it cells are shown; the rest of the workbook was not converted." },
+                fileTruncated = { "The file was too large; only the first $it cells are shown." }
+            )
+        }
+    }
+
+    /** The notes for the conversion running on this thread; conversions never share a thread at the same time. */
+    private val activeNotes = object : ThreadLocal<Notes>() {
+        override fun initialValue(): Notes = Notes.ENGLISH
+    }
+
+    private fun note(text: String): String = esc(text)
+
     /** A complete, self-contained HTML document (inline CSS, images as data: URIs, no scripts, no external links loaded). */
-    fun convert(kind: Kind, input: java.io.InputStream, title: String): String = try {
+    fun convert(kind: Kind, input: java.io.InputStream, title: String, notes: Notes = Notes.ENGLISH): String {
+        val previous = activeNotes.get()
+        activeNotes.set(notes)
+        try {
+            return convertChecked(kind, input, title)
+        } finally {
+            activeNotes.set(previous)
+        }
+    }
+
+    private fun convertChecked(kind: Kind, input: java.io.InputStream, title: String): String = try {
         when (kind) {
             Kind.DOCX -> Docx.convert(input, title)
             Kind.XLSX -> Xlsx.convert(input, title)
@@ -543,7 +585,7 @@ object OfficeToHtml {
                 val (part, external) = rels[relId] ?: return null
                 if (external) return null
                 val bytes = zip[part] ?: return null
-                val mime = imageMime(part, bytes) ?: return "<span class=\"note\">[Image not shown]</span>"
+                val mime = imageMime(part, bytes) ?: return "<span class=\"note\">${note(activeNotes.get().imageNotShown)}</span>"
                 val cx = holder.firstDescendant("extent")?.attr("cx")?.toLongOrNull()
                 val width = cx?.let { (it / EMU_PER_PX).toInt() }?.takeIf { it > 0 }
                 val style = if (width != null) " style=\"width:${width}px;max-width:100%;height:auto\"" else ""
@@ -629,10 +671,10 @@ object OfficeToHtml {
                 truncated = truncated || sheet.truncated || used.second
             }
             if (truncated) {
-                sb.append("<p class=\"note\">Only the first ").append(String.format(java.util.Locale.ROOT, "%,d", MAX_CELLS))
-                    .append(" cells are shown; the rest of the workbook was not converted.</p>\n")
+                val cells = String.format(java.util.Locale.ROOT, "%,d", MAX_CELLS)
+                sb.append("<p class=\"note\">").append(note(activeNotes.get().workbookTruncated(cells))).append("</p>\n")
             }
-            if (sb.isEmpty()) sb.append("<p class=\"note\">The workbook has no data.</p>")
+            if (sb.isEmpty()) sb.append("<p class=\"note\">").append(note(activeNotes.get().workbookEmpty)).append("</p>")
             return page(title, sb)
         }
 
@@ -796,7 +838,7 @@ object OfficeToHtml {
         val sb = StringBuilder("<pre>")
         escInto(sb, decodeText(bytes))
         sb.append("</pre>")
-        if (more) sb.append("\n<p class=\"note\">The file was too long; only the first 20 MB are shown.</p>")
+        if (more) sb.append("\n<p class=\"note\">").append(note(activeNotes.get().fileTooLong)).append("</p>")
         return page(title, sb)
     }
 
@@ -848,7 +890,7 @@ object OfficeToHtml {
         val (rows, capped) = parseCsv(decodeText(bytes), MAX_CELLS)
         val width = rows.maxOfOrNull { it.size } ?: 0
         val sb = StringBuilder()
-        if (rows.isEmpty()) sb.append("<p class=\"note\">The file has no data.</p>")
+        if (rows.isEmpty()) sb.append("<p class=\"note\">").append(note(activeNotes.get().fileEmpty)).append("</p>")
         else {
             sb.append("<table class=\"grid\">\n")
             rows.forEachIndexed { r, row ->
@@ -869,8 +911,8 @@ object OfficeToHtml {
             sb.append("</table>\n")
         }
         if (capped || more) {
-            sb.append("<p class=\"note\">The file was too large; only the first ")
-                .append(String.format(java.util.Locale.ROOT, "%,d", MAX_CELLS)).append(" cells are shown.</p>")
+            val cells = String.format(java.util.Locale.ROOT, "%,d", MAX_CELLS)
+            sb.append("<p class=\"note\">").append(note(activeNotes.get().fileTruncated(cells))).append("</p>")
         }
         return page(title, sb)
     }

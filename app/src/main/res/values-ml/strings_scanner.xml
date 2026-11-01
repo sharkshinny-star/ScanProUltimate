@@ -206,4 +206,6 @@
     <string name="doc_discard_edits_body">ഈ പേജിലെ മാറ്റങ്ങൾ പ്രയോഗിച്ചിട്ടില്ല. അവ നഷ്ടപ്പെടും.</string>
     <string name="scan_review_delete_confirm">ഈ പേജ് സ്കാനിൽ നിന്ന് ഇല്ലാതാക്കണോ? ഇത് തിരികെ ലഭിക്കില്ല.</string>
     <string name="scan_review_save_all">എല്ലാം സേവ് ചെയ്യുക (%1$d)</string>
+    <string name="doc_title_imported">ഇറക്കുമതി %1$s</string>
+    <string name="doc_title_scan">സ്കാൻ %1$s</string>
 </resources>

@@ -189,7 +189,7 @@ class DocumentRepository @Inject constructor(
                     }
                 }
             }
-            val fallbackTitle = "Imported " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val fallbackTitle = context.getString(R.string.doc_title_imported, SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created)))
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val pdf = File(folder, "document.pdf")
@@ -1135,7 +1135,7 @@ class DocumentRepository @Inject constructor(
             }
             PdfExporter.export(pages, pdf, quality, PdfPageSize.A4, searchable = true, pageNumbers = false)
 
-            val fallbackTitle = "Scan " + SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val fallbackTitle = context.getString(R.string.doc_title_scan, SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created)))
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val doc = ScanDocument(

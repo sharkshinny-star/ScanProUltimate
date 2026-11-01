@@ -568,7 +568,7 @@ private fun CompressPdfDialog(
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(stringResource(R.string.tools_compress_current_size), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatBytes(originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text(formatBytes(LocalContext.current, originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 // Three real presets rather than a slider: the engine has three settings, and how much a

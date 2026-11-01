@@ -633,7 +633,7 @@ private fun StorageCard(documentCount: Int, trashCount: Int, storageBytes: Long)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Stat(Modifier.weight(1f), "$documentCount", pluralStringResource(R.plurals.settings_stat_documents, documentCount))
                 Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin), icon = Icons.Rounded.Delete)
-                Stat(Modifier.weight(1f), formatBytes(storageBytes), stringResource(R.string.settings_stat_used))
+                Stat(Modifier.weight(1f), formatBytes(LocalContext.current, storageBytes), stringResource(R.string.settings_stat_used))
             }
         }
     }

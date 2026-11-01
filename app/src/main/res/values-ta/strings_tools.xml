@@ -214,4 +214,10 @@
         <item quantity="one">%1$d பக்க PDF ஆக மாற்றப்பட்டது</item>
         <item quantity="other">%1$d பக்க PDF ஆக மாற்றப்பட்டது</item>
     </plurals>
+    <string name="tools_office_note_image">[படம் காட்டப்படவில்லை]</string>
+    <string name="tools_office_note_workbook_empty">இந்த ஒர்க்புக்கில் தரவு எதுவும் இல்லை.</string>
+    <string name="tools_office_note_file_empty">இந்தக் கோப்பில் தரவு எதுவும் இல்லை.</string>
+    <string name="tools_office_note_too_long">கோப்பு மிக நீளமாக இருந்தது; முதல் 20 MB மட்டுமே காட்டப்படுகிறது.</string>
+    <string name="tools_office_note_workbook_truncated">முதல் %1$s செல்கள் மட்டுமே காட்டப்படுகின்றன; ஒர்க்புக்கின் மீதமுள்ள பகுதி மாற்றப்படவில்லை.</string>
+    <string name="tools_office_note_file_truncated">கோப்பு மிகப் பெரியதாக இருந்தது; முதல் %1$s செல்கள் மட்டுமே காட்டப்படுகின்றன.</string>
 </resources>

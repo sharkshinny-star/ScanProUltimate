@@ -7,6 +7,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material.icons.filled.Check
 import android.widget.Toast
@@ -51,6 +52,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -177,6 +179,10 @@ fun CameraScannerScreen(
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
+    // Turned sideways the controls move into a panel on the right, so they don't cover most of a short screen.
+    val landscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+        android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val panelClearance = if (landscape) 244.dp else 0.dp
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
@@ -841,7 +847,7 @@ fun CameraScannerScreen(
         if (showGrid) ThirdsGrid()
         if (!reviewing && maxZoomRatio > 1.05f) {
             Column(
-                Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
+                Modifier.align(Alignment.CenterEnd).padding(end = 12.dp + panelClearance),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 listOf(1f, 2f, 5f).filter { it <= maxZoomRatio + 0.01f || it == 1f }.forEach { ratio ->
@@ -863,7 +869,7 @@ fun CameraScannerScreen(
             }
         }
         if (showLevel && !barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
-            LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp))
+            LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp + panelClearance))
         }
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             DocumentBoundaryOverlay(detection = detection, quad = shownQuad, stable = stable, accent = scanLine)
@@ -901,7 +907,7 @@ fun CameraScannerScreen(
             Surface(
                 onClick = { torchOn = true },
                 enabled = dark,
-                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 62.dp),
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 62.dp, end = panelClearance),
                 shape = RoundedCornerShape(16.dp),
                 color = if (found) HintFound else Color.Black.copy(alpha = 0.6f)
             ) {
@@ -952,7 +958,7 @@ fun CameraScannerScreen(
         }
         if (retakeOfPage != null && status == null) {
             Surface(
-                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 108.dp),
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 108.dp, end = panelClearance),
                 shape = RoundedCornerShape(50),
                 color = CameraGlass
             ) {
@@ -971,7 +977,7 @@ fun CameraScannerScreen(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(top = 8.dp, start = 12.dp, end = 12.dp),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(top = 8.dp, start = 12.dp, end = 12.dp + panelClearance),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -1055,8 +1061,17 @@ fun CameraScannerScreen(
         }
 
         Column(
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .background(CameraPanel, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            modifier = (
+                if (landscape) {
+                    // A tall panel on the right edge; the mode list in it scrolls when the screen is short.
+                    Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(232.dp)
+                        .background(CameraPanel, RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp))
+                        .statusBarsPadding()
+                } else {
+                    Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                        .background(CameraPanel, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                }
+                )
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -1125,13 +1140,7 @@ fun CameraScannerScreen(
             }
             // Every mode in one strip that scrolls sideways; the chosen one is underlined.
             val modesEnabled = pages.isEmpty() && retakeOfPage == null
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(18.dp)
-            ) {
+            val modeTabs: @Composable () -> Unit = {
                 listOf(ScanMode.DOCUMENT, ScanMode.RECEIPT, ScanMode.WHITEBOARD, ScanMode.ID_CARD, ScanMode.BOOK, ScanMode.TEXT).forEach { mode ->
                     ModeTab(stringResource(mode.labelRes), selected = !barcodeMode && scanMode == mode, enabled = modesEnabled) {
                         barcodeMode = false
@@ -1145,6 +1154,22 @@ fun CameraScannerScreen(
                     scanBothSides = false
                 }
             }
+            if (landscape) {
+                // Down the side panel, filling what the controls below leave free.
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) { modeTabs() }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                ) { modeTabs() }
+            }
 
             val takePhotoDescription = stringResource(R.string.scan_take_photo)
             Row(
@@ -1152,7 +1177,7 @@ fun CameraScannerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(Modifier.width(104.dp), contentAlignment = Alignment.CenterStart) {
+                Box(if (landscape) Modifier.widthIn(min = 52.dp) else Modifier.width(104.dp), contentAlignment = Alignment.CenterStart) {
                     val importLabel = stringResource(if (barcodeMode) R.string.scan_qr_from_image else R.string.scan_import_photos)
                     BottomPill(
                         onClick = {
@@ -1211,7 +1236,7 @@ fun CameraScannerScreen(
                 }
                 }
 
-                Box(Modifier.width(104.dp), contentAlignment = Alignment.CenterEnd) {
+                Box(if (landscape) Modifier.widthIn(min = 52.dp) else Modifier.width(104.dp), contentAlignment = Alignment.CenterEnd) {
                     if (pages.isNotEmpty()) {
                         // The page count; tapping it finishes the scan.
                         val doneLabel = stringResource(R.string.common_done)

@@ -171,7 +171,7 @@ internal fun DocumentListCard(
             )
             Spacer(Modifier.height(3.dp))
             Text(
-                stringResource(R.string.lib_card_meta_three, pagesLabel(LocalContext.current, document.pageCount), formatBytes(document.sizeBytes), updatedText),
+                stringResource(R.string.lib_card_meta_three, pagesLabel(LocalContext.current, document.pageCount), formatBytes(LocalContext.current, document.sizeBytes), updatedText),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -249,7 +249,7 @@ internal fun DocumentGridCard(
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            stringResource(R.string.lib_card_meta_two, pagesLabel(LocalContext.current, document.pageCount), formatBytes(document.sizeBytes)),
+            stringResource(R.string.lib_card_meta_two, pagesLabel(LocalContext.current, document.pageCount), formatBytes(LocalContext.current, document.sizeBytes)),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

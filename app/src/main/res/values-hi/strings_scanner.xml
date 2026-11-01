@@ -206,4 +206,6 @@
     <string name="doc_discard_edits_body">इस पेज के बदलाव लागू नहीं किए गए हैं। वे खो जाएँगे।</string>
     <string name="scan_review_delete_confirm">इस पेज को स्कैन से हटाएँ? इसे वापस नहीं लाया जा सकता।</string>
     <string name="scan_review_save_all">सभी सहेजें (%1$d)</string>
+    <string name="doc_title_imported">आयातित %1$s</string>
+    <string name="doc_title_scan">स्कैन %1$s</string>
 </resources>

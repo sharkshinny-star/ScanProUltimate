@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -121,7 +122,7 @@ fun ScanSavedSheet(
                     }
                     val pages = pluralStringResource(R.plurals.doc_page_count, document.pageCount, document.pageCount)
                     Text(
-                        if (document.sizeBytes > 0) stringResource(R.string.doc_pages_and_size, pages, formatBytes(document.sizeBytes)) else pages,
+                        if (document.sizeBytes > 0) stringResource(R.string.doc_pages_and_size, pages, formatBytes(LocalContext.current, document.sizeBytes)) else pages,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

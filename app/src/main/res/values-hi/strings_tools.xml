@@ -214,4 +214,10 @@
         <item quantity="one">PDF %1$d पेज का बना</item>
         <item quantity="other">PDF %1$d पेज का बना</item>
     </plurals>
+    <string name="tools_office_note_image">[चित्र नहीं दिखाया गया]</string>
+    <string name="tools_office_note_workbook_empty">इस वर्कबुक में कोई डेटा नहीं है।</string>
+    <string name="tools_office_note_file_empty">इस फ़ाइल में कोई डेटा नहीं है।</string>
+    <string name="tools_office_note_too_long">फ़ाइल बहुत लंबी थी; केवल पहले 20 MB दिखाए गए हैं।</string>
+    <string name="tools_office_note_workbook_truncated">केवल पहले %1$s सेल दिखाए गए हैं; वर्कबुक का बाकी हिस्सा परिवर्तित नहीं किया गया।</string>
+    <string name="tools_office_note_file_truncated">फ़ाइल बहुत बड़ी थी; केवल पहले %1$s सेल दिखाए गए हैं।</string>
 </resources>

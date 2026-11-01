@@ -206,4 +206,6 @@
     <string name="doc_discard_edits_body">இந்தப் பக்கத்தில் செய்த மாற்றங்கள் பயன்படுத்தப்படவில்லை. அவை இழக்கப்படும்.</string>
     <string name="scan_review_delete_confirm">இந்தப் பக்கத்தை ஸ்கேனிலிருந்து நீக்கவா? அதை மீட்டெடுக்க முடியாது.</string>
     <string name="scan_review_save_all">அனைத்தையும் சேமி (%1$d)</string>
+    <string name="doc_title_imported">இறக்குமதி %1$s</string>
+    <string name="doc_title_scan">ஸ்கேன் %1$s</string>
 </resources>

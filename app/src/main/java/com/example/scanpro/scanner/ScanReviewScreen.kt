@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -162,6 +165,9 @@ fun ScanReviewScreen(
     // Bumped after a rotation so the page is decoded again from the same file.
     var rotationTick by remember { mutableIntStateOf(0) }
     val blocked = working || processing
+    // Turned sideways there is not room for the page and every control in one column: the controls move beside it.
+    val landscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+        android.content.res.Configuration.ORIENTATION_LANDSCAPE
     val primary = MaterialTheme.colorScheme.primary
     val desk = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) DeskDark else DeskLight
 
@@ -374,11 +380,8 @@ fun ScanReviewScreen(
         var swipe by remember { mutableFloatStateOf(0f) }
         // Pages follow the reading direction: swiping towards the end of the row (left in LTR, right in RTL) goes forward.
         val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        Box(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp)
+        val stage: @Composable (Modifier) -> Unit = { stageModifier -> Box(
+            stageModifier
                 .clip(RoundedCornerShape(14.dp))
                 .background(desk)
                 .pointerInput(current, blocked, isRtl) {
@@ -415,8 +418,10 @@ fun ScanReviewScreen(
                     onCropChange = { quads[key] = it }
                 )
             }
-        }
+        } }
 
+        // Page stepper, filters, sliders and the bottom buttons; below the page, or beside it in landscape.
+        val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         if (pages.size > 1) {
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 IconButton(enabled = current > 0 && !blocked, onClick = { onIndexChange(current - 1) }, modifier = Modifier.size(36.dp)) {
@@ -507,6 +512,17 @@ fun ScanReviewScreen(
                     )
                 }
             }
+        }
+        }
+
+        if (landscape) {
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+                stage(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 12.dp))
+                Column(Modifier.width(300.dp).fillMaxHeight().verticalScroll(rememberScrollState())) { lowerControls() }
+            }
+        } else {
+            stage(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp))
+            lowerControls()
         }
     }
 }

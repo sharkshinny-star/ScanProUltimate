@@ -17,7 +17,6 @@ import com.example.scanpro.R
 import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
 import com.example.scanpro.data.ScanDocument
 import java.io.File
-import java.util.Locale
 import kotlinx.coroutines.launch
 
 /**
@@ -136,15 +135,9 @@ fun copyText(context: Context, text: String) {
 
 fun pagesLabel(context: Context, count: Int): String = context.resources.getQuantityString(R.plurals.core_pages, count, count)
 
-fun formatBytes(bytes: Long): String {
-    if (bytes <= 0) return "0 B"
-    val units = arrayOf("B", "KB", "MB", "GB")
-    var value = bytes.toDouble()
-    var group = 0
-    // 1023.95 so a value that would print as "1024.0" rolls over to the next unit.
-    while (value >= 1023.95 && group < units.lastIndex) { value /= 1024.0; group++ }
-    return if (group == 0) "$bytes B" else String.format(Locale.getDefault(), "%.1f %s", value, units[group])
-}
+/** A file size in the phone's own units and language (for example "1.2 MB"), from the system formatter. */
+fun formatBytes(context: Context, bytes: Long): String =
+    android.text.format.Formatter.formatFileSize(context, bytes.coerceAtLeast(0L))
 
 /** How long a trashed document has left before it is deleted for good, in the largest whole unit. */
 sealed class TrashCountdown(val isUrgent: Boolean) {

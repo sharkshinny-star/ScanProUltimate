@@ -214,4 +214,10 @@
         <item quantity="one">%1$d పేజీల PDFగా మార్చబడింది</item>
         <item quantity="other">%1$d పేజీల PDFగా మార్చబడింది</item>
     </plurals>
+    <string name="tools_office_note_image">[చిత్రం చూపబడలేదు]</string>
+    <string name="tools_office_note_workbook_empty">ఈ వర్క్‌బుక్‌లో డేటా లేదు.</string>
+    <string name="tools_office_note_file_empty">ఈ ఫైల్‌లో డేటా లేదు.</string>
+    <string name="tools_office_note_too_long">ఫైల్ చాలా పెద్దది; మొదటి 20 MB మాత్రమే చూపబడింది.</string>
+    <string name="tools_office_note_workbook_truncated">మొదటి %1$s సెల్‌లు మాత్రమే చూపబడ్డాయి; వర్క్‌బుక్‌లోని మిగతా భాగం మార్చబడలేదు.</string>
+    <string name="tools_office_note_file_truncated">ఫైల్ చాలా పెద్దది; మొదటి %1$s సెల్‌లు మాత్రమే చూపబడ్డాయి.</string>
 </resources>
