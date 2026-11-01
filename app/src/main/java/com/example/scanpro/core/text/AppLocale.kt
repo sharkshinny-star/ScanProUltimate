@@ -29,7 +29,9 @@ object AppLocale {
     private const val KEY_TAG = "tag"
     private const val KEY_CHOSEN = "chosen"
 
-    private fun prefs(context: Context) = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    // The application context is null while the Application itself is being attached ([wrap] runs then, on
+    // Android 12 and older), so fall back to the context given; shared preferences are per app either way.
+    private fun prefs(context: Context) = (context.applicationContext ?: context).getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     /** True once the user has picked a language (first-launch screen shown). */
     fun isChosen(context: Context): Boolean = prefs(context).getBoolean(KEY_CHOSEN, false)
