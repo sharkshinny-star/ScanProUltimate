@@ -62,6 +62,10 @@ class AppViewModel @Inject constructor(
     fun markRatingShown() { viewModelScope.launch { settings.setFeedbackPromptShown() } }
 
     /** Wallpaper-derived colours (Android 12+); applied as soon as it is known, false until then. */
+    /** Camera defaults from Settings: the mode it opens in and the filter new scans start with. */
+    val defaultScanMode: StateFlow<String> = settings.defaultScanMode.stateIn(viewModelScope, SharingStarted.Eagerly, ScanMode.DOCUMENT.name)
+    val defaultFilter: StateFlow<PageFilter?> = settings.defaultFilter.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     val dynamicColor: StateFlow<Boolean> = settings.dynamicColor
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     /** Null until the setting has loaded, so the library is never shown before the lock decision. */
@@ -203,12 +207,13 @@ class AppViewModel @Inject constructor(
         target: RetakeTarget,
         imageUri: Uri,
         crop: CropQuad,
-        filter: PageFilter
+        filter: PageFilter,
+        adjustments: PageAdjustments? = null
     ) {
         val number = target.position + 1
         operations.enqueue(context.getString(R.string.msg_replacing_page, number), context.getString(R.string.msg_page_retaken, number)) {
             try {
-                repository.replacePage(target.documentId, target.pageId, imageUri, crop, filter)
+                repository.replacePage(target.documentId, target.pageId, imageUri, crop, filter, adjustments)
             } finally {
                 if (imageUri.scheme == "file") imageUri.path?.let { File(it).parentFile }
                     ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()

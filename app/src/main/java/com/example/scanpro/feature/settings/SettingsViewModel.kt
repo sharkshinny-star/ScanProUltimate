@@ -79,6 +79,11 @@ class SettingsViewModel @Inject constructor(
     fun setTrashRetentionDays(value: Int) { viewModelScope.launch { settings.setTrashRetentionDays(value) } }
     fun setDefaultOcrScript(value: OcrScript) { viewModelScope.launch { settings.setDefaultOcrScript(value) } }
 
+    val defaultScanMode = settings.defaultScanMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.example.scanpro.data.ScanMode.DOCUMENT.name)
+    fun setDefaultScanMode(value: String) { viewModelScope.launch { settings.setDefaultScanMode(value) } }
+    val defaultFilter = settings.defaultFilter.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    fun setDefaultFilter(value: com.example.scanpro.data.PageFilter?) { viewModelScope.launch { settings.setDefaultFilter(value) } }
+
     val notifyFinished = settings.notifyFinished.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val notifyFailures = settings.notifyFailures.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val notifyTrash = settings.notifyTrash.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)

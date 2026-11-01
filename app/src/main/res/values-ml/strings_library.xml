@@ -199,4 +199,9 @@
     <string name="lib_menu_unlock_folder">ലോക്ക് നീക്കുക</string>
     <string name="lib_lock_folder_title">“%1$s” ലോക്ക് ചെയ്യണോ?</string>
     <string name="lib_lock_folder_message">അതിലെ ഡോക്യുമെന്റുകൾ എല്ലാം, സമീപകാലം, തിരയൽ എന്നിവയിൽ നിന്ന് മറയ്ക്കും, ഫോൾഡർ തുറക്കുമ്പോൾ ഫിംഗർപ്രിന്റ്, ഫേസ് അല്ലെങ്കിൽ സ്ക്രീൻ ലോക്ക് ചോദിക്കും. ഇത് ScanPro-യ്ക്കുള്ളിൽ ഫോൾഡർ മറയ്ക്കുക മാത്രമാണ്; ഫയലുകൾ എൻക്രിപ്റ്റ് ചെയ്യുന്നില്ല, ബാക്കപ്പുകളിൽ അവ ഇപ്പോഴും ഉൾപ്പെടും.</string>
+    <string name="settings_default_mode_title">ക്യാമറ ഇതിൽ തുറക്കും</string>
+    <string name="settings_default_mode_subtitle">സ്കാനർ തുടങ്ങുന്ന മോഡ്</string>
+    <string name="settings_default_filter_title">തുടക്ക ഫിൽട്ടർ</string>
+    <string name="settings_default_filter_subtitle">പുതിയ സ്കാനുകൾ ഈ രൂപത്തിൽ തുടങ്ങും; ഓരോ പേജിലും മാറ്റാം</string>
+    <string name="settings_default_filter_automatic">ഓട്ടോമാറ്റിക്</string>
 </resources>

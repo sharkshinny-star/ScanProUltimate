@@ -254,7 +254,7 @@ fun DocumentRoute(
     val preview by viewModel.preview.collectAsStateWithLifecycle()
 
     val hiddenFolders by viewModel.hiddenFolders.collectAsStateWithLifecycle()
-    val lockedDoc = document?.takeIf { d -> d.folderName.isNotBlank() && com.example.scanpro.core.security.FolderLock.key(d.folderName) in hiddenFolders }
+    val lockedDoc = document?.takeIf { d -> com.example.scanpro.core.security.FolderLock.hides(hiddenFolders, d.folderName) }
     if (lockedDoc != null) {
         // Opened from a notification, a share, search or a link while its folder is locked.
         LockedFolderGate(folder = lockedDoc.folderName, onBack = onBack, onUnlocked = { viewModel.unlockFolder(lockedDoc.folderName) })
@@ -266,8 +266,9 @@ fun DocumentRoute(
         // longer lists is really unavailable. Until then the screen is already laid out, with the title
         // and cover Home had, so it slides in looking ready rather than as a blank page.
         DocumentLoadingScreen(
-            title = preview?.title,
-            coverPath = preview?.coverPath,
+            // Nothing of a locked folder's document shows while its pages load.
+            title = preview?.takeUnless { com.example.scanpro.core.security.FolderLock.hides(hiddenFolders, it.folderName) }?.title,
+            coverPath = preview?.takeUnless { com.example.scanpro.core.security.FolderLock.hides(hiddenFolders, it.folderName) }?.coverPath,
             coverVersion = preview?.updatedAt,
             unavailable = missing && !busy,
             onBack = onBack

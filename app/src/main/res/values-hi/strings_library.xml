@@ -199,4 +199,9 @@
     <string name="lib_menu_unlock_folder">लॉक हटाएं</string>
     <string name="lib_lock_folder_title">“%1$s” लॉक करें?</string>
     <string name="lib_lock_folder_message">इसके दस्तावेज़ सभी, हाल के और खोज में नहीं दिखेंगे, और फ़ोल्डर खोलने पर आपका फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक माँगा जाएगा। यह फ़ोल्डर को केवल ScanPro के अंदर छिपाता है; फ़ाइलें एन्क्रिप्ट नहीं होतीं, और बैकअप में वे शामिल रहती हैं।</string>
+    <string name="settings_default_mode_title">कैमरा इसमें खुलता है</string>
+    <string name="settings_default_mode_subtitle">स्कैनर किस मोड में शुरू हो</string>
+    <string name="settings_default_filter_title">शुरुआती फ़िल्टर</string>
+    <string name="settings_default_filter_subtitle">नए स्कैन इसी लुक से शुरू होते हैं; आप हर पेज पर इसे बदल सकते हैं</string>
+    <string name="settings_default_filter_automatic">अपने-आप</string>
 </resources>

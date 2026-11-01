@@ -207,7 +207,9 @@ fun ScanProApp(
                     onCameraScanComplete = viewModel::importCameraSession,
                     onCameraRetakeComplete = viewModel::replacePageFromCamera,
                     onFallbackScanner = onFallbackScanner,
-                    onAppLockChange = onAppLockChange
+                    onAppLockChange = onAppLockChange,
+                    defaultScanMode = viewModel.defaultScanMode.collectAsStateWithLifecycle().value,
+                    defaultFilter = viewModel.defaultFilter.collectAsStateWithLifecycle().value
                 )
             }
         }

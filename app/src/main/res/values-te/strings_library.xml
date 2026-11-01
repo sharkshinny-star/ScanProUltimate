@@ -199,4 +199,9 @@
     <string name="lib_menu_unlock_folder">లాక్ తీసివేయండి</string>
     <string name="lib_lock_folder_title">“%1$s” లాక్ చేయాలా?</string>
     <string name="lib_lock_folder_message">దీని డాక్యుమెంట్‌లు అన్నీ, ఇటీవలివి, శోధనలో కనిపించవు; ఫోల్డర్ తెరవడానికి మీ వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్ అడుగుతుంది. ఇది ScanPro లోపల మాత్రమే ఫోల్డర్‌ను దాచుతుంది; ఫైల్‌లు ఎన్‌క్రిప్ట్ కావు, బ్యాకప్‌లో అవి ఉంటాయి.</string>
+    <string name="settings_default_mode_title">కెమెరా దీనిలో తెరుచుకుంటుంది</string>
+    <string name="settings_default_mode_subtitle">స్కానర్ మొదలయ్యే మోడ్</string>
+    <string name="settings_default_filter_title">మొదటి ఫిల్టర్</string>
+    <string name="settings_default_filter_subtitle">కొత్త స్కాన్‌లు ఈ లుక్‌తో మొదలవుతాయి; ప్రతి పేజీకి మార్చుకోవచ్చు</string>
+    <string name="settings_default_filter_automatic">ఆటోమేటిక్</string>
 </resources>

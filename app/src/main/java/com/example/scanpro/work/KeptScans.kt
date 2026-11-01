@@ -2,7 +2,6 @@ package com.example.scanpro.work
 
 import com.example.scanpro.core.text.AppStrings
 import android.content.Context
-import androidx.work.Data
 import androidx.work.WorkManager
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.scanner.SESSION_IMPORT_FAILED
@@ -103,7 +102,7 @@ class KeptScanStore @Inject constructor(@ApplicationContext private val context:
          * The request to send again: the recorded one, limited to the photos still on disk (with each photo's own
          * outline and filter), or, with no record, every photo in the session for the importer to outline itself.
          */
-        internal fun retryInput(session: File, photos: List<File>): Data {
+        internal fun retryInput(session: File, photos: List<File>): ImportRequest {
             val request = readRequest(session)
             val recorded = request?.getNullableStringArray(ImportScanWorker.KEY_URIS)?.toList()
             // A recorded photo is found where it was, or by name in the session folder (moved from the old cache location).
@@ -111,25 +110,25 @@ class KeptScanStore @Inject constructor(@ApplicationContext private val context:
             val keep = resolved?.indices?.filter { resolved[it] != null }.orEmpty()
             if (request == null || recorded == null || keep.isEmpty()) {
                 // Nothing usable recorded: save the photos that are there, in the recorded mode if known.
-                return Data.Builder()
+                return ImportRequest.Builder()
                     .apply {
                         // The recorded outlines and filters belong to photos that aren't there any more.
                         if (request != null) putAll(request)
-                            .putStringArray(ImportScanWorker.KEY_CROPS, emptyArray())
-                            .putStringArray(ImportScanWorker.KEY_FILTERS, emptyArray())
-                            .putStringArray(ImportScanWorker.KEY_ADJUSTMENTS, emptyArray())
+                            .putStringArray(ImportScanWorker.KEY_CROPS, arrayOf())
+                            .putStringArray(ImportScanWorker.KEY_FILTERS, arrayOf())
+                            .putStringArray(ImportScanWorker.KEY_ADJUSTMENTS, arrayOf())
                     }
-                    .putStringArray(ImportScanWorker.KEY_URIS, photos.map { "file://${it.absolutePath}" }.toTypedArray())
+                    .putStringArray(ImportScanWorker.KEY_URIS, photos.map<File, String?> { "file://${it.absolutePath}" }.toTypedArray())
                     .putString(ImportScanWorker.KEY_MODE, request?.getString(ImportScanWorker.KEY_MODE) ?: ScanMode.DOCUMENT.name)
                     .build()
             }
             val crops = request.getNullableStringArray(ImportScanWorker.KEY_CROPS)?.toList().orEmpty()
             val filters = request.getNullableStringArray(ImportScanWorker.KEY_FILTERS)?.toList().orEmpty()
             val adjustments = request.getNullableStringArray(ImportScanWorker.KEY_ADJUSTMENTS)?.toList().orEmpty()
-            fun List<String?>.pick() = if (size == recorded.size) keep.map { this[it] }.toTypedArray() else emptyArray()
-            return Data.Builder()
+            fun List<String?>.pick(): Array<String?> = if (size == recorded.size) keep.map { this[it] }.toTypedArray() else arrayOf()
+            return ImportRequest.Builder()
                 .putAll(request)
-                .putStringArray(ImportScanWorker.KEY_URIS, keep.map { "file://${resolved.orEmpty()[it]!!.absolutePath}" }.toTypedArray())
+                .putStringArray(ImportScanWorker.KEY_URIS, keep.map<Int, String?> { "file://${resolved.orEmpty()[it]!!.absolutePath}" }.toTypedArray())
                 .putStringArray(ImportScanWorker.KEY_CROPS, crops.pick())
                 .putStringArray(ImportScanWorker.KEY_FILTERS, filters.pick())
                 .putStringArray(ImportScanWorker.KEY_ADJUSTMENTS, adjustments.pick())
@@ -152,11 +151,11 @@ class KeptScanStore @Inject constructor(@ApplicationContext private val context:
                 }
         }
 
-        private fun readRequest(session: File): Data? =
+        private fun readRequest(session: File): ImportRequest? =
             File(session, SESSION_IMPORT_REQUEST).takeIf { it.isFile }
-                ?.let { runCatching { Data.fromByteArray(it.readBytes()) }.getOrNull() }
+                ?.let { runCatching { ImportRequest.readFile(it) }.getOrNull() }
 
-        private fun photosOf(session: File, request: Data?): List<File> {
+        private fun photosOf(session: File, request: ImportRequest?): List<File> {
             val recorded = request?.getNullableStringArray(ImportScanWorker.KEY_URIS)
                 ?.mapNotNull { it?.let(::fileOf) }?.filter { it.isFile }
             if (!recorded.isNullOrEmpty()) return recorded

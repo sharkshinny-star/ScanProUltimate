@@ -38,11 +38,19 @@ class BarcodeFrameAnalyzer(
      * Calls [onResult] with the first code found, or null when there is none or the picture can't be read.
      */
     fun scanImage(uri: android.net.Uri, onResult: (Barcode?) -> Unit) {
-        val input = runCatching { InputImage.fromFilePath(context, uri) }.getOrNull() ?: return onResult(null)
         paused = true
-        scanner.process(input)
-            .addOnSuccessListener { codes -> onResult(codes.firstOrNull { !it.rawValue.isNullOrEmpty() }) }
-            .addOnFailureListener { onResult(null) }
+        val main = android.os.Handler(android.os.Looper.getMainLooper())
+        // Decoding a large photo takes a moment: off the main thread. ML Kit's listeners run on the main thread.
+        kotlin.concurrent.thread(name = "qr-image") {
+            val input = runCatching { InputImage.fromFilePath(context, uri) }.getOrNull()
+            if (input == null) {
+                main.post { onResult(null) }
+                return@thread
+            }
+            scanner.process(input)
+                .addOnSuccessListener { codes -> onResult(codes.firstOrNull { !it.rawValue.isNullOrEmpty() }) }
+                .addOnFailureListener { onResult(null) }
+        }
     }
 
     @OptIn(ExperimentalGetImage::class)

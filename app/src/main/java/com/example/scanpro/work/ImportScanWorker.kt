@@ -53,6 +53,8 @@ class ImportScanWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
+        // Large batches keep their page lists in the scan's folder (see enqueue); read them back from there.
+        val inputData = expand(inputData)
         val uris = inputData.getNullableStringArray(KEY_URIS)?.filterNotNull()?.map(Uri::parse).orEmpty()
         if (uris.isEmpty()) return Result.success()
         val mode = runCatching { ScanMode.valueOf(inputData.getString(KEY_MODE).orEmpty()) }.getOrDefault(ScanMode.DOCUMENT)
@@ -142,8 +144,18 @@ class ImportScanWorker @AssistedInject constructor(
         const val TAG = "import-scan"
         const val SESSION_TAG_PREFIX = "import-scan-session:"
 
-        private fun sessionDirOf(input: Data): File? =
-            input.getNullableStringArray(KEY_URIS)?.firstOrNull()?.let { File(it.toUri().path.orEmpty()).parentFile }
+        private fun sessionDirOf(input: ImportRequest): File? =
+            input.getString(KEY_REQUEST_FILE)?.let { File(it).parentFile }
+                ?: input.getNullableStringArray(KEY_URIS)?.firstOrNull()?.let { File(it.toUri().path.orEmpty()).parentFile }
+
+        /** Set instead of the page lists when they were too large for WorkManager: the file that holds them. */
+        internal const val KEY_REQUEST_FILE = "request_file"
+
+        /** The full request: the work's input itself, or the one saved at its [KEY_REQUEST_FILE]. */
+        internal fun expand(input: Data): ImportRequest {
+            val path = input.getString(KEY_REQUEST_FILE) ?: return ImportRequest.fromData(input)
+            return runCatching { ImportRequest.readFile(File(path)) }.getOrNull() ?: ImportRequest.fromData(input)
+        }
 
         fun inputFor(
             uris: List<Uri>,
@@ -151,28 +163,34 @@ class ImportScanWorker @AssistedInject constructor(
             crops: List<CropQuad>,
             filters: List<PageFilter>,
             adjustments: List<PageAdjustments?> = emptyList()
-        ): Data = workDataOf(
-            KEY_URIS to uris.map(Uri::toString).toTypedArray(),
-            KEY_MODE to mode.name,
-            KEY_CROPS to crops.map(JsonCodec::encodeCrop).toTypedArray(),
-            KEY_FILTERS to filters.map { it.name }.toTypedArray(),
-            KEY_ADJUSTMENTS to adjustments.map { it?.let(JsonCodec::encodeAdjustments) ?: "" }.toTypedArray()
-        )
+        ): ImportRequest = ImportRequest.Builder()
+            .putStringArray(KEY_URIS, uris.map { it.toString() }.toTypedArray())
+            .putString(KEY_MODE, mode.name)
+            .putStringArray(KEY_CROPS, crops.map { JsonCodec.encodeCrop(it) }.toTypedArray())
+            .putStringArray(KEY_FILTERS, filters.map { it.name }.toTypedArray())
+            .putStringArray(KEY_ADJUSTMENTS, adjustments.map { it?.let(JsonCodec::encodeAdjustments) ?: "" }.toTypedArray())
+            .build()
 
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */
-        fun enqueue(context: Context, input: Data) {
+        fun enqueue(context: Context, input: ImportRequest) {
             val sessionDir = sessionDirOf(input)
             val sessionKey = sessionDir?.name ?: "scan"
-            if (sessionDir?.parentFile?.name == SESSION_ROOT) runCatching {
+            val inSession = sessionDir?.parentFile?.name == SESSION_ROOT
+            if (inSession) runCatching {
                 // Cleanup leaves a session with this marker alone until its import is done, and the request
                 // itself is kept beside the photos so the scan can be saved again from "Unsaved scans".
                 File(sessionDir, SESSION_PENDING_IMPORT).createNewFile()
-                File(sessionDir, SESSION_IMPORT_REQUEST).writeBytes(input.toByteArray())
+                File(sessionDir, SESSION_IMPORT_REQUEST).writeText(input.toJson())
                 // A new attempt: the scan leaves "Unsaved scans" until this one fails too.
                 File(sessionDir, SESSION_IMPORT_FAILED).delete()
             }
+            // WorkManager refuses input over 10 KB, which a batch of about 60 pages passes (a path, crop, filter and
+            // sliders per page). Then the work gets only the path of the request saved above.
+            val workInput = input.toWorkData()
+                ?: if (inSession) androidx.work.workDataOf(KEY_REQUEST_FILE to File(sessionDir, SESSION_IMPORT_REQUEST).absolutePath)
+                else error("Scan import request too large and not in a scanner session")
             val request = OneTimeWorkRequestBuilder<ImportScanWorker>()
-                .setInputData(input)
+                .setInputData(workInput)
                 .addTag(TAG)
                 .addTag(SESSION_TAG_PREFIX + sessionKey)
                 .build()

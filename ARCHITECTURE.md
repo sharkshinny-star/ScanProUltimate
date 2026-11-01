@@ -177,6 +177,8 @@ A biometric UI gate should not be marketed as full at-rest encryption of every l
 
 ## 11. Background work
 
+`ImportScanWorker` takes an `ImportRequest` (photo URIs, mode, per-page crop/filter/sliders). It is saved as JSON in the scan's session folder; WorkManager gets the request itself when it fits its 10 KB input limit, otherwise only the file's path (`KEY_REQUEST_FILE`).
+
 - `work/CleanupWorker` (daily, unique periodic): purges recycle-bin documents older than the user's retention setting,
   runs `CacheCleaner`, and posts the optional recycle-bin and backup reminders.
 - `work/ImportScanWorker` (one-time, `@HiltWorker`): imports a finished camera session. The session lives in

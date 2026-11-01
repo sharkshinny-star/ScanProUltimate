@@ -199,4 +199,9 @@
     <string name="lib_menu_unlock_folder">ಲಾಕ್ ತೆಗೆಯಿರಿ</string>
     <string name="lib_lock_folder_title">“%1$s” ಲಾಕ್ ಮಾಡಬೇಕೇ?</string>
     <string name="lib_lock_folder_message">ಇದರ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು ಎಲ್ಲಾ, ಇತ್ತೀಚಿನವು ಮತ್ತು ಹುಡುಕಾಟದಿಂದ ಮರೆಯಾಗುತ್ತವೆ, ಮತ್ತು ಫೋಲ್ಡರ್ ತೆರೆಯುವಾಗ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್, ಮುಖ ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಕೇಳುತ್ತದೆ. ಇದು ScanPro ಒಳಗೆ ಫೋಲ್ಡರ್ ಅನ್ನು ಮರೆಮಾಡುತ್ತದೆ; ಫೈಲ್‌ಗಳನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡುವುದಿಲ್ಲ, ಬ್ಯಾಕಪ್‌ಗಳಲ್ಲಿ ಅವು ಇರುತ್ತವೆ.</string>
+    <string name="settings_default_mode_title">ಕ್ಯಾಮೆರಾ ಇದರಲ್ಲಿ ತೆರೆಯುತ್ತದೆ</string>
+    <string name="settings_default_mode_subtitle">ಸ್ಕ್ಯಾನರ್ ಆರಂಭವಾಗುವ ಮೋಡ್</string>
+    <string name="settings_default_filter_title">ಆರಂಭದ ಫಿಲ್ಟರ್</string>
+    <string name="settings_default_filter_subtitle">ಹೊಸ ಸ್ಕ್ಯಾನ್‌ಗಳು ಈ ಲುಕ್‌ನಿಂದ ಆರಂಭವಾಗುತ್ತವೆ; ಪ್ರತಿ ಪುಟಕ್ಕೂ ಬದಲಾಯಿಸಬಹುದು</string>
+    <string name="settings_default_filter_automatic">ಸ್ವಯಂಚಾಲಿತ</string>
 </resources>

@@ -51,9 +51,11 @@ fun ScanProNavHost(
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
     onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>) -> Unit,
-    onCameraRetakeComplete: (RetakeTarget, android.net.Uri, CropQuad, PageFilter) -> Unit,
+    onCameraRetakeComplete: (RetakeTarget, android.net.Uri, CropQuad, PageFilter, PageAdjustments?) -> Unit,
     onFallbackScanner: () -> Unit,
-    onAppLockChange: (Boolean) -> Unit
+    onAppLockChange: (Boolean) -> Unit,
+    defaultScanMode: String = "",
+    defaultFilter: PageFilter? = null
 ) {
     val context = LocalContext.current
     val pdfDocumentTitle = stringResource(R.string.nav_pdf_document)
@@ -143,12 +145,14 @@ fun ScanProNavHost(
             // import twice or pop Home and leave an empty screen.
             fun resumed() = entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             CameraScannerScreen(
-                initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty(),
+                // A shortcut or quick action names its mode; otherwise the camera opens in the mode chosen in Settings.
+                initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty().ifEmpty { defaultScanMode },
+                defaultFilter = defaultFilter,
                 retakeOfPage = retake?.position,
                 onClose = dropUnlessResumed { navController.popBackStack() },
                 onComplete = { uris, mode, crops, filters, adjustments ->
                     if (resumed()) {
-                        if (retake != null) onCameraRetakeComplete(retake, uris.first(), crops.first(), filters.first())
+                        if (retake != null) onCameraRetakeComplete(retake, uris.first(), crops.first(), filters.first(), adjustments.firstOrNull())
                         else onCameraScanComplete(uris, mode, crops, filters, adjustments)
                         navController.popBackStack()
                     }

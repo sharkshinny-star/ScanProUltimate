@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Hotfix F33: launch crash on Android 7–12 from the language code. |
+| newest | Review fixes (F34) and P3 Settings defaults (F35). |
+| 3ab433d | Hotfix F33: launch crash on Android 7–12 from the language code. |
 | 6dd0557 | Lens-style QR mode (F32): viewfinder, scan from a picture, Wi-Fi Connect, UPI pay. |
 | bc1aecd | Kannada and Malayalam (same checks as F31; `kn`/`ml` added to `locales_config.xml` and `AppLocale.SUPPORTED`). |
 | ca8bfa8 | P2 (F31): Hindi/Tamil/Telugu UI, first-launch language picker and in-app language setting, freehand pen, locked folders. |
@@ -74,7 +75,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 ## 4. Next steps
 
-0. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3: PPT export, Office/web → PDF via the print framework, default scan mode and filter in Settings.
+0. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3: Office/web → PDF via the print framework (PowerPoint export dropped at the owner's request).
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
 2. **First: launch on an Android 12-or-older device or emulator (F33 hotfix), including picking a language.** Then device-check F32 with real codes: a Wi-Fi QR (Connect on Android 11+, password copy below), a UPI QR (opens UPI apps), an event/ticket QR, a screenshot from the gallery. Then F31: first launch language picker (pick Hindi, Tamil, Telugu; Android 12 and 13+), Settings > App language, the pen (colours, widths, move in Edit mark-up), lock a folder (hidden from All/Recent/search, unlock prompt, re-locks 30 s after leaving), and have native speakers read the translations. Then F30 on the owner's phone: scanner chrome (zoom, torch, mode strip, Auto/count pill), the Adjust page screen (handles, sliders, Save page), the Document tabs, per-page sheet and Export sheet; then F29 (rating sheet after the first scan: stars, emoji, both buttons) and F28 (every screen changed) and F24–F26 on the owner's phone: document screen sheets and pager, opening from Recent, ID card capture crop, Auto Clean on real documents, signature placement; and F24 (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
 3. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.

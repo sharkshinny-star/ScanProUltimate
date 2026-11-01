@@ -448,12 +448,13 @@ internal fun LibraryScreen(
                                         onClick = { moreMenuOpen = false; onImportPdf() }
                                     )
                                     if (mode == ScanProDestinations.FILES && folder.isNotBlank()) {
+                                        val folderLocked = com.example.scanpro.core.security.FolderLock.key(folder) in lockedFolders
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.lib_menu_rename_folder)) },
                                             leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
-                                            onClick = { moreMenuOpen = false; renameFolderSource = folder }
+                                            // A locked folder can be renamed or removed only after the phone's unlock, like removing its lock.
+                                            onClick = { moreMenuOpen = false; val name = folder; if (folderLocked) deviceUnlock { renameFolderSource = name } else renameFolderSource = name }
                                         )
-                                        val folderLocked = com.example.scanpro.core.security.FolderLock.key(folder) in lockedFolders
                                         DropdownMenuItem(
                                             text = { Text(stringResource(if (folderLocked) R.string.lib_menu_unlock_folder else R.string.lib_menu_lock_folder)) },
                                             leadingIcon = { Icon(if (folderLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock, contentDescription = null) },
@@ -468,7 +469,7 @@ internal fun LibraryScreen(
                                             text = { Text(stringResource(R.string.lib_menu_remove_folder)) },
                                             leadingIcon = { Icon(Icons.Rounded.FolderDelete, contentDescription = null) },
                                             enabled = !busy,
-                                            onClick = { moreMenuOpen = false; deleteFolderOpen = true }
+                                            onClick = { moreMenuOpen = false; if (folderLocked) deviceUnlock { deleteFolderOpen = true } else deleteFolderOpen = true }
                                         )
                                     }
                                     DropdownMenuItem(
@@ -549,7 +550,7 @@ internal fun LibraryScreen(
                                         when {
                                             folder.equals(name, ignoreCase = true) -> onFolderChange("")
                                             // A closed locked folder opens only after the phone's own unlock.
-                                            key in hiddenFolders -> deviceUnlock { onUnlockFolder(name); onFolderChange(name) }
+                                            com.example.scanpro.core.security.FolderLock.hides(hiddenFolders, name) -> deviceUnlock { onUnlockFolder(name); onFolderChange(name) }
                                             else -> onFolderChange(name)
                                         }
                                     }

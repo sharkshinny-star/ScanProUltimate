@@ -46,6 +46,25 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         }.getOrDefault(PdfQuality.BALANCED)
     }
 
+    private val keyDefaultScanMode = stringPreferencesKey("default_scan_mode")
+    private val keyDefaultFilter = stringPreferencesKey("default_filter")
+
+    /** Mode the camera opens in when nothing asked for a particular one: a ScanMode name, or "QR". */
+    val defaultScanMode: Flow<String> = preferences.map { it[keyDefaultScanMode] ?: ScanMode.DOCUMENT.name }
+
+    /** Filter new scans start with; null keeps each mode's own (ScanMode.defaultFilter). */
+    val defaultFilter: Flow<PageFilter?> = preferences.map { p ->
+        p[keyDefaultFilter]?.let { name -> PageFilter.entries.firstOrNull { it.name == name } }
+    }
+
+    suspend fun setDefaultScanMode(value: String) {
+        context.scanProSettings.edit { it[keyDefaultScanMode] = value }
+    }
+
+    suspend fun setDefaultFilter(value: PageFilter?) {
+        context.scanProSettings.edit { if (value == null) it.remove(keyDefaultFilter) else it[keyDefaultFilter] = value.name }
+    }
+
     val autoTitle: Flow<Boolean> = preferences.map { preferences ->
         preferences[keyAutoTitle] ?: true
     }

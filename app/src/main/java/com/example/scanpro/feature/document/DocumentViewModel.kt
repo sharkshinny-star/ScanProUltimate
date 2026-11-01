@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.document
 
+import kotlinx.coroutines.flow.combine
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
@@ -83,8 +84,9 @@ class DocumentViewModel @Inject constructor(
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.overview.value.recent.firstOrNull { it.id == id })
 
-    val otherDocuments: StateFlow<List<DocumentSummary>> = library.overview
-        .map { repository.loadOtherSummaries(id, OTHER_DOCUMENT_LIMIT) }
+    /** Documents offered for merging; those in closed locked folders are left out. */
+    val otherDocuments: StateFlow<List<DocumentSummary>> = combine(library.overview, folderLock.hidden) { _, hidden -> hidden }
+        .map { hidden -> repository.loadOtherSummaries(id, OTHER_DOCUMENT_LIMIT).filterNot { com.example.scanpro.core.security.FolderLock.hides(hidden, it.folderName) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** True right after this document was scanned: its screen offers share, save and rename at once. */

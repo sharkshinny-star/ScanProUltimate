@@ -56,6 +56,7 @@ class MainActivity : FragmentActivity() {
     private val viewModel: AppViewModel by viewModels()
     @Inject lateinit var notifications: AppNotifications
     @Inject lateinit var documentEditor: DocumentEditor
+    @Inject lateinit var folderLock: com.example.scanpro.core.security.FolderLock
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -116,8 +117,11 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // With app lock on, keep documents out of screenshots and the recent-apps preview.
-                viewModel.appLockEnabled.collect { locked ->
-                    if (locked != false) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                // Also while a locked folder is open this session, so its documents stay out of screenshots too.
+                kotlinx.coroutines.flow.combine(viewModel.appLockEnabled, folderLock.locked, folderLock.hidden) { appLocked, locked, hidden ->
+                    appLocked != false || locked.any { it !in hidden }
+                }.collect { secure ->
+                    if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                 }
             }

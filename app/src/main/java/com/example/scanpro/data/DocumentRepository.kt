@@ -705,7 +705,7 @@ class DocumentRepository @Inject constructor(
      * Swaps a page's photo for a new one taken in the camera. The page keeps its place; its mark-up, text
      * corrections and adjustments belonged to the old photo and are dropped, and OCR runs again.
      */
-    suspend fun replacePage(documentId: String, pageId: String, imageUri: Uri, crop: CropQuad, filter: PageFilter) = withContext(Dispatchers.IO) {
+    suspend fun replacePage(documentId: String, pageId: String, imageUri: Uri, crop: CropQuad, filter: PageFilter, adjustments: PageAdjustments? = null) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val old = doc.pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
@@ -725,7 +725,8 @@ class DocumentRepository @Inject constructor(
                     sourcePath = source.absolutePath,
                     imagePath = rendered.absolutePath,
                     crop = crop,
-                    filter = filter
+                    filter = filter,
+                    adjustments = adjustments?.normalized() ?: PageAdjustments.DEFAULT
                 )
             )
         } catch (error: Throwable) {

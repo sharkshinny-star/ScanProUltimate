@@ -515,7 +515,8 @@ object ImageProcessor {
                     color = Color.argb((item.opacity.coerceIn(0.05f, 1f) * 120).toInt(), 255, 235, 59)
                 })
                 AnnotationType.ERASE -> Unit
-                AnnotationType.INK -> drawInk(canvas, item, rect, output.width)
+                // Pen width is a fraction of the page's width when it was drawn; a quarter turn since swapped the sides.
+                AnnotationType.INK -> drawInk(canvas, item, rect, if (turned) output.height else output.width)
                 AnnotationType.TEXT -> if (item.background != null) {
                     drawReplacementText(output, canvas, item, rect, box, turned)
                 } else {

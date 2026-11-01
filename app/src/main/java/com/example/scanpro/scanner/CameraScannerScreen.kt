@@ -167,6 +167,8 @@ private enum class DetectMode(@StringRes val label: Int) { AUTO(R.string.scan_de
 fun CameraScannerScreen(
     /** Mode to open in: a [ScanMode] name, "QR", or empty for the usual document mode. */
     initialMode: String = "",
+    /** Filter new scans start with, from Settings; null keeps each mode's own. */
+    defaultFilter: PageFilter? = null,
     /** Position of the saved page this session replaces; the session then takes exactly one photo. */
     retakeOfPage: Int? = null,
     onClose: () -> Unit,
@@ -417,7 +419,7 @@ fun CameraScannerScreen(
         if (completed || processing || pages.isEmpty()) return
         processing = true
         val inputs = pages.toList().map { it to quads[it.toString()] }
-        val chosen = pages.map { filters[it.toString()] ?: sessionFilter ?: scanMode.defaultFilter }
+        val chosen = pages.map { filters[it.toString()] ?: sessionFilter ?: defaultFilter ?: scanMode.defaultFilter }
         scope.launch {
             // The untouched originals are kept and the confirmed crop travels beside them, so the border can
             // still be widened later; nothing here cuts pixels out of the photo.
@@ -775,7 +777,7 @@ fun CameraScannerScreen(
             quads = quads,
             filters = filters,
             adjustments = adjustments,
-            defaultFilter = sessionFilter ?: scanMode.defaultFilter,
+            defaultFilter = sessionFilter ?: defaultFilter ?: scanMode.defaultFilter,
             onDefaultFilterChange = { sessionFilter = it },
             index = reviewIndex,
             processing = processing,

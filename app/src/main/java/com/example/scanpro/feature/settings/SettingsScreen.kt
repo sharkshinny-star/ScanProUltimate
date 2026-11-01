@@ -1,5 +1,7 @@
 package com.example.scanpro.feature.settings
 
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.CameraAlt
 import com.example.scanpro.core.ui.findActivity
 import android.Manifest
 import android.content.ActivityNotFoundException
@@ -129,6 +131,8 @@ fun SettingsRoute(
     val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
     val defaultOcrScript by viewModel.defaultOcrScript.collectAsStateWithLifecycle()
+    val defaultScanMode by viewModel.defaultScanMode.collectAsStateWithLifecycle()
+    val defaultFilter by viewModel.defaultFilter.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val notifyFinished by viewModel.notifyFinished.collectAsStateWithLifecycle()
     val notifyFailures by viewModel.notifyFailures.collectAsStateWithLifecycle()
@@ -160,6 +164,10 @@ fun SettingsRoute(
         defaultOcrScript = defaultOcrScript,
         onTrashRetentionChange = viewModel::setTrashRetentionDays,
         onDefaultOcrScriptChange = viewModel::setDefaultOcrScript,
+        defaultScanMode = defaultScanMode,
+        onDefaultScanModeChange = viewModel::setDefaultScanMode,
+        defaultFilter = defaultFilter,
+        onDefaultFilterChange = viewModel::setDefaultFilter,
         pdfQuality = pdfQuality,
         autoTitle = autoTitle,
         appLock = appLock,
@@ -202,6 +210,10 @@ fun SettingsScreen(
     onRestoreBackup: (Uri, String) -> Unit = { _, _ -> },
     trashRetentionDays: Int = DEFAULT_TRASH_RETENTION_DAYS,
     defaultOcrScript: OcrScript = OcrScript.LATIN,
+    defaultScanMode: String = com.example.scanpro.data.ScanMode.DOCUMENT.name,
+    onDefaultScanModeChange: (String) -> Unit = {},
+    defaultFilter: com.example.scanpro.data.PageFilter? = null,
+    onDefaultFilterChange: (com.example.scanpro.data.PageFilter?) -> Unit = {},
     onTrashRetentionChange: (Int) -> Unit = {},
     onDefaultOcrScriptChange: (OcrScript) -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
@@ -370,6 +382,61 @@ fun SettingsScreen(
                 }
 
                 SettingsSection(stringResource(R.string.settings_section_scanning)) {
+                    // Camera start mode: every mode in the camera's strip, QR code last.
+                    val modeChoices = com.example.scanpro.data.ScanMode.entries.map { it.name to stringResource(it.labelRes) } +
+                        ("QR" to stringResource(R.string.scan_qr_code))
+                    var modeMenuOpen by remember { mutableStateOf(false) }
+                    val modeLabel = modeChoices.firstOrNull { it.first == defaultScanMode }?.second ?: modeChoices.first().second
+                    SettingsRow(
+                        icon = Icons.Rounded.CameraAlt,
+                        tone = TileTone.Indigo,
+                        title = stringResource(R.string.settings_default_mode_title),
+                        subtitle = stringResource(R.string.settings_default_mode_subtitle),
+                        trailing = {
+                            Box {
+                                Text(modeLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                androidx.compose.material3.DropdownMenu(expanded = modeMenuOpen, onDismissRequest = { modeMenuOpen = false }) {
+                                    modeChoices.forEach { (value, label) ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(label) },
+                                            onClick = { modeMenuOpen = false; onDefaultScanModeChange(value) }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { modeMenuOpen = true }
+                    )
+                    InsetDivider()
+                    // Starting filter: "Automatic" keeps each mode's own (Auto Clean, Whiteboard, Original for ID cards).
+                    var filterMenuOpen by remember { mutableStateOf(false) }
+                    val automatic = stringResource(R.string.settings_default_filter_automatic)
+                    val filterLabel = defaultFilter?.let { stringResource(it.labelRes) } ?: automatic
+                    SettingsRow(
+                        icon = Icons.Rounded.AutoFixHigh,
+                        tone = TileTone.Amber,
+                        title = stringResource(R.string.settings_default_filter_title),
+                        subtitle = stringResource(R.string.settings_default_filter_subtitle),
+                        trailing = {
+                            Box {
+                                Text(filterLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                androidx.compose.material3.DropdownMenu(expanded = filterMenuOpen, onDismissRequest = { filterMenuOpen = false }) {
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text(automatic) },
+                                        onClick = { filterMenuOpen = false; onDefaultFilterChange(null) }
+                                    )
+                                    com.example.scanpro.data.PageFilter.entries.forEach { f ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(stringResource(f.labelRes)) },
+                                            onClick = { filterMenuOpen = false; onDefaultFilterChange(f) }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { filterMenuOpen = true }
+                    )
+                    InsetDivider()
                     SettingsRow(
                         icon = Icons.Rounded.PictureAsPdf,
                         tone = TileTone.Coral,

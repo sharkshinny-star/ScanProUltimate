@@ -81,6 +81,15 @@ class LibraryViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, library.overview.value)
 
     fun setFolderLocked(name: String, locked: Boolean) = folderLock.setLocked(name, locked)
+
+    init {
+        // Leaving the app re-locks folders: a locked folder left selected in Files goes back to All.
+        viewModelScope.launch {
+            folderLock.hidden.collect { hidden ->
+                if (com.example.scanpro.core.security.FolderLock.hides(hidden, folder.value)) savedState[KEY_FOLDER] = ""
+            }
+        }
+    }
     fun unlockFolder(name: String) = folderLock.unlockForSession(name)
 
     /**
@@ -92,7 +101,7 @@ class LibraryViewModel @Inject constructor(
         combine(_query.debounce(180.milliseconds), folder, favoritesOnly, sort, folderLock.hidden) { query, folder, favorites, sort, hidden -> Filters(query, folder, favorites, sort) to hidden }
             .flatMapLatest { (f, hidden) ->
                 // A closed locked folder shows nothing, and its documents stay out of All, favourites and search.
-                if (f.folder.isNotBlank() && com.example.scanpro.core.security.FolderLock.key(f.folder) in hidden) {
+                if (com.example.scanpro.core.security.FolderLock.hides(hidden, f.folder)) {
                     flow { emit(PagingData.empty()) }
                 } else if (f.query.isBlank()) {
                     repository.pagedSummaries(f.folder, f.favoritesOnly, f.sort)
@@ -202,5 +211,4 @@ class LibraryViewModel @Inject constructor(
     }
 }
 
-private fun DocumentSummary.inHidden(hidden: Set<String>) =
-    folderName.isNotBlank() && com.example.scanpro.core.security.FolderLock.key(folderName) in hidden
+private fun DocumentSummary.inHidden(hidden: Set<String>) = com.example.scanpro.core.security.FolderLock.hides(hidden, folderName)

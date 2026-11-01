@@ -31,14 +31,18 @@ class FolderLock @Inject constructor(
     val locked: StateFlow<Set<String>> =
         settings.lockedFolders.map { set -> set.map(::key).toSet() }.stateIn(scope, SharingStarted.Eagerly, emptySet())
 
+    // Until the saved list has loaded, every folder counts as locked, so nothing locked can flash past at start-up.
+    private val loaded: StateFlow<Boolean> = settings.lockedFolders.map { true }.stateIn(scope, SharingStarted.Eagerly, false)
+
     private val unlocked = MutableStateFlow<Set<String>>(emptySet())
 
-    /** Locked folders not opened this session: their documents are hidden. */
+    /** Locked folders not opened this session: their documents are hidden. Test with [hides]. */
     val hidden: StateFlow<Set<String>> =
-        combine(locked, unlocked) { l, u -> l - u }.stateIn(scope, SharingStarted.Eagerly, emptySet())
+        combine(locked, unlocked, loaded) { l, u, ready -> if (ready) l - u else setOf(ALL) }
+            .stateIn(scope, SharingStarted.Eagerly, setOf(ALL))
 
     fun isLocked(folder: String): Boolean = folder.isNotBlank() && key(folder) in locked.value
-    fun isHidden(folder: String): Boolean = folder.isNotBlank() && key(folder) in hidden.value
+    fun isHidden(folder: String): Boolean = hides(hidden.value, folder)
 
     /** Locks or unlocks [folder] for good. */
     fun setLocked(folder: String, lock: Boolean) {
@@ -66,6 +70,13 @@ class FolderLock @Inject constructor(
 
     companion object {
         fun key(folder: String) = folder.trim().lowercase()
+
+        /** Marks "not loaded yet": every folder is hidden. */
+        private const val ALL = "\u0000all"
+
+        /** True when documents in [folder] are hidden by [hidden] (a value of [FolderLock.hidden]). */
+        fun hides(hidden: Set<String>, folder: String): Boolean =
+            folder.isNotBlank() && (ALL in hidden || key(folder) in hidden)
     }
 }
 

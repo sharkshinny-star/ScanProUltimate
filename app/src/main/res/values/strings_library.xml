@@ -213,4 +213,10 @@
     <string name="lib_menu_unlock_folder">Remove lock</string>
     <string name="lib_lock_folder_title">Lock “%1$s”?</string>
     <string name="lib_lock_folder_message">Its documents will be hidden from All, Recent and search, and opening the folder will ask for your fingerprint, face or screen lock. This hides the folder inside ScanPro; it does not encrypt the files, and backups still include them.</string>
+    <!-- Scanning defaults -->
+    <string name="settings_default_mode_title">Camera opens in</string>
+    <string name="settings_default_mode_subtitle">The mode the scanner starts in</string>
+    <string name="settings_default_filter_title">Starting filter</string>
+    <string name="settings_default_filter_subtitle">The look new scans start with; you can change it per page</string>
+    <string name="settings_default_filter_automatic">Automatic</string>
 </resources>

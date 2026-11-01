@@ -199,4 +199,9 @@
     <string name="lib_menu_unlock_folder">பூட்டை நீக்கு</string>
     <string name="lib_lock_folder_title">“%1$s” பூட்டவா?</string>
     <string name="lib_lock_folder_message">இதன் ஆவணங்கள் அனைத்தும், சமீபத்தியவை, தேடல் ஆகியவற்றில் காட்டப்படாது; ஃபோல்டரைத் திறக்க உங்கள் கைரேகை, முகம் அல்லது திரைப் பூட்டு கேட்கப்படும். இது ScanPro-க்குள் மட்டும் ஃபோல்டரை மறைக்கிறது; ஃபைல்கள் என்க்ரிப்ட் செய்யப்படாது, பேக்அப்பில் அவை இருக்கும்.</string>
+    <string name="settings_default_mode_title">கேமரா இதில் திறக்கும்</string>
+    <string name="settings_default_mode_subtitle">ஸ்கேனர் தொடங்கும் முறை</string>
+    <string name="settings_default_filter_title">தொடக்க ஃபில்டர்</string>
+    <string name="settings_default_filter_subtitle">புதிய ஸ்கேன்கள் இந்தத் தோற்றத்துடன் தொடங்கும்; ஒவ்வொரு பக்கத்திலும் மாற்றலாம்</string>
+    <string name="settings_default_filter_automatic">தானியங்கி</string>
 </resources>
