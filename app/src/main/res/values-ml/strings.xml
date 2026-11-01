@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ScanPro</string>
+    <string name="translate_module_title">വിവർത്തനം</string>
+    <string name="shortcut_scan_short">ഇപ്പോൾ സ്കാൻ ചെയ്യൂ</string>
+    <string name="shortcut_scan_long">ഡോക്യുമെന്റ് ഇപ്പോൾ സ്കാൻ ചെയ്യൂ</string>
+    <string name="shortcut_dont_remove_short">🥺 ഞങ്ങളുടെ ആപ്പ് നീക്കം ചെയ്യല്ലേ!</string>
+    <string name="shortcut_dont_remove_long">ഞങ്ങൾക്ക് ഒരവസരം കൂടി തരൂ!</string>
+    <string name="shortcut_bugs_short">⚠️ ബഗുകളോ പ്രശ്നങ്ങളോ ഉണ്ടോ?</string>
+    <string name="shortcut_bugs_long">ഇവിടെ ഞങ്ങളെ അറിയിക്കൂ!</string>
+    <string name="operation_channel_name">പശ്ചാത്തല ജോലികൾ</string>
+    <string name="operation_channel_description">സ്കാൻ പ്രോസസ്സ് ചെയ്യുമ്പോൾ കാണിക്കും, അതിനാൽ നിങ്ങൾ മറ്റ് ആപ്പിലേക്ക് മാറിയാലും ജോലി പൂർത്തിയാകും.</string>
+    <string name="operation_notification_working">നിങ്ങളുടെ ഡോക്യുമെന്റ് തയ്യാറാക്കുന്നു…</string>
+    <string name="crash_prompt_title">ScanPro അപ്രതീക്ഷിതമായി അടഞ്ഞു</string>
+    <string name="crash_prompt_body">കഴിഞ്ഞ തവണ ഒരു പിശക് കാരണം ആപ്പ് നിന്നുപോയി. റിപ്പോർട്ട് ഡെവലപ്പർമാരുമായി പങ്കിട്ടാൽ ഇത് പരിഹരിക്കാൻ സഹായിക്കും. റിപ്പോർട്ടിൽ പിശകിന്റെ വിവരങ്ങളും നിങ്ങളുടെ ഡിവൈസ് മോഡലും മാത്രമേ ഉള്ളൂ, ഡോക്യുമെന്റുകൾ ഇല്ല.</string>
+    <string name="crash_prompt_share">റിപ്പോർട്ട് പങ്കിടുക</string>
+    <string name="crash_prompt_dismiss">ഇപ്പോൾ വേണ്ട</string>
+    <string name="crash_share_subject">ScanPro ക്രാഷ് റിപ്പോർട്ട്</string>
+</resources>

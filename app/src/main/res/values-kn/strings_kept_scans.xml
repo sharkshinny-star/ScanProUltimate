@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kept_title">ಉಳಿಸದ ಸ್ಕ್ಯಾನ್‌ಗಳು</string>
+    <string name="kept_intro">ಈ ಸ್ಕ್ಯಾನ್‌ಗಳನ್ನು ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳಾಗಿ ಉಳಿಸಲು ಆಗಲಿಲ್ಲ. ನೀವು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು ಅವುಗಳ ಫೋಟೋಗಳನ್ನು 30 ದಿನ ಇಡಲಾಗುತ್ತದೆ.</string>
+    <string name="kept_item_title">%1$s ಸ್ಕ್ಯಾನ್</string>
+    <plurals name="kept_item_meta">
+        <item quantity="one">%1$d ಫೋಟೋ · %2$s</item>
+        <item quantity="other">%1$d ಫೋಟೋಗಳು · %2$s</item>
+    </plurals>
+    <string name="kept_item_expires">%1$s ವರೆಗೆ ಇಡಲಾಗುತ್ತದೆ</string>
+    <string name="kept_item_failure">ಕೊನೆಯ ದೋಷ: %1$s</string>
+    <string name="kept_retry">ಮತ್ತೆ ಉಳಿಸಿ</string>
+    <string name="kept_share_photos">ಫೋಟೋ ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="kept_share_title">ಸ್ಕ್ಯಾನ್ ಫೋಟೋಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="kept_discard">ತ್ಯಜಿಸಿ</string>
+    <string name="kept_cd_more_actions">ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು</string>
+    <string name="kept_discard_dialog_title">ಈ ಸ್ಕ್ಯಾನ್ ತ್ಯಜಿಸಬೇಕೇ?</string>
+    <plurals name="kept_discard_dialog_message">
+        <item quantity="one">ಇದರ %1$d ಫೋಟೋಗಳನ್ನು ಅಳಿಸಲಾಗುತ್ತದೆ. ಅವು ಬೇರೆಲ್ಲೂ ಉಳಿಸಿಲ್ಲ, ಹಾಗಾಗಿ ಇದನ್ನು ಹಿಂಪಡೆಯಲು ಆಗುವುದಿಲ್ಲ.</item>
+        <item quantity="other">ಇದರ %1$d ಫೋಟೋಗಳನ್ನು ಅಳಿಸಲಾಗುತ್ತದೆ. ಅವು ಬೇರೆಲ್ಲೂ ಉಳಿಸಿಲ್ಲ, ಹಾಗಾಗಿ ಇದನ್ನು ಹಿಂಪಡೆಯಲು ಆಗುವುದಿಲ್ಲ.</item>
+    </plurals>
+    <string name="kept_empty_title">ಉಳಿಸಲು ಏನೂ ಇಲ್ಲ</string>
+    <string name="kept_empty_body">ಎಲ್ಲಾ ಸ್ಕ್ಯಾನ್‌ಗಳನ್ನು ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳಾಗಿ ಉಳಿಸಲಾಗಿದೆ.</string>
+    <string name="kept_msg_saving_again">ಸ್ಕ್ಯಾನ್ ಮತ್ತೆ ಉಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="kept_msg_discarded">ಸ್ಕ್ಯಾನ್ ತ್ಯಜಿಸಲಾಗಿದೆ</string>
+    <plurals name="kept_banner_title">
+        <item quantity="one">%1$d ಸ್ಕ್ಯಾನ್ ಉಳಿಸಲಾಗಿಲ್ಲ</item>
+        <item quantity="other">%1$d ಸ್ಕ್ಯಾನ್‌ಗಳನ್ನು ಉಳಿಸಲಾಗಿಲ್ಲ</item>
+    </plurals>
+    <string name="kept_banner_body">ಫೋಟೋಗಳನ್ನು ಇಡಲಾಗಿದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+</resources>

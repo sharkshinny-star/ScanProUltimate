@@ -20,7 +20,9 @@ object AppLocale {
         "en" to "English",
         "hi" to "हिन्दी",
         "ta" to "தமிழ்",
-        "te" to "తెలుగు"
+        "te" to "తెలుగు",
+        "kn" to "ಕನ್ನಡ",
+        "ml" to "മലയാളം"
     )
 
     private const val PREFS = "app_locale"

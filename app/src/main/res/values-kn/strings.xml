@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ScanPro</string>
+    <string name="translate_module_title">ಅನುವಾದ</string>
+    <string name="shortcut_scan_short">ಈಗ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="shortcut_scan_long">ಡಾಕ್ಯುಮೆಂಟ್ ಈಗ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="shortcut_dont_remove_short">🥺 ನಮ್ಮ ಆ್ಯಪ್ ತೆಗೆಯಬೇಡಿ!</string>
+    <string name="shortcut_dont_remove_long">ನಮಗೆ ಇನ್ನೊಂದು ಅವಕಾಶ ಕೊಡಿ!</string>
+    <string name="shortcut_bugs_short">⚠️ ಬಗ್‌ಗಳು ಅಥವಾ ಸಮಸ್ಯೆಗಳಿವೆಯೇ?</string>
+    <string name="shortcut_bugs_long">ಇಲ್ಲಿ ನಮಗೆ ತಿಳಿಸಿ!</string>
+    <string name="operation_channel_name">ಹಿನ್ನೆಲೆ ಕೆಲಸಗಳು</string>
+    <string name="operation_channel_description">ಸ್ಕ್ಯಾನ್ ಪ್ರೊಸೆಸ್ ಆಗುತ್ತಿರುವಾಗ ತೋರಿಸಲಾಗುತ್ತದೆ, ಇದರಿಂದ ನೀವು ಬೇರೆ ಆ್ಯಪ್‌ಗೆ ಹೋದರೂ ಕೆಲಸ ಪೂರ್ಣಗೊಳ್ಳುತ್ತದೆ.</string>
+    <string name="operation_notification_working">ನಿಮ್ಮ ಡಾಕ್ಯುಮೆಂಟ್ ಮೇಲೆ ಕೆಲಸ ನಡೆಯುತ್ತಿದೆ…</string>
+    <string name="crash_prompt_title">ScanPro ಅನಿರೀಕ್ಷಿತವಾಗಿ ಮುಚ್ಚಿತು</string>
+    <string name="crash_prompt_body">ಕಳೆದ ಬಾರಿ ದೋಷದಿಂದಾಗಿ ಆ್ಯಪ್ ನಿಂತುಹೋಯಿತು. ವರದಿಯನ್ನು ಡೆವಲಪರ್‌ಗಳೊಂದಿಗೆ ಹಂಚಿಕೊಂಡರೆ ಅದನ್ನು ಸರಿಪಡಿಸಲು ಸಹಾಯವಾಗುತ್ತದೆ. ವರದಿಯಲ್ಲಿ ದೋಷದ ವಿವರಗಳು ಮತ್ತು ನಿಮ್ಮ ಸಾಧನದ ಮಾಡೆಲ್ ಮಾತ್ರ ಇರುತ್ತದೆ, ನಿಮ್ಮ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳಲ್ಲ.</string>
+    <string name="crash_prompt_share">ವರದಿ ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="crash_prompt_dismiss">ಈಗ ಬೇಡ</string>
+    <string name="crash_share_subject">ScanPro ಕ್ರ್ಯಾಶ್ ವರದಿ</string>
+</resources>

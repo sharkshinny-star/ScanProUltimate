@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="data_filter_original">ഒറിജിനൽ</string>
+    <string name="data_filter_auto">ഓട്ടോ ക്ലീൻ</string>
+    <string name="data_filter_color">മാജിക് കളർ</string>
+    <string name="data_filter_gray">ഗ്രേ</string>
+    <string name="data_filter_bw">ബ്ലാക്ക് &amp; വൈറ്റ്</string>
+    <string name="data_filter_whiteboard">വൈറ്റ്ബോർഡ്</string>
+    <string name="data_pdf_quality_high">ഉയർന്നത്</string>
+    <string name="data_pdf_quality_balanced">ബാലൻസ്ഡ്</string>
+    <string name="data_pdf_quality_small">ചെറുത്</string>
+    <string name="data_page_size_auto">ഓട്ടോ</string>
+    <string name="data_page_size_a4">A4</string>
+    <string name="data_page_size_letter">ലെറ്റർ</string>
+    <string name="data_page_size_legal">ലീഗൽ</string>
+    <string name="data_theme_light">ലൈറ്റ്</string>
+    <string name="data_theme_dark">ഡാർക്ക്</string>
+    <string name="data_theme_system">സിസ്റ്റം ഡിഫോൾട്ട്</string>
+    <string name="data_scan_mode_document">ഡോക്യുമെന്റ്</string>
+    <string name="data_scan_mode_receipt">രസീത്</string>
+    <string name="data_scan_mode_whiteboard">വൈറ്റ്ബോർഡ്</string>
+    <string name="data_scan_mode_id_card">ഐഡി കാർഡ്</string>
+    <string name="data_scan_mode_book">പുസ്തകം</string>
+    <string name="data_scan_mode_text">ടെക്സ്റ്റ് എടുക്കുക</string>
+    <string name="data_ocr_script_latin">ലാറ്റിൻ</string>
+    <string name="data_ocr_script_devanagari">ദേവനാഗരി</string>
+    <string name="data_ocr_script_chinese">ചൈനീസ്</string>
+    <string name="data_ocr_script_japanese">ജാപ്പനീസ്</string>
+    <string name="data_ocr_script_korean">കൊറിയൻ</string>
+    <string name="data_watermark_size_small">ചെറുത്</string>
+    <string name="data_watermark_size_medium">ഇടത്തരം</string>
+    <string name="data_watermark_size_large">വലുത്</string>
+    <string name="data_watermark_position_diagonal">ചരിഞ്ഞ്</string>
+    <string name="data_watermark_position_center">മധ്യത്തിൽ</string>
+    <string name="data_watermark_position_bottom">താഴെ</string>
+    <string name="data_kind_invoice">ഇൻവോയ്സ്</string>
+    <string name="data_kind_receipt">രസീത്</string>
+    <string name="data_kind_contract">കരാർ</string>
+    <string name="data_kind_identity">തിരിച്ചറിയൽ രേഖ</string>
+    <string name="data_kind_business_card">ബിസിനസ് കാർഡ്</string>
+    <string name="data_kind_letter">കത്ത്</string>
+    <string name="data_kind_notes">കുറിപ്പുകൾ</string>
+    <string name="data_kind_general">ഡോക്യുമെന്റ്</string>
+</resources>

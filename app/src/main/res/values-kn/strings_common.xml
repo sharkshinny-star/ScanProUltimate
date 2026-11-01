@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_cancel">ರದ್ದುಮಾಡಿ</string>
+    <string name="common_save">ಉಳಿಸಿ</string>
+    <string name="common_delete">ಅಳಿಸಿ</string>
+    <string name="common_done">ಮುಗಿದಿದೆ</string>
+    <string name="common_close">ಮುಚ್ಚಿ</string>
+    <string name="common_back">ಹಿಂದೆ</string>
+    <string name="common_share">ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="common_rename">ಹೆಸರು ಬದಲಿಸಿ</string>
+    <string name="common_retry">ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ</string>
+    <string name="common_continue">ಮುಂದುವರಿಸಿ</string>
+    <string name="common_apply">ಅನ್ವಯಿಸಿ</string>
+    <string name="common_reset">ರೀಸೆಟ್</string>
+    <string name="common_undo">ರದ್ದುಗೊಳಿಸಿ</string>
+    <string name="common_redo">ಮತ್ತೆ ಮಾಡಿ</string>
+    <string name="common_more">ಇನ್ನಷ್ಟು</string>
+    <string name="common_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="common_search">ಹುಡುಕಿ</string>
+    <string name="common_something_went_wrong">ಏನೋ ತಪ್ಪಾಗಿದೆ</string>
+    <string name="common_stopped">ನಿಲ್ಲಿಸಲಾಗಿದೆ</string>
+    <string name="common_stop">ನಿಲ್ಲಿಸಿ</string>
+    <string name="common_on">ಆನ್</string>
+    <string name="common_off">ಆಫ್</string>
+    <string name="language_picker_title">ನಿಮ್ಮ ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ</string>
+</resources>

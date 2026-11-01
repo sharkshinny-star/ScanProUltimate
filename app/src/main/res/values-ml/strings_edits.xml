@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="edits_msg_interrupted">
+        <item quantity="one">ScanPro അടഞ്ഞപ്പോൾ %1$d എഡിറ്റുകൾ മുടങ്ങി. ഡോക്യുമെന്റുകൾ പരിശോധിച്ച് ആവശ്യമെങ്കിൽ വീണ്ടും ചെയ്യുക.</item>
+        <item quantity="other">ScanPro അടഞ്ഞപ്പോൾ %1$d എഡിറ്റുകൾ മുടങ്ങി. ഡോക്യുമെന്റുകൾ പരിശോധിച്ച് ആവശ്യമെങ്കിൽ വീണ്ടും ചെയ്യുക.</item>
+    </plurals>
+    <string name="edits_msg_document_gone">ഡോക്യുമെന്റ് ഡിലീറ്റ് ചെയ്തതിനാൽ ഒരു എഡിറ്റ് ഒഴിവാക്കി.</string>
+</resources>

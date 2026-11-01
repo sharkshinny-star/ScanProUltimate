@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kept_title">സേവ് ചെയ്യാത്ത സ്കാനുകൾ</string>
+    <string name="kept_intro">ഈ സ്കാനുകൾ ഡോക്യുമെന്റുകളായി സേവ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കാൻ ഇവയുടെ ഫോട്ടോകൾ 30 ദിവസം സൂക്ഷിക്കും.</string>
+    <string name="kept_item_title">%1$s സ്കാൻ</string>
+    <plurals name="kept_item_meta">
+        <item quantity="one">%1$d ഫോട്ടോ · %2$s</item>
+        <item quantity="other">%1$d ഫോട്ടോകൾ · %2$s</item>
+    </plurals>
+    <string name="kept_item_expires">%1$s വരെ സൂക്ഷിക്കും</string>
+    <string name="kept_item_failure">അവസാന പിശക്: %1$s</string>
+    <string name="kept_retry">വീണ്ടും സേവ് ചെയ്യുക</string>
+    <string name="kept_share_photos">ഫോട്ടോകൾ പങ്കിടുക</string>
+    <string name="kept_share_title">സ്കാൻ ഫോട്ടോകൾ പങ്കിടുക</string>
+    <string name="kept_discard">ഉപേക്ഷിക്കുക</string>
+    <string name="kept_cd_more_actions">കൂടുതൽ ഓപ്ഷനുകൾ</string>
+    <string name="kept_discard_dialog_title">ഈ സ്കാൻ ഉപേക്ഷിക്കണോ?</string>
+    <plurals name="kept_discard_dialog_message">
+        <item quantity="one">ഇതിന്റെ %1$d ഫോട്ടോകൾ ഡിലീറ്റ് ചെയ്യും. ഇവ മറ്റെവിടെയും സേവ് ചെയ്തിട്ടില്ല, അതിനാൽ പഴയപടിയാക്കാനാവില്ല.</item>
+        <item quantity="other">ഇതിന്റെ %1$d ഫോട്ടോകൾ ഡിലീറ്റ് ചെയ്യും. ഇവ മറ്റെവിടെയും സേവ് ചെയ്തിട്ടില്ല, അതിനാൽ പഴയപടിയാക്കാനാവില്ല.</item>
+    </plurals>
+    <string name="kept_empty_title">സേവ് ചെയ്യാൻ ഒന്നുമില്ല</string>
+    <string name="kept_empty_body">എല്ലാ സ്കാനുകളും ഡോക്യുമെന്റുകളായി സേവ് ചെയ്തു.</string>
+    <string name="kept_msg_saving_again">സ്കാൻ വീണ്ടും സേവ് ചെയ്യുന്നു…</string>
+    <string name="kept_msg_discarded">സ്കാൻ ഉപേക്ഷിച്ചു</string>
+    <plurals name="kept_banner_title">
+        <item quantity="one">%1$d സ്കാൻ സേവ് ചെയ്തില്ല</item>
+        <item quantity="other">%1$d സ്കാനുകൾ സേവ് ചെയ്തില്ല</item>
+    </plurals>
+    <string name="kept_banner_body">ഫോട്ടോകൾ സൂക്ഷിച്ചിട്ടുണ്ട്. വീണ്ടും ശ്രമിക്കാൻ ടാപ്പ് ചെയ്യുക.</string>
+</resources>

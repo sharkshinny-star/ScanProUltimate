@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notify_channel_results">പൂർത്തിയായ ജോലികൾ</string>
+    <string name="notify_channel_results_description">നിങ്ങൾ മറ്റൊരു ആപ്പിലായിരിക്കുമ്പോൾ ഒരു സ്കാൻ, എക്സ്പോർട്ട് അല്ലെങ്കിൽ PDF ടൂൾ പൂർത്തിയായി</string>
+    <string name="notify_channel_failures">പരാജയപ്പെട്ട ജോലികൾ</string>
+    <string name="notify_channel_failures_description">നിങ്ങൾ മറ്റൊരു ആപ്പിലായിരിക്കുമ്പോൾ ഒരു സ്കാൻ, എക്സ്പോർട്ട് അല്ലെങ്കിൽ PDF ടൂൾ പൂർത്തിയാക്കാനായില്ല</string>
+    <string name="notify_channel_reminders">ഓർമ്മപ്പെടുത്തലുകൾ</string>
+    <string name="notify_channel_reminders_description">ക്രമീകരണങ്ങളിൽ നിങ്ങൾ ഓണാക്കിയ റീസൈക്കിൾ ബിൻ, ബാക്കപ്പ് ഓർമ്മപ്പെടുത്തലുകൾ</string>
+    <string name="notify_finished_title">പൂർത്തിയായി</string>
+    <string name="notify_failed_title">പൂർത്തിയാക്കാനായില്ല</string>
+    <string name="notify_scan_saved">നിങ്ങളുടെ സ്കാൻ സേവ് ചെയ്തു. തുറക്കാൻ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="notify_scan_failed">നിങ്ങളുടെ സ്കാൻ ഇതുവരെ സേവ് ചെയ്തിട്ടില്ല. വീണ്ടും ശ്രമിക്കാൻ ScanPro തുറക്കുക; ഫോട്ടോകൾ സൂക്ഷിച്ചിട്ടുണ്ട്.</string>
+    <string name="notify_open_to_see">വിശദാംശങ്ങൾ കാണാൻ ScanPro തുറക്കുക</string>
+    <string name="notify_public_text">വിശദാംശങ്ങൾക്ക് ScanPro തുറക്കുക</string>
+    <string name="notify_trash_title">റീസൈക്കിൾ ബിൻ</string>
+    <plurals name="notify_trash_body">
+        <item quantity="one">%1$d ഡോക്യുമെന്റ് ഒരു ദിവസത്തിനുള്ളിൽ എന്നേക്കുമായി ഡിലീറ്റ് ആകും</item>
+        <item quantity="other">%1$d ഡോക്യുമെന്റുകൾ ഒരു ദിവസത്തിനുള്ളിൽ എന്നേക്കുമായി ഡിലീറ്റ് ആകും</item>
+    </plurals>
+    <string name="notify_backup_title">ബാക്കപ്പ് എടുക്കാൻ സമയമായി</string>
+    <string name="notify_backup_body">ഒരു മാസമായി നിങ്ങൾ ഡോക്യുമെന്റുകളുടെ ബാക്കപ്പ് എടുത്തിട്ടില്ല</string>
+    <string name="settings_section_notifications">അറിയിപ്പുകൾ</string>
+    <string name="settings_notifications_off_title">അറിയിപ്പുകൾ ഓഫാണ്</string>
+    <string name="settings_notifications_off_body">ഒരു ജോലി പൂർത്തിയാകുമ്പോൾ ScanPro-യ്ക്ക് അറിയിക്കാൻ, അനുവദിക്കാൻ ടാപ്പ് ചെയ്യുക</string>
+    <string name="settings_notify_finished_title">പൂർത്തിയായ ജോലികൾ</string>
+    <string name="settings_notify_finished_body">നിങ്ങൾ മറ്റൊരു ആപ്പിലായിരിക്കുമ്പോൾ ഒരു സ്കാൻ, എക്സ്പോർട്ട് അല്ലെങ്കിൽ PDF ടൂൾ പൂർത്തിയാകുമ്പോൾ</string>
+    <string name="settings_notify_failures_title">പരാജയപ്പെട്ട ജോലികൾ</string>
+    <string name="settings_notify_failures_body">നിങ്ങൾ മറ്റൊരു ആപ്പിലായിരിക്കുമ്പോൾ ഒരു ജോലി പൂർത്തിയാക്കാനാകാതെ വരുമ്പോൾ</string>
+    <string name="settings_notify_trash_title">റീസൈക്കിൾ ബിൻ ഓർമ്മപ്പെടുത്തൽ</string>
+    <string name="settings_notify_trash_body">ഡിലീറ്റ് ചെയ്ത ഡോക്യുമെന്റുകൾ എന്നേക്കുമായി നീക്കം ചെയ്യുന്നതിന്റെ തലേന്ന്</string>
+    <string name="settings_notify_backup_title">ബാക്കപ്പ് ഓർമ്മപ്പെടുത്തൽ</string>
+    <string name="settings_notify_backup_body">ഒരു മാസമായി ബാക്കപ്പ് എടുത്തിട്ടില്ലെങ്കിൽ</string>
+    <string name="settings_notifications_system_title">സിസ്റ്റം അറിയിപ്പ് ക്രമീകരണങ്ങൾ</string>
+    <string name="settings_notifications_system_body">ശബ്ദങ്ങൾ, ലോക്ക് സ്ക്രീൻ എന്നിവയും മറ്റും, ഓരോ തരം അറിയിപ്പിനും</string>
+</resources>

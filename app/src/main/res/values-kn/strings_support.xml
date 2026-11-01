@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="support_subject_feedback">ScanPro ಪ್ರತಿಕ್ರಿಯೆ</string>
+    <string name="support_subject_issue">ScanPro ಸಮಸ್ಯೆ ವರದಿ</string>
+    <string name="support_subject_feature">ScanPro ಫೀಚರ್ ಸಲಹೆ</string>
+    <string name="support_prompt_feedback">ಯಾವುದು ಚೆನ್ನಾಗಿ ಕೆಲಸ ಮಾಡುತ್ತಿದೆ, ಯಾವುದು ಇಲ್ಲ?</string>
+    <string name="support_prompt_issue">ಏನಾಯಿತು, ಮತ್ತು ನೀವು ಏನನ್ನು ನಿರೀಕ್ಷಿಸಿದ್ದಿರಿ?\nಮತ್ತೆ ಹಾಗೆ ಆಗುವ ಹಂತಗಳು:\n1.\n2.\n3.</string>
+    <string name="support_prompt_feature">ScanPro ಏನು ಮಾಡಬೇಕೆಂದು ನೀವು ಬಯಸುತ್ತೀರಿ?</string>
+    <string name="support_to_line">ಗೆ: %1$s</string>
+    <string name="support_subject_line">ವಿಷಯ: %1$s</string>
+    <string name="support_delivery_email">ವಿವರಗಳು ತುಂಬಿದ ನಿಮ್ಮ ಇಮೇಲ್ ಆ್ಯಪ್ ತೆರೆಯಿತು</string>
+    <string name="support_delivery_share">ಯಾವುದೇ ಇಮೇಲ್ ಆ್ಯಪ್ ಸಿಗಲಿಲ್ಲ; ಸಂದೇಶ ಕಳುಹಿಸಲು ಒಂದು ಆ್ಯಪ್ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="support_delivery_clipboard">ಸಂದೇಶವನ್ನು ಕಾಪಿ ಮಾಡಲಾಗಿದೆ; %1$s ಗೆ ಯಾವುದೇ ಇಮೇಲ್‌ನಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ</string>
+    <string name="export_id_copy_footer">ScanPro Studio ರಚಿಸಿದ ID ಪ್ರತಿ</string>
+    <string name="export_err_page_unreadable">ಪುಟ %1$d ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="export_err_id_copy_no_pages">ID ಪ್ರತಿಗೆ ಕನಿಷ್ಠ ಒಂದು ಪುಟ ಬೇಕು</string>
+    <string name="export_err_no_pages">ಡಾಕ್ಯುಮೆಂಟ್‌ನಲ್ಲಿ ಪುಟಗಳಿಲ್ಲ</string>
+    <string name="export_err_pages_undecodable">ಪುಟಗಳನ್ನು ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="export_err_too_long">ಒಂದೇ ಚಿತ್ರಕ್ಕೆ ಡಾಕ್ಯುಮೆಂಟ್ ತುಂಬಾ ಉದ್ದವಿದೆ. ಕಡಿಮೆ ಪುಟಗಳನ್ನು ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಿ.</string>
+    <string name="export_err_nothing">ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಲು ಏನೂ ಇಲ್ಲ</string>
+    <string name="export_err_long_image_encode">ಉದ್ದ ಚಿತ್ರವನ್ನು ಉಳಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="assistant_ask_specific">ಗುರುತಿಸಿದ ಪಠ್ಯದ ಬಗ್ಗೆ ಒಂದು ನಿರ್ದಿಷ್ಟ ಪ್ರಶ್ನೆ ಕೇಳಿ.</string>
+    <string name="assistant_no_match">ಪಠ್ಯದಲ್ಲಿ ಹೊಂದುವ ಭಾಗ ನನಗೆ ಸಿಗಲಿಲ್ಲ.</string>
+    <string name="print_err_failed">PDF ಪ್ರಿಂಟ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="backup_warning_unredacted_document">ಈ ಡಾಕ್ಯುಮೆಂಟ್‌ನಲ್ಲಿ ಮರೆಮಾಡಿದ ಅಥವಾ ಅಳಿಸಿದ ಭಾಗಗಳಿವೆ. ಬ್ಯಾಕಪ್‌ನಲ್ಲಿ ಮೂಲ ಫೋಟೋಗಳು ಇರುತ್ತವೆ, ಹಾಗಾಗಿ ಬ್ಯಾಕಪ್ ಮತ್ತು ಅದರ ಪಾಸ್‌ವರ್ಡ್ ಇರುವ ಯಾರಾದರೂ ಮರೆಮಾಡಿದ್ದನ್ನು ನೋಡಬಹುದು. ಮರೆಮಾಡಿದ ಪ್ರತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಲು, ಬದಲಿಗೆ PDF ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಿ.</string>
+    <string name="backup_warning_unredacted_all">ಬ್ಯಾಕಪ್‌ಗಳಲ್ಲಿ ಪ್ರತಿ ಪುಟದ ಮೂಲ ಫೋಟೋ ಇರುತ್ತದೆ, ನೀವು ಮರೆಮಾಡಿದ ಅಥವಾ ಅಳಿಸಿದ ಭಾಗಗಳೂ ಸೇರಿ. ಬ್ಯಾಕಪ್ ಮತ್ತು ಅದರ ಪಾಸ್‌ವರ್ಡ್ ಇರುವ ಯಾರಾದರೂ ಮರೆಮಾಡಿದ್ದನ್ನು ನೋಡಬಹುದು. ಮರೆಮಾಡಿದ ಪ್ರತಿಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಲು, ಬದಲಿಗೆ PDF ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಿ.</string>
+    <string name="rate_title">ScanPro ನಿಮಗೆ ಹೇಗೆ ಅನಿಸುತ್ತಿದೆ?</string>
+    <string name="rate_body">ನಿಮ್ಮ ರೇಟಿಂಗ್ ಪ್ರತಿ ಸ್ಕ್ಯಾನ್ ಅನ್ನು ಉತ್ತಮಗೊಳಿಸಲು ನಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತದೆ.</string>
+    <string name="rate_tap_a_star">ಒಂದು ಸ್ಟಾರ್ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="rate_label_1">ಕಳಪೆ</string>
+    <string name="rate_label_2">ಪರವಾಗಿಲ್ಲ</string>
+    <string name="rate_label_3">ಚೆನ್ನಾಗಿದೆ</string>
+    <string name="rate_label_4">ತುಂಬಾ ಚೆನ್ನಾಗಿದೆ</string>
+    <string name="rate_label_5">ಅದ್ಭುತ!</string>
+    <string name="rate_title_1">ನಿಮ್ಮನ್ನು ನಿರಾಶೆಗೊಳಿಸಿದ್ದಕ್ಕೆ ಕ್ಷಮಿಸಿ</string>
+    <string name="rate_body_1">ಏನು ತಪ್ಪಾಯಿತು ಎಂದು ತಿಳಿಸಿ, ನಾವು ಸರಿಪಡಿಸುತ್ತೇವೆ.</string>
+    <string name="rate_title_2">ನಾವು ಇನ್ನೂ ಉತ್ತಮವಾಗಿ ಮಾಡಬಹುದು</string>
+    <string name="rate_body_2">ಏನು ಸರಿಪಡಿಸಬೇಕೆಂದು ತಿಳಿಸಿ.</string>
+    <string name="rate_title_3">ಪ್ರತಿಕ್ರಿಯೆಗೆ ಧನ್ಯವಾದಗಳು</string>
+    <string name="rate_body_3">ಏನನ್ನು ಸುಧಾರಿಸಬೇಕೆಂದು ಒಂದು ಸಾಲು ಬರೆದರೂ ತುಂಬಾ ಸಹಾಯವಾಗುತ್ತದೆ.</string>
+    <string name="rate_title_4">ನಿಮಗೆ ಇಷ್ಟವಾಗಿದ್ದಕ್ಕೆ ಖುಷಿ!</string>
+    <string name="rate_body_4">ಒಂದು ಚಿಕ್ಕ ರಿವ್ಯೂ ಇತರರಿಗೆ ScanPro ಹುಡುಕಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ.</string>
+    <string name="rate_title_5">ನೀವು ನಮ್ಮ ದಿನ ಸುಂದರಗೊಳಿಸಿದಿರಿ!</string>
+    <string name="rate_body_5">ಒಂದು ಚಿಕ್ಕ ರಿವ್ಯೂ ಮೂಲಕ ಪ್ರೀತಿ ಹಂಚಿಕೊಳ್ಳಿ.</string>
+    <string name="rate_not_now">ಈಗ ಬೇಡ</string>
+    <string name="rate_on_google_play">Google Play ನಲ್ಲಿ ರೇಟ್ ಮಾಡಿ</string>
+    <string name="rate_send_feedback">ಪ್ರತಿಕ್ರಿಯೆ ಕಳುಹಿಸಿ</string>
+    <string name="rate_stars_content_description">ರೇಟಿಂಗ್, ಒಂದರಿಂದ ಐದು ಸ್ಟಾರ್</string>
+    <plurals name="rate_star">
+        <item quantity="one">%1$d ಸ್ಟಾರ್</item>
+        <item quantity="other">%1$d ಸ್ಟಾರ್‌ಗಳು</item>
+    </plurals>
+</resources>

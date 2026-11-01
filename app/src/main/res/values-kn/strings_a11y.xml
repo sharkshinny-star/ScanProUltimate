@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favorite_on">ಮೆಚ್ಚಿನವುಗಳಲ್ಲಿದೆ</string>
+    <string name="a11y_favorite_off">ಮೆಚ್ಚಿನವುಗಳಲ್ಲಿಲ್ಲ</string>
+    <string name="a11y_page_preview">ಪುಟದ ಪ್ರಿವ್ಯೂ</string>
+    <string name="a11y_signature_pad">ಸಹಿ ಪ್ಯಾಡ್</string>
+    <string name="a11y_move_up">ಮೇಲೆ ಸರಿಸಿ</string>
+    <string name="a11y_move_down">ಕೆಳಗೆ ಸರಿಸಿ</string>
+</resources>

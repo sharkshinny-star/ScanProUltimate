@@ -6,4 +6,6 @@
     <locale android:name="hi" />
     <locale android:name="ta" />
     <locale android:name="te" />
+    <locale android:name="kn" />
+    <locale android:name="ml" />
 </locale-config>

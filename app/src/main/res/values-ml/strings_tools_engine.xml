@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_progress_merging">%2$d-ൽ %1$d-ാമത്തെ ഫയൽ ലയിപ്പിക്കുന്നു…</string>
+    <string name="tools_progress_saving_merged">ലയിപ്പിച്ച PDF സേവ് ചെയ്യുന്നു…</string>
+    <string name="tools_progress_splitting_page">%2$d-ൽ %1$d-ാമത്തെ പേജ് വിഭജിക്കുന്നു…</string>
+    <string name="tools_progress_splitting_chunk">ഭാഗം %1$d വിഭജിക്കുന്നു…</string>
+    <string name="tools_progress_extracting_range">%2$d-ൽ %1$d-ാമത്തെ റേഞ്ച് എടുക്കുന്നു…</string>
+    <string name="tools_progress_extracting_page">%2$d-ൽ %1$d-ാമത്തെ പേജ് എടുക്കുന്നു…</string>
+    <string name="tools_progress_rotating">%2$d-ൽ %1$d-ാമത്തെ പേജ് തിരിക്കുന്നു…</string>
+    <string name="tools_progress_processing_page">%2$d-ൽ %1$d-ാമത്തെ പേജ് പ്രോസസ്സ് ചെയ്യുന്നു…</string>
+    <string name="tools_progress_loading_image">%2$d-ൽ %1$d-ാമത്തെ ചിത്രം ലോഡ് ചെയ്യുന്നു…</string>
+    <string name="tools_progress_creating_pdf">PDF ഡോക്യുമെന്റ് ഉണ്ടാക്കുന്നു…</string>
+    <string name="tools_progress_exporting_page">പേജ് %1$d, %2$s ആയി എക്സ്പോർട്ട് ചെയ്യുന്നു…</string>
+    <plurals name="tools_result_merged">
+        <item quantity="one">%1$d PDF-കൾ ലയിപ്പിച്ചു (ആകെ %2$d പേജ്)</item>
+        <item quantity="other">%1$d PDF-കൾ ലയിപ്പിച്ചു (ആകെ %2$d പേജുകൾ)</item>
+    </plurals>
+    <plurals name="tools_result_extracted">
+        <item quantity="one">%1$d പേജ് എടുത്തു</item>
+        <item quantity="other">%1$d പേജുകൾ എടുത്തു</item>
+    </plurals>
+    <string name="tools_result_rotated">പേജുകൾ തിരിച്ചു</string>
+    <plurals name="tools_result_organized">
+        <item quantity="one">%1$d പേജ് ക്രമം മാറ്റി സേവ് ചെയ്തു</item>
+        <item quantity="other">%1$d പേജുകൾ ക്രമം മാറ്റി സേവ് ചെയ്തു</item>
+    </plurals>
+    <plurals name="tools_result_images_to_pdf">
+        <item quantity="one">%1$d പേജുള്ള PDF ഉണ്ടാക്കി</item>
+        <item quantity="other">%1$d പേജുകളുള്ള PDF ഉണ്ടാക്കി</item>
+    </plurals>
+    <string name="tools_result_protected">PDF പാസ്‌വേഡ് ഉപയോഗിച്ച് സംരക്ഷിച്ചു</string>
+    <string name="tools_result_password_removed">പാസ്‌വേഡ് നീക്കം ചെയ്തു; ഈ കോപ്പി പാസ്‌വേഡ് ഇല്ലാതെ തുറക്കും</string>
+    <string name="tools_result_restrictions_removed">എഡിറ്റിംഗ്, കോപ്പി നിയന്ത്രണങ്ങൾ നീക്കം ചെയ്തു; ഈ ഫയൽ തുറക്കാൻ ഒരിക്കലും പാസ്‌വേഡ് വേണ്ടിയിരുന്നില്ല</string>
+    <string name="tools_err_merge_two">ലയിപ്പിക്കാൻ കുറഞ്ഞത് 2 PDF ഫയലുകൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="tools_err_file_reason">ഫയൽ %1$d: %2$s</string>
+    <string name="tools_err_file_unreadable">ഫയൽ %1$d PDF ആയി വായിക്കാനായില്ല (കേടായതോ പാസ്‌വേഡ് ഉള്ളതോ ആകാം)</string>
+    <string name="tools_err_merge_no_pages">തിരഞ്ഞെടുത്ത PDF-കളിൽ പേജുകളൊന്നുമില്ല</string>
+    <string name="tools_err_no_pages">PDF-ൽ പേജുകളൊന്നുമില്ല</string>
+    <string name="tools_err_no_ranges">സാധുവായ പേജ് റേഞ്ചുകളൊന്നും നൽകിയിട്ടില്ല</string>
+    <string name="tools_err_extract_none">എടുക്കാൻ കുറഞ്ഞത് ഒരു പേജ് തിരഞ്ഞെടുക്കുക</string>
+    <string name="tools_err_keep_one_page">PDF-ൽ കുറഞ്ഞത് ഒരു പേജെങ്കിലും വേണം</string>
+    <string name="tools_err_no_images">കുറഞ്ഞത് ഒരു ചിത്രമെങ്കിലും തിരഞ്ഞെടുക്കുക</string>
+    <string name="tools_err_image_unreadable">%1$d-ാം സ്ഥാനത്തെ ചിത്രം വായിക്കാനായില്ല</string>
+    <string name="tools_err_image_undecodable">ചിത്രം %1$d ഡീകോഡ് ചെയ്യാനായില്ല</string>
+    <string name="tools_err_pages_missing">തിരഞ്ഞെടുത്ത പേജുകളൊന്നും ഈ PDF-ൽ ഇല്ല</string>
+    <string name="tools_err_already_protected">ഈ PDF തുറക്കാൻ ഇതിനകം പാസ്‌വേഡ് വേണം. ആദ്യം അൺലോക്ക് ചെയ്ത്, പിന്നെ പുതിയ പാസ്‌വേഡ് ഉപയോഗിച്ച് സംരക്ഷിക്കുക.</string>
+    <string name="tools_err_password_protected">ഈ PDF പാസ്‌വേഡ് ഉപയോഗിച്ച് സംരക്ഷിച്ചതാണ്. ആദ്യം PDF അൺലോക്ക് ടൂൾ ഉപയോഗിച്ച് അൺലോക്ക് ചെയ്യുക.</string>
+    <string name="tools_err_unreadable_location">തിരഞ്ഞെടുത്ത സ്ഥലത്തുനിന്ന് PDF വായിക്കാനായില്ല</string>
+    <string name="tools_err_invalid_ranges">പേജ് റേഞ്ചുകൾ തെറ്റാണ്</string>
+</resources>

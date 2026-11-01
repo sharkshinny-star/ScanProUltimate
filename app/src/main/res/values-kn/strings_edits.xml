@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="edits_msg_interrupted">
+        <item quantity="one">ScanPro ಮುಚ್ಚಿದಾಗ %1$d ಎಡಿಟ್‌ಗಳು ಅಡ್ಡಿಯಾದವು. ನಿಮ್ಮ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ, ಬೇಕಿದ್ದರೆ ಮತ್ತೆ ಮಾಡಿ.</item>
+        <item quantity="other">ScanPro ಮುಚ್ಚಿದಾಗ %1$d ಎಡಿಟ್‌ಗಳು ಅಡ್ಡಿಯಾದವು. ನಿಮ್ಮ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ, ಬೇಕಿದ್ದರೆ ಮತ್ತೆ ಮಾಡಿ.</item>
+    </plurals>
+    <string name="edits_msg_document_gone">ಡಾಕ್ಯುಮೆಂಟ್ ಅಳಿಸಲಾಗಿದ್ದರಿಂದ ಒಂದು ಎಡಿಟ್ ಬಿಟ್ಟುಬಿಡಲಾಯಿತು.</string>
+</resources>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="data_filter_original">ಮೂಲ</string>
+    <string name="data_filter_auto">ಆಟೋ ಕ್ಲೀನ್</string>
+    <string name="data_filter_color">ಮ್ಯಾಜಿಕ್ ಬಣ್ಣ</string>
+    <string name="data_filter_gray">ಬೂದು</string>
+    <string name="data_filter_bw">ಕಪ್ಪು&amp;ಬಿಳುಪು</string>
+    <string name="data_filter_whiteboard">ವೈಟ್‌ಬೋರ್ಡ್</string>
+    <string name="data_pdf_quality_high">ಹೆಚ್ಚು</string>
+    <string name="data_pdf_quality_balanced">ಸಮತೋಲನ</string>
+    <string name="data_pdf_quality_small">ಚಿಕ್ಕದು</string>
+    <string name="data_page_size_auto">ಆಟೋ</string>
+    <string name="data_page_size_a4">A4</string>
+    <string name="data_page_size_letter">ಲೆಟರ್</string>
+    <string name="data_page_size_legal">ಲೀಗಲ್</string>
+    <string name="data_theme_light">ಲೈಟ್</string>
+    <string name="data_theme_dark">ಡಾರ್ಕ್</string>
+    <string name="data_theme_system">ಸಿಸ್ಟಂ ಡೀಫಾಲ್ಟ್</string>
+    <string name="data_scan_mode_document">ಡಾಕ್ಯುಮೆಂಟ್</string>
+    <string name="data_scan_mode_receipt">ರಸೀದಿ</string>
+    <string name="data_scan_mode_whiteboard">ವೈಟ್‌ಬೋರ್ಡ್</string>
+    <string name="data_scan_mode_id_card">ID ಕಾರ್ಡ್</string>
+    <string name="data_scan_mode_book">ಪುಸ್ತಕ</string>
+    <string name="data_scan_mode_text">ಪಠ್ಯ ತೆಗೆಯಿರಿ</string>
+    <string name="data_ocr_script_latin">ಲ್ಯಾಟಿನ್</string>
+    <string name="data_ocr_script_devanagari">ದೇವನಾಗರಿ</string>
+    <string name="data_ocr_script_chinese">ಚೈನೀಸ್</string>
+    <string name="data_ocr_script_japanese">ಜಪಾನೀಸ್</string>
+    <string name="data_ocr_script_korean">ಕೊರಿಯನ್</string>
+    <string name="data_watermark_size_small">ಚಿಕ್ಕದು</string>
+    <string name="data_watermark_size_medium">ಮಧ್ಯಮ</string>
+    <string name="data_watermark_size_large">ದೊಡ್ಡದು</string>
+    <string name="data_watermark_position_diagonal">ಕರ್ಣೀಯ</string>
+    <string name="data_watermark_position_center">ಮಧ್ಯ</string>
+    <string name="data_watermark_position_bottom">ಕೆಳಗೆ</string>
+    <string name="data_kind_invoice">ಇನ್‌ವಾಯ್ಸ್</string>
+    <string name="data_kind_receipt">ರಸೀದಿ</string>
+    <string name="data_kind_contract">ಒಪ್ಪಂದ</string>
+    <string name="data_kind_identity">ಗುರುತಿನ ದಾಖಲೆ</string>
+    <string name="data_kind_business_card">ಬಿಸಿನೆಸ್ ಕಾರ್ಡ್</string>
+    <string name="data_kind_letter">ಪತ್ರ</string>
+    <string name="data_kind_notes">ಟಿಪ್ಪಣಿಗಳು</string>
+    <string name="data_kind_general">ಡಾಕ್ಯುಮೆಂಟ್</string>
+</resources>

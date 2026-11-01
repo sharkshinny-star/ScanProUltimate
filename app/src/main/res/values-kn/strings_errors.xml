@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="err_page_not_found">ಈ ಪುಟ ಈಗ ಇಲ್ಲ</string>
+    <string name="err_document_not_found">ಈ ಡಾಕ್ಯುಮೆಂಟ್ ಈಗ ಇಲ್ಲ</string>
+    <string name="err_choose_different_document">ಬೇರೆ ಡಾಕ್ಯುಮೆಂಟ್ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="err_could_not_decode_page">ಪುಟದ ಚಿತ್ರ ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_page_too_narrow_to_split">ವಿಭಜಿಸಲು ಪುಟ ತುಂಬಾ ಕಿರಿದಾಗಿದೆ</string>
+    <plurals name="err_document_page_limit">
+        <item quantity="one">ಒಂದು ಡಾಕ್ಯುಮೆಂಟ್‌ನಲ್ಲಿ %1$d ಪುಟದವರೆಗೆ ಇರಬಹುದು</item>
+        <item quantity="other">ಒಂದು ಡಾಕ್ಯುಮೆಂಟ್‌ನಲ್ಲಿ %1$d ಪುಟಗಳವರೆಗೆ ಇರಬಹುದು</item>
+    </plurals>
+    <string name="err_page_could_not_be_read">ಪುಟ %1$d ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_no_scan_pages_returned">ಸ್ಕ್ಯಾನರ್ ಯಾವುದೇ ಪುಟ ನೀಡಲಿಲ್ಲ</string>
+    <string name="err_change_cannot_be_undone">ಈ ಬದಲಾವಣೆಯನ್ನು ಇನ್ನು ರದ್ದುಗೊಳಿಸಲು ಆಗುವುದಿಲ್ಲ</string>
+    <string name="err_could_not_open_selected_file">ಆಯ್ಕೆಮಾಡಿದ ಫೈಲ್ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_file_too_large_to_import">ಈ ಫೈಲ್ ಇಂಪೋರ್ಟ್ ಮಾಡಲು ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ (ಮಿತಿ %1$d MB)</string>
+    <string name="err_could_not_create_file_in_folder">ಆಯ್ಕೆಮಾಡಿದ ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಫೈಲ್ ರಚಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_could_not_write_to_folder">ಆಯ್ಕೆಮಾಡಿದ ಫೋಲ್ಡರ್‌ಗೆ ಬರೆಯಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_choose_at_least_one_image">ಕನಿಷ್ಠ ಒಂದು ಚಿತ್ರ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="err_pdf_page_count_range">PDF ನಲ್ಲಿ %1$d ರಿಂದ %2$d ಪುಟಗಳು ಇರಬೇಕು</string>
+    <string name="err_name_required">ಹೆಸರು ನಮೂದಿಸಿ</string>
+    <string name="err_folder_name_required">ಫೋಲ್ಡರ್ ಹೆಸರು ನಮೂದಿಸಿ</string>
+    <string name="err_new_folder_name_required">ಹೊಸ ಫೋಲ್ಡರ್ ಹೆಸರು ನಮೂದಿಸಿ</string>
+    <string name="err_erase_nothing_selected">ಅಳಿಸಬೇಕಾದ ಭಾಗದ ಮೇಲೆ ಬ್ರಷ್ ಮಾಡಿ</string>
+    <string name="err_watermark_blank">ವಾಟರ್‌ಮಾರ್ಕ್ ಪಠ್ಯ ನಮೂದಿಸಿ</string>
+    <string name="err_png_not_written">PNG ಚಿತ್ರ ಉಳಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_no_text_to_export">ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಲು ಗುರುತಿಸಿದ ಪಠ್ಯ ಇಲ್ಲ</string>
+    <string name="err_text_blank">ಸ್ವಲ್ಪ ಪಠ್ಯ ನಮೂದಿಸಿ</string>
+    <string name="err_document_has_no_pages">ಡಾಕ್ಯುಮೆಂಟ್‌ನಲ್ಲಿ ಪುಟಗಳಿಲ್ಲ</string>
+    <string name="err_could_not_save_pdf">PDF ಉಳಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_could_not_save_signature">ಸಹಿ ಉಳಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_could_not_save_image">%1$s ಚಿತ್ರ ಉಳಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_backup_password_too_short">ಕನಿಷ್ಠ 6 ಅಕ್ಷರಗಳ ಬ್ಯಾಕಪ್ ಪಾಸ್‌ವರ್ಡ್ ಬಳಸಿ</string>
+    <string name="err_could_not_open_backup">ಬ್ಯಾಕಪ್ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_could_not_decrypt_backup">ಬ್ಯಾಕಪ್ ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ. ಪಾಸ್‌ವರ್ಡ್ ಮತ್ತು ಫೈಲ್ ಪರಿಶೀಲಿಸಿ.</string>
+    <string name="err_backup_too_large">ಈ ಬ್ಯಾಕಪ್ ರಿಸ್ಟೋರ್ ಮಾಡಲು ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ</string>
+    <string name="err_could_not_decode_image">%1$s ಚಿತ್ರ ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_could_not_decode_source">ಪುಟದ ಮೂಲ ಚಿತ್ರ ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_could_not_open_input_pdf">PDF ತೆರೆಯಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_could_not_read_pdf_page">ಪುಟ %1$d ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_page_range_empty" tools:ignore="TypographyDashes">ಕನಿಷ್ಠ ಒಂದು ಪುಟ ಅಥವಾ ಶ್ರೇಣಿ ನಮೂದಿಸಿ, ಉದಾ. 1-3</string>
+    <string name="err_page_range_backwards" tools:ignore="TypographyDashes">\"%1$s\" ಹಿಮ್ಮುಖವಾಗಿದೆ; ಅದನ್ನು %2$d-%3$d ಎಂದು ಬರೆಯಿರಿ</string>
+    <string name="err_page_range_invalid" tools:ignore="TypographyDashes">\"%1$s\" ಪುಟ ಸಂಖ್ಯೆಯೂ ಅಲ್ಲ, 2-4 ರಂತಹ ಶ್ರೇಣಿಯೂ ಅಲ್ಲ</string>
+    <string name="err_page_range_starts_at_one">ಪುಟಗಳು 1 ರಿಂದ ಆರಂಭವಾಗುತ್ತವೆ</string>
+    <plurals name="err_page_range_past_end">
+        <item quantity="one">\"%2$s\" ಕೊನೆಯ ಪುಟ ದಾಟುತ್ತದೆ; ಈ PDF ನಲ್ಲಿ %1$d ಪುಟ ಇದೆ</item>
+        <item quantity="other">\"%2$s\" ಕೊನೆಯ ಪುಟ ದಾಟುತ್ತದೆ; ಈ PDF ನಲ್ಲಿ %1$d ಪುಟಗಳಿವೆ</item>
+    </plurals>
+    <string name="err_form_xfa_unsupported">ಈ ಫಾರ್ಮ್ XFA ಯಿಂದ ಮಾಡಲಾಗಿದೆ, ಅದಕ್ಕೆ ಬೆಂಬಲವಿಲ್ಲ. Adobe Acrobat ನಲ್ಲಿ ತೆರೆಯಲು ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="err_form_no_fields">ಈ PDF ನಲ್ಲಿ ತುಂಬಬಹುದಾದ ಫೀಲ್ಡ್‌ಗಳಿಲ್ಲ</string>
+    <string name="err_form_flatten_failed">ತುಂಬಿದ ಫಾರ್ಮ್ ಅನ್ನು ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ. ಬದಲಿಗೆ ಫ್ಲ್ಯಾಟನ್ ಮಾಡದೆ ಉಳಿಸಿ.</string>
+    <string name="err_pdf_has_no_pages">ಈ PDF ನಲ್ಲಿ ಪುಟಗಳಿಲ್ಲ</string>
+    <string name="err_could_not_read_pdf_location">ಆಯ್ಕೆಮಾಡಿದ ಸ್ಥಳದಿಂದ PDF ಓದಲು ಆಗಲಿಲ್ಲ</string>
+    <plurals name="err_pdf_password_too_short">
+        <item quantity="one">ಕನಿಷ್ಠ %1$d ಅಕ್ಷರದ ಪಾಸ್‌ವರ್ಡ್ ಬಳಸಿ</item>
+        <item quantity="other">ಕನಿಷ್ಠ %1$d ಅಕ್ಷರಗಳ ಪಾಸ್‌ವರ್ಡ್ ಬಳಸಿ</item>
+    </plurals>
+    <string name="err_could_not_protect_pdf">ಈ PDF ರಕ್ಷಿಸಲು ಆಗಲಿಲ್ಲ: %1$s</string>
+    <string name="err_could_not_protect_pdf_unsupported">ಈ PDF ರಕ್ಷಿಸಲು ಆಗಲಿಲ್ಲ: ಈ ಫೈಲ್‌ಗೆ ಬೆಂಬಲವಿಲ್ಲ</string>
+    <string name="err_translation_could_not_start">ಅನುವಾದ ಇನ್‌ಸ್ಟಾಲ್ ಆಗಿದೆ ಆದರೆ ಆರಂಭವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಆ್ಯಪ್ ಮರುಪ್ರಾರಂಭಿಸಿ.</string>
+    <string name="err_translation_download_cancelled">ಅನುವಾದ ಡೌನ್‌ಲೋಡ್ ರದ್ದಾಗಿದೆ</string>
+    <string name="err_translation_needs_confirmation">ಅನುವಾದ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲು Google Play ಗೆ ನಿಮ್ಮ ದೃಢೀಕರಣ ಬೇಕು. ದಯವಿಟ್ಟು Wi-Fi ನಲ್ಲಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="err_translation_network">ಅನುವಾದ ಡೌನ್‌ಲೋಡ್ ಆಗಲಿಲ್ಲ. ನಿಮ್ಮ ಕನೆಕ್ಷನ್ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="err_translation_storage">ಅನುವಾದ ಸೇರಿಸಲು ಸಾಕಷ್ಟು ಸ್ಟೋರೇಜ್ ಇಲ್ಲ.</string>
+    <string name="err_translation_play_unavailable">ಅನುವಾದವನ್ನು Google Play ಮೂಲಕ ಸೇರಿಸಲಾಗುತ್ತದೆ, ಅದು ಈ ಸಾಧನದಲ್ಲಿ ಅಥವಾ ಈ ಇನ್‌ಸ್ಟಾಲ್‌ಗೆ ಲಭ್ಯವಿಲ್ಲ.</string>
+    <string name="err_translation_access_denied">Google Play ಅನುವಾದ ಡೌನ್‌ಲೋಡ್‌ಗೆ ಅನುಮತಿಸಲಿಲ್ಲ.</string>
+    <string name="err_translation_busy">ಇನ್ನೊಂದು ಡೌನ್‌ಲೋಡ್ ನಡೆಯುತ್ತಿದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="err_translation_play_error">ಅನುವಾದ ಸೇರಿಸಲು ಆಗಲಿಲ್ಲ (Google Play ದೋಷ %1$d).</string>
+    <string name="err_translation_no_text">ಅನುವಾದಿಸಲು ಗುರುತಿಸಿದ ಪಠ್ಯ ಇಲ್ಲ</string>
+    <string name="err_translation_unknown_language">ಪಠ್ಯದ ಭಾಷೆ ಗುರುತಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="err_translation_language_unsupported">ಪತ್ತೆಯಾದ ಭಾಷೆಗೆ (%1$s) ಅನುವಾದ ಲಭ್ಯವಿಲ್ಲ</string>
+    <string name="err_translation_target_unsupported">ಈ ಭಾಷೆಗೆ ಅನುವಾದ ಲಭ್ಯವಿಲ್ಲ</string>
+</resources>

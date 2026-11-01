@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="err_page_not_found">ഈ പേജ് ഇപ്പോൾ നിലവിലില്ല</string>
+    <string name="err_document_not_found">ഈ ഡോക്യുമെന്റ് ഇപ്പോൾ നിലവിലില്ല</string>
+    <string name="err_choose_different_document">മറ്റൊരു ഡോക്യുമെന്റ് തിരഞ്ഞെടുക്കുക</string>
+    <string name="err_could_not_decode_page">പേജ് ചിത്രം വായിക്കാനായില്ല</string>
+    <string name="err_page_too_narrow_to_split">വിഭജിക്കാൻ പറ്റാത്തത്ര വീതി കുറഞ്ഞ പേജാണിത്</string>
+    <plurals name="err_document_page_limit">
+        <item quantity="one">ഒരു ഡോക്യുമെന്റിൽ പരമാവധി %1$d പേജ് വരെ ഉൾക്കൊള്ളാം</item>
+        <item quantity="other">ഒരു ഡോക്യുമെന്റിൽ പരമാവധി %1$d പേജുകൾ വരെ ഉൾക്കൊള്ളാം</item>
+    </plurals>
+    <string name="err_page_could_not_be_read">പേജ് %1$d വായിക്കാനായില്ല</string>
+    <string name="err_no_scan_pages_returned">സ്കാനർ പേജുകളൊന്നും നൽകിയില്ല</string>
+    <string name="err_change_cannot_be_undone">ഈ മാറ്റം ഇനി പഴയപടിയാക്കാനാവില്ല</string>
+    <string name="err_could_not_open_selected_file">തിരഞ്ഞെടുത്ത ഫയൽ തുറക്കാനായില്ല</string>
+    <string name="err_file_too_large_to_import">ഇംപോർട്ട് ചെയ്യാൻ ഈ ഫയൽ വളരെ വലുതാണ് (പരിധി %1$d MB)</string>
+    <string name="err_could_not_create_file_in_folder">തിരഞ്ഞെടുത്ത ഫോൾഡറിൽ ഫയൽ ഉണ്ടാക്കാനായില്ല</string>
+    <string name="err_could_not_write_to_folder">തിരഞ്ഞെടുത്ത ഫോൾഡറിലേക്ക് എഴുതാനായില്ല</string>
+    <string name="err_choose_at_least_one_image">കുറഞ്ഞത് ഒരു ചിത്രമെങ്കിലും തിരഞ്ഞെടുക്കുക</string>
+    <string name="err_pdf_page_count_range">PDF-ൽ %1$d മുതൽ %2$d വരെ പേജുകൾ വേണം</string>
+    <string name="err_name_required">ഒരു പേര് നൽകുക</string>
+    <string name="err_folder_name_required">ഫോൾഡറിന്റെ പേര് നൽകുക</string>
+    <string name="err_new_folder_name_required">ഫോൾഡറിന് പുതിയ പേര് നൽകുക</string>
+    <string name="err_erase_nothing_selected">മായ്ക്കേണ്ട ഭാഗത്ത് ബ്രഷ് ചെയ്യുക</string>
+    <string name="err_watermark_blank">വാട്ടർമാർക്ക് ടെക്സ്റ്റ് നൽകുക</string>
+    <string name="err_png_not_written">PNG ചിത്രം സേവ് ചെയ്യാനായില്ല</string>
+    <string name="err_no_text_to_export">എക്സ്പോർട്ട് ചെയ്യാൻ തിരിച്ചറിഞ്ഞ ടെക്സ്റ്റ് ഒന്നുമില്ല</string>
+    <string name="err_text_blank">കുറച്ച് ടെക്സ്റ്റ് നൽകുക</string>
+    <string name="err_document_has_no_pages">ഡോക്യുമെന്റിൽ പേജുകളൊന്നുമില്ല</string>
+    <string name="err_could_not_save_pdf">PDF സേവ് ചെയ്യാനായില്ല</string>
+    <string name="err_could_not_save_signature">ഒപ്പ് സേവ് ചെയ്യാനായില്ല</string>
+    <string name="err_could_not_save_image">%1$s എന്ന ചിത്രം സേവ് ചെയ്യാനായില്ല</string>
+    <string name="err_backup_password_too_short">കുറഞ്ഞത് 6 അക്ഷരങ്ങളുള്ള ബാക്കപ്പ് പാസ്‌വേഡ് ഉപയോഗിക്കുക</string>
+    <string name="err_could_not_open_backup">ബാക്കപ്പ് തുറക്കാനായില്ല</string>
+    <string name="err_could_not_decrypt_backup">ബാക്കപ്പ് ഡീക്രിപ്റ്റ് ചെയ്യാനായില്ല. പാസ്‌വേഡും ഫയലും പരിശോധിക്കുക.</string>
+    <string name="err_backup_too_large">റീസ്റ്റോർ ചെയ്യാൻ ഈ ബാക്കപ്പ് വളരെ വലുതാണ്</string>
+    <string name="err_could_not_decode_image">%1$s എന്ന ചിത്രം വായിക്കാനായില്ല</string>
+    <string name="err_could_not_decode_source">പേജിന്റെ ഒറിജിനൽ ചിത്രം വായിക്കാനായില്ല</string>
+    <string name="err_could_not_open_input_pdf">PDF തുറക്കാനായില്ല</string>
+    <string name="err_could_not_read_pdf_page">പേജ് %1$d വായിക്കാനായില്ല</string>
+    <string name="err_page_range_empty" tools:ignore="TypographyDashes">കുറഞ്ഞത് ഒരു പേജോ റേഞ്ചോ നൽകുക, ഉദാ. 1-3</string>
+    <string name="err_page_range_backwards" tools:ignore="TypographyDashes">\"%1$s\" തിരിച്ചാണ്; %2$d-%3$d എന്ന് എഴുതുക</string>
+    <string name="err_page_range_invalid" tools:ignore="TypographyDashes">\"%1$s\" ഒരു പേജ് നമ്പറോ 2-4 പോലുള്ള റേഞ്ചോ അല്ല</string>
+    <string name="err_page_range_starts_at_one">പേജുകൾ 1-ൽ ആരംഭിക്കുന്നു</string>
+    <plurals name="err_page_range_past_end">
+        <item quantity="one">\"%2$s\" അവസാന പേജിനപ്പുറം പോകുന്നു; ഈ PDF-ൽ %1$d പേജ് മാത്രമേയുള്ളൂ</item>
+        <item quantity="other">\"%2$s\" അവസാന പേജിനപ്പുറം പോകുന്നു; ഈ PDF-ൽ %1$d പേജുകൾ മാത്രമേയുള്ളൂ</item>
+    </plurals>
+    <string name="err_form_xfa_unsupported">ഈ ഫോം XFA ഉപയോഗിച്ച് നിർമ്മിച്ചതാണ്, അത് പിന്തുണയ്ക്കുന്നില്ല. Adobe Acrobat-ൽ തുറന്ന് നോക്കൂ.</string>
+    <string name="err_form_no_fields">ഈ PDF-ൽ പൂരിപ്പിക്കാവുന്ന ഫീൽഡുകളൊന്നുമില്ല</string>
+    <string name="err_form_flatten_failed">പൂരിപ്പിച്ച ഫോം ഫ്ലാറ്റൻ ചെയ്യാനായില്ല. പകരം ഫ്ലാറ്റൻ ചെയ്യാതെ സേവ് ചെയ്യുക.</string>
+    <string name="err_pdf_has_no_pages">ഈ PDF-ൽ പേജുകളൊന്നുമില്ല</string>
+    <string name="err_could_not_read_pdf_location">തിരഞ്ഞെടുത്ത സ്ഥലത്തുനിന്ന് PDF വായിക്കാനായില്ല</string>
+    <plurals name="err_pdf_password_too_short">
+        <item quantity="one">കുറഞ്ഞത് %1$d അക്ഷരമുള്ള പാസ്‌വേഡ് ഉപയോഗിക്കുക</item>
+        <item quantity="other">കുറഞ്ഞത് %1$d അക്ഷരങ്ങളുള്ള പാസ്‌വേഡ് ഉപയോഗിക്കുക</item>
+    </plurals>
+    <string name="err_could_not_protect_pdf">ഈ PDF സംരക്ഷിക്കാനായില്ല: %1$s</string>
+    <string name="err_could_not_protect_pdf_unsupported">ഈ PDF സംരക്ഷിക്കാനായില്ല: ഈ ഫയൽ പിന്തുണയ്ക്കുന്നില്ല</string>
+    <string name="err_translation_could_not_start">വിവർത്തനം ഇൻസ്റ്റാൾ ചെയ്തിട്ടുണ്ട്, പക്ഷേ തുടങ്ങാനായില്ല. ആപ്പ് റീസ്റ്റാർട്ട് ചെയ്യുക.</string>
+    <string name="err_translation_download_cancelled">വിവർത്തനം ഡൗൺലോഡ് റദ്ദാക്കി</string>
+    <string name="err_translation_needs_confirmation">വിവർത്തനം ഡൗൺലോഡ് ചെയ്യാൻ Google Play-ക്ക് നിങ്ങളുടെ സ്ഥിരീകരണം വേണം. Wi-Fi-ൽ വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="err_translation_network">വിവർത്തനം ഡൗൺലോഡ് ചെയ്യാനായില്ല. കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="err_translation_storage">വിവർത്തനം ചേർക്കാൻ ആവശ്യത്തിന് സ്റ്റോറേജ് ഇല്ല.</string>
+    <string name="err_translation_play_unavailable">വിവർത്തനം Google Play വഴിയാണ് ചേർക്കുന്നത്, അത് ഈ ഡിവൈസിലോ ഈ ഇൻസ്റ്റാളിലോ ലഭ്യമല്ല.</string>
+    <string name="err_translation_access_denied">വിവർത്തനം ഡൗൺലോഡ് ചെയ്യാൻ Google Play അനുവദിച്ചില്ല.</string>
+    <string name="err_translation_busy">മറ്റൊരു ഡൗൺലോഡ് നടക്കുന്നു. അൽപ്പസമയത്തിനു ശേഷം വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="err_translation_play_error">വിവർത്തനം ചേർക്കാനായില്ല (Google Play പിശക് %1$d).</string>
+    <string name="err_translation_no_text">വിവർത്തനം ചെയ്യാൻ തിരിച്ചറിഞ്ഞ ടെക്സ്റ്റ് ഒന്നുമില്ല</string>
+    <string name="err_translation_unknown_language">ടെക്സ്റ്റിന്റെ ഭാഷ തിരിച്ചറിയാനായില്ല</string>
+    <string name="err_translation_language_unsupported">കണ്ടെത്തിയ ഭാഷയ്ക്ക് (%1$s) വിവർത്തനം ലഭ്യമല്ല</string>
+    <string name="err_translation_target_unsupported">ഈ ഭാഷയിലേക്കുള്ള വിവർത്തനം ലഭ്യമല്ല</string>
+</resources>

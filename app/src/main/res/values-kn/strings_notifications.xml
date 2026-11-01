@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notify_channel_results">ಮುಗಿದ ಕೆಲಸಗಳು</string>
+    <string name="notify_channel_results_description">ನೀವು ಬೇರೆ ಆ್ಯಪ್‌ನಲ್ಲಿದ್ದಾಗ ಸ್ಕ್ಯಾನ್, ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಅಥವಾ PDF ಟೂಲ್ ಮುಗಿದಿದೆ</string>
+    <string name="notify_channel_failures">ವಿಫಲವಾದ ಕೆಲಸಗಳು</string>
+    <string name="notify_channel_failures_description">ನೀವು ಬೇರೆ ಆ್ಯಪ್‌ನಲ್ಲಿದ್ದಾಗ ಸ್ಕ್ಯಾನ್, ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಅಥವಾ PDF ಟೂಲ್ ಮುಗಿಯಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="notify_channel_reminders">ರಿಮೈಂಡರ್‌ಗಳು</string>
+    <string name="notify_channel_reminders_description">ನೀವು ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಆನ್ ಮಾಡಿದ ರೀಸೈಕಲ್ ಬಿನ್ ಮತ್ತು ಬ್ಯಾಕಪ್ ರಿಮೈಂಡರ್‌ಗಳು</string>
+    <string name="notify_finished_title">ಮುಗಿದಿದೆ</string>
+    <string name="notify_failed_title">ಮುಗಿಸಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="notify_scan_saved">ನಿಮ್ಮ ಸ್ಕ್ಯಾನ್ ಉಳಿಸಲಾಗಿದೆ. ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="notify_scan_failed">ನಿಮ್ಮ ಸ್ಕ್ಯಾನ್ ಇನ್ನೂ ಉಳಿಸಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು ScanPro ತೆರೆಯಿರಿ; ಫೋಟೋಗಳನ್ನು ಇಡಲಾಗಿದೆ.</string>
+    <string name="notify_open_to_see">ವಿವರಗಳನ್ನು ನೋಡಲು ScanPro ತೆರೆಯಿರಿ</string>
+    <string name="notify_public_text">ವಿವರಗಳಿಗಾಗಿ ScanPro ತೆರೆಯಿರಿ</string>
+    <string name="notify_trash_title">ರೀಸೈಕಲ್ ಬಿನ್</string>
+    <plurals name="notify_trash_body">
+        <item quantity="one">%1$d ಡಾಕ್ಯುಮೆಂಟ್ ಒಂದು ದಿನದೊಳಗೆ ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಲಾಗುತ್ತದೆ</item>
+        <item quantity="other">%1$d ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು ಒಂದು ದಿನದೊಳಗೆ ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಲಾಗುತ್ತವೆ</item>
+    </plurals>
+    <string name="notify_backup_title">ಬ್ಯಾಕಪ್ ಮಾಡುವ ಸಮಯ</string>
+    <string name="notify_backup_body">ಒಂದು ತಿಂಗಳಿಂದ ನಿಮ್ಮ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳ ಬ್ಯಾಕಪ್ ಮಾಡಿಲ್ಲ</string>
+    <string name="settings_section_notifications">ಅಧಿಸೂಚನೆಗಳು</string>
+    <string name="settings_notifications_off_title">ಅಧಿಸೂಚನೆಗಳು ಆಫ್ ಆಗಿವೆ</string>
+    <string name="settings_notifications_off_body">ಕೆಲಸ ಮುಗಿದಾಗ ScanPro ನಿಮಗೆ ತಿಳಿಸಲು, ಅನುಮತಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="settings_notify_finished_title">ಮುಗಿದ ಕೆಲಸಗಳು</string>
+    <string name="settings_notify_finished_body">ನೀವು ಬೇರೆ ಆ್ಯಪ್‌ನಲ್ಲಿದ್ದಾಗ ಸ್ಕ್ಯಾನ್, ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಅಥವಾ PDF ಟೂಲ್ ಮುಗಿದಾಗ</string>
+    <string name="settings_notify_failures_title">ವಿಫಲವಾದ ಕೆಲಸಗಳು</string>
+    <string name="settings_notify_failures_body">ನೀವು ಬೇರೆ ಆ್ಯಪ್‌ನಲ್ಲಿದ್ದಾಗ ಕೆಲಸ ಮುಗಿಯಲು ಆಗದಿದ್ದರೆ</string>
+    <string name="settings_notify_trash_title">ರೀಸೈಕಲ್ ಬಿನ್ ರಿಮೈಂಡರ್</string>
+    <string name="settings_notify_trash_body">ಅಳಿಸಿದ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು ಶಾಶ್ವತವಾಗಿ ತೆಗೆಯುವ ಹಿಂದಿನ ದಿನ</string>
+    <string name="settings_notify_backup_title">ಬ್ಯಾಕಪ್ ರಿಮೈಂಡರ್</string>
+    <string name="settings_notify_backup_body">ಒಂದು ತಿಂಗಳಿಂದ ನೀವು ಬ್ಯಾಕಪ್ ಮಾಡದಿದ್ದಾಗ</string>
+    <string name="settings_notifications_system_title">ಸಿಸ್ಟಂ ಅಧಿಸೂಚನೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="settings_notifications_system_body">ಪ್ರತಿ ರೀತಿಯ ಸೂಚನೆಗೆ ಶಬ್ದಗಳು, ಲಾಕ್ ಸ್ಕ್ರೀನ್ ಮತ್ತು ಇನ್ನಷ್ಟು</string>
+</resources>
