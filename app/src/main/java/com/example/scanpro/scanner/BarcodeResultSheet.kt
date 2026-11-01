@@ -1,5 +1,7 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.CurrencyRupee
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -86,6 +88,13 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
             }
             Spacer(Modifier.height(8.dp))
 
+            // UPI payment codes (upi://pay?...): hand them to the phone's UPI apps, which show the payee and amount
+            // and ask for the PIN themselves. Only this scheme is opened from a non-web code.
+            if (raw.startsWith("upi://", ignoreCase = true)) {
+                Action(Icons.Default.CurrencyRupee, stringResource(R.string.scan_code_pay_upi), upiPayee(raw)) {
+                    start(context, Intent.createChooser(Intent(Intent.ACTION_VIEW, raw.toUri()), resources.getString(R.string.scan_code_pay_upi)))
+                }
+            }
             when (code.valueType) {
                 Barcode.TYPE_URL -> {
                     val url = code.url?.url ?: raw
@@ -99,7 +108,11 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                     wifi.password?.takeIf { it.isNotEmpty() }?.let { password ->
                         Action(Icons.Default.ContentCopy, stringResource(R.string.scan_code_copy_wifi_password), wifi.ssid) { copy(context, resources.getString(R.string.scan_code_clip_wifi_password), password, sensitive = true) }
                     }
-                    Action(Icons.Default.Wifi, stringResource(R.string.scan_code_open_wifi_settings), null) { start(context, Intent(Settings.ACTION_WIFI_SETTINGS)) }
+                    // Android 11+: the system asks to save the network, no password typing and no Wi-Fi permission needed.
+                    wifiAddIntent(wifi)?.let { intent ->
+                        Action(Icons.Default.Wifi, stringResource(R.string.scan_code_connect_wifi), wifi.ssid) { start(context, intent) }
+                    }
+                    Action(Icons.Default.Settings, stringResource(R.string.scan_code_open_wifi_settings), null) { start(context, Intent(Settings.ACTION_WIFI_SETTINGS)) }
                 }
                 Barcode.TYPE_CONTACT_INFO -> code.contactInfo?.let { info ->
                     Action(Icons.Default.PersonAdd, stringResource(R.string.scan_code_add_to_contacts), info.name?.formattedName) {
@@ -235,3 +248,27 @@ private fun copy(context: Context, label: String, text: String, sensitive: Boole
     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
     if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, context.getString(R.string.scan_code_copied), Toast.LENGTH_SHORT).show()
 }
+
+/** Android 11+: the system "Save this network?" request for a scanned Wi-Fi code; null on older versions or odd codes. */
+private fun wifiAddIntent(wifi: Barcode.WiFi): Intent? {
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
+    val ssid = wifi.ssid?.takeIf { it.isNotEmpty() } ?: return null
+    val password = wifi.password.orEmpty()
+    val builder = android.net.wifi.WifiNetworkSuggestion.Builder().setSsid(ssid)
+    runCatching {
+        when (wifi.encryptionType) {
+            Barcode.WiFi.TYPE_OPEN -> Unit
+            Barcode.WiFi.TYPE_WPA -> builder.setWpa2Passphrase(password)
+            else -> return null // WEP can't be saved this way; the settings button still works.
+        }
+    }.getOrElse { return null }
+    val suggestion = runCatching { builder.build() }.getOrNull() ?: return null
+    return Intent(Settings.ACTION_WIFI_ADD_NETWORKS)
+        .putParcelableArrayListExtra(Settings.EXTRA_WIFI_NETWORK_LIST, arrayListOf(suggestion))
+}
+
+/** The payee name (pn) or address (pa) of a UPI link, for the button's detail line. */
+private fun upiPayee(raw: String): String? = runCatching {
+    val uri = raw.toUri()
+    uri.getQueryParameter("pn")?.takeIf { it.isNotBlank() } ?: uri.getQueryParameter("pa")
+}.getOrNull()

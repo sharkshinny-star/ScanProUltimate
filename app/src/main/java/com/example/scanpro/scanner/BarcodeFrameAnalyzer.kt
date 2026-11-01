@@ -33,6 +33,18 @@ class BarcodeFrameAnalyzer(
 
     fun resume() { paused = false }
 
+    /**
+     * Reads a code from a picture (a screenshot of a ticket or a Wi-Fi card, say), like Lens's gallery button.
+     * Calls [onResult] with the first code found, or null when there is none or the picture can't be read.
+     */
+    fun scanImage(uri: android.net.Uri, onResult: (Barcode?) -> Unit) {
+        val input = runCatching { InputImage.fromFilePath(context, uri) }.getOrNull() ?: return onResult(null)
+        paused = true
+        scanner.process(input)
+            .addOnSuccessListener { codes -> onResult(codes.firstOrNull { !it.rawValue.isNullOrEmpty() }) }
+            .addOnFailureListener { onResult(null) }
+    }
+
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(image: ImageProxy) {
         val media = image.image

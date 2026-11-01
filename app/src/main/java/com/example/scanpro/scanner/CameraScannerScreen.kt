@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.draw.alpha
@@ -385,6 +386,16 @@ fun CameraScannerScreen(
         )
     }
     val frameAnalyzer = remember { SwitchingAnalyzer(analyzer, barcodeAnalyzer) }
+    // QR mode's gallery button: read a code from a screenshot or photo, like Lens.
+    val codePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) barcodeAnalyzer.scanImage(uri) { code ->
+            if (code != null) foundCode = code
+            else {
+                barcodeAnalyzer.resume()
+                status = resources.getString(R.string.scan_qr_none_in_image)
+            }
+        }
+    }
     SideEffect {
         frameAnalyzer.barcodeMode = barcodeMode
         // Nothing reads the result in No-detect mode or during review, so the frames are not analysed at all.
@@ -852,16 +863,10 @@ fun CameraScannerScreen(
         }
 
         if (barcodeMode && foundCode == null) {
-            Surface(
-                modifier = Modifier.align(Alignment.Center),
-                shape = RoundedCornerShape(12.dp),
-                color = CameraGlass
-            ) {
-                Text(
-                    if (barcodeUnavailable) stringResource(R.string.scan_qr_downloading)
-                    else stringResource(R.string.scan_qr_point),
-                    color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp))
-            }
+            QrViewfinder(
+                hint = stringResource(if (barcodeUnavailable) R.string.scan_qr_downloading else R.string.scan_qr_point),
+                motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+            )
         }
         foundCode?.let { code ->
             val scanAgain = {
@@ -1117,13 +1122,14 @@ fun CameraScannerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
-                    if (!barcodeMode) {
-                        val importLabel = stringResource(R.string.scan_import_photos)
-                        BottomPill(
-                            onClick = { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                            modifier = Modifier.semantics { contentDescription = importLabel }
-                        ) { Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color.White) }
-                    }
+                    val importLabel = stringResource(if (barcodeMode) R.string.scan_qr_from_image else R.string.scan_import_photos)
+                    BottomPill(
+                        onClick = {
+                            val request = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            if (barcodeMode) codePicker.launch(request) else photoPicker.launch(request)
+                        },
+                        modifier = Modifier.semantics { contentDescription = importLabel }
+                    ) { Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color.White) }
                 }
 
                 // Outer ring fills clockwise as the page settles and turns solid mint once it is steady; the
@@ -1133,6 +1139,8 @@ fun CameraScannerScreen(
                     animationSpec = if (steadiness == 0f) tween(200) else spring(stiffness = 700f),
                     label = "ring"
                 )
+                // QR codes are read live, so there is no shutter in QR mode: just the viewfinder, like Lens.
+                if (barcodeMode) Spacer(Modifier.size(72.dp)) else {
                 val shutterScale by androidx.compose.animation.core.animateFloatAsState(if (capturing) 0.86f else 1f, spring(stiffness = 900f), label = "shutter")
                 Box(
                     Modifier
@@ -1169,6 +1177,7 @@ fun CameraScannerScreen(
                         // The shutter has no visible label, so screen readers need one.
                         modifier = Modifier.fillMaxSize().semantics { contentDescription = takePhotoDescription }
                     ) {}
+                }
                 }
 
                 Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
@@ -1236,6 +1245,72 @@ private val CameraGlass = Color(0xFF0F1118).copy(alpha = 0.72f)
 /** The design's accents: amber for the torch, the underline and Auto; green for "document found". */
 private val TorchOn = Color(0xFFFFD54A)
 private val HintFound = Color(0xFF14804F)
+
+/**
+ * QR mode's viewfinder, like Google Lens: everything outside a centred square is dimmed, the square has rounded
+ * corner brackets and a scan line sweeping down it, and a hint sits under it. Any code in view is read, inside the
+ * square or not; the square only shows where to aim.
+ */
+@Composable
+private fun QrViewfinder(hint: String, motion: Boolean) {
+    val sweep = if (motion) {
+        val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "qr")
+        transition.animateFloat(
+            0f, 1f,
+            androidx.compose.animation.core.infiniteRepeatable(tween(1800), androidx.compose.animation.core.RepeatMode.Reverse),
+            label = "qrSweep"
+        ).value
+    } else 0.5f
+    Box(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize()) {
+            val side = minOf(size.width * 0.68f, size.height * 0.42f)
+            val left = (size.width - side) / 2f
+            val top = (size.height - side) / 2f - 60.dp.toPx()
+            val radius = 22.dp.toPx()
+            val outside = Path().apply {
+                fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+                addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+                addRoundRect(androidx.compose.ui.geometry.RoundRect(left, top, left + side, top + side, radius, radius))
+            }
+            drawPath(outside, Color.Black.copy(alpha = 0.55f))
+            val arm = side * 0.16f
+            val w = 5.dp.toPx()
+            fun corner(x: Float, y: Float, dx: Float, dy: Float) {
+                val path = Path().apply {
+                    moveTo(x, y + dy * arm)
+                    lineTo(x, y + dy * radius)
+                    quadraticTo(x, y, x + dx * radius, y)
+                    lineTo(x + dx * arm, y)
+                }
+                drawPath(path, Color.White, style = Stroke(w, cap = StrokeCap.Round))
+            }
+            corner(left, top, 1f, 1f)
+            corner(left + side, top, -1f, 1f)
+            corner(left, top + side, 1f, -1f)
+            corner(left + side, top + side, -1f, -1f)
+            val y = top + side * (0.1f + 0.8f * sweep)
+            drawLine(
+                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    listOf(Color.Transparent, TorchOn, Color.Transparent),
+                    startX = left + radius, endX = left + side - radius
+                ),
+                Offset(left + radius, y), Offset(left + side - radius, y), strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round
+            )
+        }
+        Text(
+            hint,
+            color = Color.White,
+            style = MaterialTheme.typography.titleSmall,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 32.dp)
+                .offset(y = 150.dp)
+                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                .padding(horizontal = 14.dp, vertical = 7.dp)
+        )
+    }
+}
 
 /** The square pills either side of the shutter (gallery; Auto or the page count). */
 @Composable

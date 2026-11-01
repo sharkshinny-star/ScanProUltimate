@@ -198,4 +198,8 @@
         <item quantity="one">%1$d ఫోటో వదిలేశాం: ఒక స్కాన్‌లో గరిష్ఠంగా %2$d పేజీలు ఉంటాయి</item>
         <item quantity="other">%1$d ఫోటోలు వదిలేశాం: ఒక స్కాన్‌లో గరిష్ఠంగా %2$d పేజీలు ఉంటాయి</item>
     </plurals>
+    <string name="scan_qr_from_image">ఫోటో నుండి కోడ్ స్కాన్ చేయండి</string>
+    <string name="scan_qr_none_in_image">ఆ ఫోటోలో QR కోడ్ లేదా బార్‌కోడ్ కనిపించలేదు</string>
+    <string name="scan_code_connect_wifi">ఈ Wi-Fiకి కనెక్ట్ అవ్వండి</string>
+    <string name="scan_code_pay_upi">UPI యాప్‌తో చెల్లించండి</string>
 </resources>

@@ -198,4 +198,8 @@
         <item quantity="one">%1$d ஃபோட்டோ விடுபட்டது: ஒரு ஸ்கேனில் அதிகபட்சம் %2$d பக்கங்கள் இருக்கலாம்</item>
         <item quantity="other">%1$d ஃபோட்டோக்கள் விடுபட்டன: ஒரு ஸ்கேனில் அதிகபட்சம் %2$d பக்கங்கள் இருக்கலாம்</item>
     </plurals>
+    <string name="scan_qr_from_image">படத்திலிருந்து கோடை ஸ்கேன் செய்</string>
+    <string name="scan_qr_none_in_image">அந்தப் படத்தில் QR கோடு அல்லது பார்கோடு இல்லை</string>
+    <string name="scan_code_connect_wifi">இந்த வைஃபையுடன் இணை</string>
+    <string name="scan_code_pay_upi">UPI ஆப் மூலம் பணம் செலுத்து</string>
 </resources>

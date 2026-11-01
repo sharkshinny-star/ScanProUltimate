@@ -198,4 +198,8 @@
         <item quantity="one">%1$d ಫೋಟೋ ಬಿಡಲಾಗಿದೆ: ಒಂದು ಸ್ಕ್ಯಾನ್‌ನಲ್ಲಿ %2$d ಪುಟಗಳವರೆಗೆ ಇರಬಹುದು</item>
         <item quantity="other">%1$d ಫೋಟೋಗಳನ್ನು ಬಿಡಲಾಗಿದೆ: ಒಂದು ಸ್ಕ್ಯಾನ್‌ನಲ್ಲಿ %2$d ಪುಟಗಳವರೆಗೆ ಇರಬಹುದು</item>
     </plurals>
+    <string name="scan_qr_from_image">ಫೋಟೋದಿಂದ ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="scan_qr_none_in_image">ಆ ಫೋಟೋದಲ್ಲಿ QR ಕೋಡ್ ಅಥವಾ ಬಾರ್‌ಕೋಡ್ ಸಿಗಲಿಲ್ಲ</string>
+    <string name="scan_code_connect_wifi">ಈ Wi-Fi ಗೆ ಸಂಪರ್ಕಿಸಿ</string>
+    <string name="scan_code_pay_upi">UPI ಆ್ಯಪ್ ಮೂಲಕ ಪಾವತಿಸಿ</string>
 </resources>

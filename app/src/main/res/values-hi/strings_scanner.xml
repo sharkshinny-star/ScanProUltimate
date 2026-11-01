@@ -198,4 +198,8 @@
         <item quantity="one">%1$d फ़ोटो छोड़ दी गई: एक स्कैन में ज़्यादा से ज़्यादा %2$d पेज हो सकते हैं</item>
         <item quantity="other">%1$d फ़ोटो छोड़ दी गईं: एक स्कैन में ज़्यादा से ज़्यादा %2$d पेज हो सकते हैं</item>
     </plurals>
+    <string name="scan_qr_from_image">फ़ोटो से कोड स्कैन करें</string>
+    <string name="scan_qr_none_in_image">उस फ़ोटो में कोई QR कोड या बारकोड नहीं मिला</string>
+    <string name="scan_code_connect_wifi">इस वाई-फ़ाई से जुड़ें</string>
+    <string name="scan_code_pay_upi">UPI ऐप से भुगतान करें</string>
 </resources>

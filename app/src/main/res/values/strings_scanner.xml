@@ -77,6 +77,8 @@
     <string name="scan_code_copy_wifi_password">Copy Wi-Fi password</string>
     <string name="scan_code_clip_wifi_password">Wi-Fi password</string>
     <string name="scan_code_open_wifi_settings">Open Wi-Fi settings</string>
+    <string name="scan_code_connect_wifi">Connect to this Wi-Fi</string>
+    <string name="scan_code_pay_upi">Pay with a UPI app</string>
     <string name="scan_code_add_to_contacts">Add to contacts</string>
     <string name="scan_code_call">Call</string>
     <string name="scan_code_send_message">Send message</string>
@@ -130,6 +132,8 @@
     <string name="scan_id_fit_inside">Fit it inside the borders</string>
     <string name="scan_qr_downloading">The QR reader is still downloading. Connect to the internet, then try again.</string>
     <string name="scan_qr_point">Point at a QR code or barcode</string>
+    <string name="scan_qr_from_image">Scan a code from a picture</string>
+    <string name="scan_qr_none_in_image">No QR code or barcode found in that picture</string>
     <string name="scan_guidance_hold_capturing">Hold… capturing</string>
     <string name="scan_quit_title">Quit scanning?</string>
     <string name="scan_quit_body">If you quit now, the photos you took will be discarded.</string>

@@ -198,4 +198,8 @@
         <item quantity="one">%1$d ഫോട്ടോ ഒഴിവാക്കി: ഒരു സ്കാനിൽ പരമാവധി %2$d പേജുകൾ</item>
         <item quantity="other">%1$d ഫോട്ടോകൾ ഒഴിവാക്കി: ഒരു സ്കാനിൽ പരമാവധി %2$d പേജുകൾ</item>
     </plurals>
+    <string name="scan_qr_from_image">ചിത്രത്തിൽ നിന്ന് കോഡ് സ്കാൻ ചെയ്യുക</string>
+    <string name="scan_qr_none_in_image">ആ ചിത്രത്തിൽ QR കോഡോ ബാർകോഡോ കണ്ടെത്തിയില്ല</string>
+    <string name="scan_code_connect_wifi">ഈ Wi-Fi-യിലേക്ക് കണക്റ്റ് ചെയ്യുക</string>
+    <string name="scan_code_pay_upi">UPI ആപ്പ് വഴി പണമടയ്ക്കുക</string>
 </resources>
