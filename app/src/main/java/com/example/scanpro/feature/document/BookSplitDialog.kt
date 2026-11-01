@@ -1,5 +1,7 @@
 package com.example.scanpro.feature.document
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -51,7 +53,7 @@ fun BookSplitDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.doc_split_book_spread)) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
                     stringResource(R.string.doc_split_book_hint),
                     style = MaterialTheme.typography.bodySmall

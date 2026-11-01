@@ -208,4 +208,12 @@
     <string name="scan_review_save_all">सभी सहेजें (%1$d)</string>
     <string name="doc_title_imported">आयातित %1$s</string>
     <string name="doc_title_scan">स्कैन %1$s</string>
+    <string name="scan_hint_document">पेज, पत्र और फ़ॉर्म</string>
+    <string name="scan_hint_receipt">बिल और रसीदें</string>
+    <string name="scan_hint_whiteboard">व्हाइटबोर्ड को साफ़ करता है</string>
+    <string name="scan_hint_id_card">असली रंग रखता है; सिर्फ़ सामने या दोनों तरफ़</string>
+    <string name="scan_hint_book">किताब के पन्ने</string>
+    <string name="scan_hint_text">स्कैन सहेजता है और उसका टेक्स्ट कॉपी करता है</string>
+    <string name="scan_hint_qr">QR कोड और बारकोड पढ़ता है</string>
+    <string name="scan_mode_locked">मोड बदलने के लिए यह स्कैन पूरा करें या छोड़ दें</string>
 </resources>

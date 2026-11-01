@@ -1,5 +1,7 @@
 package com.example.scanpro.core.designsystem
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import android.graphics.Bitmap
 import android.util.LruCache
 import androidx.compose.foundation.Image
@@ -159,19 +161,22 @@ fun TextInputDialog(
         text = {
             // Inside the dialog's own window, where the field exists by the time the effect runs.
             LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
-            OutlinedTextField(
-                value = value,
-                onValueChange = { value = it },
-                label = { Text(label) },
-                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-                maxLines = maxLines,
-                singleLine = maxLines == 1,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = if (maxLines == 1) ImeAction.Done else ImeAction.Default
-                ),
-                keyboardActions = KeyboardActions(onDone = { if (canConfirm) onConfirm(value.text) })
-            )
+            // Scrolls, so the field stays reachable with a big font, in landscape or above the keyboard.
+            androidx.compose.foundation.layout.Column(Modifier.verticalScroll(rememberScrollState())) {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = { Text(label) },
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                    maxLines = maxLines,
+                    singleLine = maxLines == 1,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = if (maxLines == 1) ImeAction.Done else ImeAction.Default
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { if (canConfirm) onConfirm(value.text) })
+                )
+            }
         },
         confirmButton = {
             TextButton(
@@ -196,7 +201,7 @@ fun ConfirmDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
-        text = { Text(message) },
+        text = { androidx.compose.foundation.layout.Column(Modifier.verticalScroll(rememberScrollState())) { Text(message) } },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text(confirmLabel) }
         },
@@ -222,7 +227,7 @@ fun PasswordInputDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            androidx.compose.foundation.layout.Column {
+            androidx.compose.foundation.layout.Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(message)
                 if (warning != null) {
                     androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))

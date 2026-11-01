@@ -208,4 +208,12 @@
     <string name="scan_review_save_all">ಎಲ್ಲವನ್ನೂ ಉಳಿಸಿ (%1$d)</string>
     <string name="doc_title_imported">ಆಮದು %1$s</string>
     <string name="doc_title_scan">ಸ್ಕ್ಯಾನ್ %1$s</string>
+    <string name="scan_hint_document">ಪುಟಗಳು, ಪತ್ರಗಳು ಮತ್ತು ಫಾರ್ಮ್‌ಗಳು</string>
+    <string name="scan_hint_receipt">ಬಿಲ್‌ಗಳು ಮತ್ತು ರಸೀದಿಗಳು</string>
+    <string name="scan_hint_whiteboard">ವೈಟ್‌ಬೋರ್ಡ್ ಅನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸುತ್ತದೆ</string>
+    <string name="scan_hint_id_card">ನಿಜವಾದ ಬಣ್ಣಗಳನ್ನು ಉಳಿಸುತ್ತದೆ; ಮುಂಭಾಗ ಮಾತ್ರ ಅಥವಾ ಎರಡೂ ಬದಿ</string>
+    <string name="scan_hint_book">ಪುಸ್ತಕದ ಪುಟಗಳು</string>
+    <string name="scan_hint_text">ಸ್ಕ್ಯಾನ್ ಉಳಿಸಿ ಅದರ ಪಠ್ಯವನ್ನು ನಕಲಿಸುತ್ತದೆ</string>
+    <string name="scan_hint_qr">QR ಕೋಡ್ ಮತ್ತು ಬಾರ್‌ಕೋಡ್‌ಗಳನ್ನು ಓದುತ್ತದೆ</string>
+    <string name="scan_mode_locked">ಮೋಡ್ ಬದಲಾಯಿಸಲು ಈ ಸ್ಕ್ಯಾನ್ ಮುಗಿಸಿ ಅಥವಾ ತ್ಯಜಿಸಿ</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.document
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -184,9 +185,13 @@ fun PenDialog(
                         val label = stringResource(option.labelRes)
                         Box(
                             Modifier
+                                // The swatch stays 36 dp; the 48 dp minimum is invisible touch area around it.
+                                .minimumInteractiveComponentSize()
                                 .size(36.dp)
                                 .clip(CircleShape)
                                 .background(option.color)
+                                // A thin ring keeps the black swatch visible on a dark surface.
+                                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                                 .border(3.dp, if (colour == option) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape)
                                 .semantics { contentDescription = label; selected = colour == option; role = Role.RadioButton }
                                 .pointerInput(option) { detectTapGestures { colour = option } }

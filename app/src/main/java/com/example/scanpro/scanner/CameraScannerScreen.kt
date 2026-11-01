@@ -859,7 +859,7 @@ fun CameraScannerScreen(
                         shape = CircleShape,
                         color = if (on) Color.White else Color.Black.copy(alpha = 0.45f),
                         contentColor = if (on) Color(0xFF111111) else Color.White,
-                        modifier = Modifier.size(40.dp).semantics { contentDescription = description; selected = on }
+                        modifier = Modifier.size(48.dp).semantics { contentDescription = description; selected = on }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
@@ -1134,24 +1134,40 @@ fun CameraScannerScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     listOf(false to R.string.scan_id_front_only, true to R.string.scan_id_both_sides).forEach { (both, text) ->
-                        ModeTab(stringResource(text), selected = scanBothSides == both, enabled = pages.isEmpty() && retakeOfPage == null) { scanBothSides = both }
+                        ModeTab(stringResource(text), selected = scanBothSides == both, enabled = pages.isEmpty() && retakeOfPage == null) {
+                            if (pages.isEmpty() && retakeOfPage == null) scanBothSides = both
+                        }
                     }
                 }
             }
             // Every mode in one strip that scrolls sideways; the chosen one is underlined.
             val modesEnabled = pages.isEmpty() && retakeOfPage == null
+            // Tapping a mode says what it does. Once a page is taken the modes stay put, and a tap says why.
+            val modeLockedMessage = stringResource(R.string.scan_mode_locked)
             val modeTabs: @Composable () -> Unit = {
                 listOf(ScanMode.DOCUMENT, ScanMode.RECEIPT, ScanMode.WHITEBOARD, ScanMode.ID_CARD, ScanMode.BOOK, ScanMode.TEXT).forEach { mode ->
+                    val hint = stringResource(modeHint(mode))
                     ModeTab(stringResource(mode.labelRes), selected = !barcodeMode && scanMode == mode, enabled = modesEnabled) {
-                        barcodeMode = false
-                        scanMode = mode
-                        scanBothSides = false
+                        if (modesEnabled) {
+                            barcodeMode = false
+                            scanMode = mode
+                            scanBothSides = false
+                            status = hint
+                        } else {
+                            status = modeLockedMessage
+                        }
                     }
                 }
+                val qrHint = stringResource(R.string.scan_hint_qr)
                 ModeTab(stringResource(R.string.scan_qr_code), selected = barcodeMode, enabled = modesEnabled) {
-                    barcodeMode = true
-                    scanMode = ScanMode.DOCUMENT
-                    scanBothSides = false
+                    if (modesEnabled) {
+                        barcodeMode = true
+                        scanMode = ScanMode.DOCUMENT
+                        scanBothSides = false
+                        status = qrHint
+                    } else {
+                        status = modeLockedMessage
+                    }
                 }
             }
             if (landscape) {
@@ -1408,12 +1424,23 @@ private fun BottomPill(
 }
 
 /** One of the mode pills above the shutter. */
+/** One line on what a scan mode does, shown when it is chosen. */
+@StringRes
+private fun modeHint(mode: ScanMode): Int = when (mode) {
+    ScanMode.DOCUMENT -> R.string.scan_hint_document
+    ScanMode.RECEIPT -> R.string.scan_hint_receipt
+    ScanMode.WHITEBOARD -> R.string.scan_hint_whiteboard
+    ScanMode.ID_CARD -> R.string.scan_hint_id_card
+    ScanMode.BOOK -> R.string.scan_hint_book
+    ScanMode.TEXT -> R.string.scan_hint_text
+}
+
 @Composable
 private fun ModeTab(text: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     Column(
         Modifier
             .clip(RoundedCornerShape(6.dp))
-            .clickable(enabled = enabled, role = Role.Tab, onClick = onClick)
+            .clickable(role = Role.Tab, onClick = onClick)
             .semantics { this.selected = selected }
             .padding(horizontal = 2.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally

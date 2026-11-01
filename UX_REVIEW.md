@@ -8,10 +8,10 @@ observed. Open items are tracked as R12 to R16 in `AUDIT_FINDINGS.md`.
 
 ## Status after the first fixes (F38, not compiled or run)
 
+Also fixed in code (F40): the rest of R14 (mode hints and explained lock, one filter rule, a thumbnail strip) and R16 (touch targets, pen swatch ring, scrolling dialogs); R17 holds what is left (drag-to-reorder, contrast measurements).
 Also fixed in code (F39): R13 (localised fallback titles, Office-to-PDF notes and file sizes) and R15 (landscape layouts for the camera and the review).
 Fixed in code (F38): R12 (editors), the review "Save page" and Delete page items, the Done and Auto/Manual pills, pinch zoom and the
-zoom slider, the retake pill overlap, and background scans opening over other screens. Still open: the mode lock and filter
-rules and filmstrip in R14, R16. Delete page asks for confirmation instead of offering undo.
+zoom slider, the retake pill overlap, and background scans opening over other screens. Still open: R17. Delete page asks for confirmation instead of offering undo.
 Correction: the "Scan saved" notification is already skipped while the app is visible, so a message and a notification did not
 arrive together as item 4 below says.
 

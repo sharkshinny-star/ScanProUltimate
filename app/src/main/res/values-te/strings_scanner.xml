@@ -208,4 +208,12 @@
     <string name="scan_review_save_all">అన్నీ సేవ్ చేయి (%1$d)</string>
     <string name="doc_title_imported">దిగుమతి %1$s</string>
     <string name="doc_title_scan">స్కాన్ %1$s</string>
+    <string name="scan_hint_document">పేజీలు, లేఖలు, ఫారమ్‌లు</string>
+    <string name="scan_hint_receipt">బిల్లులు మరియు రసీదులు</string>
+    <string name="scan_hint_whiteboard">వైట్‌బోర్డ్‌ను శుభ్రం చేస్తుంది</string>
+    <string name="scan_hint_id_card">అసలు రంగులను ఉంచుతుంది; ముందు వైపు మాత్రమే లేదా రెండు వైపులా</string>
+    <string name="scan_hint_book">పుస్తకంలోని పేజీలు</string>
+    <string name="scan_hint_text">స్కాన్‌ను సేవ్ చేసి దాని టెక్స్ట్‌ను కాపీ చేస్తుంది</string>
+    <string name="scan_hint_qr">QR కోడ్‌లు, బార్‌కోడ్‌లను చదువుతుంది</string>
+    <string name="scan_mode_locked">మోడ్ మార్చడానికి ఈ స్కాన్‌ను పూర్తి చేయండి లేదా రద్దు చేయండి</string>
 </resources>

@@ -7,6 +7,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -32,8 +40,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.NavigateBefore
-import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Check
@@ -352,7 +358,7 @@ fun ScanReviewScreen(
                     if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) },
-                            onClick = { menu = false; pages.forEach { filters[it.toString()] = pageFilter } }
+                            onClick = { menu = false; pages.forEach { filters[it.toString()] = pageFilter }; onDefaultFilterChange(pageFilter) }
                         )
                     }
                     if (pages.size > 1) {
@@ -422,29 +428,34 @@ fun ScanReviewScreen(
 
         // Page stepper, filters, sliders and the bottom buttons; below the page, or beside it in landscape.
         val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
-        if (pages.size > 1) {
-            Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                IconButton(enabled = current > 0 && !blocked, onClick = { onIndexChange(current - 1) }, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = stringResource(R.string.scan_review_previous_page))
-                }
-                Text("${current + 1}/${pages.size}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 4.dp))
-                IconButton(enabled = current < pages.lastIndex && !blocked, onClick = { onIndexChange(current + 1) }, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_next_page))
-                }
-            }
-        }
+        // Every page as a thumbnail: tap one to adjust it, "+" takes another page.
+        ReviewFilmstrip(
+            pages = pages,
+            current = current,
+            refresh = rotationTick,
+            enabled = !blocked,
+            onSelect = onIndexChange,
+            onAdd = onAdd
+        )
 
         FilterStrip(
             previews = previews,
             selected = pageFilter,
             enabled = !blocked,
-            onSelect = { filter ->
-                filters[key] = filter
-                // Pages not set by hand follow the newest choice, so a batch is styled with one tap.
-                onDefaultFilterChange(filter)
-            },
+            // One rule: a filter applies to this page only. "Use on all pages" below applies it to the whole scan.
+            onSelect = { filter -> filters[key] = filter },
             modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
         )
+        if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
+            TextButton(
+                enabled = !blocked,
+                onClick = {
+                    pages.forEach { filters[it.toString()] = pageFilter }
+                    onDefaultFilterChange(pageFilter)
+                },
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) }
+        }
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
             AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
@@ -523,6 +534,76 @@ fun ScanReviewScreen(
         } else {
             stage(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp))
             lowerControls()
+        }
+    }
+}
+
+/** Thumbnails of every page: tap one to adjust it, "+" at the end takes another page. */
+@Composable
+private fun ReviewFilmstrip(
+    pages: List<Uri>,
+    current: Int,
+    refresh: Int,
+    enabled: Boolean,
+    onSelect: (Int) -> Unit,
+    onAdd: () -> Unit
+) {
+    val cache = remember { HashMap<String, Bitmap>() }
+    val listState = rememberLazyListState()
+    LaunchedEffect(current, pages.size) { if (current in pages.indices) listState.animateScrollToItem(current) }
+    val addLabel = stringResource(R.string.scan_review_add_another_page)
+    LazyRow(
+        state = listState,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+    ) {
+        itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+            // A turned page is decoded again: the refresh counter is part of the cache key.
+            val cacheKey = "$uri#$refresh"
+            val thumbnail by produceState<Bitmap?>(initialValue = cache[cacheKey], cacheKey) {
+                if (value == null) {
+                    value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160) }.getOrNull() }
+                    value?.let { cache[cacheKey] = it }
+                }
+            }
+            val isCurrent = index == current
+            val label = stringResource(R.string.scan_review_page_n, index + 1)
+            Box(
+                Modifier
+                    .size(48.dp, 64.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(
+                        if (isCurrent) 2.dp else 1.dp,
+                        if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        RoundedCornerShape(6.dp)
+                    )
+                    .clickable(enabled = enabled, role = Role.Tab, onClick = { onSelect(index) })
+                    .semantics { contentDescription = label; selected = isCurrent }
+            ) {
+                thumbnail?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                Text(
+                    "${index + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = androidx.compose.ui.graphics.Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), RoundedCornerShape(topStart = 6.dp))
+                        .padding(horizontal = 4.dp)
+                )
+            }
+        }
+        item(key = "add-page") {
+            Box(
+                Modifier
+                    .size(48.dp, 64.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+                    .clickable(enabled = enabled, role = Role.Button, onClick = onAdd)
+                    .semantics { contentDescription = addLabel },
+                contentAlignment = Alignment.Center
+            ) { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
         }
     }
 }

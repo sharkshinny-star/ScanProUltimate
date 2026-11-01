@@ -1,5 +1,7 @@
 package com.example.scanpro.feature.document
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
@@ -90,7 +92,7 @@ fun SignaturePadDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.doc_add_signature)) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 if (saved.isNotEmpty()) {
                     Eyebrow(stringResource(R.string.doc_saved_signatures), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyRow(

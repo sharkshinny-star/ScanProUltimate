@@ -208,4 +208,12 @@
     <string name="scan_review_save_all">அனைத்தையும் சேமி (%1$d)</string>
     <string name="doc_title_imported">இறக்குமதி %1$s</string>
     <string name="doc_title_scan">ஸ்கேன் %1$s</string>
+    <string name="scan_hint_document">பக்கங்கள், கடிதங்கள், படிவங்கள்</string>
+    <string name="scan_hint_receipt">பில்கள் மற்றும் ரசீதுகள்</string>
+    <string name="scan_hint_whiteboard">வைட்போர்டை தெளிவாக்கும்</string>
+    <string name="scan_hint_id_card">உண்மையான நிறங்களை வைத்திருக்கும்; முன்புறம் மட்டும் அல்லது இருபுறமும்</string>
+    <string name="scan_hint_book">புத்தகப் பக்கங்கள்</string>
+    <string name="scan_hint_text">ஸ்கேனைச் சேமித்து அதன் உரையை நகலெடுக்கும்</string>
+    <string name="scan_hint_qr">QR குறியீடுகள், பார்கோடுகளைப் படிக்கும்</string>
+    <string name="scan_mode_locked">பயன்முறையை மாற்ற, இந்த ஸ்கேனை முடிக்கவும் அல்லது நிராகரிக்கவும்</string>
 </resources>

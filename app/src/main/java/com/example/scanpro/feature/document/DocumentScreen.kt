@@ -1464,14 +1464,14 @@ private fun PageCell(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(26.dp)
+                .height(40.dp)
         ) {
             Text(
                 "${index + 1}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 6.dp)
             )
             Row(Modifier.align(Alignment.CenterEnd)) {
                 MoveButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_earlier), enabled, onMoveEarlier)
@@ -1483,8 +1483,8 @@ private fun PageCell(
 
 @Composable
 private fun MoveButton(icon: ImageVector, label: String, enabled: Boolean, onClick: (() -> Unit)?) {
-    IconButton(onClick = onClick ?: {}, enabled = enabled && onClick != null, modifier = Modifier.size(26.dp)) {
-        Icon(icon, contentDescription = label, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    IconButton(onClick = onClick ?: {}, enabled = enabled && onClick != null, modifier = Modifier.size(40.dp)) {
+        Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
