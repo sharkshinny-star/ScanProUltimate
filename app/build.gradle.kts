@@ -104,7 +104,15 @@ android {
     }
 
     testOptions {
+        // Robolectric needs the merged resources and manifest (LaunchSmokeTest).
+        unitTests.isIncludeAndroidResources = true
         unitTests.all {
+            // Each Android version Robolectric loads is a few hundred MB of framework classes.
+            it.maxHeapSize = "4g"
+            // Robolectric's Android 16 reads file-descriptor internals that Java 21 keeps closed by default.
+            it.jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED", "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+            // Robolectric fetches each Android version itself; Google's mirror of Maven Central avoids rate limits.
+            it.systemProperty("robolectric.dependency.repo.url", "https://maven-central.storage-download.googleapis.com/maven2")
             // -Pscanpro.updateGoldens=true rewrites the golden images of the imaging tests (see MatFiltersGoldenTest).
             it.systemProperty("scanpro.updateGoldens", (project.findProperty("scanpro.updateGoldens") ?: "false").toString())
             // -Pscanpro.photoDir=<folder of photos> enables RealPhotoEquivalenceTest.
@@ -254,6 +262,9 @@ dependencies {
     }
 
     testImplementation("junit:junit:4.13.2")
+    // Runs the real Android framework of each version on the JVM: the launch smoke test starts the app on API 24 to 36.
+    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("androidx.test:core-ktx:1.7.0")
     // The real org.json: the Android jar's version only has stubs, and the backup format is JSON.
     testImplementation("org.json:json:20260814")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")

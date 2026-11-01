@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Office to PDF (F36); P3 complete. |
+| newest | Robolectric launch test on API 24–37 (all pass). |
+| 3b497d4 | Office to PDF (F36); P3 complete. |
 | 5f27eba | Review fixes (F34) and P3 Settings defaults (F35). |
 | 3ab433d | Hotfix F33: launch crash on Android 7–12 from the language code. |
 | 6dd0557 | Lens-style QR mode (F32): viewfinder, scan from a picture, Wi-Fi Connect, UPI pay. |
@@ -71,7 +72,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 1. **Device testing (required before release).** Camera, every PDF tool, app lock, notifications, backup/restore, on at least one
    low-end and one recent phone.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
-6. **R2: targetSdk is now 37** (code-reviewed, not device-tested). Test on Android 17, including a tablet or foldable.
+6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 
 ## 4. Next steps

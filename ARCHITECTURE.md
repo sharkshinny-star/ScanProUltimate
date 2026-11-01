@@ -220,6 +220,8 @@ Main libraries: Jetpack Compose (BOM 2026.09.00) + Material3, Navigation Compose
 schema v3, schemas in `app/schemas`), DataStore 1.3.0, WorkManager 2.12.0, CameraX, ML Kit (text recognition, barcode,
 document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCastle forced to 1.86, coroutines 1.11.0.
 
+**Tests.** JVM unit tests plus `LaunchSmokeTest` (Robolectric, test-only dependency) that starts the app on every supported Android version, API 24–37.
+
 ## 14. Key decisions
 
 - **Offline only.** No accounts, analytics, FCM or remote services; notifications are local.

@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after the "Office to PDF" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after the "launch test on every Android version" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,18 +40,19 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-01, "Office to PDF" commit)
+## Latest results (2026-11-01, "launch test on every Android version" commit)
 
 | Check | Result |
 |---|---|
 | `:app:compileDebugKotlin`, `:translate:compileDebugKotlin` | Passed, 0 warnings |
-| `:app:testDebugUnitTest` | 187 tests: 185 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
+| `:app:testDebugUnitTest` | 229 tests: 227 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
 | `:app:lintDebug` | 0 issues (`UseTomlInstead` ignored, see R10) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.3 MB |
 | Sideload `assembleRelease` | Passed; arm64 32.8 MB (budget 40) |
 | 16 KB page alignment | arm64 and x86_64 `.so` aligned to `0x4000` (`readelf`) |
 | `-Pscanpro.bundledMl=true` build | Not run |
+| `LaunchSmokeTest` (Robolectric 4.17) | Passed on **API 24–37** (Android 7.0–17), 42/42: the app starts to its first screen, survives recreation, and applies a saved language while the Application is attached (F33 regression). JVM framework, not a device: camera, GPU, WebView printing and Play services are not exercised. Needs `-Xmx4g` and the two `--add-*` JVM flags in `app/build.gradle.kts` |
 | Instrumented tests (`AppSmokeTest`), screenshot, performance | Not run: no emulator or device in the container |
 | Android 17 (targetSdk 37) on a device | Not run (see R2) |
 | IDE inspection with the shared profile | Not run: no Android Studio in the container |
