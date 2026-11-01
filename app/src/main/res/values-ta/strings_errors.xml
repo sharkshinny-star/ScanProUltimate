@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="err_page_not_found">இந்தப் பக்கம் இப்போது இல்லை</string>
+    <string name="err_document_not_found">இந்த ஆவணம் இப்போது இல்லை</string>
+    <string name="err_choose_different_document">வேறொரு ஆவணத்தைத் தேர்வுசெய்யுங்கள்</string>
+    <string name="err_could_not_decode_page">பக்கப் படத்தைப் படிக்க முடியவில்லை</string>
+    <string name="err_page_too_narrow_to_split">பிரிக்க முடியாத அளவுக்குப் பக்கம் குறுகலாக உள்ளது</string>
+    <plurals name="err_document_page_limit">
+        <item quantity="one">ஒரு ஆவணத்தில் அதிகபட்சம் %1$d பக்கம் இருக்கலாம்</item>
+        <item quantity="other">ஒரு ஆவணத்தில் அதிகபட்சம் %1$d பக்கங்கள் இருக்கலாம்</item>
+    </plurals>
+    <string name="err_page_could_not_be_read">பக்கம் %1$d-ஐப் படிக்க முடியவில்லை</string>
+    <string name="err_no_scan_pages_returned">ஸ்கேனர் எந்தப் பக்கத்தையும் தரவில்லை</string>
+    <string name="err_change_cannot_be_undone">இந்த மாற்றத்தை இனி செயல்தவிர்க்க முடியாது</string>
+    <string name="err_could_not_open_selected_file">தேர்ந்தெடுத்த ஃபைலைத் திறக்க முடியவில்லை</string>
+    <string name="err_file_too_large_to_import">இந்த ஃபைல் இறக்குமதி செய்ய மிகப் பெரியது (வரம்பு %1$d MB)</string>
+    <string name="err_could_not_create_file_in_folder">தேர்ந்தெடுத்த ஃபோல்டரில் ஃபைலை உருவாக்க முடியவில்லை</string>
+    <string name="err_could_not_write_to_folder">தேர்ந்தெடுத்த ஃபோல்டரில் எழுத முடியவில்லை</string>
+    <string name="err_choose_at_least_one_image">குறைந்தது ஒரு படத்தைத் தேர்வுசெய்யுங்கள்</string>
+    <string name="err_pdf_page_count_range">PDF-இல் %1$d முதல் %2$d பக்கங்கள் இருக்க வேண்டும்</string>
+    <string name="err_name_required">பெயரை உள்ளிடுங்கள்</string>
+    <string name="err_folder_name_required">ஃபோல்டர் பெயரை உள்ளிடுங்கள்</string>
+    <string name="err_new_folder_name_required">புதிய ஃபோல்டர் பெயரை உள்ளிடுங்கள்</string>
+    <string name="err_erase_nothing_selected">அழிக்க வேண்டியதன் மேல் பிரஷ் செய்யுங்கள்</string>
+    <string name="err_watermark_blank">வாட்டர்மார்க் உரையை உள்ளிடுங்கள்</string>
+    <string name="err_png_not_written">PNG படத்தைச் சேமிக்க முடியவில்லை</string>
+    <string name="err_no_text_to_export">ஏற்றுமதி செய்ய அடையாளம் காணப்பட்ட உரை இல்லை</string>
+    <string name="err_text_blank">ஏதேனும் உரையை உள்ளிடுங்கள்</string>
+    <string name="err_document_has_no_pages">ஆவணத்தில் பக்கங்கள் இல்லை</string>
+    <string name="err_could_not_save_pdf">PDF-ஐச் சேமிக்க முடியவில்லை</string>
+    <string name="err_could_not_save_signature">கையொப்பத்தைச் சேமிக்க முடியவில்லை</string>
+    <string name="err_could_not_save_image">%1$s படத்தைச் சேமிக்க முடியவில்லை</string>
+    <string name="err_backup_password_too_short">குறைந்தது 6 எழுத்துகள் கொண்ட பேக்கப் பாஸ்வேர்டைப் பயன்படுத்துங்கள்</string>
+    <string name="err_could_not_open_backup">பேக்கப்பைத் திறக்க முடியவில்லை</string>
+    <string name="err_could_not_decrypt_backup">பேக்கப்பை டிகிரிப்ட் செய்ய முடியவில்லை. பாஸ்வேர்டையும் ஃபைலையும் சரிபாருங்கள்.</string>
+    <string name="err_backup_too_large">இந்த பேக்கப் மீட்டெடுக்க மிகப் பெரியது</string>
+    <string name="err_could_not_decode_image">%1$s படத்தைப் படிக்க முடியவில்லை</string>
+    <string name="err_could_not_decode_source">பக்கத்தின் அசல் படத்தைப் படிக்க முடியவில்லை</string>
+    <string name="err_could_not_open_input_pdf">PDF-ஐத் திறக்க முடியவில்லை</string>
+    <string name="err_could_not_read_pdf_page">பக்கம் %1$d-ஐப் படிக்க முடியவில்லை</string>
+    <string name="err_page_range_empty" tools:ignore="TypographyDashes">குறைந்தது ஒரு பக்கம் அல்லது வரம்பை உள்ளிடுங்கள், எ.கா. 1-3</string>
+    <string name="err_page_range_backwards" tools:ignore="TypographyDashes">\"%1$s\" தலைகீழாக உள்ளது; %2$d-%3$d என எழுதுங்கள்</string>
+    <string name="err_page_range_invalid" tools:ignore="TypographyDashes">\"%1$s\" பக்க எண்ணோ 2-4 போன்ற வரம்போ அல்ல</string>
+    <string name="err_page_range_starts_at_one">பக்கங்கள் 1-இல் தொடங்கும்</string>
+    <plurals name="err_page_range_past_end">
+        <item quantity="one">\"%2$s\" கடைசிப் பக்கத்தைத் தாண்டுகிறது; இந்த PDF-இல் %1$d பக்கம் உள்ளது</item>
+        <item quantity="other">\"%2$s\" கடைசிப் பக்கத்தைத் தாண்டுகிறது; இந்த PDF-இல் %1$d பக்கங்கள் உள்ளன</item>
+    </plurals>
+    <string name="err_form_xfa_unsupported">இந்தப் படிவம் XFA கொண்டு உருவாக்கப்பட்டது, அது ஆதரிக்கப்படவில்லை. Adobe Acrobat-இல் திறந்து பாருங்கள்.</string>
+    <string name="err_form_no_fields">இந்த PDF-இல் நிரப்பக்கூடிய புலங்கள் இல்லை</string>
+    <string name="err_form_flatten_failed">நிரப்பிய படிவத்தை ஃபிளாட்டன் செய்ய முடியவில்லை. ஃபிளாட்டன் செய்யாமல் சேமியுங்கள்.</string>
+    <string name="err_pdf_has_no_pages">இந்த PDF-இல் பக்கங்கள் இல்லை</string>
+    <string name="err_could_not_read_pdf_location">தேர்ந்தெடுத்த இடத்திலிருந்து PDF-ஐப் படிக்க முடியவில்லை</string>
+    <plurals name="err_pdf_password_too_short">
+        <item quantity="one">குறைந்தது %1$d எழுத்து கொண்ட பாஸ்வேர்டைப் பயன்படுத்துங்கள்</item>
+        <item quantity="other">குறைந்தது %1$d எழுத்துகள் கொண்ட பாஸ்வேர்டைப் பயன்படுத்துங்கள்</item>
+    </plurals>
+    <string name="err_could_not_protect_pdf">இந்த PDF-ஐப் பாதுகாக்க முடியவில்லை: %1$s</string>
+    <string name="err_could_not_protect_pdf_unsupported">இந்த PDF-ஐப் பாதுகாக்க முடியவில்லை: ஃபைல் ஆதரிக்கப்படவில்லை</string>
+    <string name="err_translation_could_not_start">மொழிபெயர்ப்பு நிறுவப்பட்டது, ஆனால் தொடங்க முடியவில்லை. ஆப்பை மீண்டும் தொடங்குங்கள்.</string>
+    <string name="err_translation_download_cancelled">மொழிபெயர்ப்பு டவுன்லோடு ரத்துசெய்யப்பட்டது</string>
+    <string name="err_translation_needs_confirmation">மொழிபெயர்ப்பை டவுன்லோடு செய்ய Google Play-க்கு உங்கள் உறுதிப்படுத்தல் தேவை. Wi-Fi-இல் மீண்டும் முயலுங்கள்.</string>
+    <string name="err_translation_network">மொழிபெயர்ப்பை டவுன்லோடு செய்ய முடியவில்லை. இணைப்பைச் சரிபார்த்து மீண்டும் முயலுங்கள்.</string>
+    <string name="err_translation_storage">மொழிபெயர்ப்பைச் சேர்க்கப் போதுமான ஸ்டோரேஜ் இல்லை.</string>
+    <string name="err_translation_play_unavailable">மொழிபெயர்ப்பு Google Play மூலம் சேர்க்கப்படுகிறது, அது இந்தச் சாதனத்தில் அல்லது இந்த நிறுவலுக்குக் கிடைக்கவில்லை.</string>
+    <string name="err_translation_access_denied">மொழிபெயர்ப்பு டவுன்லோடை Google Play அனுமதிக்கவில்லை.</string>
+    <string name="err_translation_busy">வேறொரு டவுன்லோடு நடந்துகொண்டிருக்கிறது. சிறிது நேரத்தில் மீண்டும் முயலுங்கள்.</string>
+    <string name="err_translation_play_error">மொழிபெயர்ப்பைச் சேர்க்க முடியவில்லை (Google Play பிழை %1$d).</string>
+    <string name="err_translation_no_text">மொழிபெயர்க்க அடையாளம் காணப்பட்ட உரை இல்லை</string>
+    <string name="err_translation_unknown_language">உரையின் மொழியைக் கண்டறிய முடியவில்லை</string>
+    <string name="err_translation_language_unsupported">கண்டறியப்பட்ட மொழிக்கு (%1$s) மொழிபெயர்ப்பு கிடைக்கவில்லை</string>
+    <string name="err_translation_target_unsupported">இந்த மொழிக்கு மொழிபெயர்ப்பு கிடைக்கவில்லை</string>
+</resources>

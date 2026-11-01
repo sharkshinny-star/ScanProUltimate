@@ -15,6 +15,11 @@ plugins {
 val sideload = providers.gradleProperty("scanpro.sideload").orNull == "true"
 
 android {
+    // The app switches language itself (first launch and Settings), so every language ships in every install:
+    // with Play's per-language splits a newly chosen language could be missing until Play delivered it.
+    bundle {
+        language { enableSplit = false }
+    }
     namespace = "com.example.scanpro"
     compileSdk = 37
 

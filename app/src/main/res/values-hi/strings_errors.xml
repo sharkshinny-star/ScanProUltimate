@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="err_page_not_found">यह पेज अब मौजूद नहीं है</string>
+    <string name="err_document_not_found">यह डॉक्यूमेंट अब मौजूद नहीं है</string>
+    <string name="err_choose_different_document">कोई दूसरा डॉक्यूमेंट चुनें</string>
+    <string name="err_could_not_decode_page">पेज की इमेज पढ़ी नहीं जा सकी</string>
+    <string name="err_page_too_narrow_to_split">पेज बांटने के लिए बहुत पतला है</string>
+    <plurals name="err_document_page_limit">
+        <item quantity="one">एक डॉक्यूमेंट में ज़्यादा से ज़्यादा %1$d पेज हो सकता है</item>
+        <item quantity="other">एक डॉक्यूमेंट में ज़्यादा से ज़्यादा %1$d पेज हो सकते हैं</item>
+    </plurals>
+    <string name="err_page_could_not_be_read">पेज %1$d पढ़ा नहीं जा सका</string>
+    <string name="err_no_scan_pages_returned">स्कैनर से कोई पेज नहीं मिला</string>
+    <string name="err_change_cannot_be_undone">यह बदलाव अब पहले जैसा नहीं किया जा सकता</string>
+    <string name="err_could_not_open_selected_file">चुनी गई फ़ाइल खुल नहीं सकी</string>
+    <string name="err_file_too_large_to_import">यह फ़ाइल इंपोर्ट करने के लिए बहुत बड़ी है (सीमा %1$d MB)</string>
+    <string name="err_could_not_create_file_in_folder">चुने गए फ़ोल्डर में फ़ाइल नहीं बन सकी</string>
+    <string name="err_could_not_write_to_folder">चुने गए फ़ोल्डर में सेव नहीं हो सका</string>
+    <string name="err_choose_at_least_one_image">कम से कम एक इमेज चुनें</string>
+    <string name="err_pdf_page_count_range">PDF में %1$d से %2$d पेज होने चाहिए</string>
+    <string name="err_name_required">नाम डालें</string>
+    <string name="err_folder_name_required">फ़ोल्डर का नाम डालें</string>
+    <string name="err_new_folder_name_required">फ़ोल्डर का नया नाम डालें</string>
+    <string name="err_erase_nothing_selected">जो मिटाना है, उस पर ब्रश चलाएं</string>
+    <string name="err_watermark_blank">वॉटरमार्क का टेक्स्ट डालें</string>
+    <string name="err_png_not_written">PNG इमेज सेव नहीं हो सकी</string>
+    <string name="err_no_text_to_export">एक्सपोर्ट करने के लिए कोई पहचाना गया टेक्स्ट नहीं है</string>
+    <string name="err_text_blank">कुछ टेक्स्ट डालें</string>
+    <string name="err_document_has_no_pages">डॉक्यूमेंट में कोई पेज नहीं है</string>
+    <string name="err_could_not_save_pdf">PDF सेव नहीं हो सकी</string>
+    <string name="err_could_not_save_signature">सिग्नेचर सेव नहीं हो सका</string>
+    <string name="err_could_not_save_image">इमेज %1$s सेव नहीं हो सकी</string>
+    <string name="err_backup_password_too_short">बैकअप के लिए कम से कम 6 अक्षरों का पासवर्ड रखें</string>
+    <string name="err_could_not_open_backup">बैकअप खुल नहीं सका</string>
+    <string name="err_could_not_decrypt_backup">बैकअप डिक्रिप्ट नहीं हो सका। पासवर्ड और फ़ाइल जांचें।</string>
+    <string name="err_backup_too_large">यह बैकअप रीस्टोर करने के लिए बहुत बड़ा है</string>
+    <string name="err_could_not_decode_image">इमेज %1$s पढ़ी नहीं जा सकी</string>
+    <string name="err_could_not_decode_source">पेज की ओरिजिनल इमेज पढ़ी नहीं जा सकी</string>
+    <string name="err_could_not_open_input_pdf">PDF खुल नहीं सकी</string>
+    <string name="err_could_not_read_pdf_page">पेज %1$d पढ़ा नहीं जा सका</string>
+    <string name="err_page_range_empty" tools:ignore="TypographyDashes">कम से कम एक पेज या रेंज डालें, जैसे 1-3</string>
+    <string name="err_page_range_backwards" tools:ignore="TypographyDashes">\"%1$s\" उल्टे क्रम में है; इसे %2$d-%3$d लिखें</string>
+    <string name="err_page_range_invalid" tools:ignore="TypographyDashes">\"%1$s\" कोई पेज नंबर या 2-4 जैसी रेंज नहीं है</string>
+    <string name="err_page_range_starts_at_one">पेज 1 से शुरू होते हैं</string>
+    <plurals name="err_page_range_past_end">
+        <item quantity="one">\"%2$s\" आखिरी पेज से आगे जाता है; इस PDF में %1$d पेज है</item>
+        <item quantity="other">\"%2$s\" आखिरी पेज से आगे जाता है; इस PDF में %1$d पेज हैं</item>
+    </plurals>
+    <string name="err_form_xfa_unsupported">यह फ़ॉर्म XFA से बना है, जो सपोर्टेड नहीं है। इसे Adobe Acrobat में खोलकर देखें।</string>
+    <string name="err_form_no_fields">इस PDF में भरने लायक कोई फ़ील्ड नहीं है</string>
+    <string name="err_form_flatten_failed">भरा हुआ फ़ॉर्म फ़्लैटन नहीं हो सका। इसकी जगह इसे बिना फ़्लैटन किए सेव करें।</string>
+    <string name="err_pdf_has_no_pages">इस PDF में कोई पेज नहीं है</string>
+    <string name="err_could_not_read_pdf_location">चुनी गई जगह से PDF पढ़ी नहीं जा सकी</string>
+    <plurals name="err_pdf_password_too_short">
+        <item quantity="one">कम से कम %1$d अक्षर का पासवर्ड रखें</item>
+        <item quantity="other">कम से कम %1$d अक्षरों का पासवर्ड रखें</item>
+    </plurals>
+    <string name="err_could_not_protect_pdf">यह PDF सुरक्षित नहीं हो सकी: %1$s</string>
+    <string name="err_could_not_protect_pdf_unsupported">यह PDF सुरक्षित नहीं हो सकी: यह फ़ाइल सपोर्टेड नहीं है</string>
+    <string name="err_translation_could_not_start">अनुवाद इंस्टॉल है, पर शुरू नहीं हो सका। कृपया ऐप रीस्टार्ट करें।</string>
+    <string name="err_translation_download_cancelled">अनुवाद का डाउनलोड रद्द किया गया</string>
+    <string name="err_translation_needs_confirmation">अनुवाद डाउनलोड करने के लिए Google Play को आपकी मंज़ूरी चाहिए। कृपया Wi-Fi पर फिर से कोशिश करें।</string>
+    <string name="err_translation_network">अनुवाद डाउनलोड नहीं हो सका। अपना कनेक्शन जांचें और फिर से कोशिश करें।</string>
+    <string name="err_translation_storage">अनुवाद जोड़ने के लिए स्टोरेज कम है।</string>
+    <string name="err_translation_play_unavailable">अनुवाद Google Play से जोड़ा जाता है, जो इस डिवाइस या इस इंस्टॉल के लिए उपलब्ध नहीं है।</string>
+    <string name="err_translation_access_denied">Google Play ने अनुवाद डाउनलोड करने की अनुमति नहीं दी।</string>
+    <string name="err_translation_busy">एक और डाउनलोड चल रहा है। कृपया थोड़ी देर में फिर से कोशिश करें।</string>
+    <string name="err_translation_play_error">अनुवाद नहीं जोड़ा जा सका (Google Play गड़बड़ी %1$d)।</string>
+    <string name="err_translation_no_text">अनुवाद के लिए कोई पहचाना गया टेक्स्ट नहीं है</string>
+    <string name="err_translation_unknown_language">टेक्स्ट की भाषा पहचानी नहीं जा सकी</string>
+    <string name="err_translation_language_unsupported">पहचानी गई भाषा (%1$s) के लिए अनुवाद उपलब्ध नहीं है</string>
+    <string name="err_translation_target_unsupported">इस भाषा में अनुवाद उपलब्ध नहीं है</string>
+</resources>

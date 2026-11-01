@@ -1,5 +1,7 @@
 package com.example.scanpro.ui
 
+import com.example.scanpro.core.ui.findActivity
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -173,6 +175,15 @@ fun ScanProApp(
     // Wide windows keep navigation at the side of the content instead of along the bottom.
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showRail = com.example.scanpro.navigation.isWideWindow() && currentRoute in ScanProDestinations.topLevel
+    // First launch: the language comes before the welcome, so the welcome is already in the chosen language.
+    var languageChosen by rememberSaveable { mutableStateOf(com.example.scanpro.core.text.AppLocale.isChosen(context)) }
+    if (!languageChosen) {
+        LanguagePickerScreen(initial = com.example.scanpro.core.text.AppLocale.current(context) ?: com.example.scanpro.core.text.AppLocale.suggested()) { tag ->
+            languageChosen = true
+            context.findActivity()?.let { com.example.scanpro.core.text.AppLocale.apply(it, tag) }
+        }
+        return
+    }
     val welcomeShowing = welcomeSeen == false
     Box(Modifier.fillMaxSize()) {
         // While the welcome covers the app, screen readers must not reach the controls underneath.

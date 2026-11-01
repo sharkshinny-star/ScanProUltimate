@@ -156,6 +156,10 @@ The engine currently provides:
 
 ## 10. Storage and security
 
+**Languages.** English plus Hindi, Tamil and Telugu (`res/values-hi|ta|te`). `core/text/AppLocale` owns the in-app choice: `LocaleManager` on Android 13+, a saved tag applied in `attachBaseContext` of the application and activity below that. The bundle ships every language (language splits off).
+
+**Locked folders.** `core/security/FolderLock` keeps locked folder names (DataStore `locked_folders`) and the folders opened this session (memory only). `LibraryViewModel` and `DocumentViewModel` read its `hidden` set; `LocalDeviceUnlock` (provided by `MainActivity`) shows the system prompt. A privacy screen, not encryption.
+
 The core library lives under app-private storage. Broad filesystem permission is not requested.
 
 Export/import paths use Photo Picker, SAF, FileProvider and Android Sharesheet.

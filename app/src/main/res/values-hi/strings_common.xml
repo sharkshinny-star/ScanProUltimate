@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_cancel">रद्द करें</string>
+    <string name="common_save">सेव करें</string>
+    <string name="common_delete">डिलीट करें</string>
+    <string name="common_done">हो गया</string>
+    <string name="common_close">बंद करें</string>
+    <string name="common_back">वापस</string>
+    <string name="common_share">शेयर करें</string>
+    <string name="common_rename">नाम बदलें</string>
+    <string name="common_retry">फिर कोशिश करें</string>
+    <string name="common_continue">जारी रखें</string>
+    <string name="common_apply">लागू करें</string>
+    <string name="common_reset">रीसेट करें</string>
+    <string name="common_undo">पहले जैसा करें</string>
+    <string name="common_redo">फिर से करें</string>
+    <string name="common_more">और</string>
+    <string name="common_settings">सेटिंग्स</string>
+    <string name="common_search">खोजें</string>
+    <string name="common_something_went_wrong">कुछ गड़बड़ हो गई</string>
+    <string name="common_stopped">रुका हुआ</string>
+    <string name="common_stop">रोकें</string>
+    <string name="common_on">चालू</string>
+    <string name="common_off">बंद</string>
+    <string name="language_picker_title">अपनी भाषा चुनें</string>
+</resources>

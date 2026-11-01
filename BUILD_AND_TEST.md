@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-10-31, after the "three screens from the design artifact" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-10-31, after the "P2" commit. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,12 +40,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-10-31, "three screens from the design artifact" commit)
+## Latest results (2026-11-01, "P2" commit)
 
 | Check | Result |
 |---|---|
 | `:app:compileDebugKotlin`, `:translate:compileDebugKotlin` | Passed, 0 warnings |
-| `:app:testDebugUnitTest` | 169 tests: 167 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
+| `:app:testDebugUnitTest` | 171 tests: 169 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
 | `:app:lintDebug` | 0 issues (`UseTomlInstead` ignored, see R10) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.3 MB |

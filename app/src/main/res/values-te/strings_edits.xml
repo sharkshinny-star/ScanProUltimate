@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="edits_msg_interrupted">
+        <item quantity="one">ScanPro మూసివేసినప్పుడు ఒక ఎడిట్ మధ్యలో ఆగిపోయింది. డాక్యుమెంట్‌ను చూసి, అవసరమైతే మళ్లీ చేయండి.</item>
+        <item quantity="other">ScanPro మూసివేసినప్పుడు %1$d ఎడిట్‌లు మధ్యలో ఆగిపోయాయి. మీ డాక్యుమెంట్‌లను చూసి, అవసరమైతే మళ్లీ చేయండి.</item>
+    </plurals>
+    <string name="edits_msg_document_gone">డాక్యుమెంట్ తొలగించబడినందున ఒక ఎడిట్ దాటవేయబడింది.</string>
+</resources>

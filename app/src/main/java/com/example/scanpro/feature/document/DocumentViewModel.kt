@@ -45,6 +45,7 @@ import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class DocumentViewModel @Inject constructor(
+    private val folderLock: com.example.scanpro.core.security.FolderLock,
     savedStateHandle: SavedStateHandle,
     @ApplicationContext private val context: Context,
     private val repository: DocumentRepository,
@@ -156,6 +157,10 @@ class DocumentViewModel @Inject constructor(
     }
 
     /** Saved signatures, newest first, offered in the signature dialog. */
+    /** Locked folders not opened this session (lower-cased names). */
+    val hiddenFolders: StateFlow<Set<String>> = folderLock.hidden
+    fun unlockFolder(name: String) = folderLock.unlockForSession(name)
+
     val savedSignatures: StateFlow<List<java.io.File>> = signatures.items
 
     fun stampSignature(pageId: String, signature: Bitmap, keep: Boolean = false, placement: SignaturePlacement? = null) =

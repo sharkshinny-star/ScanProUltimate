@@ -90,6 +90,10 @@ class MainActivity : FragmentActivity() {
         if (uris.isNotEmpty()) viewModel.importImages(uris)
     }
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(com.example.scanpro.core.text.AppLocale.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // The splash library needs its own Theme.SplashScreen on Android 11 and older and crashes without it;
         // the activity uses the app theme, so there the first frame is held back instead (same effect).
@@ -119,11 +123,14 @@ class MainActivity : FragmentActivity() {
             }
         }
         setContent {
+          androidx.compose.runtime.CompositionLocalProvider(
+            com.example.scanpro.core.security.LocalDeviceUnlock provides { onSuccess -> authenticate(onSuccess = onSuccess) }
+          ) {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
             // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
-            val mode = themeMode ?: return@setContent
+            val mode = themeMode ?: return@CompositionLocalProvider
             val targetDark = when (mode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
@@ -175,7 +182,8 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
-    }
+      }
+        }
 
     /**
      * Keeps the launch screen (always light) up until the saved theme and app-lock setting have

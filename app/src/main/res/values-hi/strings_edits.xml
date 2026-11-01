@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="edits_msg_interrupted">
+        <item quantity="one">ScanPro बंद होने से %1$d बदलाव अधूरे रह गए। अपने डॉक्यूमेंट देखें और ज़रूरत हो तो दोबारा करें।</item>
+        <item quantity="other">ScanPro बंद होने से %1$d बदलाव अधूरे रह गए। अपने डॉक्यूमेंट देखें और ज़रूरत हो तो दोबारा करें।</item>
+    </plurals>
+    <string name="edits_msg_document_gone">एक बदलाव छोड़ दिया गया क्योंकि उसका डॉक्यूमेंट डिलीट हो चुका था।</string>
+</resources>

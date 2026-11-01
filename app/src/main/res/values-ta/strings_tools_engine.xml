@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_progress_merging">%2$d-இல் %1$d ஃபைல் இணைக்கப்படுகிறது…</string>
+    <string name="tools_progress_saving_merged">இணைத்த PDF சேமிக்கப்படுகிறது…</string>
+    <string name="tools_progress_splitting_page">%2$d-இல் %1$d பக்கம் பிரிக்கப்படுகிறது…</string>
+    <string name="tools_progress_splitting_chunk">பகுதி %1$d பிரிக்கப்படுகிறது…</string>
+    <string name="tools_progress_extracting_range">%2$d-இல் %1$d வரம்பு பிரித்தெடுக்கப்படுகிறது…</string>
+    <string name="tools_progress_extracting_page">%2$d-இல் %1$d பக்கம் பிரித்தெடுக்கப்படுகிறது…</string>
+    <string name="tools_progress_rotating">%2$d-இல் %1$d பக்கம் சுழற்றப்படுகிறது…</string>
+    <string name="tools_progress_processing_page">%2$d-இல் %1$d பக்கம் செயலாக்கப்படுகிறது…</string>
+    <string name="tools_progress_loading_image">%2$d-இல் %1$d படம் ஏற்றப்படுகிறது…</string>
+    <string name="tools_progress_creating_pdf">PDF ஆவணம் உருவாக்கப்படுகிறது…</string>
+    <string name="tools_progress_exporting_page">பக்கம் %1$d, %2$s ஆக ஏற்றுமதி செய்யப்படுகிறது…</string>
+    <plurals name="tools_result_merged">
+        <item quantity="one">%1$d PDF-கள் இணைக்கப்பட்டன (மொத்தம் %2$d பக்கம்)</item>
+        <item quantity="other">%1$d PDF-கள் இணைக்கப்பட்டன (மொத்தம் %2$d பக்கங்கள்)</item>
+    </plurals>
+    <plurals name="tools_result_extracted">
+        <item quantity="one">%1$d பக்கம் பிரித்தெடுக்கப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்கள் பிரித்தெடுக்கப்பட்டன</item>
+    </plurals>
+    <string name="tools_result_rotated">பக்கங்கள் சுழற்றப்பட்டன</string>
+    <plurals name="tools_result_organized">
+        <item quantity="one">%1$d பக்கம் மறுவரிசைப்படுத்திச் சேமிக்கப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்கள் மறுவரிசைப்படுத்திச் சேமிக்கப்பட்டன</item>
+    </plurals>
+    <plurals name="tools_result_images_to_pdf">
+        <item quantity="one">%1$d பக்கத்துடன் PDF உருவாக்கப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்களுடன் PDF உருவாக்கப்பட்டது</item>
+    </plurals>
+    <string name="tools_result_protected">PDF பாஸ்வேர்டால் பாதுகாக்கப்பட்டது</string>
+    <string name="tools_result_password_removed">பாஸ்வேர்டு நீக்கப்பட்டது; நகல் பாஸ்வேர்டு இல்லாமல் திறக்கும்</string>
+    <string name="tools_result_restrictions_removed">திருத்துதல், நகலெடுத்தல் கட்டுப்பாடுகள் நீக்கப்பட்டன; இந்த ஃபைலைத் திறக்க பாஸ்வேர்டு எப்போதும் தேவைப்படவில்லை</string>
+    <string name="tools_err_merge_two">இணைக்கக் குறைந்தது 2 PDF ஃபைல்களைத் தேர்ந்தெடுங்கள்</string>
+    <string name="tools_err_file_reason">ஃபைல் %1$d: %2$s</string>
+    <string name="tools_err_file_unreadable">ஃபைல் %1$d-ஐ PDF ஆகப் படிக்க முடியவில்லை (சேதமடைந்திருக்கலாம் அல்லது பாஸ்வேர்டால் பாதுகாக்கப்பட்டிருக்கலாம்)</string>
+    <string name="tools_err_merge_no_pages">தேர்ந்தெடுத்த PDF-களில் பக்கங்கள் இல்லை</string>
+    <string name="tools_err_no_pages">PDF-இல் பக்கங்கள் இல்லை</string>
+    <string name="tools_err_no_ranges">சரியான பக்க வரம்புகள் கொடுக்கப்படவில்லை</string>
+    <string name="tools_err_extract_none">பிரித்தெடுக்கக் குறைந்தது ஒரு பக்கத்தைத் தேர்ந்தெடுங்கள்</string>
+    <string name="tools_err_keep_one_page">PDF-இல் குறைந்தது ஒரு பக்கமாவது இருக்க வேண்டும்</string>
+    <string name="tools_err_no_images">குறைந்தது ஒரு படத்தைத் தேர்ந்தெடுங்கள்</string>
+    <string name="tools_err_image_unreadable">%1$d-ஆவது இடத்திலுள்ள படத்தைப் படிக்க முடியவில்லை</string>
+    <string name="tools_err_image_undecodable">படம் %1$d-ஐ டிகோடு செய்ய முடியவில்லை</string>
+    <string name="tools_err_pages_missing">தேர்ந்தெடுத்த பக்கங்களில் எதுவும் இந்த PDF-இல் இல்லை</string>
+    <string name="tools_err_already_protected">இந்த PDF-ஐத் திறக்க ஏற்கெனவே பாஸ்வேர்டு தேவை. முதலில் அன்லாக் செய்து, பிறகு புதிய பாஸ்வேர்டால் பாதுகாக்கவும்.</string>
+    <string name="tools_err_password_protected">இந்த PDF பாஸ்வேர்டால் பாதுகாக்கப்பட்டுள்ளது. முதலில் PDF அன்லாக் கருவி மூலம் அன்லாக் செய்யுங்கள்.</string>
+    <string name="tools_err_unreadable_location">தேர்ந்தெடுத்த இடத்திலிருந்து PDF-ஐப் படிக்க முடியவில்லை</string>
+    <string name="tools_err_invalid_ranges">தவறான பக்க வரம்புகள்</string>
+</resources>

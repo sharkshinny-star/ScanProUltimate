@@ -32,7 +32,8 @@ class ScanProApplication : Application(), Configuration.Provider {
             .build()
 
     override fun attachBaseContext(base: Context) {
-        super.attachBaseContext(base)
+        // Android 12 and older: the language chosen in the app (13+ applies it through LocaleManager).
+        super.attachBaseContext(com.example.scanpro.core.text.AppLocale.wrap(base))
         // Makes code from on-demand modules (translation) usable as soon as Play installs them, without a restart.
         SplitCompat.install(this)
     }

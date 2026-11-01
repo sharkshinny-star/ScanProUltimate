@@ -2,6 +2,8 @@
 
 package com.example.scanpro.feature.document
 
+import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.systemBarsPadding
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -69,6 +71,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Highlight
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
@@ -250,6 +253,13 @@ fun DocumentRoute(
 
     val preview by viewModel.preview.collectAsStateWithLifecycle()
 
+    val hiddenFolders by viewModel.hiddenFolders.collectAsStateWithLifecycle()
+    val lockedDoc = document?.takeIf { d -> d.folderName.isNotBlank() && com.example.scanpro.core.security.FolderLock.key(d.folderName) in hiddenFolders }
+    if (lockedDoc != null) {
+        // Opened from a notification, a share, search or a link while its folder is locked.
+        LockedFolderGate(folder = lockedDoc.folderName, onBack = onBack, onUnlocked = { viewModel.unlockFolder(lockedDoc.folderName) })
+        return
+    }
     val current = document
     if (current == null) {
         // Pages are read from the database after the screen opens; only a document the library no
@@ -463,6 +473,7 @@ internal fun DocumentDetailScreen(
     var markupOpen by rememberSaveable { mutableStateOf(false) }
     var editTextOpen by rememberSaveable { mutableStateOf(false) }
     var eraserOpen by rememberSaveable { mutableStateOf(false) }
+    var penOpen by rememberSaveable { mutableStateOf(false) }
     var adjustmentsOpen by remember { mutableStateOf(false) }
     var mergeOpen by remember { mutableStateOf(false) }
     var deletePageOpen by remember { mutableStateOf(false) }
@@ -604,6 +615,7 @@ internal fun DocumentDetailScreen(
                         val canMark = !busy && currentPage != null
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             item { ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true } }
+                            item { ActionChip(Icons.Default.Gesture, stringResource(R.string.doc_pen), canMark) { penOpen = true } }
                             item { ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true } }
                             item { ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } } }
                             item { ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } } }
@@ -1023,6 +1035,7 @@ internal fun DocumentDetailScreen(
                 SheetRow(Icons.Default.FileCopy, stringResource(R.string.doc_duplicate), !busy, run { onDuplicatePage(currentPage.id) })
                 SheetRow(Icons.Default.Output, stringResource(R.string.doc_extract), !busy, run { onExtractPage(currentPage.id) })
                 SheetRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.doc_split_book), !busy, run { bookSplitOpen = true })
+                SheetRow(Icons.Default.Gesture, stringResource(R.string.doc_pen), !busy, run { penOpen = true })
                 SheetRow(Icons.Default.AutoFixOff, stringResource(R.string.doc_eraser), !busy, run { eraserOpen = true })
                 SheetRow(Icons.Default.EditNote, stringResource(R.string.doc_edit_text), !busy, run { editTextOpen = true })
                 SheetRow(Icons.Default.Edit, stringResource(R.string.doc_edit_markup), !busy && hasMarkup, run { markupOpen = true })
@@ -1185,6 +1198,17 @@ internal fun DocumentDetailScreen(
             onApply = { edit ->
                 editTextOpen = false
                 onReplaceText(currentPage.id, edit)
+            }
+        )
+    }
+
+    if (penOpen && currentPage != null) {
+        PenDialog(
+            imagePath = currentPage.imagePath,
+            onDismiss = { penOpen = false },
+            onApply = { ink ->
+                penOpen = false
+                onApplyMarkup(currentPage.id, currentPage.annotations + ink)
             }
         )
     }
@@ -1692,6 +1716,33 @@ private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersi
                     }
                 }
             }
+        }
+    }
+}
+
+/** Shown instead of a document whose folder is locked and not opened this session. */
+@Composable
+private fun LockedFolderGate(folder: String, onBack: () -> Unit, onUnlocked: () -> Unit) {
+    val unlock = com.example.scanpro.core.security.LocalDeviceUnlock.current
+    androidx.compose.material3.Surface(Modifier.fillMaxSize()) {
+        Column(
+            Modifier.fillMaxSize().systemBarsPadding().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
+            Spacer(Modifier.height(16.dp))
+            Text(stringResource(R.string.doc_locked_folder_title, folder), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.doc_locked_folder_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(24.dp))
+            Button(onClick = { unlock(onUnlocked) }) { Text(stringResource(R.string.doc_unlock)) }
+            TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
         }
     }
 }

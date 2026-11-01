@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favorite_on">பிடித்தவையில் உள்ளது</string>
+    <string name="a11y_favorite_off">பிடித்தவையில் இல்லை</string>
+    <string name="a11y_page_preview">பக்க முன்னோட்டம்</string>
+    <string name="a11y_signature_pad">கையொப்பப் பகுதி</string>
+    <string name="a11y_move_up">மேலே நகர்த்து</string>
+    <string name="a11y_move_down">கீழே நகர்த்து</string>
+</resources>

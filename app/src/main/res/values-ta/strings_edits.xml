@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="edits_msg_interrupted">
+        <item quantity="one">ScanPro மூடப்பட்டபோது ஒரு திருத்தம் இடையில் நின்றது. ஆவணத்தைச் சரிபார்த்து, தேவைப்பட்டால் மீண்டும் செய்யுங்கள்.</item>
+        <item quantity="other">ScanPro மூடப்பட்டபோது %1$d திருத்தங்கள் இடையில் நின்றன. உங்கள் ஆவணங்களைச் சரிபார்த்து, தேவைப்பட்டால் மீண்டும் செய்யுங்கள்.</item>
+    </plurals>
+    <string name="edits_msg_document_gone">ஆவணம் நீக்கப்பட்டதால் ஒரு திருத்தம் தவிர்க்கப்பட்டது.</string>
+</resources>

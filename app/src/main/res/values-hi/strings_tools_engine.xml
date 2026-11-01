@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_progress_merging">%2$d में से फ़ाइल %1$d जोड़ी जा रही है…</string>
+    <string name="tools_progress_saving_merged">जोड़ी गई PDF सेव हो रही है…</string>
+    <string name="tools_progress_splitting_page">%2$d में से पेज %1$d अलग हो रहा है…</string>
+    <string name="tools_progress_splitting_chunk">हिस्सा %1$d अलग हो रहा है…</string>
+    <string name="tools_progress_extracting_range">%2$d में से रेंज %1$d निकाली जा रही है…</string>
+    <string name="tools_progress_extracting_page">%2$d में से पेज %1$d निकाला जा रहा है…</string>
+    <string name="tools_progress_rotating">%2$d में से पेज %1$d घुमाया जा रहा है…</string>
+    <string name="tools_progress_processing_page">%2$d में से पेज %1$d प्रोसेस हो रहा है…</string>
+    <string name="tools_progress_loading_image">%2$d में से इमेज %1$d लोड हो रही है…</string>
+    <string name="tools_progress_creating_pdf">PDF डॉक्यूमेंट बन रहा है…</string>
+    <string name="tools_progress_exporting_page">पेज %1$d को %2$s के रूप में एक्सपोर्ट किया जा रहा है…</string>
+    <plurals name="tools_result_merged">
+        <item quantity="one">%1$d PDF जोड़ी गईं (कुल %2$d पेज)</item>
+        <item quantity="other">%1$d PDF जोड़ी गईं (कुल %2$d पेज)</item>
+    </plurals>
+    <plurals name="tools_result_extracted">
+        <item quantity="one">%1$d पेज निकाला गया</item>
+        <item quantity="other">%1$d पेज निकाले गए</item>
+    </plurals>
+    <string name="tools_result_rotated">पेज घुमा दिए गए</string>
+    <plurals name="tools_result_organized">
+        <item quantity="one">%1$d पेज का क्रम बदलकर सेव किया गया</item>
+        <item quantity="other">%1$d पेजों का क्रम बदलकर सेव किया गया</item>
+    </plurals>
+    <plurals name="tools_result_images_to_pdf">
+        <item quantity="one">%1$d पेज की PDF बनाई गई</item>
+        <item quantity="other">%1$d पेजों की PDF बनाई गई</item>
+    </plurals>
+    <string name="tools_result_protected">PDF पासवर्ड से सुरक्षित की गई</string>
+    <string name="tools_result_password_removed">पासवर्ड हटा दिया गया; कॉपी बिना पासवर्ड के खुलेगी</string>
+    <string name="tools_result_restrictions_removed">एडिट और कॉपी करने की पाबंदियां हटा दी गईं; इस फ़ाइल को खोलने के लिए कभी पासवर्ड की ज़रूरत नहीं थी</string>
+    <string name="tools_err_merge_two">जोड़ने के लिए कम से कम 2 PDF फ़ाइलें चुनें</string>
+    <string name="tools_err_file_reason">फ़ाइल %1$d: %2$s</string>
+    <string name="tools_err_file_unreadable">फ़ाइल %1$d को PDF के रूप में पढ़ा नहीं जा सका (यह खराब हो सकती है या पासवर्ड से सुरक्षित हो सकती है)</string>
+    <string name="tools_err_merge_no_pages">चुनी गई PDF में कोई पेज नहीं है</string>
+    <string name="tools_err_no_pages">PDF में कोई पेज नहीं है</string>
+    <string name="tools_err_no_ranges">कोई सही पेज रेंज नहीं दी गई</string>
+    <string name="tools_err_extract_none">निकालने के लिए कम से कम एक पेज चुनें</string>
+    <string name="tools_err_keep_one_page">PDF में कम से कम एक पेज रहना चाहिए</string>
+    <string name="tools_err_no_images">कम से कम एक इमेज चुनें</string>
+    <string name="tools_err_image_unreadable">स्थान %1$d पर मौजूद इमेज पढ़ी नहीं जा सकी</string>
+    <string name="tools_err_image_undecodable">इमेज %1$d डिकोड नहीं हो सकी</string>
+    <string name="tools_err_pages_missing">चुने गए पेजों में से कोई भी इस PDF में नहीं है</string>
+    <string name="tools_err_already_protected">इस PDF को खोलने के लिए पहले से पासवर्ड चाहिए। पहले इसे अनलॉक करें, फिर नए पासवर्ड से सुरक्षित करें।</string>
+    <string name="tools_err_password_protected">यह PDF पासवर्ड से सुरक्षित है। पहले इसे PDF अनलॉक करें टूल से अनलॉक करें।</string>
+    <string name="tools_err_unreadable_location">चुनी गई जगह से PDF पढ़ी नहीं जा सकी</string>
+    <string name="tools_err_invalid_ranges">पेज रेंज गलत है</string>
+</resources>

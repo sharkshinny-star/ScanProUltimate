@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favorite_on">पसंदीदा में है</string>
+    <string name="a11y_favorite_off">पसंदीदा में नहीं है</string>
+    <string name="a11y_page_preview">पेज प्रीव्यू</string>
+    <string name="a11y_signature_pad">सिग्नेचर पैड</string>
+    <string name="a11y_move_up">ऊपर ले जाएं</string>
+    <string name="a11y_move_down">नीचे ले जाएं</string>
+</resources>

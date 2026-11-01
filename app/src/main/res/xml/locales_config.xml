@@ -3,4 +3,7 @@
      and the in-app "App language" row opens that page. Add a locale here together with its values-xx folder. -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="en" />
+    <locale android:name="hi" />
+    <locale android:name="ta" />
+    <locale android:name="te" />
 </locale-config>

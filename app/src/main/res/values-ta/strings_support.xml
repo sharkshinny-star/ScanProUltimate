@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="support_subject_feedback">ScanPro கருத்து</string>
+    <string name="support_subject_issue">ScanPro பிரச்சனை அறிக்கை</string>
+    <string name="support_subject_feature">ScanPro அம்சப் பரிந்துரை</string>
+    <string name="support_prompt_feedback">எது நன்றாக வேலை செய்கிறது, எது இல்லை?</string>
+    <string name="support_prompt_issue">என்ன நடந்தது, நீங்கள் என்ன எதிர்பார்த்தீர்கள்?\nமீண்டும் நிகழ்த்துவதற்கான படிகள்:\n1.\n2.\n3.</string>
+    <string name="support_prompt_feature">ScanPro என்ன செய்ய வேண்டும் என்று விரும்புகிறீர்கள்?</string>
+    <string name="support_to_line">பெறுநர்: %1$s</string>
+    <string name="support_subject_line">பொருள்: %1$s</string>
+    <string name="support_delivery_email">விவரங்கள் நிரப்பப்பட்டு உங்கள் ஈமெயில் ஆப் திறக்கப்பட்டது</string>
+    <string name="support_delivery_share">ஈமெயில் ஆப் இல்லை; செய்தியை அனுப்ப ஒரு ஆப்பைத் தேர்ந்தெடுங்கள்</string>
+    <string name="support_delivery_clipboard">செய்தி நகலெடுக்கப்பட்டது; %1$s-க்கு அனுப்பும் எந்த ஈமெயிலிலும் பேஸ்ட் செய்யுங்கள்</string>
+    <string name="export_id_copy_footer">ScanPro Studio உருவாக்கிய ID நகல்</string>
+    <string name="export_err_page_unreadable">பக்கம் %1$d-ஐப் படிக்க முடியவில்லை</string>
+    <string name="export_err_id_copy_no_pages">ID நகலுக்குக் குறைந்தது ஒரு பக்கம் தேவை</string>
+    <string name="export_err_no_pages">ஆவணத்தில் பக்கங்கள் இல்லை</string>
+    <string name="export_err_pages_undecodable">பக்கங்களைப் படிக்க முடியவில்லை</string>
+    <string name="export_err_too_long">ஒரே படமாக்க ஆவணம் மிக நீளமாக உள்ளது. குறைவான பக்கங்களை ஏற்றுமதி செய்யுங்கள்.</string>
+    <string name="export_err_nothing">ஏற்றுமதி செய்ய எதுவும் இல்லை</string>
+    <string name="export_err_long_image_encode">நீண்ட படத்தைச் சேமிக்க முடியவில்லை</string>
+    <string name="assistant_ask_specific">அடையாளம் காணப்பட்ட உரை பற்றி ஒரு குறிப்பிட்ட கேள்வியைக் கேளுங்கள்.</string>
+    <string name="assistant_no_match">உரையில் பொருந்தும் பகுதியைக் கண்டுபிடிக்க முடியவில்லை.</string>
+    <string name="print_err_failed">PDF-ஐ பிரிண்ட் செய்ய முடியவில்லை</string>
+    <string name="backup_warning_unredacted_document">இந்த ஆவணத்தில் மறைக்கப்பட்ட அல்லது அழிக்கப்பட்ட பகுதிகள் உள்ளன. பேக்கப்பில் அசல் ஃபோட்டோக்கள் இருக்கும், எனவே பேக்கப்பும் அதன் பாஸ்வேர்டும் உள்ள எவரும் மறைத்ததைப் பார்க்க முடியும். மறைத்த நகலைப் பகிர, அதற்குப் பதிலாக PDF-ஆக ஏற்றுமதி செய்யுங்கள்.</string>
+    <string name="backup_warning_unredacted_all">நீங்கள் மறைத்த அல்லது அழித்த பகுதிகள் உட்பட, ஒவ்வொரு பக்கத்தின் அசல் ஃபோட்டோவும் பேக்கப்பில் இருக்கும். பேக்கப்பும் அதன் பாஸ்வேர்டும் உள்ள எவரும் மறைத்ததைப் பார்க்க முடியும். மறைத்த நகல்களைப் பகிர, அதற்குப் பதிலாக PDF-களாக ஏற்றுமதி செய்யுங்கள்.</string>
+    <string name="rate_title">ScanPro உங்களுக்கு எப்படி இருக்கிறது?</string>
+    <string name="rate_body">உங்கள் மதிப்பீடு ஒவ்வொரு ஸ்கேனையும் மேம்படுத்த உதவும்.</string>
+    <string name="rate_tap_a_star">ஒரு நட்சத்திரத்தைத் தட்டவும்</string>
+    <string name="rate_label_1">மோசம்</string>
+    <string name="rate_label_2">பரவாயில்லை</string>
+    <string name="rate_label_3">நன்று</string>
+    <string name="rate_label_4">மிக நன்று</string>
+    <string name="rate_label_5">அருமை!</string>
+    <string name="rate_title_1">ஏமாற்றியதற்கு மன்னிக்கவும்</string>
+    <string name="rate_body_1">என்ன தவறு நடந்தது என்று சொல்லுங்கள், சரிசெய்கிறோம்.</string>
+    <string name="rate_title_2">இன்னும் சிறப்பாகச் செய்யலாம்</string>
+    <string name="rate_body_2">எதைச் சரிசெய்ய வேண்டும் என்று சொல்லுங்கள்.</string>
+    <string name="rate_title_3">கருத்துக்கு நன்றி</string>
+    <string name="rate_body_3">எதை மேம்படுத்தலாம் என்று ஒரு வரி எழுதினாலும் பெரிய உதவி.</string>
+    <string name="rate_title_4">உங்களுக்குப் பிடித்ததில் மகிழ்ச்சி!</string>
+    <string name="rate_body_4">ஒரு சிறிய ரிவ்யூ மற்றவர்கள் ScanPro-வைக் கண்டறிய உதவும்.</string>
+    <string name="rate_title_5">எங்கள் நாளையே இனிதாக்கினீர்கள்!</string>
+    <string name="rate_body_5">ஒரு சிறிய ரிவ்யூ மூலம் உங்கள் அன்பைப் பகிருங்கள்.</string>
+    <string name="rate_not_now">இப்போது வேண்டாம்</string>
+    <string name="rate_on_google_play">Google Play-இல் மதிப்பிடு</string>
+    <string name="rate_send_feedback">கருத்து அனுப்பு</string>
+    <string name="rate_stars_content_description">மதிப்பீடு, ஒன்று முதல் ஐந்து நட்சத்திரங்கள்</string>
+    <plurals name="rate_star">
+        <item quantity="one">%1$d நட்சத்திரம்</item>
+        <item quantity="other">%1$d நட்சத்திரங்கள்</item>
+    </plurals>
+</resources>

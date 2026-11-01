@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -159,6 +160,8 @@ fun LibraryRoute(
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val busyLabel by viewModel.busyLabel.collectAsStateWithLifecycle()
     val savedGrid by viewModel.libraryGrid.collectAsStateWithLifecycle()
+    val lockedFolders by viewModel.lockedFolders.collectAsStateWithLifecycle()
+    val hiddenFolders by viewModel.hiddenFolders.collectAsStateWithLifecycle()
     LibraryScreen(
         mode = mode,
         overview = overview,
@@ -167,6 +170,10 @@ fun LibraryRoute(
         favoritesOnly = favoritesOnly,
         sort = sort,
         onFolderChange = viewModel::setFolder,
+        lockedFolders = lockedFolders,
+        hiddenFolders = hiddenFolders,
+        onSetFolderLocked = viewModel::setFolderLocked,
+        onUnlockFolder = viewModel::unlockFolder,
         onFavoritesOnlyChange = viewModel::setFavoritesOnly,
         savedGrid = savedGrid,
         onSortChange = viewModel::setSort,
@@ -210,6 +217,10 @@ internal fun LibraryScreen(
     favoritesOnly: Boolean,
     sort: LibrarySort,
     onFolderChange: (String) -> Unit,
+    lockedFolders: Set<String> = emptySet(),
+    hiddenFolders: Set<String> = emptySet(),
+    onSetFolderLocked: (String, Boolean) -> Unit = { _, _ -> },
+    onUnlockFolder: (String) -> Unit = {},
     onFavoritesOnlyChange: (Boolean) -> Unit,
     trashCount: Int,
     query: String,
@@ -250,6 +261,8 @@ internal fun LibraryScreen(
     var renameMergeTarget by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     var renameFolderSource by remember { mutableStateOf<String?>(null) }
+    var lockFolderOpen by remember { mutableStateOf<String?>(null) }
+    val deviceUnlock = com.example.scanpro.core.security.LocalDeviceUnlock.current
     var sortMenuOpen by remember { mutableStateOf(false) }
     var moreMenuOpen by remember { mutableStateOf(false) }
     val selected = rememberSaveable(saver = androidx.compose.runtime.saveable.listSaver(save = { it.toList() }, restore = { mutableStateListOf(*it.toTypedArray()) })) { mutableStateListOf<String>() }
@@ -440,6 +453,17 @@ internal fun LibraryScreen(
                                             leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                                             onClick = { moreMenuOpen = false; renameFolderSource = folder }
                                         )
+                                        val folderLocked = com.example.scanpro.core.security.FolderLock.key(folder) in lockedFolders
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(if (folderLocked) R.string.lib_menu_unlock_folder else R.string.lib_menu_lock_folder)) },
+                                            leadingIcon = { Icon(if (folderLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock, contentDescription = null) },
+                                            onClick = {
+                                                moreMenuOpen = false
+                                                val name = folder
+                                                // Removing a lock needs the phone's unlock too; adding one does not.
+                                                if (folderLocked) deviceUnlock { onSetFolderLocked(name, false) } else lockFolderOpen = name
+                                            }
+                                        )
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.lib_menu_remove_folder)) },
                                             leadingIcon = { Icon(Icons.Rounded.FolderDelete, contentDescription = null) },
@@ -515,8 +539,19 @@ internal fun LibraryScreen(
                             }
                             folders.forEach { name ->
                                 item(key = "folder_$name") {
-                                    LibraryChip(selected = folder.equals(name, ignoreCase = true), label = name, icon = Icons.Rounded.Folder) {
-                                        onFolderChange(if (folder.equals(name, ignoreCase = true)) "" else name)
+                                    val key = com.example.scanpro.core.security.FolderLock.key(name)
+                                    val locked = key in lockedFolders
+                                    LibraryChip(
+                                        selected = folder.equals(name, ignoreCase = true),
+                                        label = name,
+                                        icon = if (locked) Icons.Rounded.Lock else Icons.Rounded.Folder
+                                    ) {
+                                        when {
+                                            folder.equals(name, ignoreCase = true) -> onFolderChange("")
+                                            // A closed locked folder opens only after the phone's own unlock.
+                                            key in hiddenFolders -> deviceUnlock { onUnlockFolder(name); onFolderChange(name) }
+                                            else -> onFolderChange(name)
+                                        }
                                     }
                                 }
                             }
@@ -575,6 +610,19 @@ internal fun LibraryScreen(
         }
     }
 
+    lockFolderOpen?.let { name ->
+        // Said plainly before locking: this hides the folder inside the app; it does not encrypt the files.
+        ConfirmDialog(
+            title = stringResource(R.string.lib_lock_folder_title, name),
+            message = stringResource(R.string.lib_lock_folder_message),
+            confirmLabel = stringResource(R.string.lib_menu_lock_folder),
+            onDismiss = { lockFolderOpen = null },
+            onConfirm = {
+                lockFolderOpen = null
+                onSetFolderLocked(name, true)
+            }
+        )
+    }
     renameFolderSource?.let { source ->
         TextInputDialog(
             title = stringResource(R.string.lib_menu_rename_folder),

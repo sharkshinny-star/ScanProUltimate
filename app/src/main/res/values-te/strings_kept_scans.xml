@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kept_title">సేవ్ కాని స్కాన్‌లు</string>
+    <string name="kept_intro">ఈ స్కాన్‌లను డాక్యుమెంట్‌లుగా సేవ్ చేయలేకపోయాం. మీరు మళ్లీ ప్రయత్నించడానికి వీటి ఫోటోలు 30 రోజులు ఉంచబడతాయి.</string>
+    <string name="kept_item_title">%1$s స్కాన్</string>
+    <plurals name="kept_item_meta">
+        <item quantity="one">%1$d ఫోటో · %2$s</item>
+        <item quantity="other">%1$d ఫోటోలు · %2$s</item>
+    </plurals>
+    <string name="kept_item_expires">%1$s వరకు ఉంచబడుతుంది</string>
+    <string name="kept_item_failure">చివరి లోపం: %1$s</string>
+    <string name="kept_retry">మళ్లీ సేవ్ చేయండి</string>
+    <string name="kept_share_photos">ఫోటోలు షేర్ చేయండి</string>
+    <string name="kept_share_title">స్కాన్ ఫోటోలను షేర్ చేయండి</string>
+    <string name="kept_discard">తీసేయండి</string>
+    <string name="kept_cd_more_actions">మరిన్ని చర్యలు</string>
+    <string name="kept_discard_dialog_title">ఈ స్కాన్‌ను తీసేయాలా?</string>
+    <plurals name="kept_discard_dialog_message">
+        <item quantity="one">దీని ఫోటో తొలగించబడుతుంది. ఇది ఇంకెక్కడా సేవ్ కాలేదు, కాబట్టి దీన్ని అన్‌డూ చేయలేరు.</item>
+        <item quantity="other">దీని %1$d ఫోటోలు తొలగించబడతాయి. అవి ఇంకెక్కడా సేవ్ కాలేదు, కాబట్టి దీన్ని అన్‌డూ చేయలేరు.</item>
+    </plurals>
+    <string name="kept_empty_title">సేవ్ చేయడానికి ఏమీ లేదు</string>
+    <string name="kept_empty_body">ప్రతి స్కాన్ డాక్యుమెంట్‌గా సేవ్ అయింది.</string>
+    <string name="kept_msg_saving_again">స్కాన్‌ను మళ్లీ సేవ్ చేస్తోంది…</string>
+    <string name="kept_msg_discarded">స్కాన్ తీసేయబడింది</string>
+    <plurals name="kept_banner_title">
+        <item quantity="one">%1$d స్కాన్ సేవ్ కాలేదు</item>
+        <item quantity="other">%1$d స్కాన్‌లు సేవ్ కాలేదు</item>
+    </plurals>
+    <string name="kept_banner_body">ఫోటోలు ఉంచబడ్డాయి. మళ్లీ ప్రయత్నించడానికి ట్యాప్ చేయండి.</string>
+</resources>

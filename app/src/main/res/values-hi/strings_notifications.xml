@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notify_channel_results">पूरे हुए काम</string>
+    <string name="notify_channel_results_description">जब आप किसी दूसरे ऐप में थे, तब कोई स्कैन, एक्सपोर्ट या PDF टूल पूरा हो गया</string>
+    <string name="notify_channel_failures">अधूरे रहे काम</string>
+    <string name="notify_channel_failures_description">जब आप किसी दूसरे ऐप में थे, तब कोई स्कैन, एक्सपोर्ट या PDF टूल पूरा नहीं हो सका</string>
+    <string name="notify_channel_reminders">रिमाइंडर</string>
+    <string name="notify_channel_reminders_description">रीसायकल बिन और बैकअप के रिमाइंडर, जो आपने सेटिंग्स में चालू किए हैं</string>
+    <string name="notify_finished_title">हो गया</string>
+    <string name="notify_failed_title">पूरा नहीं हो सका</string>
+    <string name="notify_scan_saved">आपका स्कैन सेव हो गया। खोलने के लिए टैप करें।</string>
+    <string name="notify_scan_failed">आपका स्कैन अभी सेव नहीं हुआ। फिर से कोशिश करने के लिए ScanPro खोलें; फ़ोटो रखी गई हैं।</string>
+    <string name="notify_open_to_see">जानकारी देखने के लिए ScanPro खोलें</string>
+    <string name="notify_public_text">जानकारी के लिए ScanPro खोलें</string>
+    <string name="notify_trash_title">रीसायकल बिन</string>
+    <plurals name="notify_trash_body">
+        <item quantity="one">%1$d डॉक्यूमेंट एक दिन में हमेशा के लिए डिलीट हो जाएगा</item>
+        <item quantity="other">%1$d डॉक्यूमेंट एक दिन में हमेशा के लिए डिलीट हो जाएंगे</item>
+    </plurals>
+    <string name="notify_backup_title">बैकअप का समय</string>
+    <string name="notify_backup_body">आपने एक महीने से अपने डॉक्यूमेंट का बैकअप नहीं लिया है</string>
+    <string name="settings_section_notifications">नोटिफ़िकेशन</string>
+    <string name="settings_notifications_off_title">नोटिफ़िकेशन बंद हैं</string>
+    <string name="settings_notifications_off_body">इन्हें चालू करने के लिए टैप करें, ताकि काम पूरा होने पर ScanPro आपको बता सके</string>
+    <string name="settings_notify_finished_title">पूरे हुए काम</string>
+    <string name="settings_notify_finished_body">जब आप किसी दूसरे ऐप में हों और कोई स्कैन, एक्सपोर्ट या PDF टूल पूरा हो जाए</string>
+    <string name="settings_notify_failures_title">अधूरे रहे काम</string>
+    <string name="settings_notify_failures_body">जब आप किसी दूसरे ऐप में हों और कोई काम पूरा न हो सके</string>
+    <string name="settings_notify_trash_title">रीसायकल बिन रिमाइंडर</string>
+    <string name="settings_notify_trash_body">डिलीट किए गए डॉक्यूमेंट हमेशा के लिए हटने से एक दिन पहले</string>
+    <string name="settings_notify_backup_title">बैकअप रिमाइंडर</string>
+    <string name="settings_notify_backup_body">जब आपने एक महीने से बैकअप न लिया हो</string>
+    <string name="settings_notifications_system_title">सिस्टम नोटिफ़िकेशन सेटिंग्स</string>
+    <string name="settings_notifications_system_body">हर तरह की सूचना के लिए आवाज़, लॉक स्क्रीन और बहुत कुछ</string>
+</resources>

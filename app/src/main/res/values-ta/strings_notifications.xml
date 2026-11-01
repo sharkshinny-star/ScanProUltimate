@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notify_channel_results">முடிந்த வேலைகள்</string>
+    <string name="notify_channel_results_description">நீங்கள் வேறு ஆப்பில் இருந்தபோது ஸ்கேன், ஏற்றுமதி அல்லது PDF கருவி முடிந்தது</string>
+    <string name="notify_channel_failures">தோல்வியடைந்த வேலைகள்</string>
+    <string name="notify_channel_failures_description">நீங்கள் வேறு ஆப்பில் இருந்தபோது ஸ்கேன், ஏற்றுமதி அல்லது PDF கருவி முடிக்க முடியவில்லை</string>
+    <string name="notify_channel_reminders">நினைவூட்டல்கள்</string>
+    <string name="notify_channel_reminders_description">அமைப்புகளில் நீங்கள் ஆன் செய்த குப்பைத் தொட்டி மற்றும் பேக்கப் நினைவூட்டல்கள்</string>
+    <string name="notify_finished_title">முடிந்தது</string>
+    <string name="notify_failed_title">முடிக்க முடியவில்லை</string>
+    <string name="notify_scan_saved">உங்கள் ஸ்கேன் சேமிக்கப்பட்டது. திறக்கத் தட்டவும்.</string>
+    <string name="notify_scan_failed">உங்கள் ஸ்கேன் இன்னும் சேமிக்கப்படவில்லை. மீண்டும் முயல ScanPro-வைத் திறக்கவும்; ஃபோட்டோக்கள் வைக்கப்பட்டுள்ளன.</string>
+    <string name="notify_open_to_see">விவரங்களைப் பார்க்க ScanPro-வைத் திறக்கவும்</string>
+    <string name="notify_public_text">விவரங்களுக்கு ScanPro-வைத் திறக்கவும்</string>
+    <string name="notify_trash_title">குப்பைத் தொட்டி</string>
+    <plurals name="notify_trash_body">
+        <item quantity="one">%1$d ஆவணம் ஒரு நாளுக்குள் நிரந்தரமாக நீக்கப்படும்</item>
+        <item quantity="other">%1$d ஆவணங்கள் ஒரு நாளுக்குள் நிரந்தரமாக நீக்கப்படும்</item>
+    </plurals>
+    <string name="notify_backup_title">பேக்கப் எடுக்கும் நேரம்</string>
+    <string name="notify_backup_body">ஒரு மாதமாக உங்கள் ஆவணங்களை பேக்கப் எடுக்கவில்லை</string>
+    <string name="settings_section_notifications">அறிவிப்புகள்</string>
+    <string name="settings_notifications_off_title">அறிவிப்புகள் ஆஃப் செய்யப்பட்டுள்ளன</string>
+    <string name="settings_notifications_off_body">வேலை முடிந்ததும் ScanPro உங்களுக்குத் தெரிவிக்க, அவற்றை அனுமதிக்கத் தட்டவும்</string>
+    <string name="settings_notify_finished_title">முடிந்த வேலைகள்</string>
+    <string name="settings_notify_finished_body">நீங்கள் வேறு ஆப்பில் இருக்கும்போது ஸ்கேன், ஏற்றுமதி அல்லது PDF கருவி முடிந்தால்</string>
+    <string name="settings_notify_failures_title">தோல்வியடைந்த வேலைகள்</string>
+    <string name="settings_notify_failures_body">நீங்கள் வேறு ஆப்பில் இருக்கும்போது ஒரு வேலையை முடிக்க முடியாவிட்டால்</string>
+    <string name="settings_notify_trash_title">குப்பைத் தொட்டி நினைவூட்டல்</string>
+    <string name="settings_notify_trash_body">நீக்கப்பட்ட ஆவணங்கள் நிரந்தரமாக அகற்றப்படுவதற்கு முந்தைய நாள்</string>
+    <string name="settings_notify_backup_title">பேக்கப் நினைவூட்டல்</string>
+    <string name="settings_notify_backup_body">ஒரு மாதமாக நீங்கள் பேக்கப் எடுக்காவிட்டால்</string>
+    <string name="settings_notifications_system_title">சிஸ்டம் அறிவிப்பு அமைப்புகள்</string>
+    <string name="settings_notifications_system_body">ஒவ்வொரு வகை அறிவிப்புக்கும் ஒலிகள், லாக் ஸ்கிரீன் மற்றும் பல</string>
+</resources>

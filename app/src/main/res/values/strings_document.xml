@@ -280,4 +280,15 @@
     <string name="doc_word_docx_hint">Recognised text as a Word document</string>
     <string name="doc_excel_xlsx_hint">Recognised text as a spreadsheet</string>
     <string name="doc_encrypted_backup_hint">Pages, text and settings in one password-protected file</string>
+    <!-- Freehand pen (Pages tab chip and the page sheet) -->
+    <string name="doc_pen">Pen</string>
+    <string name="doc_pen_hint">Draw with your finger. Each colour and width becomes one mark-up you can move or remove later.</string>
+    <string name="doc_pen_black">Black</string>
+    <string name="doc_pen_blue">Blue</string>
+    <string name="doc_pen_red">Red</string>
+    <string name="doc_pen_bold">Bold</string>
+    <!-- A document opened while its folder is locked -->
+    <string name="doc_locked_folder_title">“%1$s” is locked</string>
+    <string name="doc_locked_folder_body">Unlock with your fingerprint, face or screen lock to open this document.</string>
+    <string name="doc_unlock">Unlock</string>
 </resources>

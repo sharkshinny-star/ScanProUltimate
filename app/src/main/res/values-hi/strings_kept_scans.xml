@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kept_title">बिना सेव हुए स्कैन</string>
+    <string name="kept_intro">ये स्कैन डॉक्यूमेंट के रूप में सेव नहीं हो सके। इनकी फ़ोटो 30 दिन तक रखी जाती हैं ताकि आप फिर से कोशिश कर सकें।</string>
+    <string name="kept_item_title">%1$s स्कैन</string>
+    <plurals name="kept_item_meta">
+        <item quantity="one">%1$d फ़ोटो · %2$s</item>
+        <item quantity="other">%1$d फ़ोटो · %2$s</item>
+    </plurals>
+    <string name="kept_item_expires">%1$s तक रखा जाएगा</string>
+    <string name="kept_item_failure">पिछली गड़बड़ी: %1$s</string>
+    <string name="kept_retry">फिर से सेव करें</string>
+    <string name="kept_share_photos">फ़ोटो शेयर करें</string>
+    <string name="kept_share_title">स्कैन की फ़ोटो शेयर करें</string>
+    <string name="kept_discard">हटाएं</string>
+    <string name="kept_cd_more_actions">और विकल्प</string>
+    <string name="kept_discard_dialog_title">यह स्कैन हटाएं?</string>
+    <plurals name="kept_discard_dialog_message">
+        <item quantity="one">इसकी %1$d फ़ोटो डिलीट हो जाएंगी। ये कहीं और सेव नहीं हैं, इसलिए इन्हें वापस नहीं लाया जा सकेगा।</item>
+        <item quantity="other">इसकी %1$d फ़ोटो डिलीट हो जाएंगी। ये कहीं और सेव नहीं हैं, इसलिए इन्हें वापस नहीं लाया जा सकेगा।</item>
+    </plurals>
+    <string name="kept_empty_title">सेव करने को कुछ नहीं</string>
+    <string name="kept_empty_body">हर स्कैन डॉक्यूमेंट के रूप में सेव हो गया।</string>
+    <string name="kept_msg_saving_again">स्कैन फिर से सेव हो रहा है…</string>
+    <string name="kept_msg_discarded">स्कैन हटा दिया गया</string>
+    <plurals name="kept_banner_title">
+        <item quantity="one">%1$d स्कैन सेव नहीं हुआ</item>
+        <item quantity="other">%1$d स्कैन सेव नहीं हुए</item>
+    </plurals>
+    <string name="kept_banner_body">फ़ोटो रखी गई हैं। फिर से कोशिश करने के लिए टैप करें।</string>
+</resources>

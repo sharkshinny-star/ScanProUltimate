@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="err_page_not_found">ఈ పేజీ ఇప్పుడు లేదు</string>
+    <string name="err_document_not_found">ఈ డాక్యుమెంట్ ఇప్పుడు లేదు</string>
+    <string name="err_choose_different_document">వేరే డాక్యుమెంట్ ఎంచుకోండి</string>
+    <string name="err_could_not_decode_page">పేజీ చిత్రాన్ని చదవలేకపోయాం</string>
+    <string name="err_page_too_narrow_to_split">విభజించడానికి పేజీ చాలా సన్నగా ఉంది</string>
+    <plurals name="err_document_page_limit">
+        <item quantity="one">ఒక డాక్యుమెంట్‌లో గరిష్ఠంగా %1$d పేజీ ఉండవచ్చు</item>
+        <item quantity="other">ఒక డాక్యుమెంట్‌లో గరిష్ఠంగా %1$d పేజీలు ఉండవచ్చు</item>
+    </plurals>
+    <string name="err_page_could_not_be_read">పేజీ %1$dని చదవలేకపోయాం</string>
+    <string name="err_no_scan_pages_returned">స్కానర్ ఏ పేజీలనూ ఇవ్వలేదు</string>
+    <string name="err_change_cannot_be_undone">ఈ మార్పును ఇక అన్‌డూ చేయలేరు</string>
+    <string name="err_could_not_open_selected_file">ఎంచుకున్న ఫైల్‌ను తెరవలేకపోయాం</string>
+    <string name="err_file_too_large_to_import">ఈ ఫైల్ ఇంపోర్ట్ చేయడానికి చాలా పెద్దది (పరిమితి %1$d MB)</string>
+    <string name="err_could_not_create_file_in_folder">ఎంచుకున్న ఫోల్డర్‌లో ఫైల్‌ను సృష్టించలేకపోయాం</string>
+    <string name="err_could_not_write_to_folder">ఎంచుకున్న ఫోల్డర్‌లో సేవ్ చేయలేకపోయాం</string>
+    <string name="err_choose_at_least_one_image">కనీసం ఒక చిత్రాన్ని ఎంచుకోండి</string>
+    <string name="err_pdf_page_count_range">PDFలో %1$d నుండి %2$d పేజీలు ఉండాలి</string>
+    <string name="err_name_required">పేరు నమోదు చేయండి</string>
+    <string name="err_folder_name_required">ఫోల్డర్ పేరు నమోదు చేయండి</string>
+    <string name="err_new_folder_name_required">కొత్త ఫోల్డర్ పేరు నమోదు చేయండి</string>
+    <string name="err_erase_nothing_selected">మీరు చెరిపేయాలనుకున్న దానిపై బ్రష్ చేయండి</string>
+    <string name="err_watermark_blank">వాటర్‌మార్క్ టెక్స్ట్ నమోదు చేయండి</string>
+    <string name="err_png_not_written">PNG చిత్రాన్ని సేవ్ చేయలేకపోయాం</string>
+    <string name="err_no_text_to_export">ఎక్స్‌పోర్ట్ చేయడానికి గుర్తించిన టెక్స్ట్ ఏదీ లేదు</string>
+    <string name="err_text_blank">కొంత టెక్స్ట్ నమోదు చేయండి</string>
+    <string name="err_document_has_no_pages">డాక్యుమెంట్‌లో పేజీలు ఏవీ లేవు</string>
+    <string name="err_could_not_save_pdf">PDFని సేవ్ చేయలేకపోయాం</string>
+    <string name="err_could_not_save_signature">సంతకాన్ని సేవ్ చేయలేకపోయాం</string>
+    <string name="err_could_not_save_image">%1$s చిత్రాన్ని సేవ్ చేయలేకపోయాం</string>
+    <string name="err_backup_password_too_short">కనీసం 6 అక్షరాలు ఉన్న బ్యాకప్ పాస్‌వర్డ్ వాడండి</string>
+    <string name="err_could_not_open_backup">బ్యాకప్‌ను తెరవలేకపోయాం</string>
+    <string name="err_could_not_decrypt_backup">బ్యాకప్‌ను డీక్రిప్ట్ చేయలేకపోయాం. పాస్‌వర్డ్, ఫైల్‌ను చెక్ చేయండి.</string>
+    <string name="err_backup_too_large">ఈ బ్యాకప్ రీస్టోర్ చేయడానికి చాలా పెద్దది</string>
+    <string name="err_could_not_decode_image">%1$s చిత్రాన్ని చదవలేకపోయాం</string>
+    <string name="err_could_not_decode_source">పేజీ అసలు చిత్రాన్ని చదవలేకపోయాం</string>
+    <string name="err_could_not_open_input_pdf">PDFని తెరవలేకపోయాం</string>
+    <string name="err_could_not_read_pdf_page">పేజీ %1$dని చదవలేకపోయాం</string>
+    <string name="err_page_range_empty" tools:ignore="TypographyDashes">కనీసం ఒక పేజీ లేదా పరిధి నమోదు చేయండి, ఉదా. 1-3</string>
+    <string name="err_page_range_backwards" tools:ignore="TypographyDashes">\"%1$s\" వెనుకకు ఉంది; దాన్ని %2$d-%3$d అని రాయండి</string>
+    <string name="err_page_range_invalid" tools:ignore="TypographyDashes">\"%1$s\" పేజీ నంబర్ కాదు, 2-4 లాంటి పరిధి కూడా కాదు</string>
+    <string name="err_page_range_starts_at_one">పేజీలు 1 నుండి మొదలవుతాయి</string>
+    <plurals name="err_page_range_past_end">
+        <item quantity="one">\"%2$s\" చివరి పేజీని దాటుతోంది; ఈ PDFలో %1$d పేజీ ఉంది</item>
+        <item quantity="other">\"%2$s\" చివరి పేజీని దాటుతోంది; ఈ PDFలో %1$d పేజీలు ఉన్నాయి</item>
+    </plurals>
+    <string name="err_form_xfa_unsupported">ఈ ఫారమ్ XFAతో తయారైంది, దానికి సపోర్ట్ లేదు. Adobe Acrobatలో తెరిచి చూడండి.</string>
+    <string name="err_form_no_fields">ఈ PDFలో నింపగల ఫీల్డ్‌లు ఏవీ లేవు</string>
+    <string name="err_form_flatten_failed">నింపిన ఫారమ్‌ను ఫ్లాటెన్ చేయలేకపోయాం. బదులుగా ఫ్లాటెన్ చేయకుండా సేవ్ చేయండి.</string>
+    <string name="err_pdf_has_no_pages">ఈ PDFలో పేజీలు ఏవీ లేవు</string>
+    <string name="err_could_not_read_pdf_location">ఎంచుకున్న లొకేషన్ నుండి PDFని చదవలేకపోయాం</string>
+    <plurals name="err_pdf_password_too_short">
+        <item quantity="one">కనీసం %1$d అక్షరం ఉన్న పాస్‌వర్డ్ వాడండి</item>
+        <item quantity="other">కనీసం %1$d అక్షరాలు ఉన్న పాస్‌వర్డ్ వాడండి</item>
+    </plurals>
+    <string name="err_could_not_protect_pdf">ఈ PDFని రక్షించలేకపోయాం: %1$s</string>
+    <string name="err_could_not_protect_pdf_unsupported">ఈ PDFని రక్షించలేకపోయాం: ఈ ఫైల్‌కి సపోర్ట్ లేదు</string>
+    <string name="err_translation_could_not_start">అనువాదం ఇన్‌స్టాల్ అయింది కానీ మొదలవలేదు. దయచేసి యాప్‌ను రీస్టార్ట్ చేయండి.</string>
+    <string name="err_translation_download_cancelled">అనువాదం డౌన్‌లోడ్ రద్దు చేయబడింది</string>
+    <string name="err_translation_needs_confirmation">అనువాదం డౌన్‌లోడ్ చేయడానికి Google Playకి మీ నిర్ధారణ కావాలి. దయచేసి Wi-Fiలో మళ్లీ ప్రయత్నించండి.</string>
+    <string name="err_translation_network">అనువాదం డౌన్‌లోడ్ కాలేదు. మీ కనెక్షన్ చెక్ చేసి మళ్లీ ప్రయత్నించండి.</string>
+    <string name="err_translation_storage">అనువాదం జోడించడానికి తగినంత స్టోరేజ్ లేదు.</string>
+    <string name="err_translation_play_unavailable">అనువాదం Google Play ద్వారా జోడించబడుతుంది, అది ఈ డివైజ్‌లో లేదా ఈ ఇన్‌స్టాల్‌కి అందుబాటులో లేదు.</string>
+    <string name="err_translation_access_denied">అనువాదం డౌన్‌లోడ్‌కి Google Play అనుమతించలేదు.</string>
+    <string name="err_translation_busy">మరో డౌన్‌లోడ్ జరుగుతోంది. దయచేసి కాసేపట్లో మళ్లీ ప్రయత్నించండి.</string>
+    <string name="err_translation_play_error">అనువాదం జోడించలేకపోయాం (Google Play లోపం %1$d).</string>
+    <string name="err_translation_no_text">అనువదించడానికి గుర్తించిన టెక్స్ట్ ఏదీ లేదు</string>
+    <string name="err_translation_unknown_language">టెక్స్ట్ భాషను గుర్తించలేకపోయాం</string>
+    <string name="err_translation_language_unsupported">గుర్తించిన భాషకు (%1$s) అనువాదం అందుబాటులో లేదు</string>
+    <string name="err_translation_target_unsupported">ఈ భాషలోకి అనువాదం అందుబాటులో లేదు</string>
+</resources>

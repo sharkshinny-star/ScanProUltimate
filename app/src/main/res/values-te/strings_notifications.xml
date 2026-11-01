@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notify_channel_results">పూర్తయిన పనులు</string>
+    <string name="notify_channel_results_description">మీరు వేరే యాప్‌లో ఉన్నప్పుడు స్కాన్, ఎక్స్‌పోర్ట్ లేదా PDF టూల్ పూర్తయింది</string>
+    <string name="notify_channel_failures">విఫలమైన పనులు</string>
+    <string name="notify_channel_failures_description">మీరు వేరే యాప్‌లో ఉన్నప్పుడు స్కాన్, ఎక్స్‌పోర్ట్ లేదా PDF టూల్ పూర్తి కాలేదు</string>
+    <string name="notify_channel_reminders">రిమైండర్‌లు</string>
+    <string name="notify_channel_reminders_description">మీరు సెట్టింగ్‌లలో ఆన్ చేసిన రీసైకిల్ బిన్, బ్యాకప్ రిమైండర్‌లు</string>
+    <string name="notify_finished_title">పూర్తయింది</string>
+    <string name="notify_failed_title">పూర్తి కాలేదు</string>
+    <string name="notify_scan_saved">మీ స్కాన్ సేవ్ అయింది. తెరవడానికి ట్యాప్ చేయండి.</string>
+    <string name="notify_scan_failed">మీ స్కాన్ ఇంకా సేవ్ కాలేదు. మళ్లీ ప్రయత్నించడానికి ScanPro తెరవండి; ఫోటోలు ఉంచబడ్డాయి.</string>
+    <string name="notify_open_to_see">వివరాలు చూడటానికి ScanPro తెరవండి</string>
+    <string name="notify_public_text">వివరాల కోసం ScanPro తెరవండి</string>
+    <string name="notify_trash_title">రీసైకిల్ బిన్</string>
+    <plurals name="notify_trash_body">
+        <item quantity="one">%1$d డాక్యుమెంట్ ఒక రోజులో శాశ్వతంగా తొలగించబడుతుంది</item>
+        <item quantity="other">%1$d డాక్యుమెంట్‌లు ఒక రోజులో శాశ్వతంగా తొలగించబడతాయి</item>
+    </plurals>
+    <string name="notify_backup_title">బ్యాకప్ చేసే సమయం</string>
+    <string name="notify_backup_body">మీరు ఒక నెలగా మీ డాక్యుమెంట్‌లను బ్యాకప్ చేయలేదు</string>
+    <string name="settings_section_notifications">నోటిఫికేషన్‌లు</string>
+    <string name="settings_notifications_off_title">నోటిఫికేషన్‌లు ఆఫ్‌లో ఉన్నాయి</string>
+    <string name="settings_notifications_off_body">పని పూర్తయినప్పుడు ScanPro మీకు చెప్పేలా, అనుమతించడానికి ట్యాప్ చేయండి</string>
+    <string name="settings_notify_finished_title">పూర్తయిన పనులు</string>
+    <string name="settings_notify_finished_body">మీరు వేరే యాప్‌లో ఉన్నప్పుడు స్కాన్, ఎక్స్‌పోర్ట్ లేదా PDF టూల్ పూర్తయితే</string>
+    <string name="settings_notify_failures_title">విఫలమైన పనులు</string>
+    <string name="settings_notify_failures_body">మీరు వేరే యాప్‌లో ఉన్నప్పుడు ఏదైనా పని పూర్తి కాకపోతే</string>
+    <string name="settings_notify_trash_title">రీసైకిల్ బిన్ రిమైండర్</string>
+    <string name="settings_notify_trash_body">తొలగించిన డాక్యుమెంట్‌లు శాశ్వతంగా తీసేయబడే ముందు రోజు</string>
+    <string name="settings_notify_backup_title">బ్యాకప్ రిమైండర్</string>
+    <string name="settings_notify_backup_body">మీరు ఒక నెలగా బ్యాకప్ చేయకపోతే</string>
+    <string name="settings_notifications_system_title">సిస్టమ్ నోటిఫికేషన్ సెట్టింగ్‌లు</string>
+    <string name="settings_notifications_system_body">ఒక్కో రకం నోటీసుకు సౌండ్‌లు, లాక్ స్క్రీన్ మరియు మరిన్ని</string>
+</resources>

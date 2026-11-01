@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ScanPro</string>
+    <string name="translate_module_title">అనువాదం</string>
+    <string name="shortcut_scan_short">ఇప్పుడే స్కాన్ చేయండి</string>
+    <string name="shortcut_scan_long">డాక్యుమెంట్‌ను ఇప్పుడే స్కాన్ చేయండి</string>
+    <string name="shortcut_dont_remove_short">🥺 మా యాప్‌ను తీసేయకండి!</string>
+    <string name="shortcut_dont_remove_long">మాకు ఇంకో అవకాశం ఇవ్వండి!</string>
+    <string name="shortcut_bugs_short">⚠️ బగ్‌లు లేదా సమస్యలు ఉన్నాయా?</string>
+    <string name="shortcut_bugs_long">ఇక్కడ మాకు చెప్పండి!</string>
+    <string name="operation_channel_name">బ్యాక్‌గ్రౌండ్ పనులు</string>
+    <string name="operation_channel_description">స్కాన్ ప్రాసెస్ అవుతున్నప్పుడు చూపిస్తుంది, మీరు వేరే యాప్‌కి మారినా పని పూర్తవుతుంది.</string>
+    <string name="operation_notification_working">మీ డాక్యుమెంట్‌పై పని జరుగుతోంది…</string>
+    <string name="crash_prompt_title">ScanPro అనుకోకుండా ఆగిపోయింది</string>
+    <string name="crash_prompt_body">గత సారి, ఒక లోపం వల్ల యాప్ ఆగిపోయింది. రిపోర్ట్‌ను డెవలపర్‌లతో షేర్ చేస్తే దాన్ని సరిచేయడానికి సహాయపడుతుంది. రిపోర్ట్‌లో లోపం వివరాలు, మీ డివైజ్ మోడల్ మాత్రమే ఉంటాయి, మీ డాక్యుమెంట్‌లు కాదు.</string>
+    <string name="crash_prompt_share">రిపోర్ట్ షేర్ చేయండి</string>
+    <string name="crash_prompt_dismiss">ఇప్పుడు కాదు</string>
+    <string name="crash_share_subject">ScanPro క్రాష్ రిపోర్ట్</string>
+</resources>

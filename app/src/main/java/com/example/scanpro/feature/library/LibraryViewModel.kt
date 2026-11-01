@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.library
 
+import androidx.paging.filter
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -48,6 +49,7 @@ class LibraryViewModel @Inject constructor(
     private val library: DocumentLibrary,
     private val settings: SettingsStore,
     private val savedState: SavedStateHandle,
+    private val folderLock: com.example.scanpro.core.security.FolderLock,
     keptScans: KeptScanStore
 ) : ViewModel() {
     private val _query = MutableStateFlow("")
@@ -69,7 +71,17 @@ class LibraryViewModel @Inject constructor(
     fun setSort(value: LibrarySort) { viewModelScope.launch { settings.setLibrarySort(value.name) } }
     fun setLibraryGrid(value: Boolean) { viewModelScope.launch { settings.setLibraryGrid(value) } }
 
-    val overview: StateFlow<LibraryOverview> = library.overview
+    /** Locked folders (lower-cased) and the ones still closed this session; see FolderLock. */
+    val lockedFolders: StateFlow<Set<String>> = folderLock.locked
+    val hiddenFolders: StateFlow<Set<String>> = folderLock.hidden
+
+    /** The library overview with documents in closed locked folders left out of Recent. */
+    val overview: StateFlow<LibraryOverview> = combine(library.overview, folderLock.hidden) { o, hidden ->
+        if (hidden.isEmpty()) o else o.copy(recent = o.recent.filterNot { it.inHidden(hidden) })
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, library.overview.value)
+
+    fun setFolderLocked(name: String, locked: Boolean) = folderLock.setLocked(name, locked)
+    fun unlockFolder(name: String) = folderLock.unlockForSession(name)
 
     /**
      * The documents to list. Without a search this is the paged database query for the current folder,
@@ -77,12 +89,16 @@ class LibraryViewModel @Inject constructor(
      */
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val documents: Flow<PagingData<DocumentSummary>> =
-        combine(_query.debounce(180.milliseconds), folder, favoritesOnly, sort) { query, folder, favorites, sort -> Filters(query, folder, favorites, sort) }
-            .flatMapLatest { f ->
-                if (f.query.isBlank()) {
+        combine(_query.debounce(180.milliseconds), folder, favoritesOnly, sort, folderLock.hidden) { query, folder, favorites, sort, hidden -> Filters(query, folder, favorites, sort) to hidden }
+            .flatMapLatest { (f, hidden) ->
+                // A closed locked folder shows nothing, and its documents stay out of All, favourites and search.
+                if (f.folder.isNotBlank() && com.example.scanpro.core.security.FolderLock.key(f.folder) in hidden) {
+                    flow { emit(PagingData.empty()) }
+                } else if (f.query.isBlank()) {
                     repository.pagedSummaries(f.folder, f.favoritesOnly, f.sort)
+                        .map { page -> if (hidden.isEmpty()) page else page.filter { !it.inHidden(hidden) } }
                 } else {
-                    flow { emit(PagingData.from(searchResults(f))) }
+                    flow { emit(PagingData.from(searchResults(f).filterNot { it.inHidden(hidden) })) }
                 }
             }
             .cachedIn(viewModelScope)
@@ -136,7 +152,10 @@ class LibraryViewModel @Inject constructor(
     fun deleteFolder(name: String) = operations.run(
         context.getString(R.string.lib_msg_removing_folder),
         context.getString(R.string.lib_msg_folder_removed)
-    ) { repository.deleteFolder(name) }
+    ) {
+        repository.deleteFolder(name)
+        folderLock.setLocked(name, false)
+    }
 
     suspend fun folderExists(name: String): Boolean = repository.folderExists(name)
 
@@ -172,10 +191,16 @@ class LibraryViewModel @Inject constructor(
 
     /** Renames the folder; queued if another job is running. */
     fun renameFolder(oldName: String, newName: String) =
-        operations.run(context.getString(R.string.msg_renaming_folder), context.getString(R.string.msg_folder_renamed)) { repository.renameFolder(oldName, newName) }
+        operations.run(context.getString(R.string.msg_renaming_folder), context.getString(R.string.msg_folder_renamed)) {
+            repository.renameFolder(oldName, newName)
+            folderLock.rename(oldName, newName)
+        }
 
     private companion object {
         const val KEY_FOLDER = "folder"
         const val KEY_FAVORITES = "favoritesOnly"
     }
 }
+
+private fun DocumentSummary.inHidden(hidden: Set<String>) =
+    folderName.isNotBlank() && com.example.scanpro.core.security.FolderLock.key(folderName) in hidden

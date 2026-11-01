@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_cancel">ரத்துசெய்</string>
+    <string name="common_save">சேமி</string>
+    <string name="common_delete">நீக்கு</string>
+    <string name="common_done">முடிந்தது</string>
+    <string name="common_close">மூடு</string>
+    <string name="common_back">பின்செல்</string>
+    <string name="common_share">பகிர்</string>
+    <string name="common_rename">பெயர் மாற்று</string>
+    <string name="common_retry">மீண்டும் முயல்</string>
+    <string name="common_continue">தொடர்</string>
+    <string name="common_apply">பயன்படுத்து</string>
+    <string name="common_reset">மீட்டமை</string>
+    <string name="common_undo">செயல்தவிர்</string>
+    <string name="common_redo">மீண்டும் செய்</string>
+    <string name="common_more">மேலும்</string>
+    <string name="common_settings">அமைப்புகள்</string>
+    <string name="common_search">தேடு</string>
+    <string name="common_something_went_wrong">ஏதோ தவறு நடந்துவிட்டது</string>
+    <string name="common_stopped">நிறுத்தப்பட்டது</string>
+    <string name="common_stop">நிறுத்து</string>
+    <string name="common_on">ஆன்</string>
+    <string name="common_off">ஆஃப்</string>
+    <string name="language_picker_title">உங்கள் மொழியைத் தேர்வுசெய்யுங்கள்</string>
+</resources>

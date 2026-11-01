@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kept_title">சேமிக்கப்படாத ஸ்கேன்கள்</string>
+    <string name="kept_intro">இந்த ஸ்கேன்களை ஆவணங்களாகச் சேமிக்க முடியவில்லை. மீண்டும் முயல அவற்றின் ஃபோட்டோக்கள் 30 நாட்கள் வைக்கப்படும்.</string>
+    <string name="kept_item_title">%1$s ஸ்கேன்</string>
+    <plurals name="kept_item_meta">
+        <item quantity="one">%1$d ஃபோட்டோ · %2$s</item>
+        <item quantity="other">%1$d ஃபோட்டோக்கள் · %2$s</item>
+    </plurals>
+    <string name="kept_item_expires">%1$s வரை வைக்கப்படும்</string>
+    <string name="kept_item_failure">கடைசிப் பிழை: %1$s</string>
+    <string name="kept_retry">மீண்டும் சேமி</string>
+    <string name="kept_share_photos">ஃபோட்டோக்களைப் பகிர்</string>
+    <string name="kept_share_title">ஸ்கேன் ஃபோட்டோக்களைப் பகிர்</string>
+    <string name="kept_discard">நிராகரி</string>
+    <string name="kept_cd_more_actions">மேலும் செயல்கள்</string>
+    <string name="kept_discard_dialog_title">இந்த ஸ்கேனை நிராகரிக்கவா?</string>
+    <plurals name="kept_discard_dialog_message">
+        <item quantity="one">இதன் ஃபோட்டோ நீக்கப்படும். அது வேறு எங்கும் சேமிக்கப்படவில்லை, எனவே இதைத் திரும்பப் பெற முடியாது.</item>
+        <item quantity="other">இதன் %1$d ஃபோட்டோக்கள் நீக்கப்படும். அவை வேறு எங்கும் சேமிக்கப்படவில்லை, எனவே இதைத் திரும்பப் பெற முடியாது.</item>
+    </plurals>
+    <string name="kept_empty_title">சேமிக்க எதுவும் இல்லை</string>
+    <string name="kept_empty_body">எல்லா ஸ்கேன்களும் ஆவணங்களாகச் சேமிக்கப்பட்டன.</string>
+    <string name="kept_msg_saving_again">ஸ்கேன் மீண்டும் சேமிக்கப்படுகிறது…</string>
+    <string name="kept_msg_discarded">ஸ்கேன் நிராகரிக்கப்பட்டது</string>
+    <plurals name="kept_banner_title">
+        <item quantity="one">%1$d ஸ்கேன் சேமிக்கப்படவில்லை</item>
+        <item quantity="other">%1$d ஸ்கேன்கள் சேமிக்கப்படவில்லை</item>
+    </plurals>
+    <string name="kept_banner_body">ஃபோட்டோக்கள் வைக்கப்பட்டுள்ளன. மீண்டும் முயல தட்டவும்.</string>
+</resources>

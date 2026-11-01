@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="data_filter_original">ओरिजिनल</string>
+    <string name="data_filter_auto">ऑटो क्लीन</string>
+    <string name="data_filter_color">मैजिक कलर</string>
+    <string name="data_filter_gray">ग्रे</string>
+    <string name="data_filter_bw">ब्लैक &amp; व्हाइट</string>
+    <string name="data_filter_whiteboard">व्हाइटबोर्ड</string>
+    <string name="data_pdf_quality_high">हाई</string>
+    <string name="data_pdf_quality_balanced">बैलेंस्ड</string>
+    <string name="data_pdf_quality_small">छोटा</string>
+    <string name="data_page_size_auto">ऑटो</string>
+    <string name="data_page_size_a4">A4</string>
+    <string name="data_page_size_letter">लेटर</string>
+    <string name="data_page_size_legal">लीगल</string>
+    <string name="data_theme_light">लाइट</string>
+    <string name="data_theme_dark">डार्क</string>
+    <string name="data_theme_system">सिस्टम डिफ़ॉल्ट</string>
+    <string name="data_scan_mode_document">डॉक्यूमेंट</string>
+    <string name="data_scan_mode_receipt">रसीद</string>
+    <string name="data_scan_mode_whiteboard">व्हाइटबोर्ड</string>
+    <string name="data_scan_mode_id_card">ID कार्ड</string>
+    <string name="data_scan_mode_book">किताब</string>
+    <string name="data_scan_mode_text">टेक्स्ट निकालें</string>
+    <string name="data_ocr_script_latin">लैटिन</string>
+    <string name="data_ocr_script_devanagari">देवनागरी</string>
+    <string name="data_ocr_script_chinese">चीनी</string>
+    <string name="data_ocr_script_japanese">जापानी</string>
+    <string name="data_ocr_script_korean">कोरियाई</string>
+    <string name="data_watermark_size_small">छोटा</string>
+    <string name="data_watermark_size_medium">मीडियम</string>
+    <string name="data_watermark_size_large">बड़ा</string>
+    <string name="data_watermark_position_diagonal">तिरछा</string>
+    <string name="data_watermark_position_center">बीच में</string>
+    <string name="data_watermark_position_bottom">नीचे</string>
+    <string name="data_kind_invoice">इनवॉइस</string>
+    <string name="data_kind_receipt">रसीद</string>
+    <string name="data_kind_contract">कॉन्ट्रैक्ट</string>
+    <string name="data_kind_identity">पहचान पत्र</string>
+    <string name="data_kind_business_card">बिज़नेस कार्ड</string>
+    <string name="data_kind_letter">पत्र</string>
+    <string name="data_kind_notes">नोट्स</string>
+    <string name="data_kind_general">डॉक्यूमेंट</string>
+</resources>

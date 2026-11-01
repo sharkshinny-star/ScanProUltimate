@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_favorite_on">ఇష్టమైనవాటిలో ఉంది</string>
+    <string name="a11y_favorite_off">ఇష్టమైనవాటిలో లేదు</string>
+    <string name="a11y_page_preview">పేజీ ప్రివ్యూ</string>
+    <string name="a11y_signature_pad">సంతకం ప్యాడ్</string>
+    <string name="a11y_move_up">పైకి జరపండి</string>
+    <string name="a11y_move_down">కిందికి జరపండి</string>
+</resources>

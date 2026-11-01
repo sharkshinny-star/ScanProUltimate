@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="support_subject_feedback">ScanPro फ़ीडबैक</string>
+    <string name="support_subject_issue">ScanPro समस्या रिपोर्ट</string>
+    <string name="support_subject_feature">ScanPro फ़ीचर सुझाव</string>
+    <string name="support_prompt_feedback">क्या अच्छा चल रहा है, और क्या नहीं?</string>
+    <string name="support_prompt_issue">क्या हुआ, और आप क्या होने की उम्मीद कर रहे थे?\nदोबारा ऐसा करने के स्टेप:\n1.\n2.\n3.</string>
+    <string name="support_prompt_feature">आप ScanPro में क्या चाहते हैं?</string>
+    <string name="support_to_line">प्रति: %1$s</string>
+    <string name="support_subject_line">विषय: %1$s</string>
+    <string name="support_delivery_email">आपका ईमेल ऐप जानकारी भरकर खुल गया है</string>
+    <string name="support_delivery_share">कोई ईमेल ऐप नहीं मिला; मैसेज भेजने के लिए कोई ऐप चुनें</string>
+    <string name="support_delivery_clipboard">मैसेज कॉपी हो गया; इसे किसी भी ईमेल में पेस्ट करके %1$s पर भेजें</string>
+    <string name="export_id_copy_footer">ID कॉपी ScanPro Studio से बनाई गई</string>
+    <string name="export_err_page_unreadable">पेज %1$d पढ़ा नहीं जा सका</string>
+    <string name="export_err_id_copy_no_pages">ID कॉपी के लिए कम से कम एक पेज चाहिए</string>
+    <string name="export_err_no_pages">डॉक्यूमेंट में कोई पेज नहीं है</string>
+    <string name="export_err_pages_undecodable">पेज पढ़े नहीं जा सके</string>
+    <string name="export_err_too_long">डॉक्यूमेंट एक इमेज के लिए बहुत लंबा है। कम पेज एक्सपोर्ट करें।</string>
+    <string name="export_err_nothing">एक्सपोर्ट करने के लिए कुछ नहीं है</string>
+    <string name="export_err_long_image_encode">लंबी इमेज सेव नहीं हो सकी</string>
+    <string name="assistant_ask_specific">पहचाने गए टेक्स्ट के बारे में कोई खास सवाल पूछें।</string>
+    <string name="assistant_no_match">मुझे टेक्स्ट में इससे मिलता-जुलता हिस्सा नहीं मिला।</string>
+    <string name="print_err_failed">PDF प्रिंट नहीं हो सकी</string>
+    <string name="backup_warning_unredacted_document">इस डॉक्यूमेंट में छिपाए या मिटाए गए हिस्से हैं। बैकअप में ओरिजिनल फ़ोटो रहती हैं, इसलिए बैकअप और उसका पासवर्ड रखने वाला कोई भी छिपी हुई चीज़ें देख सकता है। छिपाए हिस्सों वाली कॉपी शेयर करने के लिए, इसकी जगह PDF एक्सपोर्ट करें।</string>
+    <string name="backup_warning_unredacted_all">बैकअप में हर पेज की ओरिजिनल फ़ोटो रहती है, उन हिस्सों के साथ भी जिन्हें आपने छिपाया या मिटाया था। बैकअप और उसका पासवर्ड रखने वाला कोई भी छिपी हुई चीज़ें देख सकता है। छिपाए हिस्सों वाली कॉपी शेयर करने के लिए, इसकी जगह PDF एक्सपोर्ट करें।</string>
+    <string name="rate_title">ScanPro आपको कैसा लग रहा है?</string>
+    <string name="rate_body">आपकी रेटिंग से हमें हर स्कैन बेहतर बनाने में मदद मिलती है।</string>
+    <string name="rate_tap_a_star">किसी स्टार पर टैप करें</string>
+    <string name="rate_label_1">खराब</string>
+    <string name="rate_label_2">ठीक-ठाक</string>
+    <string name="rate_label_3">अच्छा</string>
+    <string name="rate_label_4">बहुत अच्छा</string>
+    <string name="rate_label_5">शानदार!</string>
+    <string name="rate_title_1">माफ़ कीजिए, हम उम्मीद पर खरे नहीं उतरे</string>
+    <string name="rate_body_1">बताइए क्या गलत हुआ, हम उसे ठीक करेंगे।</string>
+    <string name="rate_title_2">हम और बेहतर कर सकते हैं</string>
+    <string name="rate_body_2">बताइए क्या ठीक करना है।</string>
+    <string name="rate_title_3">फ़ीडबैक के लिए धन्यवाद</string>
+    <string name="rate_body_3">क्या बेहतर हो सकता है, इस पर एक लाइन भी बहुत काम आती है।</string>
+    <string name="rate_title_4">खुशी है कि आपको पसंद आया!</string>
+    <string name="rate_body_4">एक छोटा-सा रिव्यू दूसरों को ScanPro ढूंढने में मदद करता है।</string>
+    <string name="rate_title_5">आपने हमारा दिन बना दिया!</string>
+    <string name="rate_body_5">एक छोटा-सा रिव्यू देकर अपना प्यार बांटें।</string>
+    <string name="rate_not_now">अभी नहीं</string>
+    <string name="rate_on_google_play">Google Play पर रेट करें</string>
+    <string name="rate_send_feedback">फ़ीडबैक भेजें</string>
+    <string name="rate_stars_content_description">रेटिंग, एक से पांच स्टार</string>
+    <plurals name="rate_star">
+        <item quantity="one">%1$d स्टार</item>
+        <item quantity="other">%1$d स्टार</item>
+    </plurals>
+</resources>

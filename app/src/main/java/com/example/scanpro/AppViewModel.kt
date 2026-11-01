@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class AppViewModel @Inject constructor(
+    private val folderLock: com.example.scanpro.core.security.FolderLock,
     @ApplicationContext private val context: Context,
     private val repository: DocumentRepository,
     private val settings: SettingsStore,
@@ -118,7 +119,10 @@ class AppViewModel @Inject constructor(
 
     /** Re-locks after a real absence, but not for quick trips to the photo picker, camera or share sheet. */
     fun onAppStarted(nowMs: Long, timeoutMs: Long) {
-        if (stoppedAt != 0L && nowMs - stoppedAt > timeoutMs) _sessionUnlocked.value = false
+        if (stoppedAt != 0L && nowMs - stoppedAt > timeoutMs) {
+            _sessionUnlocked.value = false
+            folderLock.relockAll()
+        }
     }
 
     fun requestScan() { _scanRequested.value = true }

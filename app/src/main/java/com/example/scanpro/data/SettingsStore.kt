@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
@@ -120,6 +121,17 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     suspend fun setLibraryGrid(value: Boolean) { context.scanProSettings.edit { it[keyLibraryGrid] = value } }
     suspend fun setTrashRetentionDays(value: Int) { context.scanProSettings.edit { it[keyTrashRetentionDays] = value.coerceIn(1, 365) } }
     suspend fun setDefaultOcrScript(value: OcrScript) { context.scanProSettings.edit { it[keyDefaultOcrScript] = value.name } }
+
+    private val keyLockedFolders = stringSetPreferencesKey("locked_folders")
+    /** Folder names (lower-cased) whose documents need the phone's unlock; see FolderLock. */
+    val lockedFolders: Flow<Set<String>> = preferences.map { it[keyLockedFolders] ?: emptySet() }
+
+    suspend fun setFolderLocked(folderKey: String, locked: Boolean) {
+        context.scanProSettings.edit {
+            val now = it[keyLockedFolders] ?: emptySet()
+            it[keyLockedFolders] = if (locked) now + folderKey else now - folderKey
+        }
+    }
 
     private val keyCompletedScans = intPreferencesKey("completed_scans")
     private val keyFeedbackPromptShown = booleanPreferencesKey("feedback_prompt_shown")

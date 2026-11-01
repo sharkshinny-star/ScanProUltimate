@@ -161,6 +161,7 @@ fun MarkupEditorDialog(
                                     AnnotationType.HIGHLIGHT -> Color(0x88FFEB3B)
                                     AnnotationType.TEXT -> Color(0x332F7BFF)
                                     AnnotationType.ERASE -> Color(0x33FF5252)
+                                    AnnotationType.INK -> Color(0x221A49C9)
                                     else -> Color(0x3300A86B)
                                 }
                                 drawRect(fill, topLeft, boxSize)

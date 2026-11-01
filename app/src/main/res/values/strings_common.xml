@@ -22,4 +22,6 @@
     <string name="common_stop">Stop</string>
     <string name="common_on">On</string>
     <string name="common_off">Off</string>
+    <!-- First-launch language picker -->
+    <string name="language_picker_title">Choose your language</string>
 </resources>

@@ -76,7 +76,6 @@
     <string name="settings_pdf_quality_body">High keeps every detail. Small makes lighter files.</string>
     <string name="settings_app_language">App language</string>
     <string name="settings_app_language_subtitle">Choose the language ScanPro uses</string>
-    <string name="settings_app_language_unavailable">Language settings aren\'t available on this device</string>
     <string name="settings_link_unavailable">No app can open this link</string>
     <string name="settings_smart_titles_title">Smart titles</string>
     <string name="settings_smart_titles_body">Name new scans from the text they contain</string>
@@ -209,4 +208,9 @@
     <string name="settings_privacy_dialog_translation">Translation needs language packs; they are downloaded from Google only when you choose a language and are the one thing that uses the network.</string>
     <string name="settings_privacy_dialog_camera">Camera access is used for scanning only. No photo library permission is requested; pictures you import come through the system picker.</string>
     <string name="settings_privacy_dialog_ok">Got it</string>
+    <!-- Locked folders (Files tab ⋮ menu) -->
+    <string name="lib_menu_lock_folder">Lock folder</string>
+    <string name="lib_menu_unlock_folder">Remove lock</string>
+    <string name="lib_lock_folder_title">Lock “%1$s”?</string>
+    <string name="lib_lock_folder_message">Its documents will be hidden from All, Recent and search, and opening the folder will ask for your fingerprint, face or screen lock. This hides the folder inside ScanPro; it does not encrypt the files, and backups still include them.</string>
 </resources>

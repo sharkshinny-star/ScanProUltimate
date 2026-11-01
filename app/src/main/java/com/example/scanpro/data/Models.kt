@@ -66,7 +66,9 @@ enum class AnnotationType {
     REDACT,
     SIGNATURE,
     /** Brush strokes painted out and filled in from the paper around them (stains, pen marks, handwriting). */
-    ERASE
+    ERASE,
+    /** Freehand pen: [PageAnnotation.strokes] drawn in [PageAnnotation.color], [PageAnnotation.brushSize] wide. */
+    INK
 }
 
 data class NormalizedPoint(
@@ -166,11 +168,11 @@ data class PageAnnotation(
      */
     val background: Int? = null,
     /**
-     * For ERASE: the brush strokes, each a list of points given as fractions of this annotation's box, so moving
+     * For ERASE and INK: the strokes, each a list of points given as fractions of this annotation's box, so moving
      * or resizing the box carries them along.
      */
     val strokes: List<List<NormalizedPoint>> = emptyList(),
-    /** For ERASE: the brush diameter as a fraction of the page width. */
+    /** For ERASE and INK: the brush or pen width as a fraction of the page width. */
     val brushSize: Float = 0f
 ) {
     /** True when this hides what was printed underneath, so the page's text has to be read again. */

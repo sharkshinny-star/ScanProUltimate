@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.settings
 
+import com.example.scanpro.core.ui.findActivity
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -206,6 +207,7 @@ fun SettingsScreen(
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
+    var languageDialogOpen by rememberSaveable { mutableStateOf(false) }
     var privacyOpen by rememberSaveable { mutableStateOf(false) }
     // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive works
     // too); restore reads one such file back. Documents never leave the device otherwise.
@@ -344,22 +346,24 @@ fun SettingsScreen(
                             onCheckedChange = onDynamicColorChange
                         )
                     }
-                    if (Build.VERSION.SDK_INT >= 33) {
-                        val languageUnavailable = stringResource(R.string.settings_app_language_unavailable)
-                        InsetDivider()
-                        SettingsRow(
-                            icon = Icons.Rounded.Language,
-                            tone = TileTone.Teal,
-                            title = stringResource(R.string.settings_app_language),
-                            subtitle = stringResource(R.string.settings_app_language_subtitle),
-                            trailing = { Chevron() },
-                            onClick = {
-                                val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.fromParts("package", context.packageName, null))
-                                try {
-                                    context.startActivity(intent)
-                                } catch (_: ActivityNotFoundException) {
-                                    Toast.makeText(context, languageUnavailable, Toast.LENGTH_SHORT).show()
-                                }
+                    InsetDivider()
+                    val currentTag = com.example.scanpro.core.text.AppLocale.current(context) ?: com.example.scanpro.core.text.AppLocale.suggested()
+                    SettingsRow(
+                        icon = Icons.Rounded.Language,
+                        tone = TileTone.Teal,
+                        title = stringResource(R.string.settings_app_language),
+                        subtitle = com.example.scanpro.core.text.AppLocale.SUPPORTED.firstOrNull { it.first == currentTag }?.second
+                            ?: stringResource(R.string.settings_app_language_subtitle),
+                        trailing = { Chevron() },
+                        onClick = { languageDialogOpen = true }
+                    )
+                    if (languageDialogOpen) {
+                        com.example.scanpro.ui.LanguagePickerDialog(
+                            current = currentTag,
+                            onDismiss = { languageDialogOpen = false },
+                            onChosen = { tag ->
+                                languageDialogOpen = false
+                                context.findActivity()?.let { com.example.scanpro.core.text.AppLocale.apply(it, tag) }
                             }
                         )
                     }

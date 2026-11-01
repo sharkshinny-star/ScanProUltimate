@@ -464,6 +464,32 @@ object ImageProcessor {
         return kotlin.math.abs(area) / 2f >= imageArea * 0.01f
     }
 
+    /** Pen strokes inside [rect] (the mark-up's box, laid out unturned), [pageWidth] px wide page for the pen width. */
+    private fun drawInk(canvas: Canvas, item: PageAnnotation, rect: RectF, pageWidth: Int) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.argb(
+                (255 * item.opacity.coerceIn(0.05f, 1f)).toInt(),
+                Color.red(item.color), Color.green(item.color), Color.blue(item.color)
+            )
+            style = Paint.Style.STROKE
+            strokeWidth = (item.brushSize * pageWidth).coerceAtLeast(1f)
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        item.strokes.forEach { stroke ->
+            if (stroke.isEmpty()) return@forEach
+            fun px(p: NormalizedPoint) = rect.left + p.x * rect.width() to rect.top + p.y * rect.height()
+            if (stroke.size == 1) {
+                val (x, y) = px(stroke[0])
+                canvas.drawPoint(x, y, paint)
+            } else {
+                val path = android.graphics.Path()
+                stroke.forEachIndexed { i, p -> val (x, y) = px(p); if (i == 0) path.moveTo(x, y) else path.lineTo(x, y) }
+                canvas.drawPath(path, paint)
+            }
+        }
+    }
+
     private fun applyAnnotations(source: Bitmap, annotations: List<PageAnnotation>): Bitmap {
         val output = source.copy(Bitmap.Config.ARGB_8888, true)
         // Erasing comes first: it removes what was printed, never text or signatures added on top.
@@ -489,6 +515,7 @@ object ImageProcessor {
                     color = Color.argb((item.opacity.coerceIn(0.05f, 1f) * 120).toInt(), 255, 235, 59)
                 })
                 AnnotationType.ERASE -> Unit
+                AnnotationType.INK -> drawInk(canvas, item, rect, output.width)
                 AnnotationType.TEXT -> if (item.background != null) {
                     drawReplacementText(output, canvas, item, rect, box, turned)
                 } else {
