@@ -28,9 +28,9 @@ Last updated: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, after the "fix 
 
 | Commit | What |
 |---|---|
-| newest | F40 (uncompiled): mode hints and an explained mode lock; thumbnail strip and one filter rule in the review; 40 to 48 dp touch targets, pen swatch ring, scrolling dialogs (R14, R16). |
-| next | F39 (uncompiled): localised fallback titles, Office-to-PDF notes and file sizes (R13); camera and review screens lay out in landscape (R15). |
-| next | F38 (uncompiled): editors confirm discard and keep state across rotation; "Save all (n)" and Delete-page confirmation in the scan review; pinch zoom, Auto/Manual label, tick on the finish button; background scans open only from a top-level screen. |
+| newest | F40: mode hints and an explained mode lock; thumbnail strip and one filter rule in the review; 40 to 48 dp touch targets, pen swatch ring, scrolling dialogs (R14, R16). |
+| next | F39: localised fallback titles, Office-to-PDF notes and file sizes (R13); camera and review screens lay out in landscape (R15). |
+| next | F38: editors confirm discard and keep state across rotation; "Save all (n)" and Delete-page confirmation in the scan review; pinch zoom, Auto/Manual label, tick on the finish button; background scans open only from a top-level screen. |
 | e7b141e | F37: four start-up bugs fixed: crash when the Scan shortcut or a notification arrives while the first-run language picker is up; Recents replaying a shared file or shortcut; 1 s frozen frame on every rotation (Android 12+); welcome could flash the library first. Recents regression test added. |
 | b61d381 | ML Kit text-recognition (Play services) 19.0.1→19.0.2 and the four script modules 16.0.1→16.0.2; every other ML Kit library already latest. Compile, 229 unit tests, lint, both release builds pass; not checked on a device. |
 | c4542a6 | Robolectric launch test on API 24–37 (all pass). |
@@ -78,7 +78,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
    low-end and one recent phone.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
-7. **F38, F39 and F40 are uncompiled and untested** (no Android SDK in that session): compile, run the unit tests and lint first, then check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. For F39 also check both screens in landscape, a new scan's title in Hindi, and the sizes in the library. For F40 also check the review's thumbnail strip, mode hints and the locked-mode message, and the dialogs at 200% font. Still open from the UX review (`UX_REVIEW.md`): R17 (drag-to-reorder, contrast measurements).
+7. **F38, F39 and F40 compile, pass the 243 unit tests and lint (0 issues) on `07293b0`, but have never run on a device**: check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. For F39 also check both screens in landscape, a new scan's title in Hindi, and the sizes in the library. For F40 also check the review's thumbnail strip, mode hints and the locked-mode message, and the dialogs at 200% font. Still open from the UX review (`UX_REVIEW.md`): R17 (drag-to-reorder, contrast measurements).
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 
 ## 4. Next steps
@@ -107,6 +107,6 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 These live outside the repo; a new cloud container won't have them.
 
-- Android SDK was installed at `/opt/android-sdk` (platform 37, build tools), license accepted by the owner. `local.properties` (gitignored) points at it.
+- Android SDK was installed at `/opt/android-sdk` (cmdline-tools 16111833, build-tools 37.0.0, platform `android-37.0`; the newer SDK manager names platform 37 `platforms;android-37.0`), licences accepted at the owner's request on 2026-11-01. `local.properties` (gitignored) points at it.
 - Maven Central returned HTTP 429, so `~/.gradle/init.d/central-mirror.gradle` routed it to Google's Maven Central mirror.
   Recreate it if dependency downloads fail with 429; see `BUILD_AND_TEST.md`.

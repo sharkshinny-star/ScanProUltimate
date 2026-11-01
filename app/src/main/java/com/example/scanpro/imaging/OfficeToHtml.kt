@@ -88,6 +88,8 @@ object OfficeToHtml {
         override fun initialValue(): Notes = Notes.ENGLISH
     }
 
+    private fun currentNotes(): Notes = activeNotes.get() ?: Notes.ENGLISH
+
     private fun note(text: String): String = esc(text)
 
     /** A complete, self-contained HTML document (inline CSS, images as data: URIs, no scripts, no external links loaded). */
@@ -585,7 +587,7 @@ object OfficeToHtml {
                 val (part, external) = rels[relId] ?: return null
                 if (external) return null
                 val bytes = zip[part] ?: return null
-                val mime = imageMime(part, bytes) ?: return "<span class=\"note\">${note(activeNotes.get().imageNotShown)}</span>"
+                val mime = imageMime(part, bytes) ?: return "<span class=\"note\">${note(currentNotes().imageNotShown)}</span>"
                 val cx = holder.firstDescendant("extent")?.attr("cx")?.toLongOrNull()
                 val width = cx?.let { (it / EMU_PER_PX).toInt() }?.takeIf { it > 0 }
                 val style = if (width != null) " style=\"width:${width}px;max-width:100%;height:auto\"" else ""
@@ -672,9 +674,9 @@ object OfficeToHtml {
             }
             if (truncated) {
                 val cells = String.format(java.util.Locale.ROOT, "%,d", MAX_CELLS)
-                sb.append("<p class=\"note\">").append(note(activeNotes.get().workbookTruncated(cells))).append("</p>\n")
+                sb.append("<p class=\"note\">").append(note(currentNotes().workbookTruncated(cells))).append("</p>\n")
             }
-            if (sb.isEmpty()) sb.append("<p class=\"note\">").append(note(activeNotes.get().workbookEmpty)).append("</p>")
+            if (sb.isEmpty()) sb.append("<p class=\"note\">").append(note(currentNotes().workbookEmpty)).append("</p>")
             return page(title, sb)
         }
 
@@ -838,7 +840,7 @@ object OfficeToHtml {
         val sb = StringBuilder("<pre>")
         escInto(sb, decodeText(bytes))
         sb.append("</pre>")
-        if (more) sb.append("\n<p class=\"note\">").append(note(activeNotes.get().fileTooLong)).append("</p>")
+        if (more) sb.append("\n<p class=\"note\">").append(note(currentNotes().fileTooLong)).append("</p>")
         return page(title, sb)
     }
 
@@ -890,7 +892,7 @@ object OfficeToHtml {
         val (rows, capped) = parseCsv(decodeText(bytes), MAX_CELLS)
         val width = rows.maxOfOrNull { it.size } ?: 0
         val sb = StringBuilder()
-        if (rows.isEmpty()) sb.append("<p class=\"note\">").append(note(activeNotes.get().fileEmpty)).append("</p>")
+        if (rows.isEmpty()) sb.append("<p class=\"note\">").append(note(currentNotes().fileEmpty)).append("</p>")
         else {
             sb.append("<table class=\"grid\">\n")
             rows.forEachIndexed { r, row ->
@@ -912,7 +914,7 @@ object OfficeToHtml {
         }
         if (capped || more) {
             val cells = String.format(java.util.Locale.ROOT, "%,d", MAX_CELLS)
-            sb.append("<p class=\"note\">").append(note(activeNotes.get().fileTruncated(cells))).append("</p>")
+            sb.append("<p class=\"note\">").append(note(currentNotes().fileTruncated(cells))).append("</p>")
         }
         return page(title, sb)
     }
