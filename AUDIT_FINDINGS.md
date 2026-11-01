@@ -1,6 +1,6 @@
 # Audit findings
 
-Last updated: 2026-10-31, edit queue and kept-scan fixes (F21, F22), IDE inspection report (F23). Priorities: P0 data loss or build break, P1 crash/security/reliability,
+Last updated: 2026-11-01, UX review added (R12 to R16, `UX_REVIEW.md`); earlier: edit queue and kept-scan fixes (F21, F22), IDE inspection report (F23). Priorities: P0 data loss or build break, P1 crash/security/reliability,
 P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; never reuse an ID.
 
 ## Open
@@ -12,6 +12,11 @@ P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; neve
 | R6 | P2 | Security | `backup/ChunkedAead.kt`, `backup/EncryptedDocumentPackage.kt` | Not re-audited this round (12 unit tests pass: tampering, truncation, wrong password, path traversal, iteration bounds). | Independent review of AES-GCM chunking, PBKDF2 (210k iterations) and header parsing. |
 | R7 | P1 | Testing | whole app | Nothing verified on a device; no screenshot or Compose UI tests. | Device pass; add UI tests in CI on an emulator. |
 | R9 | P3 | Maintainability | `data/DocumentRepository.kt` (~1,500 lines) | One class does most data work. | Split by use case. |
+| R12 | P2 | UX / data loss | `feature/document/MarkupEditorDialog.kt:78,95,200`, `EraserDialog.kt:80`, `CropEditorDialog.kt`, `SignaturePlacement.kt`, `DocumentScreen.kt:474` | Full-screen editors close on Back or Cancel with no "Discard changes?"; mark-up state is `remember` while the open flag is `rememberSaveable`, so a rotation leaves the dialog open with the edits reset. Only `FormFillDialog` confirms. (Code reading, not run.) | Confirm discard when edited; hold editor state in `rememberSaveable` or the ViewModel. See `UX_REVIEW.md`. |
+| R13 | P2 | i18n | `data/DocumentRepository.kt:192,1138`, `imaging/OfficeToHtml.kt:633,873`, `core/ui/UiUtils.kt:140` | English fallback titles "Imported …"/"Scan …" (also the exported file name), English notes inside Office-to-PDF output, hard-coded B/KB/MB/GB. | Move to string resources; pass the locale into the converter. |
+| R14 | P2 | UX | `scanner/ScanReviewScreen.kt:282-292,423,479`, `scanner/CameraScannerScreen.kt:409,1098,1185`, `work/ImportScanWorker.kt:102` | "Save page" only advances except on the last page; Delete page is permanent with no undo; Done is an unlabelled count pill; the document opens by itself after import; modes locked and unexplained; two filter-propagation rules; probable pill overlap when retaking. (Code reading, not run.) | Single "Save (n pages)" action, filmstrip with undo-able delete, labelled Done, "Saving…" card on Home. See `UX_REVIEW.md` section C. |
+| R15 | P3 | UX | `scanner/CameraScannerScreen.kt:805-840,1012,1067` | No pinch-to-zoom (tap-to-focus only); fixed 1x/2x/5x chips; "Zoom & exposure" shows only exposure; no landscape handling. | Pinch zoom, zoom slider, landscape layout check on a device. |
+| R16 | P3 | Accessibility / UI | `feature/document/DocumentScreen.kt:1486`, `scanner/ScanReviewScreen.kt:406,410`, `core/designsystem/Components.kt`, `SignaturePad.kt`, `BookSplitDialog.kt` | Controls forced below 48 dp (touch area unverified); three buttons with `contentDescription = null` to check with TalkBack; ~25 colours outside the theme; dialogs without a scroll container. | Device check with TalkBack, 200% font and dark mode; add scrolling to the dialogs. |
 
 ## Fixed
 

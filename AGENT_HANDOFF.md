@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, after the "fix start-up bugs" commit (newest in `git log`).
+Last updated: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, after the "fix start-up bugs" commit, plus a static UX review (`UX_REVIEW.md`, R12 to R16; nothing run).
 
 ## 1. Current state
 
@@ -75,6 +75,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
    low-end and one recent phone.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
+7. **UX review (R12 to R16, code reading only):** editors lose work on Back or rotation, "Save page" only advances, Delete page has no undo, no pinch zoom, English fallback titles. Details and a device checklist in `UX_REVIEW.md`.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 
 ## 4. Next steps
