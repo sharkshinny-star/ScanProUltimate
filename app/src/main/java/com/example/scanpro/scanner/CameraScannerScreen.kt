@@ -802,12 +802,28 @@ fun CameraScannerScreen(
             .background(CameraBackdrop)
             .onGloballyPositioned { screenOrigin = it.positionInRoot(); screenSize = it.size }
     ) {
+        // Pinch to zoom. A touch that ever had two fingers down is a pinch, not a tap to focus.
+        val twoFingers = remember { BooleanArray(1) }
+        val pinchDetector = remember(context) {
+            android.view.ScaleGestureDetector(
+                context,
+                object : android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                    override fun onScale(detector: android.view.ScaleGestureDetector): Boolean {
+                        zoomRatio = (zoomRatio * detector.scaleFactor).coerceIn(1f, maxZoomRatio.coerceAtLeast(1f))
+                        return true
+                    }
+                }
+            )
+        }
         AndroidView(
             factory = { previewView },
             modifier = Modifier.fillMaxSize(),
             update = { view ->
                 view.setOnTouchListener { _, event ->
-                    if (event.action == android.view.MotionEvent.ACTION_UP) {
+                    if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) twoFingers[0] = false
+                    if (event.pointerCount > 1) twoFingers[0] = true
+                    pinchDetector.onTouchEvent(event)
+                    if (event.action == android.view.MotionEvent.ACTION_UP && !twoFingers[0]) {
                         // Report the tap as a click for accessibility services.
                         view.performClick()
                         focusPoint = Offset(event.x, event.y)
@@ -837,7 +853,7 @@ fun CameraScannerScreen(
                         shape = CircleShape,
                         color = if (on) Color.White else Color.Black.copy(alpha = 0.45f),
                         contentColor = if (on) Color(0xFF111111) else Color.White,
-                        modifier = Modifier.size(34.dp).semantics { contentDescription = description; selected = on }
+                        modifier = Modifier.size(40.dp).semantics { contentDescription = description; selected = on }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
@@ -936,7 +952,7 @@ fun CameraScannerScreen(
         }
         if (retakeOfPage != null && status == null) {
             Surface(
-                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 64.dp),
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 108.dp),
                 shape = RoundedCornerShape(50),
                 color = CameraGlass
             ) {
@@ -1065,6 +1081,19 @@ fun CameraScannerScreen(
             }
 
             if (showAdjustments) {
+                if (maxZoomRatio > 1.05f) {
+                    val zoomLabel = "${(zoomRatio * 10).roundToInt() / 10f}x"
+                    val zoomDescription = stringResource(R.string.scan_zoom_level, zoomLabel)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(zoomLabel, color = Color.White, style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(36.dp))
+                        Slider(
+                            value = zoomRatio.coerceIn(1f, maxZoomRatio),
+                            onValueChange = { zoomRatio = it },
+                            valueRange = 1f..maxZoomRatio,
+                            modifier = Modifier.weight(1f).padding(horizontal = 10.dp).semantics { contentDescription = zoomDescription }
+                        )
+                    }
+                }
                 if (exposureMin < exposureMax) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.scan_ev), color = Color.White, style = MaterialTheme.typography.labelSmall)
@@ -1123,7 +1152,7 @@ fun CameraScannerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterStart) {
+                Box(Modifier.width(104.dp), contentAlignment = Alignment.CenterStart) {
                     val importLabel = stringResource(if (barcodeMode) R.string.scan_qr_from_image else R.string.scan_import_photos)
                     BottomPill(
                         onClick = {
@@ -1182,7 +1211,7 @@ fun CameraScannerScreen(
                 }
                 }
 
-                Box(Modifier.width(96.dp), contentAlignment = Alignment.CenterEnd) {
+                Box(Modifier.width(104.dp), contentAlignment = Alignment.CenterEnd) {
                     if (pages.isNotEmpty()) {
                         // The page count; tapping it finishes the scan.
                         val doneLabel = stringResource(R.string.common_done)
@@ -1195,7 +1224,14 @@ fun CameraScannerScreen(
                                 .onGloballyPositioned { counterCenter = it.boundsInRoot().center }
                                 .graphicsLayer { scaleX = counterPulse.value; scaleY = counterPulse.value }
                                 .semantics { contentDescription = doneLabel }
-                        ) { Text("${pages.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+                        ) {
+                            // A tick beside the count says this is the way to finish, not just a counter.
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("${pages.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     } else if (!barcodeMode && scanMode != ScanMode.ID_CARD && detectMode != DetectMode.NO_DETECT) {
                         // Auto capture on or off (off is Manual: the page is outlined, the shutter is yours).
                         val modeDescription = stringResource(R.string.scan_detection_mode)
@@ -1207,7 +1243,16 @@ fun CameraScannerScreen(
                             color = if (autoCapture) TorchOn else Color.White.copy(alpha = 0.1f),
                             contentColor = if (autoCapture) Color(0xFF222222) else Color.White,
                             modifier = Modifier.semantics { contentDescription = modeDescription; stateDescription = if (autoCapture) onLabel else offLabel }
-                        ) { Text(stringResource(R.string.scan_detect_auto), style = MaterialTheme.typography.labelLarge, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) }
+                        ) {
+                            // Names the current state (Auto or Manual) instead of "Auto" in both.
+                            Text(
+                                stringResource(if (autoCapture) R.string.scan_detect_auto else R.string.scan_detect_manual),
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                softWrap = false,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
                     }
                 }
             }

@@ -64,6 +64,10 @@ class OperationRunner @Inject constructor(
     /** Id of a newly created document the UI should open once it appears in the library. */
     val openDocumentRequest: StateFlow<String?> = _openDocumentRequest.asStateFlow()
 
+    private val _openWhenIdleRequest = MutableStateFlow<String?>(null)
+    /** A just-saved scan. The UI opens it only from a top-level screen; anywhere else it announces the scan instead. */
+    val openWhenIdleRequest: StateFlow<String?> = _openWhenIdleRequest.asStateFlow()
+
     private val _scanSaved = MutableStateFlow<String?>(null)
     /** Id of a just-scanned document whose screen should offer the "Scan saved" share and save sheet. */
     val scanSaved: StateFlow<String?> = _scanSaved.asStateFlow()
@@ -76,6 +80,8 @@ class OperationRunner @Inject constructor(
     fun clearExportArtifact() { _exportArtifact.value = null }
     fun requestOpenDocument(id: String) { _openDocumentRequest.value = id }
     fun clearOpenDocumentRequest() { _openDocumentRequest.value = null }
+    fun requestOpenWhenIdle(id: String) { _openWhenIdleRequest.value = id }
+    fun clearOpenWhenIdleRequest() { _openWhenIdleRequest.value = null }
     fun offerScanSaved(id: String) { _scanSaved.value = id }
     fun clearScanSaved(id: String) { _scanSaved.compareAndSet(id, null) }
 

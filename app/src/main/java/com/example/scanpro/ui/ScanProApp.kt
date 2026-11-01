@@ -60,6 +60,7 @@ fun ScanProApp(
     val message by viewModel.message.collectAsStateWithLifecycle()
     val exportArtifact by viewModel.exportArtifact.collectAsStateWithLifecycle()
     val openDocumentRequest by viewModel.openDocumentRequest.collectAsStateWithLifecycle()
+    val openWhenIdleRequest by viewModel.openWhenIdleRequest.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val scanRequested by viewModel.scanRequested.collectAsStateWithLifecycle()
     val destinationRequest by viewModel.destinationRequest.collectAsStateWithLifecycle()
@@ -154,6 +155,22 @@ fun ScanProApp(
         if (viewModel.documentExists(id)) {
             navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
             viewModel.clearOpenDocumentRequest()
+        }
+    }
+
+    // A scan that finished in the background opens by itself only if the user is on a top-level screen. Anywhere else
+    // (editing a document, scanning again) it would pull them away from what they are doing, so it is announced with
+    // an Open button instead.
+    LaunchedEffect(openWhenIdleRequest, libraryRevision) {
+        val id = openWhenIdleRequest ?: return@LaunchedEffect
+        if (viewModel.documentExists(id)) {
+            viewModel.clearOpenWhenIdleRequest()
+            val route = navController.currentBackStackEntry?.destination?.route
+            if (route == null || route in ScanProDestinations.topLevel) {
+                navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
+            } else {
+                viewModel.announceScanSaved(id)
+            }
         }
     }
 

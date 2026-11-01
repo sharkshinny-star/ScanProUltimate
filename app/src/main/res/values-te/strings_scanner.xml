@@ -202,4 +202,8 @@
     <string name="scan_qr_none_in_image">ఆ ఫోటోలో QR కోడ్ లేదా బార్‌కోడ్ కనిపించలేదు</string>
     <string name="scan_code_connect_wifi">ఈ Wi-Fiకి కనెక్ట్ అవ్వండి</string>
     <string name="scan_code_pay_upi">UPI యాప్‌తో చెల్లించండి</string>
+    <string name="doc_discard_edits_title">మీ మార్పులను విస్మరించాలా?</string>
+    <string name="doc_discard_edits_body">ఈ పేజీలో చేసిన మార్పులు వర్తింపజేయబడలేదు. అవి కోల్పోతాయి.</string>
+    <string name="scan_review_delete_confirm">ఈ పేజీని స్కాన్ నుండి తొలగించాలా? దీన్ని తిరిగి తీసుకురాలేము.</string>
+    <string name="scan_review_save_all">అన్నీ సేవ్ చేయి (%1$d)</string>
 </resources>

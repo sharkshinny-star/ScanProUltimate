@@ -107,11 +107,20 @@ class AppViewModel @Inject constructor(
     val message: StateFlow<UiMessage?> = operations.message
     val exportArtifact: StateFlow<ExportArtifact?> = operations.exportArtifact
     val openDocumentRequest: StateFlow<String?> = operations.openDocumentRequest
+    val openWhenIdleRequest: StateFlow<String?> = operations.openWhenIdleRequest
 
     fun showMessage(value: String) = operations.showMessage(value)
     fun clearMessage(shown: UiMessage) = operations.clearMessage(shown)
     fun clearExportArtifact() = operations.clearExportArtifact()
     fun clearOpenDocumentRequest() = operations.clearOpenDocumentRequest()
+    fun clearOpenWhenIdleRequest() = operations.clearOpenWhenIdleRequest()
+
+    /** A scan finished while the user was busy elsewhere: say so, with a way to open it, instead of pulling them away. */
+    fun announceScanSaved(id: String) {
+        operations.showMessage(
+            UiMessage(context.getString(R.string.doc_scan_saved), context.getString(R.string.msg_open), onAction = { operations.requestOpenDocument(id) })
+        )
+    }
 
     fun setAppLock(value: Boolean) { viewModelScope.launch { settings.setAppLock(value) } }
 

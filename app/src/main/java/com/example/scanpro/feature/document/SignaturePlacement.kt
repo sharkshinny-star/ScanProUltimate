@@ -29,7 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,9 +79,9 @@ fun SignaturePlacementDialog(
     val signature by produceState<Bitmap?>(null) { value = withContext(Dispatchers.IO) { runCatching { loadSignature() }.getOrNull() } }
 
     // Centre and width as fractions of the page; the height follows from the signature's proportions.
-    var centerX by remember { mutableFloatStateOf(0.73f) }
-    var centerY by remember { mutableFloatStateOf(0.84f) }
-    var width by remember { mutableFloatStateOf(0.34f) }
+    var centerX by rememberSaveable { mutableFloatStateOf(0.73f) }
+    var centerY by rememberSaveable { mutableFloatStateOf(0.84f) }
+    var width by rememberSaveable { mutableFloatStateOf(0.34f) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(

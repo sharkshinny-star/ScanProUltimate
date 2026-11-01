@@ -28,7 +28,8 @@ Last updated: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, after the "fix 
 
 | Commit | What |
 |---|---|
-| newest | F37: four start-up bugs fixed: crash when the Scan shortcut or a notification arrives while the first-run language picker is up; Recents replaying a shared file or shortcut; 1 s frozen frame on every rotation (Android 12+); welcome could flash the library first. Recents regression test added. |
+| newest | F38 (uncompiled): editors confirm discard and keep state across rotation; "Save all (n)" and Delete-page confirmation in the scan review; pinch zoom, Auto/Manual label, tick on the finish button; background scans open only from a top-level screen. |
+| e7b141e | F37: four start-up bugs fixed: crash when the Scan shortcut or a notification arrives while the first-run language picker is up; Recents replaying a shared file or shortcut; 1 s frozen frame on every rotation (Android 12+); welcome could flash the library first. Recents regression test added. |
 | b61d381 | ML Kit text-recognition (Play services) 19.0.1→19.0.2 and the four script modules 16.0.1→16.0.2; every other ML Kit library already latest. Compile, 229 unit tests, lint, both release builds pass; not checked on a device. |
 | c4542a6 | Robolectric launch test on API 24–37 (all pass). |
 | 3b497d4 | Office to PDF (F36); P3 complete. |
@@ -75,7 +76,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
    low-end and one recent phone.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
-7. **UX review (R12 to R16, code reading only):** editors lose work on Back or rotation, "Save page" only advances, Delete page has no undo, no pinch zoom, English fallback titles. Details and a device checklist in `UX_REVIEW.md`.
+7. **F38 is uncompiled and untested** (no Android SDK in that session): compile, run the unit tests and lint first, then check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. Still open from the UX review (`UX_REVIEW.md`): R13 English fallback titles, R14 mode lock/filter rules/filmstrip, R15 landscape, R16 touch targets and dialogs.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 
 ## 4. Next steps

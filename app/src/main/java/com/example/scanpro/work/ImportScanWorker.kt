@@ -99,7 +99,8 @@ class ImportScanWorker @AssistedInject constructor(
         settings.recordCompletedScan()
         // Text scans copy their text instead; every other scan offers share/save straight away.
         if (mode == ScanMode.TEXT) copyRecognizedText(document) else operations.offerScanSaved(document.id)
-        operations.requestOpenDocument(document.id)
+        // Opens the document only if the user is still on a top-level screen; see ScanProApp.
+        operations.requestOpenWhenIdle(document.id)
         notifications.taskFinished(applicationContext.getString(R.string.notify_scan_saved), document.id)
         // The document now holds its own copies; drop the scanner session's temporary captures.
         uris.asSequence()

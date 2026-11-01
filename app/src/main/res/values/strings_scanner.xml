@@ -223,4 +223,8 @@
         <item quantity="one">%1$d photo was left out: a scan holds up to %2$d pages</item>
         <item quantity="other">%1$d photos were left out: a scan holds up to %2$d pages</item>
     </plurals>
+    <string name="doc_discard_edits_title">Discard your edits?</string>
+    <string name="doc_discard_edits_body">Your changes to this page haven\'t been applied. They will be lost.</string>
+    <string name="scan_review_delete_confirm">Delete this page from the scan? It can\'t be brought back.</string>
+    <string name="scan_review_save_all">Save all (%1$d)</string>
 </resources>

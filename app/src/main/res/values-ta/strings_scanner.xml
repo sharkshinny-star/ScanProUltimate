@@ -202,4 +202,8 @@
     <string name="scan_qr_none_in_image">அந்தப் படத்தில் QR கோடு அல்லது பார்கோடு இல்லை</string>
     <string name="scan_code_connect_wifi">இந்த வைஃபையுடன் இணை</string>
     <string name="scan_code_pay_upi">UPI ஆப் மூலம் பணம் செலுத்து</string>
+    <string name="doc_discard_edits_title">உங்கள் மாற்றங்களை நிராகரிக்கவா?</string>
+    <string name="doc_discard_edits_body">இந்தப் பக்கத்தில் செய்த மாற்றங்கள் பயன்படுத்தப்படவில்லை. அவை இழக்கப்படும்.</string>
+    <string name="scan_review_delete_confirm">இந்தப் பக்கத்தை ஸ்கேனிலிருந்து நீக்கவா? அதை மீட்டெடுக்க முடியாது.</string>
+    <string name="scan_review_save_all">அனைத்தையும் சேமி (%1$d)</string>
 </resources>

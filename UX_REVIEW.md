@@ -6,6 +6,14 @@ Date: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, at `e7b141e`.
 the code at the cited line does what is described. "Inferred" means the effect on screen depends on behaviour that was not
 observed. Open items are tracked as R12 to R16 in `AUDIT_FINDINGS.md`.
 
+## Status after the first fixes (F38, not compiled or run)
+
+Fixed in code: R12 (editors), the review "Save page" and Delete page items, the Done and Auto/Manual pills, pinch zoom and the
+zoom slider, the retake pill overlap, and background scans opening over other screens. Still open: R13, the mode lock and filter
+rules and filmstrip in R14, landscape in R15, R16. Delete page asks for confirmation instead of offering undo.
+Correction: the "Scan saved" notification is already skipped while the app is visible, so a message and a notification did not
+arrive together as item 4 below says.
+
 ## A. Findings
 
 ### Editors lose work (R12, confirmed)

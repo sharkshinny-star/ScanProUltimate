@@ -26,7 +26,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -53,6 +56,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.data.AnnotationType
+import com.example.scanpro.data.JsonCodec
 import com.example.scanpro.data.PageAnnotation
 import com.example.scanpro.imaging.ImageProcessor
 import kotlinx.coroutines.Dispatchers
@@ -75,8 +79,12 @@ fun MarkupEditorDialog(
     onDismiss: () -> Unit,
     onApply: (List<PageAnnotation>) -> Unit
 ) {
-    val items = remember { mutableStateListOf<PageAnnotation>().apply { addAll(initial) } }
-    var selectedId by remember { mutableStateOf(initial.lastOrNull()?.id) }
+    // Saved across rotation and theme changes, so the dialog never reopens with its edits silently reset.
+    val items = rememberSaveable(saver = AnnotationListSaver) { mutableStateListOf<PageAnnotation>().apply { addAll(initial) } }
+    var selectedId by rememberSaveable { mutableStateOf(initial.lastOrNull()?.id) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    // Back, the arrow and Cancel all ask first when something was changed.
+    val close = { if (items.toList() != initial) confirmDiscard = true else onDismiss() }
     val base by produceState<Bitmap?>(initialValue = null) {
         value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeScaled(loadBase().absolutePath, 1600) }.getOrNull() }
     }
@@ -92,11 +100,11 @@ fun MarkupEditorDialog(
     }
 
     // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize(), color = DarkChrome.backdrop) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_close), onClick = onDismiss)
+                    GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_close), onClick = close)
                     Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                         Text(stringResource(R.string.doc_edit_markup), color = DarkChrome.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(
@@ -197,13 +205,22 @@ fun MarkupEditorDialog(
                     DarkOutlinedButton(stringResource(R.string.common_delete), enabled = enabled, onClick = { items.removeAt(selectedIndex); selectedId = items.lastOrNull()?.id })
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                    DarkTextButton(stringResource(R.string.common_cancel), onClick = onDismiss)
+                    DarkTextButton(stringResource(R.string.common_cancel), onClick = close)
                     AccentButton(stringResource(R.string.common_apply), onClick = { onApply(items.toList()) })
                 }
             }
         }
     }
+    if (confirmDiscard) {
+        DiscardEditsDialog(onKeepEditing = { confirmDiscard = false }, onDiscard = { confirmDiscard = false; onDismiss() })
+    }
 }
+
+/** Keeps the editor's boxes through a recreation as JSON, the same form they are stored in. */
+private val AnnotationListSaver = Saver<SnapshotStateList<PageAnnotation>, String>(
+    save = { JsonCodec.encodeAnnotations(it.toList()) },
+    restore = { raw -> mutableStateListOf<PageAnnotation>().apply { addAll(JsonCodec.decodeAnnotations(raw)) } }
+)
 
 private fun hit(item: PageAnnotation, point: Offset, width: Float, height: Float): Boolean =
     point.x in item.x * width..(item.x + item.width) * width && point.y in item.y * height..(item.y + item.height) * height

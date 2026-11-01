@@ -202,4 +202,8 @@
     <string name="scan_qr_none_in_image">उस फ़ोटो में कोई QR कोड या बारकोड नहीं मिला</string>
     <string name="scan_code_connect_wifi">इस वाई-फ़ाई से जुड़ें</string>
     <string name="scan_code_pay_upi">UPI ऐप से भुगतान करें</string>
+    <string name="doc_discard_edits_title">अपने बदलाव छोड़ दें?</string>
+    <string name="doc_discard_edits_body">इस पेज के बदलाव लागू नहीं किए गए हैं। वे खो जाएँगे।</string>
+    <string name="scan_review_delete_confirm">इस पेज को स्कैन से हटाएँ? इसे वापस नहीं लाया जा सकता।</string>
+    <string name="scan_review_save_all">सभी सहेजें (%1$d)</string>
 </resources>

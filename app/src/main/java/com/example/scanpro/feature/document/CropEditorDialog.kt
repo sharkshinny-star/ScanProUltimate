@@ -44,6 +44,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +69,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.scanpro.R
 import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.JsonCodec
 import com.example.scanpro.data.NormalizedPoint
 import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.core.designsystem.AccentButton
@@ -98,14 +102,18 @@ fun CropEditorDialog(
     /** Moves to the page `delta` away, with the crop of the page being left; the editor stays open. */
     onPage: ((delta: Int, crop: CropQuad) -> Unit)? = null
 ) {
+    // Held above the dialog and saved, so a rotation keeps the outline the user has drawn.
+    var crop by rememberSaveable(initial, saver = CropStateSaver) { mutableStateOf(initial) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    // Back and the arrow ask first once the outline differs from where it started.
+    val close = { if (crop != initial) confirmDiscard = true else onDismiss() }
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = close,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         val bitmap by produceState<Bitmap?>(initialValue = null, sourcePath) {
             value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(sourcePath, 2000) }
         }
-        var crop by remember(initial) { mutableStateOf(initial) }
         val scope = rememberCoroutineScope()
         val latestCrop by rememberUpdatedState(crop)
         var activeCorner by remember { mutableIntStateOf(0) }
@@ -132,7 +140,7 @@ fun CropEditorDialog(
                     .padding(top = 8.dp, start = 12.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_back), onClick = onDismiss)
+                GlassIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_back), onClick = close)
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                     Text(stringResource(R.string.doc_crop), color = DarkChrome.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
@@ -422,7 +430,16 @@ fun CropEditorDialog(
             }
         }
     }
+    if (confirmDiscard) {
+        DiscardEditsDialog(onKeepEditing = { confirmDiscard = false }, onDiscard = { confirmDiscard = false; onDismiss() })
+    }
 }
+
+/** Keeps the outline through a recreation, in the form crops are stored in. */
+private val CropStateSaver = Saver<MutableState<CropQuad>, String>(
+    save = { JsonCodec.encodeCrop(it.value) },
+    restore = { raw -> mutableStateOf(JsonCodec.decodeCrop(raw)) }
+)
 
 private fun handlesForCrop(crop: CropQuad, width: Float, height: Float): List<Offset> {
     val tl = Offset(crop.topLeft.x * width, crop.topLeft.y * height)

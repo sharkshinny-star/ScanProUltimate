@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Rotate90DegreesCw
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -156,6 +158,7 @@ fun ScanReviewScreen(
     // Curve mode shows a handle in the middle of each edge that bends it, for book pages and curled paper.
     var curveMode by rememberSaveable { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
     // Bumped after a rotation so the page is decoded again from the same file.
     var rotationTick by remember { mutableIntStateOf(0) }
     val blocked = working || processing
@@ -258,6 +261,26 @@ fun ScanReviewScreen(
         onIndexChange(target)
     }
 
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.scan_review_delete_page)) },
+            text = { Text(stringResource(R.string.scan_review_delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    quads.remove(key)
+                    filters.remove(key)
+                    adjustments.remove(key)
+                    Thread { File(uri.path.orEmpty()).delete() }.start()
+                    pages.remove(uri)
+                    if (pages.isEmpty()) onBack() else onIndexChange(current.coerceAtMost(pages.lastIndex))
+                }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.common_cancel)) } }
+        )
+    }
+
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
         // Top bar: Back · title · Undo · Retake · Delete · overflow.
         var menu by remember { mutableStateOf(false) }
@@ -279,17 +302,10 @@ fun ScanReviewScreen(
                     Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.scan_review_retake_page))
                 }
             }
-            IconButton(
-                enabled = !blocked,
-                onClick = {
-                    quads.remove(key)
-                    filters.remove(key)
-                    adjustments.remove(key)
-                    Thread { File(uri.path.orEmpty()).delete() }.start()
-                    pages.remove(uri)
-                    if (pages.isEmpty()) onBack() else onIndexChange(current.coerceAtMost(pages.lastIndex))
-                }
-            ) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page)) }
+            // Deleting removes the photo file for good, so it asks first.
+            IconButton(enabled = !blocked, onClick = { confirmDelete = true }) {
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page))
+            }
             Box {
                 IconButton(enabled = !blocked, onClick = { menu = true }) {
                     Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.scan_review_more))
@@ -435,7 +451,7 @@ fun ScanReviewScreen(
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
         }
 
-        // Bottom row: Auto detect · Rotate · Save page.
+        // Bottom row: Auto detect · Rotate · Save (saves every page).
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -476,14 +492,19 @@ fun ScanReviewScreen(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-                onClick = { if (current < pages.lastIndex) onIndexChange(current + 1) else onDone() }
+                // Always saves the whole scan, from any page; the stepper and swiping move between pages.
+                onClick = onDone
             ) {
                 if (processing) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.scan_review_save_page), maxLines = 1, softWrap = false)
+                    Text(
+                        if (pages.size > 1) stringResource(R.string.scan_review_save_all, pages.size) else stringResource(R.string.scan_review_save_page),
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
         }

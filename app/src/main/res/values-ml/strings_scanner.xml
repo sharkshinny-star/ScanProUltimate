@@ -202,4 +202,8 @@
     <string name="scan_qr_none_in_image">ആ ചിത്രത്തിൽ QR കോഡോ ബാർകോഡോ കണ്ടെത്തിയില്ല</string>
     <string name="scan_code_connect_wifi">ഈ Wi-Fi-യിലേക്ക് കണക്റ്റ് ചെയ്യുക</string>
     <string name="scan_code_pay_upi">UPI ആപ്പ് വഴി പണമടയ്ക്കുക</string>
+    <string name="doc_discard_edits_title">മാറ്റങ്ങൾ ഉപേക്ഷിക്കണോ?</string>
+    <string name="doc_discard_edits_body">ഈ പേജിലെ മാറ്റങ്ങൾ പ്രയോഗിച്ചിട്ടില്ല. അവ നഷ്ടപ്പെടും.</string>
+    <string name="scan_review_delete_confirm">ഈ പേജ് സ്കാനിൽ നിന്ന് ഇല്ലാതാക്കണോ? ഇത് തിരികെ ലഭിക്കില്ല.</string>
+    <string name="scan_review_save_all">എല്ലാം സേവ് ചെയ്യുക (%1$d)</string>
 </resources>

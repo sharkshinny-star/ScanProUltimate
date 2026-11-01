@@ -30,6 +30,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,18 +80,22 @@ fun EraserDialog(
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(imagePath, 1600) }
     }
     // Each finished stroke with the brush it was drawn with; Apply sends one eraser per brush size.
-    val strokes = remember { mutableStateListOf<Pair<Brush, List<NormalizedPoint>>>() }
+    // Saved across rotation and theme changes, so the dialog never reopens with its strokes silently gone.
+    val strokes = rememberSaveable(saver = StrokesSaver) { mutableStateListOf<Pair<Brush, List<NormalizedPoint>>>() }
     var current by remember { mutableStateOf<List<NormalizedPoint>>(emptyList()) }
-    var brush by remember { mutableStateOf(Brush.MEDIUM) }
+    var brush by rememberSaveable { mutableStateOf(Brush.MEDIUM) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    // Back, the arrow and any other way out ask first once something was painted.
+    val close = { if (strokes.isNotEmpty()) confirmDiscard = true else onDismiss() }
     val ink = Color(0xFFFF5252).copy(alpha = 0.55f)
     val pagePreview = stringResource(R.string.a11y_page_preview)
 
     // Edge to edge like the rest of the app: the editor draws behind the bars and pads its own content.
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+    Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
+                    IconButton(onClick = close) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
                     Text(stringResource(R.string.doc_eraser), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).padding(start = 4.dp))
                     IconButton(enabled = strokes.isNotEmpty(), onClick = { strokes.removeAt(strokes.lastIndex) }) {
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.doc_undo_last_stroke))
@@ -176,7 +183,28 @@ fun EraserDialog(
             }
         }
     }
+    if (confirmDiscard) {
+        DiscardEditsDialog(onKeepEditing = { confirmDiscard = false }, onDiscard = { confirmDiscard = false; onDismiss() })
+    }
 }
+
+/** Keeps the painted strokes through a recreation: one entry per stroke, "BRUSH|x,y;x,y;…". */
+private val StrokesSaver = Saver<SnapshotStateList<Pair<Brush, List<NormalizedPoint>>>, List<String>>(
+    save = { list -> list.map { (brush, points) -> brush.name + "|" + points.joinToString(";") { "${it.x},${it.y}" } } },
+    restore = { saved ->
+        mutableStateListOf<Pair<Brush, List<NormalizedPoint>>>().apply {
+            saved.forEach { entry ->
+                val brush = runCatching { Brush.valueOf(entry.substringBefore('|')) }.getOrNull() ?: return@forEach
+                val points = entry.substringAfter('|').split(';').mapNotNull { pair ->
+                    val x = pair.substringBefore(',').toFloatOrNull()
+                    val y = pair.substringAfter(',').toFloatOrNull()
+                    if (x != null && y != null) NormalizedPoint(x, y) else null
+                }
+                add(brush to points)
+            }
+        }
+    }
+)
 
 /** Drops points closer than about half a percent of the page to the previous one; finger drags oversample. */
 private fun simplify(points: List<NormalizedPoint>): List<NormalizedPoint> {
