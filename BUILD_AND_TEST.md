@@ -40,19 +40,19 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-01, "update ML Kit text recognition" commit)
+## Latest results (2026-11-01, "fix start-up bugs" commit)
 
 | Check | Result |
 |---|---|
 | `:app:compileDebugKotlin`, `:translate:compileDebugKotlin` | Passed, 0 warnings |
-| `:app:testDebugUnitTest` | 229 tests: 227 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
+| `:app:testDebugUnitTest` | 243 tests: 241 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
 | `:app:lintDebug` | 0 issues (`UseTomlInstead` ignored, see R10) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.6 MB |
 | Sideload `assembleRelease` | Passed; arm64 33.4 MB unsigned (budget 40) |
 | 16 KB page alignment | arm64 and x86_64 `.so` aligned to `0x4000` (`readelf`) |
 | `-Pscanpro.bundledMl=true` build | Not run |
-| `LaunchSmokeTest` (Robolectric 4.17) | Last run at c4542a6 (not rerun separately after the ML Kit bump): passed on **API 24–37** (Android 7.0–17), 42/42: the app starts to its first screen, survives recreation, and applies a saved language while the Application is attached (F33 regression). JVM framework, not a device: camera, GPU, WebView printing and Play services are not exercised. Needs `-Xmx4g` and the two `--add-*` JVM flags in `app/build.gradle.kts` |
+| `LaunchSmokeTest` (Robolectric 4.17) | Passed, now 4 tests including the F37 Recents check (fails without the fix): on **API 24–37** (Android 7.0–17), 56/56: the app starts to its first screen, survives recreation, and applies a saved language while the Application is attached (F33 regression). JVM framework, not a device: camera, GPU, WebView printing and Play services are not exercised. Needs `-Xmx4g` and the two `--add-*` JVM flags in `app/build.gradle.kts` |
 | Instrumented tests (`AppSmokeTest`), screenshot, performance | Not run: no emulator or device in the container |
 | Android 17 (targetSdk 37) on a device | Not run (see R2) |
 | IDE inspection with the shared profile | Not run: no Android Studio in the container |

@@ -78,6 +78,13 @@ class AppViewModel @Inject constructor(
         .map<Boolean, Boolean?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /**
+     * True once everything the first frame depends on has loaded: the theme, the lock decision and whether the
+     * welcome is due (otherwise a first launch could flash the library before the welcome covers it).
+     */
+    val launchStateReady: Boolean
+        get() = themeMode.value != null && appLockEnabled.value != null && welcomeSeen.value != null
+
     fun markWelcomeSeen() { viewModelScope.launch { settings.setWelcomeSeen() } }
 
     // Lives in the ViewModel so rotating the screen doesn't lock the app again.

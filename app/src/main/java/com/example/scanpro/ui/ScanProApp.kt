@@ -120,6 +120,18 @@ fun ScanProApp(
         }
     }
 
+    // First launch: the language comes before the welcome, so the welcome is already in the chosen language.
+    // Also before the navigation effects below: they need the NavHost, which isn't composed while the picker is
+    // up (a "Scan" shortcut or notification opened before a language was chosen crashed the app).
+    var languageChosen by rememberSaveable { mutableStateOf(com.example.scanpro.core.text.AppLocale.isChosen(context)) }
+    if (!languageChosen) {
+        LanguagePickerScreen(initial = com.example.scanpro.core.text.AppLocale.current(context) ?: com.example.scanpro.core.text.AppLocale.suggested()) { tag ->
+            languageChosen = true
+            context.findActivity()?.let { com.example.scanpro.core.text.AppLocale.apply(it, tag) }
+        }
+        return
+    }
+
     // Launcher "Scan" shortcut: open the camera once the library is unlocked.
     LaunchedEffect(scanRequested) {
         if (scanRequested) {
@@ -175,15 +187,6 @@ fun ScanProApp(
     // Wide windows keep navigation at the side of the content instead of along the bottom.
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showRail = com.example.scanpro.navigation.isWideWindow() && currentRoute in ScanProDestinations.topLevel
-    // First launch: the language comes before the welcome, so the welcome is already in the chosen language.
-    var languageChosen by rememberSaveable { mutableStateOf(com.example.scanpro.core.text.AppLocale.isChosen(context)) }
-    if (!languageChosen) {
-        LanguagePickerScreen(initial = com.example.scanpro.core.text.AppLocale.current(context) ?: com.example.scanpro.core.text.AppLocale.suggested()) { tag ->
-            languageChosen = true
-            context.findActivity()?.let { com.example.scanpro.core.text.AppLocale.apply(it, tag) }
-        }
-        return
-    }
     val welcomeShowing = welcomeSeen == false
     Box(Modifier.fillMaxSize()) {
         // While the welcome covers the app, screen readers must not reach the controls underneath.

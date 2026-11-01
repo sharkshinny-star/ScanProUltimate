@@ -100,11 +100,16 @@ class MainActivity : FragmentActivity() {
         // the activity uses the app theme, so there the first frame is held back instead (same effect).
         val splash = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) installSplashScreen() else null
         super.onCreate(savedInstanceState)
-        if (splash != null) showLaunchScreenUntilReady(splash) else holdFirstFrameUntilReady()
+        // A recreation (rotation, language or theme change) has no launch screen to finish: its state is already
+        // loaded, so it must not be held back for the launch animation either.
+        val freshLaunch = savedInstanceState == null
+        if (splash != null) showLaunchScreenUntilReady(splash, freshLaunch) else holdFirstFrameUntilReady()
         // Edits that were still waiting when the app was last stopped run now, once per process.
         documentEditor.resumeInterrupted()
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
-        if (savedInstanceState == null) handleIntent(intent)
+        // Reopening from Recents after backing out redelivers the intent the task started with (a shared PDF, a
+        // shortcut); every action here is one-shot, so it is not replayed then.
+        if (savedInstanceState == null && !launchedFromHistory(intent)) handleIntent(intent)
         enableEdgeToEdge()
         // The app draws behind both system bars; screens pad their own content with the insets. The
         // bars themselves stay available (hiding them took three-button navigation away from people).
@@ -190,24 +195,21 @@ class MainActivity : FragmentActivity() {
         }
 
     /**
-     * Keeps the launch screen (always light) up until the saved theme and app-lock setting have
-     * loaded, so the first frame is already in the right theme instead of flashing light, then dark.
-     */
-    /**
-     * Keeps the launch screen up until the saved theme and lock setting have loaded (normally a few
+     * Keeps the launch screen up until the saved theme, lock and welcome settings have loaded (normally a few
      * milliseconds, never longer than [LAUNCH_SCREEN_MAX_HOLD_MS]), so nothing flashes in the wrong theme.
-     * The animated icon is shown in full first. It then fades and grows away instead of cutting to the app.
+     * On a fresh launch the animated icon is shown in full first. It then fades and grows away instead of
+     * cutting to the app.
      */
-    private fun showLaunchScreenUntilReady(splash: androidx.core.splashscreen.SplashScreen) {
+    private fun showLaunchScreenUntilReady(splash: androidx.core.splashscreen.SplashScreen, freshLaunch: Boolean) {
         val startedAt = SystemClock.uptimeMillis()
         // The animated icon (ic_launcher_splash) plays once in full, unless the user turned animations off.
         val animationsOn = android.provider.Settings.Global.getFloat(
             contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f
         ) > 0f
-        val minimumMs = if (animationsOn) LAUNCH_ANIMATION_MS else 0L
+        val minimumMs = if (animationsOn && freshLaunch) LAUNCH_ANIMATION_MS else 0L
         splash.setKeepOnScreenCondition {
             val elapsed = SystemClock.uptimeMillis() - startedAt
-            val ready = viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null
+            val ready = viewModel.launchStateReady
             (!ready && elapsed < LAUNCH_SCREEN_MAX_HOLD_MS) || elapsed < minimumMs
         }
         splash.setOnExitAnimationListener { provider ->
@@ -222,19 +224,22 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    /** Android 11 and older: don't draw until the saved theme and lock setting are known (or the hold times out). */
+    /** Android 11 and older: don't draw until the saved theme, lock and welcome settings are known (or the hold times out). */
     private fun holdFirstFrameUntilReady() {
         val startedAt = SystemClock.uptimeMillis()
         val content = findViewById<android.view.View>(android.R.id.content)
         content.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
-                val ready = (viewModel.themeMode.value != null && viewModel.appLockEnabled.value != null) ||
+                val ready = viewModel.launchStateReady ||
                     SystemClock.uptimeMillis() - startedAt >= LAUNCH_SCREEN_MAX_HOLD_MS
                 if (ready) content.viewTreeObserver.removeOnPreDrawListener(this)
                 return ready
             }
         })
     }
+
+    private fun launchedFromHistory(intent: Intent?): Boolean =
+        intent != null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

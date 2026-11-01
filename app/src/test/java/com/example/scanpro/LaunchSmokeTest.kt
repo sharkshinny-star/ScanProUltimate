@@ -2,6 +2,8 @@ package com.example.scanpro
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.os.Looper
 import android.os.Build
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -9,9 +11,11 @@ import androidx.test.core.app.ApplicationProvider
 import com.example.scanpro.core.text.AppLocale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -51,5 +55,27 @@ class LaunchSmokeTest {
         }
         val wrapped = AppLocale.wrap(attaching)
         if (Build.VERSION.SDK_INT < 33) assertEquals("hi", wrapped.resources.configuration.locales[0].language)
+    }
+
+    @Test
+    fun `reopening from Recents does not replay the intent the task started with`() {
+        val fromHistory = Intent(Intent.ACTION_MAIN).setAction("com.example.scanpro.action.REPORT_ISSUE")
+            .addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+        launch(fromHistory).use { scenario ->
+            settle()
+            scenario.onActivity { activity -> assertNull(shadowOf(activity).nextStartedActivity) }
+        }
+    }
+
+    private fun launch(intent: Intent): ActivityScenario<MainActivity> =
+        ActivityScenario.launch<MainActivity>(intent.setClass(ApplicationProvider.getApplicationContext(), MainActivity::class.java))
+            .also { it.moveToState(Lifecycle.State.RESUMED) }
+
+    /** Lets the settings load on their own thread and the main thread catch up. */
+    private fun settle() {
+        repeat(30) {
+            shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(100))
+            Thread.sleep(20)
+        }
     }
 }
