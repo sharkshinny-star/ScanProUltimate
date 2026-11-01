@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit queue and kept-scan fixes" commit (newest in `git log`).
+Last updated: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, after the "update ML Kit text recognition" commit (newest in `git log`).
 
 ## 1. Current state
 
@@ -28,7 +28,8 @@ Last updated: 2026-10-31, branch `claude/awesome-clarke-ussjo3`, after the "edit
 
 | Commit | What |
 |---|---|
-| newest | Robolectric launch test on API 24–37 (all pass). |
+| newest | ML Kit text-recognition (Play services) 19.0.1→19.0.2 and the four script modules 16.0.1→16.0.2; every other ML Kit library already latest. Compile, 229 unit tests, lint, both release builds pass; not checked on a device. |
+| c4542a6 | Robolectric launch test on API 24–37 (all pass). |
 | 3b497d4 | Office to PDF (F36); P3 complete. |
 | 5f27eba | Review fixes (F34) and P3 Settings defaults (F35). |
 | 3ab433d | Hotfix F33: launch crash on Android 7–12 from the language code. |
@@ -77,7 +78,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 ## 4. Next steps
 
-0. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3 done (PowerPoint export dropped at the owner's request). Optional: bump the five ML Kit text-recognition libraries (19.0.1→19.0.2, 16.0.1→16.0.2), the only outdated dependencies on 1 Nov 2026.
+0. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3 done (PowerPoint export dropped at the owner's request).
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
 2. Try Office to PDF on a device with a real .docx, .xlsx and a page saved from Chrome (⋮ › Download).
 3. **First: launch on an Android 12-or-older device or emulator (F33 hotfix), including picking a language.** Then device-check F32 with real codes: a Wi-Fi QR (Connect on Android 11+, password copy below), a UPI QR (opens UPI apps), an event/ticket QR, a screenshot from the gallery. Then F31: first launch language picker (pick Hindi, Tamil, Telugu; Android 12 and 13+), Settings > App language, the pen (colours, widths, move in Edit mark-up), lock a folder (hidden from All/Recent/search, unlock prompt, re-locks 30 s after leaving), and have native speakers read the translations. Then F30 on the owner's phone: scanner chrome (zoom, torch, mode strip, Auto/count pill), the Adjust page screen (handles, sliders, Save page), the Document tabs, per-page sheet and Export sheet; then F29 (rating sheet after the first scan: stars, emoji, both buttons) and F28 (every screen changed) and F24–F26 on the owner's phone: document screen sheets and pager, opening from Recent, ID card capture crop, Auto Clean on real documents, signature placement; and F24 (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.

@@ -215,11 +215,11 @@ dependencies {
         implementation("com.google.mlkit:text-recognition-korean:16.0.1")
         implementation("com.google.mlkit:barcode-scanning:17.3.0")
     } else {
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.1")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.1")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-japanese:16.0.1")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.1")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.2")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.2")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.2")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-japanese:16.0.2")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.2")
         implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
     }
     // ML Kit Translate and language identification live in the on-demand :translate module, or in the app

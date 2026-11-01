@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-10-31, after the "localise remaining strings" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-11-01, after the "update ML Kit text recognition" commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -217,7 +217,7 @@ routed by `AppViewModel.destinationRequest` below the app-lock gate. No document
 | `:baselineprofile` | Baseline profile generator |
 
 Main libraries: Jetpack Compose (BOM 2026.09.00) + Material3, Navigation Compose 2.10.2, Hilt 2.60.1, Room 2.8.5 (FTS4,
-schema v3, schemas in `app/schemas`), DataStore 1.3.0, WorkManager 2.12.0, CameraX, ML Kit (text recognition, barcode,
+schema v3, schemas in `app/schemas`), DataStore 1.3.0, WorkManager 2.12.0, CameraX, ML Kit (text recognition 19.0.2 / scripts 16.0.2, barcode,
 document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCastle forced to 1.86, coroutines 1.11.0.
 
 **Tests.** JVM unit tests plus `LaunchSmokeTest` (Robolectric, test-only dependency) that starts the app on every supported Android version, API 24–37.
