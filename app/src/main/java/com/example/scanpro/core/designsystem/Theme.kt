@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -266,7 +267,10 @@ fun ScanProTheme(
         dark -> DarkBrand
         else -> LightBrand
     }
-    CompositionLocalProvider(LocalScanProColors provides brand) {
+    // MaterialTheme sets no content colour, and screens drawn straight on the background (Welcome, Lock, Scan review)
+    // have no Surface to set one: their text and icons without an explicit colour defaulted to black, unreadable in
+    // dark mode. Surfaces, cards and buttons still set their own.
+    CompositionLocalProvider(LocalScanProColors provides brand, LocalContentColor provides colors.onBackground) {
         MaterialTheme(
             colorScheme = colors,
             typography = ScanProTypography,

@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, after the "fix start-up bugs" commit, plus a static UX review (`UX_REVIEW.md`, R12 to R16; nothing run).
+Last updated: 2026-11-02, branch `claude/awesome-clarke-ussjo3`, after the "Screenshot tests; dark-mode content colour and Settings stats" commit (newest in `git log`).
 
 ## 1. Current state
 
@@ -21,14 +21,20 @@ Last updated: 2026-11-01, branch `claude/awesome-clarke-ussjo3`, after the "fix 
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
 - **Builds:** debug and release compile with 0 warnings; lint reports 0 issues. Unit tests, lint and release builds pass (see `BUILD_AND_TEST.md`).
 - **Not verified:** nothing has run on a device or emulator. Camera, PDF tools, app lock, notifications and backup/restore
-  are untested in practice. There are no instrumented or screenshot tests beyond `AppSmokeTest`.
+  are untested in practice. No instrumented tests beyond `AppSmokeTest`; `ScreenScreenshotTest` (opt-in) renders 12 screens
+  in light and dark for review but asserts nothing.
+- **Figma review board:** "ScanPro UI review (real app screens)", https://www.figma.com/design/iHjKny6T0cokWhVhglDkTB, the owner's Starter-plan file
+  (View seat: Figma MCP reads are capped at about 20 a month; writes such as `html_to_figma` are not). After UI changes,
+  re-render and upload a new board (the boards are plain layers from `html_to_figma`, not linked to code).
 - **App version:** 4.2.0 (versionCode 7), `applicationId com.scanpro.app`, minSdk 24, targetSdk 37, compileSdk 37.
 
 ## 2. Completed work (newest first)
 
 | Commit | What |
 |---|---|
-| newest | F40: mode hints and an explained mode lock; thumbnail strip and one filter rule in the review; 40 to 48 dp touch targets, pen swatch ring, scrolling dialogs (R14, R16). |
+| newest | `ScreenScreenshotTest` (12 screens × light/dark, Robolectric, opt-in) reviewed in Figma; F41 dark-mode content colour app-wide (Scan review, Lock, Welcome); F42 Settings stat tiles and even segmented selectors; R18 suggestions. 267 tests, lint 0. |
+| `bd3cacd` | Verified F38 to F40 with a real build; Office notes warnings. |
+| `07293b0` | F40: mode hints and an explained mode lock; thumbnail strip and one filter rule in the review; 40 to 48 dp touch targets, pen swatch ring, scrolling dialogs (R14, R16). |
 | next | F39: localised fallback titles, Office-to-PDF notes and file sizes (R13); camera and review screens lay out in landscape (R15). |
 | next | F38: editors confirm discard and keep state across rotation; "Save all (n)" and Delete-page confirmation in the scan review; pinch zoom, Auto/Manual label, tick on the finish button; background scans open only from a top-level screen. |
 | e7b141e | F37: four start-up bugs fixed: crash when the Scan shortcut or a notification arrives while the first-run language picker is up; Recents replaying a shared file or shortcut; 1 s frozen frame on every rotation (Android 12+); welcome could flash the library first. Recents regression test added. |
@@ -79,6 +85,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
 7. **F38, F39 and F40 compile, pass the 243 unit tests and lint (0 issues) on `07293b0`, but have never run on a device**: check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. For F39 also check both screens in landscape, a new scan's title in Hindi, and the sizes in the library. For F40 also check the review's thumbnail strip, mode hints and the locked-mode message, and the dialogs at 200% font. Still open from the UX review (`UX_REVIEW.md`): R17 (drag-to-reorder, contrast measurements).
+7a. **R18: UX suggestions** from the screenshot review (Recycle bin top bar, document title truncation, "System default", folder on grid cards). Owner decides; see the Figma board.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 
 ## 4. Next steps
@@ -91,7 +98,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 3. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
 4. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
 5. Device-test the edit journal: queue several edits behind a long OCR, force-stop the app, reopen, check they run and that the interrupted one is reported.
-6. Add Compose UI/screenshot tests and run them on an emulator in CI.
+6. Compose UI tests on an emulator in CI; extend `ScreenScreenshotTest` to Tools, PDF viewer and dialogs, and add golden comparison.
 7. Device-test targetSdk 37 on Android 17 (R2).
 
 ## 5. Rules carried over from the owner's audit brief

@@ -17,8 +17,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
@@ -88,7 +91,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -334,12 +339,15 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_theme_title),
                         subtitle = stringResource(R.string.settings_theme_subtitle)
                     )
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
                         ThemeMode.entries.forEachIndexed { index, mode ->
                             SegmentedButton(
                                 selected = mode == themeMode,
                                 onClick = { onThemeModeChange(mode) },
                                 shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
+                                // Every segment as tall as the tallest, so a label that wraps ("System default"
+                                // on a narrow phone) doesn't leave the outline stepped.
+                                modifier = Modifier.fillMaxHeight(),
                                 colors = SegmentedButtonDefaults.colors(
                                     activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                                     activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -443,12 +451,13 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_pdf_quality_title),
                         subtitle = stringResource(R.string.settings_pdf_quality_body)
                     )
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
                         PdfQuality.entries.forEachIndexed { index, quality ->
                             SegmentedButton(
                                 selected = quality == pdfQuality,
                                 onClick = { onPdfQualityChange(quality) },
                                 shape = SegmentedButtonDefaults.itemShape(index, PdfQuality.entries.size),
+                                modifier = Modifier.fillMaxHeight(),
                                 colors = SegmentedButtonDefaults.colors(
                                     activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                                     activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -632,7 +641,8 @@ private fun StorageCard(documentCount: Int, trashCount: Int, storageBytes: Long)
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Stat(Modifier.weight(1f), "$documentCount", pluralStringResource(R.plurals.settings_stat_documents, documentCount))
-                Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin), icon = Icons.Rounded.Delete)
+                // No bin icon: in a third of a 360dp row it left room for "in" and nothing else.
+                Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin))
                 Stat(Modifier.weight(1f), formatBytes(LocalContext.current, storageBytes), stringResource(R.string.settings_stat_used))
             }
         }
@@ -640,17 +650,22 @@ private fun StorageCard(documentCount: Int, trashCount: Int, storageBytes: Long)
 }
 
 @Composable
-private fun Stat(modifier: Modifier, value: String, label: String, icon: ImageVector? = null) {
+private fun Stat(modifier: Modifier, value: String, label: String) {
     Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLowest, modifier = modifier) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (icon != null) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
-                    Spacer(Modifier.width(4.dp))
-                }
-                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-            }
+            // Three tiles share a 360dp phone's width, so "46.1 MB" doesn't fit at full size. One line with
+            // maxLines = 1 dropped the unit after the line break; shrinking the text keeps it whole.
+            val valueStyle = MaterialTheme.typography.titleLarge
+            Text(
+                value,
+                style = valueStyle,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = valueStyle.fontSize)
+            )
+            // Two lines, so "in recycle bin" (and longer translations) isn't cut to its first word.
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }

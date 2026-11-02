@@ -113,6 +113,8 @@ android {
             it.jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED", "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
             // Robolectric fetches each Android version itself; Google's mirror of Maven Central avoids rate limits.
             it.systemProperty("robolectric.dependency.repo.url", "https://maven-central.storage-download.googleapis.com/maven2")
+            // -Pscanpro.screenshots=true renders every screen to app/build/screenshots (see ScreenScreenshotTest).
+            it.systemProperty("scanpro.screenshots", (project.findProperty("scanpro.screenshots") ?: "false").toString())
             // -Pscanpro.updateGoldens=true rewrites the golden images of the imaging tests (see MatFiltersGoldenTest).
             it.systemProperty("scanpro.updateGoldens", (project.findProperty("scanpro.updateGoldens") ?: "false").toString())
             // -Pscanpro.photoDir=<folder of photos> enables RealPhotoEquivalenceTest.
@@ -265,6 +267,9 @@ dependencies {
     // Runs the real Android framework of each version on the JVM: the launch smoke test starts the app on API 24 to 36.
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.test:core-ktx:1.7.0")
+    // Screenshot tests: the real Compose screens rendered on the JVM (ScreenScreenshotTest).
+    testImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
     // The real org.json: the Android jar's version only has stubs, and the backup format is JSON.
     testImplementation("org.json:json:20260814")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
