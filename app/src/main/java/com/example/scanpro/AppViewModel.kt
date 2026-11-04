@@ -211,11 +211,13 @@ class AppViewModel @Inject constructor(
         mode: ScanMode,
         crops: List<CropQuad> = emptyList(),
         filters: List<PageFilter> = emptyList(),
-        adjustments: List<PageAdjustments?> = emptyList()
+        adjustments: List<PageAdjustments?> = emptyList(),
+        /** Typed on the review screen; null names the document automatically. */
+        title: String? = null
     ) {
         if (imageUris.isEmpty()) return
         // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
-        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments))
+        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments, title))
     }
 
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */

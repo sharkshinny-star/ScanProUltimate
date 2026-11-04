@@ -216,4 +216,7 @@
     <string name="scan_hint_text">ஸ்கேனைச் சேமித்து அதன் உரையை நகலெடுக்கும்</string>
     <string name="scan_hint_qr">QR குறியீடுகள், பார்கோடுகளைப் படிக்கும்</string>
     <string name="scan_mode_locked">பயன்முறையை மாற்ற, இந்த ஸ்கேனை முடிக்கவும் அல்லது நிராகரிக்கவும்</string>
+    <string name="scan_review_name_label">பெயர்</string>
+    <string name="scan_review_name_auto">தானியங்கு</string>
+    <string name="scan_review_name_dialog_title">இந்த ஸ்கேனுக்குப் பெயரிடுங்கள்</string>
 </resources>

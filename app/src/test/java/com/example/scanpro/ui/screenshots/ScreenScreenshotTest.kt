@@ -156,7 +156,8 @@ class ScreenScreenshotTest(private val dark: Boolean) {
         ScanReviewScreen(
             pages = pages, quads = quads, filters = filters,
             defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {}, index = 0, processing = false,
-            onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}, onRetake = {}
+            onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}, onRetake = {},
+            name = "", onNameChange = {}
         )
     }
 

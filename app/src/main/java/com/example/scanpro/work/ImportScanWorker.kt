@@ -71,7 +71,10 @@ class ImportScanWorker @AssistedInject constructor(
 
         val document = try {
             operations.perform(applicationContext.getString(R.string.msg_finishing_scan_progress, applicationContext.getString(mode.labelRes).lowercase())) {
-                repository.importImages(uris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters, adjustments)
+                repository.importImages(
+                    uris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters, adjustments,
+                    title = inputData.getString(KEY_TITLE)
+                )
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -140,6 +143,8 @@ class ImportScanWorker @AssistedInject constructor(
         internal const val KEY_FILTERS = "filters"
         /** Parallel to [KEY_URIS]: each page's review-slider adjustments as JSON, or an empty string for none. */
         internal const val KEY_ADJUSTMENTS = "adjustments"
+        /** The document name typed on the review screen; absent when it is left to the automatic title. */
+        internal const val KEY_TITLE = "title"
         private const val MAX_AUTOMATIC_ATTEMPTS = 3
         /** Every import carries this tag, plus [SESSION_TAG_PREFIX] and its session folder's name. */
         const val TAG = "import-scan"
@@ -163,13 +168,16 @@ class ImportScanWorker @AssistedInject constructor(
             mode: ScanMode,
             crops: List<CropQuad>,
             filters: List<PageFilter>,
-            adjustments: List<PageAdjustments?> = emptyList()
+            adjustments: List<PageAdjustments?> = emptyList(),
+            /** The name typed on the review screen; null or blank names the document automatically. */
+            title: String? = null
         ): ImportRequest = ImportRequest.Builder()
             .putStringArray(KEY_URIS, uris.map { it.toString() }.toTypedArray())
             .putString(KEY_MODE, mode.name)
             .putStringArray(KEY_CROPS, crops.map { JsonCodec.encodeCrop(it) }.toTypedArray())
             .putStringArray(KEY_FILTERS, filters.map { it.name }.toTypedArray())
             .putStringArray(KEY_ADJUSTMENTS, adjustments.map { it?.let(JsonCodec::encodeAdjustments) ?: "" }.toTypedArray())
+            .apply { title?.trim()?.takeIf { it.isNotEmpty() }?.let { putString(KEY_TITLE, it) } }
             .build()
 
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */

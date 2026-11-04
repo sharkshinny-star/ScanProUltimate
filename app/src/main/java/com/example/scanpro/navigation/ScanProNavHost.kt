@@ -50,7 +50,7 @@ fun ScanProNavHost(
     snackbarHostState: SnackbarHostState,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
-    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>) -> Unit,
+    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?) -> Unit,
     onCameraRetakeComplete: (RetakeTarget, android.net.Uri, CropQuad, PageFilter, PageAdjustments?) -> Unit,
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit,
@@ -150,10 +150,10 @@ fun ScanProNavHost(
                 defaultFilter = defaultFilter,
                 retakeOfPage = retake?.position,
                 onClose = dropUnlessResumed { navController.popBackStack() },
-                onComplete = { uris, mode, crops, filters, adjustments ->
+                onComplete = { uris, mode, crops, filters, adjustments, name ->
                     if (resumed()) {
                         if (retake != null) onCameraRetakeComplete(retake, uris.first(), crops.first(), filters.first(), adjustments.firstOrNull())
-                        else onCameraScanComplete(uris, mode, crops, filters, adjustments)
+                        else onCameraScanComplete(uris, mode, crops, filters, adjustments, name)
                         navController.popBackStack()
                     }
                 },

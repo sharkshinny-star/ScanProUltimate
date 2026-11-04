@@ -216,4 +216,7 @@
     <string name="scan_hint_text">స్కాన్‌ను సేవ్ చేసి దాని టెక్స్ట్‌ను కాపీ చేస్తుంది</string>
     <string name="scan_hint_qr">QR కోడ్‌లు, బార్‌కోడ్‌లను చదువుతుంది</string>
     <string name="scan_mode_locked">మోడ్ మార్చడానికి ఈ స్కాన్‌ను పూర్తి చేయండి లేదా రద్దు చేయండి</string>
+    <string name="scan_review_name_label">పేరు</string>
+    <string name="scan_review_name_auto">ఆటోమేటిక్</string>
+    <string name="scan_review_name_dialog_title">ఈ స్కాన్‌కు పేరు పెట్టండి</string>
 </resources>

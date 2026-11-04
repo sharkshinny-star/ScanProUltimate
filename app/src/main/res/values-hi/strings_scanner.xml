@@ -216,4 +216,7 @@
     <string name="scan_hint_text">स्कैन सहेजता है और उसका टेक्स्ट कॉपी करता है</string>
     <string name="scan_hint_qr">QR कोड और बारकोड पढ़ता है</string>
     <string name="scan_mode_locked">मोड बदलने के लिए यह स्कैन पूरा करें या छोड़ दें</string>
+    <string name="scan_review_name_label">नाम</string>
+    <string name="scan_review_name_auto">अपने-आप</string>
+    <string name="scan_review_name_dialog_title">इस स्कैन का नाम रखें</string>
 </resources>

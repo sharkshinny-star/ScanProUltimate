@@ -1,5 +1,8 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material.icons.filled.Edit
+import com.example.scanpro.core.designsystem.TextInputDialog
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.graphics.graphicsLayer
@@ -164,7 +167,11 @@ fun ScanReviewScreen(
     onBack: () -> Unit,
     onDone: () -> Unit,
     /** Returns to the camera to shoot this page again; the next capture replaces it in place. */
-    onRetake: (() -> Unit)? = null
+    onRetake: (() -> Unit)? = null,
+    /** The name typed for the new document; blank leaves it to the automatic title. */
+    name: String = "",
+    /** Shows the Name row when set; null where a name means nothing (a page shot again for a saved document). */
+    onNameChange: ((String) -> Unit)? = null
 ) {
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
@@ -176,6 +183,7 @@ fun ScanReviewScreen(
     var curveMode by rememberSaveable { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var naming by rememberSaveable { mutableStateOf(false) }
     // Bumped after a rotation so the page is decoded again from the same file.
     var rotationTick by remember { mutableIntStateOf(0) }
     val blocked = working || processing
@@ -288,6 +296,19 @@ fun ScanReviewScreen(
         pages[current] = pages[target]
         pages[target] = moved
         onIndexChange(target)
+    }
+
+    if (naming && onNameChange != null) {
+        TextInputDialog(
+            title = stringResource(R.string.scan_review_name_dialog_title),
+            initial = name,
+            label = stringResource(R.string.scan_review_name_label),
+            confirmLabel = stringResource(R.string.common_done),
+            // Clearing the name hands it back to the automatic title.
+            allowBlank = true,
+            onDismiss = { naming = false },
+            onConfirm = { typed -> onNameChange(typed.trim()); naming = false }
+        )
     }
 
     if (confirmDelete) {
@@ -485,6 +506,37 @@ fun ScanReviewScreen(
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
         }
 
+
+        }
+
+        // Name the document before saving, as Adobe Scan and CamScanner allow; left alone, it is named automatically. It sits
+        // with the Save button: under the controls in portrait, pinned beside it in landscape.
+        val nameRow: @Composable () -> Unit = {
+        if (onNameChange != null) {
+            val nameLabel = stringResource(R.string.scan_review_name_label)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(enabled = !blocked, onClickLabel = stringResource(R.string.scan_review_name_dialog_title)) { naming = true }
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(nameLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    name.ifBlank { stringResource(R.string.scan_review_name_auto) },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (name.isBlank()) FontWeight.Normal else FontWeight.SemiBold,
+                    color = if (name.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(Icons.Default.Edit, contentDescription = null, tint = primary, modifier = Modifier.size(18.dp))
+            }
+        }
         }
 
         // Bottom buttons: Auto detect · Rotate · Save (saves every page). One row under the page in portrait; in
@@ -552,6 +604,7 @@ fun ScanReviewScreen(
                 stage(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 12.dp))
                 Column(Modifier.width(320.dp).fillMaxHeight()) {
                     Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) { lowerControls() }
+                    nameRow()
                     Row(
                         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -566,6 +619,7 @@ fun ScanReviewScreen(
         } else {
             stage(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp))
             lowerControls()
+            nameRow()
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,

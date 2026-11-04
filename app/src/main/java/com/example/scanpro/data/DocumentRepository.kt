@@ -113,10 +113,12 @@ class DocumentRepository @Inject constructor(
         filters: List<PageFilter> = emptyList(),
         /** The review screen's brightness, contrast and saturation for each page; null or missing keeps the page as is. */
         adjustments: List<PageAdjustments?> = emptyList(),
+        /** A name the user typed before saving; null or blank uses the automatic title. */
+        title: String? = null,
     ): ScanDocument = withContext(Dispatchers.IO) {
         userRequire(imageUris.isNotEmpty(), R.string.err_choose_at_least_one_image)
         // Camera scans arrive with the outline the user confirmed; gallery and shared photos are outlined here.
-        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, adjustments, detectCrops = crops.isEmpty())
+        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, adjustments, detectCrops = crops.isEmpty(), userTitle = title)
     }
 
     suspend fun importPdf(
@@ -1091,7 +1093,9 @@ class DocumentRepository @Inject constructor(
         /** The review sliders for each page, when they were moved. */
         adjustments: List<PageAdjustments?> = emptyList(),
         /** Find the page in each photo, as the camera does, when no outline was given. */
-        detectCrops: Boolean = false
+        detectCrops: Boolean = false,
+        /** Typed by the user; wins over the automatic title when it has any text. */
+        userTitle: String? = null
     ): ScanDocument {
         val defaultScript = settings.defaultOcrScript.first()
         val created = now()
@@ -1137,7 +1141,8 @@ class DocumentRepository @Inject constructor(
 
             val fallbackTitle = context.getString(R.string.doc_title_scan, SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created)))
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
-            val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
+            val title = userTitle?.trim()?.takeIf { it.isNotEmpty() }?.take(MAX_TITLE_LENGTH)
+                ?: if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
             val doc = ScanDocument(
                 id = id,
                 title = title,
