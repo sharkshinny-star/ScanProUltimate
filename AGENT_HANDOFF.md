@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05 (F48, F49 PDF Tools fixes; F50 first-launch permissions); before that 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
+Last updated: 2026-11-05 (colour themes, Home tips, What's new, F52); before that 2026-11-05 (F48, F49 PDF Tools fixes; F50 first-launch permissions); before that 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
 
 ## 1. Current state
 
@@ -32,7 +32,8 @@ Last updated: 2026-11-05 (F48, F49 PDF Tools fixes; F50 first-launch permissions
 
 | Commit | What |
 |---|---|
-| newest | F51: choose the folder a new scan is saved in, on the review screen (Name and Folder cells; shared folder picker). |
+| newest | Colour themes (5 palettes, Settings > Appearance), "Did you know?" Home tips, one-time What's new sheet, animated scan beam on the empty-library hero card, F52 (tablet rail Scan button), translations of the new strings (R19), `ColourThemeScreenshotTest`. A launch-animation redesign was drawn in Figma but not shipped (see `ARCHITECTURE.md` 12b). |
+| `e66c106` | F51: choose the folder a new scan is saved in, on the review screen (Name and Folder cells; shared folder picker). |
 | `b7681d7` | F50: first-launch permission page after the welcome (Camera, Notifications on 13+), `WelcomePermissionsTest` (5). |
 | `22540d1` | F48/F49: Images to PDF decodes once on white (transparent PNGs no longer black); Merge asks for a protected file's password. `PdfPictureTest`, `MergePasswordTest`. Also fixed two lint errors in `ScanReviewReorderTest` (state created in composition). |
 | `b6362d3` | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |

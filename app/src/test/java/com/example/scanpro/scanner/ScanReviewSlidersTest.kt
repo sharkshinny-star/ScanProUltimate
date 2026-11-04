@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -41,7 +42,7 @@ class ScanReviewSlidersTest {
     private fun show() = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(
-                pages = pages, quads = mutableStateMapOf<String, CropQuad>(), filters = mutableStateMapOf<String, PageFilter>(),
+                pages = pages, quads = remember { mutableStateMapOf<String, CropQuad>() }, filters = remember { mutableStateMapOf<String, PageFilter>() },
                 adjustments = adjustments, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {}, index = 0,
                 processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}
             )

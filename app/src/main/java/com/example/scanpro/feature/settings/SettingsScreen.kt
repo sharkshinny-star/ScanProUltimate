@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.AutoDelete
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.ErrorOutline
@@ -55,6 +56,7 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.TipsAndUpdates
 import androidx.compose.material.icons.rounded.Title
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Wallpaper
@@ -116,7 +118,9 @@ import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.TRASH_RETENTION_CHOICES
+import com.example.scanpro.data.AccentPalette
 import com.example.scanpro.data.ThemeMode
+import com.example.scanpro.core.designsystem.PalettePicker
 import kotlinx.coroutines.launch
 
 @Composable
@@ -131,6 +135,8 @@ fun SettingsRoute(
     val appLock by viewModel.appLock.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
+    val accentPalette by viewModel.accentPalette.collectAsStateWithLifecycle()
+    val homeTips by viewModel.homeTips.collectAsStateWithLifecycle()
     val documentCount by viewModel.documentCount.collectAsStateWithLifecycle()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
     val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
@@ -187,6 +193,10 @@ fun SettingsRoute(
         onAppLockChange = onAppLockChange,
         onThemeModeChange = viewModel::setThemeMode,
         onDynamicColorChange = viewModel::setDynamicColor,
+        accentPalette = accentPalette,
+        onAccentPaletteChange = viewModel::setAccentPalette,
+        homeTips = homeTips,
+        onHomeTipsChange = viewModel::setHomeTips,
         onRestoreBackup = viewModel::restoreBackup,
         bottomBar = bottomBar
     )
@@ -212,6 +222,10 @@ fun SettingsScreen(
     onAppLockChange: (Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit = {},
+    accentPalette: AccentPalette = AccentPalette.INDIGO,
+    onAccentPaletteChange: (AccentPalette) -> Unit = {},
+    homeTips: Boolean = true,
+    onHomeTipsChange: (Boolean) -> Unit = {},
     onRestoreBackup: (Uri, String) -> Unit = { _, _ -> },
     trashRetentionDays: Int = DEFAULT_TRASH_RETENTION_DAYS,
     defaultOcrScript: OcrScript = OcrScript.LATIN,
@@ -355,6 +369,22 @@ fun SettingsScreen(
                             ) { Text(stringResource(mode.labelRes)) }
                         }
                     }
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.ColorLens,
+                        tone = TileTone.Rose,
+                        title = stringResource(R.string.settings_palette_title),
+                        subtitle = stringResource(
+                            if (dynamicColor && supportsDynamicColor) R.string.settings_palette_subtitle_wallpaper
+                            else R.string.settings_palette_subtitle
+                        )
+                    )
+                    PalettePicker(
+                        // With wallpaper colours on, no theme applies, so none is marked.
+                        selected = accentPalette.takeUnless { dynamicColor && supportsDynamicColor },
+                        onSelect = onAccentPaletteChange,
+                        modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 10.dp)
+                    )
                     if (supportsDynamicColor) {
                         InsetDivider()
                         SettingsRow(
@@ -387,6 +417,15 @@ fun SettingsScreen(
                             }
                         )
                     }
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.TipsAndUpdates,
+                        tone = TileTone.Amber,
+                        title = stringResource(R.string.settings_home_tips_title),
+                        subtitle = stringResource(R.string.settings_home_tips_subtitle),
+                        checked = homeTips,
+                        onCheckedChange = onHomeTipsChange
+                    )
                 }
 
                 SettingsSection(stringResource(R.string.settings_section_scanning)) {

@@ -15,7 +15,9 @@ import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPasswordRequiredException
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
+import com.example.scanpro.data.AccentPalette
 import com.example.scanpro.data.ThemeMode
+import com.example.scanpro.data.WHATS_NEW_VERSION
 import com.example.scanpro.navigation.RetakeTarget
 import com.example.scanpro.scanner.SESSION_ROOT
 import com.example.scanpro.work.ImportScanWorker
@@ -84,13 +86,38 @@ class AppViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /**
-     * True once everything the first frame depends on has loaded: the theme, the lock decision and whether the
+     * True once everything the first frame depends on has loaded: the theme and colour theme, the lock decision and whether the
      * welcome is due (otherwise a first launch could flash the library before the welcome covers it).
      */
     val launchStateReady: Boolean
-        get() = themeMode.value != null && appLockEnabled.value != null && welcomeSeen.value != null
+        get() = themeMode.value != null && accentPalette.value != null && appLockEnabled.value != null && welcomeSeen.value != null
 
-    fun markWelcomeSeen() { viewModelScope.launch { settings.setWelcomeSeen() } }
+    /** Closing the welcome also counts as having seen the current "What's new": it covers the same ground. */
+    fun markWelcomeSeen() {
+        viewModelScope.launch {
+            settings.setWhatsNewSeen(WHATS_NEW_VERSION)
+            settings.setWelcomeSeen()
+        }
+    }
+
+    /** Null until the saved colour theme has loaded; like [themeMode], it holds the launch screen until then. */
+    val accentPalette: StateFlow<AccentPalette?> = settings.accentPalette
+        .map<AccentPalette, AccentPalette?> { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Set from the welcome's "Make it yours" page; Settings has its own controls. */
+    fun setThemeMode(value: ThemeMode) { viewModelScope.launch { settings.setThemeMode(value) } }
+    fun setAccentPalette(value: AccentPalette) { viewModelScope.launch { settings.setAccentPalette(value) } }
+
+    /**
+     * True once for people updating from a release before [WHATS_NEW_VERSION], after the welcome is
+     * known to have been seen (so a new install never gets both).
+     */
+    val whatsNewDue: StateFlow<Boolean> = combine(settings.welcomeSeen, settings.whatsNewSeen) { welcome, seen ->
+        welcome && seen < WHATS_NEW_VERSION
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun markWhatsNewSeen() { viewModelScope.launch { settings.setWhatsNewSeen(WHATS_NEW_VERSION) } }
 
     // Lives in the ViewModel so rotating the screen doesn't lock the app again.
     private val _sessionUnlocked = MutableStateFlow(false)

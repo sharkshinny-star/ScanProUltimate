@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -39,8 +40,8 @@ class ScanReviewNamingTest {
     private fun show(nameable: Boolean = true) = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(
-                pages = mutableStateListOf(Uri.parse("file:///nowhere/a.jpg")), quads = mutableStateMapOf<String, CropQuad>(),
-                filters = mutableStateMapOf<String, PageFilter>(), defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {},
+                pages = remember { mutableStateListOf(Uri.parse("file:///nowhere/a.jpg")) }, quads = remember { mutableStateMapOf<String, CropQuad>() },
+                filters = remember { mutableStateMapOf<String, PageFilter>() }, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {},
                 index = 0, processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {},
                 name = name, onNameChange = if (nameable) ({ name = it }) else null,
                 folder = folder, folders = listOf("Tax", "Work"), onFolderChange = if (nameable) ({ folder = it }) else null

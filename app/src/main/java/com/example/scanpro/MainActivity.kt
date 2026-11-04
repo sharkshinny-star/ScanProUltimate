@@ -39,6 +39,7 @@ import com.example.scanpro.feature.document.DocumentEditor
 import com.example.scanpro.core.ui.SupportTopic
 import com.example.scanpro.core.ui.contactSupport
 import com.example.scanpro.core.ui.openPlayStoreListing
+import com.example.scanpro.data.AccentPalette
 import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.scanner.HardwareShutter
@@ -137,15 +138,19 @@ class MainActivity : FragmentActivity() {
           ) {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
+            val savedPalette by viewModel.accentPalette.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
             // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
             val mode = themeMode ?: return@CompositionLocalProvider
+            val palette = savedPalette ?: return@CompositionLocalProvider
             val targetDark = when (mode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
-            ThemeTransition(targetDark) { dark ->
+            // A change of light/dark, colour theme or wallpaper colours crossfades rather than snapping.
+            ThemeTransition(AppTheme(targetDark, palette, dynamicColor)) { theme ->
+                val dark = theme.dark
                 // Status and navigation bar icons follow the app's theme, not the system's.
                 DisposableEffect(dark) {
                     // Explicit light/dark styles: with SystemBarStyle.auto, enableEdgeToEdge turns the navigation-bar
@@ -157,7 +162,7 @@ class MainActivity : FragmentActivity() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
                     onDispose { }
                 }
-                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = dynamicColor) {
+                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = theme.dynamicColor, palette = theme.palette) {
                     CrashReportPrompt()
                     ScanProApp(
                         viewModel = viewModel,
@@ -461,3 +466,6 @@ class MainActivity : FragmentActivity() {
         private const val ACTION_SUPPORT = "com.example.scanpro.action.SUPPORT"
     }
 }
+
+/** Everything that decides the app's colours; a change to any of it crossfades the screen. */
+private data class AppTheme(val dark: Boolean, val palette: AccentPalette, val dynamicColor: Boolean)

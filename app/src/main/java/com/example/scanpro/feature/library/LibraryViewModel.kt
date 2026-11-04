@@ -92,6 +92,10 @@ class LibraryViewModel @Inject constructor(
     }
     fun unlockFolder(name: String) = folderLock.unlockForSession(name)
 
+    /** The "Did you know?" card on Home; off until loaded so it never flashes for people who closed it. */
+    val homeTips: StateFlow<Boolean> = settings.homeTips.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    fun hideHomeTips() { viewModelScope.launch { settings.setHomeTips(false) } }
+
     /**
      * The documents to list. Without a search this is the paged database query for the current folder,
      * favourites and sort. A search returns its (small) result set, filtered and ordered the same way.

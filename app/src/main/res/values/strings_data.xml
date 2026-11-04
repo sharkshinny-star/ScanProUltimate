@@ -19,7 +19,13 @@
 
     <string name="data_theme_light">Light</string>
     <string name="data_theme_dark">Dark</string>
-    <string name="data_theme_system">System default</string>
+    <string name="data_theme_system">System</string>
+
+    <string name="data_palette_indigo">Indigo</string>
+    <string name="data_palette_ocean">Ocean</string>
+    <string name="data_palette_emerald">Emerald</string>
+    <string name="data_palette_sunset">Sunset</string>
+    <string name="data_palette_berry">Berry</string>
 
     <string name="data_scan_mode_document">Document</string>
     <string name="data_scan_mode_receipt">Receipt</string>

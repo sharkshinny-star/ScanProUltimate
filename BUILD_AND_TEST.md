@@ -41,7 +41,16 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-04, `b76720c`, full run in a cloud container)
+## Latest results (2026-11-05, colour themes / Home tips / What's new, rebased on `d2c1451`)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin`, `:app:compileDebugUnitTestKotlin` | Passed, 0 compiler warnings |
+| `:app:testDebugUnitTest` | 306 tests, 276 passed, 30 skipped, 0 failed (includes the new `ColourThemeScreenshotTest`, 2 tests, which always renders Home and Settings in several colour themes to `app/build/screenshots`; renders looked at) |
+| `:app:lintDebug` | 0 errors, 1 warning: `GradleDependency`, uiautomator 2.4.1 is available (not from this change). Fixed on the way: 47 `MissingTranslation` for the new strings, 5 `UnrememberedMutableState` in `ScanReviewNamingTest`/`ScanReviewSlidersTest` |
+| Release builds, `:translate`, `:opencv`, device | Not run |
+
+## Earlier results (2026-11-04, `b76720c`, full run in a cloud container)
 
 **Every check below was run on `b76720c` (screen-review fixes, F43) unless a row says otherwise.**
 

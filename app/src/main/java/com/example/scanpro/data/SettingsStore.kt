@@ -114,6 +114,47 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.scanProSettings.edit { it[keyThemeMode] = value.name }
     }
 
+    private val keyAccentPalette = stringPreferencesKey("accent_palette")
+
+    // Like the theme mode: a tapped swatch recolours the app before the write reaches disk.
+    private val pendingAccentPalette = MutableStateFlow<AccentPalette?>(null)
+
+    /** The colour theme; [AccentPalette.INDIGO] (the original look) until one is picked. */
+    val accentPalette: Flow<AccentPalette> = combine(
+        preferences.map { preferences ->
+            runCatching { AccentPalette.valueOf(preferences[keyAccentPalette] ?: AccentPalette.INDIGO.name) }
+                .getOrDefault(AccentPalette.INDIGO)
+        },
+        pendingAccentPalette
+    ) { stored, pending -> pending ?: stored }.distinctUntilChanged()
+
+    /** Picking a colour theme also turns wallpaper colours off, since those would hide it. */
+    suspend fun setAccentPalette(value: AccentPalette) {
+        pendingAccentPalette.value = value
+        context.scanProSettings.edit {
+            it[keyAccentPalette] = value.name
+            it[keyDynamicColor] = false
+        }
+    }
+
+    private val keyHomeTips = booleanPreferencesKey("home_tips")
+
+    /** The "Did you know?" card on Home. On until closed there or switched off in Settings. */
+    val homeTips: Flow<Boolean> = preferences.map { it[keyHomeTips] ?: true }
+
+    suspend fun setHomeTips(value: Boolean) {
+        context.scanProSettings.edit { it[keyHomeTips] = value }
+    }
+
+    private val keyWhatsNewSeen = intPreferencesKey("whats_new_seen")
+
+    /** The newest "What's new" release notes already shown (0 = none). See [WHATS_NEW_VERSION]. */
+    val whatsNewSeen: Flow<Int> = preferences.map { it[keyWhatsNewSeen] ?: 0 }
+
+    suspend fun setWhatsNewSeen(version: Int) {
+        context.scanProSettings.edit { it[keyWhatsNewSeen] = maxOf(version, it[keyWhatsNewSeen] ?: 0) }
+    }
+
     private val keyDynamicColor = booleanPreferencesKey("dynamic_color")
 
     /** Android 12+ wallpaper colours instead of the brand palette. Off by default so the brand shows first. */
@@ -204,3 +245,10 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
 const val DEFAULT_TRASH_RETENTION_DAYS = 7
 /** The recycle-bin retention choices offered in Settings. */
 val TRASH_RETENTION_CHOICES = listOf(7, 14, 30)
+
+/**
+ * The release notes the "What's new" sheet describes. Raise it (and update the sheet) when a release has
+ * something worth telling existing users about; everyone who has not seen that version yet sees it once.
+ * New installs skip it: the welcome already covers everything.
+ */
+const val WHATS_NEW_VERSION = 1

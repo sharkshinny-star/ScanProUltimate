@@ -67,6 +67,7 @@ fun ScanProApp(
     val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
     val ratingDue by viewModel.ratingDue.collectAsStateWithLifecycle()
+    val whatsNewDue by viewModel.whatsNewDue.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Once, after the first saved document and never over the welcome or lock screens. Marked as shown on every
@@ -215,7 +216,9 @@ fun ScanProApp(
             if (showRail) {
                 ScanProNavigationRail(
                     selectedRoute = currentRoute.orEmpty(),
-                    onTab = { route -> navController.navigateToTopLevel(route) }
+                    onTab = { route -> navController.navigateToTopLevel(route) },
+                    // The rail's scan button did nothing before: it relied on the default no-op.
+                    onScan = { navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true } }
                 )
             }
             Box(Modifier.weight(1f).fillMaxSize()) {
@@ -233,6 +236,17 @@ fun ScanProApp(
                     defaultFilter = viewModel.defaultFilter.collectAsStateWithLifecycle().value
                 )
             }
+        }
+
+        // Once, after an update that has something to tell (never together with the welcome or the rating sheet).
+        if (whatsNewDue && !welcomeShowing && !ratingDue) {
+            WhatsNewSheet(
+                onPickColours = {
+                    viewModel.markWhatsNewSeen()
+                    navController.navigateToTopLevel(ScanProDestinations.SETTINGS)
+                },
+                onDismiss = viewModel::markWhatsNewSeen
+            )
         }
 
         // First launch only, drawn over the app so the library is already there underneath when it

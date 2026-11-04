@@ -208,6 +208,25 @@ sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional remin
 routed by `AppViewModel.destinationRequest` below the app-lock gate. No document names; neutral text when app lock is on.
 Runtime permissions (camera, notifications on 13+) are asked once after the welcome on first launch (`StartupPermissions` in `ui/WelcomeScreen.kt`), then again in context if refused.
 
+## 12b. Colour themes, Home tips, What's new
+
+- **Colour themes.** `data/Models.kt` `AccentPalette` (Indigo, Ocean, Emerald, Sunset, Berry) is stored by name in
+  `SettingsStore` (`accent_palette`; applied before the write lands, like the theme mode; picking one turns wallpaper colours
+  off). `ScanProTheme(palette)` picks the Material scheme and the brand gradient (`paletteScheme`, `paletteBrand`). Indigo is
+  the original hand-made scheme; the other four in `core/designsystem/Palettes.kt` are **generated** with Material Color
+  Utilities (fidelity scheme, 2021 spec) from one seed each, so contrast pairs hold: regenerate from a seed rather than
+  editing single roles. Brand gradients were picked for at least 4.5:1 white text. The mint scan line is the same in every
+  theme because the scanner uses it to mean "page found". `PalettePicker` draws the swatches (Settings > Appearance).
+  `MainActivity` holds the first frame until the palette has loaded (`AppViewModel.launchStateReady`) and `ThemeTransition`
+  crossfades on any change of light/dark, palette or wallpaper colours.
+- **Home tips.** `feature/library/HomeTips.kt`: a "Did you know?" card at the end of Home, one tip per day, each leading
+  straight to its feature; closing it hides tips for good, Settings > Appearance brings them back (`home_tips`).
+- **What's new.** `ui/WhatsNewSheet.kt`, shown once to people updating past `WHATS_NEW_VERSION` (`SettingsStore`), never with
+  the welcome or the rating sheet; finishing the welcome marks it seen.
+- **Launch motion study.** A redesign of the launch animation was drawn and assessed in Figma
+  (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi, frame `2:2` with keyframes, spec `6:2`). It is not implemented:
+  the shipped launch is the animated launch icon from `c068e53`.
+
 ## 13. Modules and dependencies
 
 | Module | Purpose |
