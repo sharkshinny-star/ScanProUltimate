@@ -135,7 +135,15 @@ class ScreenScreenshotTest(private val dark: Boolean) {
     }
 
     @Test
-    fun scanReview() = shoot("07-scan-review") {
+    fun scanReview() = shoot("07-scan-review") { ScanReview() }
+
+    // A phone on its side: the page sits on the left and the controls scroll in a column on the right.
+    @Test
+    @Config(qualifiers = "w800dp-h360dp-land-xxhdpi")
+    fun scanReviewLandscape() = shoot("07b-scan-review-landscape") { ScanReview() }
+
+    @Composable
+    private fun ScanReview() {
         val pages = remember { mutableStateListOf(*samples.pageFiles.take(3).map { it.toUri() }.toTypedArray()) }
         val quads = remember { mutableStateMapOf<String, CropQuad>() }
         val filters = remember { mutableStateMapOf<String, PageFilter>() }

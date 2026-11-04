@@ -245,4 +245,20 @@ class OfficeToHtmlTest {
         } catch (_: OfficeConversionException) {
         }
     }
+    @Test
+    fun `notes come in the language the caller passes, escaped, and the default stays English`() {
+        val notes = OfficeToHtml.Notes(
+            imageNotShown = "img",
+            workbookEmpty = "wb",
+            fileEmpty = "खाली <फ़ाइल>",
+            fileTooLong = "long",
+            workbookTruncated = { "wb $it" },
+            fileTruncated = { "file $it" }
+        )
+        val localised = OfficeToHtml.convert(Kind.CSV, ByteArrayInputStream(ByteArray(0)), "T", notes)
+        assertTrue(localised.contains("खाली &lt;फ़ाइल&gt;"))
+        assertFalse(localised.contains("The file has no data."))
+        // The next conversion on the same thread is back to the default.
+        assertTrue(convert(Kind.CSV, "").contains("The file has no data."))
+    }
 }
