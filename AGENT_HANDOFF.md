@@ -12,14 +12,14 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-02, branch `claude/awesome-clarke-ussjo3`, after the "Screenshot tests; dark-mode content colour and Settings stats" commit (newest in `git log`).
+Last updated: 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
 
 ## 1. Current state
 
 - **Branch:** `claude/awesome-clarke-ussjo3` on `codingking155/ScanProUltimate`. Work is pushed; no pull request is open.
 - **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`.
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
-- **Builds:** debug and release compile with 0 warnings; lint reports 0 issues. Unit tests, lint and release builds pass (see `BUILD_AND_TEST.md`).
+- **Builds (2026-11-04, `b76720c`):** 0 compiler warnings on a clean compile; 275 unit tests, 0 failed; lint 0 issues (`:app`, `:opencv`); bundle and sideload release builds pass; 16 KB alignment checked (see `BUILD_AND_TEST.md`).
 - **Not verified:** nothing has run on a device or emulator. Camera, PDF tools, app lock, notifications and backup/restore
   are untested in practice. No instrumented tests beyond `AppSmokeTest`; `ScreenScreenshotTest` (opt-in) renders 12 screens
   in light and dark for review but asserts nothing.
@@ -32,7 +32,8 @@ Last updated: 2026-11-02, branch `claude/awesome-clarke-ussjo3`, after the "Scre
 
 | Commit | What |
 |---|---|
-| newest | `ScreenScreenshotTest` (12 screens × light/dark, Robolectric, opt-in) reviewed in Figma; F41 dark-mode content colour app-wide (Scan review, Lock, Welcome); F42 Settings stat tiles and even segmented selectors; R18 suggestions. 267 tests, lint 0. |
+| `b76720c` | F43: search results show the page text around a text-only match; Recycle bin actions under the notice; short file sizes; dimmed end arrows in the page grid. `ab4e72d`: landscape review keeps Save visible; 0 compiler warnings. Full run: 275 tests (0 failed), lint 0, both release builds, 16 KB alignment. |
+| `94b09d9` | `ScreenScreenshotTest` (12 screens × light/dark, Robolectric, opt-in) reviewed in Figma; F41 dark-mode content colour app-wide (Scan review, Lock, Welcome); F42 Settings stat tiles and even segmented selectors; R18 suggestions. 267 tests, lint 0. |
 | `bd3cacd` | Verified F38 to F40 with a real build; Office notes warnings. |
 | `07293b0` | F40: mode hints and an explained mode lock; thumbnail strip and one filter rule in the review; 40 to 48 dp touch targets, pen swatch ring, scrolling dialogs (R14, R16). |
 | next | F39: localised fallback titles, Office-to-PDF notes and file sizes (R13); camera and review screens lay out in landscape (R15). |
@@ -85,7 +86,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
 7. **F38, F39 and F40 compile, pass the 243 unit tests and lint (0 issues) on `07293b0`, but have never run on a device**: check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. For F39 also check both screens in landscape, a new scan's title in Hindi, and the sizes in the library. For F40 also check the review's thumbnail strip, mode hints and the locked-mode message, and the dialogs at 200% font. Still open from the UX review (`UX_REVIEW.md`): R17 (drag-to-reorder, contrast measurements).
-7a. **R18: UX suggestions** from the screenshot review (Recycle bin top bar, document title truncation, "System default", folder on grid cards). Owner decides; see the Figma board.
+7a. **R18: UX suggestions** from the screenshot review (document title truncation, "System default", folder on grid cards; the Recycle bin top bar was fixed in F43). Owner decides; see the Figma board.
 8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
 
 ## 4. Next steps

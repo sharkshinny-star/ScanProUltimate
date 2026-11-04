@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-02, after the screenshot tests and F41/F42. Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-04, full run on `b76720c` (tests, lint, both release builds, 16 KB check). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -41,7 +41,24 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-01, "fix start-up bugs" commit)
+## Latest results (2026-11-04, `b76720c`, full run in a cloud container)
+
+**Every check below was run on `b76720c` (screen-review fixes, F43) unless a row says otherwise.**
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin --rerun` | Passed, **0 compiler warnings** (the four older deprecation/inline warnings were fixed in `ab4e72d`) |
+| `:app:testDebugUnitTest` | 275 tests: 245 passed, 30 skipped (28 `ScreenScreenshotTest` cases, opt-in; 2 `RealPhotoEquivalenceTest`), 0 failed. New: `DocumentSearchSnippetTest` (3, real Room/FTS4 under Robolectric), one `OfficeToHtmlTest` case |
+| `ScreenScreenshotTest` (`-Pscanpro.screenshots=true`) | 28 renders (14 screens × light/dark, including the new landscape review and text-search hit), all looked at |
+| `:app:lintDebug`, `:opencv:lintDebug` | 0 issues each |
+| `:translate:testDebugUnitTest`, `:opencv:testDebugUnitTest` | No tests in those modules (NO-SOURCE) |
+| `:app:bundleRelease` | Passed; AAB 45.7 MB |
+| Sideload `assembleRelease` | Passed; arm64 33.5 MB, armeabi-v7a 25.5 MB, x86_64 39.3 MB, universal 82.6 MB (unsigned) |
+| 16 KB page alignment | arm64 and x86_64: all 8 `.so` files each have 16 KB `LOAD` alignment (`readelf`) |
+| Instrumented (`AppSmokeTest`), baseline profile, performance | Not run: no emulator or device |
+| Release signing | Not validated: no secrets; outputs unsigned |
+
+Older runs, kept for history:
 
 **2026-11-02, screenshot tests and F41/F42 on top of `bd3cacd`:** `:app:testDebugUnitTest` 267 tests, 241 passed, 26 skipped (24 `ScreenScreenshotTest` cases, opt-in; 2 `RealPhotoEquivalenceTest`), 0 failed; `:app:lintDebug` 0 issues; 0 compiler warnings. `ScreenScreenshotTest` with `-Pscanpro.screenshots=true`: 24 PNGs, checked by eye. Release builds, `:translate`, `:opencv` not re-run.
 
