@@ -1,5 +1,13 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -264,6 +272,15 @@ fun ScanReviewScreen(
         }
     }
 
+    // The page being adjusted stays selected while others are dragged around it.
+    val selectedUri by rememberUpdatedState(uri)
+    fun movePage(from: Int, to: Int) {
+        if (blocked || from !in pages.indices || to !in pages.indices || from == to) return
+        val keep = selectedUri
+        pages.add(to, pages.removeAt(from))
+        onIndexChange(pages.indexOf(keep).coerceAtLeast(0))
+    }
+
     fun move(delta: Int) {
         val target = current + delta
         if (target !in pages.indices) return
@@ -435,7 +452,8 @@ fun ScanReviewScreen(
             refresh = rotationTick,
             enabled = !blocked,
             onSelect = onIndexChange,
-            onAdd = onAdd
+            onAdd = onAdd,
+            onMove = ::movePage
         )
 
         FilterStrip(
@@ -561,7 +579,10 @@ fun ScanReviewScreen(
     }
 }
 
-/** Thumbnails of every page: tap one to adjust it, "+" at the end takes another page. */
+/**
+ * Thumbnails of every page: tap one to adjust it, long-press and drag one to put the pages in order, "+" at the end
+ * takes another page. Screen readers get "Move earlier" and "Move later" actions on each thumbnail instead of the drag.
+ */
 @Composable
 private fun ReviewFilmstrip(
     pages: List<Uri>,
@@ -569,12 +590,25 @@ private fun ReviewFilmstrip(
     refresh: Int,
     enabled: Boolean,
     onSelect: (Int) -> Unit,
-    onAdd: () -> Unit
+    onAdd: () -> Unit,
+    onMove: (from: Int, to: Int) -> Unit
 ) {
     val cache = remember { HashMap<String, Bitmap>() }
     val listState = rememberLazyListState()
-    LaunchedEffect(current, pages.size) { if (current in pages.indices) listState.animateScrollToItem(current) }
+    // Not while dragging: scrolling to the selected page would pull the strip out from under the finger.
+    var draggingKey by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(current, pages.size) {
+        if (draggingKey == null && current in pages.indices) listState.animateScrollToItem(current)
+    }
     val addLabel = stringResource(R.string.scan_review_add_another_page)
+    val moveEarlierLabel = stringResource(R.string.scan_review_move_earlier)
+    val moveLaterLabel = stringResource(R.string.scan_review_move_later)
+    val haptic = LocalHapticFeedback.current
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // One thumbnail plus the gap: dragging this far past a neighbour swaps the two.
+    val step = with(LocalDensity.current) { (48.dp + 8.dp).toPx() }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val latestOnMove by rememberUpdatedState(onMove)
     LazyRow(
         state = listState,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -592,8 +626,50 @@ private fun ReviewFilmstrip(
             }
             val isCurrent = index == current
             val label = stringResource(R.string.scan_review_page_n, index + 1)
+            val key = uri.toString()
+            val dragging = draggingKey == key
+            val latestIndex by rememberUpdatedState(index)
+            val latestCount by rememberUpdatedState(pages.size)
             Box(
                 Modifier
+                    .then(if (dragging) Modifier.zIndex(1f) else Modifier.animateItem())
+                    .graphicsLayer {
+                        if (dragging) {
+                            translationX = dragOffset
+                            scaleX = 1.08f
+                            scaleY = 1.08f
+                            shadowElevation = 8.dp.toPx()
+                        }
+                    }
+                    .pointerInput(enabled) {
+                        if (!enabled) return@pointerInput
+                        var position = 0
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                position = latestIndex
+                                draggingKey = key
+                                dragOffset = 0f
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffset += amount.x
+                                // Towards the end of the row is right in left-to-right layouts and left in right-to-left ones.
+                                val forward = if (isRtl) -dragOffset else dragOffset
+                                if (forward > step && position < latestCount - 1) {
+                                    latestOnMove(position, position + 1)
+                                    position++
+                                    dragOffset += if (isRtl) step else -step
+                                } else if (forward < -step && position > 0) {
+                                    latestOnMove(position, position - 1)
+                                    position--
+                                    dragOffset += if (isRtl) -step else step
+                                }
+                            },
+                            onDragEnd = { draggingKey = null; dragOffset = 0f },
+                            onDragCancel = { draggingKey = null; dragOffset = 0f }
+                        )
+                    }
                     .size(48.dp, 64.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -603,7 +679,14 @@ private fun ReviewFilmstrip(
                         RoundedCornerShape(6.dp)
                     )
                     .clickable(enabled = enabled, role = Role.Tab, onClick = { onSelect(index) })
-                    .semantics { contentDescription = label; selected = isCurrent }
+                    .semantics {
+                        contentDescription = label
+                        selected = isCurrent
+                        customActions = buildList {
+                            if (index > 0) add(CustomAccessibilityAction(moveEarlierLabel) { latestOnMove(index, index - 1); true })
+                            if (index < pages.lastIndex) add(CustomAccessibilityAction(moveLaterLabel) { latestOnMove(index, index + 1); true })
+                        }
+                    }
             ) {
                 thumbnail?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
                 Text(
