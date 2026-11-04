@@ -426,7 +426,7 @@ fun ScanReviewScreen(
             }
         } }
 
-        // Page stepper, filters, sliders and the bottom buttons; below the page, or beside it in landscape.
+        // Thumbnails, filters and sliders; below the page, or beside it in landscape.
         val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         // Every page as a thumbnail: tap one to adjust it, "+" takes another page.
         ReviewFilmstrip(
@@ -467,20 +467,22 @@ fun ScanReviewScreen(
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
         }
 
-        // Bottom row: Auto detect · Rotate · Save (saves every page).
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        }
+
+        // Bottom buttons: Auto detect · Rotate · Save (saves every page). One row under the page in portrait; in
+        // landscape they stay pinned at the foot of the side column while the controls above them scroll.
+        val autoDetectButton: @Composable (Modifier) -> Unit = { buttonModifier ->
             OutlinedButton(
                 enabled = !blocked && bitmap != null,
+                modifier = buttonModifier,
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                 onClick = {
                     val image = bitmap ?: return@OutlinedButton
                     scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
                 }
             ) { Text(stringResource(R.string.scan_review_auto_detect), maxLines = 1, softWrap = false) }
+        }
+        val rotateButton: @Composable () -> Unit = {
             // Tap turns the page clockwise; a long press turns it the other way.
             val rotateEnabled = !blocked
             Box(
@@ -503,12 +505,14 @@ fun ScanReviewScreen(
                     tint = if (rotateEnabled) primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
             }
+        }
+        val saveButton: @Composable (Modifier) -> Unit = { buttonModifier ->
             Button(
                 enabled = !blocked,
-                modifier = Modifier.weight(1f),
+                modifier = buttonModifier,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-                // Always saves the whole scan, from any page; the stepper and swiping move between pages.
+                // Always saves the whole scan, from any page; the thumbnails and swiping move between pages.
                 onClick = onDone
             ) {
                 if (processing) {
@@ -524,16 +528,35 @@ fun ScanReviewScreen(
                 }
             }
         }
-        }
 
         if (landscape) {
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 stage(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 12.dp))
-                Column(Modifier.width(300.dp).fillMaxHeight().verticalScroll(rememberScrollState())) { lowerControls() }
+                Column(Modifier.width(320.dp).fillMaxHeight()) {
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) { lowerControls() }
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        autoDetectButton(Modifier.weight(1f))
+                        rotateButton()
+                    }
+                    saveButton(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp))
+                }
             }
         } else {
             stage(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp))
             lowerControls()
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                autoDetectButton(Modifier)
+                rotateButton()
+                saveButton(Modifier.weight(1f))
+            }
         }
     }
 }

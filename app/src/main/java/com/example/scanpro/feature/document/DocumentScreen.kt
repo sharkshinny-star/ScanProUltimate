@@ -119,9 +119,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -1385,13 +1384,13 @@ private fun DocumentTopBar(title: String, status: String?, onBack: () -> Unit, a
 /** Pages · Text · Insights, with the design's 3 dp underline on the selected tab. */
 @Composable
 private fun DocumentTabs(selected: Int, onSelect: (Int) -> Unit) {
-    TabRow(
+    SecondaryTabRow(
         selectedTabIndex = selected,
         containerColor = MaterialTheme.colorScheme.background,
         contentColor = MaterialTheme.colorScheme.primary,
-        indicator = { positions ->
+        indicator = {
             TabRowDefaults.SecondaryIndicator(
-                Modifier.tabIndicatorOffset(positions[selected]),
+                Modifier.tabIndicatorOffset(selected, matchContentSize = false),
                 height = 3.dp,
                 color = MaterialTheme.colorScheme.primary
             )

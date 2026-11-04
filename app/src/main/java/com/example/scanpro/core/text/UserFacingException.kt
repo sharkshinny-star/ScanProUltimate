@@ -35,7 +35,7 @@ fun userError(@StringRes messageRes: Int, vararg args: Any, cause: Throwable? = 
     throw UserFacingException(messageRes, *args, cause = cause)
 
 /** Localised `require`: throws [UserFacingException] with [messageRes] when [condition] is false. */
-inline fun userRequire(condition: Boolean, @StringRes messageRes: Int, vararg args: Any) {
+fun userRequire(condition: Boolean, @StringRes messageRes: Int, vararg args: Any) {
     if (!condition) throw UserFacingException(messageRes, *args)
 }
 
