@@ -1,5 +1,6 @@
 package com.example.scanpro.core.designsystem
 
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import android.graphics.Bitmap
@@ -152,7 +153,8 @@ fun TextInputDialog(
     // Single-line values (names, tags) start selected so typing replaces them; longer text such as OCR
     // starts with the cursor at the end so a stray keypress can't wipe it.
     val initialSelection = if (maxLines == 1) TextRange(0, initial.length) else TextRange(initial.length)
-    var value by remember(initial) { mutableStateOf(TextFieldValue(initial, initialSelection)) }
+    // Saveable: turning the phone while typing must not wipe the draft (the dialog itself comes back after a rotation).
+    var value by rememberSaveable(initial, stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue(initial, initialSelection)) }
     val focusRequester = remember { FocusRequester() }
     val canConfirm = allowBlank || value.text.isNotBlank()
     AlertDialog(

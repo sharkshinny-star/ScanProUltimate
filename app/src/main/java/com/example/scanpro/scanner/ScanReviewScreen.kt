@@ -729,11 +729,42 @@ private fun ReviewFilmstrip(
             val label = stringResource(R.string.scan_review_page_n, index + 1)
             val key = uri.toString()
             val dragging = draggingKey == key
-            val latestIndex by rememberUpdatedState(index)
-            val latestCount by rememberUpdatedState(pages.size)
             Box(
                 Modifier
                     .then(if (dragging) Modifier.zIndex(1f) else Modifier.animateItem())
+                    // Outside the lift layer below: inside it, finger movement would be scaled down by the 1.08x lift.
+                    .pointerInput(enabled) {
+                        if (!enabled) return@pointerInput
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                draggingKey = key
+                                dragOffset = 0f
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffset += amount.x
+                                // Found by key at every step, so another change to the pages mid-drag can't move the wrong one.
+                                val from = pages.indexOfFirst { it.toString() == key }
+                                if (from < 0) return@detectDragGesturesAfterLongPress
+                                // Towards the end of the row is right in left-to-right layouts and left in right-to-left ones.
+                                val forward = if (isRtl) -dragOffset else dragOffset
+                                val to = when {
+                                    forward > step && from < pages.lastIndex -> from + 1
+                                    forward < -step && from > 0 -> from - 1
+                                    else -> return@detectDragGesturesAfterLongPress
+                                }
+                                // The strip keeps its scroll on the first visible item's key; when that item is the one
+                                // moving, pin the position first, or the strip would jump along with it.
+                                val first = listState.firstVisibleItemIndex
+                                if (first == from || first == to) listState.requestScrollToItem(first, listState.firstVisibleItemScrollOffset)
+                                latestOnMove(from, to)
+                                dragOffset += if ((to > from) != isRtl) -step else step
+                            },
+                            onDragEnd = { draggingKey = null; dragOffset = 0f },
+                            onDragCancel = { draggingKey = null; dragOffset = 0f }
+                        )
+                    }
                     .graphicsLayer {
                         if (dragging) {
                             translationX = dragOffset
@@ -741,35 +772,6 @@ private fun ReviewFilmstrip(
                             scaleY = 1.08f
                             shadowElevation = 8.dp.toPx()
                         }
-                    }
-                    .pointerInput(enabled) {
-                        if (!enabled) return@pointerInput
-                        var position = 0
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                position = latestIndex
-                                draggingKey = key
-                                dragOffset = 0f
-                            },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                dragOffset += amount.x
-                                // Towards the end of the row is right in left-to-right layouts and left in right-to-left ones.
-                                val forward = if (isRtl) -dragOffset else dragOffset
-                                if (forward > step && position < latestCount - 1) {
-                                    latestOnMove(position, position + 1)
-                                    position++
-                                    dragOffset += if (isRtl) step else -step
-                                } else if (forward < -step && position > 0) {
-                                    latestOnMove(position, position - 1)
-                                    position--
-                                    dragOffset += if (isRtl) -step else step
-                                }
-                            },
-                            onDragEnd = { draggingKey = null; dragOffset = 0f },
-                            onDragCancel = { draggingKey = null; dragOffset = 0f }
-                        )
                     }
                     .size(48.dp, 64.dp)
                     .clip(RoundedCornerShape(6.dp))

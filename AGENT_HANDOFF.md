@@ -32,7 +32,8 @@ Last updated: 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full 
 
 | Commit | What |
 |---|---|
-| newest | F46 (from the competitor comparison): slider Reset and Apply to all pages, Rotate all pages, Auto capture in the camera ⋮ menu, spoken camera guidance. |
+| newest | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |
+| `08d9887` | F46 (from the competitor comparison): slider Reset and Apply to all pages, Rotate all pages, Auto capture in the camera ⋮ menu, spoken camera guidance. |
 | `c21d582` | F45: name a scan on the review screen before saving (Name row and dialog; the name rides the import request into the document). |
 | `5f96824` | F44: drag-to-reorder on the review thumbnail strip (long-press, lift, swap; accessibility actions); `ScanReviewReorderTest` (3). |
 | `b76720c` | F43: search results show the page text around a text-only match; Recycle bin actions under the notice; short file sizes; dimmed end arrows in the page grid. `ab4e72d`: landscape review keeps Save visible; 0 compiler warnings. Full run: 275 tests (0 failed), lint 0, both release builds, 16 KB alignment. |
