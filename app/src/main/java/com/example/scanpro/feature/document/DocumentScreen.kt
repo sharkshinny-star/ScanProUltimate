@@ -1482,8 +1482,11 @@ private fun PageCell(
 
 @Composable
 private fun MoveButton(icon: ImageVector, label: String, enabled: Boolean, onClick: (() -> Unit)?) {
-    IconButton(onClick = onClick ?: {}, enabled = enabled && onClick != null, modifier = Modifier.size(40.dp)) {
-        Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    val active = enabled && onClick != null
+    IconButton(onClick = onClick ?: {}, enabled = active, modifier = Modifier.size(40.dp)) {
+        // An explicit tint overrides the button's disabled colour, so the dimming is applied here.
+        val tint = MaterialTheme.colorScheme.onSurfaceVariant.let { if (active) it else it.copy(alpha = 0.3f) }
+        Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp), tint = tint)
     }
 }
 

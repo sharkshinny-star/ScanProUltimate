@@ -1,5 +1,7 @@
 package com.example.scanpro.ui.screenshots
 
+import com.example.scanpro.data.SNIPPET_MATCH_START
+import com.example.scanpro.data.SNIPPET_MATCH_END
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -103,6 +105,10 @@ class ScreenScreenshotTest(private val dark: Boolean) {
     @Test
     fun search() = shoot("04-search") { Library(ScanProDestinations.SEARCH, query = "invoice") }
 
+    // A word found only in a page's text: the result shows that text with the word highlighted.
+    @Test
+    fun searchText() = shoot("04b-search-text") { Library(ScanProDestinations.SEARCH, query = "northwind") }
+
     @Test
     fun emptyHome() = shoot("05-home-empty") {
         LibraryScreen(
@@ -190,7 +196,17 @@ class ScreenScreenshotTest(private val dark: Boolean) {
 
     @Composable
     private fun Library(mode: String, query: String = "", grid: Boolean = true) {
-        val list = if (query.isEmpty()) samples.summaries else samples.summaries.filter { it.title.contains(query, true) }
+        val list = if (query.isEmpty()) samples.summaries else samples.summaries.mapNotNull { summary ->
+            when {
+                summary.title.contains(query, true) -> summary
+                // What DocumentDatabase.search returns for a page-text hit: FTS4 snippet() with the word marked.
+                summary.id == "doc0" && query == "northwind" -> summary.copy(
+                    matchSnippet = "Due: 13 Nov 2026 Bill to: ${SNIPPET_MATCH_START}Northwind$SNIPPET_MATCH_END Studio, " +
+                        "accounts@${SNIPPET_MATCH_START}northwind$SNIPPET_MATCH_END.example, +1 415 555 0142…"
+                )
+                else -> null
+            }
+        }
         // Remembered: a new flow on every recomposition restarts paging, and the list never leaves "loading".
         val flow = remember(list) { flowOf(PagingData.from(list)) }
         val items = if (mode == ScanProDestinations.HOME) null else flow.collectAsLazyPagingItems()

@@ -1,5 +1,10 @@
 package com.example.scanpro.feature.library
 
+import com.example.scanpro.data.SNIPPET_MATCH_START
+import com.example.scanpro.data.SNIPPET_MATCH_END
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -177,6 +182,17 @@ internal fun DocumentListCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            // Search: the page text around a word that matched only there, so it is clear why the document is listed.
+            document.matchSnippet?.let { snippet ->
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    highlightedSnippet(snippet, MaterialTheme.colorScheme.primary),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             if (document.folderName.isNotBlank()) {
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -193,6 +209,26 @@ internal fun DocumentListCard(
             Icon(Icons.Rounded.Star, contentDescription = stringResource(R.string.lib_cd_favorite), tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
         }
     }
+}
+
+/** A search snippet with its matched words in bold and [highlight]; the markers themselves are dropped. */
+internal fun highlightedSnippet(snippet: String, highlight: Color): AnnotatedString = buildAnnotatedString {
+    var open = 0
+    var i = 0
+    while (i < snippet.length) {
+        when {
+            snippet.startsWith(SNIPPET_MATCH_START, i) -> {
+                pushStyle(SpanStyle(fontWeight = FontWeight.Bold, color = highlight)); open++
+                i += SNIPPET_MATCH_START.length
+            }
+            snippet.startsWith(SNIPPET_MATCH_END, i) -> {
+                if (open > 0) { pop(); open-- }
+                i += SNIPPET_MATCH_END.length
+            }
+            else -> { append(snippet[i]); i++ }
+        }
+    }
+    repeat(open) { pop() }
 }
 
 /** Grid tile: a tall thumbnail with the title underneath. */

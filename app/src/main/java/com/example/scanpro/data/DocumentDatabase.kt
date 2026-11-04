@@ -217,6 +217,13 @@ internal interface ScanDao {
     @Query("SELECT DISTINCT document_id FROM page_fts WHERE page_fts MATCH :ftsQuery")
     fun searchOcrDocumentIds(ftsQuery: String): List<String>
 
+    /** FTS4 `snippet()`: about a dozen words of page text (column 2, `content`) around the first match. */
+    @Query(
+        "SELECT snippet(page_fts, :open, :close, '…', 2, 12) FROM page_fts " +
+            "WHERE page_fts MATCH :ftsQuery AND document_id = :documentId LIMIT 1"
+    )
+    fun ocrSnippet(ftsQuery: String, documentId: String, open: String, close: String): String?
+
     @Query(
         "SELECT * FROM documents WHERE trashed_at = 0 AND " +
             "(LOWER(title) LIKE '%' || LOWER(:query) || '%' ESCAPE '\\' OR " +
@@ -370,6 +377,9 @@ class DocumentDatabase @Inject constructor(
         val words = clean.lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }.take(8)
         return room.runInTransaction<List<DocumentSummary>> {
             var matching: Set<String>? = null
+            // Documents found by a word that is only in their page text, with that word's query: the result shows
+            // the text around it, or it would be unclear why the document matched.
+            val textOnly = HashMap<String, String>()
             for (word in words) {
                 val ids = HashSet<String>()
                 // Escape LIKE wildcards so typing % or _ searches for those characters instead of matching everything.
@@ -377,8 +387,12 @@ class DocumentDatabase @Inject constructor(
                     .filter { entity -> entity.title.contains(word, true) || entity.folderName.contains(word, true) ||
                         JsonCodec.decodeStringList(entity.tagsJson).any { it.contains(word, true) } }
                     .forEach { ids += it.id }
+                val inMetadata = HashSet(ids)
                 buildFtsQuery(word)?.let { safeQuery ->
-                    runCatching { dao.searchOcrDocumentIds(safeQuery) }.getOrDefault(emptyList()).forEach { ids += it }
+                    runCatching { dao.searchOcrDocumentIds(safeQuery) }.getOrDefault(emptyList()).forEach { id ->
+                        ids += id
+                        if (id !in inMetadata && id !in textOnly) textOnly[id] = safeQuery
+                    }
                 }
                 matching = matching?.intersect(ids) ?: ids
                 if (matching.isEmpty()) break
@@ -388,7 +402,12 @@ class DocumentDatabase @Inject constructor(
             val entities = found.toList().chunked(SQL_VARIABLE_CHUNK)
                 .flatMap(dao::loadDocuments)
                 .filter { it.trashedAt == 0L }
-            loadSummaries(entities.sortedByDescending { it.updatedAt }.map { it.id })
+            loadSummaries(entities.sortedByDescending { it.updatedAt }.map { it.id }).map { summary ->
+                val ftsQuery = textOnly[summary.id] ?: return@map summary
+                val snippet = runCatching { dao.ocrSnippet(ftsQuery, summary.id, SNIPPET_MATCH_START, SNIPPET_MATCH_END) }.getOrNull()
+                    ?.replace(Regex("\\s+"), " ")?.trim()?.takeIf { it.isNotEmpty() }
+                summary.copy(matchSnippet = snippet)
+            }
         }
     }
 

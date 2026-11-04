@@ -135,9 +135,12 @@ fun copyText(context: Context, text: String) {
 
 fun pagesLabel(context: Context, count: Int): String = context.resources.getQuantityString(R.plurals.core_pages, count, count)
 
-/** A file size in the phone's own units and language (for example "1.2 MB"), from the system formatter. */
+/**
+ * A file size in the phone's own units and language, from the system formatter. The short form ("96 kB",
+ * "1.9 MB"): the long one prints two decimals below 100 ("96.00 kB"), which is noise on a card.
+ */
 fun formatBytes(context: Context, bytes: Long): String =
-    android.text.format.Formatter.formatFileSize(context, bytes.coerceAtLeast(0L))
+    android.text.format.Formatter.formatShortFileSize(context, bytes.coerceAtLeast(0L))
 
 /** How long a trashed document has left before it is deleted for good, in the largest whole unit. */
 sealed class TrashCountdown(val isUrgent: Boolean) {

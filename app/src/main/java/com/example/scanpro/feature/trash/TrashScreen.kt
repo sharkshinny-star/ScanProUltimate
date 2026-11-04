@@ -37,7 +37,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -147,14 +148,6 @@ internal fun TrashScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
-                actions = {
-                    if (documents.isNotEmpty()) {
-                        TextButton(enabled = !busy, onClick = onRestoreAll) { Text(stringResource(R.string.trash_restore_all)) }
-                        TextButton(enabled = !busy, onClick = { showEmptyDialog = true }) {
-                            Text(stringResource(R.string.trash_empty_action), color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -208,6 +201,29 @@ internal fun TrashScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
+                    }
+                }
+
+                // Under the notice rather than in the title bar, where the two text actions crowded the title and
+                // longer translations would collide with it.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(enabled = !busy, onClick = onRestoreAll, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.trash_restore_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    OutlinedButton(
+                        enabled = !busy,
+                        onClick = { showEmptyDialog = true },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.trash_empty_action), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
 

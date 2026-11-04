@@ -23,8 +23,17 @@ data class DocumentSummary(
     val folderName: String = "",
     val scanMode: ScanMode = ScanMode.DOCUMENT,
     val isTrashed: Boolean = false,
-    val trashedAt: Long = 0L
+    val trashedAt: Long = 0L,
+    /**
+     * Search results only: a few words of page text around a word that matched there and nowhere in the title,
+     * folder or tags, with each matched word between [SNIPPET_MATCH_START] and [SNIPPET_MATCH_END]. Null otherwise.
+     */
+    val matchSnippet: String? = null
 )
+
+/** Start and end of a matched word in [DocumentSummary.matchSnippet]: private-use characters, never in OCR text. */
+const val SNIPPET_MATCH_START = "\uE000"
+const val SNIPPET_MATCH_END = "\uE001"
 
 /** How the Files list is ordered; each value is one SQL ordering of the paged query. */
 enum class LibrarySort(@StringRes val label: Int) {
