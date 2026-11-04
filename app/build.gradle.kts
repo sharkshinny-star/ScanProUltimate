@@ -17,6 +17,7 @@ val sideload = providers.gradleProperty("scanpro.sideload").orNull == "true"
 android {
     // The app switches language itself (first launch and Settings), so every language ships in every install:
     // with Play's per-language splits a newly chosen language could be missing until Play delivered it.
+    @Suppress("UnstableApiUsage")
     bundle {
         language { enableSplit = false }
     }
@@ -26,6 +27,7 @@ android {
     defaultConfig {
         applicationId = "com.scanpro.app"
         minSdk = 24
+        //noinspection EditedTargetSdkVersion
         targetSdk = 37
         versionCode = 7
         versionName = "4.2.0"
@@ -64,7 +66,10 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile != null) {
+                signingConfig = releaseSigning
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -97,7 +102,7 @@ android {
 
     if (sideload) {
         // No Play to deliver modules: the translation code is built into the app instead.
-        sourceSets.getByName("main").kotlin.srcDir("../translate/src/main/java")
+        sourceSets.getByName("main").kotlin.directories.add("../translate/src/main/java")
     } else {
         // Delivered by Google Play when first used; see TranslationFeature and translate/build.gradle.kts.
         dynamicFeatures += setOf(":translate")
@@ -164,7 +169,11 @@ hilt {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
+    @Suppress("AvoidDuplicateDependencies")
+    //noinspection GradleDependency
     implementation(composeBom)
+    @Suppress("AvoidDuplicateDependencies")
+    //noinspection GradleDependency
     androidTestImplementation(composeBom)
 
     implementation("androidx.core:core-ktx:1.19.1")
@@ -226,10 +235,11 @@ dependencies {
     }
     // ML Kit Translate and language identification live in the on-demand :translate module, or in the app
     // itself for sideload builds.
+    implementation(libs.mlkit.common)
     implementation("com.google.android.play:feature-delivery:2.1.0")
     if (sideload) {
-        implementation("com.google.mlkit:translate:17.0.3")
-        implementation("com.google.mlkit:language-id:17.0.6")
+        implementation(libs.translate)
+        implementation(libs.language.id)
     }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
     // Google Play In-App Review: asked for once, quietly, after a few successful scans.
@@ -254,14 +264,6 @@ dependencies {
 
     // Apache-2.0 PDF engine for merge/split/import and password protection.
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
-    constraints {
-        // PDFBox-Android pins BouncyCastle 1.72, which has published vulnerabilities; the current release is
-        // API-compatible for the certificate (public-key) security handler PDFBox uses it for.
-        val bouncyCastle = "1.86"
-        implementation("org.bouncycastle:bcprov-jdk15to18:$bouncyCastle")
-        implementation("org.bouncycastle:bcpkix-jdk15to18:$bouncyCastle")
-        implementation("org.bouncycastle:bcutil-jdk15to18:$bouncyCastle")
-    }
 
     testImplementation("junit:junit:4.13.2")
     // Runs the real Android framework of each version on the JVM: the launch smoke test starts the app on API 24 to 36.
@@ -278,3 +280,14 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+androidComponents {
+    beforeVariants { variantBuilder ->
+        (variantBuilder as? com.android.build.api.variant.HasUnitTestBuilder)?.enableUnitTest = true
+    }
+}
+
+
+
+
+

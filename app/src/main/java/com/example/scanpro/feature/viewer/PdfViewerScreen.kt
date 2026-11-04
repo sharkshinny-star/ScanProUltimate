@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -137,7 +136,7 @@ fun PdfViewerScreen(
     // The zoom once the fingers have stopped: pages are redrawn sharp at this level (not on every frame of a pinch).
     var settledScale by remember { mutableFloatStateOf(1f) }
     LaunchedEffect(scale) {
-        kotlinx.coroutines.delay(250)
+        kotlinx.coroutines.delay(250.milliseconds)
         settledScale = scale
     }
 
@@ -221,7 +220,7 @@ fun PdfViewerScreen(
                     val bmp = if (pdfUri.scheme == "file" && pdfUri.path != null) {
                         ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
                     } else {
-                        val copy = java.io.File(context.cacheDir, "view_${java.util.UUID.randomUUID()}.img")
+                        val copy = File(context.cacheDir, "view_${java.util.UUID.randomUUID()}.img")
                         try {
                             context.contentResolver.openInputStream(pdfUri)?.use { input -> copy.outputStream().use { input.copyTo(it) } }
                             ImageProcessor.decodeOrientedScaled(copy.absolutePath, 2400)
@@ -656,7 +655,7 @@ fun PdfViewerScreen(
                             openRenderer(unlocked)
                             passwordError = null
                             needsPassword = false
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             passwordError = resources.getString(R.string.viewer_wrong_password)
                         } finally {
                             unlocking = false
@@ -702,7 +701,7 @@ private fun PdfPageItem(
     LaunchedEffect(renderer, pageIndex, widthPx) {
         if (widthPx == 0) return@LaunchedEffect
         val targetW = (widthPx * 1.5f).toInt().coerceIn(720, 2400)
-        pageCache.get(pageIndex)?.takeIf { it.width >= targetW }?.let { cached ->
+        pageCache[pageIndex]?.takeIf { it.width >= targetW }?.let { cached ->
             bitmap = cached
             aspectRatio = cached.width.toFloat() / cached.height.toFloat()
             isPageLoading = false
@@ -714,10 +713,8 @@ private fun PdfPageItem(
                 // One page at a time: PdfRenderer throws if a second page is opened before the first is closed,
                 // which is what left most pages blank when several were on screen.
                 val bmp = renderPage(renderer, renderLock, pageIndex, targetW) { aspectRatio = it }
-                if (bmp != null) {
-                    pageCache.put(pageIndex, bmp)
-                    bitmap = bmp
-                }
+                pageCache.put(pageIndex, bmp)
+                bitmap = bmp
             } catch (e: Exception) {
                 bitmap = null
             } finally {
@@ -779,7 +776,7 @@ private fun PdfPageItem(
 private const val ZOOM_PIXEL_BUDGET = 10_000_000f
 
 /** Renders one page [targetW] px wide on white; reports the page's aspect ratio. */
-private suspend fun renderPage(renderer: PdfRenderer, renderLock: Mutex, pageIndex: Int, targetW: Int, onAspect: (Float) -> Unit): Bitmap? =
+private suspend fun renderPage(renderer: PdfRenderer, renderLock: Mutex, pageIndex: Int, targetW: Int, onAspect: (Float) -> Unit): Bitmap =
     renderLock.withLock {
         renderer.openPage(pageIndex).use { page ->
             val aspect = page.width.toFloat() / page.height.toFloat()

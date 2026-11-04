@@ -156,13 +156,43 @@ fun BrandWordmark(modifier: Modifier = Modifier, color: Color = MaterialTheme.co
     )
 }
 
-/** Mark and wordmark side by side. */
+/** Time-based greeting string resource (Good morning / afternoon / evening). */
+@androidx.annotation.StringRes
+fun greetingRes(hour: Int): Int =
+    when (hour) {
+        in 4..11 -> R.string.greeting_morning
+        in 12..16 -> R.string.greeting_afternoon
+        else -> R.string.greeting_evening
+    }
+
+@androidx.annotation.StringRes
+fun greetingRes(): Int = greetingRes(java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY))
+
+/** Mark and wordmark side by side, with an optional uppercase wishing message/subtitle underneath. */
 @Composable
-fun BrandLockup(modifier: Modifier = Modifier, markSize: Dp = 28.dp, color: Color = MaterialTheme.colorScheme.onSurface) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        BrandMark(size = markSize)
-        Spacer(Modifier.width(10.dp))
-        BrandWordmark(color = color)
+fun BrandLockup(
+    modifier: Modifier = Modifier,
+    markSize: Dp = 28.dp,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    subtitle: String? = null
+) {
+    Column(modifier = modifier, verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BrandMark(size = markSize)
+            Spacer(Modifier.width(10.dp))
+            BrandWordmark(color = color)
+        }
+        if (!subtitle.isNullOrBlank()) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = subtitle.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.2.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+        }
     }
 }
 

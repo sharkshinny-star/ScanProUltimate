@@ -78,4 +78,10 @@ class LaunchSmokeTest {
             Thread.sleep(20)
         }
     }
+
+    @Test
+    fun `mlkit context initializes without missing dependency exception`() {
+        val app = ApplicationProvider.getApplicationContext<Context>()
+        com.google.mlkit.common.sdkinternal.MlKitContext.initializeIfNeeded(app)
+    }
 }

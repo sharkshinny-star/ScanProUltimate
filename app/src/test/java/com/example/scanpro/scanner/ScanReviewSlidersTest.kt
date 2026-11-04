@@ -38,10 +38,13 @@ class ScanReviewSlidersTest {
     private val adjustments = mutableStateMapOf<String, PageAdjustments>()
     private val brighter = reviewAdjustments(20, 10, 0)
 
+    private val quads = mutableStateMapOf<String, CropQuad>()
+    private val filters = mutableStateMapOf<String, PageFilter>()
+
     private fun show() = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(
-                pages = pages, quads = mutableStateMapOf<String, CropQuad>(), filters = mutableStateMapOf<String, PageFilter>(),
+                pages = pages, quads = quads, filters = filters,
                 adjustments = adjustments, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {}, index = 0,
                 processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}
             )

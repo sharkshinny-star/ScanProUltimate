@@ -26,4 +26,10 @@ android {
         abortOnError = false
         checkDependencies = false
     }
+    buildTypes {
+        create("benchmarkRelease") {
+        }
+        create("nonMinifiedRelease") {
+        }
+    }
 }

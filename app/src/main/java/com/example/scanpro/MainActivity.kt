@@ -26,6 +26,8 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -118,6 +120,7 @@ class MainActivity : FragmentActivity() {
             // No translucent scrim behind the gesture bar; the status bar never had one on these versions.
             window.isNavigationBarContrastEnforced = false
         }
+        hideSystemNavigationBars()
         publishShortcuts()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -155,6 +158,7 @@ class MainActivity : FragmentActivity() {
                     val style = if (dark) SystemBarStyle.dark(transparent) else SystemBarStyle.light(transparent, transparent)
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
+                    hideSystemNavigationBars()
                     onDispose { }
                 }
                 ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = dynamicColor) {
@@ -213,12 +217,35 @@ class MainActivity : FragmentActivity() {
             (!ready && elapsed < LAUNCH_SCREEN_MAX_HOLD_MS) || elapsed < minimumMs
         }
         splash.setOnExitAnimationListener { provider ->
+            val isDark = when (viewModel.themeMode.value) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                else -> (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+            val targetBg = if (isDark) {
+                ContextCompat.getColor(this, R.color.scanpro_window_dark)
+            } else {
+                ContextCompat.getColor(this, R.color.scanpro_window_light)
+            }
+            provider.view.setBackgroundColor(targetBg)
+
+            val interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
+
+            // Icon smoothly zooms and fades out
+            provider.iconView.animate()
+                .scaleX(1.2f)
+                .scaleY(1.2f)
+                .alpha(0f)
+                .setDuration(320L)
+                .setInterpolator(interpolator)
+                .start()
+
+            // Splash view fades out to reveal the correctly-themed app screen
             provider.view.animate()
                 .alpha(0f)
-                .scaleX(1.12f)
-                .scaleY(1.12f)
-                .setDuration(260L)
-                .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                .setDuration(300L)
+                .setInterpolator(interpolator)
                 .withEndAction { provider.remove() }
                 .start()
         }
@@ -232,7 +259,21 @@ class MainActivity : FragmentActivity() {
             override fun onPreDraw(): Boolean {
                 val ready = viewModel.launchStateReady ||
                     SystemClock.uptimeMillis() - startedAt >= LAUNCH_SCREEN_MAX_HOLD_MS
-                if (ready) content.viewTreeObserver.removeOnPreDrawListener(this)
+                if (ready) {
+                    content.viewTreeObserver.removeOnPreDrawListener(this)
+                    val isDark = when (viewModel.themeMode.value) {
+                        ThemeMode.DARK -> true
+                        ThemeMode.LIGHT -> false
+                        else -> (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                            android.content.res.Configuration.UI_MODE_NIGHT_YES
+                    }
+                    val targetBg = if (isDark) {
+                        ContextCompat.getColor(this@MainActivity, R.color.scanpro_window_dark)
+                    } else {
+                        ContextCompat.getColor(this@MainActivity, R.color.scanpro_window_light)
+                    }
+                    window.decorView.setBackgroundColor(targetBg)
+                }
                 return ready
             }
         })
@@ -359,6 +400,20 @@ class MainActivity : FragmentActivity() {
                 )
             )
         }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hideSystemNavigationBars()
+        }
+    }
+
+    private fun hideSystemNavigationBars() {
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.hide(WindowInsetsCompat.Type.navigationBars())
+        insetsController.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 
     override fun onStop() {

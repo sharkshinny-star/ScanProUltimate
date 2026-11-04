@@ -4,6 +4,9 @@
         <item quantity="one">%1$d ಆಯ್ಕೆಯಾಗಿದೆ</item>
         <item quantity="other">%1$d ಆಯ್ಕೆಯಾಗಿವೆ</item>
     </plurals>
+    <string name="greeting_morning">ಶುಭೋದಯ</string>
+    <string name="greeting_afternoon">ಶುಭ ಅಪರಾಹ್ನ</string>
+    <string name="greeting_evening">ಶುಭ ಸಂಜೆ</string>
     <string name="lib_title_files">ನನ್ನ ಫೈಲ್‌ಗಳು</string>
     <string name="lib_cd_clear_selection">ಆಯ್ಕೆ ತೆರವುಗೊಳಿಸಿ</string>
     <string name="lib_cd_share_selected">ಆಯ್ಕೆಮಾಡಿದ್ದನ್ನು ಹಂಚಿಕೊಳ್ಳಿ</string>

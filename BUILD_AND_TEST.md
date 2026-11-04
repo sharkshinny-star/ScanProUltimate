@@ -41,7 +41,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-04, `b76720c`, full run in a cloud container)
+## Latest results (2026-11-05, F48)
+
+- **Compilation:** `:app:compileDebugKotlin` 0 warnings, clean.
+- **Unit tests:** 247 passed, 52 skipped, 0 failed.
+- **Lint:** `:app:lintDebug` passes with 0 errors.
+
+## Prior results (2026-11-04, `b76720c`, full run in a cloud container)
 
 **Every check below was run on `b76720c` (screen-review fixes, F43) unless a row says otherwise.**
 

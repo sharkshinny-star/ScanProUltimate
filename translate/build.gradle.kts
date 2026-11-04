@@ -21,6 +21,7 @@ android {
 
 dependencies {
     implementation(project(":app"))
+    implementation(libs.mlkit.common)
     implementation(libs.translate)
     implementation(libs.language.id)
     implementation(libs.kotlinx.coroutines.play.services)

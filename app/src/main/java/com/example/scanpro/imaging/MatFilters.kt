@@ -4,6 +4,7 @@ import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageFilter
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.Size
@@ -77,7 +78,7 @@ internal object MatFilters {
             Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
             Imgproc.cvtColor(small, hsv, Imgproc.COLOR_RGB2HSV)
             val bytes = ByteArray((hsv.total() * 3).toInt())
-            hsv.get(0, 0, bytes)
+            hsv[0, 0, bytes]
             val values = IntArray(bytes.size / 3) { bytes[it * 3 + 2].toInt() and 0xFF }
             val bright = percentile(values, 0.9)
             var paper = 0
@@ -159,7 +160,7 @@ internal object MatFilters {
         val span = (white - black).coerceAtLeast(1.0)
         for (v in 0 until 256) for (c in 0 until 3) {
             val x = ((v * gains[c] - black) / span).coerceIn(0.0, 1.0)
-            table[v * 3 + c] = (Math.pow(x, gamma) * 255.0 + 0.5).toInt().coerceIn(0, 255).toByte()
+            table[v * 3 + c] = (x.pow(gamma) * 255.0 + 0.5).toInt().coerceIn(0, 255).toByte()
         }
         return Mat(1, 256, org.opencv.core.CvType.CV_8UC3).also { it.put(0, 0, table) }
     }

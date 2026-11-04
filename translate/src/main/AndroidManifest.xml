@@ -11,4 +11,32 @@
         <!-- Included in universal APKs (bundletool universal mode), so sideloaded builds keep translation. -->
         <dist:fusing dist:include="true" />
     </dist:module>
+
+    <!--
+      Android OS Split APK Behavior:
+      When a dynamic feature split APK declares a <service> with the same name as one in base.apk,
+      PackageManagerService overrides the base service entry with the split's entry. Android OS
+      does not merge <meta-data> tags across split APKs at runtime.
+      Without explicitly carrying the base ML Kit ComponentRegistrars here, installing split_translate.apk
+      causes MlKitComponentDiscoveryService to only return translation registrars, dropping
+      CommonComponentRegistrar (and OCR/Barcode registrars), which crashes MlKitInitProvider at startup
+      with MissingDependencyException for ModelFileHelper and ExecutorSelector.
+    -->
+    <application>
+        <service
+            android:name="com.google.mlkit.common.internal.MlKitComponentDiscoveryService">
+            <meta-data
+                android:name="com.google.firebase.components:com.google.mlkit.common.internal.CommonComponentRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.mlkit.vision.common.internal.VisionCommonRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.mlkit.vision.text.internal.TextRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data
+                android:name="com.google.firebase.components:com.google.mlkit.vision.barcode.internal.BarcodeRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+        </service>
+    </application>
 </manifest>

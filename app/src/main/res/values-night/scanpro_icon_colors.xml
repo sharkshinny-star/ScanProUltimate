@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colours in dark mode -->
+    <color name="scanpro_splash_icon_bg">#4457E6</color>
+</resources>

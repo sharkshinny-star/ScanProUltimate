@@ -332,7 +332,7 @@ internal fun LibraryScreen(
                     title = {
                         when {
                             selecting -> TitleWithStatus(pluralStringResource(R.plurals.lib_title_selected_count, selected.size, selected.size), if (busy) busyLabel else null)
-                            isHome -> BrandLockup()
+                            isHome -> BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
                             isSearch -> Text(stringResource(R.string.common_search))
                             else -> TitleWithStatus(
                                 stringResource(R.string.lib_title_files),
@@ -1097,7 +1097,7 @@ private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () 
                             androidx.compose.material3.TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Rounded.Folder, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }

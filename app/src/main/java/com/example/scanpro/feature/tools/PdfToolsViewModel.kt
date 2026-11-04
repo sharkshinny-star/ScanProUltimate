@@ -164,7 +164,7 @@ class PdfToolsViewModel @Inject constructor(
                 val text = if (cancelledMidWay) context.getString(R.string.msg_tools_operation_cancelled) else error.localizedMessage ?: failure
                 _message.value = text
                 if (!cancelledMidWay) notifications.taskFailed(text)
-            } catch (memory: OutOfMemoryError) {
+            } catch (_: OutOfMemoryError) {
                 // A huge page image is a failed tool run, not a reason to lose the app.
                 _message.value = context.getString(R.string.msg_tools_out_of_memory)
                 notifications.taskFailed(_message.value)
@@ -174,7 +174,7 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    private fun bundled(files: List<java.io.File>, prefix: String, @PluralsRes message: Int): suspend () -> PdfToolResult? = {
+    private fun bundled(files: List<File>, prefix: String, @PluralsRes message: Int): suspend () -> PdfToolResult? = {
         if (files.isEmpty()) null
         else PdfToolResult(
             outputFile = PdfToolsEngine.bundleOutputs(context, files, "${prefix}_${System.currentTimeMillis()}"),
@@ -235,7 +235,7 @@ class PdfToolsViewModel @Inject constructor(
     fun unlock(uri: Uri, password: String) = launchTool(R.string.msg_tools_unlocking, R.string.msg_tools_unlock_failed) {
         try {
             PdfToolsEngine.unlockPdf(context, uri, password, named(uri, "unlocked"))
-        } catch (wrong: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+        } catch (_: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
             // Ask again for the same file, with the error in the dialog (a snackbar would sit behind it).
             _wrongPassword.value = true
             _passwordNeeded.value = uri
@@ -274,7 +274,7 @@ class PdfToolsViewModel @Inject constructor(
         if (fields.isEmpty()) {
             _message.value = context.getString(R.string.msg_tools_no_fillable_fields)
         } else {
-            _form.value = FormSession(uri, fields, fields.associate { it.name to it.value })
+            _form.value = FormSession(uri, fields, fields.associateBy({ it.name }, { it.value }))
         }
         null
     }
@@ -384,7 +384,7 @@ class PdfToolsViewModel @Inject constructor(
         val output = PdfToolsEngine.outputLocation(context, "$name.pdf")
         try {
             HtmlToPdf.write(context, html, output)
-        } catch (unavailable: HtmlToPdf.DirectPrintUnavailable) {
+        } catch (_: HtmlToPdf.DirectPrintUnavailable) {
             // This Android won't let the app drive the print engine itself: the user saves from the print dialogue.
             _printFallback.value = html to name
             return@launchTool null

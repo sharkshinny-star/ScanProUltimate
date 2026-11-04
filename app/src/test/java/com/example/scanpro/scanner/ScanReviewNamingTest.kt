@@ -34,11 +34,15 @@ class ScanReviewNamingTest {
     private val automatic = app.getString(R.string.scan_review_name_auto)
     private var name by mutableStateOf("")
 
+    private val pages = mutableStateListOf(Uri.parse("file:///nowhere/a.jpg"))
+    private val quads = mutableStateMapOf<String, CropQuad>()
+    private val filters = mutableStateMapOf<String, PageFilter>()
+
     private fun show(nameable: Boolean = true) = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(
-                pages = mutableStateListOf(Uri.parse("file:///nowhere/a.jpg")), quads = mutableStateMapOf<String, CropQuad>(),
-                filters = mutableStateMapOf<String, PageFilter>(), defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {},
+                pages = pages, quads = quads,
+                filters = filters, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {},
                 index = 0, processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {},
                 name = name, onNameChange = if (nameable) ({ name = it }) else null
             )

@@ -4,6 +4,7 @@ junit = "1.3.0"
 kotlinGradlePlugin = "2.4.21"
 kotlinxCoroutinesPlayServices = "1.11.0"
 languageId = "17.0.6"
+mlkitCommon = "18.11.0"
 translate = "17.0.3"
 uiautomator = "2.4.0"
 
@@ -14,4 +15,5 @@ androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomato
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 language-id = { group = "com.google.mlkit", name = "language-id", version.ref = "languageId" }
+mlkit-common = { group = "com.google.mlkit", name = "common", version.ref = "mlkitCommon" }
 translate = { group = "com.google.mlkit", name = "translate", version.ref = "translate" }

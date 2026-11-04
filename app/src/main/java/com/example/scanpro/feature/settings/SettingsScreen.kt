@@ -8,7 +8,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -640,7 +639,7 @@ private fun StorageCard(documentCount: Int, trashCount: Int, storageBytes: Long)
             }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Stat(Modifier.weight(1f), "$documentCount", pluralStringResource(R.plurals.settings_stat_documents, documentCount))
+                Stat(Modifier.weight(1f), documentCount.toString(), pluralStringResource(R.plurals.settings_stat_documents, documentCount))
                 // No bin icon: in a third of a 360dp row it left room for "in" and nothing else.
                 Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin))
                 Stat(Modifier.weight(1f), formatBytes(LocalContext.current, storageBytes), stringResource(R.string.settings_stat_used))
