@@ -1,5 +1,7 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.res.pluralStringResource
@@ -943,7 +945,15 @@ fun CameraScannerScreen(
                             },
                             label = "guidance"
                         ) { text ->
-                            Text(text, color = Color.White, style = MaterialTheme.typography.labelLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            // Read out as it changes, so TalkBack users hear "page found" and the other hints (Lens and
+                            // Genius Scan speak their framing guidance too).
+                            Text(
+                                text,
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelLarge,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                            )
                         }
                     }
                 }
@@ -1058,6 +1068,13 @@ fun CameraScannerScreen(
                                 prefs.edit { putString("detect", detectMode.name) }
                             }
                         }
+                        // Also here, not only on the pill that the page count replaces: so it can be changed mid-batch.
+                        if (!barcodeMode && scanMode != ScanMode.ID_CARD && detectMode != DetectMode.NO_DETECT) {
+                            SwitchItem(R.string.scan_detection_mode, autoCapture) {
+                                detectMode = if (autoCapture) DetectMode.MANUAL else DetectMode.AUTO
+                                prefs.edit { putString("detect", detectMode.name) }
+                            }
+                        }
                         SwitchItem(R.string.scan_show_grid, showGrid) { showGrid = !showGrid; prefs.edit { putBoolean("grid", showGrid) } }
                         SwitchItem(R.string.scan_show_level, showLevel) { showLevel = !showLevel; prefs.edit { putBoolean("level", showLevel) } }
                         DropdownMenuItem(
@@ -1099,7 +1116,12 @@ fun CameraScannerScreen(
             }
             if (status != null) {
                 Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
-                    Text(status.orEmpty(), color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
+                    Text(
+                        status.orEmpty(),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
             }

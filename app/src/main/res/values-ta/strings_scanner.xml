@@ -219,4 +219,5 @@
     <string name="scan_review_name_label">பெயர்</string>
     <string name="scan_review_name_auto">தானியங்கு</string>
     <string name="scan_review_name_dialog_title">இந்த ஸ்கேனுக்குப் பெயரிடுங்கள்</string>
+    <string name="scan_review_adjust_use_on_all">எல்லாப் பக்கங்களுக்கும் பயன்படுத்து</string>
 </resources>

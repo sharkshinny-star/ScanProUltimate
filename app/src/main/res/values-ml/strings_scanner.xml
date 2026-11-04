@@ -219,4 +219,5 @@
     <string name="scan_review_name_label">പേര്</string>
     <string name="scan_review_name_auto">സ്വയമേവ</string>
     <string name="scan_review_name_dialog_title">ഈ സ്കാനിന് പേര് നൽകുക</string>
+    <string name="scan_review_adjust_use_on_all">എല്ലാ പേജുകളിലും പ്രയോഗിക്കുക</string>
 </resources>

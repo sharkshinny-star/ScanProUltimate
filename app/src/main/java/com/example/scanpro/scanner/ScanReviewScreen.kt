@@ -280,6 +280,25 @@ fun ScanReviewScreen(
         }
     }
 
+    /** Turns every page a quarter clockwise (CamScanner's batch rotate), the same way [rotate] turns one. */
+    fun rotateAll() {
+        if (blocked) return
+        working = true
+        scope.launch {
+            val all = pages.toList()
+            val turned = withContext(Dispatchers.IO) {
+                all.filter { page ->
+                    runCatching { ExifInterface(page.path.orEmpty()).apply { rotate(90) }.saveAttributes() }.isSuccess
+                }
+            }
+            turned.forEach { page -> page.toString().let { k -> quads[k]?.let { quads[k] = rotateQuad(it, true) } } }
+            if (uri in turned) snapshot = snapshot?.let { it.copy(quad = rotateQuad(it.quad, true)) }
+            if (turned.size < all.size) message = resources.getString(R.string.scan_review_rotate_failed)
+            rotationTick++
+            working = false
+        }
+    }
+
     // The page being adjusted stays selected while others are dragged around it.
     val selectedUri by rememberUpdatedState(uri)
     fun movePage(from: Int, to: Int) {
@@ -411,6 +430,14 @@ fun ScanReviewScreen(
                             onClick = { menu = false; move(1) }
                         )
                     }
+                    if (pages.size > 1) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.tools_organizer_rotate_all)) },
+                            leadingIcon = { Icon(RotateRightIcon, contentDescription = null) },
+                            enabled = !blocked,
+                            onClick = { menu = false; rotateAll() }
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.scan_review_add_another_page)) },
                         leadingIcon = { Icon(Icons.Default.AddAPhoto, contentDescription = null) },
@@ -500,6 +527,26 @@ fun ScanReviewScreen(
             AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
             AdjustmentRow(stringResource(R.string.doc_contrast), sliders.second, !blocked) { setSliders(sliders.first, it, sliders.third) }
             AdjustmentRow(stringResource(R.string.doc_saturation), sliders.third, !blocked) { setSliders(sliders.first, sliders.second, it) }
+        }
+        // Shown only when they would do something: Reset once a slider has moved, "Apply to all pages" while other
+        // pages differ (Adobe Scan and Lens offer the same for their sliders).
+        val slidersMoved = adjustments[key] != null
+        val othersDiffer = pages.size > 1 && pages.any { adjustments[it.toString()] != adjustments[key] }
+        if (slidersMoved || othersDiffer) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
+                if (slidersMoved) {
+                    TextButton(enabled = !blocked, onClick = { adjustments.remove(key) }) { Text(stringResource(R.string.common_reset)) }
+                }
+                if (othersDiffer) {
+                    TextButton(
+                        enabled = !blocked,
+                        onClick = {
+                            val chosen = adjustments[key]
+                            pages.forEach { page -> if (chosen == null) adjustments.remove(page.toString()) else adjustments[page.toString()] = chosen }
+                        }
+                    ) { Text(stringResource(R.string.scan_review_adjust_use_on_all)) }
+                }
+            }
         }
 
         message?.let {

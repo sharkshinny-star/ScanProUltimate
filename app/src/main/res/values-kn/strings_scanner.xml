@@ -219,4 +219,5 @@
     <string name="scan_review_name_label">ಹೆಸರು</string>
     <string name="scan_review_name_auto">ಸ್ವಯಂಚಾಲಿತ</string>
     <string name="scan_review_name_dialog_title">ಈ ಸ್ಕ್ಯಾನ್‌ಗೆ ಹೆಸರಿಡಿ</string>
+    <string name="scan_review_adjust_use_on_all">ಎಲ್ಲ ಪುಟಗಳಿಗೆ ಅನ್ವಯಿಸಿ</string>
 </resources>

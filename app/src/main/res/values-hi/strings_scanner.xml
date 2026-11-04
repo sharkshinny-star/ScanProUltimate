@@ -219,4 +219,5 @@
     <string name="scan_review_name_label">नाम</string>
     <string name="scan_review_name_auto">अपने-आप</string>
     <string name="scan_review_name_dialog_title">इस स्कैन का नाम रखें</string>
+    <string name="scan_review_adjust_use_on_all">सभी पेज पर लागू करें</string>
 </resources>

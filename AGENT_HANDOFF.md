@@ -32,7 +32,8 @@ Last updated: 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full 
 
 | Commit | What |
 |---|---|
-| newest | F45: name a scan on the review screen before saving (Name row and dialog; the name rides the import request into the document). |
+| newest | F46 (from the competitor comparison): slider Reset and Apply to all pages, Rotate all pages, Auto capture in the camera ⋮ menu, spoken camera guidance. |
+| `c21d582` | F45: name a scan on the review screen before saving (Name row and dialog; the name rides the import request into the document). |
 | `5f96824` | F44: drag-to-reorder on the review thumbnail strip (long-press, lift, swap; accessibility actions); `ScanReviewReorderTest` (3). |
 | `b76720c` | F43: search results show the page text around a text-only match; Recycle bin actions under the notice; short file sizes; dimmed end arrows in the page grid. `ab4e72d`: landscape review keeps Save visible; 0 compiler warnings. Full run: 275 tests (0 failed), lint 0, both release builds, 16 KB alignment. |
 | `94b09d9` | `ScreenScreenshotTest` (12 screens × light/dark, Robolectric, opt-in) reviewed in Figma; F41 dark-mode content colour app-wide (Scan review, Lock, Welcome); F42 Settings stat tiles and even segmented selectors; R18 suggestions. 267 tests, lint 0. |
