@@ -1,5 +1,19 @@
 package com.example.scanpro.ui
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.snap
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -80,12 +94,118 @@ private val points = listOf(
 )
 
 /**
- * Shown once on first launch: one page with the promise, the privacy line and three things the app does,
- * then a single button. Drawn edge to edge over the ambient brand backdrop, with the content stepping
- * aside for the system bars.
+ * The runtime permissions asked for together once, right after the welcome on first launch, as most scanner apps do:
+ * the camera, because scanning is what the app is for, and notifications on Android 13 and newer (older versions
+ * allow them without asking), so finished and failed jobs can be announced while the user is in another app. If the
+ * user says no here, each is asked for again where it is used: the camera screen and Settings > Notifications.
+ */
+internal object StartupPermissions {
+    fun wanted(): List<String> = buildList {
+        add(Manifest.permission.CAMERA)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    fun missing(context: Context): List<String> =
+        wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+}
+
+/**
+ * Shown once on first launch: one page with the promise, the privacy line and three things the app does, then a
+ * single button. If Android has not granted the camera and notifications yet, a second page explains why the app
+ * would like them and asks for both in one go, so the first scan opens straight into the camera. [onGetStarted]
+ * runs when the user is through (Back on either page skips the rest). Drawn edge to edge over the ambient brand
+ * backdrop, with the content stepping aside for the system bars.
  */
 @Composable
 fun WelcomeScreen(onGetStarted: () -> Unit) {
+    val context = LocalContext.current
+    val motion = rememberMotionEnabled()
+    // Saveable, so turning the phone on the permission page doesn't bring the welcome back.
+    var askingPermissions by rememberSaveable { mutableStateOf(false) }
+    Crossfade(
+        targetState = askingPermissions,
+        animationSpec = if (motion) tween(320) else snap(),
+        label = "welcomePage"
+    ) { asking ->
+        if (asking) {
+            PermissionsPage(onDone = onGetStarted)
+        } else {
+            OnboardingPage(
+                heroIcon = Icons.Rounded.Shield,
+                heroTone = TileTone.Teal,
+                title = stringResource(R.string.ui_welcome_title),
+                body = stringResource(R.string.ui_welcome_tagline),
+                points = points.map { OnboardingPoint(it.icon, it.tone, stringResource(it.text)) },
+                primary = stringResource(R.string.ui_welcome_get_started),
+                onPrimary = {
+                    // Nothing left to ask (granted already, e.g. reinstalled with permissions restored): straight in.
+                    if (StartupPermissions.missing(context).isEmpty()) onGetStarted() else askingPermissions = true
+                }
+            )
+        }
+    }
+}
+
+/** The second welcome page: why the app would like each permission it does not have yet, then Android's own dialogs. */
+@Composable
+private fun PermissionsPage(onDone: () -> Unit) {
+    val context = LocalContext.current
+    // Fixed while the page is up, so the rows don't change under Android's dialogs as each answer comes in.
+    val asked = remember { StartupPermissions.missing(context) }
+    // Whatever the answers, the app opens next; a "no" is asked again where that permission is needed.
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { onDone() }
+    var requested by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(asked) { if (asked.isEmpty()) onDone() }
+    OnboardingPage(
+        heroIcon = Icons.Rounded.PhotoCamera,
+        heroTone = TileTone.Indigo,
+        title = stringResource(R.string.ui_permissions_title),
+        body = stringResource(R.string.ui_permissions_body),
+        points = asked.mapNotNull { permission ->
+            when (permission) {
+                Manifest.permission.CAMERA -> OnboardingPoint(
+                    Icons.Rounded.PhotoCamera, TileTone.Indigo,
+                    stringResource(R.string.ui_permission_camera_title), stringResource(R.string.ui_permission_camera_body)
+                )
+                Manifest.permission.POST_NOTIFICATIONS -> OnboardingPoint(
+                    Icons.Rounded.Notifications, TileTone.Amber,
+                    stringResource(R.string.ui_permission_notifications_title), stringResource(R.string.ui_permission_notifications_body)
+                )
+                else -> null
+            }
+        },
+        primary = stringResource(R.string.ui_permissions_allow),
+        // One request at a time: a second tap while Android's dialog is opening would be refused by the system.
+        primaryEnabled = !requested,
+        onPrimary = {
+            requested = true
+            request.launch(asked.toTypedArray())
+        },
+        secondary = stringResource(R.string.ui_permissions_not_now),
+        onSecondary = onDone
+    )
+}
+
+/** One row of an onboarding page's card: an icon, a line of text and, for permissions, why it is asked for. */
+private class OnboardingPoint(val icon: ImageVector, val tone: TileTone, val title: String, val detail: String? = null)
+
+/**
+ * The layout both welcome pages share: brand, illustration, title, text, a card of points, a main button and,
+ * optionally, a quieter second one.
+ */
+@Composable
+private fun OnboardingPage(
+    heroIcon: ImageVector,
+    heroTone: TileTone,
+    title: String,
+    body: String,
+    points: List<OnboardingPoint>,
+    primary: String,
+    onPrimary: () -> Unit,
+    primaryEnabled: Boolean = true,
+    secondary: String? = null,
+    onSecondary: () -> Unit = {}
+) {
     val motion = rememberMotionEnabled()
     // First appearance: the header, illustration, text and button rise in one after another. With
     // animations off in the system settings everything is simply there.
@@ -126,21 +246,21 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
                 ) {
                     Spacer(Modifier.height(12.dp))
                     HeroIllustration(
-                        icon = Icons.Rounded.Shield,
-                        tone = TileTone.Teal,
+                        icon = heroIcon,
+                        tone = heroTone,
                         modifier = Modifier.fillMaxWidth().height(236.dp).enter(1),
                         current = entered
                     )
                     Spacer(Modifier.height(26.dp))
                     Text(
-                        stringResource(R.string.ui_welcome_title),
+                        title,
                         style = MaterialTheme.typography.headlineMedium,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().enter(2)
                     )
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        stringResource(R.string.ui_welcome_tagline),
+                        body,
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -170,7 +290,18 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
                                 ) {
                                     IconTile(point.icon, point.tone, size = 38.dp, corner = 12.dp, iconSize = 20.dp)
                                     Spacer(Modifier.width(14.dp))
-                                    Text(stringResource(point.text), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                    if (point.detail == null) {
+                                        Text(point.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                    } else {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(point.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                            Text(
+                                                point.detail,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -178,11 +309,18 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
                     Spacer(Modifier.height(16.dp))
                 }
                 GradientButton(
-                    text = stringResource(R.string.ui_welcome_get_started),
+                    text = primary,
                     icon = Icons.AutoMirrored.Rounded.ArrowForward,
-                    onClick = onGetStarted,
+                    onClick = onPrimary,
+                    enabled = primaryEnabled,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp).enter(4)
                 )
+                if (secondary != null) {
+                    TextButton(
+                        onClick = onSecondary,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).enter(4)
+                    ) { Text(secondary) }
+                }
                 Spacer(Modifier.height(4.dp))
             }
         }

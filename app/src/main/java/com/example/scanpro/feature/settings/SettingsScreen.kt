@@ -763,7 +763,8 @@ private fun NotificationsSection(state: NotificationSettings) {
     val openSystemSettings: () -> Unit = {
         state.systemSettingsIntent?.let { runCatching { context.startActivity(it()) } }
     }
-    // Asked only here, when the user turns a notice on, never at launch.
+    // Asked once after the welcome on first launch (StartupPermissions); if refused there, asked again here when
+    // the user turns a notice on.
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         state.onPermissionResult()
         // Refused before: Android won't ask again, so its own settings page is the only way to allow them.

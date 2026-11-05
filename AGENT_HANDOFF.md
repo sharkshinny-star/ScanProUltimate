@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05 (F48, F49 PDF Tools fixes); before that 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
+Last updated: 2026-11-05 (F48, F49 PDF Tools fixes; F50 first-launch permissions); before that 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
 
 ## 1. Current state
 
@@ -32,7 +32,8 @@ Last updated: 2026-11-05 (F48, F49 PDF Tools fixes); before that 2026-11-04, bra
 
 | Commit | What |
 |---|---|
-| newest | F48/F49: Images to PDF decodes once on white (transparent PNGs no longer black); Merge asks for a protected file's password. `PdfPictureTest`, `MergePasswordTest`. Also fixed two lint errors in `ScanReviewReorderTest` (state created in composition). |
+| newest | F50: first-launch permission page after the welcome (Camera, Notifications on 13+), `WelcomePermissionsTest` (5). |
+| `820c400` | F48/F49: Images to PDF decodes once on white (transparent PNGs no longer black); Merge asks for a protected file's password. `PdfPictureTest`, `MergePasswordTest`. Also fixed two lint errors in `ScanReviewReorderTest` (state created in composition). |
 | `b6362d3` | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |
 | `08d9887` | F46 (from the competitor comparison): slider Reset and Apply to all pages, Rotate all pages, Auto capture in the camera ⋮ menu, spoken camera guidance. |
 | `c21d582` | F45: name a scan on the review screen before saving (Name row and dialog; the name rides the import request into the document). |
@@ -86,7 +87,7 @@ Details per finding: `AUDIT_FINDINGS.md`.
 
 Ranked; IDs match `AUDIT_FINDINGS.md`.
 
-1. **Device testing (required before release).** Camera, every PDF tool, app lock, notifications, backup/restore, on at least one
+1. **Device testing (required before release).** Includes F48 (transparent PNG to PDF), F49 (merge with a protected PDF) and F50 (fresh install: welcome, permission page, both answers, Android 12 and 13+). Camera, every PDF tool, app lock, notifications, backup/restore, on at least one
    low-end and one recent phone.
 3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
 6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.

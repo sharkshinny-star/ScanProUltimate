@@ -206,6 +206,7 @@ sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional remin
 `reminders`; one fixed id per kind. Preferences in `SettingsStore` (`notify_finished`, `notify_failures` default on;
 `notify_trash`, `notify_backup` default off). Taps use explicit immutable PendingIntents with `MainActivity.ACTION_OPEN_*`,
 routed by `AppViewModel.destinationRequest` below the app-lock gate. No document names; neutral text when app lock is on.
+Runtime permissions (camera, notifications on 13+) are asked once after the welcome on first launch (`StartupPermissions` in `ui/WelcomeScreen.kt`), then again in context if refused.
 
 ## 13. Modules and dependencies
 

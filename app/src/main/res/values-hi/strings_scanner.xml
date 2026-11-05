@@ -17,6 +17,14 @@
     <string name="ui_welcome_point_clean">साफ़ करें और खोजने लायक बनाएं</string>
     <string name="ui_welcome_point_share">साइन करें और शेयर करें</string>
     <string name="ui_welcome_get_started">शुरू करें</string>
+    <string name="ui_permissions_title">अनुमति दें</string>
+    <string name="ui_permissions_body">ScanPro सिर्फ़ ज़रूरी अनुमतियां मांगता है, और आपके डॉक्यूमेंट आपके फ़ोन पर ही रहते हैं। आप इसे कभी भी फ़ोन की सेटिंग्स में बदल सकते हैं।</string>
+    <string name="ui_permission_camera_title">कैमरा</string>
+    <string name="ui_permission_camera_body">डॉक्यूमेंट, ID कार्ड और QR कोड स्कैन करने के लिए</string>
+    <string name="ui_permission_notifications_title">नोटिफ़िकेशन</string>
+    <string name="ui_permission_notifications_body">जब कोई लंबा काम, जैसे PDF जोड़ना या बैकअप, पूरा हो जाए तो आपको बताने के लिए</string>
+    <string name="ui_permissions_allow">अनुमति दें</string>
+    <string name="ui_permissions_not_now">अभी नहीं</string>
     <string name="ui_scanned_page">स्कैन किया गया पेज</string>
     <string name="ui_password_label">पासवर्ड</string>
     <plurals name="ui_password_minimum_chars">
