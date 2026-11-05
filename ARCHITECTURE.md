@@ -233,9 +233,16 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   straight to its feature; closing it hides tips for good, Settings > Appearance brings them back (`home_tips`).
 - **What's new.** `ui/WhatsNewSheet.kt`, shown once to people updating past `WHATS_NEW_VERSION` (`SettingsStore`), never with
   the welcome or the rating sheet; finishing the welcome marks it seen.
-- **Launch motion study.** A redesign of the launch animation was drawn and assessed in Figma
-  (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi, frame `2:2` with keyframes, spec `6:2`). It is not implemented:
-  the shipped launch is the animated launch icon from `c068e53`.
+- **Launch animation.** Designed and assessed in Figma (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi: frame
+  `2:2` holds the keyframes, `6:2` the spec) and drawn by `ui/LaunchIntro.kt` from the same keyframe table: the icon is
+  pressed, the scan line writes the page, the brackets lock on, an indigo-to-pink flood fills the screen, "ScanPro"
+  rises, the icon zooms through into the app (1.6 s, tap to skip). The system launch screen shows its first frame
+  (`res/drawable/ic_launch_icon.xml`: the icon tile, 144dp at the 288dp the system draws it, with a blank page), so
+  the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
+  plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
+  when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+  `MainActivity` settles the app from 104 % at the reveal; `ScanProApp(launchSettled)` keeps the rating and What's new
+  sheets back until it ends, and the crash prompt waits too. It replaced the animated splash icon (`ic_launcher_splash`).
 
 ## 13. Modules and dependencies
 

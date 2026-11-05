@@ -41,7 +41,16 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-05, security hardening commit on top of `10fa630`)
+## Latest results (2026-11-05, launch animation from the Figma design, on `7eee16f`)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 320 tests, 290 passed, 30 skipped, 0 failed (includes `LaunchSmokeTest`: 56 launches on Android 7-17, and `LaunchIntroTest`: 3); 0 compiler warnings |
+| `LaunchIntroTest` | Reveal at 1.18 s and end at 1.6 s, each once; a tap skips to the exit; 12 frames rendered to `app/build/screenshots/intro_*.png` and compared side by side with the Figma render (match; frame 0 deliberately has no icon shadow, matching the system launch screen) |
+| `:app:lintDebug` | 0 errors, 1 warning (`GradleDependency`, a newer library version; not from this change) |
+| Release builds, device | Not run |
+
+## Earlier results (2026-11-05, security hardening commit on top of `10fa630`)
 
 | Check | Result |
 |---|---|

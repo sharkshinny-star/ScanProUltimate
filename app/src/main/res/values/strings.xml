@@ -30,4 +30,6 @@
     <string name="whats_new_tips_body">A short tip about a feature you may not have tried. You can turn them off in Settings.</string>
     <string name="whats_new_pick_colours">Choose your colours</string>
     <string name="whats_new_got_it">Got it</string>
+    <!-- Under the wordmark in the launch animation (ui/LaunchIntro.kt) -->
+    <string name="launch_tagline">Scan. Search. Share.</string>
 </resources>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch-screen icon (Android 12+): the first frame of the launch animation (ui/LaunchIntro.kt), drawn by the system
+     before the app runs. The app-icon tile (54 of 108 units = 144dp at the 288dp the system draws it, inside the
+     192dp circle it shows) with a blank page in the scanner brackets; the intro then scans the page. Keep the two in
+     step: LaunchIntro draws the same tile at the same size, centred, so the hand-over cannot be seen. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M41.25,27h25.5a14.25,14.25 0 0,1 14.25,14.25v25.5a14.25,14.25 0 0,1 -14.25,14.25h-25.5a14.25,14.25 0 0,1 -14.25,-14.25v-25.5a14.25,14.25 0 0,1 14.25,-14.25z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="27"
+                android:startY="27"
+                android:endX="81"
+                android:endY="81"
+                android:startColor="#3346D3"
+                android:endColor="#6E5BE6" />
+        </aapt:attr>
+    </path>
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.5"
+        android:scaleY="0.5">
+        <path
+            android:fillColor="#000000"
+            android:fillAlpha="0.18"
+            android:pathData="M37,29h26l12,12v38.5a5,5 0 0,1 -5,5h-33a5,5 0 0,1 -5,-5v-45.5a5,5 0 0,1 5,-5z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M36,26h26l12,12v40a5,5 0 0,1 -5,5h-33a5,5 0 0,1 -5,-5v-47a5,5 0 0,1 5,-5z" />
+        <path
+            android:fillColor="#C9CEFF"
+            android:pathData="M62,26v8a4,4 0 0,0 4,4h8z" />
+        <path
+            android:pathData="M32,20h-8a4,4 0 0,0 -4,4v8"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M76,20h8a4,4 0 0,1 4,4v8"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M32,88h-8a4,4 0 0,1 -4,-4v-8"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M76,88h8a4,4 0 0,0 4,-4v-8"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

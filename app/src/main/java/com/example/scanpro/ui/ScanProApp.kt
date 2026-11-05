@@ -55,7 +55,9 @@ fun ScanProApp(
     onFallbackScanner: () -> Unit,
     onImportImages: () -> Unit,
     onUnlock: () -> Unit,
-    onAppLockChange: (Boolean) -> Unit
+    onAppLockChange: (Boolean) -> Unit,
+    /** False while the launch animation plays: nothing that opens its own window may cover it. */
+    launchSettled: Boolean = true
 ) {
     val context = LocalContext.current
     val libraryRevision by viewModel.libraryRevision.collectAsStateWithLifecycle()
@@ -74,7 +76,7 @@ fun ScanProApp(
 
     // Once, after the first saved document and never over the welcome or lock screens. Marked as shown on every
     // way out, so it cannot come back.
-    if (ratingDue && sessionUnlocked && welcomeSeen == true) {
+    if (ratingDue && sessionUnlocked && welcomeSeen == true && launchSettled) {
         RatingSheet(
             onNotNow = viewModel::markRatingShown,
             onRateOnPlay = {
@@ -243,7 +245,7 @@ fun ScanProApp(
         }
 
         // Once, after an update that has something to tell (never together with the welcome or the rating sheet).
-        if (whatsNewDue && !welcomeShowing && !ratingDue) {
+        if (whatsNewDue && !welcomeShowing && !ratingDue && launchSettled) {
             WhatsNewSheet(
                 onPickColours = {
                     viewModel.markWhatsNewSeen()

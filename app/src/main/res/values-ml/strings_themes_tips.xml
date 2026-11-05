@@ -45,4 +45,5 @@
     <string name="tip_theme_title">അഞ്ച് കളർ തീമുകൾ</string>
     <string name="tip_theme_body">ScanPro-യ്ക്ക് ഓഷ്യൻ, എമറാൾഡ്, സൺസെറ്റ് അല്ലെങ്കിൽ ബെറി നിറം, ലൈറ്റിലോ ഡാർക്കിലോ.</string>
     <string name="tip_theme_action">നിറങ്ങൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="launch_tagline">സ്കാൻ ചെയ്യുക. തിരയുക. പങ്കിടുക.</string>
 </resources>
