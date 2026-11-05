@@ -111,6 +111,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 ## 4. Next steps
 
+0a. Competitor-comparison leftovers, open as R26 to R35 in `AUDIT_FINDINGS.md`, roughly in value order: fast save from the camera (R26), review shows the finished page with crop on request (R27), Share PDF card with size estimates (R28), Book mode spread split (R29), cropped camera thumbnails with quick delete (R30), one flash button (R31, owner decision), duplicate-aware auto-capture (R32), Quick Settings tile and widget (R33), localised smart titles and a name pattern (R34), tags, sort and recent searches (R35). Already done from the same comparison: F44-F47, F51, F61-F63.
 0. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3 done (PowerPoint export dropped at the owner's request).
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
 2. Try Office to PDF on a device with a real .docx, .xlsx and a page saved from Chrome (⋮ › Download).
