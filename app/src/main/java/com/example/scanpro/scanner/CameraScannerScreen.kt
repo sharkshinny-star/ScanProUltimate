@@ -176,8 +176,13 @@ fun CameraScannerScreen(
     /** Position of the saved page this session replaces; the session then takes exactly one photo. */
     retakeOfPage: Int? = null,
     onClose: () -> Unit,
-    /** Pages, mode, outlines, filters, slider adjustments, and the name typed on the review screen (null: automatic). */
-    onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?) -> Unit,
+    /**
+     * Pages, mode, outlines, filters, slider adjustments, then the name typed on the review screen (null: automatic) and
+     * the folder chosen there (null: none).
+     */
+    onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?, String?) -> Unit,
+    /** Existing folders a new scan can be saved into (locked ones left out). */
+    folders: List<String> = emptyList(),
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
@@ -263,6 +268,7 @@ fun CameraScannerScreen(
     var reviewing by rememberSaveable { mutableStateOf(false) }
     // The name typed on the review screen; blank leaves it to the automatic title.
     var documentName by rememberSaveable { mutableStateOf("") }
+    var documentFolder by rememberSaveable { mutableStateOf("") }
     var reviewIndex by rememberSaveable { mutableIntStateOf(0) }
     // Page the next capture replaces, when the review step asked to retake one; -1 otherwise.
     var retakeIndex by rememberSaveable { mutableIntStateOf(-1) }
@@ -443,7 +449,8 @@ fun CameraScannerScreen(
             processing = false
             onComplete(
                 inputs.map { it.first }, scanMode, crops, chosen, inputs.map { (uri, _) -> adjustments[uri.toString()] },
-                documentName.trim().ifBlank { null }
+                documentName.trim().ifBlank { null },
+                documentFolder.trim().ifBlank { null }
             )
         }
     }
@@ -806,7 +813,10 @@ fun CameraScannerScreen(
             },
             name = documentName,
             // A page shot again for a saved document keeps that document's name.
-            onNameChange = if (retakeOfPage == null) ({ documentName = it }) else null
+            onNameChange = if (retakeOfPage == null) ({ documentName = it }) else null,
+            folder = documentFolder,
+            folders = folders,
+            onFolderChange = if (retakeOfPage == null) ({ documentFolder = it }) else null
         )
         return
     }

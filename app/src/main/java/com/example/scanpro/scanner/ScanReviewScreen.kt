@@ -1,5 +1,7 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.material.icons.filled.Folder
+import com.example.scanpro.feature.library.FolderPickerDialog
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Edit
 import com.example.scanpro.core.designsystem.TextInputDialog
@@ -171,7 +173,13 @@ fun ScanReviewScreen(
     /** The name typed for the new document; blank leaves it to the automatic title. */
     name: String = "",
     /** Shows the Name row when set; null where a name means nothing (a page shot again for a saved document). */
-    onNameChange: ((String) -> Unit)? = null
+    onNameChange: ((String) -> Unit)? = null,
+    /** The folder the new document goes into; blank for none. */
+    folder: String = "",
+    /** Existing folders to offer, locked ones left out. */
+    folders: List<String> = emptyList(),
+    /** Shows the Folder choice when set; null for a retake, like [onNameChange]. */
+    onFolderChange: ((String) -> Unit)? = null
 ) {
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
@@ -184,6 +192,7 @@ fun ScanReviewScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var naming by rememberSaveable { mutableStateOf(false) }
+    var choosingFolder by rememberSaveable { mutableStateOf(false) }
     // Bumped after a rotation so the page is decoded again from the same file.
     var rotationTick by remember { mutableIntStateOf(0) }
     val blocked = working || processing
@@ -327,6 +336,17 @@ fun ScanReviewScreen(
             allowBlank = true,
             onDismiss = { naming = false },
             onConfirm = { typed -> onNameChange(typed.trim()); naming = false }
+        )
+    }
+
+    if (choosingFolder && onFolderChange != null) {
+        FolderPickerDialog(
+            title = stringResource(R.string.scan_review_folder_dialog_title),
+            confirmLabel = stringResource(R.string.common_done),
+            folders = folders,
+            initial = folder,
+            onDismiss = { choosingFolder = false },
+            onConfirm = { chosen -> onFolderChange(chosen.trim()); choosingFolder = false }
         )
     }
 
@@ -559,31 +579,35 @@ fun ScanReviewScreen(
         // Name the document before saving, as Adobe Scan and CamScanner allow; left alone, it is named automatically. It sits
         // with the Save button: under the controls in portrait, pinned beside it in landscape.
         val nameRow: @Composable () -> Unit = {
-        if (onNameChange != null) {
-            val nameLabel = stringResource(R.string.scan_review_name_label)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(enabled = !blocked, onClickLabel = stringResource(R.string.scan_review_name_dialog_title)) { naming = true }
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(nameLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    name.ifBlank { stringResource(R.string.scan_review_name_auto) },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (name.isBlank()) FontWeight.Normal else FontWeight.SemiBold,
-                    color = if (name.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(Icons.Default.Edit, contentDescription = null, tint = primary, modifier = Modifier.size(18.dp))
+            if (onNameChange != null || onFolderChange != null) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onNameChange != null) {
+                        SaveOptionCell(
+                            label = stringResource(R.string.scan_review_name_label),
+                            value = name.ifBlank { stringResource(R.string.scan_review_name_auto) },
+                            chosen = name.isNotBlank(),
+                            icon = Icons.Default.Edit,
+                            enabled = !blocked,
+                            onClickLabel = stringResource(R.string.scan_review_name_dialog_title),
+                            onClick = { naming = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Where it is saved, as Genius Scan (scan into a folder), Adobe Scan and Lens (save location) allow.
+                    if (onFolderChange != null) {
+                        SaveOptionCell(
+                            label = stringResource(R.string.scan_review_folder_label),
+                            value = folder.ifBlank { stringResource(R.string.lib_no_folder) },
+                            chosen = folder.isNotBlank(),
+                            icon = Icons.Default.Folder,
+                            enabled = !blocked,
+                            onClickLabel = stringResource(R.string.scan_review_folder_dialog_title),
+                            onClick = { choosingFolder = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
-        }
         }
 
         // Bottom buttons: Auto detect · Rotate · Save (saves every page). One row under the page in portrait; in
@@ -813,6 +837,41 @@ private fun ReviewFilmstrip(
                     .semantics { contentDescription = addLabel },
                 contentAlignment = Alignment.Center
             ) { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+        }
+    }
+}
+
+/** A labelled, tappable value above the Save button: the new document's name or folder. */
+@Composable
+private fun SaveOptionCell(
+    label: String,
+    value: String,
+    chosen: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean,
+    onClickLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClickLabel = onClickLabel, onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (chosen) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (chosen) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

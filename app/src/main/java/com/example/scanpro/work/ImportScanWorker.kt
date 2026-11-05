@@ -73,7 +73,8 @@ class ImportScanWorker @AssistedInject constructor(
             operations.perform(applicationContext.getString(R.string.msg_finishing_scan_progress, applicationContext.getString(mode.labelRes).lowercase())) {
                 repository.importImages(
                     uris, settings.pdfQuality.first(), settings.autoTitle.first(), mode, crops, filters, adjustments,
-                    title = inputData.getString(KEY_TITLE)
+                    title = inputData.getString(KEY_TITLE),
+                    folder = inputData.getString(KEY_FOLDER)
                 )
             }
         } catch (cancelled: CancellationException) {
@@ -145,6 +146,8 @@ class ImportScanWorker @AssistedInject constructor(
         internal const val KEY_ADJUSTMENTS = "adjustments"
         /** The document name typed on the review screen; absent when it is left to the automatic title. */
         internal const val KEY_TITLE = "title"
+        /** The folder chosen on the review screen; absent for none. */
+        internal const val KEY_FOLDER = "folder"
         private const val MAX_AUTOMATIC_ATTEMPTS = 3
         /** Every import carries this tag, plus [SESSION_TAG_PREFIX] and its session folder's name. */
         const val TAG = "import-scan"
@@ -170,7 +173,9 @@ class ImportScanWorker @AssistedInject constructor(
             filters: List<PageFilter>,
             adjustments: List<PageAdjustments?> = emptyList(),
             /** The name typed on the review screen; null or blank names the document automatically. */
-            title: String? = null
+            title: String? = null,
+            /** The folder chosen on the review screen; null or blank saves it outside any folder. */
+            folder: String? = null
         ): ImportRequest = ImportRequest.Builder()
             .putStringArray(KEY_URIS, uris.map { it.toString() }.toTypedArray())
             .putString(KEY_MODE, mode.name)
@@ -178,6 +183,7 @@ class ImportScanWorker @AssistedInject constructor(
             .putStringArray(KEY_FILTERS, filters.map { it.name }.toTypedArray())
             .putStringArray(KEY_ADJUSTMENTS, adjustments.map { it?.let(JsonCodec::encodeAdjustments) ?: "" }.toTypedArray())
             .apply { title?.trim()?.takeIf { it.isNotEmpty() }?.let { putString(KEY_TITLE, it) } }
+            .apply { folder?.trim()?.takeIf { it.isNotEmpty() }?.let { putString(KEY_FOLDER, it) } }
             .build()
 
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */

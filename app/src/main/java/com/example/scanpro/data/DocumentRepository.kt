@@ -115,10 +115,12 @@ class DocumentRepository @Inject constructor(
         adjustments: List<PageAdjustments?> = emptyList(),
         /** A name the user typed before saving; null or blank uses the automatic title. */
         title: String? = null,
+        /** The folder chosen before saving; null or blank leaves the document outside any folder. */
+        folder: String? = null,
     ): ScanDocument = withContext(Dispatchers.IO) {
         userRequire(imageUris.isNotEmpty(), R.string.err_choose_at_least_one_image)
         // Camera scans arrive with the outline the user confirmed; gallery and shared photos are outlined here.
-        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, adjustments, detectCrops = crops.isEmpty(), userTitle = title)
+        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, adjustments, detectCrops = crops.isEmpty(), userTitle = title, userFolder = folder)
     }
 
     suspend fun importPdf(
@@ -1095,7 +1097,9 @@ class DocumentRepository @Inject constructor(
         /** Find the page in each photo, as the camera does, when no outline was given. */
         detectCrops: Boolean = false,
         /** Typed by the user; wins over the automatic title when it has any text. */
-        userTitle: String? = null
+        userTitle: String? = null,
+        /** Chosen by the user; the document is filed there (blank: no folder). */
+        userFolder: String? = null
     ): ScanDocument {
         val defaultScript = settings.defaultOcrScript.first()
         val created = now()
@@ -1154,7 +1158,8 @@ class DocumentRepository @Inject constructor(
                 pdfQuality = quality,
                 searchablePdf = pages.isNotEmpty(),
                 scanMode = mode,
-                ocrScript = defaultScript
+                ocrScript = defaultScript,
+                folderName = userFolder?.trim().orEmpty().take(80)
             )
             db.saveDocument(doc)
             return doc

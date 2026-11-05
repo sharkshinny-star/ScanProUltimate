@@ -50,11 +50,13 @@ fun ScanProNavHost(
     snackbarHostState: SnackbarHostState,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
-    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?) -> Unit,
+    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?, String?) -> Unit,
     onCameraRetakeComplete: (RetakeTarget, android.net.Uri, CropQuad, PageFilter, PageAdjustments?) -> Unit,
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit,
     defaultScanMode: String = "",
+    /** Folders a new scan can be saved into, for the review screen's Folder choice. */
+    saveFolders: List<String> = emptyList(),
     defaultFilter: PageFilter? = null
 ) {
     val context = LocalContext.current
@@ -149,11 +151,12 @@ fun ScanProNavHost(
                 initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty().ifEmpty { defaultScanMode },
                 defaultFilter = defaultFilter,
                 retakeOfPage = retake?.position,
+                folders = saveFolders,
                 onClose = dropUnlessResumed { navController.popBackStack() },
-                onComplete = { uris, mode, crops, filters, adjustments, name ->
+                onComplete = { uris, mode, crops, filters, adjustments, name, folder ->
                     if (resumed()) {
                         if (retake != null) onCameraRetakeComplete(retake, uris.first(), crops.first(), filters.first(), adjustments.firstOrNull())
-                        else onCameraScanComplete(uris, mode, crops, filters, adjustments, name)
+                        else onCameraScanComplete(uris, mode, crops, filters, adjustments, name, folder)
                         navController.popBackStack()
                     }
                 },

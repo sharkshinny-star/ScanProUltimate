@@ -16,9 +16,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
 class ImportTitleTest {
-    private fun request(title: String?) = ImportScanWorker.inputFor(
+    private fun request(title: String?, folder: String? = null) = ImportScanWorker.inputFor(
         listOf(Uri.parse("file:///data/user/0/com.scanpro.app/files/pro_scanner_session/s1/raw_1.jpg")),
-        ScanMode.DOCUMENT, listOf(CropQuad.DEFAULT), listOf(PageFilter.AUTO), title = title
+        ScanMode.DOCUMENT, listOf(CropQuad.DEFAULT), listOf(PageFilter.AUTO), title = title, folder = folder
     )
 
     @Test
@@ -27,6 +27,15 @@ class ImportTitleTest {
         assertEquals("Tax return 2026", input.getString(ImportScanWorker.KEY_TITLE))
         assertEquals("Tax return 2026", ImportRequest.fromData(input.toWorkData()!!).getString(ImportScanWorker.KEY_TITLE))
         assertEquals("Tax return 2026", ImportRequest.fromJson(input.toJson()).getString(ImportScanWorker.KEY_TITLE))
+    }
+
+    @Test
+    fun `a chosen folder travels the same way, and none or blank means no folder`() {
+        val input = request(null, folder = " Tax ")
+        assertEquals("Tax", ImportRequest.fromData(input.toWorkData()!!).getString(ImportScanWorker.KEY_FOLDER))
+        assertEquals("Tax", ImportRequest.fromJson(input.toJson()).getString(ImportScanWorker.KEY_FOLDER))
+        assertNull(request(null).getString(ImportScanWorker.KEY_FOLDER))
+        assertNull(request(null, folder = "  ").getString(ImportScanWorker.KEY_FOLDER))
     }
 
     @Test

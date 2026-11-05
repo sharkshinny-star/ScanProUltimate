@@ -73,6 +73,11 @@ class AppViewModel @Inject constructor(
         .map<Boolean, Boolean?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** Folders a new scan can be saved into: every folder except locked ones not opened this session. */
+    val saveFolders: StateFlow<List<String>> = combine(library.overview, folderLock.hidden) { overview, hidden ->
+        overview.folders.filterNot { com.example.scanpro.core.security.FolderLock.hides(hidden, it) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     /** Null until known; false shows the first-run welcome once. */
     val welcomeSeen: StateFlow<Boolean?> = settings.welcomeSeen
         .map<Boolean, Boolean?> { it }
@@ -213,11 +218,13 @@ class AppViewModel @Inject constructor(
         filters: List<PageFilter> = emptyList(),
         adjustments: List<PageAdjustments?> = emptyList(),
         /** Typed on the review screen; null names the document automatically. */
-        title: String? = null
+        title: String? = null,
+        /** Chosen on the review screen; null saves the document outside any folder. */
+        folder: String? = null
     ) {
         if (imageUris.isEmpty()) return
         // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
-        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments, title))
+        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments, title, folder))
     }
 
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */

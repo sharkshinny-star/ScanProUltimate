@@ -671,9 +671,10 @@ internal fun LibraryScreen(
         )
     }
     if (moveToFolderOpen) {
-        MoveToFolderDialog(
+        FolderPickerDialog(
+            title = pluralStringResource(R.plurals.lib_move_documents_title, selected.size, selected.size),
+            confirmLabel = stringResource(R.string.lib_move),
             folders = folders,
-            count = selected.size,
             onDismiss = { moveToFolderOpen = false },
             onConfirm = { target ->
                 moveToFolderOpen = false
@@ -1073,45 +1074,3 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
     }
 }
 
-/** Picks an existing folder, types a new one, or takes the documents out of any folder. */
-@Composable
-private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(pluralStringResource(R.plurals.lib_move_documents_title, count, count)) },
-        text = {
-            Column {
-                androidx.compose.material3.OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it.take(80) },
-                    label = { Text(stringResource(R.string.lib_rename_folder_label)) },
-                    placeholder = { Text(stringResource(R.string.lib_folder_name_placeholder)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (folders.isNotEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 240.dp)) {
-                        items(folders, key = { it }) { existing ->
-                            androidx.compose.material3.TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Rounded.Folder, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            androidx.compose.material3.Button(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.lib_move)) }
-        },
-        dismissButton = {
-            Row {
-                androidx.compose.material3.TextButton(onClick = { onConfirm("") }) { Text(stringResource(R.string.lib_no_folder)) }
-                androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
-            }
-        }
-    )
-}

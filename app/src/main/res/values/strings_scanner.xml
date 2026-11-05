@@ -249,4 +249,6 @@
     <string name="scan_review_name_auto">Automatic</string>
     <string name="scan_review_name_dialog_title">Name this scan</string>
     <string name="scan_review_adjust_use_on_all">Apply to all pages</string>
+    <string name="scan_review_folder_label">Folder</string>
+    <string name="scan_review_folder_dialog_title">Save in a folder</string>
 </resources>
