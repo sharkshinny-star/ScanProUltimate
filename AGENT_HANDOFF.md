@@ -17,7 +17,7 @@ Last updated: 2026-11-05 (REMAINING_WORK.md added); before that 2026-11-05 (afte
 ## 1. Current state
 
 - **Branch:** `claude/awesome-clarke-ussjo3` on `codingking155/ScanProUltimate`. Work is pushed; no pull request is open.
-- **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`.
+- **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`, by hand on 2026-10-30/31; their commits were recorded in this branch's history on 2026-11-05 by a history-only merge (`-s ours`, no file changes), so `git rev-list HEAD..origin/<branch>` is empty for every branch.
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
 - **Builds (2026-11-04, `b76720c`):** 0 compiler warnings on a clean compile; 275 unit tests, 0 failed; lint 0 issues (`:app`, `:opencv`); bundle and sideload release builds pass; 16 KB alignment checked (see `BUILD_AND_TEST.md`).
 - **Not verified:** nothing has run on a device or emulator. Camera, PDF tools, app lock, notifications and backup/restore
