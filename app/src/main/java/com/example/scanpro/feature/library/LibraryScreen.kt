@@ -136,7 +136,8 @@ fun LibraryRoute(
     mode: String,
     snackbarHostState: SnackbarHostState,
     onOpenDocument: (String) -> Unit,
-    onStartScan: () -> Unit,
+    /** Opens the camera; Files passes the folder it is showing, so the scan is filed there (blank: none). */
+    onStartScan: (folder: String) -> Unit,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
     onTrash: () -> Unit,
@@ -194,7 +195,7 @@ fun LibraryRoute(
         snackbarHostState = snackbarHostState,
         onQueryChange = viewModel::setQuery,
         onOpenDocument = onOpenDocument,
-        onStartScan = onStartScan,
+        onStartScan = { onStartScan(if (mode == ScanProDestinations.FILES) folder else "") },
         onImportImages = onImportImages,
         onImportPdf = onImportPdf,
         onTrash = onTrash,
@@ -272,6 +273,14 @@ internal fun LibraryScreen(
     // Files keeps the saved layout; Search is always a list. The saved sort orders both.
     val gridMode = mode == ScanProDestinations.FILES && savedGrid
     var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
+    // The document whose card ⋮ asked to move it; null when no such dialog is open.
+    var movingDocument by rememberSaveable { mutableStateOf<String?>(null) }
+    fun cardMenu(doc: DocumentSummary) = DocumentCardMenu(
+        onShare = { onShareSelected(setOf(doc.id)) },
+        onMoveToFolder = { movingDocument = doc.id },
+        onToggleFavourite = { onSetFavorite(setOf(doc.id), !doc.isFavorite) },
+        onMoveToRecycleBin = { onBulkDelete(setOf(doc.id)) }
+    )
     var deleteFolderOpen by rememberSaveable { mutableStateOf(false) }
     var renameMergeTarget by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -604,7 +613,8 @@ internal fun LibraryScreen(
                                     document = doc,
                                     selected = doc.id in selected,
                                     onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) }
+                                    onLongClick = { toggleSelection(doc.id) },
+                                    menu = if (selecting) null else cardMenu(doc)
                                 )
                             }
                         }
@@ -619,7 +629,8 @@ internal fun LibraryScreen(
                                     document = doc,
                                     selected = doc.id in selected,
                                     onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) }
+                                    onLongClick = { toggleSelection(doc.id) },
+                                    menu = if (selecting) null else cardMenu(doc)
                                 )
                             }
                         }
@@ -686,6 +697,16 @@ internal fun LibraryScreen(
                 deleteFolderOpen = false
                 onDeleteFolder(folder); onFolderChange("")
             }
+        )
+    }
+    // One document moved from its card's ⋮ menu.
+    movingDocument?.let { id ->
+        FolderPickerDialog(
+            title = pluralStringResource(R.plurals.lib_move_documents_title, 1, 1),
+            confirmLabel = stringResource(R.string.lib_move),
+            folders = folders,
+            onDismiss = { movingDocument = null },
+            onConfirm = { target -> movingDocument = null; onMoveToFolder(setOf(id), target) }
         )
     }
     if (moveToFolderOpen) {

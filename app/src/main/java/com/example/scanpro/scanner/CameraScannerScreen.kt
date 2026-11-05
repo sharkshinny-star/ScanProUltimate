@@ -183,6 +183,8 @@ fun CameraScannerScreen(
     onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?, String?) -> Unit,
     /** Existing folders a new scan can be saved into (locked ones left out). */
     folders: List<String> = emptyList(),
+    /** The folder Files was showing when the scan started (Genius Scan scans into the open folder); blank for none. */
+    initialFolder: String = "",
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
@@ -268,7 +270,7 @@ fun CameraScannerScreen(
     var reviewing by rememberSaveable { mutableStateOf(false) }
     // The name typed on the review screen; blank leaves it to the automatic title.
     var documentName by rememberSaveable { mutableStateOf("") }
-    var documentFolder by rememberSaveable { mutableStateOf("") }
+    var documentFolder by rememberSaveable { mutableStateOf(initialFolder) }
     var reviewIndex by rememberSaveable { mutableIntStateOf(0) }
     // Page the next capture replaces, when the review step asked to retake one; -1 otherwise.
     var retakeIndex by rememberSaveable { mutableIntStateOf(-1) }

@@ -456,7 +456,11 @@ internal fun DocumentDetailScreen(
     // Set while the on-demand translation module is being fetched from Google Play.
     var translationProgress by remember { mutableStateOf<TranslationFeature.Progress?>(null) }
 
-    var tab by rememberSaveable(document.id) { mutableIntStateOf(DocumentTab.PAGES.ordinal) }
+    // A scan made in Text mode was taken for its words: it opens on the Text tab, where the copied text can be checked
+    // (Lens, ACE Scanner and OKEN show the recognised text straight after such a scan).
+    var tab by rememberSaveable(document.id) {
+        mutableIntStateOf(if (document.scanMode == ScanMode.TEXT) DocumentTab.TEXT.ordinal else DocumentTab.PAGES.ordinal)
+    }
     // The translate controls unfold under the Text tab's chips only when asked for.
     var translateOpen by rememberSaveable(document.id) { mutableStateOf(false) }
     var renameOpen by remember { mutableStateOf(false) }

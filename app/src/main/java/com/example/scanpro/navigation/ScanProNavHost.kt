@@ -89,7 +89,7 @@ fun ScanProNavHost(
                     mode = route,
                     snackbarHostState = snackbarHostState,
                     onOpenDocument = { navController.navigate(ScanProDestinations.document(it)) },
-                    onStartScan = { navController.navigate(ScanProDestinations.CAMERA) },
+                    onStartScan = { folder -> navController.navigate(ScanProDestinations.cameraInFolder(folder)) },
                     onQuickScan = { mode -> navController.navigate(ScanProDestinations.camera(mode)) },
                     onOpenTools = { onTab(ScanProDestinations.TOOLS) },
                     onImportImages = onImportImages,
@@ -139,7 +139,8 @@ fun ScanProNavHost(
             route = ScanProDestinations.CAMERA_ROUTE,
             arguments = listOf(
                 navArgument(ScanProDestinations.CAMERA_MODE_ARG) { type = NavType.StringType; defaultValue = "" },
-                navArgument(ScanProDestinations.CAMERA_RETAKE_ARG) { type = NavType.StringType; defaultValue = "" }
+                navArgument(ScanProDestinations.CAMERA_RETAKE_ARG) { type = NavType.StringType; defaultValue = "" },
+                navArgument(ScanProDestinations.CAMERA_FOLDER_ARG) { type = NavType.StringType; defaultValue = "" }
             )
         ) { entry ->
             val retake = ScanProDestinations.parseRetake(entry.arguments?.getString(ScanProDestinations.CAMERA_RETAKE_ARG))
@@ -152,6 +153,7 @@ fun ScanProNavHost(
                 defaultFilter = defaultFilter,
                 retakeOfPage = retake?.position,
                 folders = saveFolders,
+                initialFolder = entry.arguments?.getString(ScanProDestinations.CAMERA_FOLDER_ARG).orEmpty(),
                 onClose = dropUnlessResumed { navController.popBackStack() },
                 onComplete = { uris, mode, crops, filters, adjustments, name, folder ->
                     if (resumed()) {
