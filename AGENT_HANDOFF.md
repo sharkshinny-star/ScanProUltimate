@@ -103,7 +103,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 9. **R23: ML Kit usage metrics.** ML Kit's logging transport ships in the release build and the app holds `INTERNET`; Google says
    the APIs report usage and performance metrics (no content). Declare it in the Play Data safety form and the final policy.
 10. **Security changes not device-tested:** password keyboards (F57), launcher/shortcut/notification/share launches with
-   `taskAffinity=""` (F58), backup speed with 600k rounds on a low-end phone (F53). R21 and R22 are low priority.
+   `taskAffinity=""` (F58; owner decided 2026-11-05 to keep Android 7–10, so no `minSdk 30`), backup speed with 600k rounds on a low-end phone (F53). R21 and R22 are low priority.
 
 ## 4. Next steps
 
