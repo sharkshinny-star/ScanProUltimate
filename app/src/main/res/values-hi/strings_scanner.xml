@@ -230,4 +230,5 @@
     <string name="scan_review_adjust_use_on_all">सभी पेज पर लागू करें</string>
     <string name="scan_review_folder_label">फ़ोल्डर</string>
     <string name="scan_review_folder_dialog_title">फ़ोल्डर में सहेजें</string>
+    <string name="scan_review_adjust">समायोजित करें</string>
 </resources>

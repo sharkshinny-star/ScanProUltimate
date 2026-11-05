@@ -230,4 +230,5 @@
     <string name="scan_review_adjust_use_on_all">అన్ని పేజీలకు వర్తింపజేయి</string>
     <string name="scan_review_folder_label">ఫోల్డర్</string>
     <string name="scan_review_folder_dialog_title">ఫోల్డర్‌లో సేవ్ చేయి</string>
+    <string name="scan_review_adjust">సర్దుబాటు</string>
 </resources>

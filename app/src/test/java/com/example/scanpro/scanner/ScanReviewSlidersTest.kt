@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -39,7 +41,13 @@ class ScanReviewSlidersTest {
     private val adjustments = mutableStateMapOf<String, PageAdjustments>()
     private val brighter = reviewAdjustments(20, 10, 0)
 
-    private fun show() = compose.setContent {
+    /** Shows the screen and opens the Adjust panel, where the sliders and their actions live. */
+    private fun show(openAdjust: Boolean = true) {
+        showScreen()
+        if (openAdjust) compose.onNode(hasText(app.getString(R.string.scan_review_adjust), substring = true) and hasClickAction()).performClick()
+    }
+
+    private fun showScreen() = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(
                 pages = pages, quads = remember { mutableStateMapOf<String, CropQuad>() }, filters = remember { mutableStateMapOf<String, PageFilter>() },
@@ -76,5 +84,13 @@ class ScanReviewSlidersTest {
         show()
         compose.onNodeWithText(app.getString(R.string.common_reset)).assertDoesNotExist()
         compose.onNodeWithText(app.getString(R.string.scan_review_adjust_use_on_all)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the sliders stay folded away until Adjust is opened`() {
+        show(openAdjust = false)
+        compose.onNodeWithText(app.getString(R.string.doc_brightness)).assertDoesNotExist()
+        compose.onNode(hasText(app.getString(R.string.scan_review_adjust), substring = true) and hasClickAction()).performClick()
+        compose.onNodeWithText(app.getString(R.string.doc_brightness)).assertExists()
     }
 }

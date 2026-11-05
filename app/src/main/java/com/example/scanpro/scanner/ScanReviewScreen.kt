@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.filled.Folder
 import com.example.scanpro.feature.library.FolderPickerDialog
 import androidx.compose.ui.text.style.TextOverflow
@@ -193,6 +194,7 @@ fun ScanReviewScreen(
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var naming by rememberSaveable { mutableStateOf(false) }
     var choosingFolder by rememberSaveable { mutableStateOf(false) }
+    var panel by rememberSaveable { mutableIntStateOf(PANEL_FILTERS) }
     // Bumped after a rotation so the page is decoded again from the same file.
     var rotationTick by remember { mutableIntStateOf(0) }
     val blocked = working || processing
@@ -524,6 +526,24 @@ fun ScanReviewScreen(
             onMove = ::movePage
         )
 
+        // Filters or Adjust, one panel at a time, as Adobe Scan, CamScanner, OKEN and Lens do: the sliders no longer take
+        // room from the page while nobody is using them. A dot on Adjust says this page's sliders have moved.
+        Row(
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = panel == PANEL_FILTERS,
+                onClick = { panel = PANEL_FILTERS },
+                label = { Text(stringResource(R.string.doc_filters)) }
+            )
+            FilterChip(
+                selected = panel == PANEL_ADJUST,
+                onClick = { panel = PANEL_ADJUST },
+                label = { Text(stringResource(R.string.scan_review_adjust) + if (adjustments[key] != null) " •" else "") }
+            )
+        }
+        if (panel == PANEL_FILTERS) {
         FilterStrip(
             previews = previews,
             selected = pageFilter,
@@ -542,6 +562,7 @@ fun ScanReviewScreen(
                 modifier = Modifier.padding(horizontal = 8.dp)
             ) { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) }
         }
+        } else {
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
             AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
@@ -567,6 +588,7 @@ fun ScanReviewScreen(
                     ) { Text(stringResource(R.string.scan_review_adjust_use_on_all)) }
                 }
             }
+        }
         }
 
         message?.let {
@@ -875,6 +897,9 @@ private fun SaveOptionCell(
         }
     }
 }
+
+private const val PANEL_FILTERS = 0
+private const val PANEL_ADJUST = 1
 
 /** One slider row: label · slider · value, with the value as a whole number from −50 to 50. */
 @Composable

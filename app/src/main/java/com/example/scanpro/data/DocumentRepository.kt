@@ -1166,7 +1166,13 @@ class DocumentRepository @Inject constructor(
             }
             PdfExporter.export(pages, pdf, quality, PdfPageSize.A4, searchable = true, pageNumbers = false)
 
-            val fallbackTitle = context.getString(R.string.doc_title_scan, SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created)))
+            // Named after the mode when it says something ("Receipt 2026-11-05 10-31", "ID card …"), as Adobe Scan does;
+            // used only when no title comes from the page text.
+            val stamp = SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val fallbackTitle = when (mode) {
+                ScanMode.DOCUMENT, ScanMode.TEXT -> context.getString(R.string.doc_title_scan, stamp)
+                else -> "${context.getString(mode.labelRes)} $stamp"
+            }
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = userTitle?.trim()?.takeIf { it.isNotEmpty() }?.take(MAX_TITLE_LENGTH)
                 ?: if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
