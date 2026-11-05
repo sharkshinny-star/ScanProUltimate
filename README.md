@@ -134,7 +134,7 @@ The built-in assistant is deliberately deterministic and source-grounded. It doe
 - optional biometric app gate
 - password-protected PDF exports
 - AES-GCM encrypted `.scanpro` portable backups
-- PBKDF2-HMAC-SHA256 key derivation with a per-backup salt
+- PBKDF2-HMAC-SHA256 key derivation (600k iterations) with a per-backup salt; backup and PDF passwords need at least 8 characters
 - safe ZIP extraction checks on restore
 - Android backup disabled for private scan data by default
 

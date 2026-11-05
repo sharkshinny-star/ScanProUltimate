@@ -102,6 +102,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.BuildConfig
 import com.example.scanpro.R
+import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.core.designsystem.BrandMark
 import com.example.scanpro.core.designsystem.Eyebrow
 import com.example.scanpro.core.designsystem.IconTile
@@ -257,6 +258,7 @@ fun SettingsScreen(
         PasswordInputDialog(
             title = stringResource(R.string.settings_backup_all),
             message = stringResource(R.string.settings_backup_password_message),
+            minimumLength = EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH,
             confirmLabel = stringResource(R.string.settings_backup_start),
             onDismiss = { backupFolder = null },
             warning = stringResource(R.string.backup_warning_unredacted_all)
@@ -269,6 +271,7 @@ fun SettingsScreen(
         PasswordInputDialog(
             title = stringResource(R.string.settings_restore_backup),
             message = stringResource(R.string.settings_restore_password_message),
+            minimumLength = EncryptedDocumentPackage.MIN_RESTORE_PASSWORD_LENGTH,
             confirmLabel = stringResource(R.string.settings_restore_start),
             onDismiss = { backupToRestore = null }
         ) { password ->

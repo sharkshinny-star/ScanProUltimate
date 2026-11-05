@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-11-02, after the screenshot tests. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-11-05, after the security hardening commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -171,9 +171,19 @@ Security controls:
 - optional biometric app gate
 - PDF password protection
 - encrypted `.scanpro` backups using AES-GCM
-- PBKDF2-HMAC-SHA256 password derivation, 210k iterations, random salt and IV
-- ZIP-slip/path traversal defence during backup restore
+- PBKDF2-HMAC-SHA256 password derivation, random salt and nonce prefix. New backups: 600k iterations and a password of
+  at least 8 characters. Restore accepts 100k–1M iterations and 6 characters, so backups from earlier versions (210k,
+  6 characters) still restore and older versions can read new backups.
+- ZIP-slip/path traversal defence during backup restore, plus caps: 2 GB unpacked, 20,000 entries, 64 MB manifest, and
+  the picked file copied with a size limit
+- PDF password protection needs at least 8 characters
 - Android cloud backup disabled for private scan files
+- `MainActivity` has `android:taskAffinity=""`, so other apps cannot claim ScanPro's task affinity to insert screens into
+  its task (task hijacking; Android 11+ is patched in the OS, on Android 7–10 this is a partial, app-side mitigation)
+- every password field uses `KeyboardType.Password`, so keyboards do not learn or suggest passwords
+- build supply chain: the Gradle wrapper pins the distribution's SHA-256 (`distributionSha256Sum`); `google()` is
+  content-filtered to `com.android.*`, `com.google.*` and `androidx.*` in `settings.gradle.kts` (everything else comes
+  from Maven Central; a new Google-hosted group needs adding to both filters); CI runs with a read-only token and no secrets
 
 A biometric UI gate should not be marketed as full at-rest encryption of every live library file. The encrypted portable-backup path is cryptographic; the main library relies on Android app-private storage unless a future per-document vault is added.
 

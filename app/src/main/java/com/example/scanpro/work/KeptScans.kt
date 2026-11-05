@@ -105,8 +105,11 @@ class KeptScanStore @Inject constructor(@ApplicationContext private val context:
         internal fun retryInput(session: File, photos: List<File>): ImportRequest {
             val request = readRequest(session)
             val recorded = request?.getNullableStringArray(ImportScanWorker.KEY_URIS)?.toList()
-            // A recorded photo is found where it was, or by name in the session folder (moved from the old cache location).
-            val resolved = recorded?.map { uri -> uri?.let(::fileOf)?.let { f -> f.takeIf { it.isFile } ?: File(session, f.name).takeIf { it.isFile } } }
+            // A recorded photo is found where it was, or by name in the session folder (moved from the old cache location),
+            // and only ever inside that folder.
+            val resolved = recorded?.map { uri ->
+                uri?.let(::fileOf)?.let { f -> f.takeIf { isPhotoIn(session, it) } ?: File(session, f.name).takeIf { isPhotoIn(session, it) } }
+            }
             val keep = resolved?.indices?.filter { resolved[it] != null }.orEmpty()
             if (request == null || recorded == null || keep.isEmpty()) {
                 // Nothing usable recorded: save the photos that are there, in the recorded mode if known.
@@ -155,9 +158,17 @@ class KeptScanStore @Inject constructor(@ApplicationContext private val context:
             File(session, SESSION_IMPORT_REQUEST).takeIf { it.isFile }
                 ?.let { runCatching { ImportRequest.readFile(it) }.getOrNull() }
 
+        /**
+         * Only photos inside the session's own folder count: they can be shared and imported again, so a recorded
+         * path must never lead anywhere else in the app's storage.
+         */
+        private fun isPhotoIn(session: File, file: File): Boolean =
+            file.isFile && file.canonicalPath.startsWith(session.canonicalPath + File.separator)
+
         private fun photosOf(session: File, request: ImportRequest?): List<File> {
             val recorded = request?.getNullableStringArray(ImportScanWorker.KEY_URIS)
-                ?.mapNotNull { it?.let(::fileOf) }?.filter { it.isFile }
+                ?.mapNotNull { it?.let(::fileOf) }
+                ?.filter { isPhotoIn(session, it) }
             if (!recorded.isNullOrEmpty()) return recorded
             return session.listFiles().orEmpty()
                 .filter { it.isFile && it.extension.equals("jpg", ignoreCase = true) }

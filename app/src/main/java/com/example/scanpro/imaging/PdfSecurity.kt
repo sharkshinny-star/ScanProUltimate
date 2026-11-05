@@ -9,8 +9,11 @@ import com.example.scanpro.core.text.UserFacingPluralException
 import com.example.scanpro.core.text.userError
 
 object PdfSecurity {
-    /** PDF passwords can be attacked offline, so very short ones offer little protection. */
-    const val MIN_PASSWORD_LENGTH = 6
+    /**
+     * PDF passwords can be attacked offline, and the PDF key derivation is far cheaper to guess against than
+     * the backup's PBKDF2, so short ones offer little protection.
+     */
+    const val MIN_PASSWORD_LENGTH = 8
 
     fun protect(source: File, destination: File, password: String) {
         if (password.length < MIN_PASSWORD_LENGTH) throw UserFacingPluralException(R.plurals.err_pdf_password_too_short, MIN_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH)

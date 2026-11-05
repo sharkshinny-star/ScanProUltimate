@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05 (colour themes, Home tips, What's new, F52); before that 2026-11-05 (F48, F49 PDF Tools fixes; F50 first-launch permissions); before that 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
+Last updated: 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
 
 ## 1. Current state
 
@@ -32,7 +32,8 @@ Last updated: 2026-11-05 (colour themes, Home tips, What's new, F52); before tha
 
 | Commit | What |
 |---|---|
-| newest | Colour themes (5 palettes, Settings > Appearance), "Did you know?" Home tips, one-time What's new sheet, animated scan beam on the empty-library hero card, F52 (tablet rail Scan button), translations of the new strings (R19), `ColourThemeScreenshotTest`. A launch-animation redesign was drawn in Figma but not shipped (see `ARCHITECTURE.md` 12b). |
+| newest | Security hardening pass (owner asked to make the app "hack proof"). Backups: 8-character minimum and 600k PBKDF2 rounds for new backups, old 6-character/210k backups still restore (F53); restore caps on file size, entry count and manifest size (F55). PDF password minimum 8 (F54). Kept-scan and restored annotation paths confined (F56). Password keyboard type on every password field (F57). `taskAffinity=""` against task hijacking (F58). Gradle checksum pinned, wrapper JAR verified, keystores git-ignored (F59). `google()` content-filtered (F60; cloud dependency downloads ~40x faster). Backup crypto reviewed (V6, closes R6); attack surface incl. Office conversion, WebView, QR/UPI and locked folders reviewed (V7). New open items R20 (no encryption at rest, owner decision), R21, R22, R23 (ML Kit usage metrics to disclose). |
+| `10fa630` | Colour themes (5 palettes, Settings > Appearance), "Did you know?" Home tips, one-time What's new sheet, animated scan beam on the empty-library hero card, F52 (tablet rail Scan button), translations of the new strings (R19), `ColourThemeScreenshotTest`. A launch-animation redesign was drawn in Figma but not shipped (see `ARCHITECTURE.md` 12b). |
 | `e66c106` | F51: choose the folder a new scan is saved in, on the review screen (Name and Folder cells; shared folder picker). |
 | `b7681d7` | F50: first-launch permission page after the welcome (Camera, Notifications on 13+), `WelcomePermissionsTest` (5). |
 | `22540d1` | F48/F49: Images to PDF decodes once on white (transparent PNGs no longer black); Merge asks for a protected file's password. `PdfPictureTest`, `MergePasswordTest`. Also fixed two lint errors in `ScanReviewReorderTest` (state created in composition). |
@@ -95,7 +96,13 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
 7. **F38, F39 and F40 compile, pass the 243 unit tests and lint (0 issues) on `07293b0`, but have never run on a device**: check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. For F39 also check both screens in landscape, a new scan's title in Hindi, and the sizes in the library. For F40 also check the review's thumbnail strip, mode hints and the locked-mode message, and the dialogs at 200% font. Still open from the UX review (`UX_REVIEW.md`): R17 (drag-to-reorder, contrast measurements).
 7a. **R18: UX suggestions** from the screenshot review (document title truncation, "System default", folder on grid cards; the Recycle bin top bar was fixed in F43). Owner decides; see the Figma board.
-8. **Crypto not re-audited** this round (`ChunkedAead`, `EncryptedDocumentPackage`); its unit tests pass.
+8. **R20: no encryption at rest.** The library relies on Android's file-based encryption and the sandbox; app lock and locked
+   folders are UI gates. On a rooted or forensically extracted phone, documents are readable. Fixing it (Keystore-backed
+   encryption of page files and the database) is architectural: ask the owner and document it first.
+9. **R23: ML Kit usage metrics.** ML Kit's logging transport ships in the release build and the app holds `INTERNET`; Google says
+   the APIs report usage and performance metrics (no content). Declare it in the Play Data safety form and the final policy.
+10. **Security changes not device-tested:** password keyboards (F57), launcher/shortcut/notification/share launches with
+   `taskAffinity=""` (F58), backup speed with 600k rounds on a low-end phone (F53). R21 and R22 are low priority.
 
 ## 4. Next steps
 

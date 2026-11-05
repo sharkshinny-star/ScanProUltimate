@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-04, full run on `b76720c` (tests, lint, both release builds, 16 KB check). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-05, security hardening commit on top of `10fa630` (tests, lint, Play bundle). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -41,7 +41,22 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-05, colour themes / Home tips / What's new, rebased on `d2c1451`)
+## Latest results (2026-11-05, security hardening commit on top of `10fa630`)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin --rerun` | Passed, 0 Kotlin warnings in app code (one Gradle-script deprecation in `app/build.gradle.kts:100`, `srcDir`, predates this commit) |
+| `:app:testDebugUnitTest` | 313 tests: 283 passed, 30 skipped (28 `ScreenScreenshotTest` cases, opt-in; 2 `RealPhotoEquivalenceTest`), 0 failed. New in this commit: 5 in `EncryptedDocumentPackageTest`, 2 in `KeptScanStoreTest` |
+| `:app:lintDebug` | 0 errors, 1 warning (`GradleDependency`: uiautomator 2.4.1 available) |
+| `:app:bundleRelease` | Passed (R8); AAB 45.8 MB; merged release manifest has `android:taskAffinity=""` |
+| Gradle wrapper checksum | A fresh download (empty `GRADLE_USER_HOME`) was verified against the pinned `distributionSha256Sum`; `gradle-wrapper.jar` matches a published Gradle wrapper checksum |
+| Sideload `assembleRelease`, 16 KB alignment, `:opencv:lintDebug`, screenshots | Not run this time (last passed on `b76720c`, below) |
+| Instrumented tests, device checks (password keyboards, `taskAffinity`, backup speed with 600k rounds) | Not run: no emulator or device |
+| Release signing | Not validated: no secrets; outputs unsigned |
+
+Older runs, kept for history:
+
+### 2026-11-05, colour themes / Home tips / What's new, rebased on `d2c1451`
 
 | Check | Result |
 |---|---|
@@ -66,8 +81,6 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 | 16 KB page alignment | arm64 and x86_64: all 8 `.so` files each have 16 KB `LOAD` alignment (`readelf`) |
 | Instrumented (`AppSmokeTest`), baseline profile, performance | Not run: no emulator or device |
 | Release signing | Not validated: no secrets; outputs unsigned |
-
-Older runs, kept for history:
 
 **2026-11-02, screenshot tests and F41/F42 on top of `bd3cacd`:** `:app:testDebugUnitTest` 267 tests, 241 passed, 26 skipped (24 `ScreenScreenshotTest` cases, opt-in; 2 `RealPhotoEquivalenceTest`), 0 failed; `:app:lintDebug` 0 issues; 0 compiler warnings. `ScreenScreenshotTest` with `-Pscanpro.screenshots=true`: 24 PNGs, checked by eye. Release builds, `:translate`, `:opencv` not re-run.
 
@@ -106,6 +119,10 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 | Problem | Fix |
 |---|---|
 | Maven Central HTTP 429 in cloud containers | Add `~/.gradle/init.d/central-mirror.gradle` that replaces `mavenCentral()` with `https://maven-central.storage-download.googleapis.com/maven2/`. Local only; never commit it. |
+| `sdkmanager` 9862592 can't find `platforms;android-37` | Unzip `platform-37.0_r02.zip` into `platforms/android-37` and `build-tools_r37_linux.zip` into `build-tools/37.0.0` (from `dl.google.com/android/repository/`); Build-Tools 36 likewise if AGP's own download is slow. |
+| Upgrading Gradle | The wrapper pins `distributionSha256Sum`. Run `./gradlew wrapper --gradle-version <v> --gradle-distribution-sha256-sum <sum>` with the sum from `https://services.gradle.org/distributions/gradle-<v>-bin.zip.sha256`, or the wrapper refuses the download. |
+| A dependency "could not be found" although Google's Maven repository has it | `google()` only serves `com.android.*`, `com.google.*` and `androidx.*`; add the new group to both filters in `settings.gradle.kts`. |
+| Dependency downloads crawl (a few MB per minute) in a cloud container | Keep the `google()` content filters in `settings.gradle.kts`: without them every Maven Central artifact first waits about 2 s on a miss at Google's repository. |
 | `ScreenScreenshotTest`: Files grid empty | Keep the v1 `createComposeRule` (deprecated, suppressed): under the v2 rule the grid never got Paging's first page. |
 | Test JVM aborts (exit 134, "Class not found: java/nio/LongBuffer") | Robolectric native graphics, when only some `ScreenScreenshotTest` cases run (e.g. `--tests '*files*'`); run the whole class. |
 | Compose UI test never goes idle (`AppNotIdleException`) once a dialog with a text field is open | Robolectric limitation here: even a plain Material `AlertDialog` + `OutlinedTextField` hangs, with or without focus and with a manual clock. Test the state around the dialog instead (as `ScanReviewNamingTest` does) and check typing on a device. |

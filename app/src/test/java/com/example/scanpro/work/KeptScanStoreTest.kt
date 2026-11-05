@@ -65,15 +65,40 @@ class KeptScanStoreTest {
     }
 
     @Test
+    fun `recorded photos outside the session folder are ignored`() {
+        val root = temp.newFolder("sessions")
+        val dir = session(root, "s", photos = 2)
+        val outside = temp.newFile("private.jpg").also { it.writeText("not a scan photo") }
+        val sibling = File(session(root, "other", photos = 1), "raw_0.jpg")
+        request(dir, listOf(outside, sibling), ScanMode.DOCUMENT, emptyList(), emptyList())
+        val scan = KeptScanStore.collect(root, emptySet()).first { it.id == "s" }
+        // Nothing recorded is usable, so the session's own photos are listed instead.
+        assertEquals(listOf("raw_0.jpg", "raw_1.jpg"), scan.photos.map { it.name }.sorted())
+        assertTrue(scan.photos.all { it.parentFile == dir })
+    }
+
+    @Test
+    fun `a retry never sends a recorded photo from outside the session folder`() {
+        val dir = session(temp.newFolder("sessions"), "s", photos = 1)
+        val inside = File(dir, "raw_0.jpg")
+        val outside = temp.newFile("elsewhere.jpg").also { it.writeText("not a scan photo") }
+        request(dir, listOf(outside, inside), ScanMode.DOCUMENT, listOf("c-out", "c0"), listOf("f-out", "f0"))
+        val input = KeptScanStore.retryInput(dir, listOf(inside))
+        assertArrayEquals(arrayOf(uri(inside)), input.getNullableStringArray(ImportScanWorker.KEY_URIS))
+        assertArrayEquals(arrayOf("c0"), input.getNullableStringArray(ImportScanWorker.KEY_CROPS))
+        assertArrayEquals(arrayOf("f0"), input.getNullableStringArray(ImportScanWorker.KEY_FILTERS))
+    }
+
+    @Test
     fun `a retry keeps each remaining photo's outline and filter`() {
         val dir = session(temp.newFolder("sessions"), "s", photos = 3)
         val photos = (0..2).map { File(dir, "raw_$it.jpg") }
         request(dir, photos, ScanMode.BOOK, listOf("c0", "c1", "c2"), listOf("f0", "f1", "f2"))
         photos[1].delete()
         val input = KeptScanStore.retryInput(dir, listOf(photos[0], photos[2]))
-        assertArrayEquals(arrayOf(uri(photos[0]), uri(photos[2])), input.getStringArray(ImportScanWorker.KEY_URIS))
-        assertArrayEquals(arrayOf("c0", "c2"), input.getStringArray(ImportScanWorker.KEY_CROPS))
-        assertArrayEquals(arrayOf("f0", "f2"), input.getStringArray(ImportScanWorker.KEY_FILTERS))
+        assertArrayEquals(arrayOf(uri(photos[0]), uri(photos[2])), input.getNullableStringArray(ImportScanWorker.KEY_URIS))
+        assertArrayEquals(arrayOf("c0", "c2"), input.getNullableStringArray(ImportScanWorker.KEY_CROPS))
+        assertArrayEquals(arrayOf("f0", "f2"), input.getNullableStringArray(ImportScanWorker.KEY_FILTERS))
         assertEquals(ScanMode.BOOK.name, input.getString(ImportScanWorker.KEY_MODE))
     }
 
@@ -82,8 +107,8 @@ class KeptScanStoreTest {
         val dir = session(temp.newFolder("sessions"), "s", photos = 2)
         val photos = (0..1).map { File(dir, "raw_$it.jpg") }
         val input = KeptScanStore.retryInput(dir, photos)
-        assertArrayEquals(photos.map(::uri).toTypedArray(), input.getStringArray(ImportScanWorker.KEY_URIS))
-        assertNull(input.getStringArray(ImportScanWorker.KEY_CROPS))
+        assertArrayEquals(photos.map(::uri).toTypedArray(), input.getNullableStringArray(ImportScanWorker.KEY_URIS))
+        assertNull(input.getNullableStringArray(ImportScanWorker.KEY_CROPS))
         assertEquals(ScanMode.DOCUMENT.name, input.getString(ImportScanWorker.KEY_MODE))
     }
 

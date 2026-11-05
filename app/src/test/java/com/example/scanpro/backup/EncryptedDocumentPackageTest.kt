@@ -1,5 +1,7 @@
 package com.example.scanpro.backup
 
+import com.example.scanpro.R
+import com.example.scanpro.core.text.UserFacingException
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
@@ -13,6 +15,8 @@ import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.ScanPage
 import java.io.BufferedOutputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -21,6 +25,8 @@ import java.util.zip.ZipOutputStream
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -185,12 +191,60 @@ class EncryptedDocumentPackageTest {
         try {
             EncryptedDocumentPackage.write(doc, "12345".toCharArray(), target)
             fail("a five-character password should be refused")
-        } catch (expected: IllegalArgumentException) { /* the requirement is six */ }
+        } catch (expected: IllegalArgumentException) { /* the requirement is eight */ }
         assertFalse(target.exists())
         try {
             restore(exported(doc), pass = "12345")
             fail("a five-character password should be refused")
-        } catch (expected: IllegalArgumentException) { /* same rule on the way back */ }
+        } catch (expected: IllegalArgumentException) { /* restore accepts six (older backups), never fewer */ }
+    }
+
+    @Test
+    fun `new backups need eight characters and use 600k rounds`() {
+        val doc = document()
+        val target = File(tmp.root, "seven.scanpro")
+        try {
+            EncryptedDocumentPackage.write(doc, "1234567".toCharArray(), target)
+            fail("a seven-character password should be refused for a new backup")
+        } catch (expected: IllegalArgumentException) { /* the requirement is eight */ }
+        assertFalse(target.exists())
+        val header = DataInputStream(exported(doc).inputStream()).use { it.skipBytes(4); it.readInt() }
+        assertEquals(EncryptedDocumentPackage.ITERATIONS, header)
+        assertEquals(600_000, header)
+    }
+
+    @Test
+    fun `a backup made with a six-character password and 210k rounds still restores`() {
+        val manifest = """{"title":"old","pages":[{"file":"pages/0000.jpg","ocr":"hi"}]}"""
+        val file = craft("123456", iterations = 210_000, entries = listOf("manifest.json" to manifest.toByteArray(), "pages/0000.jpg" to bytes(1, 10)))
+        val restored = restore(file, pass = "123456")
+        assertEquals("old", restored.title)
+        assertEquals("hi", restored.pages.single().ocrText)
+    }
+
+    @Test
+    fun `a backup with too many entries is refused`() {
+        val entries = (0..20_000).map { "e/$it" to ByteArray(0) } + ("manifest.json" to "{}".toByteArray())
+        val file = craft(password, entries = entries)
+        val outDir = File(tmp.root, "restore-many")
+        try {
+            restore(file, outDir = outDir)
+            fail("a backup with more than 20,000 entries should be refused")
+        } catch (expected: IllegalArgumentException) {
+            assertEquals(R.string.err_backup_too_large, (expected as UserFacingException).messageRes)
+        }
+        assertFalse("the half-restored files are removed", outDir.exists())
+    }
+
+    @Test
+    fun `copying a picked backup stops at the size limit`() {
+        val out = ByteArrayOutputStream()
+        EncryptedDocumentPackage.copyCapped(ByteArray(100).inputStream(), out, limit = 100)
+        assertEquals(100, out.size())
+        try {
+            EncryptedDocumentPackage.copyCapped(ByteArray(101).inputStream(), ByteArrayOutputStream(), limit = 100)
+            fail("a file over the limit should be refused")
+        } catch (expected: IllegalArgumentException) { /* too large */ }
     }
 
     @Test
@@ -212,6 +266,23 @@ class EncryptedDocumentPackageTest {
         val manifest = """{"title":"x","pages":[{"file":"../../outside.jpg"}]}"""
         val file = craft(password, entries = listOf("manifest.json" to manifest.toByteArray(), "pages/0000.jpg" to bytes(1, 10)))
         assertRestoreFails(file, expectedCause = "Unsafe backup path")
+    }
+
+    @Test
+    fun `annotation file paths from a backup never point outside it`() {
+        val annotations = JSONArray()
+            .put(JSONObject().put("type", "TEXT").put("text", "hi").put("asset", "/data/data/com.scanpro.app/databases/library.db"))
+            .put(JSONObject().put("type", "SIGNATURE").put("asset", "../../outside.png"))
+            .toString()
+        val page = JSONObject().put("file", "pages/0000.jpg").put("source", "sources/0000").put("annotations", annotations)
+        val manifest = JSONObject().put("title", "x").put("pages", JSONArray().put(page)).toString()
+        val file = craft(password, entries = listOf(
+            "manifest.json" to manifest.toByteArray(), "pages/0000.jpg" to bytes(1, 10), "sources/0000" to bytes(2, 10)
+        ))
+        val restored = restore(file).pages.single().annotations
+        // The text annotation survives without its path; the signature pointing outside the backup is dropped.
+        assertEquals(listOf(AnnotationType.TEXT), restored.map { it.type })
+        assertEquals("", restored.single().assetPath)
     }
 
     @Test

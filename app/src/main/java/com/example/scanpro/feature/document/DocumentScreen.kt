@@ -160,6 +160,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
+import com.example.scanpro.backup.EncryptedDocumentPackage
 import com.example.scanpro.core.designsystem.ConfirmDialog
 import com.example.scanpro.core.designsystem.Eyebrow
 import com.example.scanpro.core.designsystem.IconTile
@@ -1124,7 +1125,7 @@ internal fun DocumentDetailScreen(
     if (backupPasswordOpen) PasswordInputDialog(
         title = stringResource(R.string.doc_encrypted_backup_title),
         message = stringResource(R.string.doc_encrypted_backup_message),
-        minimumLength = 6,
+        minimumLength = EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH,
         confirmLabel = stringResource(R.string.doc_create_backup),
         onDismiss = { backupPasswordOpen = false },
         // Backups keep each page's original photo so edits stay reversible, including what redaction or erasing hid.

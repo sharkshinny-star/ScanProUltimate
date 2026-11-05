@@ -942,7 +942,10 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun exportEncryptedBackup(id: String, password: String): File = withContext(Dispatchers.IO) {
-        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
+        userRequire(
+            password.length >= EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH,
+            R.string.err_backup_password_too_short, EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH
+        )
         val doc = requireDocument(id)
         val file = freshExportFile("${safeName(doc.title)}_backup", "scanpro")
         encryptedPackages.export(doc, password.toCharArray(), file)
@@ -955,7 +958,10 @@ class DocumentRepository @Inject constructor(
      * staged whole. [onProgress] gets (done, total) after each document. Returns how many were written.
      */
     suspend fun backupAll(treeUri: Uri, password: String, onProgress: (Int, Int) -> Unit = { _, _ -> }): Int = withContext(Dispatchers.IO) {
-        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
+        userRequire(
+            password.length >= EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH,
+            R.string.err_backup_password_too_short, EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH
+        )
         val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
         val documents = db.loadAll()
         val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now()))
@@ -979,7 +985,10 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun importEncryptedBackup(source: Uri, password: String): ScanDocument = withContext(Dispatchers.IO) {
-        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
+        userRequire(
+            password.length >= EncryptedDocumentPackage.MIN_RESTORE_PASSWORD_LENGTH,
+            R.string.err_backup_password_too_short, EncryptedDocumentPackage.MIN_RESTORE_PASSWORD_LENGTH
+        )
         val restored = encryptedPackages.import(source, password.toCharArray())
         val created = now()
         val id = UUID.randomUUID().toString()

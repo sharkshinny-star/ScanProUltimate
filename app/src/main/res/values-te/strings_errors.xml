@@ -30,7 +30,7 @@
     <string name="err_could_not_save_pdf">PDFని సేవ్ చేయలేకపోయాం</string>
     <string name="err_could_not_save_signature">సంతకాన్ని సేవ్ చేయలేకపోయాం</string>
     <string name="err_could_not_save_image">%1$s చిత్రాన్ని సేవ్ చేయలేకపోయాం</string>
-    <string name="err_backup_password_too_short">కనీసం 6 అక్షరాలు ఉన్న బ్యాకప్ పాస్‌వర్డ్ వాడండి</string>
+    <string name="err_backup_password_too_short">కనీసం %1$d అక్షరాలు ఉన్న బ్యాకప్ పాస్‌వర్డ్ వాడండి</string>
     <string name="err_could_not_open_backup">బ్యాకప్‌ను తెరవలేకపోయాం</string>
     <string name="err_could_not_decrypt_backup">బ్యాకప్‌ను డీక్రిప్ట్ చేయలేకపోయాం. పాస్‌వర్డ్, ఫైల్‌ను చెక్ చేయండి.</string>
     <string name="err_backup_too_large">ఈ బ్యాకప్ రీస్టోర్ చేయడానికి చాలా పెద్దది</string>
