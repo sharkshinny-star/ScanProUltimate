@@ -122,7 +122,7 @@ OCR can be edited manually and re-indexed. A document can also be re-OCR'd using
 
 ## 7. PDF architecture
 
-`PdfExporter` owns page layout and image compression. It supports Auto/A4/Letter page size, optional page numbers, and High/Balanced/Small image presets.
+`PdfExporter` owns page layout and image compression. Callers can pass a `decode` hook (Images to PDF uses `decodePicture`: EXIF-upright, alpha composited on white) and a `beforePage` callback for progress and cancel. It supports Auto/A4/Letter page size, optional page numbers, and High/Balanced/Small image presets.
 
 The current searchable PDF implementation provides a page text layer for searchability. Exact word-coordinate text geometry remains a documented future hardening task.
 

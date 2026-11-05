@@ -1,7 +1,10 @@
 package com.example.scanpro.imaging
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.PorterDuff
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import com.example.scanpro.data.PdfPageSize
@@ -25,13 +28,20 @@ object PdfExporter {
     private const val MARGIN = 18f
     private const val MAX_WORDS_PER_PAGE = 6000
 
+    /**
+     * Writes [pages] as a PDF. [decode] reads each page image at most `maxDimension` pixels on its longer side: scan
+     * pages are already upright and opaque, while pictures picked for Images to PDF pass [decodePicture]. [beforePage]
+     * runs before each page (1-based) is read, for progress, and may throw to stop a cancelled job between pages.
+     */
     fun export(
         pages: List<ScanPage>,
         destination: File,
         quality: PdfQuality,
         pageSize: PdfPageSize,
         searchable: Boolean,
-        pageNumbers: Boolean
+        pageNumbers: Boolean,
+        decode: (path: String, maxDimension: Int) -> Bitmap? = ImageProcessor::decodeScaled,
+        beforePage: (number: Int, total: Int) -> Unit = { _, _ -> }
     ) {
         userRequire(pages.isNotEmpty(), R.string.err_document_has_no_pages)
         destination.parentFile?.mkdirs()
@@ -39,8 +49,9 @@ object PdfExporter {
         val pdf = PdfDocument()
         try {
             pages.sortedBy { it.position }.forEachIndexed { index, pageModel ->
+                beforePage(index + 1, pages.size)
                 // Fail loudly: silently skipping a page would produce a short PDF with wrong page numbers.
-                val bitmap = ImageProcessor.decodeScaled(pageModel.imagePath, quality.maxImageDimension)
+                val bitmap = decode(pageModel.imagePath, quality.maxImageDimension)
                     ?: userError(R.string.err_could_not_read_pdf_page, index + 1)
                 val (pageWidth, pageHeight) = pageDimensions(pageSize, bitmap.width, bitmap.height)
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
@@ -127,6 +138,30 @@ object PdfExporter {
         } finally {
             pdf.close()
         }
+    }
+
+    /**
+     * A picture picked for Images to PDF, read once and straight from the picked file: scaled, turned upright from its
+     * EXIF rotation, and laid on white. Saving it as a JPEG first cost a second round of compression and turned
+     * transparency (a PNG logo, signature or screenshot) black, because JPEG has no alpha channel.
+     */
+    fun decodePicture(path: String, maxDimension: Int): Bitmap? =
+        ImageProcessor.decodeOrientedScaled(path, maxDimension)?.let(::onWhite)
+
+    /**
+     * [bitmap] composited onto white and marked opaque, as it looks on a white page, so the PDF holds a plain picture
+     * rather than one with a separate transparency mask. A bitmap without alpha is returned as it is; otherwise the
+     * result is [bitmap] itself when it can be drawn on, or a copy (and [bitmap] is recycled).
+     */
+    internal fun onWhite(bitmap: Bitmap): Bitmap {
+        if (!bitmap.hasAlpha()) return bitmap
+        val target = if (bitmap.isMutable) bitmap
+        else bitmap.copy(Bitmap.Config.ARGB_8888, true)?.also { bitmap.recycle() } ?: return bitmap
+        // DST_OVER paints the white behind what is already there: transparent pixels turn white, half-transparent
+        // ones blend with it, opaque ones keep their colour.
+        Canvas(target).drawColor(Color.WHITE, PorterDuff.Mode.DST_OVER)
+        target.setHasAlpha(false)
+        return target
     }
 
     /** Backwards-compatible image-only export used by special tools. */

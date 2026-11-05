@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
+Last updated: 2026-11-05 (F48, F49 PDF Tools fixes); before that 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
 
 ## 1. Current state
 
@@ -32,7 +32,8 @@ Last updated: 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full 
 
 | Commit | What |
 |---|---|
-| newest | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |
+| newest | F48/F49: Images to PDF decodes once on white (transparent PNGs no longer black); Merge asks for a protected file's password. `PdfPictureTest`, `MergePasswordTest`. Also fixed two lint errors in `ScanReviewReorderTest` (state created in composition). |
+| `b6362d3` | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |
 | `08d9887` | F46 (from the competitor comparison): slider Reset and Apply to all pages, Rotate all pages, Auto capture in the camera ⋮ menu, spoken camera guidance. |
 | `c21d582` | F45: name a scan on the review screen before saving (Name row and dialog; the name rides the import request into the document). |
 | `5f96824` | F44: drag-to-reorder on the review thumbnail strip (long-press, lift, swap; accessibility actions); `ScanReviewReorderTest` (3). |

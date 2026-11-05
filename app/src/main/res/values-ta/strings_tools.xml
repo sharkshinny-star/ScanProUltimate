@@ -175,6 +175,8 @@
         <item quantity="other">நகலைத் திறக்கும் அனைவருக்கும் இந்தப் பாஸ்வேர்டு தேவைப்படும் (குறைந்தது %1$d எழுத்துகள்). இதை மீட்டெடுக்க வழியில்லை.</item>
     </plurals>
     <string name="tools_password_unlock_prompt">இந்த PDF-இலிருந்து பாதுகாப்பை நீக்க பாஸ்வேர்டை உள்ளிடுங்கள்:</string>
+    <string name="tools_merge_password_prompt">“%1$s” பாதுகாக்கப்பட்டுள்ளது. இணைக்க அதன் பாஸ்வேர்டை உள்ளிடுங்கள்.</string>
+    <string name="tools_merge_password_unprotected_note">இணைத்த PDF பாஸ்வேர்டு இல்லாமல் திறக்கும். அதைப் பாதுகாக்க, பிறகு PDF பாதுகாப்பு கருவியைப் பயன்படுத்துங்கள்.</string>
     <string name="tools_password_confirm_label">பாஸ்வேர்டை உறுதிப்படுத்து</string>
     <string name="tools_password_mismatch">பாஸ்வேர்டுகள் பொருந்தவில்லை</string>
     <plurals name="tools_split_has_pages">

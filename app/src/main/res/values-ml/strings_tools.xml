@@ -175,6 +175,8 @@
         <item quantity="other">കോപ്പി തുറക്കുന്ന ആർക്കും ഈ പാസ്‌വേഡ് വേണം (കുറഞ്ഞത് %1$d അക്ഷരങ്ങൾ). ഇത് വീണ്ടെടുക്കാൻ ഒരു വഴിയുമില്ല.</item>
     </plurals>
     <string name="tools_password_unlock_prompt">ഈ PDF-ൽ നിന്ന് സംരക്ഷണം നീക്കാൻ പാസ്‌വേഡ് നൽകുക:</string>
+    <string name="tools_merge_password_prompt">“%1$s” സംരക്ഷിച്ചതാണ്. ലയിപ്പിക്കാൻ അതിന്റെ പാസ്‌വേഡ് നൽകുക.</string>
+    <string name="tools_merge_password_unprotected_note">ലയിപ്പിച്ച PDF പാസ്‌വേഡ് ഇല്ലാതെ തുറക്കും. അത് സംരക്ഷിക്കാൻ പിന്നീട് PDF സംരക്ഷിക്കുക ടൂൾ ഉപയോഗിക്കുക.</string>
     <string name="tools_password_confirm_label">പാസ്‌വേഡ് സ്ഥിരീകരിക്കുക</string>
     <string name="tools_password_mismatch">പാസ്‌വേഡുകൾ യോജിക്കുന്നില്ല</string>
     <plurals name="tools_split_has_pages">

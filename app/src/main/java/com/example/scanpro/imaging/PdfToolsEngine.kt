@@ -17,6 +17,7 @@ import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanPage
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
+import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +55,14 @@ enum class ImageExportFormat(val extension: String) {
 
 /** How a PDF is protected, as far as opening and editing it goes. */
 enum class PdfProtection { NONE, PASSWORD_REQUIRED, RESTRICTED_ONLY }
+
+/**
+ * Merge reached file [index] (0-based), [uri], which needs a password to open: none was given for it, or
+ * [wrongPassword] is true because the one given did not work. The Tools screen asks for it and merges again.
+ * Anywhere else it reads as the usual "unlock it first" message.
+ */
+class MergePasswordNeededException(val index: Int, val uri: Uri, val wrongPassword: Boolean, cause: Throwable? = null) :
+    UserFacingException(R.string.tools_err_password_protected, cause = cause)
 
 object PdfToolsEngine {
 
@@ -97,11 +106,17 @@ object PdfToolsEngine {
         return com.example.scanpro.data.fileSafeName(base.ifBlank { fallback })
     }
 
+    /**
+     * Merges [inputUris] in order. A file that needs a password to open is opened with its entry in [passwords]; when
+     * it has none, or that one is wrong, the merge stops with [MergePasswordNeededException] so the user can be asked.
+     * The merged PDF itself has no password.
+     */
     suspend fun mergePdfs(
         context: Context,
         inputUris: List<Uri>,
         outputFile: File,
-        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        passwords: Map<Uri, String> = emptyMap()
     ): PdfToolResult = withContext(Dispatchers.IO) {
         userRequire(inputUris.size >= 2, R.string.tools_err_merge_two)
         outputFile.parentFile?.mkdirs()
@@ -123,8 +138,11 @@ object PdfToolsEngine {
                 val tempFile = copyUriToTemp(context, uri, "merge_in_${UUID.randomUUID()}.pdf")
                 tempFiles += tempFile
                 originalSizeSum += tempFile.length()
+                val password = passwords[uri]
                 val doc = try {
-                    loadPdf(tempFile)
+                    openPdf(tempFile, password.orEmpty())
+                } catch (locked: InvalidPasswordException) {
+                    throw MergePasswordNeededException(index, uri, wrongPassword = password != null, cause = locked)
                 } catch (error: IllegalArgumentException) {
                     throw UserFacingException(R.string.tools_err_file_reason, index + 1, error.message.orEmpty(), cause = error)
                 } catch (error: Exception) {
@@ -352,23 +370,21 @@ object PdfToolsEngine {
 
         val tempDir = File(context.cacheDir, "img2pdf_${UUID.randomUUID()}").apply { mkdirs() }
         val pages = mutableListOf<ScanPage>()
+        var originalSize = 0L
 
         try {
             imageUris.forEachIndexed { index, uri ->
                 if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
                 onProgress(index + 1, imageUris.size, AppStrings.get(R.string.tools_progress_loading_image, index + 1, imageUris.size))
-                val imgFile = File(tempDir, "img_$index.jpg")
+                // The picked file byte for byte. It is decoded once, when its page is drawn (PdfExporter.decodePicture
+                // turns it upright and lays it on white), so the PDF is the only compression it goes through.
+                val imgFile = File(tempDir, "img_$index")
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     FileOutputStream(imgFile).use { output -> input.copyTo(output) }
                 } ?: userError(R.string.tools_err_image_unreadable, index + 1)
-                // Gallery photos carry their rotation in EXIF, which the PDF writer ignores; bake it in.
-                val oriented = ImageProcessor.decodeOrientedScaled(imgFile.absolutePath, 4200)
-                    ?: userError(R.string.tools_err_image_undecodable, index + 1)
-                try {
-                    ImageProcessor.saveBitmapJpeg(oriented, imgFile, 95)
-                } finally {
-                    oriented.recycle()
-                }
+                // Only the header is read here: a file that is not a picture is named before any page is drawn.
+                ImageProcessor.imageAspect(imgFile.absolutePath) ?: userError(R.string.tools_err_image_undecodable, index + 1)
+                originalSize += imgFile.length()
 
                 pages.add(
                     ScanPage(
@@ -381,20 +397,27 @@ object PdfToolsEngine {
                 )
             }
 
-            onProgress(imageUris.size, imageUris.size, AppStrings.get(R.string.tools_progress_creating_pdf))
+            val creating = AppStrings.get(R.string.tools_progress_creating_pdf)
             PdfExporter.export(
                 pages = pages,
                 destination = outputFile,
                 quality = quality,
                 pageSize = pageSize,
                 searchable = false,
-                pageNumbers = false
+                pageNumbers = false,
+                decode = PdfExporter::decodePicture,
+                beforePage = { number, total ->
+                    // Decoding is the slow part, so Cancel is honoured between pages here too.
+                    if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
+                    onProgress(number, total, creating)
+                }
             )
 
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = imageUris.size,
-                originalSizeBytes = pages.sumOf { File(it.imagePath).length() },
+                // What the user picked, not a copy made along the way.
+                originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
                 message = AppStrings.plural(R.plurals.tools_result_images_to_pdf, imageUris.size, imageUris.size)
             )
@@ -544,11 +567,15 @@ object PdfToolsEngine {
 
     /** Opens a PDF, turning "wrong password" on a protected file into a message that says what to do. */
     internal fun loadPdf(file: File): PDDocument = try {
-        // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
-        PDDocument.load(file, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
-    } catch (error: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+        openPdf(file)
+    } catch (error: InvalidPasswordException) {
         throw UserFacingException(R.string.tools_err_password_protected, cause = error)
     }
+
+    /** Opens a PDF with [password] ("" when there is none); a missing or wrong one throws [InvalidPasswordException]. */
+    private fun openPdf(file: File, password: String = ""): PDDocument =
+        // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
+        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
 
     /**
      * A PDF that opens without a password can still carry an owner-password encryption dictionary (print or copy

@@ -175,6 +175,8 @@
         <item quantity="other">कॉपी खोलने वाले हर व्यक्ति को यह पासवर्ड चाहिए होगा (कम से कम %1$d अक्षर)। इसे वापस पाने का कोई तरीका नहीं है।</item>
     </plurals>
     <string name="tools_password_unlock_prompt">इस PDF से सुरक्षा हटाने के लिए पासवर्ड डालें:</string>
+    <string name="tools_merge_password_prompt">“%1$s” सुरक्षित है। जोड़ने के लिए इसका पासवर्ड डालें।</string>
+    <string name="tools_merge_password_unprotected_note">जोड़ी गई PDF बिना पासवर्ड के खुलेगी। उसे सुरक्षित करने के लिए बाद में PDF सुरक्षित करें टूल इस्तेमाल करें।</string>
     <string name="tools_password_confirm_label">पासवर्ड की पुष्टि करें</string>
     <string name="tools_password_mismatch">पासवर्ड मेल नहीं खाते</string>
     <plurals name="tools_split_has_pages">

@@ -90,6 +90,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -221,6 +222,7 @@ fun PdfToolsScreen(
     val unlockNotice by viewModel.unlockNotice.collectAsStateWithLifecycle()
     val passwordNeeded by viewModel.passwordNeeded.collectAsStateWithLifecycle()
     val wrongPassword by viewModel.wrongPassword.collectAsStateWithLifecycle()
+    val mergePassword by viewModel.mergePassword.collectAsStateWithLifecycle()
     val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
     val formSession by viewModel.form.collectAsStateWithLifecycle()
     var showOcrDialog by rememberSaveable { mutableStateOf(false) }
@@ -495,6 +497,19 @@ fun PdfToolsScreen(
                         if (isProtect) viewModel.protect(uri, pwd) else viewModel.unlock(uri, pwd)
                     }
                 )
+            }
+
+            // Merge reached a protected file. Keyed by the question, so a new file or a retry starts with an empty field.
+            mergePassword?.let { request ->
+                key(request.attempt) {
+                    PasswordDialog(
+                        isProtect = false,
+                        mergeFileName = request.fileName,
+                        initialError = if (request.wrongPassword) stringResource(R.string.tools_wrong_password_try_again) else null,
+                        onDismiss = viewModel::cancelMergePassword,
+                        onConfirm = viewModel::submitMergePassword
+                    )
+                }
             }
 
             if (showOcrDialog && uri != null) {
@@ -1087,6 +1102,8 @@ private fun ResultDialog(
 private fun PasswordDialog(
     isProtect: Boolean,
     initialError: String? = null,
+    /** Set when Merge asks for the password of this file: the dialog names it and the button carries on merging. */
+    mergeFileName: String? = null,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
@@ -1103,14 +1120,36 @@ private fun PasswordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(if (isProtect) R.string.tools_password_protect_title else R.string.tools_unlock_pdf)) },
+        title = {
+            Text(
+                stringResource(
+                    when {
+                        mergeFileName != null -> R.string.ui_pdf_password_title
+                        isProtect -> R.string.tools_password_protect_title
+                        else -> R.string.tools_unlock_pdf
+                    }
+                )
+            )
+        },
         text = {
             Column {
                 Text(
-                    if (isProtect) pluralStringResource(R.plurals.tools_password_protect_warning, PdfSecurity.MIN_PASSWORD_LENGTH, PdfSecurity.MIN_PASSWORD_LENGTH)
-                    else stringResource(R.string.tools_password_unlock_prompt),
+                    when {
+                        mergeFileName != null -> stringResource(R.string.tools_merge_password_prompt, mergeFileName)
+                        isProtect -> pluralStringResource(R.plurals.tools_password_protect_warning, PdfSecurity.MIN_PASSWORD_LENGTH, PdfSecurity.MIN_PASSWORD_LENGTH)
+                        else -> stringResource(R.string.tools_password_unlock_prompt)
+                    },
                     style = MaterialTheme.typography.bodyMedium
                 )
+                if (mergeFileName != null) {
+                    // The pages leave the protected file behind: say so before the user carries on.
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        stringResource(R.string.tools_merge_password_unprotected_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = password,
@@ -1163,7 +1202,15 @@ private fun PasswordDialog(
                     }
                 }
             ) {
-                Text(stringResource(if (isProtect) R.string.tools_protect_pdf else R.string.tools_unlock_pdf))
+                Text(
+                    stringResource(
+                        when {
+                            mergeFileName != null -> R.string.common_continue
+                            isProtect -> R.string.tools_protect_pdf
+                            else -> R.string.tools_unlock_pdf
+                        }
+                    )
+                )
             }
         },
         dismissButton = {

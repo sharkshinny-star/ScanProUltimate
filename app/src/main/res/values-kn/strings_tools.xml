@@ -175,6 +175,8 @@
         <item quantity="other">ಪ್ರತಿಯನ್ನು ತೆರೆಯುವ ಯಾರಿಗಾದರೂ ಈ ಪಾಸ್‌ವರ್ಡ್ ಬೇಕು (ಕನಿಷ್ಠ %1$d ಅಕ್ಷರಗಳು). ಇದನ್ನು ಮರಳಿ ಪಡೆಯಲು ಯಾವುದೇ ದಾರಿ ಇಲ್ಲ.</item>
     </plurals>
     <string name="tools_password_unlock_prompt">ಈ PDF ನ ರಕ್ಷಣೆ ತೆಗೆಯಲು ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ:</string>
+    <string name="tools_merge_password_prompt">“%1$s” ರಕ್ಷಿತವಾಗಿದೆ. ಸೇರಿಸಲು ಅದರ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.</string>
+    <string name="tools_merge_password_unprotected_note">ಸೇರಿಸಿದ PDF ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲದೆ ತೆರೆಯುತ್ತದೆ. ಅದನ್ನು ರಕ್ಷಿಸಲು ನಂತರ PDF ರಕ್ಷಿಸಿ ಟೂಲ್ ಬಳಸಿ.</string>
     <string name="tools_password_confirm_label">ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ</string>
     <string name="tools_password_mismatch">ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದುತ್ತಿಲ್ಲ</string>
     <plurals name="tools_split_has_pages">

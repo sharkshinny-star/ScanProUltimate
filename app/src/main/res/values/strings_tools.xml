@@ -203,6 +203,8 @@
         <item quantity="other">Anyone opening the copy will need this password (at least %1$d characters). There is no way to recover it.</item>
     </plurals>
     <string name="tools_password_unlock_prompt">Enter the password to remove protection from this PDF:</string>
+    <string name="tools_merge_password_prompt">“%1$s” is protected. Enter its password to merge it.</string>
+    <string name="tools_merge_password_unprotected_note">The merged PDF will open without a password. To protect it, use Protect PDF afterwards.</string>
     <string name="tools_password_confirm_label">Confirm password</string>
     <string name="tools_password_mismatch">The passwords don\'t match</string>
     <plurals name="tools_split_has_pages">
