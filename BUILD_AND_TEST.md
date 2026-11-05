@@ -51,6 +51,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 | `:app:bundleRelease` | Passed; AAB 45.9 MB |
 | Sideload `assembleRelease` | Passed; arm64 33.6 MB, armeabi-v7a 25.6 MB, x86_64 39.4 MB, universal 82.7 MB (unsigned) |
 | Not run | Device or emulator, instrumented tests, screenshot renders, `:opencv:lintDebug`, 16 KB alignment |
+
 ## Earlier results (2026-11-05, after-scan sheet F65, on `f93c43c`)
 
 | Check | Result |
@@ -127,7 +128,7 @@ Older runs, kept for history:
 |---|---|
 | `:app:compileDebugKotlin` | Passed on `07293b0`, 0 warnings. `:translate:compileDebugKotlin` not re-run |
 | `:app:testDebugUnitTest` | On `07293b0`: 243 tests: 241 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
-| `:app:lintDebug` | On `07293b0`: 0 issues (`UseTomlInstead` ignored, see R10) |
+| `:app:lintDebug` | On `07293b0`: 0 issues (`UseTomlInstead` ignored, see R37) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.6 MB |
 | Sideload `assembleRelease` | Passed; arm64 33.4 MB unsigned (budget 40) |

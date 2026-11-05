@@ -12,14 +12,14 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05 (REMAINING_WORK.md added); before that 2026-11-05 (after-scan sheet F65; leftovers R36); before that 2026-11-05 (page quality check and glare hint, F64); before that 2026-11-05 (launch animation from the Figma design, R24); before that 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
+Last updated: 2026-11-05 (reference docs checked against `git log`: commit hashes, numbering, build status, R10 ID clash → R37). Newest commit: see `git log`.
 
 ## 1. Current state
 
 - **Branch:** `claude/awesome-clarke-ussjo3` on `codingking155/ScanProUltimate`. Work is pushed; no pull request is open.
 - **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`, by hand on 2026-10-30/31; their commits were recorded in this branch's history on 2026-11-05 by a history-only merge (`-s ours`, no file changes), so `git rev-list HEAD..origin/<branch>` is empty for every branch.
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
-- **Builds (2026-11-04, `b76720c`):** 0 compiler warnings on a clean compile; 275 unit tests, 0 failed; lint 0 issues (`:app`, `:opencv`); bundle and sideload release builds pass; 16 KB alignment checked (see `BUILD_AND_TEST.md`).
+- **Builds (latest full run, see `BUILD_AND_TEST.md` "Latest results"):** 320 unit tests, 0 failed; lint 0 issues; bundle and sideload release builds pass. That run predates F65: the full unit-test and lint run on the current tree is still owed (R36). Last 16 KB alignment check: 2026-11-04, `b76720c`.
 - **Not verified:** nothing has run on a device or emulator. Camera, PDF tools, app lock, notifications and backup/restore
   are untested in practice. No instrumented tests beyond `AppSmokeTest`; `ScreenScreenshotTest` (opt-in) renders 12 screens
   in light and dark for review but asserts nothing.
@@ -32,13 +32,17 @@ Last updated: 2026-11-05 (REMAINING_WORK.md added); before that 2026-11-05 (afte
 
 | Commit | What |
 |---|---|
-| newest | `TOOLS_IMPROVEMENTS.md`: PDF Tools backlog (7 items, related R7/R28, device checks for F48–F50). |
+| `0284287` | `TOOLS_IMPROVEMENTS.md`: PDF Tools backlog (7 items, related R7/R28, device checks for F48–F50). |
+| `ef2f3b2` | History-only merge of `main` and the three older branches (`-s ours`, no file changes). |
+| `5221a67` | `REMAINING_WORK.md`: every open item and the device checklist in one file. |
 | `1dfa430` | Review fix for F48 (picture that won't decode is named as an image again); uiautomator 2.4.0 → 2.4.1 (owner request), lint 0. Results in `BUILD_AND_TEST.md`. |
 | `959ce27` | F65: "Scan saved" sheet like the leading scanners: Searchable PDF badge, smart action (business card → Add to contacts, receipt/invoice → total + Copy total), Share as PDF / Copy text / Add pages, Scan another. `ScanSavedSheetTest` (5). Full suite and lint not re-run (R36). |
-| `f93c43c` | F64: every scanned page is checked for blur, glare and darkness; the review flags it with Retake and marks its thumbnail; the camera hints at glare. `PageQualityTest`, `ScanReviewQualityTest`. |
+| `f93c43c` | Competitor-comparison leftovers recorded as R26–R35. |
+| `e7385fe` | F64: every scanned page is checked for blur, glare and darkness; the review flags it with Retake and marks its thumbnail; the camera hints at glare. `PageQualityTest`, `ScanReviewQualityTest`. |
 | `0d74480` | F63: review sliders fold into an Adjust panel (Filters / Adjust switch, bigger page area); mode-aware automatic names. |
 | `1623d68` | F62: share a selection as one PDF; Add page › Scan with camera (pages keep the review's crops and filters). 317 tests, lint 0. |
-| `7eee16f` | Launch animation built from the Figma design (`ui/LaunchIntro.kt`, static `ic_launch_icon` launch screen replaces the animated `ic_launcher_splash`); `LaunchIntroTest`. |
+| `263325d` | Launch animation built from the Figma design (`ui/LaunchIntro.kt`, static `ic_launch_icon` launch screen replaces the animated `ic_launcher_splash`); `LaunchIntroTest`. |
+| `20465bb` | Owner decision recorded: keep Android 7–10 (minSdk 24) despite the partial task-hijacking fix (F58). |
 | `7eee16f` | F61: ⋮ quick menu on document cards; Scan from a Files folder files into it; Text-mode scans open on the Text tab. 310 tests, lint 0. |
 | `d867f5a` | Security hardening pass (owner asked to make the app "hack proof"). Backups: 8-character minimum and 600k PBKDF2 rounds for new backups, old 6-character/210k backups still restore (F53); restore caps on file size, entry count and manifest size (F55). PDF password minimum 8 (F54). Kept-scan and restored annotation paths confined (F56). Password keyboard type on every password field (F57). `taskAffinity=""` against task hijacking (F58). Gradle checksum pinned, wrapper JAR verified, keystores git-ignored (F59). `google()` content-filtered (F60; cloud dependency downloads ~40x faster). Backup crypto reviewed (V6, closes R6); attack surface incl. Office conversion, WebView, QR/UPI and locked folders reviewed (V7). New open items R20 (no encryption at rest, owner decision), R21, R22, R23 (ML Kit usage metrics to disclose). |
 | `10fa630` | Colour themes (5 palettes, Settings > Appearance), "Did you know?" Home tips, one-time What's new sheet, animated scan beam on the empty-library hero card, F52 (tablet rail Scan button), translations of the new strings (R19), `ColourThemeScreenshotTest`. A launch-animation redesign was drawn in Figma but not shipped (see `ARCHITECTURE.md` 12b). |
@@ -100,16 +104,16 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 1. **Device testing (required before release).** Includes F48 (transparent PNG to PDF), F49 (merge with a protected PDF) and F50 (fresh install: welcome, permission page, both answers, Android 12 and 13+). Camera, every PDF tool, app lock, notifications, backup/restore, on at least one
    low-end and one recent phone.
-3. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
-6. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
-7. **F38, F39 and F40 compile, pass the 243 unit tests and lint (0 issues) on `07293b0`, but have never run on a device**: check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. For F39 also check both screens in landscape, a new scan's title in Hindi, and the sizes in the library. For F40 also check the review's thumbnail strip, mode hints and the locked-mode message, and the dialogs at 200% font. Still open from the UX review (`UX_REVIEW.md`): R17 (drag-to-reorder, contrast measurements).
-7a. **R18: UX suggestions** from the screenshot review (document title truncation, "System default", folder on grid cards; the Recycle bin top bar was fixed in F43). Owner decides; see the Figma board.
-8. **R20: no encryption at rest.** The library relies on Android's file-based encryption and the sandbox; app lock and locked
+2. **Release signing** has never been validated; builds are unsigned as configured. Never print signing secrets in logs.
+3. **R2: targetSdk is now 37** (code-reviewed; launches under Robolectric on API 24–37, not yet on a device). Test on Android 17, including a tablet or foldable.
+4. **F38, F39 and F40 compile, pass the 243 unit tests and lint (0 issues) on `07293b0`, but have never run on a device**: check on a device that Back in the editors asks to discard, rotating keeps mark-up, "Save all (n)" saves from any page, Delete page asks, pinch zoom works, a scan finished while editing another document announces itself instead of opening. For F39 also check both screens in landscape, a new scan's title in Hindi, and the sizes in the library. For F40 also check the review's thumbnail strip, mode hints and the locked-mode message, and the dialogs at 200% font. Still open from the UX review (`UX_REVIEW.md`): R17 (contrast measurements; drag-to-reorder was done in F44).
+5. **R18: UX suggestions** from the screenshot review (document title truncation, "System default", folder on grid cards; the Recycle bin top bar was fixed in F43). Owner decides; see the Figma board.
+6. **R20: no encryption at rest.** The library relies on Android's file-based encryption and the sandbox; app lock and locked
    folders are UI gates. On a rooted or forensically extracted phone, documents are readable. Fixing it (Keystore-backed
    encryption of page files and the database) is architectural: ask the owner and document it first.
-9. **R23: ML Kit usage metrics.** ML Kit's logging transport ships in the release build and the app holds `INTERNET`; Google says
+7. **R23: ML Kit usage metrics.** ML Kit's logging transport ships in the release build and the app holds `INTERNET`; Google says
    the APIs report usage and performance metrics (no content). Declare it in the Play Data safety form and the final policy.
-10. **Security changes not device-tested:** password keyboards (F57), launcher/shortcut/notification/share launches with
+8. **Security changes not device-tested:** password keyboards (F57), launcher/shortcut/notification/share launches with
    `taskAffinity=""` (F58; owner decided 2026-11-05 to keep Android 7–10, so no `minSdk 30`), backup speed with 600k rounds on a low-end phone (F53). R21 and R22 are low priority.
 
 ## 4. Next steps
@@ -117,21 +121,21 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 All open work in one list, with a device checklist: `REMAINING_WORK.md` (generated from `AUDIT_FINDINGS.md`).
 
 - PDF Tools backlog (password prompts in every tool, file names, page numbers/watermark, sign, PDF to Word, insert pages): `TOOLS_IMPROVEMENTS.md`.
-0. **Left over (2026-11-05):** run the full `:app:testDebugUnitTest` and `:app:lintDebug` (stopped before finishing for
+1. **Left over (2026-11-05):** run the full `:app:testDebugUnitTest` and `:app:lintDebug` (stopped before finishing for
    F65, R36); device pass of the launch animation (R24), page-quality limits on real photos (R25) and the "Scan saved"
    sheet with a receipt, a business card and a letter (R36); native-speaker check of the new strings (R19); the
    competitor leftovers R26-R35.
-0a. Competitor-comparison leftovers, open as R26 to R35 in `AUDIT_FINDINGS.md`, roughly in value order: fast save from the camera (R26), review shows the finished page with crop on request (R27), Share PDF card with size estimates (R28), Book mode spread split (R29), cropped camera thumbnails with quick delete (R30), one flash button (R31, owner decision), duplicate-aware auto-capture (R32), Quick Settings tile and widget (R33), localised smart titles and a name pattern (R34), tags, sort and recent searches (R35). Already done from the same comparison: F44-F47, F51, F61-F63.
-0. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3 done (PowerPoint export dropped at the owner's request).
-1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
-2. Try Office to PDF on a device with a real .docx, .xlsx and a page saved from Chrome (⋮ › Download).
-3. **First: launch on an Android 12-or-older device or emulator (F33 hotfix), including picking a language; also F37 (Scan shortcut before choosing a language, reopen from Recents after sharing a PDF, rotate on Android 12+).** Then device-check F32 with real codes: a Wi-Fi QR (Connect on Android 11+, password copy below), a UPI QR (opens UPI apps), an event/ticket QR, a screenshot from the gallery. Then F31: first launch language picker (pick Hindi, Tamil, Telugu; Android 12 and 13+), Settings > App language, the pen (colours, widths, move in Edit mark-up), lock a folder (hidden from All/Recent/search, unlock prompt, re-locks 30 s after leaving), and have native speakers read the translations. Then F30 on the owner's phone: scanner chrome (zoom, torch, mode strip, Auto/count pill), the Adjust page screen (handles, sliders, Save page), the Document tabs, per-page sheet and Export sheet; then F29 (rating sheet after the first scan: stars, emoji, both buttons) and F28 (every screen changed) and F24–F26 on the owner's phone: document screen sheets and pager, opening from Recent, ID card capture crop, Auto Clean on real documents, signature placement; and F24 (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
-3. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.
-3. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
-4. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
-5. Device-test the edit journal: queue several edits behind a long OCR, force-stop the app, reopen, check they run and that the interrupted one is reported.
-6. Compose UI tests on an emulator in CI; extend `ScreenScreenshotTest` to Tools, PDF viewer and dialogs, and add golden comparison.
-7. Device-test targetSdk 37 on Android 17 (R2).
+2. Competitor-comparison leftovers, open as R26 to R35 in `AUDIT_FINDINGS.md`, roughly in value order: fast save from the camera (R26), review shows the finished page with crop on request (R27), Share PDF card with size estimates (R28), Book mode spread split (R29), cropped camera thumbnails with quick delete (R30), one flash button (R31, owner decision), duplicate-aware auto-capture (R32), Quick Settings tile and widget (R33), localised smart titles and a name pattern (R34), tags, sort and recent searches (R35). Already done from the same comparison: F44-F47, F51, F61-F63.
+3. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3 done (PowerPoint export dropped at the owner's request).
+4. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
+5. Try Office to PDF on a device with a real .docx, .xlsx and a page saved from Chrome (⋮ › Download).
+6. **Do this before the other device checks: launch on an Android 12-or-older device or emulator (F33 hotfix), including picking a language; also F37 (Scan shortcut before choosing a language, reopen from Recents after sharing a PDF, rotate on Android 12+).** Then device-check F32 with real codes: a Wi-Fi QR (Connect on Android 11+, password copy below), a UPI QR (opens UPI apps), an event/ticket QR, a screenshot from the gallery. Then F31: first launch language picker (pick Hindi, Tamil, Telugu; Android 12 and 13+), Settings > App language, the pen (colours, widths, move in Edit mark-up), lock a folder (hidden from All/Recent/search, unlock prompt, re-locks 30 s after leaving), and have native speakers read the translations. Then F30 on the owner's phone: scanner chrome (zoom, torch, mode strip, Auto/count pill), the Adjust page screen (handles, sliders, Save page), the Document tabs, per-page sheet and Export sheet; then F29 (rating sheet after the first scan: stars, emoji, both buttons) and F28 (every screen changed) and F24–F26 on the owner's phone: document screen sheets and pager, opening from Recent, ID card capture crop, Auto Clean on real documents, signature placement; and F24 (three-button navigation, large display size): launch animation, bottom bar, tool sheet, review screen.
+7. Device-check F21/F22: tap Stop on an edit (no "interrupted" message after restart), rapid filter taps keep order, HEIC pick message.
+8. Device-check the backup warning (F19) on a redacted document and in Settings > Back up all.
+9. Device-test "Unsaved scans": force an import failure, check the banner, notification tap, Save again, Share photos, Discard.
+10. Device-test the edit journal: queue several edits behind a long OCR, force-stop the app, reopen, check they run and that the interrupted one is reported.
+11. Compose UI tests on an emulator in CI; extend `ScreenScreenshotTest` to Tools, PDF viewer and dialogs, and add golden comparison.
+12. Device-test targetSdk 37 on Android 17 (R2).
 
 ## 5. Rules carried over from the owner's audit brief
 
