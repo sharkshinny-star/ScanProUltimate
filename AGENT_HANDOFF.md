@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05 (after-scan sheet F65; leftovers R36); before that 2026-11-05 (page quality check and glare hint, F64); before that 2026-11-05 (launch animation from the Figma design, R24); before that 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
+Last updated: 2026-11-05 (REMAINING_WORK.md added); before that 2026-11-05 (after-scan sheet F65; leftovers R36); before that 2026-11-05 (page quality check and glare hint, F64); before that 2026-11-05 (launch animation from the Figma design, R24); before that 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
 
 ## 1. Current state
 
@@ -112,6 +112,8 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
    `taskAffinity=""` (F58; owner decided 2026-11-05 to keep Android 7–10, so no `minSdk 30`), backup speed with 600k rounds on a low-end phone (F53). R21 and R22 are low priority.
 
 ## 4. Next steps
+
+All open work in one list, with a device checklist: `REMAINING_WORK.md` (generated from `AUDIT_FINDINGS.md`).
 
 0. **Left over (2026-11-05):** run the full `:app:testDebugUnitTest` and `:app:lintDebug` (stopped before finishing for
    F65, R36); device pass of the launch animation (R24), page-quality limits on real photos (R25) and the "Scan saved"
