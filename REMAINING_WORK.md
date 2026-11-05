@@ -19,6 +19,12 @@ Nothing below has run on a phone; every check so far is a JVM test or render.
 6. Android 17 / targetSdk 37 on a phone and a tablet or foldable (R2).
 7. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings added for F64, F65 and the themes (R19, R36).
 
+## PDF Tools backlog
+
+Seven tool improvements (password prompts in every tool, Unlock's "Done" notice, file names in Split and PDF to
+Images, page numbers/watermark, Sign PDF, PDF to Word, insert pages) and the device checks for F48–F50:
+see `TOOLS_IMPROVEMENTS.md`.
+
 ## Open items by priority
 
 | ID | Priority | Area | Where | Open issue | Next step |

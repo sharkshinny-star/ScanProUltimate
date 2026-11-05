@@ -32,7 +32,8 @@ Last updated: 2026-11-05 (REMAINING_WORK.md added); before that 2026-11-05 (afte
 
 | Commit | What |
 |---|---|
-| newest | Review fix for F48 (picture that won't decode is named as an image again); uiautomator 2.4.0 → 2.4.1 (owner request), lint 0. Results in `BUILD_AND_TEST.md`. |
+| newest | `TOOLS_IMPROVEMENTS.md`: PDF Tools backlog (7 items, related R7/R28, device checks for F48–F50). |
+| `1dfa430` | Review fix for F48 (picture that won't decode is named as an image again); uiautomator 2.4.0 → 2.4.1 (owner request), lint 0. Results in `BUILD_AND_TEST.md`. |
 | `959ce27` | F65: "Scan saved" sheet like the leading scanners: Searchable PDF badge, smart action (business card → Add to contacts, receipt/invoice → total + Copy total), Share as PDF / Copy text / Add pages, Scan another. `ScanSavedSheetTest` (5). Full suite and lint not re-run (R36). |
 | `f93c43c` | F64: every scanned page is checked for blur, glare and darkness; the review flags it with Retake and marks its thumbnail; the camera hints at glare. `PageQualityTest`, `ScanReviewQualityTest`. |
 | `0d74480` | F63: review sliders fold into an Adjust panel (Filters / Adjust switch, bigger page area); mode-aware automatic names. |
@@ -115,6 +116,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 All open work in one list, with a device checklist: `REMAINING_WORK.md` (generated from `AUDIT_FINDINGS.md`).
 
+- PDF Tools backlog (password prompts in every tool, file names, page numbers/watermark, sign, PDF to Word, insert pages): `TOOLS_IMPROVEMENTS.md`.
 0. **Left over (2026-11-05):** run the full `:app:testDebugUnitTest` and `:app:lintDebug` (stopped before finishing for
    F65, R36); device pass of the launch animation (R24), page-quality limits on real photos (R25) and the "Scan saved"
    sheet with a receipt, a business card and a letter (R36); native-speaker check of the new strings (R19); the
