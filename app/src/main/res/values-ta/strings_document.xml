@@ -252,4 +252,9 @@
     <string name="doc_unlock">திற</string>
     <string name="doc_add_page_camera">கேமராவில் ஸ்கேன் செய்</string>
     <string name="doc_add_page_photos">படங்களைத் தேர்ந்தெடு</string>
+    <string name="doc_saved_copy_text">உரையை நகலெடு</string>
+    <string name="doc_saved_add_pages">பக்கங்களைச் சேர்</string>
+    <string name="doc_saved_more">சேமிக்க மேலும் வழிகள்</string>
+    <string name="doc_saved_total">மொத்தம் %1$s</string>
+    <string name="doc_saved_copy_total">மொத்தத்தை நகலெடு</string>
 </resources>

@@ -72,6 +72,13 @@ detector uses. Live, `DocumentEdgeDetector` adds a glare hint (`Guidance.GLARE`)
 capture, `CameraScannerScreen` runs `OpenCvScanProcessor.assessQuality` on every page in the background; the review
 shows a notice with Retake above a flagged page and a mark on its thumbnail.
 
+### After the scan
+
+When a camera scan opens as a document, `DocumentScreen` shows `ScanSavedSheet` once: pages, size and a Searchable PDF
+badge once text is read, the name, a smart action from `scanHighlight` (business card → Add to contacts via
+`BusinessCardParser`; receipt/invoice with a total → Copy total via `DocumentIntelligenceEngine.total`), Share as PDF /
+Copy text / Add pages, the other exports, and Scan another (camera, new document). All offline.
+
 ## 3. Manual crop
 
 `CropEditorDialog.kt` stores four normalised corners. The editor includes:

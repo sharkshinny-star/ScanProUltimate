@@ -252,4 +252,9 @@
     <string name="doc_unlock">అన్‌లాక్ చేయండి</string>
     <string name="doc_add_page_camera">కెమెరాతో స్కాన్ చేయి</string>
     <string name="doc_add_page_photos">ఫోటోలను ఎంచుకోండి</string>
+    <string name="doc_saved_copy_text">టెక్స్ట్ కాపీ చేయండి</string>
+    <string name="doc_saved_add_pages">పేజీలు జోడించండి</string>
+    <string name="doc_saved_more">సేవ్ చేయడానికి మరిన్ని మార్గాలు</string>
+    <string name="doc_saved_total">మొత్తం %1$s</string>
+    <string name="doc_saved_copy_total">మొత్తం కాపీ చేయండి</string>
 </resources>

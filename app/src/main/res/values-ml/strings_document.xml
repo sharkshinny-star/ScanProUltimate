@@ -252,4 +252,9 @@
     <string name="doc_unlock">അൺലോക്ക് ചെയ്യുക</string>
     <string name="doc_add_page_camera">ക്യാമറ ഉപയോഗിച്ച് സ്കാൻ ചെയ്യുക</string>
     <string name="doc_add_page_photos">ഫോട്ടോകൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="doc_saved_copy_text">ടെക്സ്റ്റ് പകർത്തുക</string>
+    <string name="doc_saved_add_pages">പേജുകൾ ചേർക്കുക</string>
+    <string name="doc_saved_more">സേവ് ചെയ്യാൻ കൂടുതൽ വഴികൾ</string>
+    <string name="doc_saved_total">ആകെ %1$s</string>
+    <string name="doc_saved_copy_total">ആകെ പകർത്തുക</string>
 </resources>

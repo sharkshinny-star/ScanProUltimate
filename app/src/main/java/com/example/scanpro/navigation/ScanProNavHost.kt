@@ -200,7 +200,8 @@ fun ScanProNavHost(
                 },
                 onAddPagesWithCamera = { documentId ->
                     navController.navigate(ScanProDestinations.cameraAppend(documentId)) { launchSingleTop = true }
-                }
+                },
+                onScanAnother = { navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true } }
             )
         }
     }

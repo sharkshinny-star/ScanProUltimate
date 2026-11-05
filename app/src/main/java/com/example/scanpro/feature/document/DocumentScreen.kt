@@ -237,6 +237,8 @@ fun DocumentRoute(
     onRetakePage: (String, String, Int) -> Unit = { _, _, _ -> },
     /** Opens the camera to add pages to the document (its id). */
     onAddPagesWithCamera: (String) -> Unit = {},
+    /** Opens the camera for a new document (the "scan saved" sheet's Scan another). */
+    onScanAnother: () -> Unit = {},
     viewModel: DocumentViewModel = hiltViewModel()
 ) {
     val document by viewModel.document.collectAsStateWithLifecycle()
@@ -329,6 +331,7 @@ fun DocumentRoute(
         onDuplicateDocument = viewModel::duplicateDocument,
         onRetakePage = { pageId, position -> onRetakePage(current.id, pageId, position) },
         onAddPagesWithCamera = { onAddPagesWithCamera(current.id) },
+        onScanAnother = onScanAnother,
         onExportOcrTextFile = viewModel::exportOcrTextFile,
         onExportWord = viewModel::exportWordFile,
         onExportExcel = viewModel::exportExcelFile,
@@ -383,6 +386,7 @@ internal fun DocumentDetailScreen(
     onRetakePage: (String, Int) -> Unit = { _, _ -> },
     /** Add page › Scan with camera; null offers photos only. */
     onAddPagesWithCamera: (() -> Unit)? = null,
+    onScanAnother: (() -> Unit)? = null,
     onSign: (String, Bitmap, Boolean, SignaturePlacement?) -> Unit,
     savedSignatures: List<java.io.File> = emptyList(),
     onSignSaved: (String, java.io.File, SignaturePlacement?) -> Unit = { _, _, _ -> },
@@ -543,7 +547,12 @@ internal fun DocumentDetailScreen(
             onSaveToDevice = { title -> savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(title)}.pdf") },
             onSaveToDrive = saveToDrive,
             onPrint = { title -> onWithFreshPdf({}) { printPdf(context, it.copy(title = title)) } },
-            onDismiss = onDismissScanSaved
+            onDismiss = onDismissScanSaved,
+            highlight = scanHighlight(insights, businessCard, document.ocrText),
+            onAddContact = { businessCard?.let(addContact) },
+            onCopy = { copyText(context, it) },
+            onAddPages = onAddPagesWithCamera,
+            onScanAnother = onScanAnother
         )
     }
 
@@ -1777,4 +1786,15 @@ private fun LockedFolderGate(folder: String, onBack: () -> Unit, onUnlocked: () 
             TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
         }
     }
+}
+
+/**
+ * The scan's smart action for the "scan saved" sheet: a business card with contact details, or a receipt or invoice
+ * whose total was found; null for anything else.
+ */
+internal fun scanHighlight(insights: DocumentInsights, card: BusinessCard?, text: String): ScanHighlight? = when {
+    card != null -> ScanHighlight.Contact(card.name, card.company ?: card.phones.firstOrNull() ?: card.emails.firstOrNull())
+    insights.kind == com.example.scanpro.intelligence.DocumentKind.RECEIPT || insights.kind == com.example.scanpro.intelligence.DocumentKind.INVOICE ->
+        DocumentIntelligenceEngine.total(text)?.let { ScanHighlight.Bill(insights.kind, it, insights.dates.firstOrNull()) }
+    else -> null
 }

@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05 (page quality check and glare hint, F64); before that 2026-11-05 (launch animation from the Figma design, R24); before that 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
+Last updated: 2026-11-05 (after-scan sheet F65; leftovers R36); before that 2026-11-05 (page quality check and glare hint, F64); before that 2026-11-05 (launch animation from the Figma design, R24); before that 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
 
 ## 1. Current state
 
@@ -32,7 +32,8 @@ Last updated: 2026-11-05 (page quality check and glare hint, F64); before that 2
 
 | Commit | What |
 |---|---|
-| newest | F64: every scanned page is checked for blur, glare and darkness; the review flags it with Retake and marks its thumbnail; the camera hints at glare. `PageQualityTest`, `ScanReviewQualityTest`. |
+| newest | F65: "Scan saved" sheet like the leading scanners: Searchable PDF badge, smart action (business card → Add to contacts, receipt/invoice → total + Copy total), Share as PDF / Copy text / Add pages, Scan another. `ScanSavedSheetTest` (5). Full suite and lint not re-run (R36). |
+| `f93c43c` | F64: every scanned page is checked for blur, glare and darkness; the review flags it with Retake and marks its thumbnail; the camera hints at glare. `PageQualityTest`, `ScanReviewQualityTest`. |
 | `0d74480` | F63: review sliders fold into an Adjust panel (Filters / Adjust switch, bigger page area); mode-aware automatic names. |
 | `1623d68` | F62: share a selection as one PDF; Add page › Scan with camera (pages keep the review's crops and filters). 317 tests, lint 0. |
 | `7eee16f` | Launch animation built from the Figma design (`ui/LaunchIntro.kt`, static `ic_launch_icon` launch screen replaces the animated `ic_launcher_splash`); `LaunchIntroTest`. |
@@ -111,6 +112,10 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 ## 4. Next steps
 
+0. **Left over (2026-11-05):** run the full `:app:testDebugUnitTest` and `:app:lintDebug` (stopped before finishing for
+   F65, R36); device pass of the launch animation (R24), page-quality limits on real photos (R25) and the "Scan saved"
+   sheet with a receipt, a business card and a letter (R36); native-speaker check of the new strings (R19); the
+   competitor leftovers R26-R35.
 0a. Competitor-comparison leftovers, open as R26 to R35 in `AUDIT_FINDINGS.md`, roughly in value order: fast save from the camera (R26), review shows the finished page with crop on request (R27), Share PDF card with size estimates (R28), Book mode spread split (R29), cropped camera thumbnails with quick delete (R30), one flash button (R31, owner decision), duplicate-aware auto-capture (R32), Quick Settings tile and widget (R33), localised smart titles and a name pattern (R34), tags, sort and recent searches (R35). Already done from the same comparison: F44-F47, F51, F61-F63.
 0. Remaining from the owner's Play Store comparison: four more languages (Marathi, Gujarati, Bengali, Punjabi: same brief and `check_translation.py` as F31, then add each to `locales_config.xml` and `AppLocale.SUPPORTED`); P3 done (PowerPoint export dropped at the owner's request).
 1. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.

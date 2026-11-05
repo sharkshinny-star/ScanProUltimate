@@ -252,4 +252,9 @@
     <string name="doc_unlock">अनलॉक करें</string>
     <string name="doc_add_page_camera">कैमरे से स्कैन करें</string>
     <string name="doc_add_page_photos">फ़ोटो चुनें</string>
+    <string name="doc_saved_copy_text">टेक्स्ट कॉपी करें</string>
+    <string name="doc_saved_add_pages">पेज जोड़ें</string>
+    <string name="doc_saved_more">सेव करने के और तरीके</string>
+    <string name="doc_saved_total">कुल %1$s</string>
+    <string name="doc_saved_copy_total">कुल कॉपी करें</string>
 </resources>

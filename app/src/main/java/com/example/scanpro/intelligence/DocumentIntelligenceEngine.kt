@@ -141,16 +141,21 @@ object DocumentIntelligenceEngine {
         }
         ?.trim()?.trim(':', '-', '–', '|', '.', ',')?.trim()
 
+    /**
+     * The amount on the "Total" / "Amount due" / "Balance due" line (the last one, so a grand total wins), never a
+     * subtotal or a single item; an exact OCR substring, or null when there is no such line.
+     */
+    fun total(text: String): String? = text.lineSequence()
+        .filter { Regex("(?i)\\b(?:grand\\s+)?total\\b|\\bamount\\s+due\\b|\\bbalance\\s+due\\b").containsMatchIn(it) }
+        .filterNot { Regex("(?i)\\bsub\\s*-?\\s*total\\b").containsMatchIn(it) }
+        .mapNotNull { line -> amountRegex.find(line)?.value?.trim() ?: Regex("\\d[\\d,]*\\.\\d{2}\\b").find(line)?.value }
+        .lastOrNull()
+
     /** "Receipt from Blue Bottle Coffee · Total $8.37 · 03/10/2026" for receipts and invoices; null otherwise. */
     private fun structuredSummary(text: String, kind: DocumentKind, dates: List<String>): String? {
         if (kind != DocumentKind.RECEIPT && kind != DocumentKind.INVOICE) return null
         val from = issuer(text, kind.label)
-        // The amount on the "Total" / "Amount due" line, not a subtotal or a single item.
-        val total = text.lineSequence()
-            .filter { Regex("(?i)\\b(?:grand\\s+)?total\\b|\\bamount\\s+due\\b|\\bbalance\\s+due\\b").containsMatchIn(it) }
-            .filterNot { Regex("(?i)\\bsub\\s*-?\\s*total\\b").containsMatchIn(it) }
-            .mapNotNull { line -> amountRegex.find(line)?.value?.trim() ?: Regex("\\d[\\d,]*\\.\\d{2}\\b").find(line)?.value }
-            .lastOrNull()
+        val total = total(text)
         if (from == null && total == null) return null
         return listOfNotNull(
             if (from != null) "${kind.label} from $from" else kind.label,

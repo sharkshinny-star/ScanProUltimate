@@ -293,4 +293,10 @@
     <string name="doc_unlock">Unlock</string>
     <string name="doc_add_page_camera">Scan with camera</string>
     <string name="doc_add_page_photos">Choose photos</string>
+    <!-- The "scan saved" sheet (feature/document/ScanSavedSheet.kt) -->
+    <string name="doc_saved_copy_text">Copy text</string>
+    <string name="doc_saved_add_pages">Add pages</string>
+    <string name="doc_saved_more">More ways to save</string>
+    <string name="doc_saved_total">Total %1$s</string>
+    <string name="doc_saved_copy_total">Copy total</string>
 </resources>

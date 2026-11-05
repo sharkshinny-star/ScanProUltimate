@@ -41,7 +41,16 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-05, page quality check and glare hint, on `0d74480`)
+## Latest results (2026-11-05, after-scan sheet F65, on `f93c43c`)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugUnitTestKotlin` | Passed, 0 compiler warnings |
+| `ScanSavedSheetTest` | 5 passed; `app/build/screenshots/scan_saved_receipt.png` and `scan_saved_card.png` looked at |
+| Full `:app:testDebugUnitTest`, `:app:lintDebug` | **Not completed**: the run was stopped by the owner (see R36). The last full run (331 tests, 0 failed; lint 0 errors) is the F64 entry below |
+| Release builds, device | Not run |
+
+## Earlier results (2026-11-05, page quality check and glare hint, on `0d74480`)
 
 | Check | Result |
 |---|---|
