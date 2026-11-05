@@ -231,4 +231,10 @@
     <string name="scan_review_folder_label">ಫೋಲ್ಡರ್</string>
     <string name="scan_review_folder_dialog_title">ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಉಳಿಸಿ</string>
     <string name="scan_review_adjust">ಹೊಂದಿಸಿ</string>
+    <string name="scan_guidance_glare">ಪುಟದ ಮೇಲೆ ಹೊಳಪು ಇದೆ · ಫೋನ್ ಸ್ವಲ್ಪ ಓರೆಯಾಗಿಸಿ</string>
+    <string name="scan_quality_blurry">ಈ ಪುಟ ಮಸುಕಾಗಿ ಕಾಣುತ್ತದೆ: ಚಿಕ್ಕ ಪಠ್ಯ ಓದಲು ಕಷ್ಟವಾಗಬಹುದು</string>
+    <string name="scan_quality_glare">ಹೊಳಪು ಈ ಪುಟದ ಒಂದು ಭಾಗವನ್ನು ಮರೆಮಾಡುತ್ತಿದೆ</string>
+    <string name="scan_quality_dark">ಈ ಪುಟ ತುಂಬಾ ಕತ್ತಲಾಗಿ ಕಾಣುತ್ತದೆ</string>
+    <string name="scan_quality_retake">ಮತ್ತೆ ತೆಗೆಯಿರಿ</string>
+    <string name="scan_quality_page_flagged">ಪುಟ %1$d, ಮತ್ತೆ ತೆಗೆಯಬೇಕಾಗಬಹುದು</string>
 </resources>

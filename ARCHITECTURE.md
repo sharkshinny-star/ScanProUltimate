@@ -64,6 +64,14 @@ The preview quad is **not** blindly reused for export. A high-resolution image i
 
 This two-stage design keeps preview analysis fast while protecting final scan quality.
 
+### Page quality
+
+`scanner/PageQuality.kt` judges a page as blurred (variance of the Laplacian on the page < 80), too dark (mean grey
+< 45) or glary (largest solid patch of clipped white covering 1.5-60 % of the page), with the same limits the live
+detector uses. Live, `DocumentEdgeDetector` adds a glare hint (`Guidance.GLARE`) that never blocks auto-capture. After
+capture, `CameraScannerScreen` runs `OpenCvScanProcessor.assessQuality` on every page in the background; the review
+shows a notice with Retake above a flagged page and a mark on its thumbnail.
+
 ## 3. Manual crop
 
 `CropEditorDialog.kt` stores four normalised corners. The editor includes:

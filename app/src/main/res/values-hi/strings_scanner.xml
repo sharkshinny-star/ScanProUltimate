@@ -231,4 +231,10 @@
     <string name="scan_review_folder_label">फ़ोल्डर</string>
     <string name="scan_review_folder_dialog_title">फ़ोल्डर में सहेजें</string>
     <string name="scan_review_adjust">समायोजित करें</string>
+    <string name="scan_guidance_glare">पेज पर चमक है · फ़ोन थोड़ा झुकाएं</string>
+    <string name="scan_quality_blurry">यह पेज धुंधला लग रहा है: छोटा टेक्स्ट पढ़ना मुश्किल हो सकता है</string>
+    <string name="scan_quality_glare">चमक इस पेज का कुछ हिस्सा छिपा रही है</string>
+    <string name="scan_quality_dark">यह पेज बहुत गहरा लग रहा है</string>
+    <string name="scan_quality_retake">फिर से लें</string>
+    <string name="scan_quality_page_flagged">पेज %1$d, शायद फिर से लेना पड़े</string>
 </resources>

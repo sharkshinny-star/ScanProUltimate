@@ -231,4 +231,10 @@
     <string name="scan_review_folder_label">கோப்புறை</string>
     <string name="scan_review_folder_dialog_title">கோப்புறையில் சேமி</string>
     <string name="scan_review_adjust">சரிசெய்</string>
+    <string name="scan_guidance_glare">பக்கத்தில் ஒளிர்வு உள்ளது · ஃபோனைச் சற்று சாய்க்கவும்</string>
+    <string name="scan_quality_blurry">இந்தப் பக்கம் மங்கலாகத் தெரிகிறது: சிறிய உரையைப் படிப்பது கடினமாக இருக்கலாம்</string>
+    <string name="scan_quality_glare">ஒளிர்வு இந்தப் பக்கத்தின் ஒரு பகுதியை மறைக்கிறது</string>
+    <string name="scan_quality_dark">இந்தப் பக்கம் மிகவும் இருட்டாகத் தெரிகிறது</string>
+    <string name="scan_quality_retake">மீண்டும் எடு</string>
+    <string name="scan_quality_page_flagged">பக்கம் %1$d, மீண்டும் எடுக்க வேண்டியிருக்கலாம்</string>
 </resources>

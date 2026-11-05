@@ -41,7 +41,16 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-05, launch animation from the Figma design, on `7eee16f`)
+## Latest results (2026-11-05, page quality check and glare hint, on `0d74480`)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 331 tests, 301 passed, 30 skipped, 0 failed; 0 compiler warnings |
+| `PageQualityTest`, `ScanReviewQualityTest` | 7 + 3 passed; `app/build/screenshots/review_quality_notice.png` looked at (notice above the page, corner handles free) |
+| `:app:lintDebug` | 0 errors, 1 warning (`GradleDependency`, a newer library version; not from this change) |
+| Release builds, device | Not run |
+
+## Earlier results (2026-11-05, launch animation from the Figma design, on `7eee16f`)
 
 | Check | Result |
 |---|---|

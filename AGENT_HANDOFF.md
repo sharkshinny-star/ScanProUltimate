@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05 (launch animation from the Figma design, R24); before that 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
+Last updated: 2026-11-05 (page quality check and glare hint, F64); before that 2026-11-05 (launch animation from the Figma design, R24); before that 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after the security hardening commit (F53–F60, newest in `git log`); earlier entries below.
 
 ## 1. Current state
 
@@ -32,7 +32,8 @@ Last updated: 2026-11-05 (launch animation from the Figma design, R24); before t
 
 | Commit | What |
 |---|---|
-| newest | F63: review sliders fold into an Adjust panel (Filters / Adjust switch, bigger page area); mode-aware automatic names. |
+| newest | F64: every scanned page is checked for blur, glare and darkness; the review flags it with Retake and marks its thumbnail; the camera hints at glare. `PageQualityTest`, `ScanReviewQualityTest`. |
+| `0d74480` | F63: review sliders fold into an Adjust panel (Filters / Adjust switch, bigger page area); mode-aware automatic names. |
 | `1623d68` | F62: share a selection as one PDF; Add page › Scan with camera (pages keep the review's crops and filters). 317 tests, lint 0. |
 | `7eee16f` | Launch animation built from the Figma design (`ui/LaunchIntro.kt`, static `ic_launch_icon` launch screen replaces the animated `ic_launcher_splash`); `LaunchIntroTest`. |
 | `7eee16f` | F61: ⋮ quick menu on document cards; Scan from a Files folder files into it; Text-mode scans open on the Text tab. 310 tests, lint 0. |

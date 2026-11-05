@@ -109,6 +109,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -160,6 +165,8 @@ fun ScanReviewScreen(
     filters: SnapshotStateMap<String, PageFilter>,
     /** Brightness, contrast and saturation per page, keyed like [filters]; pages without an entry are untouched. */
     adjustments: MutableMap<String, PageAdjustments> = remember { mutableStateMapOf() },
+    /** What to point out per page (blurred, glare, too dark), keyed like [filters]; filled in as each check finishes. */
+    quality: Map<String, Set<PageIssue>> = emptyMap(),
     defaultFilter: PageFilter,
     onDefaultFilterChange: (PageFilter) -> Unit,
     index: Int,
@@ -473,8 +480,21 @@ fun ScanReviewScreen(
         var swipe by remember { mutableFloatStateOf(0f) }
         // Pages follow the reading direction: swiping towards the end of the row (left in LTR, right in RTL) goes forward.
         val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        val stage: @Composable (Modifier) -> Unit = { stageModifier -> Box(
-            stageModifier
+        val stage: @Composable (Modifier) -> Unit = { stageModifier -> Column(stageModifier) {
+        // A page that came out blurred, glary or dark says so, with a one-tap retake (Genius Scan, Scanbot). Above the
+        // page rather than over it, so it never covers a corner handle.
+        val issues = quality[key].orEmpty()
+        if (issues.isNotEmpty() && bitmap != null) {
+            QualityNotice(
+                issues = issues,
+                onRetake = onRetake?.takeIf { !blocked },
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 6.dp)
+            )
+        }
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
                 .background(desk)
                 .pointerInput(current, blocked, isRtl) {
@@ -511,13 +531,14 @@ fun ScanReviewScreen(
                     onCropChange = { quads[key] = it }
                 )
             }
-        } }
+        } } }
 
         // Thumbnails, filters and sliders; below the page, or beside it in landscape.
         val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         // Every page as a thumbnail: tap one to adjust it, "+" takes another page.
         ReviewFilmstrip(
             pages = pages,
+            quality = quality,
             current = current,
             refresh = rotationTick,
             enabled = !blocked,
@@ -733,6 +754,7 @@ fun ScanReviewScreen(
 @Composable
 private fun ReviewFilmstrip(
     pages: List<Uri>,
+    quality: Map<String, Set<PageIssue>>,
     current: Int,
     refresh: Int,
     enabled: Boolean,
@@ -772,8 +794,9 @@ private fun ReviewFilmstrip(
                 }
             }
             val isCurrent = index == current
-            val label = stringResource(R.string.scan_review_page_n, index + 1)
             val key = uri.toString()
+            val flagged = quality[key].orEmpty().isNotEmpty()
+            val label = stringResource(if (flagged) R.string.scan_quality_page_flagged else R.string.scan_review_page_n, index + 1)
             val dragging = draggingKey == key
             Box(
                 Modifier
@@ -838,6 +861,19 @@ private fun ReviewFilmstrip(
                     }
             ) {
                 thumbnail?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                if (flagged) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = QualityAmber,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(3.dp)
+                            .size(16.dp)
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), androidx.compose.foundation.shape.CircleShape)
+                            .padding(2.dp)
+                    )
+                }
                 Text(
                     "${index + 1}",
                     style = MaterialTheme.typography.labelSmall,
@@ -859,6 +895,42 @@ private fun ReviewFilmstrip(
                     .semantics { contentDescription = addLabel },
                 contentAlignment = Alignment.Center
             ) { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+        }
+    }
+}
+
+/** Amber for "worth a look": readable on the dark thumbnail badge and as the notice's icon in both themes. */
+private val QualityAmber = androidx.compose.ui.graphics.Color(0xFFFFB13D)
+
+/**
+ * Over the top of the page: what looks wrong with it (all issues, most serious first) and, where the page can be shot
+ * again, a Retake button. Polite live region, so TalkBack reads it when it appears for the page on screen.
+ */
+@Composable
+private fun QualityNotice(issues: Set<PageIssue>, onRetake: (() -> Unit)?, modifier: Modifier = Modifier) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.inverseSurface,
+        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        shadowElevation = 4.dp,
+        modifier = modifier.widthIn(max = 420.dp).semantics { liveRegion = LiveRegionMode.Polite }
+    ) {
+        Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Warning, contentDescription = null, tint = QualityAmber, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(
+                PageIssue.entries.filter { it in issues }.map { stringResource(it.messageRes) }.joinToString("\n"),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f, fill = false).padding(vertical = 6.dp)
+            )
+            if (onRetake != null) {
+                TextButton(
+                    onClick = onRetake,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.inversePrimary)
+                ) { Text(stringResource(R.string.scan_quality_retake)) }
+            } else {
+                Spacer(Modifier.width(8.dp))
+            }
         }
     }
 }

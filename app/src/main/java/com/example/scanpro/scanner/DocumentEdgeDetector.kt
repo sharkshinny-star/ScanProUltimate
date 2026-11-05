@@ -29,10 +29,12 @@ data class DocumentDetection(
     val brightness: Double,
     val frameWidth: Int,
     val frameHeight: Int,
-    val guidance: Guidance
+    val guidance: Guidance,
+    /** Share of the page covered by its largest clipped-white patch (see [PageQuality.glareShare]); 0 without a page. */
+    val glareShare: Double = 0.0
 ) {
-    val isBlurry: Boolean get() = blurScore < 80.0
-    val isDark: Boolean get() = brightness < 45.0
+    val isBlurry: Boolean get() = blurScore < PageQuality.BLUR_LIMIT
+    val isDark: Boolean get() = brightness < PageQuality.DARK_LIMIT
     /** Share of the frame the outline covers, 0..1. */
     val areaRatio: Float get() = quad?.let { QuadGeometry.area(it) } ?: 0f
     /** The outline is (nearly) the whole frame: the background, not a page. */
@@ -54,6 +56,8 @@ enum class Guidance(@StringRes val labelRes: Int) {
     MORE_LIGHT(R.string.scan_guidance_more_light),
     HOLD_STEADY(R.string.scan_guidance_hold_steady),
     MOVE_CLOSER(R.string.scan_guidance_move_closer),
+    /** A hint only: glare does not hold back the capture (glossy paper under a ceiling light would never be taken). */
+    GLARE(R.string.scan_guidance_glare),
     READY(R.string.scan_guidance_ready)
 }
 
@@ -221,12 +225,23 @@ object DocumentEdgeDetector {
                     region.release(); regionLaplacian.release(); regionMean.release(); regionStd.release()
                 }
             }.getOrDefault(blurWhole)
+            // Glare is judged on the unsmoothed page: a reflection is a solid patch of clipped white.
+            val glare = if (candidate == null) 0.0 else runCatching {
+                val box = Imgproc.boundingRect(MatOfPoint(*candidate.points.toTypedArray()))
+                val x = box.x.coerceIn(0, working.cols() - 1)
+                val y = box.y.coerceIn(0, working.rows() - 1)
+                PageQuality.glareShare(
+                    working,
+                    org.opencv.core.Rect(x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y))
+                )
+            }.getOrDefault(0.0)
             val guidance = when {
                 // Darkness first: a dark frame hides the outline, so "point at a document" would mislead.
                 brightness < 45.0 -> Guidance.MORE_LIGHT
                 quad == null -> Guidance.POINT_AT_DOCUMENT
                 blur < 80.0 -> Guidance.HOLD_STEADY
                 confidence < 0.48f -> Guidance.MOVE_CLOSER
+                PageQuality.isGlare(glare) -> Guidance.GLARE
                 else -> Guidance.READY
             }
 
@@ -237,7 +252,8 @@ object DocumentEdgeDetector {
                 brightness = brightness,
                 frameWidth = working.cols(),
                 frameHeight = working.rows(),
-                guidance = guidance
+                guidance = guidance,
+                glareShare = glare
             )
         } finally {
             if (working !== grayInput) working.release()
