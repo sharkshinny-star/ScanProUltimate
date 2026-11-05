@@ -121,7 +121,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 All open work in one list, with a device checklist: `REMAINING_WORK.md` (generated from `AUDIT_FINDINGS.md`).
 
 - PDF Tools backlog (password prompts in every tool, file names, page numbers/watermark, sign, PDF to Word, insert pages): `TOOLS_IMPROVEMENTS.md`.
-1. **Left over (2026-11-05):** run the full `:app:testDebugUnitTest` and `:app:lintDebug` (stopped before finishing for
+1. **Left over (2026-11-05):** (a 2026-11-05 attempt could not build: `dl.google.com` blocked by the environment's network policy, see `BUILD_AND_TEST.md` Known errors) run the full `:app:testDebugUnitTest` and `:app:lintDebug` (stopped before finishing for
    F65, R36); device pass of the launch animation (R24), page-quality limits on real photos (R25) and the "Scan saved"
    sheet with a receipt, a business card and a letter (R36); native-speaker check of the new strings (R19); the
    competitor leftovers R26-R35.
