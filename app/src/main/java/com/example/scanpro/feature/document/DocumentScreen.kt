@@ -2,6 +2,8 @@
 
 package com.example.scanpro.feature.document
 
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.systemBarsPadding
 import android.graphics.Bitmap
@@ -233,6 +235,8 @@ fun DocumentRoute(
     onBack: () -> Unit,
     /** Opens the camera to shoot the page again: document id, page id and the page's position. */
     onRetakePage: (String, String, Int) -> Unit = { _, _, _ -> },
+    /** Opens the camera to add pages to the document (its id). */
+    onAddPagesWithCamera: (String) -> Unit = {},
     viewModel: DocumentViewModel = hiltViewModel()
 ) {
     val document by viewModel.document.collectAsStateWithLifecycle()
@@ -324,6 +328,7 @@ fun DocumentRoute(
         onExportPng = viewModel::exportPng,
         onDuplicateDocument = viewModel::duplicateDocument,
         onRetakePage = { pageId, position -> onRetakePage(current.id, pageId, position) },
+        onAddPagesWithCamera = { onAddPagesWithCamera(current.id) },
         onExportOcrTextFile = viewModel::exportOcrTextFile,
         onExportWord = viewModel::exportWordFile,
         onExportExcel = viewModel::exportExcelFile,
@@ -376,6 +381,8 @@ internal fun DocumentDetailScreen(
     onExportPng: () -> Unit = {},
     onDuplicateDocument: () -> Unit = {},
     onRetakePage: (String, Int) -> Unit = { _, _ -> },
+    /** Add page › Scan with camera; null offers photos only. */
+    onAddPagesWithCamera: (() -> Unit)? = null,
     onSign: (String, Bitmap, Boolean, SignaturePlacement?) -> Unit,
     savedSignatures: List<java.io.File> = emptyList(),
     onSignSaved: (String, java.io.File, SignaturePlacement?) -> Unit = { _, _, _ -> },
@@ -647,13 +654,30 @@ internal fun DocumentDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
-                            FilledTonalButton(
-                                onClick = { appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                                enabled = !busy
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.doc_add_page))
+                            // Add page offers the camera first, as Genius Scan, ACE and CamScanner do, and photos second.
+                            var addChoice by remember { mutableStateOf(false) }
+                            val pickPhotos = { appendLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                            Box {
+                                FilledTonalButton(
+                                    onClick = { if (onAddPagesWithCamera != null) addChoice = true else pickPhotos() },
+                                    enabled = !busy
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(stringResource(R.string.doc_add_page))
+                                }
+                                DropdownMenu(expanded = addChoice, onDismissRequest = { addChoice = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.doc_add_page_camera)) },
+                                        leadingIcon = { Icon(Icons.Default.PhotoCamera, contentDescription = null) },
+                                        onClick = { addChoice = false; onAddPagesWithCamera?.invoke() }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.doc_add_page_photos)) },
+                                        leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
+                                        onClick = { addChoice = false; pickPhotos() }
+                                    )
+                                }
                             }
                             OutlinedButton(onClick = { splitAllOpen = true }, enabled = !busy && document.pageCount > 1) { Text(stringResource(R.string.doc_split)) }
                             OutlinedButton(onClick = { mergeOpen = true }, enabled = !busy && otherDocuments.isNotEmpty()) { Text(stringResource(R.string.doc_merge)) }

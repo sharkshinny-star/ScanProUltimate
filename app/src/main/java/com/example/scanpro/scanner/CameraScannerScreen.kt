@@ -185,6 +185,8 @@ fun CameraScannerScreen(
     folders: List<String> = emptyList(),
     /** The folder Files was showing when the scan started (Genius Scan scans into the open folder); blank for none. */
     initialFolder: String = "",
+    /** Adding pages to a saved document: no Name or Folder, the pages join that document. */
+    appending: Boolean = false,
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
@@ -815,10 +817,10 @@ fun CameraScannerScreen(
             },
             name = documentName,
             // A page shot again for a saved document keeps that document's name.
-            onNameChange = if (retakeOfPage == null) ({ documentName = it }) else null,
+            onNameChange = if (retakeOfPage == null && !appending) ({ documentName = it }) else null,
             folder = documentFolder,
             folders = folders,
-            onFolderChange = if (retakeOfPage == null) ({ documentFolder = it }) else null
+            onFolderChange = if (retakeOfPage == null && !appending) ({ documentFolder = it }) else null
         )
         return
     }

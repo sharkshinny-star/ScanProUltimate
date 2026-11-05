@@ -667,7 +667,14 @@ class DocumentRepository @Inject constructor(
         saved
     }
 
-    suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
+    suspend fun appendImages(
+        documentId: String,
+        imageUris: List<Uri>,
+        /** From the camera's review screen, one per photo; missing entries are detected or left as they are. */
+        crops: List<CropQuad> = emptyList(),
+        filters: List<PageFilter> = emptyList(),
+        adjustments: List<PageAdjustments?> = emptyList()
+    ) = withContext(Dispatchers.IO) {
         if (imageUris.isEmpty()) return@withContext
         val doc = requireDocument(documentId)
         if (doc.pages.size + imageUris.size > MAX_PAGES) throw UserFacingPluralException(R.plurals.err_document_page_limit, MAX_PAGES, MAX_PAGES)
@@ -693,9 +700,16 @@ class DocumentRepository @Inject constructor(
                 // Listed before copying, so a photo that fails half-way is cleaned up with the rest.
                 newPages += page
                 copyUri(uri, source)
-                // Outlined like a camera page, so a photo of a page on a desk comes in cropped and straight.
-                val crop = runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
-                newPages[newPages.lastIndex] = renderAndOcr(page.copy(crop = crop))
+                // The outline confirmed on the camera's review screen, or one found here, so a photo of a page on a
+                // desk comes in cropped and straight.
+                val crop = crops.getOrNull(offset) ?: runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
+                newPages[newPages.lastIndex] = renderAndOcr(
+                    page.copy(
+                        crop = crop,
+                        filter = filters.getOrNull(offset) ?: page.filter,
+                        adjustments = adjustments.getOrNull(offset)?.normalized() ?: page.adjustments
+                    )
+                )
             }
             saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
         } catch (error: Throwable) {

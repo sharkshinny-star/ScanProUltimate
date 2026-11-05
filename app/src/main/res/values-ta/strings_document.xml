@@ -250,4 +250,6 @@
     <string name="doc_locked_folder_title">“%1$s” பூட்டப்பட்டுள்ளது</string>
     <string name="doc_locked_folder_body">இந்த ஆவணத்தைத் திறக்க உங்கள் கைரேகை, முகம் அல்லது திரைப் பூட்டு மூலம் திறக்கவும்.</string>
     <string name="doc_unlock">திற</string>
+    <string name="doc_add_page_camera">கேமராவில் ஸ்கேன் செய்</string>
+    <string name="doc_add_page_photos">படங்களைத் தேர்ந்தெடு</string>
 </resources>

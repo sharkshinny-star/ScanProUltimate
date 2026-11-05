@@ -203,6 +203,9 @@ fun LibraryRoute(
         onBack = onBack,
         onBulkDelete = viewModel::moveManyToTrash,
         onShareSelected = { ids -> viewModel.withFreshPdfs(ids) { docs -> sharePdfs(context, docs) } },
+        onShareCombined = { ids ->
+            viewModel.combinePdfs(ids) { file -> com.example.scanpro.core.ui.shareFile(context, file.absolutePath, "application/pdf", file.name) }
+        },
         onRenameFolder = viewModel::renameFolder,
         onTab = onTab,
         onQuickScan = onQuickScan,
@@ -258,6 +261,8 @@ internal fun LibraryScreen(
     onDeleteFolder: (String) -> Unit = {},
     folderExists: suspend (String) -> Boolean = { false },
     onShareSelected: (Set<String>) -> Unit,
+    /** Shares the selection as one combined PDF, in selection order. */
+    onShareCombined: (List<String>) -> Unit = {},
     onRenameFolder: (String, String) -> Unit,
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
@@ -381,8 +386,22 @@ internal fun LibraryScreen(
                     },
                     actions = {
                         if (selecting) {
-                            IconButton(onClick = { onShareSelected(selected.toSet()) }) {
-                                Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.lib_cd_share_selected))
+                            // Several documents: separate PDFs, or one combined PDF in the order they were picked.
+                            var shareChoice by remember { mutableStateOf(false) }
+                            androidx.compose.foundation.layout.Box {
+                                IconButton(onClick = { if (selected.size > 1) shareChoice = true else onShareSelected(selected.toSet()) }) {
+                                    Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.lib_cd_share_selected))
+                                }
+                                androidx.compose.material3.DropdownMenu(expanded = shareChoice, onDismissRequest = { shareChoice = false }) {
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.lib_share_separate, selected.size)) },
+                                        onClick = { shareChoice = false; onShareSelected(selected.toSet()) }
+                                    )
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.lib_share_one_pdf)) },
+                                        onClick = { shareChoice = false; onShareCombined(selected.toList()) }
+                                    )
+                                }
                             }
                             IconButton(onClick = {
                                 // The selection stays if the app was busy and nothing moved.

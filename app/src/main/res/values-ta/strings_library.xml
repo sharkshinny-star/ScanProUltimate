@@ -204,4 +204,6 @@
     <string name="settings_default_filter_title">தொடக்க ஃபில்டர்</string>
     <string name="settings_default_filter_subtitle">புதிய ஸ்கேன்கள் இந்தத் தோற்றத்துடன் தொடங்கும்; ஒவ்வொரு பக்கத்திலும் மாற்றலாம்</string>
     <string name="settings_default_filter_automatic">தானியங்கி</string>
+    <string name="lib_share_separate">தனித்தனி PDF-கள் (%1$d)</string>
+    <string name="lib_share_one_pdf">ஒரே PDF</string>
 </resources>

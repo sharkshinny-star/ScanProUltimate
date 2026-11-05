@@ -202,6 +202,31 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Combines the documents into one temporary PDF, in the order given, for sharing (Genius Scan and Adobe Scan can
+     * share a selection as one file). The originals are untouched; the file lives in the exports cache.
+     */
+    fun combinePdfs(ids: List<String>, onReady: (java.io.File) -> Unit) {
+        operations.run(context.getString(R.string.msg_preparing_pdfs), null) {
+            val fresh = library.freshPdfs(ids)
+            if (fresh.failed > 0) {
+                operations.showMessage(
+                    if (fresh.documents.isEmpty()) context.getString(R.string.lib_msg_pdf_not_prepared)
+                    else context.resources.getQuantityString(R.plurals.lib_msg_pdfs_left_out, ids.size, fresh.failed, ids.size)
+                )
+            }
+            val docs = fresh.documents
+            if (docs.isEmpty()) return@run
+            val name = com.example.scanpro.data.fileSafeName(
+                if (docs.size == 1) docs.single().title else "${docs.first().title} (+${docs.size - 1})"
+            )
+            val out = java.io.File(java.io.File(context.cacheDir, "exports").apply { mkdirs() }, "$name.pdf")
+            if (docs.size == 1) java.io.File(docs.single().pdfPath).copyTo(out, overwrite = true)
+            else com.example.scanpro.imaging.PdfToolsEngine.mergePdfs(context, docs.map { android.net.Uri.fromFile(java.io.File(it.pdfPath)) }, out)
+            withContext(Dispatchers.Main) { onReady(out) }
+        }
+    }
+
     /** Renames the folder; queued if another job is running. */
     fun renameFolder(oldName: String, newName: String) =
         operations.run(context.getString(R.string.msg_renaming_folder), context.getString(R.string.msg_folder_renamed)) {

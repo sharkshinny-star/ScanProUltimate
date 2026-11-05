@@ -253,4 +253,6 @@
     <string name="tip_theme_title">Five colour themes</string>
     <string name="tip_theme_body">Dress ScanPro in Ocean, Emerald, Sunset or Berry, in light or dark.</string>
     <string name="tip_theme_action">Pick colours</string>
+    <string name="lib_share_separate">Separate PDFs (%1$d)</string>
+    <string name="lib_share_one_pdf">One PDF</string>
 </resources>

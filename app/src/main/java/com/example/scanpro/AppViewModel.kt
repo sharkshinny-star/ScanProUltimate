@@ -254,6 +254,25 @@ class AppViewModel @Inject constructor(
         ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments, title, folder))
     }
 
+    /** Pages shot from a document's Add page, added at its end with the review screen's outlines, filters and sliders. */
+    fun appendPagesFromCamera(
+        documentId: String,
+        imageUris: List<Uri>,
+        crops: List<CropQuad>,
+        filters: List<PageFilter>,
+        adjustments: List<PageAdjustments?>
+    ) {
+        if (imageUris.isEmpty()) return
+        operations.enqueue(context.getString(R.string.msg_adding_pages), context.getString(R.string.msg_pages_added)) {
+            try {
+                repository.appendImages(documentId, imageUris, crops, filters, adjustments)
+            } finally {
+                imageUris.firstOrNull()?.takeIf { it.scheme == "file" }?.path?.let { File(it).parentFile }
+                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
+            }
+        }
+    }
+
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */
     fun replacePageFromCamera(
         target: RetakeTarget,

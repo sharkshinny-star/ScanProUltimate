@@ -204,4 +204,6 @@
     <string name="settings_default_filter_title">शुरुआती फ़िल्टर</string>
     <string name="settings_default_filter_subtitle">नए स्कैन इसी लुक से शुरू होते हैं; आप हर पेज पर इसे बदल सकते हैं</string>
     <string name="settings_default_filter_automatic">अपने-आप</string>
+    <string name="lib_share_separate">अलग-अलग PDF (%1$d)</string>
+    <string name="lib_share_one_pdf">एक PDF में</string>
 </resources>

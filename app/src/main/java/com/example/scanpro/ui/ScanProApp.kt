@@ -239,6 +239,7 @@ fun ScanProApp(
                     onAppLockChange = onAppLockChange,
                     defaultScanMode = viewModel.defaultScanMode.collectAsStateWithLifecycle().value,
                     saveFolders = viewModel.saveFolders.collectAsStateWithLifecycle().value,
+                    onCameraAppendComplete = viewModel::appendPagesFromCamera,
                     defaultFilter = viewModel.defaultFilter.collectAsStateWithLifecycle().value
                 )
             }

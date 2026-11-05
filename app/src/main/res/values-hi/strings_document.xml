@@ -250,4 +250,6 @@
     <string name="doc_locked_folder_title">“%1$s” लॉक है</string>
     <string name="doc_locked_folder_body">यह दस्तावेज़ खोलने के लिए अपने फ़िंगरप्रिंट, चेहरे या स्क्रीन लॉक से अनलॉक करें।</string>
     <string name="doc_unlock">अनलॉक करें</string>
+    <string name="doc_add_page_camera">कैमरे से स्कैन करें</string>
+    <string name="doc_add_page_photos">फ़ोटो चुनें</string>
 </resources>
