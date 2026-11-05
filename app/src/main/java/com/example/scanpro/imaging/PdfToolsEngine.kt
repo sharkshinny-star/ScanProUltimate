@@ -398,6 +398,7 @@ object PdfToolsEngine {
             }
 
             val creating = AppStrings.get(R.string.tools_progress_creating_pdf)
+            var current = 0
             PdfExporter.export(
                 pages = pages,
                 destination = outputFile,
@@ -405,8 +406,10 @@ object PdfToolsEngine {
                 pageSize = pageSize,
                 searchable = false,
                 pageNumbers = false,
-                decode = PdfExporter::decodePicture,
+                // Only the header was checked above: a picture whose pixels can't be read is still named as a picture.
+                decode = { path, max -> PdfExporter.decodePicture(path, max) ?: userError(R.string.tools_err_image_undecodable, current) },
                 beforePage = { number, total ->
+                    current = number
                     // Decoding is the slow part, so Cancel is honoured between pages here too.
                     if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
                     onProgress(number, total, creating)
