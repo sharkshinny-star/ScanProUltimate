@@ -32,7 +32,8 @@ Last updated: 2026-11-05 (F48, F49 PDF Tools fixes; F50 first-launch permissions
 
 | Commit | What |
 |---|---|
-| newest | F50: first-launch permission page after the welcome (Camera, Notifications on 13+), `WelcomePermissionsTest` (5). |
+| newest | F51: choose the folder a new scan is saved in, on the review screen (Name and Folder cells; shared folder picker). |
+| `b7681d7` | F50: first-launch permission page after the welcome (Camera, Notifications on 13+), `WelcomePermissionsTest` (5). |
 | `22540d1` | F48/F49: Images to PDF decodes once on white (transparent PNGs no longer black); Merge asks for a protected file's password. `PdfPictureTest`, `MergePasswordTest`. Also fixed two lint errors in `ScanReviewReorderTest` (state created in composition). |
 | `b6362d3` | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |
 | `08d9887` | F46 (from the competitor comparison): slider Reset and Apply to all pages, Rotate all pages, Auto capture in the camera ⋮ menu, spoken camera guidance. |
