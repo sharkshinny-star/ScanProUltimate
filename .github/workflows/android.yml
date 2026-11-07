@@ -1,16 +1,22 @@
-# Builds and checks every push and pull request:
-#   1. unit tests and lint
-#   2. the Play bundle (translation as an on-demand module)
-#   3. the sideload APKs (one per CPU type plus universal, translation built in)
-#   4. an APK size report with a budget, so a dependency that silently adds megabytes fails the build
+# Android CI: unit tests and lint, the Play bundle (translation as an on-demand module), the sideload
+# APKs (one per CPU type plus universal, translation built in) and an APK size report with a budget,
+# so a dependency that silently adds megabytes fails the build.
+# Runs on pushes to main and pull requests; docs-only changes are skipped.
+# Artifacts are uploaded only on a manual run (kept 1 day); test reports only when a run fails.
+
 name: Android CI
 
 on:
   push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
   pull_request:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
+  workflow_dispatch:
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -19,7 +25,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -28,9 +34,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Only main saves the Gradle cache; other branches and PRs just read it.
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - run: chmod +x ./gradlew
 
       - name: Unit tests, lint and Play bundle
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:bundleRelease --no-daemon
@@ -42,7 +51,7 @@ jobs:
         run: scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-and-lint-reports
@@ -50,8 +59,10 @@ jobs:
             app/build/reports/tests/testDebugUnitTest
             app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
+          retention-days: 1
 
       - name: Build outputs
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: release-outputs
@@ -59,3 +70,4 @@ jobs:
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+          retention-days: 1

@@ -1,0 +1,38 @@
+# Web / Node CI (lint, typecheck, test, build).
+# Put in .github/workflows/ci.yml of repos that have a package.json.
+# Uses npm. For pnpm or yarn, change the cache value and the install command.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
+  pull_request:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Each step only runs if the script exists in package.json.
+      - run: npm run lint --if-present
+      - run: npm run typecheck --if-present
+      - run: npm test --if-present
+      - run: npm run build --if-present

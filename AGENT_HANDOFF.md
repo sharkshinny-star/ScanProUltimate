@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-07 (archived old ScanPro's Firebase client in `docs/archive/`; earlier: reference docs checked against `git log`: commit hashes, numbering, build status, R10 ID clash → R37). Newest commit: see `git log`.
+Last updated: 2026-11-07 (GitHub Actions budget rules added: `AGENTS.md`, CI limited to main/PRs, 20-minute timeout; earlier: archived old ScanPro's Firebase client in `docs/archive/`; earlier: reference docs checked against `git log`: commit hashes, numbering, build status, R10 ID clash → R37). Newest commit: see `git log`.
 
 ## 1. Current state
 
@@ -32,6 +32,7 @@ Last updated: 2026-11-07 (archived old ScanPro's Firebase client in `docs/archiv
 
 | Commit | What |
 |---|---|
+| (this commit) | GitHub Actions budget kit: `AGENTS.md` (push in batches, `[skip ci]` for docs), templates in `.github/budget-kit/`, `android.yml` now runs on main and PRs only, docs-skipped, 20-minute timeout, artifacts 1 day and only on manual runs. Not run on a real runner. |
 | next | `docs/archive/`: old ScanPro repo's `FirebaseCloudClient.kt` kept as `.txt` (not compiled, API key redacted) for possible future cloud sync. Old ScanPro repo compared: nothing else worth porting. |
 | `0284287` | `TOOLS_IMPROVEMENTS.md`: PDF Tools backlog (7 items, related R7/R28, device checks for F48–F50). |
 | `ef2f3b2` | History-only merge of `main` and the three older branches (`-s ours`, no file changes). |
