@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-07 (archived old ScanPro's Firebase client in `docs/archive/`; earlier: reference docs checked against `git log`: commit hashes, numbering, build status, R10 ID clash → R37). Newest commit: see `git log`.
+Last updated: 2026-11-07 (CI artifacts now kept 3 days, `retention-days: 3`, to stay inside the free 500 MB storage; not run. Earlier: archived old ScanPro's Firebase client in `docs/archive/`; reference docs checked against `git log`)
 
 ## 1. Current state
 

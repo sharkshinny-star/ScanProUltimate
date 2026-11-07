@@ -50,6 +50,7 @@ jobs:
             app/build/reports/tests/testDebugUnitTest
             app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
+          retention-days: 3
 
       - name: Build outputs
         uses: actions/upload-artifact@v4
@@ -59,3 +60,4 @@ jobs:
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+          retention-days: 3
