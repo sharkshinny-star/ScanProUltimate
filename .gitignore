@@ -19,3 +19,11 @@ build/
 /.descriptions.xml
 /[A-Z]*.xml
 google-services.json
+
+# Release signing material must never be committed (see app/build.gradle.kts for how it is supplied).
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.properties
+signing.properties

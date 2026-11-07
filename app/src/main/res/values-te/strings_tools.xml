@@ -175,6 +175,8 @@
         <item quantity="other">కాపీని తెరిచే ఎవరికైనా ఈ పాస్‌వర్డ్ కావాలి (కనీసం %1$d అక్షరాలు). దీన్ని తిరిగి పొందే మార్గం లేదు.</item>
     </plurals>
     <string name="tools_password_unlock_prompt">ఈ PDF నుండి రక్షణ తీసేయడానికి పాస్‌వర్డ్ నమోదు చేయండి:</string>
+    <string name="tools_merge_password_prompt">“%1$s” రక్షించబడింది. కలపడానికి దాని పాస్‌వర్డ్ నమోదు చేయండి.</string>
+    <string name="tools_merge_password_unprotected_note">కలిపిన PDF పాస్‌వర్డ్ లేకుండా తెరుచుకుంటుంది. దాన్ని రక్షించడానికి, తర్వాత PDF రక్షణ టూల్‌ను వాడండి.</string>
     <string name="tools_password_confirm_label">పాస్‌వర్డ్ నిర్ధారించండి</string>
     <string name="tools_password_mismatch">పాస్‌వర్డ్‌లు సరిపోలలేదు</string>
     <plurals name="tools_split_has_pages">

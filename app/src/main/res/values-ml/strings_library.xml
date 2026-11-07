@@ -207,4 +207,6 @@
     <string name="settings_default_filter_title">തുടക്ക ഫിൽട്ടർ</string>
     <string name="settings_default_filter_subtitle">പുതിയ സ്കാനുകൾ ഈ രൂപത്തിൽ തുടങ്ങും; ഓരോ പേജിലും മാറ്റാം</string>
     <string name="settings_default_filter_automatic">ഓട്ടോമാറ്റിക്</string>
+    <string name="lib_share_separate">വെവ്വേറെ PDF-കൾ (%1$d)</string>
+    <string name="lib_share_one_pdf">ഒറ്റ PDF</string>
 </resources>

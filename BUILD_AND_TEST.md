@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-04, full run on `b76720c` (tests, lint, both release builds, 16 KB check). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-05, security hardening commit on top of `10fa630` (tests, lint, Play bundle). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -41,13 +41,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-05, F48)
-
-- **Compilation:** `:app:compileDebugKotlin` 0 warnings, clean.
-- **Unit tests:** 247 passed, 52 skipped, 0 failed.
-- **Lint:** `:app:lintDebug` passes with 0 errors.
-
-## Prior results (2026-11-04, `b76720c`, full run in a cloud container)
+## Latest results (2026-11-04, `b76720c`, full run in a cloud container)
 
 **Every check below was run on `b76720c` (screen-review fixes, F43) unless a row says otherwise.**
 
@@ -64,8 +58,6 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 | Instrumented (`AppSmokeTest`), baseline profile, performance | Not run: no emulator or device |
 | Release signing | Not validated: no secrets; outputs unsigned |
 
-Older runs, kept for history:
-
 **2026-11-02, screenshot tests and F41/F42 on top of `bd3cacd`:** `:app:testDebugUnitTest` 267 tests, 241 passed, 26 skipped (24 `ScreenScreenshotTest` cases, opt-in; 2 `RealPhotoEquivalenceTest`), 0 failed; `:app:lintDebug` 0 issues; 0 compiler warnings. `ScreenScreenshotTest` with `-Pscanpro.screenshots=true`: 24 PNGs, checked by eye. Release builds, `:translate`, `:opencv` not re-run.
 
 **Re-run on `07293b0` (F38, F39 and F40 included) in a fresh cloud container, 2026-11-01:** compile, the unit tests and lint below. **Not re-run on it:** `:translate:compileDebugKotlin`, `:opencv:lintDebug`, both release builds and the 16 KB alignment check; those rows are from the commit before F38. None of the F38 to F40 screens has been seen on a device.
@@ -74,7 +66,7 @@ Older runs, kept for history:
 |---|---|
 | `:app:compileDebugKotlin` | Passed on `07293b0`, 0 warnings. `:translate:compileDebugKotlin` not re-run |
 | `:app:testDebugUnitTest` | On `07293b0`: 243 tests: 241 passed, 2 skipped (`RealPhotoEquivalenceTest`, needs `-Pscanpro.photoDir`), 0 failed |
-| `:app:lintDebug` | On `07293b0`: 0 issues (`UseTomlInstead` ignored, see R10) |
+| `:app:lintDebug` | On `07293b0`: 0 issues (`UseTomlInstead` ignored, see R37) |
 | `:opencv:lintDebug` | 0 issues (every check ignored by `opencv/lint.xml`) |
 | `:app:bundleRelease` | Passed; AAB 45.6 MB |
 | Sideload `assembleRelease` | Passed; arm64 33.4 MB unsigned (budget 40) |
@@ -103,9 +95,14 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 | Problem | Fix |
 |---|---|
 | Maven Central HTTP 429 in cloud containers | Add `~/.gradle/init.d/central-mirror.gradle` that replaces `mavenCentral()` with `https://maven-central.storage-download.googleapis.com/maven2/`. Local only; never commit it. |
+| `sdkmanager` 9862592 can't find `platforms;android-37` | Unzip `platform-37.0_r02.zip` into `platforms/android-37` and `build-tools_r37_linux.zip` into `build-tools/37.0.0` (from `dl.google.com/android/repository/`); Build-Tools 36 likewise if AGP's own download is slow. |
+| Upgrading Gradle | The wrapper pins `distributionSha256Sum`. Run `./gradlew wrapper --gradle-version <v> --gradle-distribution-sha256-sum <sum>` with the sum from `https://services.gradle.org/distributions/gradle-<v>-bin.zip.sha256`, or the wrapper refuses the download. |
+| A dependency "could not be found" although Google's Maven repository has it | `google()` only serves `com.android.*`, `com.google.*` and `androidx.*`; add the new group to both filters in `settings.gradle.kts`. |
+| Dependency downloads crawl (a few MB per minute) in a cloud container | Keep the `google()` content filters in `settings.gradle.kts`: without them every Maven Central artifact first waits about 2 s on a miss at Google's repository. |
 | `ScreenScreenshotTest`: Files grid empty | Keep the v1 `createComposeRule` (deprecated, suppressed): under the v2 rule the grid never got Paging's first page. |
 | Test JVM aborts (exit 134, "Class not found: java/nio/LongBuffer") | Robolectric native graphics, when only some `ScreenScreenshotTest` cases run (e.g. `--tests '*files*'`); run the whole class. |
 | Compose UI test never goes idle (`AppNotIdleException`) once a dialog with a text field is open | Robolectric limitation here: even a plain Material `AlertDialog` + `OutlinedTextField` hangs, with or without focus and with a manual clock. Test the state around the dialog instead (as `ScanReviewNamingTest` does) and check typing on a device. |
+| `CONNECT tunnel failed, response 403` for `dl.google.com` (2026-11-05) | The cloud environment's network policy blocks it. Google's Maven (`maven.google.com`) redirects every artifact there, and the SDK zips live there, so nothing builds. Add `dl.google.com` under Allowed domains in the environment's Network access settings. |
 | `SDK location not found` | Install platform 37 and write `local.properties`. |
 | `Could not resolve` / HTTP 429 from repo.maven.apache.org on a first build | Same Maven Central rate limit as above: create the local mirror init script, then rebuild (a first build with it took about 4 minutes). |
 | `Package platforms;android-37 not found` in `sdkmanager` | Newer SDK managers call it `platforms;android-37.0`. |

@@ -30,7 +30,7 @@
     <string name="err_could_not_save_pdf">PDF सेव नहीं हो सकी</string>
     <string name="err_could_not_save_signature">सिग्नेचर सेव नहीं हो सका</string>
     <string name="err_could_not_save_image">इमेज %1$s सेव नहीं हो सकी</string>
-    <string name="err_backup_password_too_short">बैकअप के लिए कम से कम 6 अक्षरों का पासवर्ड रखें</string>
+    <string name="err_backup_password_too_short">बैकअप के लिए कम से कम %1$d अक्षरों का पासवर्ड रखें</string>
     <string name="err_could_not_open_backup">बैकअप खुल नहीं सका</string>
     <string name="err_could_not_decrypt_backup">बैकअप डिक्रिप्ट नहीं हो सका। पासवर्ड और फ़ाइल जांचें।</string>
     <string name="err_backup_too_large">यह बैकअप रीस्टोर करने के लिए बहुत बड़ा है</string>

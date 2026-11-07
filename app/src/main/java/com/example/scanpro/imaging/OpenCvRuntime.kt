@@ -8,7 +8,9 @@ import org.opencv.android.OpenCVLoader
  * [ensureLoaded] first and, if the load is still running, waits for it (always off the main thread).
  */
 object OpenCvRuntime {
-    private val loaded: Boolean by lazy { OpenCVLoader.initLocal() }
+    // A load that throws (no library for this CPU, or a desktop JVM in tests where the vendored OpenCV is loaded
+    // directly) reports "not loaded" like a failed initLocal(), instead of breaking the class that asked.
+    private val loaded: Boolean by lazy { runCatching { OpenCVLoader.initLocal() }.getOrDefault(false) }
 
     fun ensureLoaded(): Boolean = loaded
 

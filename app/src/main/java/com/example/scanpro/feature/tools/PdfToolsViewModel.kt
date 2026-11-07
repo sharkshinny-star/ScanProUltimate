@@ -20,6 +20,7 @@ import com.example.scanpro.imaging.CompressionPreset
 import com.example.scanpro.imaging.FormField
 import com.example.scanpro.imaging.FormFieldRules
 import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.MergePasswordNeededException
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.PdfFormEngine
 import com.example.scanpro.imaging.PdfOcrEngine
@@ -55,6 +56,18 @@ data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Ma
 
 /** What the Tools screen shows while and after a tool runs. */
 data class ToolProgress(val label: String, val current: Int = 0, val total: Int = 0)
+
+/**
+ * A PDF in a merge that needs its password: file [index] of [uris], shown as [fileName]. [wrongPassword] is true when
+ * the last password typed for it did not work. [attempt] numbers the questions, so each one opens a fresh dialog.
+ */
+data class MergePasswordRequest(
+    val uris: List<Uri>,
+    val index: Int,
+    val fileName: String,
+    val wrongPassword: Boolean,
+    val attempt: Int
+)
 
 /**
  * Runs the PDF tools outside the screen, so rotating the device, resizing a split-screen window or unfolding a
@@ -112,6 +125,9 @@ class PdfToolsViewModel @Inject constructor(
 
     private var job: Job? = null
 
+    /** Set by a job that ends by asking the user something (and says so itself): it is then not announced as "Done". */
+    private var endedWithQuestion = false
+
     fun clearResult() { _result.value = null }
     fun clearMessage() { _message.value = null }
     fun clearUnlockNotice() { _unlockNotice.value = null }
@@ -149,12 +165,13 @@ class PdfToolsViewModel @Inject constructor(
         }
         _result.value = null
         _progress.value = ToolProgress(label)
+        endedWithQuestion = false
         job = viewModelScope.launch {
             try {
                 // Held alive by the foreground service: a long merge or compression must survive the user switching apps.
                 val result = operations.keepAlive(label) { work() }
                 _result.value = result
-                notifications.taskFinished(result?.message)
+                if (!endedWithQuestion) notifications.taskFinished(result?.message)
             } catch (cancelled: CancellationException) {
                 _message.value = context.getString(R.string.msg_tools_operation_cancelled)
                 throw cancelled
@@ -262,8 +279,68 @@ class PdfToolsViewModel @Inject constructor(
             }
         }
 
-    fun merge(uris: List<Uri>) = launchTool(context.resources.getQuantityString(R.plurals.msg_tools_merging, uris.size, uris.size), context.getString(R.string.msg_tools_merge_failed)) {
-        PdfToolsEngine.mergePdfs(context, uris, named(uris.first(), "merged"), ::report)
+    private val _mergePassword = MutableStateFlow<MergePasswordRequest?>(null)
+    val mergePassword: StateFlow<MergePasswordRequest?> = _mergePassword.asStateFlow()
+
+    /**
+     * Passwords typed for the files of the merge being set up. Held in memory only (never in saved state, so never
+     * written to disk) and forgotten as soon as that merge ends, fails, is cancelled or another one starts.
+     */
+    private var mergePasswords: Map<Uri, String> = emptyMap()
+    private var mergeQuestions = 0
+
+    fun merge(uris: List<Uri>) {
+        if (job?.isActive == true) {
+            _message.value = context.getString(R.string.msg_tools_still_working)
+            return
+        }
+        mergePasswords = emptyMap()
+        _mergePassword.value = null
+        runMerge(uris)
+    }
+
+    private fun runMerge(uris: List<Uri>) {
+        if (job?.isActive == true) {
+            mergePasswords = emptyMap()
+            _message.value = context.getString(R.string.msg_tools_still_working)
+            return
+        }
+        val passwords = mergePasswords
+        launchTool(context.resources.getQuantityString(R.plurals.msg_tools_merging, uris.size, uris.size), context.getString(R.string.msg_tools_merge_failed)) {
+            var asking = false
+            try {
+                PdfToolsEngine.mergePdfs(context, uris, named(uris.first(), "merged"), ::report, passwords)
+            } catch (locked: MergePasswordNeededException) {
+                val name = withContext(Dispatchers.IO) { displayName(locked.uri) }
+                _mergePassword.value = MergePasswordRequest(uris, locked.index, name, locked.wrongPassword, ++mergeQuestions)
+                asking = true
+                endedWithQuestion = true
+                // Instead of "Done", for a user who switched to another app while the files were read.
+                notifications.taskFailed(context.getString(R.string.tools_merge_password_prompt, name))
+                null
+            } finally {
+                if (!asking) mergePasswords = emptyMap()
+            }
+        }
+    }
+
+    /** The password for the file [mergePassword] asked about: the merge starts again, with it. */
+    fun submitMergePassword(password: String) {
+        val request = _mergePassword.value ?: return
+        _mergePassword.value = null
+        mergePasswords = mergePasswords + (request.uris[request.index] to password)
+        // The run that asked ends right after asking; let it finish before the next one starts.
+        val previous = job
+        viewModelScope.launch {
+            previous?.join()
+            runMerge(request.uris)
+        }
+    }
+
+    /** The password question was dismissed: the merge is dropped, and so are the passwords typed for it. */
+    fun cancelMergePassword() {
+        _mergePassword.value = null
+        mergePasswords = emptyMap()
     }
 
     private val _form = MutableStateFlow<FormSession?>(null)

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,7 +55,9 @@ fun ScanProApp(
     onFallbackScanner: () -> Unit,
     onImportImages: () -> Unit,
     onUnlock: () -> Unit,
-    onAppLockChange: (Boolean) -> Unit
+    onAppLockChange: (Boolean) -> Unit,
+    /** False while the launch animation plays: nothing that opens its own window may cover it. */
+    launchSettled: Boolean = true
 ) {
     val context = LocalContext.current
     val libraryRevision by viewModel.libraryRevision.collectAsStateWithLifecycle()
@@ -67,11 +71,12 @@ fun ScanProApp(
     val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
     val ratingDue by viewModel.ratingDue.collectAsStateWithLifecycle()
+    val whatsNewDue by viewModel.whatsNewDue.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Once, after the first saved document and never over the welcome or lock screens. Marked as shown on every
     // way out, so it cannot come back.
-    if (ratingDue && sessionUnlocked && welcomeSeen == true) {
+    if (ratingDue && sessionUnlocked && welcomeSeen == true && launchSettled) {
         RatingSheet(
             onNotNow = viewModel::markRatingShown,
             onRateOnPlay = {
@@ -189,6 +194,8 @@ fun ScanProApp(
                         isError = request.wrongPassword,
                         label = { Text(stringResource(R.string.ui_password_label)) },
                         visualTransformation = PasswordVisualTransformation(),
+                        // A password type keeps the keyboard from learning the password or suggesting it later.
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         modifier = Modifier.padding(top = 12.dp)
                     )
                     if (request.wrongPassword) {
@@ -215,7 +222,9 @@ fun ScanProApp(
             if (showRail) {
                 ScanProNavigationRail(
                     selectedRoute = currentRoute.orEmpty(),
-                    onTab = { route -> navController.navigateToTopLevel(route) }
+                    onTab = { route -> navController.navigateToTopLevel(route) },
+                    // The rail's scan button did nothing before: it relied on the default no-op.
+                    onScan = { navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true } }
                 )
             }
             Box(Modifier.weight(1f).fillMaxSize()) {
@@ -229,9 +238,22 @@ fun ScanProApp(
                     onFallbackScanner = onFallbackScanner,
                     onAppLockChange = onAppLockChange,
                     defaultScanMode = viewModel.defaultScanMode.collectAsStateWithLifecycle().value,
+                    saveFolders = viewModel.saveFolders.collectAsStateWithLifecycle().value,
+                    onCameraAppendComplete = viewModel::appendPagesFromCamera,
                     defaultFilter = viewModel.defaultFilter.collectAsStateWithLifecycle().value
                 )
             }
+        }
+
+        // Once, after an update that has something to tell (never together with the welcome or the rating sheet).
+        if (whatsNewDue && !welcomeShowing && !ratingDue && launchSettled) {
+            WhatsNewSheet(
+                onPickColours = {
+                    viewModel.markWhatsNewSeen()
+                    navController.navigateToTopLevel(ScanProDestinations.SETTINGS)
+                },
+                onDismiss = viewModel::markWhatsNewSeen
+            )
         }
 
         // First launch only, drawn over the app so the library is already there underneath when it

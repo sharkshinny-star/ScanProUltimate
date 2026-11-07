@@ -30,7 +30,7 @@
     <string name="err_could_not_save_pdf">PDF സേവ് ചെയ്യാനായില്ല</string>
     <string name="err_could_not_save_signature">ഒപ്പ് സേവ് ചെയ്യാനായില്ല</string>
     <string name="err_could_not_save_image">%1$s എന്ന ചിത്രം സേവ് ചെയ്യാനായില്ല</string>
-    <string name="err_backup_password_too_short">കുറഞ്ഞത് 6 അക്ഷരങ്ങളുള്ള ബാക്കപ്പ് പാസ്‌വേഡ് ഉപയോഗിക്കുക</string>
+    <string name="err_backup_password_too_short">കുറഞ്ഞത് %1$d അക്ഷരങ്ങളുള്ള ബാക്കപ്പ് പാസ്‌വേഡ് ഉപയോഗിക്കുക</string>
     <string name="err_could_not_open_backup">ബാക്കപ്പ് തുറക്കാനായില്ല</string>
     <string name="err_could_not_decrypt_backup">ബാക്കപ്പ് ഡീക്രിപ്റ്റ് ചെയ്യാനായില്ല. പാസ്‌വേഡും ഫയലും പരിശോധിക്കുക.</string>
     <string name="err_backup_too_large">റീസ്റ്റോർ ചെയ്യാൻ ഈ ബാക്കപ്പ് വളരെ വലുതാണ്</string>

@@ -12,9 +12,15 @@ object ScanProDestinations {
     const val CAMERA_MODE_ARG = "mode"
     /** Camera opened to shoot one page of a saved document again: "documentId/pageId/position". */
     const val CAMERA_RETAKE_ARG = "retake"
-    const val CAMERA_ROUTE = "camera?$CAMERA_MODE_ARG={$CAMERA_MODE_ARG}&$CAMERA_RETAKE_ARG={$CAMERA_RETAKE_ARG}"
+    /** Camera opened from a folder in Files: new scans are filed there unless the review screen says otherwise. */
+    const val CAMERA_FOLDER_ARG = "folder"
+    /** Camera opened from a saved document to add pages to it: the document's id. */
+    const val CAMERA_APPEND_ARG = "append"
+    const val CAMERA_ROUTE = "camera?$CAMERA_MODE_ARG={$CAMERA_MODE_ARG}&$CAMERA_RETAKE_ARG={$CAMERA_RETAKE_ARG}&$CAMERA_FOLDER_ARG={$CAMERA_FOLDER_ARG}&$CAMERA_APPEND_ARG={$CAMERA_APPEND_ARG}"
     const val CAMERA_QR = "QR"
     fun camera(mode: String) = "camera?$CAMERA_MODE_ARG=$mode"
+    fun cameraAppend(documentId: String) = "camera?$CAMERA_APPEND_ARG=$documentId"
+    fun cameraInFolder(folder: String) = if (folder.isBlank()) CAMERA else "camera?$CAMERA_FOLDER_ARG=${android.net.Uri.encode(folder)}"
     fun cameraRetake(documentId: String, pageId: String, position: Int) = "camera?$CAMERA_RETAKE_ARG=$documentId/$pageId/$position"
 
     /** The parts of a [CAMERA_RETAKE_ARG] value, or null when it is empty or malformed. */

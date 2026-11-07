@@ -80,6 +80,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -176,8 +177,17 @@ fun CameraScannerScreen(
     /** Position of the saved page this session replaces; the session then takes exactly one photo. */
     retakeOfPage: Int? = null,
     onClose: () -> Unit,
-    /** Pages, mode, outlines, filters, slider adjustments, and the name typed on the review screen (null: automatic). */
-    onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?) -> Unit,
+    /**
+     * Pages, mode, outlines, filters, slider adjustments, then the name typed on the review screen (null: automatic) and
+     * the folder chosen there (null: none).
+     */
+    onComplete: (List<Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?, String?) -> Unit,
+    /** Existing folders a new scan can be saved into (locked ones left out). */
+    folders: List<String> = emptyList(),
+    /** The folder Files was showing when the scan started (Genius Scan scans into the open folder); blank for none. */
+    initialFolder: String = "",
+    /** Adding pages to a saved document: no Name or Folder, the pages join that document. */
+    appending: Boolean = false,
     onFallbackScanner: () -> Unit
 ) {
     val context = LocalContext.current
@@ -263,6 +273,7 @@ fun CameraScannerScreen(
     var reviewing by rememberSaveable { mutableStateOf(false) }
     // The name typed on the review screen; blank leaves it to the automatic title.
     var documentName by rememberSaveable { mutableStateOf("") }
+    var documentFolder by rememberSaveable { mutableStateOf(initialFolder) }
     var reviewIndex by rememberSaveable { mutableIntStateOf(0) }
     // Page the next capture replaces, when the review step asked to retake one; -1 otherwise.
     var retakeIndex by rememberSaveable { mutableIntStateOf(-1) }
@@ -290,6 +301,22 @@ fun CameraScannerScreen(
     // Brightness / contrast / saturation chosen on the review screen, per page (keyed like filters). Not saved across
     // process death: the sliders start at zero again, which is what they show.
     val adjustments = remember { mutableStateMapOf<String, PageAdjustments>() }
+    // What the review should point out per page (blurred, glare, too dark), keyed like filters. Worked out in the
+    // background for every page as it arrives (captures, retakes and gallery picks alike); not saved, it is simply
+    // worked out again after a restart.
+    val quality = remember { mutableStateMapOf<String, Set<PageIssue>>() }
+    LaunchedEffect(pages.toList()) {
+        val keys = pages.map { it.toString() }.toSet()
+        quality.keys.retainAll(keys)
+        for (page in pages.toList()) {
+            val key = page.toString()
+            if (key in quality) continue
+            val issues = withContext(Dispatchers.Default) {
+                runCatching { OpenCvScanProcessor.assessQuality(File(page.path.orEmpty())) }.getOrDefault(emptySet())
+            }
+            if (pages.contains(page)) quality[key] = issues
+        }
+    }
     // Starts from the mode's usual look; the last filter picked becomes the default for the rest of the session.
     var sessionFilter by rememberSaveable { mutableStateOf<PageFilter?>(null) }
     // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
@@ -364,6 +391,7 @@ fun CameraScannerScreen(
                 val previousResult = detection
                 if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
                     previousResult.isBlurry != result.isBlurry || previousResult.isReady != result.isReady ||
+                    PageQuality.isGlare(previousResult.glareShare) != PageQuality.isGlare(result.glareShare) ||
                     previousResult.frameWidth != result.frameWidth || previousResult.frameHeight != result.frameHeight
                 ) detection = result
                 // A soft tick the moment the page locks on, so the eye can stay on the paper.
@@ -443,7 +471,8 @@ fun CameraScannerScreen(
             processing = false
             onComplete(
                 inputs.map { it.first }, scanMode, crops, chosen, inputs.map { (uri, _) -> adjustments[uri.toString()] },
-                documentName.trim().ifBlank { null }
+                documentName.trim().ifBlank { null },
+                documentFolder.trim().ifBlank { null }
             )
         }
     }
@@ -791,6 +820,7 @@ fun CameraScannerScreen(
             quads = quads,
             filters = filters,
             adjustments = adjustments,
+            quality = quality,
             defaultFilter = sessionFilter ?: defaultFilter ?: scanMode.defaultFilter,
             onDefaultFilterChange = { sessionFilter = it },
             index = reviewIndex,
@@ -806,7 +836,10 @@ fun CameraScannerScreen(
             },
             name = documentName,
             // A page shot again for a saved document keeps that document's name.
-            onNameChange = if (retakeOfPage == null) ({ documentName = it }) else null
+            onNameChange = if (retakeOfPage == null && !appending) ({ documentName = it }) else null,
+            folder = documentFolder,
+            folders = folders,
+            onFolderChange = if (retakeOfPage == null && !appending) ({ documentFolder = it }) else null
         )
         return
     }
@@ -931,6 +964,7 @@ fun CameraScannerScreen(
                         ready -> Icons.Default.TaskAlt
                         state?.isDark == true -> Icons.Default.Bolt
                         state?.quad != null && state.isBlurry -> Icons.Default.PanTool
+                        state?.quad != null && PageQuality.isGlare(state.glareShare) -> Icons.Default.WbSunny
                         state?.quad != null -> Icons.Default.CenterFocusWeak
                         else -> Icons.Default.DocumentScanner
                     }

@@ -35,7 +35,7 @@
     <string name="err_could_not_save_image">The image %1$s couldn\'t be saved</string>
 
     <!-- Encrypted backups -->
-    <string name="err_backup_password_too_short">Use a backup password with at least 6 characters</string>
+    <string name="err_backup_password_too_short" tools:ignore="PluralsCandidate">Use a backup password with at least %1$d characters</string>
     <string name="err_could_not_open_backup">The backup couldn\'t be opened</string>
     <string name="err_could_not_decrypt_backup">Couldn\'t decrypt the backup. Check the password and the file.</string>
     <string name="err_backup_too_large">This backup is too large to restore</string>

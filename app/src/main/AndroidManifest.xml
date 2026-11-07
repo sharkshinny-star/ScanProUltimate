@@ -40,9 +40,13 @@
             android:value="ocr,barcode" />
 
 
+        <!-- taskAffinity="": another app cannot place its own screens in ScanPro's task by claiming the same affinity
+             (task hijacking, "StrandHogg"). Android 11+ is patched in the OS; for Android 7-10 (minSdk 24) this is
+             Google's partial, app-side mitigation. -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

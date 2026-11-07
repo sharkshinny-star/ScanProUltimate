@@ -157,7 +157,7 @@ class ScreenScreenshotTest(private val dark: Boolean) {
             pages = pages, quads = quads, filters = filters,
             defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {}, index = 0, processing = false,
             onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}, onRetake = {},
-            name = "", onNameChange = {}
+            name = "", onNameChange = {}, folder = "Work", folders = listOf("Work", "Home"), onFolderChange = {}
         )
     }
 

@@ -12,7 +12,7 @@
         <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/scanpro_window_dark</item>
         <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@drawable/ic_launcher_splash</item>
         <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="31">1000</item>
-        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@color/scanpro_splash_icon_bg</item>
+        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="31">@color/scanpro_brand</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
 

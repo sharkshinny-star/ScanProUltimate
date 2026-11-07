@@ -1,5 +1,8 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.filled.Folder
+import com.example.scanpro.feature.library.FolderPickerDialog
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Edit
 import com.example.scanpro.core.designsystem.TextInputDialog
@@ -106,6 +109,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -157,6 +165,8 @@ fun ScanReviewScreen(
     filters: SnapshotStateMap<String, PageFilter>,
     /** Brightness, contrast and saturation per page, keyed like [filters]; pages without an entry are untouched. */
     adjustments: MutableMap<String, PageAdjustments> = remember { mutableStateMapOf() },
+    /** What to point out per page (blurred, glare, too dark), keyed like [filters]; filled in as each check finishes. */
+    quality: Map<String, Set<PageIssue>> = emptyMap(),
     defaultFilter: PageFilter,
     onDefaultFilterChange: (PageFilter) -> Unit,
     index: Int,
@@ -171,7 +181,13 @@ fun ScanReviewScreen(
     /** The name typed for the new document; blank leaves it to the automatic title. */
     name: String = "",
     /** Shows the Name row when set; null where a name means nothing (a page shot again for a saved document). */
-    onNameChange: ((String) -> Unit)? = null
+    onNameChange: ((String) -> Unit)? = null,
+    /** The folder the new document goes into; blank for none. */
+    folder: String = "",
+    /** Existing folders to offer, locked ones left out. */
+    folders: List<String> = emptyList(),
+    /** Shows the Folder choice when set; null for a retake, like [onNameChange]. */
+    onFolderChange: ((String) -> Unit)? = null
 ) {
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
@@ -184,6 +200,8 @@ fun ScanReviewScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var naming by rememberSaveable { mutableStateOf(false) }
+    var choosingFolder by rememberSaveable { mutableStateOf(false) }
+    var panel by rememberSaveable { mutableIntStateOf(PANEL_FILTERS) }
     // Bumped after a rotation so the page is decoded again from the same file.
     var rotationTick by remember { mutableIntStateOf(0) }
     val blocked = working || processing
@@ -330,6 +348,17 @@ fun ScanReviewScreen(
         )
     }
 
+    if (choosingFolder && onFolderChange != null) {
+        FolderPickerDialog(
+            title = stringResource(R.string.scan_review_folder_dialog_title),
+            confirmLabel = stringResource(R.string.common_done),
+            folders = folders,
+            initial = folder,
+            onDismiss = { choosingFolder = false },
+            onConfirm = { chosen -> onFolderChange(chosen.trim()); choosingFolder = false }
+        )
+    }
+
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
@@ -451,8 +480,21 @@ fun ScanReviewScreen(
         var swipe by remember { mutableFloatStateOf(0f) }
         // Pages follow the reading direction: swiping towards the end of the row (left in LTR, right in RTL) goes forward.
         val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        val stage: @Composable (Modifier) -> Unit = { stageModifier -> Box(
-            stageModifier
+        val stage: @Composable (Modifier) -> Unit = { stageModifier -> Column(stageModifier) {
+        // A page that came out blurred, glary or dark says so, with a one-tap retake (Genius Scan, Scanbot). Above the
+        // page rather than over it, so it never covers a corner handle.
+        val issues = quality[key].orEmpty()
+        if (issues.isNotEmpty() && bitmap != null) {
+            QualityNotice(
+                issues = issues,
+                onRetake = onRetake?.takeIf { !blocked },
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 6.dp)
+            )
+        }
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
                 .background(desk)
                 .pointerInput(current, blocked, isRtl) {
@@ -489,13 +531,14 @@ fun ScanReviewScreen(
                     onCropChange = { quads[key] = it }
                 )
             }
-        } }
+        } } }
 
         // Thumbnails, filters and sliders; below the page, or beside it in landscape.
         val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         // Every page as a thumbnail: tap one to adjust it, "+" takes another page.
         ReviewFilmstrip(
             pages = pages,
+            quality = quality,
             current = current,
             refresh = rotationTick,
             enabled = !blocked,
@@ -504,6 +547,24 @@ fun ScanReviewScreen(
             onMove = ::movePage
         )
 
+        // Filters or Adjust, one panel at a time, as Adobe Scan, CamScanner, OKEN and Lens do: the sliders no longer take
+        // room from the page while nobody is using them. A dot on Adjust says this page's sliders have moved.
+        Row(
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = panel == PANEL_FILTERS,
+                onClick = { panel = PANEL_FILTERS },
+                label = { Text(stringResource(R.string.doc_filters)) }
+            )
+            FilterChip(
+                selected = panel == PANEL_ADJUST,
+                onClick = { panel = PANEL_ADJUST },
+                label = { Text(stringResource(R.string.scan_review_adjust) + if (adjustments[key] != null) " •" else "") }
+            )
+        }
+        if (panel == PANEL_FILTERS) {
         FilterStrip(
             previews = previews,
             selected = pageFilter,
@@ -522,6 +583,7 @@ fun ScanReviewScreen(
                 modifier = Modifier.padding(horizontal = 8.dp)
             ) { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) }
         }
+        } else {
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
             AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
@@ -548,6 +610,7 @@ fun ScanReviewScreen(
                 }
             }
         }
+        }
 
         message?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
@@ -559,31 +622,35 @@ fun ScanReviewScreen(
         // Name the document before saving, as Adobe Scan and CamScanner allow; left alone, it is named automatically. It sits
         // with the Save button: under the controls in portrait, pinned beside it in landscape.
         val nameRow: @Composable () -> Unit = {
-        if (onNameChange != null) {
-            val nameLabel = stringResource(R.string.scan_review_name_label)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(enabled = !blocked, onClickLabel = stringResource(R.string.scan_review_name_dialog_title)) { naming = true }
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(nameLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    name.ifBlank { stringResource(R.string.scan_review_name_auto) },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (name.isBlank()) FontWeight.Normal else FontWeight.SemiBold,
-                    color = if (name.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(Icons.Default.Edit, contentDescription = null, tint = primary, modifier = Modifier.size(18.dp))
+            if (onNameChange != null || onFolderChange != null) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onNameChange != null) {
+                        SaveOptionCell(
+                            label = stringResource(R.string.scan_review_name_label),
+                            value = name.ifBlank { stringResource(R.string.scan_review_name_auto) },
+                            chosen = name.isNotBlank(),
+                            icon = Icons.Default.Edit,
+                            enabled = !blocked,
+                            onClickLabel = stringResource(R.string.scan_review_name_dialog_title),
+                            onClick = { naming = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Where it is saved, as Genius Scan (scan into a folder), Adobe Scan and Lens (save location) allow.
+                    if (onFolderChange != null) {
+                        SaveOptionCell(
+                            label = stringResource(R.string.scan_review_folder_label),
+                            value = folder.ifBlank { stringResource(R.string.lib_no_folder) },
+                            chosen = folder.isNotBlank(),
+                            icon = Icons.Default.Folder,
+                            enabled = !blocked,
+                            onClickLabel = stringResource(R.string.scan_review_folder_dialog_title),
+                            onClick = { choosingFolder = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
-        }
         }
 
         // Bottom buttons: Auto detect · Rotate · Save (saves every page). One row under the page in portrait; in
@@ -687,6 +754,7 @@ fun ScanReviewScreen(
 @Composable
 private fun ReviewFilmstrip(
     pages: List<Uri>,
+    quality: Map<String, Set<PageIssue>>,
     current: Int,
     refresh: Int,
     enabled: Boolean,
@@ -726,8 +794,9 @@ private fun ReviewFilmstrip(
                 }
             }
             val isCurrent = index == current
-            val label = stringResource(R.string.scan_review_page_n, index + 1)
             val key = uri.toString()
+            val flagged = quality[key].orEmpty().isNotEmpty()
+            val label = stringResource(if (flagged) R.string.scan_quality_page_flagged else R.string.scan_review_page_n, index + 1)
             val dragging = draggingKey == key
             Box(
                 Modifier
@@ -792,6 +861,19 @@ private fun ReviewFilmstrip(
                     }
             ) {
                 thumbnail?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                if (flagged) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = QualityAmber,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(3.dp)
+                            .size(16.dp)
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), androidx.compose.foundation.shape.CircleShape)
+                            .padding(2.dp)
+                    )
+                }
                 Text(
                     "${index + 1}",
                     style = MaterialTheme.typography.labelSmall,
@@ -816,6 +898,80 @@ private fun ReviewFilmstrip(
         }
     }
 }
+
+/** Amber for "worth a look": readable on the dark thumbnail badge and as the notice's icon in both themes. */
+private val QualityAmber = androidx.compose.ui.graphics.Color(0xFFFFB13D)
+
+/**
+ * Over the top of the page: what looks wrong with it (all issues, most serious first) and, where the page can be shot
+ * again, a Retake button. Polite live region, so TalkBack reads it when it appears for the page on screen.
+ */
+@Composable
+private fun QualityNotice(issues: Set<PageIssue>, onRetake: (() -> Unit)?, modifier: Modifier = Modifier) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.inverseSurface,
+        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        shadowElevation = 4.dp,
+        modifier = modifier.widthIn(max = 420.dp).semantics { liveRegion = LiveRegionMode.Polite }
+    ) {
+        Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Warning, contentDescription = null, tint = QualityAmber, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(
+                PageIssue.entries.filter { it in issues }.map { stringResource(it.messageRes) }.joinToString("\n"),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f, fill = false).padding(vertical = 6.dp)
+            )
+            if (onRetake != null) {
+                TextButton(
+                    onClick = onRetake,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.inversePrimary)
+                ) { Text(stringResource(R.string.scan_quality_retake)) }
+            } else {
+                Spacer(Modifier.width(8.dp))
+            }
+        }
+    }
+}
+
+/** A labelled, tappable value above the Save button: the new document's name or folder. */
+@Composable
+private fun SaveOptionCell(
+    label: String,
+    value: String,
+    chosen: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean,
+    onClickLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = enabled, onClickLabel = onClickLabel, onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (chosen) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (chosen) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+private const val PANEL_FILTERS = 0
+private const val PANEL_ADJUST = 1
 
 /** One slider row: label · slider · value, with the value as a whole number from −50 to 50. */
 @Composable

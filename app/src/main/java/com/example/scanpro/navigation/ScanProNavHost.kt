@@ -50,11 +50,15 @@ fun ScanProNavHost(
     snackbarHostState: SnackbarHostState,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
-    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?) -> Unit,
+    onCameraScanComplete: (List<android.net.Uri>, ScanMode, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>, String?, String?) -> Unit,
     onCameraRetakeComplete: (RetakeTarget, android.net.Uri, CropQuad, PageFilter, PageAdjustments?) -> Unit,
     onFallbackScanner: () -> Unit,
     onAppLockChange: (Boolean) -> Unit,
     defaultScanMode: String = "",
+    /** Pages shot from a document's Add page: document id, then the pages as for a new scan. */
+    onCameraAppendComplete: (String, List<android.net.Uri>, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>) -> Unit = { _, _, _, _, _ -> },
+    /** Folders a new scan can be saved into, for the review screen's Folder choice. */
+    saveFolders: List<String> = emptyList(),
     defaultFilter: PageFilter? = null
 ) {
     val context = LocalContext.current
@@ -87,7 +91,7 @@ fun ScanProNavHost(
                     mode = route,
                     snackbarHostState = snackbarHostState,
                     onOpenDocument = { navController.navigate(ScanProDestinations.document(it)) },
-                    onStartScan = { navController.navigate(ScanProDestinations.CAMERA) },
+                    onStartScan = { folder -> navController.navigate(ScanProDestinations.cameraInFolder(folder)) },
                     onQuickScan = { mode -> navController.navigate(ScanProDestinations.camera(mode)) },
                     onOpenTools = { onTab(ScanProDestinations.TOOLS) },
                     onImportImages = onImportImages,
@@ -137,10 +141,13 @@ fun ScanProNavHost(
             route = ScanProDestinations.CAMERA_ROUTE,
             arguments = listOf(
                 navArgument(ScanProDestinations.CAMERA_MODE_ARG) { type = NavType.StringType; defaultValue = "" },
-                navArgument(ScanProDestinations.CAMERA_RETAKE_ARG) { type = NavType.StringType; defaultValue = "" }
+                navArgument(ScanProDestinations.CAMERA_RETAKE_ARG) { type = NavType.StringType; defaultValue = "" },
+                navArgument(ScanProDestinations.CAMERA_FOLDER_ARG) { type = NavType.StringType; defaultValue = "" },
+                navArgument(ScanProDestinations.CAMERA_APPEND_ARG) { type = NavType.StringType; defaultValue = "" }
             )
         ) { entry ->
             val retake = ScanProDestinations.parseRetake(entry.arguments?.getString(ScanProDestinations.CAMERA_RETAKE_ARG))
+            val appendTo = entry.arguments?.getString(ScanProDestinations.CAMERA_APPEND_ARG)?.takeIf { it.isNotBlank() }
             // Act only while this screen is resumed, so a double tap during the exit animation can't
             // import twice or pop Home and leave an empty screen.
             fun resumed() = entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
@@ -149,11 +156,15 @@ fun ScanProNavHost(
                 initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty().ifEmpty { defaultScanMode },
                 defaultFilter = defaultFilter,
                 retakeOfPage = retake?.position,
+                folders = saveFolders,
+                initialFolder = entry.arguments?.getString(ScanProDestinations.CAMERA_FOLDER_ARG).orEmpty(),
+                appending = appendTo != null,
                 onClose = dropUnlessResumed { navController.popBackStack() },
-                onComplete = { uris, mode, crops, filters, adjustments, name ->
+                onComplete = { uris, mode, crops, filters, adjustments, name, folder ->
                     if (resumed()) {
                         if (retake != null) onCameraRetakeComplete(retake, uris.first(), crops.first(), filters.first(), adjustments.firstOrNull())
-                        else onCameraScanComplete(uris, mode, crops, filters, adjustments, name)
+                        else if (appendTo != null) onCameraAppendComplete(appendTo, uris, crops, filters, adjustments)
+                        else onCameraScanComplete(uris, mode, crops, filters, adjustments, name, folder)
                         navController.popBackStack()
                     }
                 },
@@ -186,7 +197,11 @@ fun ScanProNavHost(
                 onBack = dropUnlessResumed { navController.popBackStack() },
                 onRetakePage = { documentId, pageId, position ->
                     navController.navigate(ScanProDestinations.cameraRetake(documentId, pageId, position)) { launchSingleTop = true }
-                }
+                },
+                onAddPagesWithCamera = { documentId ->
+                    navController.navigate(ScanProDestinations.cameraAppend(documentId)) { launchSingleTop = true }
+                },
+                onScanAnother = { navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true } }
             )
         }
     }

@@ -207,4 +207,6 @@
     <string name="settings_default_filter_title">ಆರಂಭದ ಫಿಲ್ಟರ್</string>
     <string name="settings_default_filter_subtitle">ಹೊಸ ಸ್ಕ್ಯಾನ್‌ಗಳು ಈ ಲುಕ್‌ನಿಂದ ಆರಂಭವಾಗುತ್ತವೆ; ಪ್ರತಿ ಪುಟಕ್ಕೂ ಬದಲಾಯಿಸಬಹುದು</string>
     <string name="settings_default_filter_automatic">ಸ್ವಯಂಚಾಲಿತ</string>
+    <string name="lib_share_separate">ಪ್ರತ್ಯೇಕ PDF ಗಳು (%1$d)</string>
+    <string name="lib_share_one_pdf">ಒಂದೇ PDF</string>
 </resources>

@@ -6,6 +6,6 @@
         <ignore regexp="bcpkix-jdk15to18" />
     </issue>
     <!-- The owner's version catalog (gradle/libs.versions.toml) covers :translate and :baselineprofile so far; :app's
-         dependencies are still inline. Moving them is a mechanical follow-up (R10), not a defect. -->
+         dependencies are still inline. Moving them is a mechanical follow-up (R37), not a defect. -->
     <issue id="UseTomlInstead" severity="ignore" />
 </lint>

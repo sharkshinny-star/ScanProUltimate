@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colour themes, Home tips and the What's new sheet -->
+    <string name="whats_new_title">ScanPro இல் புதியவை</string>
+    <string name="whats_new_themes_title">வண்ணத் தீம்கள்</string>
+    <string name="whats_new_themes_body">முழு ஆப்பிற்கும் இண்டிகோ, ஓஷன், எமரால்டு, சன்செட் அல்லது பெர்ரி நிறம், லைட் அல்லது டார்க்கில். அமைப்புகள் › தோற்றம்.</string>
+    <string name="whats_new_tips_title">முகப்பில் குறிப்புகள்</string>
+    <string name="whats_new_tips_body">நீங்கள் இன்னும் முயற்சிக்காத அம்சம் பற்றிய சிறு குறிப்பு. அமைப்புகளில் இவற்றை அணைக்கலாம்.</string>
+    <string name="whats_new_pick_colours">உங்கள் நிறங்களைத் தேர்ந்தெடு</string>
+    <string name="whats_new_got_it">சரி</string>
+    <string name="data_palette_indigo">இண்டிகோ</string>
+    <string name="data_palette_ocean">ஓஷன்</string>
+    <string name="data_palette_emerald">எமரால்டு</string>
+    <string name="data_palette_sunset">சன்செட்</string>
+    <string name="data_palette_berry">பெர்ரி</string>
+    <string name="settings_palette_title">வண்ணத் தீம்</string>
+    <string name="settings_palette_subtitle">ScanPro நிறங்களைத் தேர்ந்தெடு</string>
+    <string name="settings_palette_subtitle_wallpaper">வால்பேப்பர் நிறங்கள் இயக்கத்தில் உள்ளன. அதற்குப் பதில் தீமைப் பயன்படுத்த அதைத் தேர்ந்தெடு.</string>
+    <string name="settings_home_tips_title">முகப்பில் குறிப்புகள்</string>
+    <string name="settings_home_tips_subtitle">நீங்கள் இன்னும் முயற்சிக்காத அம்சம் பற்றிய சிறு குறிப்பு</string>
+    <string name="tip_eyebrow">உங்களுக்குத் தெரியுமா?</string>
+    <string name="tip_next">அடுத்த குறிப்பு</string>
+    <string name="tip_cd_hide">குறிப்புகளை மறை</string>
+    <string name="tip_qr_title">QR குறியீடுகள், பார்கோடுகளைப் படி</string>
+    <string name="tip_qr_body">கேமராவை குறியீட்டை நோக்கி வைத்து அதன் இணைப்பைத் திற, உரையை நகலெடு அல்லது தொடர்பைச் சேமி.</string>
+    <string name="tip_qr_action">குறியீட்டை ஸ்கேன் செய்</string>
+    <string name="tip_text_title">காகிதத்திலிருந்து உரையை நகலெடு</string>
+    <string name="tip_text_body">உரை எடு பயன்முறை பக்கத்தைப் படித்து சொற்களைத் தருகிறது; அவற்றை நகலெடுக்க, பகிர அல்லது திருத்தலாம்.</string>
+    <string name="tip_text_action">உரை எடு</string>
+    <string name="tip_id_title">ID இன் முன்பக்கம், பின்பக்கம்</string>
+    <string name="tip_id_body">ID கார்டு பயன்முறை கார்டின் இரு பக்கங்களையும் ஒரே முறையில் படம்பிடிக்கிறது.</string>
+    <string name="tip_id_action">ID ஸ்கேன் செய்</string>
+    <string name="tip_book_title">புத்தகங்களை நேர்த்தியாக ஸ்கேன் செய்</string>
+    <string name="tip_book_body">புத்தகப் பயன்முறை திறந்த புத்தகங்களுக்கானது; வளைவு, நடுவில் வளைந்த பக்கங்களை நேராக்குகிறது.</string>
+    <string name="tip_book_action">புத்தகத்தை ஸ்கேன் செய்</string>
+    <string name="tip_tools_title">PDF களை இணை, பிரி, சுருக்கு</string>
+    <string name="tip_tools_body">PDF கருவிகள் உங்கள் ஃபோனில் உள்ள எந்த PDF இலும் வேலை செய்யும், ஸ்கேன்களில் மட்டுமல்ல.</string>
+    <string name="tip_tools_action">PDF கருவிகளைத் திற</string>
+    <string name="tip_search_title">ஸ்கேன்களுக்குள் தேடு</string>
+    <string name="tip_search_body">ஒவ்வொரு ஸ்கேனின் உரையும் படிக்கப்படுகிறது, எனவே எந்தச் சொல்லாலும் பக்கத்தைக் கண்டுபிடிக்கலாம்.</string>
+    <string name="tip_search_action">தேடு</string>
+    <string name="tip_backup_title">என்க்ரிப்ட் செய்த பேக்கப்கள்</string>
+    <string name="tip_backup_body">ஒவ்வொரு ஆவணத்தையும் கடவுச்சொல்லுடன், நீங்கள் தேர்ந்தெடுக்கும் ஃபோல்டர் அல்லது கிளவுட் டிரைவில் பேக்கப் எடு.</string>
+    <string name="tip_backup_action">அமைப்புகளைத் திற</string>
+    <string name="tip_theme_title">ஐந்து வண்ணத் தீம்கள்</string>
+    <string name="tip_theme_body">ScanPro க்கு ஓஷன், எமரால்டு, சன்செட் அல்லது பெர்ரி நிறம், லைட் அல்லது டார்க்கில்.</string>
+    <string name="tip_theme_action">நிறங்களைத் தேர்ந்தெடு</string>
+    <string name="launch_tagline">ஸ்கேன் செய். தேடு. பகிர்.</string>
+</resources>

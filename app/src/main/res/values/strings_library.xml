@@ -180,6 +180,11 @@
     <string name="settings_theme_subtitle">Light, dark, or follow the system</string>
     <string name="settings_dynamic_color_title">Wallpaper colours</string>
     <string name="settings_dynamic_color_subtitle">Tint the app with your wallpaper\'s palette</string>
+    <string name="settings_palette_title">Colour theme</string>
+    <string name="settings_palette_subtitle">Pick the colours ScanPro is dressed in</string>
+    <string name="settings_palette_subtitle_wallpaper">Wallpaper colours are on. Pick a theme to use it instead.</string>
+    <string name="settings_home_tips_title">Tips on Home</string>
+    <string name="settings_home_tips_subtitle">A short tip about a feature you may not have tried</string>
     <string name="settings_ocr_language_title">Text recognition language</string>
     <string name="settings_ocr_language_subtitle">New scans are read as %1$s; change it per document on its page</string>
     <string name="settings_trash_retention_title">Keep deleted documents for</string>
@@ -222,4 +227,35 @@
     <string name="settings_default_filter_title">Starting filter</string>
     <string name="settings_default_filter_subtitle">The look new scans start with; you can change it per page</string>
     <string name="settings_default_filter_automatic">Automatic</string>
+
+    <!-- Home: "Did you know?" tips (feature/library/HomeTips.kt) -->
+    <string name="tip_eyebrow">Did you know?</string>
+    <string name="tip_next">Next tip</string>
+    <string name="tip_cd_hide">Hide tips</string>
+    <string name="tip_qr_title">Read QR codes and barcodes</string>
+    <string name="tip_qr_body">Point the camera at a code to open its link, copy its text or save a contact.</string>
+    <string name="tip_qr_action">Scan a code</string>
+    <string name="tip_text_title">Copy text from paper</string>
+    <string name="tip_text_body">Extract text mode reads a page and gives you the words to copy, share or edit.</string>
+    <string name="tip_text_action">Extract text</string>
+    <string name="tip_id_title">Front and back of an ID</string>
+    <string name="tip_id_body">ID card mode captures both sides of a card in one go.</string>
+    <string name="tip_id_action">Scan an ID</string>
+    <string name="tip_book_title">Scan books neatly</string>
+    <string name="tip_book_body">Book mode handles open books, and Curve flattens pages that bend near the spine.</string>
+    <string name="tip_book_action">Scan a book</string>
+    <string name="tip_tools_title">Merge, split and compress PDFs</string>
+    <string name="tip_tools_body">PDF tools work on any PDF on your phone, not just your scans.</string>
+    <string name="tip_tools_action">Open PDF tools</string>
+    <string name="tip_search_title">Search inside your scans</string>
+    <string name="tip_search_body">Every scan is read for text, so you can find a page by any word on it.</string>
+    <string name="tip_search_action">Search</string>
+    <string name="tip_backup_title">Encrypted backups</string>
+    <string name="tip_backup_body">Back up every document with a password, to a folder or cloud drive you choose.</string>
+    <string name="tip_backup_action">Open Settings</string>
+    <string name="tip_theme_title">Five colour themes</string>
+    <string name="tip_theme_body">Dress ScanPro in Ocean, Emerald, Sunset or Berry, in light or dark.</string>
+    <string name="tip_theme_action">Pick colours</string>
+    <string name="lib_share_separate">Separate PDFs (%1$d)</string>
+    <string name="lib_share_one_pdf">One PDF</string>
 </resources>

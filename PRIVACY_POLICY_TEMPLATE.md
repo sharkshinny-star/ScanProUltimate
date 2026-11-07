@@ -21,6 +21,8 @@ Imported files and captured pages are processed for features such as cropping, p
 
 Supported OCR is performed on the device using Google ML Kit text-recognition components. Recognised text can be stored locally so that you can search documents, edit OCR text, export text, and create searchable PDFs.
 
+Google ML Kit components may send Google metrics about the performance and use of the ML Kit APIs (for example, which API ran and whether it succeeded). According to Google, this does not include your images or recognised text. Check Google's current ML Kit terms and data disclosure before release and describe this accurately here and in the Play Data Safety form.
+
 The app also includes deterministic offline document-insight features that can classify common document types and extract or summarise information already present in recognised text. These offline features are not a substitute for professional, legal, financial, or medical review and may contain recognition/extraction errors.
 
 ## 4. Translation models

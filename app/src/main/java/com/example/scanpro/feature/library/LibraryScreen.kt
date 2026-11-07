@@ -2,6 +2,7 @@ package com.example.scanpro.feature.library
 
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -135,7 +136,8 @@ fun LibraryRoute(
     mode: String,
     snackbarHostState: SnackbarHostState,
     onOpenDocument: (String) -> Unit,
-    onStartScan: () -> Unit,
+    /** Opens the camera; Files passes the folder it is showing, so the scan is filed there (blank: none). */
+    onStartScan: (folder: String) -> Unit,
     onImportImages: () -> Unit,
     onImportPdf: () -> Unit,
     onTrash: () -> Unit,
@@ -162,6 +164,7 @@ fun LibraryRoute(
     val savedGrid by viewModel.libraryGrid.collectAsStateWithLifecycle()
     val lockedFolders by viewModel.lockedFolders.collectAsStateWithLifecycle()
     val hiddenFolders by viewModel.hiddenFolders.collectAsStateWithLifecycle()
+    val homeTips by viewModel.homeTips.collectAsStateWithLifecycle()
     LibraryScreen(
         mode = mode,
         overview = overview,
@@ -192,7 +195,7 @@ fun LibraryRoute(
         snackbarHostState = snackbarHostState,
         onQueryChange = viewModel::setQuery,
         onOpenDocument = onOpenDocument,
-        onStartScan = onStartScan,
+        onStartScan = { onStartScan(if (mode == ScanProDestinations.FILES) folder else "") },
         onImportImages = onImportImages,
         onImportPdf = onImportPdf,
         onTrash = onTrash,
@@ -200,10 +203,23 @@ fun LibraryRoute(
         onBack = onBack,
         onBulkDelete = viewModel::moveManyToTrash,
         onShareSelected = { ids -> viewModel.withFreshPdfs(ids) { docs -> sharePdfs(context, docs) } },
+        onShareCombined = { ids ->
+            viewModel.combinePdfs(ids) { file -> com.example.scanpro.core.ui.shareFile(context, file.absolutePath, "application/pdf", file.name) }
+        },
         onRenameFolder = viewModel::renameFolder,
         onTab = onTab,
         onQuickScan = onQuickScan,
-        onOpenTools = onOpenTools
+        onOpenTools = onOpenTools,
+        showTips = homeTips,
+        onHideTips = viewModel::hideHomeTips,
+        onTipAction = { action ->
+            when (action) {
+                is TipAction.Camera -> onQuickScan(action.mode)
+                TipAction.Tools -> onOpenTools()
+                TipAction.Search -> onSearch()
+                TipAction.Settings -> onTab(ScanProDestinations.SETTINGS)
+            }
+        }
     )
 }
 
@@ -245,18 +261,31 @@ internal fun LibraryScreen(
     onDeleteFolder: (String) -> Unit = {},
     folderExists: suspend (String) -> Boolean = { false },
     onShareSelected: (Set<String>) -> Unit,
+    /** Shares the selection as one combined PDF, in selection order. */
+    onShareCombined: (List<String>) -> Unit = {},
     onRenameFolder: (String, String) -> Unit,
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {},
     keptScanCount: Int = 0,
-    onKeptScans: () -> Unit = {}
+    onKeptScans: () -> Unit = {},
+    showTips: Boolean = false,
+    onHideTips: () -> Unit = {},
+    onTipAction: (TipAction) -> Unit = {}
 ) {
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
     // Files keeps the saved layout; Search is always a list. The saved sort orders both.
     val gridMode = mode == ScanProDestinations.FILES && savedGrid
     var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
+    // The document whose card ⋮ asked to move it; null when no such dialog is open.
+    var movingDocument by rememberSaveable { mutableStateOf<String?>(null) }
+    fun cardMenu(doc: DocumentSummary) = DocumentCardMenu(
+        onShare = { onShareSelected(setOf(doc.id)) },
+        onMoveToFolder = { movingDocument = doc.id },
+        onToggleFavourite = { onSetFavorite(setOf(doc.id), !doc.isFavorite) },
+        onMoveToRecycleBin = { onBulkDelete(setOf(doc.id)) }
+    )
     var deleteFolderOpen by rememberSaveable { mutableStateOf(false) }
     var renameMergeTarget by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -357,8 +386,22 @@ internal fun LibraryScreen(
                     },
                     actions = {
                         if (selecting) {
-                            IconButton(onClick = { onShareSelected(selected.toSet()) }) {
-                                Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.lib_cd_share_selected))
+                            // Several documents: separate PDFs, or one combined PDF in the order they were picked.
+                            var shareChoice by remember { mutableStateOf(false) }
+                            androidx.compose.foundation.layout.Box {
+                                IconButton(onClick = { if (selected.size > 1) shareChoice = true else onShareSelected(selected.toSet()) }) {
+                                    Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.lib_cd_share_selected))
+                                }
+                                androidx.compose.material3.DropdownMenu(expanded = shareChoice, onDismissRequest = { shareChoice = false }) {
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.lib_share_separate, selected.size)) },
+                                        onClick = { shareChoice = false; onShareSelected(selected.toSet()) }
+                                    )
+                                    androidx.compose.material3.DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.lib_share_one_pdf)) },
+                                        onClick = { shareChoice = false; onShareCombined(selected.toList()) }
+                                    )
+                                }
                             }
                             IconButton(onClick = {
                                 // The selection stays if the app was busy and nothing moved.
@@ -509,7 +552,10 @@ internal fun LibraryScreen(
                     onSearch = onSearch,
                     onSeeAll = { onTab(ScanProDestinations.FILES) },
                     onOpenDocument = onOpenDocument,
-                    onToggleSelection = ::toggleSelection
+                    onToggleSelection = ::toggleSelection,
+                    showTips = showTips,
+                    onHideTips = onHideTips,
+                    onTipAction = onTipAction
                 )
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
@@ -586,7 +632,8 @@ internal fun LibraryScreen(
                                     document = doc,
                                     selected = doc.id in selected,
                                     onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) }
+                                    onLongClick = { toggleSelection(doc.id) },
+                                    menu = if (selecting) null else cardMenu(doc)
                                 )
                             }
                         }
@@ -601,7 +648,8 @@ internal fun LibraryScreen(
                                     document = doc,
                                     selected = doc.id in selected,
                                     onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) }
+                                    onLongClick = { toggleSelection(doc.id) },
+                                    menu = if (selecting) null else cardMenu(doc)
                                 )
                             }
                         }
@@ -670,10 +718,21 @@ internal fun LibraryScreen(
             }
         )
     }
-    if (moveToFolderOpen) {
-        MoveToFolderDialog(
+    // One document moved from its card's ⋮ menu.
+    movingDocument?.let { id ->
+        FolderPickerDialog(
+            title = pluralStringResource(R.plurals.lib_move_documents_title, 1, 1),
+            confirmLabel = stringResource(R.string.lib_move),
             folders = folders,
-            count = selected.size,
+            onDismiss = { movingDocument = null },
+            onConfirm = { target -> movingDocument = null; onMoveToFolder(setOf(id), target) }
+        )
+    }
+    if (moveToFolderOpen) {
+        FolderPickerDialog(
+            title = pluralStringResource(R.plurals.lib_move_documents_title, selected.size, selected.size),
+            confirmLabel = stringResource(R.string.lib_move),
+            folders = folders,
             onDismiss = { moveToFolderOpen = false },
             onConfirm = { target ->
                 moveToFolderOpen = false
@@ -824,7 +883,10 @@ private fun HomeDashboard(
     onOpenDocument: (String) -> Unit,
     onToggleSelection: (String) -> Unit,
     keptScanCount: Int = 0,
-    onKeptScans: () -> Unit = {}
+    onKeptScans: () -> Unit = {},
+    showTips: Boolean = false,
+    onHideTips: () -> Unit = {},
+    onTipAction: (TipAction) -> Unit = {}
 ) {
     val recent = overview.recent
     val documentCount = overview.documentCount
@@ -888,6 +950,15 @@ private fun HomeDashboard(
                     }
                     repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
+            }
+        }
+        if (showTips) {
+            item(key = "tips") {
+                HomeTipCard(
+                    onAction = onTipAction,
+                    onHide = onHideTips,
+                    modifier = Modifier.padding(horizontal = 16.dp).animateItem()
+                )
             }
         }
     }
@@ -964,6 +1035,18 @@ private fun PrivacyLine(modifier: Modifier = Modifier) {
 @Composable
 private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
     val brand = ScanProTheme.colors
+    // A scan beam sweeps down the page glyph and back, like the scanner finding a page. Read while drawing,
+    // so it never recomposes the card; still when animations are off.
+    val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+    val beam = androidx.compose.animation.core.rememberInfiniteTransition(label = "hero").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(2_400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "beam"
+    )
     Box(
         modifier
             .fillMaxWidth()
@@ -985,13 +1068,37 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     // The brand glyph, large and faint, running off the right edge.
                     // Kept to the right third so the faint glyph (and its scan line) never runs behind the text.
                     val glyph = size.height * 1.05f
-                    translate(left = size.width - glyph * 0.62f, top = (size.height - glyph) / 2f) {
+                    val left = size.width - glyph * 0.62f
+                    val top = (size.height - glyph) / 2f
+                    translate(left = left, top = top) {
                         drawScanGlyph(
                             glyph,
                             paper = Color.White.copy(alpha = 0.16f),
                             ink = Color.White.copy(alpha = 0.22f),
-                            line = brand.scanLine.copy(alpha = 0.85f),
+                            // With motion the moving beam below replaces the glyph's fixed line.
+                            line = if (motion) Color.Transparent else brand.scanLine.copy(alpha = 0.85f),
                             bracket = Color.White.copy(alpha = 0.28f)
+                        )
+                    }
+                    if (motion) {
+                        val u = glyph / 108f
+                        val y = top + (30f + 48f * beam.value) * u
+                        // A soft wake behind the beam, then the beam itself across the page.
+                        drawRect(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, brand.scanLine.copy(alpha = 0.28f)),
+                                startY = y - 14f * u,
+                                endY = y
+                            ),
+                            topLeft = Offset(left + 30f * u, y - 14f * u),
+                            size = androidx.compose.ui.geometry.Size(48f * u, 14f * u)
+                        )
+                        drawLine(
+                            brand.scanLine.copy(alpha = 0.9f),
+                            Offset(left + 24f * u, y),
+                            Offset(left + 84f * u, y),
+                            strokeWidth = 5f * u,
+                            cap = androidx.compose.ui.graphics.StrokeCap.Round
                         )
                     }
                 }
@@ -1097,7 +1204,7 @@ private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () 
                             androidx.compose.material3.TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Rounded.Folder, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             }
                         }
                     }

@@ -115,10 +115,12 @@ class DocumentRepository @Inject constructor(
         adjustments: List<PageAdjustments?> = emptyList(),
         /** A name the user typed before saving; null or blank uses the automatic title. */
         title: String? = null,
+        /** The folder chosen before saving; null or blank leaves the document outside any folder. */
+        folder: String? = null,
     ): ScanDocument = withContext(Dispatchers.IO) {
         userRequire(imageUris.isNotEmpty(), R.string.err_choose_at_least_one_image)
         // Camera scans arrive with the outline the user confirmed; gallery and shared photos are outlined here.
-        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, adjustments, detectCrops = crops.isEmpty(), userTitle = title)
+        createDocument(null, imageUris, quality, autoTitle, mode, crops, filters, adjustments, detectCrops = crops.isEmpty(), userTitle = title, userFolder = folder)
     }
 
     suspend fun importPdf(
@@ -665,7 +667,14 @@ class DocumentRepository @Inject constructor(
         saved
     }
 
-    suspend fun appendImages(documentId: String, imageUris: List<Uri>) = withContext(Dispatchers.IO) {
+    suspend fun appendImages(
+        documentId: String,
+        imageUris: List<Uri>,
+        /** From the camera's review screen, one per photo; missing entries are detected or left as they are. */
+        crops: List<CropQuad> = emptyList(),
+        filters: List<PageFilter> = emptyList(),
+        adjustments: List<PageAdjustments?> = emptyList()
+    ) = withContext(Dispatchers.IO) {
         if (imageUris.isEmpty()) return@withContext
         val doc = requireDocument(documentId)
         if (doc.pages.size + imageUris.size > MAX_PAGES) throw UserFacingPluralException(R.plurals.err_document_page_limit, MAX_PAGES, MAX_PAGES)
@@ -691,9 +700,16 @@ class DocumentRepository @Inject constructor(
                 // Listed before copying, so a photo that fails half-way is cleaned up with the rest.
                 newPages += page
                 copyUri(uri, source)
-                // Outlined like a camera page, so a photo of a page on a desk comes in cropped and straight.
-                val crop = runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
-                newPages[newPages.lastIndex] = renderAndOcr(page.copy(crop = crop))
+                // The outline confirmed on the camera's review screen, or one found here, so a photo of a page on a
+                // desk comes in cropped and straight.
+                val crop = crops.getOrNull(offset) ?: runCatching { OpenCvScanProcessor.detectCrop(source) }.getOrDefault(CropQuad.DEFAULT)
+                newPages[newPages.lastIndex] = renderAndOcr(
+                    page.copy(
+                        crop = crop,
+                        filter = filters.getOrNull(offset) ?: page.filter,
+                        adjustments = adjustments.getOrNull(offset)?.normalized() ?: page.adjustments
+                    )
+                )
             }
             saveWithStalePdf(doc.copy(pages = doc.pages + newPages, updatedAt = now())).also { history.clear(doc.id) }
         } catch (error: Throwable) {
@@ -940,7 +956,10 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun exportEncryptedBackup(id: String, password: String): File = withContext(Dispatchers.IO) {
-        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
+        userRequire(
+            password.length >= EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH,
+            R.string.err_backup_password_too_short, EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH
+        )
         val doc = requireDocument(id)
         val file = freshExportFile("${safeName(doc.title)}_backup", "scanpro")
         encryptedPackages.export(doc, password.toCharArray(), file)
@@ -953,7 +972,10 @@ class DocumentRepository @Inject constructor(
      * staged whole. [onProgress] gets (done, total) after each document. Returns how many were written.
      */
     suspend fun backupAll(treeUri: Uri, password: String, onProgress: (Int, Int) -> Unit = { _, _ -> }): Int = withContext(Dispatchers.IO) {
-        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
+        userRequire(
+            password.length >= EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH,
+            R.string.err_backup_password_too_short, EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH
+        )
         val parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
         val documents = db.loadAll()
         val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now()))
@@ -977,7 +999,10 @@ class DocumentRepository @Inject constructor(
     }
 
     suspend fun importEncryptedBackup(source: Uri, password: String): ScanDocument = withContext(Dispatchers.IO) {
-        userRequire(password.length >= 6, R.string.err_backup_password_too_short)
+        userRequire(
+            password.length >= EncryptedDocumentPackage.MIN_RESTORE_PASSWORD_LENGTH,
+            R.string.err_backup_password_too_short, EncryptedDocumentPackage.MIN_RESTORE_PASSWORD_LENGTH
+        )
         val restored = encryptedPackages.import(source, password.toCharArray())
         val created = now()
         val id = UUID.randomUUID().toString()
@@ -1095,7 +1120,9 @@ class DocumentRepository @Inject constructor(
         /** Find the page in each photo, as the camera does, when no outline was given. */
         detectCrops: Boolean = false,
         /** Typed by the user; wins over the automatic title when it has any text. */
-        userTitle: String? = null
+        userTitle: String? = null,
+        /** Chosen by the user; the document is filed there (blank: no folder). */
+        userFolder: String? = null
     ): ScanDocument {
         val defaultScript = settings.defaultOcrScript.first()
         val created = now()
@@ -1139,7 +1166,13 @@ class DocumentRepository @Inject constructor(
             }
             PdfExporter.export(pages, pdf, quality, PdfPageSize.A4, searchable = true, pageNumbers = false)
 
-            val fallbackTitle = context.getString(R.string.doc_title_scan, SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created)))
+            // Named after the mode when it says something ("Receipt 2026-11-05 10-31", "ID card …"), as Adobe Scan does;
+            // used only when no title comes from the page text.
+            val stamp = SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created))
+            val fallbackTitle = when (mode) {
+                ScanMode.DOCUMENT, ScanMode.TEXT -> context.getString(R.string.doc_title_scan, stamp)
+                else -> "${context.getString(mode.labelRes)} $stamp"
+            }
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
             val title = userTitle?.trim()?.takeIf { it.isNotEmpty() }?.take(MAX_TITLE_LENGTH)
                 ?: if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
@@ -1154,7 +1187,8 @@ class DocumentRepository @Inject constructor(
                 pdfQuality = quality,
                 searchablePdf = pages.isNotEmpty(),
                 scanMode = mode,
-                ocrScript = defaultScript
+                ocrScript = defaultScript,
+                folderName = userFolder?.trim().orEmpty().take(80)
             )
             db.saveDocument(doc)
             return doc

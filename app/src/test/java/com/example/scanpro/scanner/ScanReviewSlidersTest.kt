@@ -4,6 +4,9 @@ import android.app.Application
 import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -38,13 +41,10 @@ class ScanReviewSlidersTest {
     private val adjustments = mutableStateMapOf<String, PageAdjustments>()
     private val brighter = reviewAdjustments(20, 10, 0)
 
-    private val quads = mutableStateMapOf<String, CropQuad>()
-    private val filters = mutableStateMapOf<String, PageFilter>()
-
     private fun show() = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(
-                pages = pages, quads = quads, filters = filters,
+                pages = pages, quads = mutableStateMapOf<String, CropQuad>(), filters = mutableStateMapOf<String, PageFilter>(),
                 adjustments = adjustments, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {}, index = 0,
                 processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}
             )
@@ -78,5 +78,13 @@ class ScanReviewSlidersTest {
         show()
         compose.onNodeWithText(app.getString(R.string.common_reset)).assertDoesNotExist()
         compose.onNodeWithText(app.getString(R.string.scan_review_adjust_use_on_all)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the sliders stay folded away until Adjust is opened`() {
+        show(openAdjust = false)
+        compose.onNodeWithText(app.getString(R.string.doc_brightness)).assertDoesNotExist()
+        compose.onNode(hasText(app.getString(R.string.scan_review_adjust), substring = true) and hasClickAction()).performClick()
+        compose.onNodeWithText(app.getString(R.string.doc_brightness)).assertExists()
     }
 }

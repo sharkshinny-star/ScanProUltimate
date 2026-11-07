@@ -39,6 +39,9 @@ class ScanReviewReorderTest {
     private val b = Uri.parse("file:///nowhere/b.jpg")
     private val c = Uri.parse("file:///nowhere/c.jpg")
     private val pages = mutableStateListOf(a, b, c)
+    // Held here rather than created inside setContent, where lint wants them remembered.
+    private val quads = mutableStateMapOf<String, CropQuad>()
+    private val filters = mutableStateMapOf<String, PageFilter>()
     private var index by mutableIntStateOf(0)
 
     private val quads = mutableStateMapOf<String, CropQuad>()

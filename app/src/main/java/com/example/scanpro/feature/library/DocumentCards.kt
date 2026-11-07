@@ -1,5 +1,11 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material.icons.filled.MoreVert
 import com.example.scanpro.data.SNIPPET_MATCH_START
 import com.example.scanpro.data.SNIPPET_MATCH_END
 import androidx.compose.ui.text.buildAnnotatedString
@@ -140,7 +146,9 @@ internal fun DocumentListCard(
     document: DocumentSummary,
     selected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    /** The card's ⋮ quick menu; null hides it (while selecting). */
+    menu: DocumentCardMenu? = null
 ) {
     val updatedText = rememberUpdatedText(document.updatedAt)
     val (container, border) = cardColors(selected)
@@ -208,6 +216,7 @@ internal fun DocumentListCard(
             Spacer(Modifier.width(8.dp))
             Icon(Icons.Rounded.Star, contentDescription = stringResource(R.string.lib_cd_favorite), tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
         }
+        if (menu != null) DocumentCardMenuButton(document, menu)
     }
 }
 
@@ -231,13 +240,49 @@ internal fun highlightedSnippet(snippet: String, highlight: Color): AnnotatedStr
     repeat(open) { pop() }
 }
 
+/**
+ * The actions behind a card's ⋮: what is otherwise reached by long-pressing to select, or by opening the document
+ * (Adobe Scan, Lens and CamScanner put the same few actions on every file).
+ */
+internal class DocumentCardMenu(
+    val onShare: () -> Unit,
+    val onMoveToFolder: () -> Unit,
+    val onToggleFavourite: () -> Unit,
+    val onMoveToRecycleBin: () -> Unit
+)
+
+@Composable
+private fun DocumentCardMenuButton(document: DocumentSummary, menu: DocumentCardMenu, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }, modifier = modifier) {
+            Icon(
+                Icons.Default.MoreVert,
+                contentDescription = stringResource(R.string.lib_cd_more_options),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.doc_share_pdf)) }, onClick = { open = false; menu.onShare() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.lib_menu_move_to_folder)) }, onClick = { open = false; menu.onMoveToFolder() })
+            DropdownMenuItem(
+                text = { Text(stringResource(if (document.isFavorite) R.string.lib_menu_remove_from_favorites else R.string.lib_menu_add_to_favorites)) },
+                onClick = { open = false; menu.onToggleFavourite() }
+            )
+            DropdownMenuItem(text = { Text(stringResource(R.string.doc_move_to_recycle_bin)) }, onClick = { open = false; menu.onMoveToRecycleBin() })
+        }
+    }
+}
+
 /** Grid tile: a tall thumbnail with the title underneath. */
 @Composable
 internal fun DocumentGridCard(
     document: DocumentSummary,
     selected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    /** The card's ⋮ quick menu; null hides it (while selecting). */
+    menu: DocumentCardMenu? = null
 ) {
     val (container, border) = cardColors(selected)
     val shape = MaterialTheme.shapes.medium
@@ -276,13 +321,17 @@ internal fun DocumentGridCard(
             SelectionBadge(selected, Modifier.align(Alignment.TopEnd).padding(6.dp))
         }
         Spacer(Modifier.height(10.dp))
-        Text(
-            document.title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                document.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            if (menu != null) DocumentCardMenuButton(document, menu, Modifier.size(32.dp))
+        }
         Spacer(Modifier.height(2.dp))
         Text(
             stringResource(R.string.lib_card_meta_two, pagesLabel(LocalContext.current, document.pageCount), formatBytes(LocalContext.current, document.sizeBytes)),

@@ -1,0 +1,408 @@
+package com.example.scanpro.cloud
+
+import android.content.Context
+import android.util.Log
+import com.example.scanpro.data.PageFilter
+import com.example.scanpro.data.ScanDocument
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import javax.inject.Inject
+import javax.inject.Singleton
+
+enum class OperationType(val value: String) {
+    CREATE("create"),
+    UPDATE("update"),
+    DELETE("delete"),
+    LIST("list"),
+    GET("get"),
+    WRITE("write")
+}
+
+data class CloudUser(
+    val uid: String,
+    val email: String,
+    val displayName: String,
+    val emailVerified: Boolean,
+    val idToken: String,
+    val refreshToken: String
+)
+
+@Singleton
+class FirebaseCloudClient @Inject constructor(
+    @param:ApplicationContext private val context: Context
+) {
+    private val prefs = context.getSharedPreferences("scanpro_firebase_auth", Context.MODE_PRIVATE)
+
+    private val _currentUser = MutableStateFlow<CloudUser?>(loadSavedUser())
+    val currentUser: StateFlow<CloudUser?> = _currentUser.asStateFlow()
+
+    private val _syncStatus = MutableStateFlow(
+        if (_currentUser.value != null) "Connected as ${_currentUser.value?.email}"
+        else "Local offline mode · Sign in to sync with Firebase"
+    )
+    val syncStatus: StateFlow<String> = _syncStatus.asStateFlow()
+
+    companion object {
+        private const val TAG = "FirebaseCloudClient"
+        const val PROJECT_ID = "spiritual-valve-rsmzh"
+        const val APP_ID = "1:632678256283:web:81e8d624e94e28f390003e"
+        const val API_KEY = "REDACTED_SET_YOUR_OWN_FIREBASE_KEY"
+        const val DATABASE_ID = "ai-studio-scanproultimate-62724a68-7dbd-466f-b435-1fec0696b5de"
+
+        private const val AUTH_BASE = "https://identitytoolkit.googleapis.com/v1"
+        private const val TOKEN_BASE = "https://securetoken.googleapis.com/v1"
+        private const val FIRESTORE_BASE =
+            "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/$DATABASE_ID/documents"
+    }
+
+    suspend fun testConnection() = withContext(Dispatchers.IO) {
+        val path = "test/connection"
+        try {
+            val url = URL("$FIRESTORE_BASE/$path?key=$API_KEY")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 8000
+                readTimeout = 8000
+                _currentUser.value?.idToken?.let {
+                    setRequestProperty("Authorization", "Bearer $it")
+                }
+            }
+            val code = conn.responseCode
+            conn.disconnect()
+            if (code == 403 || code == 404 || code in 200..299) {
+                Log.d(TAG, "Firestore connection verified (HTTP $code)")
+            }
+        } catch (error: Throwable) {
+            if (error.message?.contains("offline", ignoreCase = true) == true) {
+                Log.e(TAG, "Please check your Firebase configuration.")
+            }
+        }
+    }
+
+    suspend fun signInWithEmail(email: String, password: String): CloudUser = withContext(Dispatchers.IO) {
+        require(email.isNotBlank() && password.isNotBlank()) { "Email and password are required" }
+        val payload = JSONObject().apply {
+            put("email", email.trim())
+            put("password", password)
+            put("returnSecureToken", true)
+        }
+        val response = postJson("$AUTH_BASE/accounts:signInWithPassword?key=$API_KEY", payload)
+        val user = parseAuthUser(response, fallbackName = email.substringBefore('@'))
+        saveUser(user)
+        _currentUser.value = user
+        _syncStatus.value = "Synced with Firebase (${user.email})"
+        user
+    }
+
+    suspend fun signUpWithEmail(email: String, password: String, displayName: String): CloudUser = withContext(Dispatchers.IO) {
+        require(email.isNotBlank()) { "Email is required" }
+        require(password.length >= 6) { "Password must be at least 6 characters" }
+        val payload = JSONObject().apply {
+            put("email", email.trim())
+            put("password", password)
+            put("returnSecureToken", true)
+        }
+        val response = postJson("$AUTH_BASE/accounts:signUp?key=$API_KEY", payload)
+        var idToken = response.optString("idToken")
+        val cleanName = displayName.trim().ifBlank { email.substringBefore('@') }
+        if (idToken.isNotBlank() && cleanName.isNotBlank()) {
+            runCatching {
+                val updatePayload = JSONObject().apply {
+                    put("idToken", idToken)
+                    put("displayName", cleanName)
+                    put("returnSecureToken", true)
+                }
+                val updated = postJson("$AUTH_BASE/accounts:update?key=$API_KEY", updatePayload)
+                if (updated.optString("idToken").isNotBlank()) {
+                    idToken = updated.optString("idToken")
+                }
+            }
+        }
+        val user = CloudUser(
+            uid = response.optString("localId"),
+            email = response.optString("email", email.trim()),
+            displayName = cleanName,
+            emailVerified = false,
+            idToken = idToken,
+            refreshToken = response.optString("refreshToken")
+        )
+        saveUser(user)
+        _currentUser.value = user
+        _syncStatus.value = "Account created (${user.email})"
+        user
+    }
+
+    fun signOut() {
+        prefs.edit().clear().apply()
+        _currentUser.value = null
+        _syncStatus.value = "Signed out · Local storage active"
+    }
+
+    suspend fun syncDocument(doc: ScanDocument) = withContext(Dispatchers.IO) {
+        val user = _currentUser.value ?: return@withContext
+        val safeDocId = sanitizeId(doc.id)
+        val path = "users/${user.uid}/documents/$safeDocId"
+        try {
+            val token = ensureValidToken(user)
+            val nowIso = isoTimestamp(System.currentTimeMillis())
+            val createdIso = isoTimestamp(doc.createdAt)
+            val category = when (doc.folderName.trim().lowercase(Locale.ROOT)) {
+                "work" -> "Work"
+                "finance" -> "Finance"
+                "id & cards", "id", "cards" -> "ID & Cards"
+                "legal" -> "Legal"
+                "academic" -> "Academic"
+                else -> "Work"
+            }
+            val filterMode = when (doc.pages.firstOrNull()?.filter ?: PageFilter.ORIGINAL) {
+                PageFilter.ORIGINAL -> "original"
+                PageFilter.BW -> "bw"
+                PageFilter.GRAY -> "grayscale"
+                else -> "magic"
+            }
+            val hasSignature = doc.pages.any { page ->
+                page.annotations.any { it.type.name == "SIGNATURE" }
+            }
+            val fields = JSONObject().apply {
+                put("title", stringField(doc.title.take(120).ifBlank { "Untitled Scan" }))
+                put("category", stringField(category))
+                put("pageCount", intField(doc.pageCount.coerceIn(1, 500)))
+                put("sizeKB", intField(((doc.sizeBytes / 1024L).toInt()).coerceAtLeast(1)))
+                put("filterMode", stringField(filterMode))
+                put("isSigned", boolField(hasSignature))
+                put("signerName", stringField(if (hasSignature) user.displayName.take(100) else ""))
+                put("ocrText", stringField(doc.ocrText.take(5000)))
+                put("status", stringField(if (doc.isTrashed) "trashed" else "active"))
+                put("ownerId", stringField(user.uid))
+                put("createdAt", timestampField(createdIso))
+                put("updatedAt", timestampField(nowIso))
+            }
+            val body = JSONObject().apply { put("fields", fields) }
+            val url = URL("$FIRESTORE_BASE/$path?key=$API_KEY")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "PATCH"
+                doOutput = true
+                connectTimeout = 10000
+                readTimeout = 10000
+                setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                setRequestProperty("Authorization", "Bearer $token")
+            }
+            OutputStreamWriter(conn.outputStream, Charsets.UTF_8).use { it.write(body.toString()) }
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                val errStream = conn.errorStream?.bufferedReader()?.readText().orEmpty()
+                conn.disconnect()
+                if (code == 403 || errStream.contains("PERMISSION_DENIED", ignoreCase = true)) {
+                    handleFirestoreError(
+                        IllegalStateException("Missing or insufficient permissions: $errStream"),
+                        OperationType.WRITE,
+                        path
+                    )
+                }
+                throw IllegalStateException("Cloud sync HTTP $code")
+            }
+            conn.disconnect()
+            _syncStatus.value = "Last synced ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())}"
+        } catch (error: Throwable) {
+            Log.w(TAG, "Cloud sync warning for $path: ${error.message}")
+        }
+    }
+
+    suspend fun deleteCloudDocument(docId: String) = withContext(Dispatchers.IO) {
+        val user = _currentUser.value ?: return@withContext
+        val safeDocId = sanitizeId(docId)
+        val path = "users/${user.uid}/documents/$safeDocId"
+        try {
+            val token = ensureValidToken(user)
+            val url = URL("$FIRESTORE_BASE/$path?key=$API_KEY")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "DELETE"
+                connectTimeout = 8000
+                readTimeout = 8000
+                setRequestProperty("Authorization", "Bearer $token")
+            }
+            val code = conn.responseCode
+            if (code == 403) {
+                val errText = conn.errorStream?.bufferedReader()?.readText().orEmpty()
+                conn.disconnect()
+                handleFirestoreError(
+                    IllegalStateException("Missing or insufficient permissions: $errText"),
+                    OperationType.DELETE,
+                    path
+                )
+            }
+            conn.disconnect()
+        } catch (error: Throwable) {
+            Log.w(TAG, "Cloud delete warning for $path: ${error.message}")
+        }
+    }
+
+    suspend fun syncAllDocuments(documents: List<ScanDocument>): Int = withContext(Dispatchers.IO) {
+        val user = _currentUser.value ?: error("Sign in to Firebase first to sync documents")
+        ensureValidToken(user)
+        var syncedCount = 0
+        documents.forEach { doc ->
+            runCatching {
+                syncDocument(doc)
+                syncedCount++
+            }
+        }
+        _syncStatus.value = "Synced $syncedCount documents to Firebase ($PROJECT_ID)"
+        syncedCount
+    }
+
+    fun handleFirestoreError(error: Throwable, operationType: OperationType, path: String?) {
+        val user = _currentUser.value
+        val providerArray = JSONArray()
+        if (user != null) {
+            providerArray.put(
+                JSONObject().apply {
+                    put("providerId", "password")
+                    put("email", user.email)
+                }
+            )
+        }
+        val authInfo = JSONObject().apply {
+            put("userId", user?.uid ?: JSONObject.NULL)
+            put("email", user?.email ?: JSONObject.NULL)
+            put("emailVerified", user?.emailVerified ?: false)
+            put("isAnonymous", false)
+            put("tenantId", JSONObject.NULL)
+            put("providerInfo", providerArray)
+        }
+        val errInfo = JSONObject().apply {
+            put("error", error.message ?: error.toString())
+            put("operationType", operationType.value)
+            put("path", path ?: JSONObject.NULL)
+            put("authInfo", authInfo)
+        }
+        val jsonString = errInfo.toString()
+        Log.e(TAG, "Firestore Error: $jsonString")
+        throw IllegalStateException(jsonString)
+    }
+
+    private fun ensureValidToken(user: CloudUser): String {
+        if (user.refreshToken.isBlank()) return user.idToken
+        return try {
+            val payload = JSONObject().apply {
+                put("grant_type", "refresh_token")
+                put("refresh_token", user.refreshToken)
+            }
+            val refreshed = postJson("$TOKEN_BASE/token?key=$API_KEY", payload)
+            val newIdToken = refreshed.optString("id_token", user.idToken)
+            val newRefresh = refreshed.optString("refresh_token", user.refreshToken)
+            val updated = user.copy(idToken = newIdToken, refreshToken = newRefresh)
+            saveUser(updated)
+            _currentUser.value = updated
+            newIdToken
+        } catch (_: Throwable) {
+            user.idToken
+        }
+    }
+
+    private fun parseAuthUser(json: JSONObject, fallbackName: String): CloudUser {
+        val uid = json.optString("localId")
+        val email = json.optString("email")
+        val displayName = json.optString("displayName").ifBlank { fallbackName }
+        val idToken = json.optString("idToken")
+        val refreshToken = json.optString("refreshToken")
+        var emailVerified = json.optBoolean("registered", false)
+        if (idToken.isNotBlank()) {
+            runCatching {
+                val lookup = postJson(
+                    "$AUTH_BASE/accounts:lookup?key=$API_KEY",
+                    JSONObject().apply { put("idToken", idToken) }
+                )
+                val users = lookup.optJSONArray("users")
+                if (users != null && users.length() > 0) {
+                    emailVerified = users.getJSONObject(0).optBoolean("emailVerified", emailVerified)
+                }
+            }
+        }
+        return CloudUser(
+            uid = uid,
+            email = email,
+            displayName = displayName,
+            emailVerified = emailVerified,
+            idToken = idToken,
+            refreshToken = refreshToken
+        )
+    }
+
+    private fun postJson(urlStr: String, payload: JSONObject): JSONObject {
+        val url = URL(urlStr)
+        val conn = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 10000
+            readTimeout = 10000
+            setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+        }
+        OutputStreamWriter(conn.outputStream, Charsets.UTF_8).use { it.write(payload.toString()) }
+        val code = conn.responseCode
+        val body = if (code in 200..299) {
+            conn.inputStream.bufferedReader().readText()
+        } else {
+            val err = conn.errorStream?.bufferedReader()?.readText().orEmpty()
+            conn.disconnect()
+            val parsedMsg = runCatching {
+                JSONObject(err).optJSONObject("error")?.optString("message")
+            }.getOrNull()
+            throw IllegalStateException(parsedMsg ?: "Firebase authentication failed (HTTP $code)")
+        }
+        conn.disconnect()
+        return JSONObject(body)
+    }
+
+    private fun saveUser(user: CloudUser) {
+        prefs.edit()
+            .putString("uid", user.uid)
+            .putString("email", user.email)
+            .putString("displayName", user.displayName)
+            .putBoolean("emailVerified", user.emailVerified)
+            .putString("idToken", user.idToken)
+            .putString("refreshToken", user.refreshToken)
+            .apply()
+    }
+
+    private fun loadSavedUser(): CloudUser? {
+        val uid = prefs.getString("uid", null) ?: return null
+        val email = prefs.getString("email", null) ?: return null
+        val idToken = prefs.getString("idToken", null) ?: return null
+        return CloudUser(
+            uid = uid,
+            email = email,
+            displayName = prefs.getString("displayName", email.substringBefore('@')).orEmpty(),
+            emailVerified = prefs.getBoolean("emailVerified", false),
+            idToken = idToken,
+            refreshToken = prefs.getString("refreshToken", "").orEmpty()
+        )
+    }
+
+    private fun sanitizeId(raw: String): String =
+        raw.replace(Regex("[^a-zA-Z0-9_\\-]"), "_").take(128).ifBlank { "doc_1" }
+
+    private fun isoTimestamp(epochMs: Long): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        return sdf.format(Date(epochMs))
+    }
+
+    private fun stringField(value: String) = JSONObject().apply { put("stringValue", value) }
+    private fun intField(value: Int) = JSONObject().apply { put("integerValue", value.toString()) }
+    private fun boolField(value: Boolean) = JSONObject().apply { put("booleanValue", value) }
+    private fun timestampField(iso: String) = JSONObject().apply { put("timestampValue", iso) }
+}

@@ -20,6 +20,20 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import com.example.scanpro.ui.EmphasizedDecelerate
+import com.example.scanpro.ui.LaunchIntro
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -41,6 +55,7 @@ import com.example.scanpro.feature.document.DocumentEditor
 import com.example.scanpro.core.ui.SupportTopic
 import com.example.scanpro.core.ui.contactSupport
 import com.example.scanpro.core.ui.openPlayStoreListing
+import com.example.scanpro.data.AccentPalette
 import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.scanner.HardwareShutter
@@ -105,7 +120,11 @@ class MainActivity : FragmentActivity() {
         // A recreation (rotation, language or theme change) has no launch screen to finish: its state is already
         // loaded, so it must not be held back for the launch animation either.
         val freshLaunch = savedInstanceState == null
-        if (splash != null) showLaunchScreenUntilReady(splash, freshLaunch) else holdFirstFrameUntilReady()
+        // The launch animation plays for a plain start from the launcher. Shortcuts, shares, notification taps and
+        // reopening from Recents go straight to the app, and a recreation never replays it. App lock also skips it
+        // (decided once the setting has loaded): the lock screen asks for a fingerprint straight away.
+        introWanted = freshLaunch && isLauncherIntent(intent) && !launchedFromHistory(intent) && animationsEnabled()
+        if (splash != null) showLaunchScreenUntilReady(splash) else holdFirstFrameUntilReady()
         // Edits that were still waiting when the app was last stopped run now, once per process.
         documentEditor.resumeInterrupted()
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.
@@ -140,15 +159,28 @@ class MainActivity : FragmentActivity() {
           ) {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
+            val savedPalette by viewModel.accentPalette.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
+            val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
+            // True until this start's launch animation has played (or been ruled out); saved, so a rotation
+            // during it does not replay it.
+            var launchPending by rememberSaveable { mutableStateOf(introWanted) }
+            // The app settles from a slight zoom while the launch animation opens onto it.
+            val settle = remember { Animatable(1f) }
+            val launchScope = rememberCoroutineScope()
             // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
             val mode = themeMode ?: return@CompositionLocalProvider
+            val palette = savedPalette ?: return@CompositionLocalProvider
+            val playIntro = launchPending && introWanted && appLock == false
+            if (launchPending && !playIntro) LaunchedEffect(Unit) { launchPending = false }
             val targetDark = when (mode) {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
-            ThemeTransition(targetDark) { dark ->
+            // A change of light/dark, colour theme or wallpaper colours crossfades rather than snapping.
+            ThemeTransition(AppTheme(targetDark, palette, dynamicColor)) { theme ->
+                val dark = theme.dark
                 // Status and navigation bar icons follow the app's theme, not the system's.
                 DisposableEffect(dark) {
                     // Explicit light/dark styles: with SystemBarStyle.auto, enableEdgeToEdge turns the navigation-bar
@@ -161,10 +193,13 @@ class MainActivity : FragmentActivity() {
                     hideSystemNavigationBars()
                     onDispose { }
                 }
-                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = dynamicColor) {
-                    CrashReportPrompt()
+                ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = theme.dynamicColor, palette = theme.palette) {
+                    // The crash prompt is a dialog window, which would sit on top of the launch animation.
+                    if (!playIntro) CrashReportPrompt()
+                    Box(Modifier.fillMaxSize().graphicsLayer { scaleX = settle.value; scaleY = settle.value }) {
                     ScanProApp(
                         viewModel = viewModel,
+                        launchSettled = !playIntro,
                         sessionUnlocked = sessionUnlocked,
                         onFallbackScanner = ::startCompatibilityScanner,
                         onImportImages = {
@@ -192,6 +227,18 @@ class MainActivity : FragmentActivity() {
                             }
                         }
                     )
+                    }
+                    if (playIntro) {
+                        LaunchIntro(
+                            onReveal = {
+                                launchScope.launch {
+                                    settle.snapTo(1.04f)
+                                    settle.animateTo(1f, tween(420, easing = EmphasizedDecelerate))
+                                }
+                            },
+                            onFinished = { launchPending = false }
+                        )
+                    }
                 }
             }
         }
@@ -201,47 +248,15 @@ class MainActivity : FragmentActivity() {
     /**
      * Keeps the launch screen up until the saved theme, lock and welcome settings have loaded (normally a few
      * milliseconds, never longer than [LAUNCH_SCREEN_MAX_HOLD_MS]), so nothing flashes in the wrong theme.
-     * On a fresh launch the animated icon is shown in full first. It then fades and grows away instead of
-     * cutting to the app.
+     * When the launch animation plays, it starts from the same picture, so the launch screen just steps aside;
+     * otherwise it fades and grows away instead of cutting to the app.
      */
-    private fun showLaunchScreenUntilReady(splash: androidx.core.splashscreen.SplashScreen, freshLaunch: Boolean) {
+    private fun showLaunchScreenUntilReady(splash: androidx.core.splashscreen.SplashScreen) {
         val startedAt = SystemClock.uptimeMillis()
-        // The animated icon (ic_launcher_splash) plays once in full, unless the user turned animations off.
-        val animationsOn = android.provider.Settings.Global.getFloat(
-            contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f
-        ) > 0f
-        val minimumMs = if (animationsOn && freshLaunch) LAUNCH_ANIMATION_MS else 0L
         splash.setKeepOnScreenCondition {
-            val elapsed = SystemClock.uptimeMillis() - startedAt
-            val ready = viewModel.launchStateReady
-            (!ready && elapsed < LAUNCH_SCREEN_MAX_HOLD_MS) || elapsed < minimumMs
+            !viewModel.launchStateReady && SystemClock.uptimeMillis() - startedAt < LAUNCH_SCREEN_MAX_HOLD_MS
         }
         splash.setOnExitAnimationListener { provider ->
-            val isDark = when (viewModel.themeMode.value) {
-                ThemeMode.DARK -> true
-                ThemeMode.LIGHT -> false
-                else -> (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                    android.content.res.Configuration.UI_MODE_NIGHT_YES
-            }
-            val targetBg = if (isDark) {
-                ContextCompat.getColor(this, R.color.scanpro_window_dark)
-            } else {
-                ContextCompat.getColor(this, R.color.scanpro_window_light)
-            }
-            provider.view.setBackgroundColor(targetBg)
-
-            val interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
-
-            // Icon smoothly zooms and fades out
-            provider.iconView.animate()
-                .scaleX(1.2f)
-                .scaleY(1.2f)
-                .alpha(0f)
-                .setDuration(320L)
-                .setInterpolator(interpolator)
-                .start()
-
-            // Splash view fades out to reveal the correctly-themed app screen
             provider.view.animate()
                 .alpha(0f)
                 .setDuration(300L)
@@ -278,6 +293,17 @@ class MainActivity : FragmentActivity() {
             }
         })
     }
+
+    /** Set in onCreate: whether this start should play the launch animation (still skipped with app lock on). */
+    private var introWanted = false
+
+    private fun isLauncherIntent(intent: Intent?): Boolean =
+        intent?.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_LAUNCHER)
+
+    /** False when animations are off in the system settings; then the launch animation does not play. */
+    private fun animationsEnabled(): Boolean = runCatching {
+        android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+    }.getOrDefault(true)
 
     private fun launchedFromHistory(intent: Intent?): Boolean =
         intent != null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
@@ -497,8 +523,6 @@ class MainActivity : FragmentActivity() {
     companion object {
         private const val LOCK_TIMEOUT_MS = 30_000L
         private const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
-        /** Length of the animated launch icon; matches windowSplashScreenAnimationDuration in themes.xml. */
-        private const val LAUNCH_ANIMATION_MS = 1000L
         private const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
         /** From notifications: open a document ([EXTRA_DOCUMENT_ID]), the recycle bin or settings, after unlock. */
         const val ACTION_OPEN_DOCUMENT = "com.example.scanpro.action.OPEN_DOCUMENT"
@@ -516,3 +540,6 @@ class MainActivity : FragmentActivity() {
         private const val ACTION_SUPPORT = "com.example.scanpro.action.SUPPORT"
     }
 }
+
+/** Everything that decides the app's colours; a change to any of it crossfades the screen. */
+private data class AppTheme(val dark: Boolean, val palette: AccentPalette, val dynamicColor: Boolean)

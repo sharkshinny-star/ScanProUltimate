@@ -17,6 +17,14 @@
     <string name="ui_welcome_point_clean">சுத்தம் செய்து தேடக்கூடியதாக்குங்கள்</string>
     <string name="ui_welcome_point_share">கையொப்பமிட்டுப் பகிருங்கள்</string>
     <string name="ui_welcome_get_started">தொடங்குங்கள்</string>
+    <string name="ui_permissions_title">அனுமதி அளியுங்கள்</string>
+    <string name="ui_permissions_body">ScanPro தேவையானதை மட்டுமே கேட்கிறது, உங்கள் ஆவணங்கள் உங்கள் ஃபோனிலேயே இருக்கும். இதை எப்போது வேண்டுமானாலும் ஃபோன் அமைப்புகளில் மாற்றலாம்.</string>
+    <string name="ui_permission_camera_title">கேமரா</string>
+    <string name="ui_permission_camera_body">ஆவணங்கள், ID கார்டுகள், QR குறியீடுகளை ஸ்கேன் செய்ய</string>
+    <string name="ui_permission_notifications_title">அறிவிப்புகள்</string>
+    <string name="ui_permission_notifications_body">PDF இணைத்தல், பேக்கப் போன்ற நீண்ட வேலை முடிந்ததும் உங்களுக்குத் தெரிவிக்க</string>
+    <string name="ui_permissions_allow">அனுமதி</string>
+    <string name="ui_permissions_not_now">இப்போது வேண்டாம்</string>
     <string name="ui_scanned_page">ஸ்கேன் செய்த பக்கம்</string>
     <string name="ui_password_label">பாஸ்வேர்டு</string>
     <plurals name="ui_password_minimum_chars">
@@ -220,4 +228,13 @@
     <string name="scan_review_name_auto">தானியங்கு</string>
     <string name="scan_review_name_dialog_title">இந்த ஸ்கேனுக்குப் பெயரிடுங்கள்</string>
     <string name="scan_review_adjust_use_on_all">எல்லாப் பக்கங்களுக்கும் பயன்படுத்து</string>
+    <string name="scan_review_folder_label">கோப்புறை</string>
+    <string name="scan_review_folder_dialog_title">கோப்புறையில் சேமி</string>
+    <string name="scan_review_adjust">சரிசெய்</string>
+    <string name="scan_guidance_glare">பக்கத்தில் ஒளிர்வு உள்ளது · ஃபோனைச் சற்று சாய்க்கவும்</string>
+    <string name="scan_quality_blurry">இந்தப் பக்கம் மங்கலாகத் தெரிகிறது: சிறிய உரையைப் படிப்பது கடினமாக இருக்கலாம்</string>
+    <string name="scan_quality_glare">ஒளிர்வு இந்தப் பக்கத்தின் ஒரு பகுதியை மறைக்கிறது</string>
+    <string name="scan_quality_dark">இந்தப் பக்கம் மிகவும் இருட்டாகத் தெரிகிறது</string>
+    <string name="scan_quality_retake">மீண்டும் எடு</string>
+    <string name="scan_quality_page_flagged">பக்கம் %1$d, மீண்டும் எடுக்க வேண்டியிருக்கலாம்</string>
 </resources>

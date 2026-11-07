@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colour themes, Home tips and the What's new sheet -->
+    <string name="whats_new_title">ScanPro ನಲ್ಲಿ ಹೊಸದು</string>
+    <string name="whats_new_themes_title">ಕಲರ್ ಥೀಮ್‌ಗಳು</string>
+    <string name="whats_new_themes_body">ಇಡೀ ಆ್ಯಪ್‌ಗೆ ಇಂಡಿಗೋ, ಓಷನ್, ಎಮರಾಲ್ಡ್, ಸನ್‌ಸೆಟ್ ಅಥವಾ ಬೆರ್ರಿ ಬಣ್ಣ, ಲೈಟ್ ಅಥವಾ ಡಾರ್ಕ್‌ನಲ್ಲಿ. ಸೆಟ್ಟಿಂಗ್‌ಗಳು › ನೋಟ.</string>
+    <string name="whats_new_tips_title">ಹೋಮ್‌ನಲ್ಲಿ ಸಲಹೆಗಳು</string>
+    <string name="whats_new_tips_body">ನೀವು ಇನ್ನೂ ಪ್ರಯತ್ನಿಸದ ವೈಶಿಷ್ಟ್ಯದ ಬಗ್ಗೆ ಚಿಕ್ಕ ಸಲಹೆ. ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಇವುಗಳನ್ನು ಆಫ್ ಮಾಡಬಹುದು.</string>
+    <string name="whats_new_pick_colours">ನಿಮ್ಮ ಬಣ್ಣಗಳನ್ನು ಆರಿಸಿ</string>
+    <string name="whats_new_got_it">ಸರಿ</string>
+    <string name="data_palette_indigo">ಇಂಡಿಗೋ</string>
+    <string name="data_palette_ocean">ಓಷನ್</string>
+    <string name="data_palette_emerald">ಎಮರಾಲ್ಡ್</string>
+    <string name="data_palette_sunset">ಸನ್‌ಸೆಟ್</string>
+    <string name="data_palette_berry">ಬೆರ್ರಿ</string>
+    <string name="settings_palette_title">ಕಲರ್ ಥೀಮ್</string>
+    <string name="settings_palette_subtitle">ScanPro ಬಣ್ಣಗಳನ್ನು ಆರಿಸಿ</string>
+    <string name="settings_palette_subtitle_wallpaper">ವಾಲ್‌ಪೇಪರ್ ಬಣ್ಣಗಳು ಆನ್ ಆಗಿವೆ. ಬದಲಿಗೆ ಥೀಮ್ ಬಳಸಲು ಅದನ್ನು ಆರಿಸಿ.</string>
+    <string name="settings_home_tips_title">ಹೋಮ್‌ನಲ್ಲಿ ಸಲಹೆಗಳು</string>
+    <string name="settings_home_tips_subtitle">ನೀವು ಇನ್ನೂ ಪ್ರಯತ್ನಿಸದ ವೈಶಿಷ್ಟ್ಯದ ಬಗ್ಗೆ ಚಿಕ್ಕ ಸಲಹೆ</string>
+    <string name="tip_eyebrow">ನಿಮಗೆ ಗೊತ್ತೇ?</string>
+    <string name="tip_next">ಮುಂದಿನ ಸಲಹೆ</string>
+    <string name="tip_cd_hide">ಸಲಹೆಗಳನ್ನು ಮರೆಮಾಡಿ</string>
+    <string name="tip_qr_title">QR ಕೋಡ್ ಮತ್ತು ಬಾರ್‌ಕೋಡ್ ಓದಿ</string>
+    <string name="tip_qr_body">ಕ್ಯಾಮೆರಾವನ್ನು ಕೋಡ್ ಕಡೆ ತೋರಿಸಿ ಅದರ ಲಿಂಕ್ ತೆರೆಯಿರಿ, ಪಠ್ಯ ಕಾಪಿ ಮಾಡಿ ಅಥವಾ ಸಂಪರ್ಕ ಉಳಿಸಿ.</string>
+    <string name="tip_qr_action">ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="tip_text_title">ಕಾಗದದಿಂದ ಪಠ್ಯ ಕಾಪಿ ಮಾಡಿ</string>
+    <string name="tip_text_body">ಪಠ್ಯ ತೆಗೆಯಿರಿ ಮೋಡ್ ಪುಟವನ್ನು ಓದಿ ಪದಗಳನ್ನು ನೀಡುತ್ತದೆ, ಅವುಗಳನ್ನು ಕಾಪಿ, ಹಂಚಿಕೆ ಅಥವಾ ಸಂಪಾದನೆ ಮಾಡಬಹುದು.</string>
+    <string name="tip_text_action">ಪಠ್ಯ ತೆಗೆಯಿರಿ</string>
+    <string name="tip_id_title">ID ಯ ಮುಂಭಾಗ ಮತ್ತು ಹಿಂಭಾಗ</string>
+    <string name="tip_id_body">ID ಕಾರ್ಡ್ ಮೋಡ್ ಕಾರ್ಡ್‌ನ ಎರಡೂ ಬದಿಗಳನ್ನು ಒಮ್ಮೆಗೇ ಸೆರೆಹಿಡಿಯುತ್ತದೆ.</string>
+    <string name="tip_id_action">ID ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="tip_book_title">ಪುಸ್ತಕಗಳನ್ನು ಅಚ್ಚುಕಟ್ಟಾಗಿ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="tip_book_body">ಪುಸ್ತಕ ಮೋಡ್ ತೆರೆದ ಪುಸ್ತಕಗಳಿಗೆ, ಕರ್ವ್ ಮಧ್ಯದಲ್ಲಿ ಬಾಗಿದ ಪುಟಗಳನ್ನು ಸಮಮಾಡುತ್ತದೆ.</string>
+    <string name="tip_book_action">ಪುಸ್ತಕ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="tip_tools_title">PDF ಗಳನ್ನು ಸೇರಿಸಿ, ವಿಭಜಿಸಿ, ಕುಗ್ಗಿಸಿ</string>
+    <string name="tip_tools_body">PDF ಟೂಲ್‌ಗಳು ನಿಮ್ಮ ಫೋನ್‌ನ ಯಾವುದೇ PDF ಮೇಲೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ, ಸ್ಕ್ಯಾನ್‌ಗಳ ಮೇಲೆ ಮಾತ್ರವಲ್ಲ.</string>
+    <string name="tip_tools_action">PDF ಟೂಲ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ</string>
+    <string name="tip_search_title">ಸ್ಕ್ಯಾನ್‌ಗಳ ಒಳಗೆ ಹುಡುಕಿ</string>
+    <string name="tip_search_body">ಪ್ರತಿ ಸ್ಕ್ಯಾನ್‌ನ ಪಠ್ಯವನ್ನು ಓದಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಯಾವುದೇ ಪದದಿಂದ ಪುಟವನ್ನು ಹುಡುಕಬಹುದು.</string>
+    <string name="tip_search_action">ಹುಡುಕಿ</string>
+    <string name="tip_backup_title">ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿದ ಬ್ಯಾಕಪ್‌ಗಳು</string>
+    <string name="tip_backup_body">ಪ್ರತಿ ಡಾಕ್ಯುಮೆಂಟ್ ಅನ್ನು ಪಾಸ್‌ವರ್ಡ್‌ನೊಂದಿಗೆ, ನೀವು ಆರಿಸುವ ಫೋಲ್ಡರ್ ಅಥವಾ ಕ್ಲೌಡ್ ಡ್ರೈವ್‌ಗೆ ಬ್ಯಾಕಪ್ ಮಾಡಿ.</string>
+    <string name="tip_backup_action">ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ</string>
+    <string name="tip_theme_title">ಐದು ಕಲರ್ ಥೀಮ್‌ಗಳು</string>
+    <string name="tip_theme_body">ScanPro ಗೆ ಓಷನ್, ಎಮರಾಲ್ಡ್, ಸನ್‌ಸೆಟ್ ಅಥವಾ ಬೆರ್ರಿ ಬಣ್ಣ, ಲೈಟ್ ಅಥವಾ ಡಾರ್ಕ್‌ನಲ್ಲಿ.</string>
+    <string name="tip_theme_action">ಬಣ್ಣಗಳನ್ನು ಆರಿಸಿ</string>
+    <string name="launch_tagline">ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಹುಡುಕಿ. ಹಂಚಿಕೊಳ್ಳಿ.</string>
+</resources>

@@ -12,14 +12,14 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after full build, lint and unit test pass (F48).
+Last updated: 2026-11-04, branch `claude/awesome-clarke-ussjo3`, after the full test run and screen-review fixes (F43, `b76720c`). A competitor comparison (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan, Google's scanner) was started in that session.
 
 ## 1. Current state
 
 - **Branch:** `claude/awesome-clarke-ussjo3` on `codingking155/ScanProUltimate`. Work is pushed; no pull request is open.
 - **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`.
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
-- **Builds (2026-11-05, F48):** 0 compiler warnings on a clean compile; 247 passed, 52 skipped, 0 failed; lint 0 issues (`:app`, `:opencv`).
+- **Builds (2026-11-04, `b76720c`):** 0 compiler warnings on a clean compile; 275 unit tests, 0 failed; lint 0 issues (`:app`, `:opencv`); bundle and sideload release builds pass; 16 KB alignment checked (see `BUILD_AND_TEST.md`).
 - **Not verified:** nothing has run on a device or emulator. Camera, PDF tools, app lock, notifications and backup/restore
   are untested in practice. No instrumented tests beyond `AppSmokeTest`; `ScreenScreenshotTest` (opt-in) renders 12 screens
   in light and dark for review but asserts nothing.
@@ -32,8 +32,7 @@ Last updated: 2026-11-05, branch `claude/awesome-clarke-ussjo3`, after full buil
 
 | Commit | What |
 |---|---|
-| newest | F48: system navigation bar immersion (`hideSystemNavigationBars()`), splash screen exit animation with smooth zoom & fade, theme-aware decorView background color to eliminate white flash on launch; dynamic greetings (morning/afternoon/evening) across 6 languages in BrandLockup; dynamic feature split APK MlKit component registrar preservation in `translate/src/main/AndroidManifest.xml`; unit tests unremembered state hoisted for lint compliance. |
-| `b6362d3` | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |
+| newest | F47: fixes from an independent review of F44/F45 (text-dialog drafts survive rotation app-wide; strip no longer jumps or lags while dragging; drag finds its page by key). |
 | `08d9887` | F46 (from the competitor comparison): slider Reset and Apply to all pages, Rotate all pages, Auto capture in the camera ⋮ menu, spoken camera guidance. |
 | `c21d582` | F45: name a scan on the review screen before saving (Name row and dialog; the name rides the import request into the document). |
 | `5f96824` | F44: drag-to-reorder on the review thumbnail strip (long-press, lift, swap; accessibility actions); `ScanReviewReorderTest` (3). |

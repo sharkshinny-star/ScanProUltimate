@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -33,6 +34,8 @@ class ScanReviewNamingTest {
     private val app = ApplicationProvider.getApplicationContext<Application>()
     private val automatic = app.getString(R.string.scan_review_name_auto)
     private var name by mutableStateOf("")
+    private var folder by mutableStateOf("")
+    private val noFolder = app.getString(R.string.lib_no_folder)
 
     private val pages = mutableStateListOf(Uri.parse("file:///nowhere/a.jpg"))
     private val quads = mutableStateMapOf<String, CropQuad>()
@@ -41,10 +44,11 @@ class ScanReviewNamingTest {
     private fun show(nameable: Boolean = true) = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(
-                pages = pages, quads = quads,
-                filters = filters, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {},
+                pages = mutableStateListOf(Uri.parse("file:///nowhere/a.jpg")), quads = mutableStateMapOf<String, CropQuad>(),
+                filters = mutableStateMapOf<String, PageFilter>(), defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {},
                 index = 0, processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {},
-                name = name, onNameChange = if (nameable) ({ name = it }) else null
+                name = name, onNameChange = if (nameable) ({ name = it }) else null,
+                folder = folder, folders = listOf("Tax", "Work"), onFolderChange = if (nameable) ({ folder = it }) else null
             )
         }
     }
@@ -63,8 +67,18 @@ class ScanReviewNamingTest {
     }
 
     @Test
-    fun `no Name row when a page is shot again for a saved document`() {
+    fun `the folder reads No folder until one is chosen, then shows it`() {
+        show()
+        compose.onNodeWithText(noFolder).assertExists()
+        folder = "Tax"
+        compose.onNodeWithText("Tax").assertExists()
+        compose.onNodeWithText(noFolder).assertDoesNotExist()
+    }
+
+    @Test
+    fun `no Name or Folder when a page is shot again for a saved document`() {
         show(nameable = false)
         compose.onNodeWithText(automatic).assertDoesNotExist()
+        compose.onNodeWithText(noFolder).assertDoesNotExist()
     }
 }

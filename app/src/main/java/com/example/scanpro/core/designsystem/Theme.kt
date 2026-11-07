@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.scanpro.R
+import com.example.scanpro.data.AccentPalette
 import com.example.scanpro.data.ThemeMode
 
 /*
@@ -36,6 +37,7 @@ import com.example.scanpro.data.ThemeMode
  * Colour: a Material 3 scheme with every surface-container tier filled in, so elevation is expressed
  * through tone rather than shadows, plus a small set of brand colours (the hero gradient and the mint
  * "scan line" accent) that Material has no slot for. Type: Manrope, a variable font, for everything.
+ * Five colour themes ([AccentPalette]): Indigo here, the others in Palettes.kt.
  */
 
 // ---------------------------------------------------------------------------------------------
@@ -242,10 +244,29 @@ private fun dynamicBrand(scheme: ColorScheme, dark: Boolean): ScanProColors {
     )
 }
 
+/** The Material scheme of a colour theme, before any wallpaper colours. */
+private fun paletteScheme(palette: AccentPalette, dark: Boolean): ColorScheme = when (palette) {
+    AccentPalette.INDIGO -> if (dark) ScanProDark else ScanProLight
+    AccentPalette.OCEAN -> if (dark) OceanDark else OceanLight
+    AccentPalette.EMERALD -> if (dark) EmeraldDark else EmeraldLight
+    AccentPalette.SUNSET -> if (dark) SunsetDark else SunsetLight
+    AccentPalette.BERRY -> if (dark) BerryDark else BerryLight
+}
+
+/** The brand colours (gradient, scan line, paper) of a colour theme; also used to draw its swatch. */
+fun paletteBrand(palette: AccentPalette, dark: Boolean): ScanProColors = when (palette) {
+    AccentPalette.INDIGO -> if (dark) DarkBrand else LightBrand
+    AccentPalette.OCEAN -> if (dark) OceanBrandDark else OceanBrandLight
+    AccentPalette.EMERALD -> if (dark) EmeraldBrandDark else EmeraldBrandLight
+    AccentPalette.SUNSET -> if (dark) SunsetBrandDark else SunsetBrandLight
+    AccentPalette.BERRY -> if (dark) BerryBrandDark else BerryBrandLight
+}
+
 @Composable
 fun ScanProTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
     dynamicColor: Boolean = false,
+    palette: AccentPalette = AccentPalette.INDIGO,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -259,14 +280,9 @@ fun ScanProTheme(
     val colors = when {
         dynamic && dark -> dynamicDarkColorScheme(context)
         dynamic -> dynamicLightColorScheme(context)
-        dark -> ScanProDark
-        else -> ScanProLight
+        else -> paletteScheme(palette, dark)
     }
-    val brand = when {
-        dynamic -> dynamicBrand(colors, dark)
-        dark -> DarkBrand
-        else -> LightBrand
-    }
+    val brand = if (dynamic) dynamicBrand(colors, dark) else paletteBrand(palette, dark)
     // MaterialTheme sets no content colour, and screens drawn straight on the background (Welcome, Lock, Scan review)
     // have no Surface to set one: their text and icons without an explicit colour defaulted to black, unreadable in
     // dark mode. Surfaces, cards and buttons still set their own.

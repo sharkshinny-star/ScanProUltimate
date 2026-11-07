@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -74,6 +75,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
@@ -864,7 +866,9 @@ private fun PdfPasswordDialog(error: String?, onCancel: () -> Unit, onSubmit: (S
                     singleLine = true,
                     isError = error != null,
                     label = { Text(stringResource(R.string.viewer_password_label)) },
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    // A password type keeps the keyboard from learning the password or suggesting it later.
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
                 )
                 if (error != null) {
                     Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))

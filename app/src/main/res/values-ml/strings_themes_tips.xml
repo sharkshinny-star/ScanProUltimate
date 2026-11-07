@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colour themes, Home tips and the What's new sheet -->
+    <string name="whats_new_title">ScanPro-യിൽ പുതിയത്</string>
+    <string name="whats_new_themes_title">കളർ തീമുകൾ</string>
+    <string name="whats_new_themes_body">മുഴുവൻ ആപ്പിനും ഇൻഡിഗോ, ഓഷ്യൻ, എമറാൾഡ്, സൺസെറ്റ് അല്ലെങ്കിൽ ബെറി നിറം, ലൈറ്റിലോ ഡാർക്കിലോ. ക്രമീകരണങ്ങൾ › രൂപം.</string>
+    <string name="whats_new_tips_title">ഹോമിൽ നുറുങ്ങുകൾ</string>
+    <string name="whats_new_tips_body">നിങ്ങൾ ഇതുവരെ പരീക്ഷിക്കാത്ത ഒരു സവിശേഷതയെക്കുറിച്ചുള്ള ചെറിയ നുറുങ്ങ്. ക്രമീകരണങ്ങളിൽ ഇവ ഓഫാക്കാം.</string>
+    <string name="whats_new_pick_colours">നിങ്ങളുടെ നിറങ്ങൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="whats_new_got_it">ശരി</string>
+    <string name="data_palette_indigo">ഇൻഡിഗോ</string>
+    <string name="data_palette_ocean">ഓഷ്യൻ</string>
+    <string name="data_palette_emerald">എമറാൾഡ്</string>
+    <string name="data_palette_sunset">സൺസെറ്റ്</string>
+    <string name="data_palette_berry">ബെറി</string>
+    <string name="settings_palette_title">കളർ തീം</string>
+    <string name="settings_palette_subtitle">ScanPro-യുടെ നിറങ്ങൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="settings_palette_subtitle_wallpaper">വാൾപേപ്പർ നിറങ്ങൾ ഓണാണ്. പകരം തീം ഉപയോഗിക്കാൻ അത് തിരഞ്ഞെടുക്കുക.</string>
+    <string name="settings_home_tips_title">ഹോമിൽ നുറുങ്ങുകൾ</string>
+    <string name="settings_home_tips_subtitle">നിങ്ങൾ ഇതുവരെ പരീക്ഷിക്കാത്ത ഒരു സവിശേഷതയെക്കുറിച്ചുള്ള ചെറിയ നുറുങ്ങ്</string>
+    <string name="tip_eyebrow">നിങ്ങൾക്കറിയാമോ?</string>
+    <string name="tip_next">അടുത്ത നുറുങ്ങ്</string>
+    <string name="tip_cd_hide">നുറുങ്ങുകൾ മറയ്ക്കുക</string>
+    <string name="tip_qr_title">QR കോഡുകളും ബാർകോഡുകളും വായിക്കുക</string>
+    <string name="tip_qr_body">ക്യാമറ കോഡിലേക്ക് ചൂണ്ടി അതിന്റെ ലിങ്ക് തുറക്കുക, ടെക്സ്റ്റ് പകർത്തുക അല്ലെങ്കിൽ കോൺടാക്റ്റ് സേവ് ചെയ്യുക.</string>
+    <string name="tip_qr_action">കോഡ് സ്കാൻ ചെയ്യുക</string>
+    <string name="tip_text_title">കടലാസിൽ നിന്ന് ടെക്സ്റ്റ് പകർത്തുക</string>
+    <string name="tip_text_body">ടെക്സ്റ്റ് എടുക്കുക മോഡ് പേജ് വായിച്ച് വാക്കുകൾ നൽകുന്നു; അവ പകർത്താനോ പങ്കിടാനോ എഡിറ്റ് ചെയ്യാനോ കഴിയും.</string>
+    <string name="tip_text_action">ടെക്സ്റ്റ് എടുക്കുക</string>
+    <string name="tip_id_title">ID-യുടെ മുൻഭാഗവും പിൻഭാഗവും</string>
+    <string name="tip_id_body">ID കാർഡ് മോഡ് കാർഡിന്റെ രണ്ട് വശങ്ങളും ഒറ്റയടിക്ക് പകർത്തുന്നു.</string>
+    <string name="tip_id_action">ID സ്കാൻ ചെയ്യുക</string>
+    <string name="tip_book_title">പുസ്തകങ്ങൾ വൃത്തിയായി സ്കാൻ ചെയ്യുക</string>
+    <string name="tip_book_body">പുസ്തക മോഡ് തുറന്ന പുസ്തകങ്ങൾക്കുള്ളതാണ്; കർവ് നടുവിൽ വളഞ്ഞ പേജുകൾ നേരെയാക്കുന്നു.</string>
+    <string name="tip_book_action">പുസ്തകം സ്കാൻ ചെയ്യുക</string>
+    <string name="tip_tools_title">PDF-കൾ ലയിപ്പിക്കുക, വിഭജിക്കുക, ചെറുതാക്കുക</string>
+    <string name="tip_tools_body">PDF ടൂളുകൾ നിങ്ങളുടെ ഫോണിലെ ഏത് PDF-ലും പ്രവർത്തിക്കും, സ്കാനുകളിൽ മാത്രമല്ല.</string>
+    <string name="tip_tools_action">PDF ടൂളുകൾ തുറക്കുക</string>
+    <string name="tip_search_title">സ്കാനുകൾക്കുള്ളിൽ തിരയുക</string>
+    <string name="tip_search_body">ഓരോ സ്കാനിന്റെയും ടെക്സ്റ്റ് വായിക്കപ്പെടുന്നു, അതിനാൽ ഏത് വാക്കുകൊണ്ടും പേജ് കണ്ടെത്താം.</string>
+    <string name="tip_search_action">തിരയുക</string>
+    <string name="tip_backup_title">എൻക്രിപ്റ്റ് ചെയ്ത ബാക്കപ്പുകൾ</string>
+    <string name="tip_backup_body">ഓരോ ഡോക്യുമെന്റും പാസ്‌വേഡോടെ, നിങ്ങൾ തിരഞ്ഞെടുക്കുന്ന ഫോൾഡറിലോ ക്ലൗഡ് ഡ്രൈവിലോ ബാക്കപ്പ് ചെയ്യുക.</string>
+    <string name="tip_backup_action">ക്രമീകരണങ്ങൾ തുറക്കുക</string>
+    <string name="tip_theme_title">അഞ്ച് കളർ തീമുകൾ</string>
+    <string name="tip_theme_body">ScanPro-യ്ക്ക് ഓഷ്യൻ, എമറാൾഡ്, സൺസെറ്റ് അല്ലെങ്കിൽ ബെറി നിറം, ലൈറ്റിലോ ഡാർക്കിലോ.</string>
+    <string name="tip_theme_action">നിറങ്ങൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="launch_tagline">സ്കാൻ ചെയ്യുക. തിരയുക. പങ്കിടുക.</string>
+</resources>

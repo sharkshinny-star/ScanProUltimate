@@ -17,6 +17,14 @@
     <string name="ui_welcome_point_clean">വൃത്തിയാക്കി തിരയാവുന്നതാക്കൂ</string>
     <string name="ui_welcome_point_share">ഒപ്പിട്ട് പങ്കിടൂ</string>
     <string name="ui_welcome_get_started">തുടങ്ങാം</string>
+    <string name="ui_permissions_title">അനുമതി നൽകുക</string>
+    <string name="ui_permissions_body">ScanPro ആവശ്യമുള്ളത് മാത്രമേ ചോദിക്കൂ, നിങ്ങളുടെ ഡോക്യുമെന്റുകൾ നിങ്ങളുടെ ഫോണിൽ തന്നെ ഇരിക്കും. ഇത് എപ്പോൾ വേണമെങ്കിലും ഫോണിന്റെ ക്രമീകരണങ്ങളിൽ മാറ്റാം.</string>
+    <string name="ui_permission_camera_title">ക്യാമറ</string>
+    <string name="ui_permission_camera_body">ഡോക്യുമെന്റുകൾ, ID കാർഡുകൾ, QR കോഡുകൾ എന്നിവ സ്കാൻ ചെയ്യാൻ</string>
+    <string name="ui_permission_notifications_title">അറിയിപ്പുകൾ</string>
+    <string name="ui_permission_notifications_body">PDF ലയിപ്പിക്കൽ, ബാക്കപ്പ് പോലുള്ള ദൈർഘ്യമേറിയ ജോലി പൂർത്തിയാകുമ്പോൾ അറിയിക്കാൻ</string>
+    <string name="ui_permissions_allow">അനുവദിക്കുക</string>
+    <string name="ui_permissions_not_now">ഇപ്പോൾ വേണ്ട</string>
     <string name="ui_scanned_page">സ്കാൻ ചെയ്ത പേജ്</string>
     <string name="ui_password_label">പാസ്‌വേഡ്</string>
     <plurals name="ui_password_minimum_chars">
@@ -220,4 +228,13 @@
     <string name="scan_review_name_auto">സ്വയമേവ</string>
     <string name="scan_review_name_dialog_title">ഈ സ്കാനിന് പേര് നൽകുക</string>
     <string name="scan_review_adjust_use_on_all">എല്ലാ പേജുകളിലും പ്രയോഗിക്കുക</string>
+    <string name="scan_review_folder_label">ഫോൾഡർ</string>
+    <string name="scan_review_folder_dialog_title">ഫോൾഡറിൽ സേവ് ചെയ്യുക</string>
+    <string name="scan_review_adjust">ക്രമീകരിക്കുക</string>
+    <string name="scan_guidance_glare">പേജിൽ തിളക്കമുണ്ട് · ഫോൺ അല്പം ചരിക്കുക</string>
+    <string name="scan_quality_blurry">ഈ പേജ് മങ്ങിയതായി തോന്നുന്നു: ചെറിയ ടെക്സ്റ്റ് വായിക്കാൻ ബുദ്ധിമുട്ടായേക്കാം</string>
+    <string name="scan_quality_glare">തിളക്കം ഈ പേജിന്റെ ഒരു ഭാഗം മറയ്ക്കുന്നു</string>
+    <string name="scan_quality_dark">ഈ പേജ് വളരെ ഇരുണ്ടതായി തോന്നുന്നു</string>
+    <string name="scan_quality_retake">വീണ്ടും എടുക്കുക</string>
+    <string name="scan_quality_page_flagged">പേജ് %1$d, വീണ്ടും എടുക്കേണ്ടി വന്നേക്കാം</string>
 </resources>

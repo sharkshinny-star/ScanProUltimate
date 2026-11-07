@@ -21,6 +21,8 @@ import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.security.SecureRandom
 import java.util.UUID
 import java.util.zip.ZipEntry
@@ -80,11 +82,18 @@ class EncryptedDocumentPackage(private val context: Context) {
     }
 
     fun import(source: Uri, password: CharArray): RestoredDocument {
-        userRequire(password.size >= 6, R.string.err_backup_password_too_short)
+        userRequire(password.size >= MIN_RESTORE_PASSWORD_LENGTH, R.string.err_backup_password_too_short, MIN_RESTORE_PASSWORD_LENGTH)
         val encrypted = File(context.cacheDir, "import_${UUID.randomUUID()}.scanpro")
-        context.contentResolver.openInputStream(source).use { input ->
-            if (input == null) userError(R.string.err_could_not_open_backup)
-            FileOutputStream(encrypted).use { input.copyTo(it) }
+        try {
+            context.contentResolver.openInputStream(source).use { input ->
+                if (input == null) userError(R.string.err_could_not_open_backup)
+                FileOutputStream(encrypted).use { output -> copyCapped(input, output, MAX_PACKAGE_BYTES) }
+            }
+        } catch (error: Throwable) {
+            encrypted.delete()
+            // read() wipes the password on every path of its own; this one never reaches it.
+            password.fill('\u0000')
+            throw error
         }
         val outDir = File(context.cacheDir, "restore_${UUID.randomUUID()}")
         return read(encrypted, outDir, password)
@@ -93,8 +102,25 @@ class EncryptedDocumentPackage(private val context: Context) {
     companion object {
         private val MAGIC = byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte())
         private val MAGIC_CHUNKED = byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '2'.code.toByte())
-        private const val ITERATIONS = 210_000
+        /**
+         * New backups need at least this many characters. The package can be attacked offline, so every
+         * character counts; restore still accepts [MIN_RESTORE_PASSWORD_LENGTH] for backups made before.
+         */
+        const val MIN_NEW_PASSWORD_LENGTH = 8
+        /** Backups written by versions up to 4.2.0 could use six characters; they must keep restoring. */
+        const val MIN_RESTORE_PASSWORD_LENGTH = 6
+        /**
+         * PBKDF2-HMAC-SHA256 rounds for new backups (OWASP 2023 figure). Readers accept 100k to 1M, so
+         * backups made with 210k still restore, and older app versions can restore these.
+         */
+        internal const val ITERATIONS = 600_000
         private const val MAX_RESTORE_BYTES = 2L * 1024 * 1024 * 1024
+        /** The encrypted file itself: the unpacked limit plus room for chunk tags and zip headers. */
+        private const val MAX_PACKAGE_BYTES = MAX_RESTORE_BYTES + MAX_RESTORE_BYTES / 16
+        /** A 300-page document with sources and signatures needs a few thousand; millions of empty entries would exhaust the file system. */
+        private const val MAX_ENTRIES = 20_000
+        /** OCR text and edit settings of the largest documents fit in a few MB; the manifest is read into memory whole. */
+        private const val MAX_MANIFEST_BYTES = 64L * 1024 * 1024
 
         /** Writes [document] as an encrypted package at [destination]; wipes [password] afterwards. */
         fun write(document: ScanDocument, password: CharArray, destination: File) {
@@ -106,7 +132,7 @@ class EncryptedDocumentPackage(private val context: Context) {
         }
 
         private fun writePackage(document: ScanDocument, password: CharArray, destination: File) {
-            userRequire(password.size >= 6, R.string.err_backup_password_too_short)
+            userRequire(password.size >= MIN_NEW_PASSWORD_LENGTH, R.string.err_backup_password_too_short, MIN_NEW_PASSWORD_LENGTH)
             destination.parentFile?.mkdirs()
             val salt = ByteArray(16).also(SecureRandom()::nextBytes)
             val noncePrefix = ByteArray(ChunkedAead.PREFIX_BYTES).also(SecureRandom()::nextBytes)
@@ -191,7 +217,7 @@ class EncryptedDocumentPackage(private val context: Context) {
          * run it directly. On any failure [outDir] is removed; [encrypted] is always deleted and [password] wiped.
          */
         fun read(encrypted: File, outDir: File, password: CharArray): RestoredDocument {
-            userRequire(password.size >= 6, R.string.err_backup_password_too_short)
+            userRequire(password.size >= MIN_RESTORE_PASSWORD_LENGTH, R.string.err_backup_password_too_short, MIN_RESTORE_PASSWORD_LENGTH)
             outDir.mkdirs()
             var rawInput: FileInputStream? = null
             try {
@@ -222,7 +248,9 @@ class EncryptedDocumentPackage(private val context: Context) {
                     ZipInputStream(buffered).let { zip ->
                         var entry = zip.nextEntry
                         var extractedBytes = 0L
+                        var entries = 0
                         while (entry != null) {
+                            if (++entries > MAX_ENTRIES) throw BackupTooLargeException()
                             val safe = File(outDir, entry.name).canonicalFile
                             require(safe.path.startsWith(outDir.canonicalPath + File.separator)) { "Unsafe backup entry" }
                             if (entry.isDirectory) {
@@ -254,6 +282,7 @@ class EncryptedDocumentPackage(private val context: Context) {
 
                 val manifestFile = File(outDir, "manifest.json")
                 require(manifestFile.exists()) { "Backup manifest is missing" }
+                require(manifestFile.length() <= MAX_MANIFEST_BYTES) { "Backup manifest is too large" }
                 val manifest = JSONObject(manifestFile.readText())
                 val pageArray = manifest.getJSONArray("pages")
                 val pages = buildList {
@@ -266,7 +295,9 @@ class EncryptedDocumentPackage(private val context: Context) {
                             ?.let { safeBackupFile(outDir, it) }?.takeIf { it.isFile }
                         val annotations = JsonCodec.decodeAnnotations(pageJson.optString("annotations"))
                             .mapNotNull { annotation ->
-                                if (annotation.type != AnnotationType.SIGNATURE) annotation
+                                // Only signatures use a file; a path in any other annotation could only point
+                                // outside the backup, so it is dropped.
+                                if (annotation.type != AnnotationType.SIGNATURE) annotation.copy(assetPath = "")
                                 else runCatching { safeBackupFile(outDir, annotation.assetPath) }.getOrNull()
                                     ?.takeIf { it.isFile }
                                     ?.let { annotation.copy(assetPath = it.absolutePath) }
@@ -317,6 +348,19 @@ class EncryptedDocumentPackage(private val context: Context) {
 
         private class BackupTooLargeException : UserFacingException(R.string.err_backup_too_large)
 
+        /** Copies at most [limit] bytes, so a huge or endless file picked by mistake can't fill the device. */
+        internal fun copyCapped(input: InputStream, output: OutputStream, limit: Long) {
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var total = 0L
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                total += read
+                if (total > limit) throw BackupTooLargeException()
+                output.write(buffer, 0, read)
+            }
+        }
+
         /** Resolves a manifest-relative path and refuses anything that escapes the restore directory. */
         private fun safeBackupFile(outDir: File, relative: String): File {
             val file = File(outDir, relative).canonicalFile
@@ -328,7 +372,8 @@ class EncryptedDocumentPackage(private val context: Context) {
             val spec = PBEKeySpec(password, salt, iterations, 256)
             val bytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
             spec.clearPassword()
-            return SecretKeySpec(bytes, "AES")
+            // SecretKeySpec keeps its own copy; don't leave a second one of the key on the heap.
+            return SecretKeySpec(bytes, "AES").also { bytes.fill(0) }
         }
 
         private inline fun <reified T : Enum<T>> enumOrDefault(value: String, default: T): T =

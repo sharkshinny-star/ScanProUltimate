@@ -18,12 +18,19 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddToDrive
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ManageSearch
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,9 +65,31 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.core.designsystem.THUMBNAIL_SMALL
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.data.ScanDocument
+import com.example.scanpro.intelligence.DocumentKind
+import androidx.compose.runtime.Immutable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.scanpro.core.designsystem.ScanProTheme
+
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+/**
+ * What the scan turned out to be, worth one tap right away (Adobe Scan and Microsoft Lens offer the same): a business
+ * card to add to contacts, or a receipt or invoice with its total. Every value is an exact OCR substring.
+ */
+@Immutable
+sealed interface ScanHighlight {
+    data class Contact(val name: String?, val detail: String?) : ScanHighlight
+    data class Bill(val kind: DocumentKind, val total: String, val date: String?) : ScanHighlight
+}
 
 /**
- * Shown once, right after a scan is saved: name it, then share or save it without hunting through tabs.
+ * Shown once, right after a scan is saved, like the "scan saved" moment of the leading scanners: what was saved (pages,
+ * size, whether its text was read), its name, a smart action when the scan is a business card or a bill, one-tap
+ * Share / Copy text / Add pages, the other ways to save it, and Scan another to keep going.
  * A changed name is kept however the sheet is closed.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,11 +103,22 @@ fun ScanSavedSheet(
     onSaveToDevice: (title: String) -> Unit,
     onSaveToDrive: (title: String) -> Unit,
     onPrint: (title: String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** A business card or a bill found in the text; null for anything else (or before the text is read). */
+    highlight: ScanHighlight? = null,
+    /** Opens the new-contact form for a [ScanHighlight.Contact]. */
+    onAddContact: () -> Unit = {},
+    /** Copies a string (the bill's total, the page text); the sheet stays open. Null hides Copy text. */
+    onCopy: ((String) -> Unit)? = null,
+    /** Back to the camera to add pages to this document. */
+    onAddPages: (() -> Unit)? = null,
+    /** Straight to the camera for the next document. */
+    onScanAnother: (() -> Unit)? = null
 ) {
     var name by rememberSaveable(document.id) { mutableStateOf(document.title) }
     val focus = LocalFocusManager.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val text = document.ocrText
 
     /** The name to use from now on: the edited one if it is valid, else the current title. */
     fun commitName(): String {
@@ -86,7 +126,7 @@ fun ScanSavedSheet(
         if (clean.isNotEmpty() && clean != document.title) onRename(clean)
         return clean.ifEmpty { document.title }
     }
-    // Every action renames first and gets the new name, so a shared or saved file already carries it.
+    // Every action that leaves the sheet renames first and gets the new name, so a shared or saved file carries it.
     fun then(action: (String) -> Unit): () -> Unit = {
         focus.clearFocus()
         val title = commitName()
@@ -109,7 +149,7 @@ fun ScanSavedSheet(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PageThumbnail(
                     path = document.pages.minByOrNull { it.position }?.imagePath,
-                    modifier = Modifier.size(width = 56.dp, height = 72.dp),
+                    modifier = Modifier.size(width = 60.dp, height = 78.dp),
                     maxDimension = THUMBNAIL_SMALL,
                     shape = RoundedCornerShape(8.dp)
                 )
@@ -126,6 +166,17 @@ fun ScanSavedSheet(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    // The text was read: it is a searchable PDF and every word can be found later.
+                    if (text.isNotBlank()) {
+                        Spacer(Modifier.height(6.dp))
+                        Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.secondaryContainer) {
+                            Row(Modifier.padding(horizontal = 10.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.ManageSearch, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(5.dp))
+                                Text(stringResource(R.string.doc_searchable_pdf), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                            }
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -139,11 +190,50 @@ fun ScanSavedSheet(
                 keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); commitName() }),
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(Modifier.height(8.dp))
+
+            when (highlight) {
+                is ScanHighlight.Contact -> HighlightCard(
+                    icon = Icons.Default.Badge,
+                    tone = TileTone.Teal,
+                    title = stringResource(DocumentKind.BUSINESS_CARD.labelRes),
+                    detail = listOfNotNull(highlight.name, highlight.detail).joinToString(" · ").ifEmpty { null },
+                    action = stringResource(R.string.doc_add_to_contacts),
+                    enabled = !busy,
+                    onAction = onAddContact
+                )
+                is ScanHighlight.Bill -> HighlightCard(
+                    icon = Icons.Default.ReceiptLong,
+                    tone = TileTone.Amber,
+                    title = stringResource(highlight.kind.labelRes),
+                    detail = listOfNotNull(stringResource(R.string.doc_saved_total, highlight.total), highlight.date).joinToString(" · "),
+                    action = stringResource(R.string.doc_saved_copy_total),
+                    enabled = onCopy != null,
+                    onAction = { onCopy?.invoke(highlight.total) }
+                )
+                null -> Unit
+            }
+
+            // The three things people do next, one tap each.
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                QuickAction(Icons.Default.PictureAsPdf, stringResource(R.string.doc_share_as_pdf), primary = true, enabled = !busy, modifier = Modifier.weight(1f), onClick = then(onSharePdf))
+                if (onCopy != null) {
+                    QuickAction(Icons.Default.ContentCopy, stringResource(R.string.doc_saved_copy_text), enabled = text.isNotBlank(), modifier = Modifier.weight(1f)) { onCopy(text) }
+                }
+                if (onAddPages != null) {
+                    QuickAction(Icons.Default.AddAPhoto, stringResource(R.string.doc_saved_add_pages), enabled = !busy, modifier = Modifier.weight(1f), onClick = then { onAddPages() })
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Text(
+                stringResource(R.string.doc_saved_more),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+            )
             Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
                 Column {
-                    SheetAction(Icons.Default.PictureAsPdf, TileTone.Coral, stringResource(R.string.doc_share_as_pdf), stringResource(R.string.doc_share_as_pdf_hint), !busy, then(onSharePdf))
-                    InsetDivider()
                     SheetAction(Icons.Default.Image, TileTone.Sky, stringResource(R.string.doc_share_as_jpg), stringResource(R.string.doc_share_as_jpg_hint), !busy, then(onShareJpg))
                     InsetDivider()
                     SheetAction(Icons.Default.AddToDrive, TileTone.Amber, stringResource(R.string.doc_save_to_google_drive), stringResource(R.string.doc_save_to_google_drive_hint), !busy, then(onSaveToDrive))
@@ -153,11 +243,60 @@ fun ScanSavedSheet(
                     SheetAction(Icons.Default.Print, TileTone.Slate, stringResource(R.string.doc_print), null, !busy, then(onPrint))
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End)) {
+                if (onScanAnother != null) {
+                    OutlinedButton(onClick = then { onScanAnother() }, enabled = !busy) { Text(stringResource(R.string.scan_code_scan_another)) }
+                }
                 Button(onClick = then { }, enabled = !busy) { Text(stringResource(R.string.common_done)) }
             }
             Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+/** The smart action: what the scan is, the fact that matters, and one button. */
+@Composable
+private fun HighlightCard(icon: ImageVector, tone: TileTone, title: String, detail: String?, action: String, enabled: Boolean, onAction: () -> Unit) {
+    Spacer(Modifier.height(12.dp))
+    Surface(shape = RoundedCornerShape(18.dp), color = tone.container(), modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = tone.content(), modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = tone.content())
+                if (detail != null) {
+                    Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            FilledTonalButton(onClick = onAction, enabled = enabled) { Text(action, maxLines = 1) }
+        }
+    }
+}
+
+/** A big square action: icon over label. The primary one is on the brand gradient. */
+@Composable
+private fun QuickAction(icon: ImageVector, label: String, modifier: Modifier = Modifier, primary: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
+    val brand = ScanProTheme.colors
+    val shape = RoundedCornerShape(18.dp)
+    val content = if (primary) brand.onGradient else MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier
+            .height(84.dp)
+            .then(
+                if (primary) Modifier.background(Brush.linearGradient(listOf(brand.gradientStart, brand.gradientEnd)), shape)
+                else Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, shape)
+            )
+            .clip(shape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .graphicsLayer { alpha = if (enabled) 1f else 0.45f },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 6.dp)) {
+            Icon(icon, contentDescription = null, tint = if (primary) content else MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.height(6.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge, color = content, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }

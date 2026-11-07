@@ -31,6 +31,7 @@ Current intended permissions are deliberately narrow. Re-check the merged releas
 - [ ] App-private documents are not silently uploaded.
 - [ ] Translation model downloads and Google document-scanner fallback behaviour are accurately disclosed in the privacy policy if shipped.
 - [ ] Data Safety form matches the exact production build and any analytics/crash SDKs you add later.
+- [ ] Data Safety form and privacy policy cover ML Kit's API usage and performance metrics (see `AUDIT_FINDINGS.md` R13; check Google's current ML Kit data disclosure).
 - [ ] Host the final privacy policy at a public HTTPS URL and link it in Play Console and the app where required.
 - [ ] Review encrypted `.scanpro` backup behaviour and warn users that losing the password means losing access to that backup.
 

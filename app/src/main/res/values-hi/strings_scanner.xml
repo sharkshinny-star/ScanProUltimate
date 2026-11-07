@@ -17,6 +17,14 @@
     <string name="ui_welcome_point_clean">साफ़ करें और खोजने लायक बनाएं</string>
     <string name="ui_welcome_point_share">साइन करें और शेयर करें</string>
     <string name="ui_welcome_get_started">शुरू करें</string>
+    <string name="ui_permissions_title">अनुमति दें</string>
+    <string name="ui_permissions_body">ScanPro सिर्फ़ ज़रूरी अनुमतियां मांगता है, और आपके डॉक्यूमेंट आपके फ़ोन पर ही रहते हैं। आप इसे कभी भी फ़ोन की सेटिंग्स में बदल सकते हैं।</string>
+    <string name="ui_permission_camera_title">कैमरा</string>
+    <string name="ui_permission_camera_body">डॉक्यूमेंट, ID कार्ड और QR कोड स्कैन करने के लिए</string>
+    <string name="ui_permission_notifications_title">नोटिफ़िकेशन</string>
+    <string name="ui_permission_notifications_body">जब कोई लंबा काम, जैसे PDF जोड़ना या बैकअप, पूरा हो जाए तो आपको बताने के लिए</string>
+    <string name="ui_permissions_allow">अनुमति दें</string>
+    <string name="ui_permissions_not_now">अभी नहीं</string>
     <string name="ui_scanned_page">स्कैन किया गया पेज</string>
     <string name="ui_password_label">पासवर्ड</string>
     <plurals name="ui_password_minimum_chars">
@@ -220,4 +228,13 @@
     <string name="scan_review_name_auto">अपने-आप</string>
     <string name="scan_review_name_dialog_title">इस स्कैन का नाम रखें</string>
     <string name="scan_review_adjust_use_on_all">सभी पेज पर लागू करें</string>
+    <string name="scan_review_folder_label">फ़ोल्डर</string>
+    <string name="scan_review_folder_dialog_title">फ़ोल्डर में सहेजें</string>
+    <string name="scan_review_adjust">समायोजित करें</string>
+    <string name="scan_guidance_glare">पेज पर चमक है · फ़ोन थोड़ा झुकाएं</string>
+    <string name="scan_quality_blurry">यह पेज धुंधला लग रहा है: छोटा टेक्स्ट पढ़ना मुश्किल हो सकता है</string>
+    <string name="scan_quality_glare">चमक इस पेज का कुछ हिस्सा छिपा रही है</string>
+    <string name="scan_quality_dark">यह पेज बहुत गहरा लग रहा है</string>
+    <string name="scan_quality_retake">फिर से लें</string>
+    <string name="scan_quality_page_flagged">पेज %1$d, शायद फिर से लेना पड़े</string>
 </resources>

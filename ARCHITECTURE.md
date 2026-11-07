@@ -1,6 +1,6 @@
 # ScanPro Ultimate architecture
 
-Last updated: 2026-11-02, after the screenshot tests. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
+Last updated: 2026-11-05, after the security hardening commit. See also `AGENT_HANDOFF.md`, `BUILD_AND_TEST.md`, `AUDIT_FINDINGS.md`.
 
 ## 1. Product architecture
 
@@ -64,6 +64,21 @@ The preview quad is **not** blindly reused for export. A high-resolution image i
 
 This two-stage design keeps preview analysis fast while protecting final scan quality.
 
+### Page quality
+
+`scanner/PageQuality.kt` judges a page as blurred (variance of the Laplacian on the page < 80), too dark (mean grey
+< 45) or glary (largest solid patch of clipped white covering 1.5-60 % of the page), with the same limits the live
+detector uses. Live, `DocumentEdgeDetector` adds a glare hint (`Guidance.GLARE`) that never blocks auto-capture. After
+capture, `CameraScannerScreen` runs `OpenCvScanProcessor.assessQuality` on every page in the background; the review
+shows a notice with Retake above a flagged page and a mark on its thumbnail.
+
+### After the scan
+
+When a camera scan opens as a document, `DocumentScreen` shows `ScanSavedSheet` once: pages, size and a Searchable PDF
+badge once text is read, the name, a smart action from `scanHighlight` (business card → Add to contacts via
+`BusinessCardParser`; receipt/invoice with a total → Copy total via `DocumentIntelligenceEngine.total`), Share as PDF /
+Copy text / Add pages, the other exports, and Scan another (camera, new document). All offline.
+
 ## 3. Manual crop
 
 `CropEditorDialog.kt` stores four normalised corners. The editor includes:
@@ -122,7 +137,7 @@ OCR can be edited manually and re-indexed. A document can also be re-OCR'd using
 
 ## 7. PDF architecture
 
-`PdfExporter` owns page layout and image compression. It supports Auto/A4/Letter page size, optional page numbers, and High/Balanced/Small image presets.
+`PdfExporter` owns page layout and image compression. Callers can pass a `decode` hook (Images to PDF uses `decodePicture`: EXIF-upright, alpha composited on white) and a `beforePage` callback for progress and cancel. It supports Auto/A4/Letter page size, optional page numbers, and High/Balanced/Small image presets.
 
 The current searchable PDF implementation provides a page text layer for searchability. Exact word-coordinate text geometry remains a documented future hardening task.
 
@@ -171,9 +186,19 @@ Security controls:
 - optional biometric app gate
 - PDF password protection
 - encrypted `.scanpro` backups using AES-GCM
-- PBKDF2-HMAC-SHA256 password derivation, 210k iterations, random salt and IV
-- ZIP-slip/path traversal defence during backup restore
+- PBKDF2-HMAC-SHA256 password derivation, random salt and nonce prefix. New backups: 600k iterations and a password of
+  at least 8 characters. Restore accepts 100k–1M iterations and 6 characters, so backups from earlier versions (210k,
+  6 characters) still restore and older versions can read new backups.
+- ZIP-slip/path traversal defence during backup restore, plus caps: 2 GB unpacked, 20,000 entries, 64 MB manifest, and
+  the picked file copied with a size limit
+- PDF password protection needs at least 8 characters
 - Android cloud backup disabled for private scan files
+- `MainActivity` has `android:taskAffinity=""`, so other apps cannot claim ScanPro's task affinity to insert screens into
+  its task (task hijacking; Android 11+ is patched in the OS, on Android 7–10 this is a partial, app-side mitigation)
+- every password field uses `KeyboardType.Password`, so keyboards do not learn or suggest passwords
+- build supply chain: the Gradle wrapper pins the distribution's SHA-256 (`distributionSha256Sum`); `google()` is
+  content-filtered to `com.android.*`, `com.google.*` and `androidx.*` in `settings.gradle.kts` (everything else comes
+  from Maven Central; a new Google-hosted group needs adding to both filters); CI runs with a read-only token and no secrets
 
 A biometric UI gate should not be marketed as full at-rest encryption of every live library file. The encrypted portable-backup path is cryptographic; the main library relies on Android app-private storage unless a future per-document vault is added.
 
@@ -206,6 +231,33 @@ sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional remin
 `reminders`; one fixed id per kind. Preferences in `SettingsStore` (`notify_finished`, `notify_failures` default on;
 `notify_trash`, `notify_backup` default off). Taps use explicit immutable PendingIntents with `MainActivity.ACTION_OPEN_*`,
 routed by `AppViewModel.destinationRequest` below the app-lock gate. No document names; neutral text when app lock is on.
+Runtime permissions (camera, notifications on 13+) are asked once after the welcome on first launch (`StartupPermissions` in `ui/WelcomeScreen.kt`), then again in context if refused.
+
+## 12b. Colour themes, Home tips, What's new
+
+- **Colour themes.** `data/Models.kt` `AccentPalette` (Indigo, Ocean, Emerald, Sunset, Berry) is stored by name in
+  `SettingsStore` (`accent_palette`; applied before the write lands, like the theme mode; picking one turns wallpaper colours
+  off). `ScanProTheme(palette)` picks the Material scheme and the brand gradient (`paletteScheme`, `paletteBrand`). Indigo is
+  the original hand-made scheme; the other four in `core/designsystem/Palettes.kt` are **generated** with Material Color
+  Utilities (fidelity scheme, 2021 spec) from one seed each, so contrast pairs hold: regenerate from a seed rather than
+  editing single roles. Brand gradients were picked for at least 4.5:1 white text. The mint scan line is the same in every
+  theme because the scanner uses it to mean "page found". `PalettePicker` draws the swatches (Settings > Appearance).
+  `MainActivity` holds the first frame until the palette has loaded (`AppViewModel.launchStateReady`) and `ThemeTransition`
+  crossfades on any change of light/dark, palette or wallpaper colours.
+- **Home tips.** `feature/library/HomeTips.kt`: a "Did you know?" card at the end of Home, one tip per day, each leading
+  straight to its feature; closing it hides tips for good, Settings > Appearance brings them back (`home_tips`).
+- **What's new.** `ui/WhatsNewSheet.kt`, shown once to people updating past `WHATS_NEW_VERSION` (`SettingsStore`), never with
+  the welcome or the rating sheet; finishing the welcome marks it seen.
+- **Launch animation.** Designed and assessed in Figma (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi: frame
+  `2:2` holds the keyframes, `6:2` the spec) and drawn by `ui/LaunchIntro.kt` from the same keyframe table: the icon is
+  pressed, the scan line writes the page, the brackets lock on, an indigo-to-pink flood fills the screen, "ScanPro"
+  rises, the icon zooms through into the app (1.6 s, tap to skip). The system launch screen shows its first frame
+  (`res/drawable/ic_launch_icon.xml`: the icon tile, 144dp at the 288dp the system draws it, with a blank page), so
+  the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
+  plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
+  when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+  `MainActivity` settles the app from 104 % at the reveal; `ScanProApp(launchSettled)` keeps the rating and What's new
+  sheets back until it ends, and the crash prompt waits too. It replaced the animated splash icon (`ic_launcher_splash`).
 
 ## 13. Modules and dependencies
 

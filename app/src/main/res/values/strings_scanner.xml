@@ -21,6 +21,14 @@
     <string name="ui_welcome_point_clean">Clean up and make searchable</string>
     <string name="ui_welcome_point_share">Sign and share</string>
     <string name="ui_welcome_get_started">Get started</string>
+    <string name="ui_permissions_title">Allow access</string>
+    <string name="ui_permissions_body">ScanPro asks only for what it needs, and your documents stay on your phone. You can change this at any time in your phone\'s settings.</string>
+    <string name="ui_permission_camera_title">Camera</string>
+    <string name="ui_permission_camera_body">To scan documents, ID cards and QR codes</string>
+    <string name="ui_permission_notifications_title">Notifications</string>
+    <string name="ui_permission_notifications_body">To tell you when a long job, such as a merge or a backup, has finished</string>
+    <string name="ui_permissions_allow">Allow</string>
+    <string name="ui_permissions_not_now">Not now</string>
 
     <!-- Design system components: thumbnails and shared dialogs -->
     <string name="ui_scanned_page">Scanned page</string>
@@ -241,4 +249,14 @@
     <string name="scan_review_name_auto">Automatic</string>
     <string name="scan_review_name_dialog_title">Name this scan</string>
     <string name="scan_review_adjust_use_on_all">Apply to all pages</string>
+    <string name="scan_review_folder_label">Folder</string>
+    <string name="scan_review_folder_dialog_title">Save in a folder</string>
+    <string name="scan_review_adjust">Adjust</string>
+    <!-- Page quality: live glare hint and the review notice (scanner/PageQuality.kt) -->
+    <string name="scan_guidance_glare">Glare on the page · tilt the phone a little</string>
+    <string name="scan_quality_blurry">This page looks blurred: small text may be hard to read</string>
+    <string name="scan_quality_glare">Glare is hiding part of this page</string>
+    <string name="scan_quality_dark">This page looks too dark</string>
+    <string name="scan_quality_retake">Retake</string>
+    <string name="scan_quality_page_flagged">Page %1$d, may need a retake</string>
 </resources>

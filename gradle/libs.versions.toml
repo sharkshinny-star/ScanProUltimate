@@ -6,7 +6,7 @@ kotlinxCoroutinesPlayServices = "1.11.0"
 languageId = "17.0.6"
 mlkitCommon = "18.11.0"
 translate = "17.0.3"
-uiautomator = "2.4.0"
+uiautomator = "2.4.1"
 
 [libraries]
 androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }

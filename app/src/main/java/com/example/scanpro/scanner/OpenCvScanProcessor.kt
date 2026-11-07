@@ -36,6 +36,19 @@ object OpenCvScanProcessor {
     }
 
     /** Outline of the page in a captured photo, or the whole frame when nothing convincing is found. */
+    /**
+     * What to point out about a captured page before it is saved: blurred, glare or too dark ([PageQuality]), judged
+     * on the photo the way the live camera judges its frames. Empty when the photo can't be read.
+     */
+    fun assessQuality(source: File): Set<PageIssue> {
+        val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return emptySet()
+        return try {
+            PageQuality.issues(DocumentEdgeDetector.detect(bitmap))
+        } finally {
+            if (!bitmap.isRecycled) bitmap.recycle()
+        }
+    }
+
     fun detectCrop(source: File): CropQuad {
         val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT
         return try {

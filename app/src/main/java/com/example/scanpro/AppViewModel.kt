@@ -15,7 +15,9 @@ import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfPasswordRequiredException
 import com.example.scanpro.data.ScanMode
 import com.example.scanpro.data.SettingsStore
+import com.example.scanpro.data.AccentPalette
 import com.example.scanpro.data.ThemeMode
+import com.example.scanpro.data.WHATS_NEW_VERSION
 import com.example.scanpro.navigation.RetakeTarget
 import com.example.scanpro.scanner.SESSION_ROOT
 import com.example.scanpro.work.ImportScanWorker
@@ -73,19 +75,49 @@ class AppViewModel @Inject constructor(
         .map<Boolean, Boolean?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** Folders a new scan can be saved into: every folder except locked ones not opened this session. */
+    val saveFolders: StateFlow<List<String>> = combine(library.overview, folderLock.hidden) { overview, hidden ->
+        overview.folders.filterNot { com.example.scanpro.core.security.FolderLock.hides(hidden, it) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     /** Null until known; false shows the first-run welcome once. */
     val welcomeSeen: StateFlow<Boolean?> = settings.welcomeSeen
         .map<Boolean, Boolean?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /**
-     * True once everything the first frame depends on has loaded: the theme, the lock decision and whether the
+     * True once everything the first frame depends on has loaded: the theme and colour theme, the lock decision and whether the
      * welcome is due (otherwise a first launch could flash the library before the welcome covers it).
      */
     val launchStateReady: Boolean
-        get() = themeMode.value != null && appLockEnabled.value != null && welcomeSeen.value != null
+        get() = themeMode.value != null && accentPalette.value != null && appLockEnabled.value != null && welcomeSeen.value != null
 
-    fun markWelcomeSeen() { viewModelScope.launch { settings.setWelcomeSeen() } }
+    /** Closing the welcome also counts as having seen the current "What's new": it covers the same ground. */
+    fun markWelcomeSeen() {
+        viewModelScope.launch {
+            settings.setWhatsNewSeen(WHATS_NEW_VERSION)
+            settings.setWelcomeSeen()
+        }
+    }
+
+    /** Null until the saved colour theme has loaded; like [themeMode], it holds the launch screen until then. */
+    val accentPalette: StateFlow<AccentPalette?> = settings.accentPalette
+        .map<AccentPalette, AccentPalette?> { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Set from the welcome's "Make it yours" page; Settings has its own controls. */
+    fun setThemeMode(value: ThemeMode) { viewModelScope.launch { settings.setThemeMode(value) } }
+    fun setAccentPalette(value: AccentPalette) { viewModelScope.launch { settings.setAccentPalette(value) } }
+
+    /**
+     * True once for people updating from a release before [WHATS_NEW_VERSION], after the welcome is
+     * known to have been seen (so a new install never gets both).
+     */
+    val whatsNewDue: StateFlow<Boolean> = combine(settings.welcomeSeen, settings.whatsNewSeen) { welcome, seen ->
+        welcome && seen < WHATS_NEW_VERSION
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun markWhatsNewSeen() { viewModelScope.launch { settings.setWhatsNewSeen(WHATS_NEW_VERSION) } }
 
     // Lives in the ViewModel so rotating the screen doesn't lock the app again.
     private val _sessionUnlocked = MutableStateFlow(false)
@@ -213,11 +245,32 @@ class AppViewModel @Inject constructor(
         filters: List<PageFilter> = emptyList(),
         adjustments: List<PageAdjustments?> = emptyList(),
         /** Typed on the review screen; null names the document automatically. */
-        title: String? = null
+        title: String? = null,
+        /** Chosen on the review screen; null saves the document outside any folder. */
+        folder: String? = null
     ) {
         if (imageUris.isEmpty()) return
         // As WorkManager work, so the scan is finished even if the app is swiped away meanwhile.
-        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments, title))
+        ImportScanWorker.enqueue(context, ImportScanWorker.inputFor(imageUris, mode, crops, filters, adjustments, title, folder))
+    }
+
+    /** Pages shot from a document's Add page, added at its end with the review screen's outlines, filters and sliders. */
+    fun appendPagesFromCamera(
+        documentId: String,
+        imageUris: List<Uri>,
+        crops: List<CropQuad>,
+        filters: List<PageFilter>,
+        adjustments: List<PageAdjustments?>
+    ) {
+        if (imageUris.isEmpty()) return
+        operations.enqueue(context.getString(R.string.msg_adding_pages), context.getString(R.string.msg_pages_added)) {
+            try {
+                repository.appendImages(documentId, imageUris, crops, filters, adjustments)
+            } finally {
+                imageUris.firstOrNull()?.takeIf { it.scheme == "file" }?.path?.let { File(it).parentFile }
+                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
+            }
+        }
     }
 
     /** A page shot again from the editor: the new photo takes the old page's place, then the session is cleaned up. */

@@ -34,6 +34,18 @@ enum class ThemeMode(@StringRes val labelRes: Int) {
     SYSTEM(R.string.data_theme_system)
 }
 
+/**
+ * The app's colour theme: the Material scheme and the brand gradient. [INDIGO] is the original ScanPro look.
+ * Ignored while wallpaper colours (dynamic colour) are on. Stored by name, so entries must not be renamed.
+ */
+enum class AccentPalette(@StringRes val labelRes: Int) {
+    INDIGO(R.string.data_palette_indigo),
+    OCEAN(R.string.data_palette_ocean),
+    EMERALD(R.string.data_palette_emerald),
+    SUNSET(R.string.data_palette_sunset),
+    BERRY(R.string.data_palette_berry)
+}
+
 enum class ScanMode(@StringRes val labelRes: Int) {
     DOCUMENT(R.string.data_scan_mode_document),
     RECEIPT(R.string.data_scan_mode_receipt),
