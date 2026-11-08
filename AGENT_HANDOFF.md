@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (F71 and F72 close R37 and R17; F68 fast save and its review fixes; F67 ID card page; F66 launch; CI green on runs 75, 78 and 83, wrapper download timeout fixed). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
+Last updated: 2026-11-08 (REMAINING_WORK.md refreshed after F80; F71 and F72 close R37 and R17; F68 fast save and its review fixes; F67 ID card page; F66 launch; CI green on runs 75, 78 and 83, wrapper download timeout fixed). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
 
 ## 1. Current state
 
