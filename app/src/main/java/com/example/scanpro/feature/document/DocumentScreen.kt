@@ -1303,6 +1303,7 @@ internal fun DocumentDetailScreen(
     if (cropOpen && currentPage != null) {
         CropEditorDialog(
             sourcePath = currentPage.sourcePath,
+            fallbackPath = currentPage.imagePath,
             initial = currentPage.crop,
             onDismiss = { cropOpen = false },
             onConfirm = {

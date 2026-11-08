@@ -91,7 +91,7 @@ class AppViewModel @Inject constructor(
      * welcome is due (otherwise a first launch could flash the library before the welcome covers it).
      */
     val launchStateReady: Boolean
-        get() = themeMode.value != null && accentPalette.value != null && appLockEnabled.value != null && welcomeSeen.value != null
+        get() = themeMode.value != null && accentPalette.value != null && appLockEnabled.value != null
 
     /** Closing the welcome also counts as having seen the current "What's new": it covers the same ground. */
     fun markWelcomeSeen() {

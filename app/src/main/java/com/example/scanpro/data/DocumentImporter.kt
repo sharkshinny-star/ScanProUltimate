@@ -267,7 +267,7 @@ internal class DocumentImporter(private val store: DocumentStore) {
         try {
             val pages = imageUris.mapIndexed { index, uri ->
                 val pageId = UUID.randomUUID().toString()
-                val source = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId")
+                val source = File(sourceDir, "source_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 val rendered = File(renderedDir, "page_${index.toString().padStart(3, '0')}_$pageId.jpg")
                 copyUri(uri, source)
                 val crop = crops.getOrNull(index)

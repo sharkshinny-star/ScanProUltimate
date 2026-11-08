@@ -162,7 +162,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
                 coroutineContext.ensureActive()
                 val position = start + offset
                 val pageId = UUID.randomUUID().toString()
-                val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$pageId")
+                val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$pageId.jpg")
                 val rendered = File(renderedDir, "page_${position.toString().padStart(3, '0')}_$pageId.jpg")
                 val page = ScanPage(
                     id = pageId,
@@ -205,7 +205,7 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
         val newId = UUID.randomUUID().toString()
         val position = old.position
-        val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$newId")
+        val source = File(sourceDir, "source_${position.toString().padStart(3, '0')}_$newId.jpg")
         val rendered = File(renderedDir, "page_${position.toString().padStart(3, '0')}_$newId.jpg")
         copyUri(imageUri, source)
         val page = try {

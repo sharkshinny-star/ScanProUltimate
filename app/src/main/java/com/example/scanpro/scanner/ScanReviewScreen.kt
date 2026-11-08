@@ -118,10 +118,12 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.exifinterface.media.ExifInterface
 import com.example.scanpro.R
 import com.example.scanpro.core.ui.FilterStrip
@@ -698,7 +700,14 @@ fun ScanReviewScreen(
                     val image = bitmap ?: return@OutlinedButton
                     scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
                 }
-            ) { Text(stringResource(R.string.scan_review_auto_detect), maxLines = 1, softWrap = false) }
+            ) {
+                Text(
+                    stringResource(R.string.scan_review_auto_detect),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelLarge.fontSize)
+                )
+            }
         }
         val rotateButton: @Composable () -> Unit = {
             // Tap turns the page clockwise; a long press turns it the other way.
@@ -741,7 +750,8 @@ fun ScanReviewScreen(
                     Text(
                         if (pages.size > 1) stringResource(R.string.scan_review_save_all, pages.size) else stringResource(R.string.scan_review_save_page),
                         maxLines = 1,
-                        softWrap = false
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelLarge.fontSize)
                     )
                 }
             }

@@ -172,7 +172,8 @@ class MainActivity : FragmentActivity() {
             // Nothing is drawn until the saved theme has loaded (see holdLaunchScreenUntilReady).
             val mode = themeMode ?: return@CompositionLocalProvider
             val palette = savedPalette ?: return@CompositionLocalProvider
-            val playIntro = launchPending && introWanted && appLock == false
+            val lock = appLock ?: return@CompositionLocalProvider
+            val playIntro = launchPending && introWanted && !lock
             if (launchPending && !playIntro) LaunchedEffect(Unit) { launchPending = false }
             val targetDark = when (mode) {
                 ThemeMode.LIGHT -> false
@@ -293,12 +294,20 @@ class MainActivity : FragmentActivity() {
             keep
         }
         splash.setOnExitAnimationListener { provider ->
-            provider.view.animate()
-                .alpha(0f)
-                .setDuration(300L)
-                .setInterpolator(interpolator)
-                .withEndAction { provider.remove() }
-                .start()
+            if (introWanted && viewModel.appLockEnabled.value == false) {
+                // When the launch animation plays, it starts from the exact same picture.
+                // Step aside immediately so LaunchIntro smoothly takes over without being obscured by the system overlay.
+                provider.remove()
+            } else {
+                provider.view.animate()
+                    .alpha(0f)
+                    .setDuration(220L)
+                    .setInterpolator(interpolator)
+                    .withEndAction { provider.remove() }
+                    .start()
+                // Safety timeout: ensure the splash view is always removed even if the animator is dropped or stalled.
+                provider.view.postDelayed({ runCatching { provider.remove() } }, 350L)
+            }
         }
     }
 
@@ -545,7 +554,7 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         private const val LOCK_TIMEOUT_MS = 30_000L
-        private const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
+        private const val LAUNCH_SCREEN_MAX_HOLD_MS = 600L
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
         /** Widget and tile (R33): the camera mode to open in (a ScanMode name), and the image picker straight away. */
         const val EXTRA_SCAN_MODE = "scanMode"

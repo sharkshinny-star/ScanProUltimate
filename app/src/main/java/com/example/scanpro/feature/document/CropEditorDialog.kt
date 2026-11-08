@@ -31,6 +31,11 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Rotate90DegreesCcw
 import androidx.compose.material.icons.filled.Rotate90DegreesCw
+import android.util.Log
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.text.style.TextAlign
+import java.io.File
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -99,6 +104,7 @@ fun CropEditorDialog(
     initial: CropQuad,
     onDismiss: () -> Unit,
     onConfirm: (CropQuad) -> Unit,
+    fallbackPath: String? = null,
     onRotateLeft: (() -> Unit)? = null,
     onRotateRight: (() -> Unit)? = null,
     onAddPage: (() -> Unit)? = null,
@@ -117,8 +123,41 @@ fun CropEditorDialog(
         onDismissRequest = close,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        val bitmap by produceState<Bitmap?>(initialValue = null, sourcePath) {
-            value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(sourcePath, 2000) }
+        var loadFailed by rememberSaveable(sourcePath, fallbackPath) { mutableStateOf(false) }
+        val bitmap by produceState<Bitmap?>(initialValue = null, sourcePath, fallbackPath) {
+            loadFailed = false
+            value = withContext(Dispatchers.IO) {
+                val candidates = buildList {
+                    if (sourcePath.isNotBlank()) add(sourcePath)
+                    if (sourcePath.isNotBlank() && !sourcePath.endsWith(".jpg", ignoreCase = true)) {
+                        add("$sourcePath.jpg")
+                    }
+                    if (!fallbackPath.isNullOrBlank() && fallbackPath != sourcePath) {
+                        add(fallbackPath)
+                    }
+                }.distinct()
+
+                var result: Bitmap? = null
+                for (path in candidates) {
+                    val file = File(path)
+                    if (!file.exists() || file.length() == 0L) continue
+                    for (dim in listOf(2000, 1400, 1000)) {
+                        try {
+                            result = ImageProcessor.decodeOrientedScaled(path, dim)
+                            if (result != null) break
+                        } catch (t: Throwable) {
+                            Log.w("CropEditorDialog", "Failed decoding $path at $dim", t)
+                            System.gc()
+                        }
+                    }
+                    if (result != null) break
+                }
+                if (result == null) {
+                    Log.e("CropEditorDialog", "Failed to load bitmap from candidates: $candidates")
+                    loadFailed = true
+                }
+                result
+            }
         }
         val scope = rememberCoroutineScope()
         val latestCrop by rememberUpdatedState(crop)
@@ -307,7 +346,36 @@ fun CropEditorDialog(
                             drawLine(Color.White, Offset(center.x, center.y - 16.dp.toPx()), Offset(center.x, center.y + 16.dp.toPx()), strokeWidth = 2f)
                         }
                     }
-                } ?: androidx.compose.material3.CircularProgressIndicator(color = ScanProTheme.colors.scanLine)
+                } ?: if (loadFailed) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = DarkChrome.mutedText,
+                            modifier = Modifier.size(56.dp)
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.err_could_not_decode_page),
+                            color = DarkChrome.text,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = close,
+                            colors = ButtonDefaults.buttonColors(containerColor = ScanProTheme.colors.scanLine)
+                        ) {
+                            Text(stringResource(R.string.common_close), color = Color.Black)
+                        }
+                    }
+                } else {
+                    androidx.compose.material3.CircularProgressIndicator(color = ScanProTheme.colors.scanLine)
+                }
             }
 
             // Bottom Floating Controls + Toolbar

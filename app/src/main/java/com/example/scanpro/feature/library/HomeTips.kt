@@ -11,14 +11,17 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
@@ -136,21 +139,34 @@ internal fun HomeTipCard(onAction: (TipAction) -> Unit, onHide: () -> Unit, modi
                         }
                     }
                     Spacer(Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Spacer(Modifier.width(58.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(start = 58.dp)
+                    ) {
                         FilledTonalButton(
                             onClick = { onAction(tip.target) },
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            modifier = Modifier.height(36.dp)
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                            modifier = Modifier.defaultMinSize(minHeight = 40.dp)
                         ) {
-                            Text(stringResource(tip.action), style = MaterialTheme.typography.labelLarge)
+                            Text(
+                                stringResource(tip.action),
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                         TextButton(
                             onClick = { index = (index + 1) % homeTips.size },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                            modifier = Modifier.height(36.dp)
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                            modifier = Modifier.defaultMinSize(minHeight = 40.dp)
                         ) {
-                            Text(stringResource(R.string.tip_next), style = MaterialTheme.typography.labelLarge)
+                            Text(
+                                stringResource(R.string.tip_next),
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                             Spacer(Modifier.width(4.dp))
                             Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                         }

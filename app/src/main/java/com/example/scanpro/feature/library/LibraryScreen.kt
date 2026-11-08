@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -940,7 +941,10 @@ private fun EmptyLibrary(
             )
             if (fresh) {
                 Spacer(Modifier.height(20.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Button(onClick = onStartScan, enabled = !busy) {
                         Icon(Icons.Rounded.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -1295,6 +1299,8 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
                             textAlign = TextAlign.Center,
                             maxLines = 2,
                             minLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
                             lineHeight = MaterialTheme.typography.labelMedium.lineHeight
                         )
                     }

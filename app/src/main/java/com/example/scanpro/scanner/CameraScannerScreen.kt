@@ -214,7 +214,7 @@ fun CameraScannerScreen(
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
     val previewView = remember {
         PreviewView(context).apply {
-            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             scaleType = PreviewView.ScaleType.FIT_CENTER
             // The screen must not dim or lock while someone lines up a page.
             keepScreenOn = true
@@ -924,7 +924,6 @@ fun CameraScannerScreen(
         onDispose {
             disposed.set(true)
             cameraProvider?.unbindAll()
-            runCatching { ProcessCameraProvider.getInstance(context).get().unbindAll() }
             analysisExecutor.shutdownNow()
             barcodeAnalyzer.close()
             // Leaving without Done discards the session's captures. A rotation recreates the screen

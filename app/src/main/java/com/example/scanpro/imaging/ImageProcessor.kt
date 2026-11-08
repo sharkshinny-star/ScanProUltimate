@@ -257,10 +257,14 @@ object ImageProcessor {
     }
 
     fun decodeOrientedScaled(path: String, maxDimension: Int): Bitmap? {
-        var bitmap = decodeScaled(path, maxDimension) ?: return null
-        val exifRotation = runCatching { ExifInterface(path).rotationDegrees }.getOrDefault(0)
-        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
-        return bitmap
+        return try {
+            var bitmap = decodeScaled(path, maxDimension) ?: return null
+            val exifRotation = runCatching { ExifInterface(path).rotationDegrees }.getOrDefault(0)
+            if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
+            bitmap
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     fun decodeScaled(path: String, maxDimension: Int): Bitmap? {
@@ -275,24 +279,43 @@ object ImageProcessor {
             max(bounds.outWidth, bounds.outHeight) / sample > maxDimension * 2 ||
             (bounds.outWidth.toLong() / sample) * (bounds.outHeight.toLong() / sample) > MAX_DECODE_PIXELS
         ) sample *= 2
-        val decoded = BitmapFactory.decodeFile(
-            path,
-            BitmapFactory.Options().apply {
-                inSampleSize = sample
-                inPreferredConfig = Bitmap.Config.ARGB_8888
+        val decoded = try {
+            BitmapFactory.decodeFile(
+                path,
+                BitmapFactory.Options().apply {
+                    inSampleSize = sample
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                }
+            )
+        } catch (_: OutOfMemoryError) {
+            System.gc()
+            try {
+                BitmapFactory.decodeFile(
+                    path,
+                    BitmapFactory.Options().apply {
+                        inSampleSize = sample * 2
+                        inPreferredConfig = Bitmap.Config.ARGB_8888
+                    }
+                )
+            } catch (_: OutOfMemoryError) {
+                null
             }
-        ) ?: return null
+        } ?: return null
 
         val largest = max(decoded.width, decoded.height)
         if (largest <= maxDimension) return decoded
         val scale = maxDimension.toFloat() / largest.toFloat()
-        val scaled = decoded.scale(
-            (decoded.width * scale).toInt().coerceAtLeast(1),
-            (decoded.height * scale).toInt().coerceAtLeast(1),
-            true
-        )
-        if (scaled !== decoded && !decoded.isRecycled) decoded.recycle()
-        return scaled
+        return try {
+            val scaled = decoded.scale(
+                (decoded.width * scale).toInt().coerceAtLeast(1),
+                (decoded.height * scale).toInt().coerceAtLeast(1),
+                true
+            )
+            if (scaled !== decoded && !decoded.isRecycled) decoded.recycle()
+            scaled
+        } catch (_: OutOfMemoryError) {
+            decoded
+        }
     }
 
     private fun rotate(source: Bitmap, degrees: Int): Bitmap {
