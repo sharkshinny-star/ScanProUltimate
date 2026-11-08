@@ -43,9 +43,12 @@
         <!-- taskAffinity="": another app cannot place its own screens in ScanPro's task by claiming the same affinity
              (task hijacking, "StrandHogg"). Android 11+ is patched in the OS; for Android 7-10 (minSdk 24) this is
              Google's partial, app-side mitigation. -->
+        <!-- locale, layoutDirection, uiMode: a language or light/dark change is applied in place by MainActivity
+             (onConfigurationChanged) rather than by restarting the activity, which showed a black frame. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="locale|layoutDirection|uiMode"
             android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

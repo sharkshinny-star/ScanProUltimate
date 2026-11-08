@@ -250,12 +250,24 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the welcome or the rating sheet; finishing the welcome marks it seen.
 - **Launch animation.** Designed and assessed in Figma (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi: frame
   `2:2` holds the keyframes, `6:2` the spec) and drawn by `ui/LaunchIntro.kt` from the same keyframe table: the icon is
-  pressed, the scan line writes the page, the brackets lock on, an indigo-to-pink flood fills the screen, "ScanPro"
-  rises, the icon zooms through into the app (1.6 s, tap to skip). The system launch screen shows its first frame
+  pressed, the scan line writes the page, the brackets lock on, an indigo-azure-teal flood fills the screen, "ScanPro"
+  rises and holds, the icon zooms through into the app (2.25 s, the Figma 1.6 s timeline stretched after the owner
+  found it a blink; tap to skip). It is drawn in the app's own light/dark theme, and `MainActivity` passes that choice
+  to the system (`UiModeManager.setApplicationNightMode`, Android 12+), so the system launch screen is in the same
+  mode from the next start. The system launch screen shows its first frame
   (`res/drawable/ic_launch_icon.xml`: the icon tile, 144dp at the 288dp the system draws it, with a blank page), so
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **ID card: both sides on one page.** `scanner/IdCardComposer.kt` cuts each side out of its photo along the guide
+  crop (`ImageProcessor.cropSourceToNewFile`), scales both to the same width and places them on a white A4-shaped
+  page, front above back, with a hairline border. The camera does this when Done is tapped after the second side
+  (`CameraScannerScreen.finishScan`), replacing the two captures with the one page, so the review, the filters and
+  the saved document all see a single page. Retake on that page clears it and starts both sides again.
+- **Language and theme changes without a restart.** `MainActivity` declares `configChanges="locale|layoutDirection|uiMode"`:
+  the Android 13+ per-app language change and the per-app night mode arrive as `onConfigurationChanged` (Compose re-reads
+  `LocalConfiguration`; launcher shortcuts are republished) instead of recreating the activity, which showed a black
+  frame after the language picker. Android 12 and older still recreate in `AppLocale.apply`.
   `MainActivity` settles the app from 104 % at the reveal; `ScanProApp(launchSettled)` keeps the rating and What's new
   sheets back until it ends, and the crash prompt waits too. It replaced the animated splash icon (`ic_launcher_splash`).
 

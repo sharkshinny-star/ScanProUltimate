@@ -116,6 +116,9 @@
     <string name="scan_status_capturing">క్యాప్చర్ చేస్తోంది…</string>
     <string name="scan_status_front_saved">ముందు వైపు సేవ్ అయింది · ఇప్పుడు వెనుక వైపు తీయండి</string>
     <string name="scan_status_id_ready">ID క్యాప్చర్ సిద్ధం · పూర్తయింది నొక్కండి</string>
+    <string name="scan_status_id_composing">రెండు వైపులను ఒకే పేజీలో పెడుతోంది…</string>
+    <string name="scan_status_id_compose_failed">రెండు వైపులను ఒకే పేజీలో పెట్టలేకపోయాం; అవి రెండు పేజీలుగా ఉంచబడ్డాయి</string>
+    <string name="scan_status_id_retake">రెండు వైపులూ మళ్ళీ: ముందుగా ముందు వైపు తీయండి</string>
     <string name="scan_status_page_captured">పేజీ %1$d క్యాప్చర్ అయింది</string>
     <string name="scan_id_side_front">ముందు వైపు</string>
     <string name="scan_id_side_back">వెనుక వైపు</string>
@@ -219,7 +222,7 @@
     <string name="scan_hint_document">పేజీలు, లేఖలు, ఫారమ్‌లు</string>
     <string name="scan_hint_receipt">బిల్లులు మరియు రసీదులు</string>
     <string name="scan_hint_whiteboard">వైట్‌బోర్డ్‌ను శుభ్రం చేస్తుంది</string>
-    <string name="scan_hint_id_card">అసలు రంగులను ఉంచుతుంది; ముందు వైపు మాత్రమే లేదా రెండు వైపులా</string>
+    <string name="scan_hint_id_card">ముందు, వెనుక ఒకే పేజీలో; అసలు రంగులు అలాగే ఉంటాయి</string>
     <string name="scan_hint_book">పుస్తకంలోని పేజీలు</string>
     <string name="scan_hint_text">స్కాన్‌ను సేవ్ చేసి దాని టెక్స్ట్‌ను కాపీ చేస్తుంది</string>
     <string name="scan_hint_qr">QR కోడ్‌లు, బార్‌కోడ్‌లను చదువుతుంది</string>

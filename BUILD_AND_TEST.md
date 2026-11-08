@@ -41,7 +41,69 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-04, `b76720c`, full run in a cloud container)
+## Latest results (2026-11-05, F48 review fix and uiautomator 2.4.1, run on `263325d` + that commit, before rebasing onto `959ce27`; the rebased tree compiles)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 320 tests: 290 passed, 30 skipped (opt-in screenshot and real-photo tests), 0 failed. Includes `PdfPictureTest` (6), `MergePasswordTest` (6), `WelcomePermissionsTest` (5) from F48–F50 |
+| `:app:lintDebug` (analysis rerun) | 0 issues (the `GradleDependency` warning is gone with uiautomator 2.4.1) |
+| `:baselineprofile:compileNonMinifiedReleaseKotlin` | Passed with uiautomator 2.4.1 (earlier in the session; profile not generated, no device) |
+| `:app:bundleRelease` | Passed; AAB 45.9 MB |
+| Sideload `assembleRelease` | Passed; arm64 33.6 MB, armeabi-v7a 25.6 MB, x86_64 39.4 MB, universal 82.7 MB (unsigned) |
+| Not run | Device or emulator, instrumented tests, screenshot renders, `:opencv:lintDebug`, 16 KB alignment |
+
+## Earlier results (2026-11-05, after-scan sheet F65, on `f93c43c`)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugUnitTestKotlin` | Passed, 0 compiler warnings |
+| `ScanSavedSheetTest` | 5 passed; `app/build/screenshots/scan_saved_receipt.png` and `scan_saved_card.png` looked at |
+| Full `:app:testDebugUnitTest`, `:app:lintDebug` | **Not completed**: the run was stopped by the owner (see R36). The last full run (331 tests, 0 failed; lint 0 errors) is the F64 entry below |
+| Release builds, device | Not run |
+
+## Earlier results (2026-11-05, page quality check and glare hint, on `0d74480`)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 331 tests, 301 passed, 30 skipped, 0 failed; 0 compiler warnings |
+| `PageQualityTest`, `ScanReviewQualityTest` | 7 + 3 passed; `app/build/screenshots/review_quality_notice.png` looked at (notice above the page, corner handles free) |
+| `:app:lintDebug` | 0 errors, 1 warning (`GradleDependency`, a newer library version; not from this change) |
+| Release builds, device | Not run |
+
+## Earlier results (2026-11-05, launch animation from the Figma design, on `7eee16f`)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 320 tests, 290 passed, 30 skipped, 0 failed (includes `LaunchSmokeTest`: 56 launches on Android 7-17, and `LaunchIntroTest`: 3); 0 compiler warnings |
+| `LaunchIntroTest` | Reveal at 1.18 s and end at 1.6 s, each once; a tap skips to the exit; 12 frames rendered to `app/build/screenshots/intro_*.png` and compared side by side with the Figma render (match; frame 0 deliberately has no icon shadow, matching the system launch screen) |
+| `:app:lintDebug` | 0 errors, 1 warning (`GradleDependency`, a newer library version; not from this change) |
+| Release builds, device | Not run |
+
+## Earlier results (2026-11-05, security hardening commit on top of `10fa630`)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin --rerun` | Passed, 0 Kotlin warnings in app code (one Gradle-script deprecation in `app/build.gradle.kts:100`, `srcDir`, predates this commit) |
+| `:app:testDebugUnitTest` | 313 tests: 283 passed, 30 skipped (28 `ScreenScreenshotTest` cases, opt-in; 2 `RealPhotoEquivalenceTest`), 0 failed. New in this commit: 5 in `EncryptedDocumentPackageTest`, 2 in `KeptScanStoreTest` |
+| `:app:lintDebug` | 0 errors, 1 warning (`GradleDependency`: uiautomator 2.4.1 available) |
+| `:app:bundleRelease` | Passed (R8); AAB 45.8 MB; merged release manifest has `android:taskAffinity=""` |
+| Gradle wrapper checksum | A fresh download (empty `GRADLE_USER_HOME`) was verified against the pinned `distributionSha256Sum`; `gradle-wrapper.jar` matches a published Gradle wrapper checksum |
+| Sideload `assembleRelease`, 16 KB alignment, `:opencv:lintDebug`, screenshots | Not run this time (last passed on `b76720c`, below) |
+| Instrumented tests, device checks (password keyboards, `taskAffinity`, backup speed with 600k rounds) | Not run: no emulator or device |
+| Release signing | Not validated: no secrets; outputs unsigned |
+
+Older runs, kept for history:
+
+### 2026-11-05, colour themes / Home tips / What's new, rebased on `d2c1451`
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin`, `:app:compileDebugUnitTestKotlin` | Passed, 0 compiler warnings |
+| `:app:testDebugUnitTest` | 306 tests, 276 passed, 30 skipped, 0 failed (includes the new `ColourThemeScreenshotTest`, 2 tests, which always renders Home and Settings in several colour themes to `app/build/screenshots`; renders looked at) |
+| `:app:lintDebug` | 0 errors, 1 warning: `GradleDependency`, uiautomator 2.4.1 is available (not from this change). Fixed on the way: 47 `MissingTranslation` for the new strings, 5 `UnrememberedMutableState` in `ScanReviewNamingTest`/`ScanReviewSlidersTest` |
+| Release builds, `:translate`, `:opencv`, device | Not run |
+
+## Earlier results (2026-11-04, `b76720c`, full run in a cloud container)
 
 **Every check below was run on `b76720c` (screen-review fixes, F43) unless a row says otherwise.**
 
