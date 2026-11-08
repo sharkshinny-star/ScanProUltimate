@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">हाल के</string>
     <string name="lib_sort_name">नाम</string>
     <string name="lib_sort_size">साइज़</string>
+    <string name="lib_sort_created">बनाने की तारीख</string>
+    <string name="lib_sort_newest_first">सबसे नया पहले</string>
+    <string name="lib_sort_oldest_first">सबसे पुराना पहले</string>
+    <string name="lib_sort_a_to_z">A से Z</string>
+    <string name="lib_sort_z_to_a">Z से A</string>
+    <string name="lib_sort_largest_first">सबसे बड़ा पहले</string>
+    <string name="lib_sort_smallest_first">सबसे छोटा पहले</string>
+    <string name="lib_recent_searches">हाल की खोजें</string>
+    <string name="lib_recent_searches_clear">साफ़ करें</string>
     <string name="lib_menu_import_photos">फ़ोटो इंपोर्ट करें</string>
     <string name="lib_menu_import_pdf">PDF इंपोर्ट करें</string>
     <string name="lib_menu_rename_folder">फ़ोल्डर का नाम बदलें</string>

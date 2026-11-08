@@ -33,6 +33,7 @@ Last updated: 2026-11-08 (F71 and F72 close R37 and R17; F68 fast save and its r
 
 | Commit | What |
 |---|---|
+| next | F76 (half of R35): Files sort by Date created and in either direction (query parameter, resets with the key); Search keeps the last eight terms as chips with Clear. `LibraryFiltersTest` +1, `RecentSearchesTest` (2). Tags half of R35 still open. |
 | next | F75 closes R32: duplicate-aware auto-capture (32x32 page signature, "Same page · turn the page" guidance) and the shutter waits for a sharp steady frame (`PageSignature.kt`). `PageSignatureTest` (4). |
 | next | F74 closes R30: camera page strip draws each page cropped and filtered (redrawn when the outline lands), amber mark on pages that need a look, long-press removes with Undo (file deleted after 6 s or at Done). |
 | next | F73 closes R28: Share PDF card from the Export sheet's PDF row: page ticks, a size estimate per quality from a two-page trial render, "Keep under" 1/5/10 MB that picks the quality and shrinks further if needed (`imaging/PdfShare.kt`, `SharePdfSheet.kt`). `PdfShareTest` (3), `SharePdfSheetTest`. |

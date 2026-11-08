@@ -68,7 +68,17 @@ class LibraryViewModel @Inject constructor(
 
     fun setFolder(value: String) { savedState[KEY_FOLDER] = value }
     fun setFavoritesOnly(value: Boolean) { savedState[KEY_FAVORITES] = value }
-    fun setSort(value: LibrarySort) { viewModelScope.launch { settings.setLibrarySort(value.name) } }
+    fun setSort(value: LibrarySort) { viewModelScope.launch { settings.setLibrarySort(value.name); settings.setLibrarySortAscending(null) } }
+
+    /** Sort direction (R35): the saved choice, or the key's own default when none was made. */
+    val sortAscending: StateFlow<Boolean> = combine(sort, settings.librarySortAscending) { key, saved -> saved ?: key.defaultAscending }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, LibrarySort.UPDATED.defaultAscending)
+    fun setSortAscending(value: Boolean) { viewModelScope.launch { settings.setLibrarySortAscending(value) } }
+
+    /** Recent search terms for the Search screen (R35), newest first. */
+    val recentSearches: StateFlow<List<String>> = settings.recentSearches.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    fun recordSearch(term: String) { viewModelScope.launch { settings.recordSearch(term) } }
+    fun clearRecentSearches() { viewModelScope.launch { settings.clearRecentSearches() } }
     fun setLibraryGrid(value: Boolean) { viewModelScope.launch { settings.setLibraryGrid(value) } }
 
     /** Locked folders (lower-cased) and the ones still closed this session; see FolderLock. */
@@ -102,13 +112,13 @@ class LibraryViewModel @Inject constructor(
      */
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val documents: Flow<PagingData<DocumentSummary>> =
-        combine(_query.debounce(180.milliseconds), folder, favoritesOnly, sort, folderLock.hidden) { query, folder, favorites, sort, hidden -> Filters(query, folder, favorites, sort) to hidden }
+        combine(_query.debounce(180.milliseconds), folder, favoritesOnly, combine(sort, sortAscending) { k, a -> k to a }, folderLock.hidden) { query, folder, favorites, (sort, ascending), hidden -> Filters(query, folder, favorites, sort, ascending) to hidden }
             .flatMapLatest { (f, hidden) ->
                 // A closed locked folder shows nothing, and its documents stay out of All, favourites and search.
                 if (com.example.scanpro.core.security.FolderLock.hides(hidden, f.folder)) {
                     flow { emit(PagingData.empty()) }
                 } else if (f.query.isBlank()) {
-                    repository.pagedSummaries(f.folder, f.favoritesOnly, f.sort)
+                    repository.pagedSummaries(f.folder, f.favoritesOnly, f.sort, f.ascending)
                         .map { page -> if (hidden.isEmpty()) page else page.filter { !it.inHidden(hidden) } }
                 } else {
                     flow { emit(PagingData.from(searchResults(f).filterNot { it.inHidden(hidden) })) }
@@ -116,7 +126,7 @@ class LibraryViewModel @Inject constructor(
             }
             .cachedIn(viewModelScope)
 
-    private data class Filters(val query: String, val folder: String, val favoritesOnly: Boolean, val sort: LibrarySort)
+    private data class Filters(val query: String, val folder: String, val favoritesOnly: Boolean, val sort: LibrarySort, val ascending: Boolean)
 
     private suspend fun searchResults(f: Filters): List<DocumentSummary> {
         val found = try {
@@ -127,7 +137,7 @@ class LibraryViewModel @Inject constructor(
         } catch (_: Exception) {
             emptyList()
         }
-        return found.filteredAndSorted(f.folder, f.favoritesOnly, f.sort)
+        return found.filteredAndSorted(f.folder, f.favoritesOnly, f.sort, f.ascending)
     }
 
     val trashCount: StateFlow<Int> = library.trash

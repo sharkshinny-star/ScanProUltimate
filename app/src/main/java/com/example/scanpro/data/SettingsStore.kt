@@ -189,6 +189,24 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     val defaultOcrScript: Flow<OcrScript> = preferences.map { runCatching { OcrScript.valueOf(it[keyDefaultOcrScript].orEmpty()) }.getOrDefault(OcrScript.LATIN) }
 
     suspend fun setLibrarySort(value: String) { context.scanProSettings.edit { it[keyLibrarySort] = value } }
+
+    private val keyLibrarySortAscending = stringPreferencesKey("library_sort_ascending")
+    private val keyRecentSearches = stringPreferencesKey("recent_searches")
+
+    /** Files sort direction (R35): true ascending, false descending, null the key's own default. */
+    val librarySortAscending: Flow<Boolean?> = preferences.map { p ->
+        when (p[keyLibrarySortAscending]) { "ASC" -> true; "DESC" -> false; else -> null }
+    }
+    suspend fun setLibrarySortAscending(value: Boolean?) {
+        context.scanProSettings.edit { if (value == null) it.remove(keyLibrarySortAscending) else it[keyLibrarySortAscending] = if (value) "ASC" else "DESC" }
+    }
+
+    /** Recent search terms, newest first (R35). */
+    val recentSearches: Flow<List<String>> = preferences.map { JsonCodec.decodeStringList(it[keyRecentSearches]) }.distinctUntilChanged()
+    suspend fun recordSearch(term: String) {
+        context.scanProSettings.edit { it[keyRecentSearches] = JsonCodec.encodeStringList(RecentSearches.add(JsonCodec.decodeStringList(it[keyRecentSearches]), term)) }
+    }
+    suspend fun clearRecentSearches() { context.scanProSettings.edit { it.remove(keyRecentSearches) } }
     suspend fun setLibraryGrid(value: Boolean) { context.scanProSettings.edit { it[keyLibraryGrid] = value } }
     suspend fun setTrashRetentionDays(value: Int) { context.scanProSettings.edit { it[keyTrashRetentionDays] = value.coerceIn(1, 365) } }
     suspend fun setDefaultOcrScript(value: OcrScript) { context.scanProSettings.edit { it[keyDefaultOcrScript] = value.name } }

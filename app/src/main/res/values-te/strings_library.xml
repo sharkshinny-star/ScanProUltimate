@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">ఇటీవలివి</string>
     <string name="lib_sort_name">పేరు</string>
     <string name="lib_sort_size">సైజ్</string>
+    <string name="lib_sort_created">సృష్టించిన తేదీ</string>
+    <string name="lib_sort_newest_first">కొత్తవి ముందు</string>
+    <string name="lib_sort_oldest_first">పాతవి ముందు</string>
+    <string name="lib_sort_a_to_z">A నుండి Z</string>
+    <string name="lib_sort_z_to_a">Z నుండి A</string>
+    <string name="lib_sort_largest_first">పెద్దవి ముందు</string>
+    <string name="lib_sort_smallest_first">చిన్నవి ముందు</string>
+    <string name="lib_recent_searches">ఇటీవలి శోధనలు</string>
+    <string name="lib_recent_searches_clear">తొలగించు</string>
     <string name="lib_menu_import_photos">ఫోటోలు ఇంపోర్ట్ చేయండి</string>
     <string name="lib_menu_import_pdf">PDF ఇంపోర్ట్ చేయండి</string>
     <string name="lib_menu_rename_folder">ఫోల్డర్ పేరు మార్చండి</string>

@@ -117,27 +117,35 @@ internal interface ScanDao {
     fun loadSummaries(ids: List<String>): List<DocumentSummaryRow>
 
     // The Files list, paged. An empty folder means every folder; the folder name compares ignoring case,
-    // like the folder chips do.
+    // like the folder chips do. The direction is a parameter: one CASE orders ascending, the other descending,
+    // and whichever does not apply is NULL for every row (R35).
     @Query(
         "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
             "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
-            "ORDER BY d.updated_at DESC, d.id"
+            "ORDER BY (CASE WHEN :ascending = 1 THEN d.updated_at END) ASC, (CASE WHEN :ascending = 0 THEN d.updated_at END) DESC, d.id"
     )
-    fun pagedByUpdated(folder: String, favoritesOnly: Boolean): PagingSource<Int, DocumentSummaryRow>
+    fun pagedByUpdated(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
 
     @Query(
         "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
             "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
-            "ORDER BY d.title COLLATE NOCASE ASC, d.id"
+            "ORDER BY (CASE WHEN :ascending = 1 THEN d.created_at END) ASC, (CASE WHEN :ascending = 0 THEN d.created_at END) DESC, d.id"
     )
-    fun pagedByName(folder: String, favoritesOnly: Boolean): PagingSource<Int, DocumentSummaryRow>
+    fun pagedByCreated(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
 
     @Query(
         "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
             "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
-            "ORDER BY d.size_bytes DESC, d.id"
+            "ORDER BY (CASE WHEN :ascending = 1 THEN d.title END) COLLATE NOCASE ASC, (CASE WHEN :ascending = 0 THEN d.title END) COLLATE NOCASE DESC, d.id"
     )
-    fun pagedBySize(folder: String, favoritesOnly: Boolean): PagingSource<Int, DocumentSummaryRow>
+    fun pagedByName(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
+
+    @Query(
+        "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
+            "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "ORDER BY (CASE WHEN :ascending = 1 THEN d.size_bytes END) ASC, (CASE WHEN :ascending = 0 THEN d.size_bytes END) DESC, d.id"
+    )
+    fun pagedBySize(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
 
     @Query("SELECT COUNT(*) FROM documents WHERE trashed_at = 0")
     fun countActive(): Int
@@ -305,12 +313,13 @@ class DocumentDatabase @Inject constructor(
      * The Files list as pages of summaries, straight from the database: it stays current by itself, because
      * Room invalidates the source whenever the documents or pages tables change.
      */
-    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort): Flow<PagingData<DocumentSummary>> =
+    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort, ascending: Boolean = sort.defaultAscending): Flow<PagingData<DocumentSummary>> =
         Pager(PagingConfig(pageSize = 30, prefetchDistance = 30, enablePlaceholders = false)) {
             when (sort) {
-                LibrarySort.UPDATED -> dao.pagedByUpdated(folder.trim(), favoritesOnly)
-                LibrarySort.NAME -> dao.pagedByName(folder.trim(), favoritesOnly)
-                LibrarySort.SIZE -> dao.pagedBySize(folder.trim(), favoritesOnly)
+                LibrarySort.UPDATED -> dao.pagedByUpdated(folder.trim(), favoritesOnly, ascending)
+                LibrarySort.CREATED -> dao.pagedByCreated(folder.trim(), favoritesOnly, ascending)
+                LibrarySort.NAME -> dao.pagedByName(folder.trim(), favoritesOnly, ascending)
+                LibrarySort.SIZE -> dao.pagedBySize(folder.trim(), favoritesOnly, ascending)
             }
         }.flow.map { data -> data.map { row -> row.toSummary() } }
 

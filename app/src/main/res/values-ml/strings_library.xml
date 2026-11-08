@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">സമീപകാലം</string>
     <string name="lib_sort_name">പേര്</string>
     <string name="lib_sort_size">വലുപ്പം</string>
+    <string name="lib_sort_created">സൃഷ്ടിച്ച തീയതി</string>
+    <string name="lib_sort_newest_first">പുതിയത് ആദ്യം</string>
+    <string name="lib_sort_oldest_first">പഴയത് ആദ്യം</string>
+    <string name="lib_sort_a_to_z">A മുതൽ Z</string>
+    <string name="lib_sort_z_to_a">Z മുതൽ A</string>
+    <string name="lib_sort_largest_first">വലുത് ആദ്യം</string>
+    <string name="lib_sort_smallest_first">ചെറുത് ആദ്യം</string>
+    <string name="lib_recent_searches">സമീപകാല തിരയലുകൾ</string>
+    <string name="lib_recent_searches_clear">മായ്ക്കുക</string>
     <string name="lib_menu_import_photos">ഫോട്ടോകൾ ഇംപോർട്ട് ചെയ്യുക</string>
     <string name="lib_menu_import_pdf">PDF ഇംപോർട്ട് ചെയ്യുക</string>
     <string name="lib_menu_rename_folder">ഫോൾഡറിന്റെ പേര് മാറ്റുക</string>

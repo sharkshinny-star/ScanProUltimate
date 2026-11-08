@@ -35,9 +35,21 @@ data class DocumentSummary(
 const val SNIPPET_MATCH_START = "\uE000"
 const val SNIPPET_MATCH_END = "\uE001"
 
-/** How the Files list is ordered; each value is one SQL ordering of the paged query. */
-enum class LibrarySort(@StringRes val label: Int) {
-    UPDATED(R.string.lib_sort_recent), NAME(R.string.lib_sort_name), SIZE(R.string.lib_sort_size)
+/**
+ * How the Files list is ordered; each value is one SQL ordering of the paged query. [defaultAscending] is the
+ * direction people expect for the key (A to Z, newest first, largest first); the menu offers the other one too, with
+ * [ascendingLabel] / [descendingLabel] naming them in the key's own words (R35).
+ */
+enum class LibrarySort(
+    @StringRes val label: Int,
+    val defaultAscending: Boolean,
+    @StringRes val ascendingLabel: Int,
+    @StringRes val descendingLabel: Int
+) {
+    UPDATED(R.string.lib_sort_recent, false, R.string.lib_sort_oldest_first, R.string.lib_sort_newest_first),
+    CREATED(R.string.lib_sort_created, false, R.string.lib_sort_oldest_first, R.string.lib_sort_newest_first),
+    NAME(R.string.lib_sort_name, true, R.string.lib_sort_a_to_z, R.string.lib_sort_z_to_a),
+    SIZE(R.string.lib_sort_size, false, R.string.lib_sort_smallest_first, R.string.lib_sort_largest_first)
 }
 
 /**

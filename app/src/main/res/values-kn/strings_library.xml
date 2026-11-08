@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">ಇತ್ತೀಚಿನವು</string>
     <string name="lib_sort_name">ಹೆಸರು</string>
     <string name="lib_sort_size">ಗಾತ್ರ</string>
+    <string name="lib_sort_created">ರಚಿಸಿದ ದಿನಾಂಕ</string>
+    <string name="lib_sort_newest_first">ಹೊಸದು ಮೊದಲು</string>
+    <string name="lib_sort_oldest_first">ಹಳೆಯದು ಮೊದಲು</string>
+    <string name="lib_sort_a_to_z">A ಯಿಂದ Z</string>
+    <string name="lib_sort_z_to_a">Z ಯಿಂದ A</string>
+    <string name="lib_sort_largest_first">ದೊಡ್ಡದು ಮೊದಲು</string>
+    <string name="lib_sort_smallest_first">ಚಿಕ್ಕದು ಮೊದಲು</string>
+    <string name="lib_recent_searches">ಇತ್ತೀಚಿನ ಹುಡುಕಾಟಗಳು</string>
+    <string name="lib_recent_searches_clear">ಅಳಿಸಿ</string>
     <string name="lib_menu_import_photos">ಫೋಟೋ ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
     <string name="lib_menu_import_pdf">PDF ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
     <string name="lib_menu_rename_folder">ಫೋಲ್ಡರ್ ಹೆಸರು ಬದಲಿಸಿ</string>

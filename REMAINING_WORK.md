@@ -44,6 +44,6 @@ see `TOOLS_IMPROVEMENTS.md`.
 | R22 | P3 | Privacy | `core/crash/CrashReporter.kt` | Crash reports include exception messages, which can hold file names derived from document titles. | Optional: replace paths under `filesDir`/`cacheDir` with placeholders before writing. |
 | R33 | P3 | UX | manifest, new `TileService` / widget | Competitor comparison 2026-11-04 (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan; | A Quick Settings "Scan" tile (TileService) and a 2x1 RemoteViews widget (Scan, ID card, Import), no new dependency. |
 | R34 | P3 | UX / i18n | `imaging/SmartTitle.kt` | Competitor comparison 2026-11-04 (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan; | Give SmartTitle a string provider with the document-kind labels in all six languages; optional name pattern in Settings (mode, date, first line). |
-| R35 | P3 | UX | `feature/library/*` | Competitor comparison 2026-11-04 (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan; | A Tags sheet with chips, a Tags filter chip in Files, sort direction and Date created, and recent searches on the Search screen. |
+| R35 | P3 | UX | `feature/library/*`, `feature/document/DocumentScreen.kt` | Tags half left: a Tags sheet with chips on the document and a Tags filter chip in Files (sort direction, Date created and recent searches done as F76). | Tags sheet and filter chip. |
 
 Fixed items and their evidence are in the "Fixed" table of `AUDIT_FINDINGS.md`; build and test results in `BUILD_AND_TEST.md`.

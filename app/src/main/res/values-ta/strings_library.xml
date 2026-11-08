@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">சமீபத்தியவை</string>
     <string name="lib_sort_name">பெயர்</string>
     <string name="lib_sort_size">அளவு</string>
+    <string name="lib_sort_created">உருவாக்கிய தேதி</string>
+    <string name="lib_sort_newest_first">புதியது முதலில்</string>
+    <string name="lib_sort_oldest_first">பழையது முதலில்</string>
+    <string name="lib_sort_a_to_z">A முதல் Z</string>
+    <string name="lib_sort_z_to_a">Z முதல் A</string>
+    <string name="lib_sort_largest_first">பெரியது முதலில்</string>
+    <string name="lib_sort_smallest_first">சிறியது முதலில்</string>
+    <string name="lib_recent_searches">சமீபத்திய தேடல்கள்</string>
+    <string name="lib_recent_searches_clear">அழி</string>
     <string name="lib_menu_import_photos">ஃபோட்டோக்களை இறக்குமதி செய்</string>
     <string name="lib_menu_import_pdf">PDF இறக்குமதி செய்</string>
     <string name="lib_menu_rename_folder">ஃபோல்டர் பெயரை மாற்று</string>

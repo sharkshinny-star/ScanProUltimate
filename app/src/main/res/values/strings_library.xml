@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">Recent</string>
     <string name="lib_sort_name">Name</string>
     <string name="lib_sort_size">Size</string>
+    <string name="lib_sort_created">Date created</string>
+    <string name="lib_sort_newest_first">Newest first</string>
+    <string name="lib_sort_oldest_first">Oldest first</string>
+    <string name="lib_sort_a_to_z">A to Z</string>
+    <string name="lib_sort_z_to_a">Z to A</string>
+    <string name="lib_sort_largest_first">Largest first</string>
+    <string name="lib_sort_smallest_first">Smallest first</string>
+    <string name="lib_recent_searches">Recent searches</string>
+    <string name="lib_recent_searches_clear">Clear</string>
     <string name="lib_menu_import_photos">Import photos</string>
     <string name="lib_menu_import_pdf">Import PDF</string>
     <string name="lib_menu_rename_folder">Rename folder</string>
