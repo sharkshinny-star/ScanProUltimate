@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,10 +49,12 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Compress
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FindInPage
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -60,7 +64,6 @@ import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -103,9 +106,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
@@ -123,15 +130,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.DarkChrome
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
+import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.RecentPdf
+import com.example.scanpro.feature.document.CropEditorDialog
 import com.example.scanpro.imaging.CompressionPreset
 import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.imaging.PageRanges
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfPreviewSession
@@ -140,6 +151,7 @@ import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.PdfToolResult
 import com.example.scanpro.imaging.SplitMode
 import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -301,9 +313,10 @@ fun PdfToolsScreen(
         viewModel.rememberPdfs(listOf(uri))
         startTool(tool, uri)
     }
-    // Files picked for Merge or Images to PDF are shown in a list to put in order before the tool runs:
-    // the picker's order is not the order they were tapped in.
+    // Files picked for Merge are shown in a list to put in order before merging.
     var ordering by remember { mutableStateOf<List<Uri>?>(null) }
+    // Images picked for Images to PDF are shown with thumbnails, reordering, and crop editing before conversion.
+    var imagesToOrder by remember { mutableStateOf<List<Uri>?>(null) }
     var imagesToConvert by remember { mutableStateOf<List<Uri>?>(null) }
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty() && selectedTool == "merge") {
@@ -313,18 +326,29 @@ fun PdfToolsScreen(
     }
     val imagesPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         if (uris.isNotEmpty() && selectedTool == "img2pdf") {
-            if (uris.size == 1) imagesToConvert = uris else ordering = uris
+            imagesToOrder = uris
         }
     }
     ordering?.let { picked ->
         OrderFilesDialog(
-            title = stringResource(if (selectedTool == "merge") R.string.tools_order_merge_title else R.string.tools_order_pages_title),
+            title = stringResource(R.string.tools_order_merge_title),
             items = picked,
             nameOf = viewModel::displayName,
             onDismiss = { ordering = null },
             onConfirm = { inOrder ->
                 ordering = null
-                if (selectedTool == "merge") viewModel.merge(inOrder) else imagesToConvert = inOrder
+                viewModel.merge(inOrder)
+            }
+        )
+    }
+    imagesToOrder?.let { picked ->
+        ImagesToPdfOrderDialog(
+            initialUris = picked,
+            displayName = viewModel::displayName,
+            onDismiss = { imagesToOrder = null },
+            onConfirm = { inOrder ->
+                imagesToOrder = null
+                imagesToConvert = inOrder
             }
         )
     }
@@ -755,6 +779,243 @@ private fun OrderFilesDialog(
         confirmButton = { Button(onClick = { onConfirm(order.toList()) }) { Text(stringResource(R.string.common_continue)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
+}
+
+private data class OrderedImage(
+    val id: String = UUID.randomUUID().toString(),
+    val file: File,
+    val name: String
+)
+
+/**
+ * Puts picked images in order, shows their thumbnails, and allows perspective cropping or removal before PDF generation.
+ */
+@Composable
+private fun ImagesToPdfOrderDialog(
+    initialUris: List<Uri>,
+    displayName: (Uri) -> String,
+    onDismiss: () -> Unit,
+    onConfirm: (List<Uri>) -> Unit
+) {
+    val context = LocalContext.current
+    val order = remember { mutableStateListOf<OrderedImage>() }
+    var isLoading by remember { mutableStateOf(true) }
+    var croppingItem by remember { mutableStateOf<OrderedImage?>(null) }
+
+    LaunchedEffect(initialUris) {
+        withContext(Dispatchers.IO) {
+            val stagingDir = File(context.cacheDir, "img2pdf_order_${UUID.randomUUID()}").apply { mkdirs() }
+            val loaded = initialUris.mapIndexedNotNull { index, uri ->
+                runCatching {
+                    val name = displayName(uri)
+                    val ext = if (name.contains('.')) name.substringAfterLast('.', "jpg") else "jpg"
+                    val file = File(stagingDir, "item_${index}_${System.currentTimeMillis()}.$ext")
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        file.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    OrderedImage(file = file, name = name)
+                }.getOrNull()
+            }
+            withContext(Dispatchers.Main) {
+                order.clear()
+                order.addAll(loaded)
+                isLoading = false
+            }
+        }
+    }
+
+    val currentCrop = croppingItem
+    if (currentCrop != null) {
+        CropEditorDialog(
+            sourcePath = currentCrop.file.absolutePath,
+            initial = CropQuad(),
+            onDismiss = { croppingItem = null },
+            onConfirm = { quad ->
+                val source = currentCrop.file
+                val croppedDest = File(source.parentFile, "cropped_${System.currentTimeMillis()}_${source.name}")
+                ImageProcessor.cropSourceToNewFile(source, croppedDest, quad)
+                val idx = order.indexOfFirst { it.id == currentCrop.id }
+                if (idx != -1) {
+                    order[idx] = order[idx].copy(file = croppedDest)
+                }
+                croppingItem = null
+            }
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tools_order_pages_title)) },
+        text = {
+            if (isLoading) {
+                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column {
+                    Text(
+                        stringResource(R.string.tools_img2pdf_order_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        itemsIndexed(order, key = { _, item -> item.id }) { index, item ->
+                            OrderedImageRow(
+                                index = index,
+                                item = item,
+                                canMoveUp = index > 0,
+                                canMoveDown = index < order.lastIndex,
+                                canRemove = order.size > 1,
+                                onMoveUp = { order.add(index - 1, order.removeAt(index)) },
+                                onMoveDown = { order.add(index + 1, order.removeAt(index)) },
+                                onCrop = { croppingItem = item },
+                                onRemove = { order.removeAt(index) }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(order.map { Uri.fromFile(it.file) }) },
+                enabled = !isLoading && order.isNotEmpty()
+            ) {
+                Text(stringResource(R.string.common_continue))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun OrderedImageRow(
+    index: Int,
+    item: OrderedImage,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    canRemove: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onCrop: () -> Unit,
+    onRemove: () -> Unit
+) {
+    val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, item.file) {
+        value = withContext(Dispatchers.IO) {
+            ImageProcessor.decodeOrientedScaled(item.file.absolutePath, 200)
+        }
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(R.string.tools_order_position, index + 1),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.width(26.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable(onClick = onCrop),
+                contentAlignment = Alignment.Center
+            ) {
+                val bm = thumbnail
+                if (bm != null) {
+                    Image(
+                        bitmap = bm.asImageBitmap(),
+                        contentDescription = stringResource(R.string.tools_page_number, index + 1),
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                }
+            }
+
+            Spacer(Modifier.width(10.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(4.dp))
+                OutlinedButton(
+                    onClick = onCrop,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                    modifier = Modifier.height(30.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Crop,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.tools_img2pdf_crop_button),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
+            IconButton(
+                enabled = canMoveUp,
+                onClick = onMoveUp,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Default.KeyboardArrowUp,
+                    contentDescription = stringResource(R.string.tools_order_move_up)
+                )
+            }
+            IconButton(
+                enabled = canMoveDown,
+                onClick = onMoveDown,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Default.KeyboardArrowDown,
+                    contentDescription = stringResource(R.string.tools_order_move_down)
+                )
+            }
+
+            if (canRemove) {
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.tools_img2pdf_remove_cd, index + 1),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** Page size and quality for Images to PDF, the two settings the engine already takes. */
@@ -1396,6 +1657,7 @@ private fun PdfPageOrganizerSheet(
 
     val isLoading = session == null && loadError == null
     val keptCount = pages.count { it.selected }
+    var previewPage by remember { mutableStateOf<ThumbnailPageModel?>(null) }
 
     // Shown inside the Tools tab, which already keeps clear of the status bar and the bottom bar: taking those insets
     // again here left a dark band under the pages and a gap above the title.
@@ -1517,10 +1779,18 @@ private fun PdfPageOrganizerSheet(
                             onMoveLeft = { change { pages.add(index - 1, pages.removeAt(index)) } },
                             onMoveRight = { change { pages.add(index + 1, pages.removeAt(index)) } },
                             onMoveToStart = { change { pages.add(0, pages.removeAt(index)) } },
-                            onMoveToEnd = { change { pages.add(pages.removeAt(index)) } }
+                            onMoveToEnd = { change { pages.add(pages.removeAt(index)) } },
+                            onPreview = { previewPage = item }
                         )
                     }
                 }
+            }
+            previewPage?.let { page ->
+                PdfPagePreviewDialog(
+                    page = page,
+                    session = session,
+                    onDismiss = { previewPage = null }
+                )
             }
         }
     }
@@ -1539,7 +1809,8 @@ private fun OrganizerPageCard(
     onMoveLeft: () -> Unit,
     onMoveRight: () -> Unit,
     onMoveToStart: () -> Unit = {},
-    onMoveToEnd: () -> Unit = {}
+    onMoveToEnd: () -> Unit = {},
+    onPreview: () -> Unit = {}
 ) {
     val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
         val preview = session ?: return@produceState
@@ -1565,13 +1836,28 @@ private fun OrganizerPageCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = null)
-                Text(stringResource(R.string.tools_page_number, item.index + 1), style = MaterialTheme.typography.labelMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = null)
+                    Text(stringResource(R.string.tools_page_number, item.index + 1), style = MaterialTheme.typography.labelMedium)
+                }
+                IconButton(onClick = onPreview, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Default.Fullscreen,
+                        contentDescription = stringResource(R.string.tools_organizer_preview_page, item.index + 1),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
+                    .height(150.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .combinedClickable(
+                        onClick = onToggle,
+                        onLongClick = onPreview,
+                        onLongClickLabel = stringResource(R.string.tools_organizer_preview_page, item.index + 1)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 val bitmap = thumbnail
@@ -1606,6 +1892,79 @@ private fun OrganizerPageCard(
                         Modifier.size(48.dp).combinedClickable(onClick = onMoveRight, onLongClick = onMoveToEnd, onLongClickLabel = stringResource(R.string.tools_organizer_move_to_end)),
                         contentAlignment = Alignment.Center
                     ) { Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.tools_organizer_move_later_cd, item.index + 1)) }
+                }
+            }
+        }
+    }
+}
+
+/** Full-resolution preview of a single page when tapped or long-pressed in the organiser. */
+@Composable
+private fun PdfPagePreviewDialog(
+    page: ThumbnailPageModel,
+    session: PdfPreviewSession?,
+    onDismiss: () -> Unit
+) {
+    val fullBitmap by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, page.index, session) {
+        val preview = session ?: return@produceState
+        value = withContext(Dispatchers.IO) { preview.render(page.index, 1400) }
+    }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DarkChrome.backdrop)
+                .clickable(onClick = onDismiss)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.tools_page_number, page.index + 1),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = DarkChrome.text
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.common_close),
+                            tint = DarkChrome.text
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val bitmap = fullBitmap
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = stringResource(R.string.tools_page_number, page.index + 1),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(rotationZ = page.rotation.toFloat()),
+                            contentScale = ContentScale.Fit
+                        )
+                    } else {
+                        CircularProgressIndicator(color = Color.White)
+                    }
                 }
             }
         }

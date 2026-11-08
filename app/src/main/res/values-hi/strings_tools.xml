@@ -132,6 +132,11 @@
     <string name="tools_order_position">%1$d.</string>
     <string name="tools_order_move_up">ऊपर ले जाएं</string>
     <string name="tools_order_move_down">नीचे ले जाएं</string>
+    <string name="tools_img2pdf_order_hint">PDF बनाने से पहले पेजों का क्रम बदलें, इमेज क्रॉप करें या हटाएं।</string>
+    <string name="tools_img2pdf_crop_button">क्रॉप</string>
+    <string name="tools_img2pdf_crop_cd">इमेज %1$d क्रॉप करें</string>
+    <string name="tools_img2pdf_remove_cd">इमेज %1$d हटाएं</string>
+    <string name="tools_organizer_preview_page">पेज %1$d का प्रीव्यू</string>
     <plurals name="tools_img2pdf_title">
         <item quantity="one">%1$d इमेज से PDF</item>
         <item quantity="other">%1$d इमेज से PDF</item>

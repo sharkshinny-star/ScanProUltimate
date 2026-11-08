@@ -132,6 +132,11 @@
     <string name="tools_order_position">%1$d.</string>
     <string name="tools_order_move_up">పైకి జరపండి</string>
     <string name="tools_order_move_down">కిందికి జరపండి</string>
+    <string name="tools_img2pdf_order_hint">PDF సృష్టించే ముందు పేజీల క్రమాన్ని సెట్ చేయండి, చిత్రాలను క్రాప్ చేయండి లేదా తీసివేయండి.</string>
+    <string name="tools_img2pdf_crop_button">క్రాప్</string>
+    <string name="tools_img2pdf_crop_cd">చిత్రం %1$d క్రాప్ చేయండి</string>
+    <string name="tools_img2pdf_remove_cd">చిత్రం %1$d తీసివేయండి</string>
+    <string name="tools_organizer_preview_page">పేజీ %1$d ప్రివ్యూ</string>
     <plurals name="tools_img2pdf_title">
         <item quantity="one">చిత్రం నుండి PDF</item>
         <item quantity="other">%1$d చిత్రాల నుండి PDF</item>

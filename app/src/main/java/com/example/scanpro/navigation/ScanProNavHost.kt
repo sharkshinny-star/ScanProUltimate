@@ -8,7 +8,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -79,12 +78,12 @@ fun ScanProNavHost(
         // The theme background behind every screen, so nothing during a transition shows the darker window.
         modifier = Modifier.background(MaterialTheme.colorScheme.background),
         // Tab switches use Material "fade through"; screens pushed on top slide in from the end edge
-        // (shared axis X) and slide back out when popped. The camera and full-screen editors rise from
-        // the bottom like a sheet. Navigation's own default is a 700ms crossfade, which feels like a hang.
-        enterTransition = { if (motion) enterFor(targetState, pop = false) else EnterTransition.None },
-        exitTransition = { if (motion) exitFor(targetState, pop = false) else ExitTransition.None },
-        popEnterTransition = { if (motion) enterFor(initialState, pop = true) else EnterTransition.None },
-        popExitTransition = { if (motion) exitFor(initialState, pop = true) else ExitTransition.None }
+        // (shared axis X) and slide back out when popped. The camera rises from the bottom like a sheet,
+        // leaving the caller stationary and visible underneath with zero blank screen flicker.
+        enterTransition = { if (motion) enterFor(pop = false) else EnterTransition.None },
+        exitTransition = { if (motion) exitFor(pop = false) else ExitTransition.None },
+        popEnterTransition = { if (motion) enterFor(pop = true) else EnterTransition.None },
+        popExitTransition = { if (motion) exitFor(pop = true) else ExitTransition.None }
     ) {
         // Search shares the library screen but is pushed on top of a tab rather than being one.
         listOf(ScanProDestinations.HOME, ScanProDestinations.FILES, ScanProDestinations.SEARCH).forEach { route ->
@@ -216,25 +215,30 @@ private const val FadeThroughDuration = 210
 private fun NavBackStackEntry.isTopLevel() = destination.route in ScanProDestinations.topLevel
 private fun NavBackStackEntry.isSheetLike() = destination.route == ScanProDestinations.CAMERA_ROUTE
 
-/** The transition for the screen coming in. [entry] is the screen that defines the gesture (the one on top). */
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(entry: NavBackStackEntry, pop: Boolean): EnterTransition = when {
+/** The transition for the screen coming in. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Boolean): EnterTransition = when {
     // Returning to a tab or moving between tabs: fade through.
     !pop && targetState.isTopLevel() && initialState.isTopLevel() ->
         fadeIn(tween(FadeThroughDuration, delayMillis = 60)) + scaleIn(tween(FadeThroughDuration, delayMillis = 60), initialScale = 0.96f)
-    entry.isSheetLike() -> if (pop) fadeIn(tween(PushDuration)) + scaleIn(tween(PushDuration), initialScale = 0.98f)
-    else slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(PushDuration, easing = FastOutSlowInEasing)) + fadeIn(tween(PushDuration / 2))
+    // Sheet rising from bottom: opaque slide up over the stationary caller screen (no premature fade in).
+    !pop && targetState.isSheetLike() ->
+        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(PushDuration, easing = FastOutSlowInEasing))
+    // Sheet popping back to caller: caller is already rendered and stationary underneath.
+    pop && initialState.isSheetLike() -> EnterTransition.None
     pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it / 4 }) +
         fadeIn(tween(PushDuration / 2))
-    // The pushed screen draws its own background, so it slides in opaque: fading it in showed the screen
-    // underneath through it, which read as a dark scrim.
+    // The pushed screen draws its own background, so it slides in opaque.
     else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it })
 }
 
 /** The transition for the screen going out, mirroring [enterFor]. */
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(entry: NavBackStackEntry, pop: Boolean): ExitTransition = when {
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(pop: Boolean): ExitTransition = when {
     !pop && targetState.isTopLevel() && initialState.isTopLevel() -> fadeOut(tween(90))
-    entry.isSheetLike() -> if (pop) slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(PushDuration, easing = FastOutSlowInEasing)) + fadeOut(tween(PushDuration))
-    else fadeOut(tween(PushDuration / 2)) + scaleOut(tween(PushDuration), targetScale = 0.98f)
+    // Sheet rising on top: the caller screen stays stationary and fully visible underneath.
+    !pop && targetState.isSheetLike() -> ExitTransition.None
+    // Sheet popping: slides smoothly down to uncover caller (no fade out revealing blank canvas).
+    pop && initialState.isSheetLike() ->
+        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(PushDuration, easing = FastOutSlowInEasing))
     pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it }) +
         fadeOut(tween(PushDuration / 2))
     else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it / 4 }) +

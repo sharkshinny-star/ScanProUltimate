@@ -132,6 +132,11 @@
     <string name="tools_order_position">%1$d.</string>
     <string name="tools_order_move_up">മുകളിലേക്ക് നീക്കുക</string>
     <string name="tools_order_move_down">താഴേക്ക് നീക്കുക</string>
+    <string name="tools_img2pdf_order_hint">PDF ഉണ്ടാക്കുന്നതിന് മുൻപ് പേജുകളുടെ ക്രമം മാറ്റുക, ഇമേജ് ക്രോപ്പ് ചെയ്യുക അല്ലെങ്കിൽ ഒഴിവാക്കുക.</string>
+    <string name="tools_img2pdf_crop_button">ക്രോപ്പ്</string>
+    <string name="tools_img2pdf_crop_cd">ഇമേജ് %1$d ക്രോപ്പ് ചെയ്യുക</string>
+    <string name="tools_img2pdf_remove_cd">ഇമേജ് %1$d നീക്കം ചെയ്യുക</string>
+    <string name="tools_organizer_preview_page">പേജ് %1$d പ്രിവ്യൂ</string>
     <plurals name="tools_img2pdf_title">
         <item quantity="one">%1$d ചിത്രങ്ങൾ PDF ആക്കുക</item>
         <item quantity="other">%1$d ചിത്രങ്ങൾ PDF ആക്കുക</item>

@@ -354,13 +354,17 @@ fun CameraScannerScreen(
     }
 
     var confirmQuit by remember { mutableStateOf(false) }
+    var closingSnapshot by remember { mutableStateOf<Bitmap?>(null) }
     // Closing with captured pages would discard them, so ask first.
     val retaking = retakeIndex in pages.indices
     val requestClose = {
         when {
             retaking -> { retakeIndex = -1; reviewing = true }
             pages.isNotEmpty() && !completed -> confirmQuit = true
-            else -> onClose()
+            else -> {
+                closingSnapshot = runCatching { previewView.bitmap }.getOrNull()
+                onClose()
+            }
         }
     }
     BackHandler(enabled = pages.isNotEmpty() && !completed) { requestClose() }
@@ -995,6 +999,14 @@ fun CameraScannerScreen(
                 }
             }
         )
+        closingSnapshot?.let { snapshot ->
+            androidx.compose.foundation.Image(
+                bitmap = snapshot.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+        }
 
         if (showGrid) ThirdsGrid()
         if (!reviewing && maxZoomRatio > 1.05f) {
@@ -1132,7 +1144,7 @@ fun CameraScannerScreen(
                 onDismissRequest = { confirmQuit = false },
                 title = { Text(stringResource(R.string.scan_quit_title)) },
                 text = { Text(stringResource(R.string.scan_quit_body)) },
-                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
+                confirmButton = { TextButton(onClick = { confirmQuit = false; closingSnapshot = runCatching { previewView.bitmap }.getOrNull(); onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.common_cancel)) } }
             )
         }

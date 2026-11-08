@@ -132,6 +132,11 @@
     <string name="tools_order_position">%1$d.</string>
     <string name="tools_order_move_up">மேலே நகர்த்து</string>
     <string name="tools_order_move_down">கீழே நகர்த்து</string>
+    <string name="tools_img2pdf_order_hint">PDF உருவாக்கும் முன் பக்க வரிசையை அமைக்கவும், படங்களை க்ராப் செய்யவும் அல்லது நீக்கவும்.</string>
+    <string name="tools_img2pdf_crop_button">க்ராப்</string>
+    <string name="tools_img2pdf_crop_cd">படம் %1$d-ஐ க்ராப் செய்</string>
+    <string name="tools_img2pdf_remove_cd">படம் %1$d-ஐ நீக்கு</string>
+    <string name="tools_organizer_preview_page">பக்கம் %1$d முன்னோட்டம்</string>
     <plurals name="tools_img2pdf_title">
         <item quantity="one">படத்தை PDF ஆக்கு</item>
         <item quantity="other">%1$d படங்களை PDF ஆக்கு</item>

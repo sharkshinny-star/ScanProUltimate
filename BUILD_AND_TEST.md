@@ -41,14 +41,14 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-08, F72 Home search pill clipping fix, closes R38, `HomeScrollTest` 2/2; full run)
+## Latest results (2026-11-08, F73 camera transition smoothness, Images to PDF visual reorder/crop, and Organise pages full preview; `PdfToolsFeaturesTest` 2/2)
 
 | Check | Result |
 |---|---|
-| `:app:testDebugUnitTest` | 361 tests: 302 passed, 59 skipped (opt-in), 0 failed (`HomeScrollTest` 2/2 added); closes R38 |
-| `:app:lintDebug` | 0 errors, 2 warnings (Gradle 9.9.0 available; `doc_share_as_pdf_hint` unused) |
+| `:app:testDebugUnitTest` | 363 tests: 304 passed, 59 skipped (opt-in), 0 failed (`PdfToolsFeaturesTest` 2/2 added) |
+| `:app:lintDebug` | 0 errors |
 | Clean CI-style build (before the F66 edits, on `068feba`): `clean`, then `testDebugUnitTest lintDebug bundleRelease`, then sideload `assembleRelease`, all with `--no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m` | Passed: 10 m 22 s + 3 m 28 s. Peak resident memory of all Java processes summed about 8.1 GB (shared pages counted more than once, so an over-estimate). **CI run 75 on `a502f3b` passed end to end under these limits** (build step 19.5 min, whole job about 25 min), the first green run since run 44 |
-| Not run | Release builds after F72; device checks verified on OnePlus CPH2569 |
+| Device deployment | Deployed debug build to OnePlus CPH2569 (`dc6b0551`); verified camera open/close smoothness, Images to PDF reorder and crop, and Organise pages long-press preview |
 
 Earlier results (2026-11-08, `18c89a5`):
 
