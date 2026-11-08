@@ -33,7 +33,7 @@ covers F74-F80 together.
 - **Screenshots in debug builds**: `MainActivity` skips `FLAG_SECURE` when `BuildConfig.DEBUG`, so debug builds can be
   screen-recorded while locked. Release builds are unaffected. Keep, or remove before release.
 - **R18, R20, R21, R22, R23**: see the table below; each needs a choice before work starts.
-- R9 (splitting `DocumentRepository`) is done (F81).
+- R9 (splitting `DocumentRepository`) is done (F81); R39, R40 and R41 are done (F82-F84), apart from checking document tab labels in Hindi, Tamil and Telugu on a device.
 
 ## PDF Tools backlog
 

@@ -33,6 +33,10 @@
     <!-- Design system components: thumbnails and shared dialogs -->
     <string name="ui_scanned_page">Scanned page</string>
     <string name="ui_password_label">Password</string>
+    <string name="ui_password_confirm_label">Enter the password again</string>
+    <string name="ui_password_mismatch">The passwords don\'t match</string>
+    <string name="ui_password_show">Show password</string>
+    <string name="ui_password_hide">Hide password</string>
     <plurals name="ui_password_minimum_chars">
         <item quantity="one">Minimum %1$d character</item>
         <item quantity="other">Minimum %1$d characters</item>
@@ -83,6 +87,7 @@
     <!-- Scanner: barcode result sheet -->
     <string name="scan_code_open_link">Open link</string>
     <string name="scan_code_copy_wifi_password">Copy Wi-Fi password</string>
+    <string name="scan_code_share_wifi">Wi-Fi network: %1$s (password not included)</string>
     <string name="scan_code_clip_wifi_password">Wi-Fi password</string>
     <string name="scan_code_open_wifi_settings">Open Wi-Fi settings</string>
     <string name="scan_code_connect_wifi">Connect to this Wi-Fi</string>
@@ -168,6 +173,8 @@
     <string name="scan_zoom_exposure">Exposure</string>
     <string name="scan_compat_scanner">Compatibility scanner</string>
     <string name="scan_ev">EV</string>
+    <string name="doc_split_position">Split position</string>
+    <string name="scan_exposure">Exposure</string>
     <string name="scan_id_front_only">Front only</string>
     <string name="scan_id_both_sides">Both sides</string>
     <string name="scan_book_one_page">One page</string>

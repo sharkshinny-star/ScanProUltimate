@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -145,6 +147,8 @@ fun ScanSavedSheet(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .navigationBarsPadding()
+                // The name field must stay above the keyboard.
+                .imePadding()
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PageThumbnail(
@@ -260,17 +264,33 @@ fun ScanSavedSheet(
 private fun HighlightCard(icon: ImageVector, tone: TileTone, title: String, detail: String?, action: String, enabled: Boolean, onAction: () -> Unit) {
     Spacer(Modifier.height(12.dp))
     Surface(shape = RoundedCornerShape(18.dp), color = tone.container(), modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = tone.content(), modifier = Modifier.size(24.dp))
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
+        // At large font sizes the button would squeeze the detail text to a sliver, so it drops below it.
+        val stacked = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
+        val texts: @Composable (Modifier) -> Unit = { modifier ->
+            Column(modifier) {
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = tone.content())
                 if (detail != null) {
-                    Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = if (stacked) 4 else 2, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Spacer(Modifier.width(8.dp))
-            FilledTonalButton(onClick = onAction, enabled = enabled) { Text(action, maxLines = 1) }
+        }
+        if (stacked) {
+            Column(Modifier.padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp)) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(icon, contentDescription = null, tint = tone.content(), modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(12.dp))
+                    texts(Modifier.weight(1f))
+                }
+                FilledTonalButton(onClick = onAction, enabled = enabled, modifier = Modifier.align(Alignment.End)) { Text(action, maxLines = 2) }
+            }
+        } else {
+            Row(Modifier.padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, tint = tone.content(), modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(12.dp))
+                texts(Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
+                FilledTonalButton(onClick = onAction, enabled = enabled) { Text(action, maxLines = 1) }
+            }
         }
     }
 }
@@ -283,7 +303,8 @@ private fun QuickAction(icon: ImageVector, label: String, modifier: Modifier = M
     val content = if (primary) brand.onGradient else MaterialTheme.colorScheme.onSurface
     Box(
         modifier
-            .height(84.dp)
+            // A minimum, not a fixed height: a two-line label at a large font size needs more room.
+            .heightIn(min = 84.dp)
             .then(
                 if (primary) Modifier.background(Brush.linearGradient(listOf(brand.gradientStart, brand.gradientEnd)), shape)
                 else Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, shape)

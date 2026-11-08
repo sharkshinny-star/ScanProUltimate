@@ -224,7 +224,7 @@ fun PdfViewerScreen(
                     // Decoded at screen size and turned by its EXIF tag: a full 50 MP photo would need
                     // hundreds of megabytes and show sideways.
                     val bmp = if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                        ImageProcessor.decodeOrientedScaled(pdfUri.path!!, 2400)
+                        ImageProcessor.decodeOrientedScaled(pdfUri.path.orEmpty(), 2400)
                     } else {
                         val copy = File(context.cacheDir, "view_${java.util.UUID.randomUUID()}.img")
                         try {
@@ -270,7 +270,8 @@ fun PdfViewerScreen(
                     }
                 }
             } catch (e: Exception) {
-                errorMessage = e.localizedMessage ?: resources.getString(R.string.viewer_load_failed)
+                // A fixed message: the exception's own text is English and can contain file paths.
+                errorMessage = resources.getString(R.string.viewer_load_failed)
             } finally {
                 isLoading = false
             }
@@ -319,7 +320,7 @@ fun PdfViewerScreen(
                 try {
                     // Search the file being shown; for a protected PDF that is the unlocked copy, not the original.
                     val stream = openedFile ?: if (pdfUri.scheme == "file" && pdfUri.path != null) {
-                        File(pdfUri.path!!)
+                        File(pdfUri.path.orEmpty())
                     } else {
                         context.contentResolver.openInputStream(pdfUri)?.use { input ->
                             FileOutputStream(tempPdf).use { output -> input.copyTo(output) }
@@ -583,7 +584,7 @@ fun PdfViewerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            bitmap = imageBitmap!!.asImageBitmap(),
+                            bitmap = (imageBitmap ?: return@Box).asImageBitmap(),
                             contentDescription = title,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -612,6 +613,8 @@ fun PdfViewerScreen(
                                 translationY = offsetY
                             )
                     ) {
+                        // Taken once here: the list builds its items later, by which time the state may already be cleared.
+                        val activeRenderer = pdfRenderer
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
@@ -620,9 +623,10 @@ fun PdfViewerScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(pageCount) { index ->
+                                val renderer = activeRenderer ?: return@items
                                 PdfPageItem(
                                     zoom = settledScale,
-                                    renderer = pdfRenderer!!,
+                                    renderer = renderer,
                                     renderLock = renderLock,
                                     pageCache = pageCache,
                                     pageIndex = index,

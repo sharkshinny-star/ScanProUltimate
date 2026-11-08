@@ -330,7 +330,8 @@ internal fun DocumentGridCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            if (menu != null) DocumentCardMenuButton(document, menu, Modifier.size(32.dp))
+            // 48 dp: the smallest touch target Android recommends (it was 32 dp).
+            if (menu != null) DocumentCardMenuButton(document, menu, Modifier.size(48.dp))
         }
         Spacer(Modifier.height(2.dp))
         Text(

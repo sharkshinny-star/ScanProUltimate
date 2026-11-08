@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -70,7 +72,9 @@ fun LockScreen(onUnlock: () -> Unit, snackbarHostState: SnackbarHostState) {
                 Modifier
                     .align(Alignment.Center)
                     .widthIn(max = 420.dp)
-                    .padding(horizontal = 32.dp),
+                    // Scrolls at a large font size or in landscape; the vertical padding keeps it clear of the footer line.
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 32.dp, vertical = 48.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(contentAlignment = Alignment.BottomEnd) {

@@ -27,6 +27,10 @@
     <string name="ui_permissions_not_now">இப்போது வேண்டாம்</string>
     <string name="ui_scanned_page">ஸ்கேன் செய்த பக்கம்</string>
     <string name="ui_password_label">பாஸ்வேர்டு</string>
+    <string name="ui_password_confirm_label">கடவுச்சொல்லை மீண்டும் உள்ளிடவும்</string>
+    <string name="ui_password_mismatch">கடவுச்சொற்கள் பொருந்தவில்லை</string>
+    <string name="ui_password_show">கடவுச்சொல்லைக் காட்டு</string>
+    <string name="ui_password_hide">கடவுச்சொல்லை மறை</string>
     <plurals name="ui_password_minimum_chars">
         <item quantity="one">குறைந்தது %1$d எழுத்து</item>
         <item quantity="other">குறைந்தது %1$d எழுத்துகள்</item>
@@ -71,6 +75,7 @@
     <string name="nav_pdf_document">PDF ஆவணம்</string>
     <string name="scan_code_open_link">லிங்கைத் திற</string>
     <string name="scan_code_copy_wifi_password">Wi-Fi பாஸ்வேர்டை நகலெடு</string>
+    <string name="scan_code_share_wifi">வைஃபை நெட்வொர்க்: %1$s (கடவுச்சொல் சேர்க்கப்படவில்லை)</string>
     <string name="scan_code_clip_wifi_password">Wi-Fi பாஸ்வேர்டு</string>
     <string name="scan_code_open_wifi_settings">Wi-Fi அமைப்புகளைத் திற</string>
     <string name="scan_code_add_to_contacts">கான்டாக்ட்ஸில் சேர்</string>
@@ -147,6 +152,8 @@
     <string name="scan_zoom_exposure">எக்ஸ்போஷர்</string>
     <string name="scan_compat_scanner">இணக்க ஸ்கேனர்</string>
     <string name="scan_ev">EV</string>
+    <string name="doc_split_position">பிரிக்கும் இடம்</string>
+    <string name="scan_exposure">ஒளிவெளிப்பாடு</string>
     <string name="scan_id_front_only">முன்பக்கம் மட்டும்</string>
     <string name="scan_id_both_sides">இரு பக்கங்களும்</string>
     <string name="scan_book_one_page">ஒரு பக்கம்</string>

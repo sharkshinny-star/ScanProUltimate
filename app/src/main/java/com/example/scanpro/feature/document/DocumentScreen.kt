@@ -820,7 +820,9 @@ internal fun DocumentDetailScreen(
                                         } catch (cancelled: CancellationException) {
                                             throw cancelled
                                         } catch (error: Exception) {
-                                            error.message ?: resources.getString(R.string.doc_translation_failed)
+                                            // A failure is a message, not a "translation" the user could copy or share.
+                                            android.widget.Toast.makeText(context, R.string.doc_translation_failed, android.widget.Toast.LENGTH_LONG).show()
+                                            ""
                                         } finally {
                                             translating = false
                                             translationProgress = null
@@ -1180,7 +1182,8 @@ internal fun DocumentDetailScreen(
         message = stringResource(R.string.doc_protect_pdf_message),
         minimumLength = PdfSecurity.MIN_PASSWORD_LENGTH,
         confirmLabel = stringResource(R.string.doc_create),
-        onDismiss = { passwordOpen = false }
+        onDismiss = { passwordOpen = false },
+        confirmTwice = true
     ) { onExportProtectedPdf(it); passwordOpen = false }
     if (backupPasswordOpen) PasswordInputDialog(
         title = stringResource(R.string.doc_encrypted_backup_title),
@@ -1189,7 +1192,8 @@ internal fun DocumentDetailScreen(
         confirmLabel = stringResource(R.string.doc_create_backup),
         onDismiss = { backupPasswordOpen = false },
         // Backups keep each page's original photo so edits stay reversible, including what redaction or erasing hid.
-        warning = if (document.hidesContent()) stringResource(R.string.backup_warning_unredacted_document) else null
+        warning = if (document.hidesContent()) stringResource(R.string.backup_warning_unredacted_document) else null,
+        confirmTwice = true
     ) { onExportEncryptedBackup(it); backupPasswordOpen = false }
     if (annotationTextOpen && currentPage != null) TextInputDialog(stringResource(R.string.doc_add_text_to_page), label = stringResource(R.string.doc_text), confirmLabel = stringResource(R.string.doc_add), maxLines = 3, onDismiss = { annotationTextOpen = false }) { onTextAnnotation(currentPage.id, it); annotationTextOpen = false }
     if (ocrEditOpen && currentPage != null) TextInputDialog(

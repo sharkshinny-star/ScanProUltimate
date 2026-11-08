@@ -275,7 +275,8 @@ fun SettingsScreen(
             minimumLength = EncryptedDocumentPackage.MIN_NEW_PASSWORD_LENGTH,
             confirmLabel = stringResource(R.string.settings_backup_start),
             onDismiss = { backupFolder = null },
-            warning = stringResource(R.string.backup_warning_unredacted_all)
+            warning = stringResource(R.string.backup_warning_unredacted_all),
+            confirmTwice = true
         ) { password ->
             backupFolder = null
             onBackupAll(folder, password)

@@ -1476,13 +1476,9 @@ private fun ProcessingOverlay(
     label: String,
     onCancel: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onCancel,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false,
-            usePlatformDefaultWidth = false
-        )
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)
     ) {
         BackHandler(onBack = onCancel)
         Box(
@@ -1500,7 +1496,8 @@ private fun ProcessingOverlay(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    // Scrolls when a large font or landscape leaves too little height, so Cancel is never cut off.
+                    modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CircularProgressIndicator(
@@ -2191,7 +2188,7 @@ private fun PdfPageOrganizerSheet(
             } catch (error: SecurityException) {
                 loadError = protectedError
             } catch (error: Exception) {
-                loadError = error.localizedMessage ?: openFailedError
+                loadError = openFailedError // not the exception's text: it is English and can contain file paths
             }
         }
         onDispose {

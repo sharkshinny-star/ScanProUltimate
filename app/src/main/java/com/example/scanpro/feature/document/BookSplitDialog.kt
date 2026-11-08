@@ -44,9 +44,14 @@ fun BookSplitDialog(
     onDismiss: () -> Unit,
     onConfirm: (Float) -> Unit
 ) {
+    // Three states: still loading (null, not failed), loaded, or failed. Without the third, a page that cannot be
+    // decoded left "Loading page" on screen for ever.
+    var decodeFailed by remember(imagePath) { mutableStateOf(false) }
     val bitmap by produceState<Bitmap?>(initialValue = null, imagePath) {
-        value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(imagePath, 1400) }
+        value = withContext(Dispatchers.IO) { runCatching { ImageProcessor.decodeOrientedScaled(imagePath, 1400) }.getOrNull() }
+        if (value == null) decodeFailed = true
     }
+    val splitPosition = stringResource(R.string.doc_split_position)
     var fraction by rememberSaveable { mutableStateOf(0.5f) }
     val pagePreview = stringResource(R.string.a11y_page_preview)
 
@@ -79,12 +84,16 @@ fun BookSplitDialog(
                         drawLine(Color.Black.copy(alpha = 0.6f), Offset(x, 0f), Offset(x, size.height), strokeWidth = 7.dp.toPx())
                         drawLine(Color(0xFF2FD6A6), Offset(x, 0f), Offset(x, size.height), strokeWidth = 3.dp.toPx())
                     }
-                } ?: Text(stringResource(R.string.doc_loading_page), modifier = Modifier.padding(top = 16.dp))
+                } ?: Text(
+                    stringResource(if (decodeFailed) R.string.err_could_not_decode_page else R.string.doc_loading_page),
+                    color = if (decodeFailed) MaterialTheme.colorScheme.error else Color.Unspecified,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
                 Slider(
                     value = fraction,
                     onValueChange = { fraction = it },
                     valueRange = 0.1f..0.9f,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = splitPosition }
                 )
             }
         },
