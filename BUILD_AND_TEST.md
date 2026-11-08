@@ -41,7 +41,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-08, F74 camera animation delay eliminated, tool renames to Merge PDF / Split PDF, smart 1-page PDF split alert; `PdfToolsFeaturesTest` 4/4)
+## Latest results (2026-11-08, F75 RecentPdfStore async load, F74 camera animation delay eliminated, tool renames to Merge PDF / Split PDF, smart 1-page PDF split alert; `PdfToolsFeaturesTest` 4/4)
 
 | Check | Result |
 |---|---|

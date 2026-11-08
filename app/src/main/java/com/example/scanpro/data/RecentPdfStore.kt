@@ -8,9 +8,12 @@ import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.core.net.toUri
@@ -25,9 +28,15 @@ data class RecentPdf(val uri: Uri, val name: String, val openedAt: Long)
  */
 @Singleton
 class RecentPdfStore @Inject constructor(@ApplicationContext private val context: Context) {
-    private val prefs = context.getSharedPreferences("recent_pdfs", Context.MODE_PRIVATE)
-    private val _items = MutableStateFlow(load())
+    private val prefs by lazy { context.getSharedPreferences("recent_pdfs", Context.MODE_PRIVATE) }
+    private val _items = MutableStateFlow<List<RecentPdf>>(emptyList())
     val items: StateFlow<List<RecentPdf>> = _items.asStateFlow()
+
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            _items.value = load()
+        }
+    }
 
     /** Records [uri] as just opened. Picker results can be kept across restarts; other links are kept only while they last. */
     @Synchronized
