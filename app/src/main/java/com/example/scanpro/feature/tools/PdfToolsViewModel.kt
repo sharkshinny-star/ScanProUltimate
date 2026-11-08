@@ -93,6 +93,19 @@ class PdfToolsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) { uris.asReversed().forEach { recents.add(it) } }
     }
 
+    /**
+     * True if the Recents row for [uri] can still be read. If not, the row is dropped and the reason shown: the file was
+     * moved or deleted, or the provider took its access back (a blank viewer told the user nothing).
+     */
+    suspend fun checkRecent(uri: Uri): Boolean {
+        val readable = withContext(Dispatchers.IO) { recents.canRead(uri) }
+        if (!readable) {
+            forgetPdf(uri)
+            _message.value = context.getString(R.string.tools_recent_unavailable)
+        }
+        return readable
+    }
+
     fun forgetPdf(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) { recents.remove(uri) }
     }

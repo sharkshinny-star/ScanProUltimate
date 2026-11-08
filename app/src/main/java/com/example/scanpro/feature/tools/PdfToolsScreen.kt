@@ -241,6 +241,7 @@ fun PdfToolsScreen(
     val wrongPassword by viewModel.wrongPassword.collectAsStateWithLifecycle()
     val mergePassword by viewModel.mergePassword.collectAsStateWithLifecycle()
     val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
+    val recentScope = rememberCoroutineScope()
     val formSession by viewModel.form.collectAsStateWithLifecycle()
     var showOcrDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -415,8 +416,8 @@ fun PdfToolsScreen(
                     items(recentPdfs, key = { it.uri.toString() }) { pdf ->
                         RecentPdfRow(
                             pdf = pdf,
-                            onOpen = { onOpenPdfViewer(pdf.uri, pdf.name) },
-                            onUseWith = { tool -> startTool(tool, pdf.uri) },
+                            onOpen = { recentScope.launch { if (viewModel.checkRecent(pdf.uri)) onOpenPdfViewer(pdf.uri, pdf.name) } },
+                            onUseWith = { tool -> recentScope.launch { if (viewModel.checkRecent(pdf.uri)) startTool(tool, pdf.uri) } },
                             onRemove = { viewModel.forgetPdf(pdf.uri) }
                         )
                     }
@@ -1058,7 +1059,9 @@ private fun OrderFilesDialog(
 private data class OrderedImage(
     val id: String = UUID.randomUUID().toString(),
     val file: File,
-    val name: String
+    val name: String,
+    /** The picked photo, untouched: a second crop starts from this, not from the first crop's result. */
+    val original: File = file
 )
 
 /**
@@ -1098,22 +1101,50 @@ private fun ImagesToPdfOrderDialog(
         }
     }
 
+    val scope = rememberCoroutineScope()
+    var isCropping by remember { mutableStateOf(false) }
+    var cropFailed by remember { mutableStateOf(false) }
     val currentCrop = croppingItem
     if (currentCrop != null) {
         CropEditorDialog(
-            sourcePath = currentCrop.file.absolutePath,
+            sourcePath = currentCrop.original.absolutePath,
             initial = CropQuad(),
             onDismiss = { croppingItem = null },
             onConfirm = { quad ->
-                val source = currentCrop.file
-                val croppedDest = File(source.parentFile, "cropped_${System.currentTimeMillis()}_${source.name}")
-                ImageProcessor.cropSourceToNewFile(source, croppedDest, quad)
-                val idx = order.indexOfFirst { it.id == currentCrop.id }
-                if (idx != -1) {
-                    order[idx] = order[idx].copy(file = croppedDest)
-                }
                 croppingItem = null
+                isCropping = true
+                scope.launch {
+                    // A 4200 px photo takes a moment and a lot of memory: off the main thread, and a failure is shown.
+                    val cropped = withContext(Dispatchers.IO) {
+                        runCatching {
+                            val source = currentCrop.original
+                            val dest = File(source.parentFile, "cropped_${System.currentTimeMillis()}_${source.name}.jpg")
+                            ImageProcessor.cropSourceToNewFile(source, dest, quad)
+                            dest
+                        }
+                    }
+                    isCropping = false
+                    cropped.onSuccess { dest ->
+                        val idx = order.indexOfFirst { it.id == currentCrop.id }
+                        if (idx != -1) {
+                            val previous = order[idx].file
+                            order[idx] = order[idx].copy(file = dest)
+                            if (previous != currentCrop.original) previous.delete()
+                        } else dest.delete()
+                    }.onFailure { error ->
+                        if (error is kotlinx.coroutines.CancellationException) throw error
+                        cropFailed = true
+                    }
+                }
             }
+        )
+    }
+    if (cropFailed) {
+        AlertDialog(
+            onDismissRequest = { cropFailed = false },
+            title = { Text(stringResource(R.string.tools_img2pdf_crop_failed_title)) },
+            text = { Text(stringResource(R.string.tools_img2pdf_crop_failed)) },
+            confirmButton = { TextButton(onClick = { cropFailed = false }) { Text(stringResource(R.string.common_close)) } }
         )
     }
 
@@ -1121,7 +1152,7 @@ private fun ImagesToPdfOrderDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.tools_order_pages_title)) },
         text = {
-            if (isLoading) {
+            if (isLoading || isCropping) {
                 Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
@@ -1159,7 +1190,7 @@ private fun ImagesToPdfOrderDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirm(order.map { Uri.fromFile(it.file) }) },
-                enabled = !isLoading && order.isNotEmpty()
+                enabled = !isLoading && !isCropping && order.isNotEmpty()
             ) {
                 Text(stringResource(R.string.common_continue))
             }
@@ -1203,7 +1234,7 @@ private fun OrderedImageRow(
             Text(
                 stringResource(R.string.tools_order_position, index + 1),
                 style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.width(26.dp)
+                modifier = Modifier.widthIn(min = 26.dp)
             )
 
             Box(
@@ -1239,8 +1270,8 @@ private fun OrderedImageRow(
                 Spacer(Modifier.height(4.dp))
                 OutlinedButton(
                     onClick = onCrop,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                    modifier = Modifier.height(30.dp)
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    modifier = Modifier.heightIn(min = 36.dp)
                 ) {
                     Icon(
                         Icons.Default.Crop,
@@ -1250,7 +1281,8 @@ private fun OrderedImageRow(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         stringResource(R.string.tools_img2pdf_crop_button),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1
                     )
                 }
             }
@@ -1258,7 +1290,7 @@ private fun OrderedImageRow(
             IconButton(
                 enabled = canMoveUp,
                 onClick = onMoveUp,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     Icons.Default.KeyboardArrowUp,
@@ -1268,7 +1300,7 @@ private fun OrderedImageRow(
             IconButton(
                 enabled = canMoveDown,
                 onClick = onMoveDown,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     Icons.Default.KeyboardArrowDown,
@@ -1279,7 +1311,7 @@ private fun OrderedImageRow(
             if (canRemove) {
                 IconButton(
                     onClick = onRemove,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         Icons.Default.Close,

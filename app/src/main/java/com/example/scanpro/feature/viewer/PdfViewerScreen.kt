@@ -270,8 +270,11 @@ fun PdfViewerScreen(
                     }
                 }
             } catch (e: Exception) {
-                // A fixed message: the exception's own text is English and can contain file paths.
-                errorMessage = resources.getString(R.string.viewer_load_failed)
+                // Fixed messages: the exception's own text is English and can contain file paths. A refused or
+                // missing link is told apart, because the fix is different (pick the file again).
+                errorMessage = resources.getString(
+                    if (e is SecurityException || e is java.io.FileNotFoundException) R.string.viewer_access_lost else R.string.viewer_load_failed
+                )
             } finally {
                 isLoading = false
             }

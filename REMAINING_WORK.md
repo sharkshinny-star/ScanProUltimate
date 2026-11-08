@@ -37,6 +37,7 @@ The device suite (`connectedDebugAndroidTest`, 6 passed), Home search pill stabi
 18. Layout fixes from the screenshots (F89): at font scale 2 the Settings pickers are radio rows and no word breaks; in
     landscape at font scale 2 all four rail tabs fit; the landscape camera panel shows the Auto/Manual pill whole; the landscape
     Adjust page filter thumbnails are readable; in Tamil the bottom bar, rail and document tabs fit on one line.
+19. Images to PDF and Recents (F90): pick three photos, crop one (the dialog shows a spinner, the page changes, a second crop starts from the original photo); open a PDF from a cloud or Downloads provider, close the app completely, reopen it from Recent and confirm the pages show; delete the file and tap its row to see the message.
 
 ## Owner decisions (resolved 2026-11-08)
 
