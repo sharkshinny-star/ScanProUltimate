@@ -32,7 +32,7 @@ covers F74-F80 together.
 
 - **Screenshots in debug builds**: `MainActivity` skips `FLAG_SECURE` when `BuildConfig.DEBUG`, so debug builds can be
   screen-recorded while locked. Release builds are unaffected. Keep, or remove before release.
-- **R9**: split `DocumentRepository` (about 1,500 lines) by use case. Optional, maintainability only.
+- **R9**: exports are split out (`DocumentExporter`); splitting the rest of `DocumentRepository` is optional, maintainability only.
 - **R18, R20, R21, R22, R23**: see the table below; each needs a choice before work starts.
 
 ## PDF Tools backlog
@@ -54,7 +54,7 @@ see `TOOLS_IMPROVEMENTS.md`.
 | R25 | P2 | UX | `scanner/PageQuality.kt` | The blur, glare and darkness limits come from the live detector and synthetic tests, not from real photos. | Run `SCAN_QUALITY_TEST_PLAN.md` photos through `OpenCvScanProcessor.assessQuality` and tune `GLARE_MIN_SHARE` / the clipped level. |
 | R36 | P2 | Testing / UX | `feature/document/ScanSavedSheet.kt`, `scanner/PageQuality.kt`, `ui/LaunchIntro.kt` | Left over from the 2026-11-05 after-scan, page-quality and launch work; the suite and lint half is done (F80 run). | On a device scan a receipt, a business card and a letter and check the sheet; then R24/R25 device checks. |
 | R38 | P3 | UX | `feature/library/LibraryScreen.kt` (`HomeContent` `LazyColumn`) | Seen on a OnePlus (Android 15): with no touch, Home ends up scrolled by about 14 dp. | Reproduce on a device, then pin the list to the top when content fits. |
-| R9 | P3 | Maintainability | `data/DocumentRepository.kt` (~1,500 lines) | One class does most data work. | Split by use case. |
+| R9 | P3 | Maintainability | `data/DocumentRepository.kt` (~1,480 lines) | Exports moved to `DocumentExporter`; page edits, trash, import and undo still share helpers in one class. | Optional: cut further only when that code is next changed. |
 | R18 | P3 | UX | `feature/trash/TrashScreen.kt`, `feature/document/DocumentScreen.kt`, `feature/settings/SettingsScreen.kt`, `feature/library/DocumentCards.kt` | From the screenshot review (360 dp phone), not changed (the Recycle bin actions were moved under the notice in F43): | Owner picks; Empty into ⋮ is the cheapest. |
 | R21 | P3 | Security | `MainActivity.handleIntent` | The exported activity accepts the internal actions (open document, recycle bin, settings, unsaved scans, scan) from any app. | Optional: route notification and shortcut actions through a non-exported trampoline activity. |
 | R22 | P3 | Privacy | `core/crash/CrashReporter.kt` | Crash reports include exception messages, which can hold file names derived from document titles. | Optional: replace paths under `filesDir`/`cacheDir` with placeholders before writing. |
