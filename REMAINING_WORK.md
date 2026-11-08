@@ -10,8 +10,9 @@ Nothing below has run on a phone; every check so far is a JVM test or render. Th
 0 failed, lint 0 errors) covers everything up to F84; CI run 89 passed up to the review-branch merge, run 90 covers
 R9 and F82-F84.
 
-1. Run the three instrumented tests in Android Studio (`app/src/androidTest`: `LaunchDeviceTest`, `LanguageChangeDeviceTest`,
-   `scanner/IdCardDeviceTest`, plus the older `AppSmokeTest`). They compile but have never run.
+1. Instrumented tests: another session ran the device suite on the OnePlus at its F77 commit (5 passed, 1 ignored for the
+   camera permission). Run `connectedDebugAndroidTest` again on the merged tree in Android Studio
+   (`app/src/androidTest`: `LaunchDeviceTest`, `LanguageChangeDeviceTest`, `scanner/IdCardDeviceTest`, `AppSmokeTest`).
 2. Launch animation (R24): cold start from the launcher on Android 12+ and on Android 11; with app lock on (no animation);
    rotate during it; share a file into the app (no animation). Also the F66 fixes: no dark start, no black frame after a
    language change.
