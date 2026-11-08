@@ -32,6 +32,7 @@ Last updated: 2026-11-08 (static screen review R38–R41 and `ARTEMIS_SCREEN_TES
 
 | Commit | What |
 |---|---|
+| next | R38 rotation fixes (10 files, `rememberSaveable`; Pen strokes saver and discard prompt; PDF viewer search kept and Back closes it). **Not compiled or run** (no Android SDK): run `./gradlew :app:compileDebugKotlin` first. Remaining R38 items listed in `AUDIT_FINDINGS.md`. |
 | next | Static review of all screens (3 reviewers, code reading only): R38–R41 in `AUDIT_FINDINGS.md`. `ARTEMIS_SCREEN_TEST_PLAN.md` (`ad0d5f5`): 18 Artemis prompts for a device pass; Artemis could not run in the cloud (no SDK/device). |
 | next | F66 from the owner's screen recording: launch animation 2.25 s (was 1.6 s), wordmark held, indigo-azure-teal flood; the intro follows the app's theme and `MainActivity` sets the system's per-app night mode so the Android 12+ launch screen matches from the next start; `configChanges="locale\|layoutDirection\|uiMode"` so the language picker's Continue (and theme changes) no longer restart the activity (the black frame). CI: Gradle 3 GB, Kotlin compiler in-process, test heap 2.5 GB (run 73 OOMed at 1.5 GB); tests 336/0, lint 0 errors, bundle and sideload builds pass locally under those limits. |
 | next | `docs/archive/`: old ScanPro repo's `FirebaseCloudClient.kt` kept as `.txt` (not compiled, API key redacted) for possible future cloud sync. Old ScanPro repo compared: nothing else worth porting. |

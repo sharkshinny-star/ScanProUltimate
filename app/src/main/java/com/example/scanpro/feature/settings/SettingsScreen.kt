@@ -243,8 +243,8 @@ fun SettingsScreen(
     var privacyOpen by rememberSaveable { mutableStateOf(false) }
     // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive works
     // too); restore reads one such file back. Documents never leave the device otherwise.
-    var backupFolder by remember { mutableStateOf<Uri?>(null) }
-    var backupToRestore by remember { mutableStateOf<Uri?>(null) }
+    var backupFolder by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var backupToRestore by rememberSaveable { mutableStateOf<Uri?>(null) }
     val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let {
             runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }

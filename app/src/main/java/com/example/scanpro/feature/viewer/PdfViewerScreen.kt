@@ -63,6 +63,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -126,16 +127,19 @@ fun PdfViewerScreen(
     var showMenu by remember { mutableStateOf(false) }
 
     // Search state
-    var isSearchActive by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    // Saved so a rotation keeps the open search bar, the query and the match being looked at.
+    var isSearchActive by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     var matchingPageIndices by remember { mutableStateOf<List<Int>>(emptyList()) }
-    var currentMatchIdx by remember { mutableIntStateOf(0) }
+    var currentMatchIdx by rememberSaveable { mutableStateOf(0) }
+    // True until the search effect has run once: after a recreation it must redo the search without jumping.
+    var searchRestoring by remember { mutableStateOf(searchQuery.isNotBlank()) }
     var isSearchingText by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
+    var scale by rememberSaveable { mutableStateOf(1f) }
+    var offsetX by rememberSaveable { mutableStateOf(0f) }
+    var offsetY by rememberSaveable { mutableStateOf(0f) }
     // The zoom once the fingers have stopped: pages are redrawn sharp at this level (not on every frame of a pinch).
     var settledScale by remember { mutableFloatStateOf(1f) }
     LaunchedEffect(scale) {
@@ -292,10 +296,15 @@ fun PdfViewerScreen(
         }
     }
 
+    androidx.activity.compose.BackHandler(enabled = isSearchActive) {
+        isSearchActive = false
+        searchQuery = ""
+    }
+
     LaunchedEffect(searchQuery, openedFile) {
         if (searchQuery.isBlank() || isImageMode) {
             matchingPageIndices = emptyList()
-            currentMatchIdx = 0
+            if (!searchRestoring) currentMatchIdx = 0
             isSearchingText = false
             return@LaunchedEffect
         }
@@ -336,8 +345,13 @@ fun PdfViewerScreen(
             }.also { pageTexts = it }
             val matches = texts.withIndex().filter { (_, text) -> text.contains(query, ignoreCase = true) }.map { it.index }
             matchingPageIndices = matches
-            currentMatchIdx = 0
-            if (matches.isNotEmpty()) listState.scrollToItem(matches.first())
+            if (searchRestoring) {
+                searchRestoring = false
+                currentMatchIdx = currentMatchIdx.coerceIn(0, (matches.size - 1).coerceAtLeast(0))
+            } else {
+                currentMatchIdx = 0
+                if (matches.isNotEmpty()) listState.scrollToItem(matches.first())
+            }
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled
         } catch (_: Exception) {

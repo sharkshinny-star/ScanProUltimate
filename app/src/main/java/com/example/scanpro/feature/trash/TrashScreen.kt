@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,10 +114,10 @@ internal fun TrashScreen(
     retentionDays: Int = DEFAULT_TRASH_RETENTION_DAYS,
     onRestoreAll: () -> Unit = {}
 ) {
-    var sortOption by remember { mutableStateOf(TrashSortOption.EXPIRY) }
-    var showEmptyDialog by remember { mutableStateOf(false) }
+    var sortOption by rememberSaveable { mutableStateOf(TrashSortOption.EXPIRY) }
+    var showEmptyDialog by rememberSaveable { mutableStateOf(false) }
     var deleteSingleDoc by remember { mutableStateOf<DocumentSummary?>(null) }
-    var activeMenuDocId by remember { mutableStateOf<String?>(null) }
+    var activeMenuDocId by rememberSaveable { mutableStateOf<String?>(null) }
 
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {

@@ -287,10 +287,10 @@ internal fun LibraryScreen(
         onMoveToRecycleBin = { onBulkDelete(setOf(doc.id)) }
     )
     var deleteFolderOpen by rememberSaveable { mutableStateOf(false) }
-    var renameMergeTarget by remember { mutableStateOf<String?>(null) }
+    var renameMergeTarget by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    var renameFolderSource by remember { mutableStateOf<String?>(null) }
-    var lockFolderOpen by remember { mutableStateOf<String?>(null) }
+    var renameFolderSource by rememberSaveable { mutableStateOf<String?>(null) }
+    var lockFolderOpen by rememberSaveable { mutableStateOf<String?>(null) }
     val deviceUnlock = com.example.scanpro.core.security.LocalDeviceUnlock.current
     var sortMenuOpen by remember { mutableStateOf(false) }
     var moreMenuOpen by remember { mutableStateOf(false) }
