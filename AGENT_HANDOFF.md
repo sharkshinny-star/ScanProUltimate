@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (F66: launch animation slower, lighter and recoloured; system launch screen follows the app's theme; language/theme changes applied in place, no black frame. CI memory limits raised after run 73's compiler OOM; clean CI-style build passes locally). Release builds last run locally 2026-11-08; devices not run.
+Last updated: 2026-11-08 (static screen review R38–R41 and `ARTEMIS_SCREEN_TEST_PLAN.md` added, nothing run; F66: launch animation slower, lighter and recoloured; system launch screen follows the app's theme; language/theme changes applied in place, no black frame. CI memory limits raised after run 73's compiler OOM; clean CI-style build passes locally). Release builds last run locally 2026-11-08; devices not run.
 
 ## 1. Current state
 
@@ -32,6 +32,7 @@ Last updated: 2026-11-08 (F66: launch animation slower, lighter and recoloured; 
 
 | Commit | What |
 |---|---|
+| next | Static review of all screens (3 reviewers, code reading only): R38–R41 in `AUDIT_FINDINGS.md`. `ARTEMIS_SCREEN_TEST_PLAN.md` (`ad0d5f5`): 18 Artemis prompts for a device pass; Artemis could not run in the cloud (no SDK/device). |
 | next | F66 from the owner's screen recording: launch animation 2.25 s (was 1.6 s), wordmark held, indigo-azure-teal flood; the intro follows the app's theme and `MainActivity` sets the system's per-app night mode so the Android 12+ launch screen matches from the next start; `configChanges="locale\|layoutDirection\|uiMode"` so the language picker's Continue (and theme changes) no longer restart the activity (the black frame). CI: Gradle 3 GB, Kotlin compiler in-process, test heap 2.5 GB (run 73 OOMed at 1.5 GB); tests 336/0, lint 0 errors, bundle and sideload builds pass locally under those limits. |
 | next | `docs/archive/`: old ScanPro repo's `FirebaseCloudClient.kt` kept as `.txt` (not compiled, API key redacted) for possible future cloud sync. Old ScanPro repo compared: nothing else worth porting. |
 | `0284287` | `TOOLS_IMPROVEMENTS.md`: PDF Tools backlog (7 items, related R7/R28, device checks for F48–F50). |
