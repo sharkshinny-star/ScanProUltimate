@@ -1501,10 +1501,14 @@ fun CameraScannerScreen(
             }
 
             val takePhotoDescription = stringResource(R.string.scan_take_photo)
-            Row(
+            // A FlowRow, not a Row: in the narrow landscape panel the gallery button, the shutter and the
+            // Auto/Manual pill do not fit side by side, and the pill used to be squeezed to "Ma" (R44). It now
+            // moves to a second line, centred, when there is not room.
+            androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                itemVerticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (landscape) Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally) else Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(if (landscape) Modifier.widthIn(min = 52.dp) else Modifier.width(104.dp), contentAlignment = Alignment.CenterStart) {
                     val importLabel = stringResource(if (barcodeMode) R.string.scan_qr_from_image else R.string.scan_import_photos)

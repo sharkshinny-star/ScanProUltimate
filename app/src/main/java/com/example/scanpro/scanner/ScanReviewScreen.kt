@@ -751,16 +751,20 @@ fun ScanReviewScreen(
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 stage(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 12.dp))
                 Column(Modifier.width(320.dp).fillMaxHeight()) {
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) { lowerControls() }
-                    nameRow()
-                    Row(
-                        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        autoDetectButton(Modifier.weight(1f))
-                        rotateButton()
+                    // Auto detect and Rotate scroll with the other controls here. Pinned under them, as before, they
+                    // left the filter thumbnails only a thin strip of the 360 dp height (R45); only the name and Save stay fixed.
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        lowerControls()
+                        Row(
+                            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            autoDetectButton(Modifier.weight(1f))
+                            rotateButton()
+                        }
                     }
+                    nameRow()
                     saveButton(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp))
                 }
             }

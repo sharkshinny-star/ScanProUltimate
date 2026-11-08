@@ -1467,7 +1467,8 @@ private fun DocumentTabs(selected: Int, onSelect: (Int) -> Unit) {
             Tab(
                 selected = isSelected,
                 onClick = { onSelect(index) },
-                text = { Text(stringResource(item.labelRes), fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium) },
+                // One line that shrinks to fit: "நுண்ணறிவு" used to wrap in the middle of the word (R46).
+                text = { com.example.scanpro.core.designsystem.FitText(stringResource(item.labelRes), fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium) },
                 selectedContentColor = MaterialTheme.colorScheme.primary,
                 unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             )

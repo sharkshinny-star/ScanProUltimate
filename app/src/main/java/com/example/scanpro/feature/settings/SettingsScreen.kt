@@ -69,6 +69,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -379,22 +382,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_theme_title),
                         subtitle = stringResource(R.string.settings_theme_subtitle)
                     )
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
-                        ThemeMode.entries.forEachIndexed { index, mode ->
-                            SegmentedButton(
-                                selected = mode == themeMode,
-                                onClick = { onThemeModeChange(mode) },
-                                shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
-                                // Every segment as tall as the tallest, so a label that wraps ("System default"
-                                // on a narrow phone) doesn't leave the outline stepped.
-                                modifier = Modifier.fillMaxHeight(),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            ) { Text(stringResource(mode.labelRes)) }
-                        }
-                    }
+                    SettingsChoiceRow(options = ThemeMode.entries, selected = themeMode, onSelect = onThemeModeChange) { stringResource(it.labelRes) }
                     InsetDivider()
                     SettingsRow(
                         icon = Icons.Rounded.ColorLens,
@@ -517,20 +505,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_review_mode_title),
                         subtitle = stringResource(R.string.settings_review_mode_subtitle)
                     )
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
-                        com.example.scanpro.data.ReviewMode.entries.forEachIndexed { index, mode ->
-                            SegmentedButton(
-                                selected = mode == reviewMode,
-                                onClick = { onReviewModeChange(mode) },
-                                shape = SegmentedButtonDefaults.itemShape(index, com.example.scanpro.data.ReviewMode.entries.size),
-                                modifier = Modifier.fillMaxHeight(),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            ) { Text(stringResource(mode.labelRes)) }
-                        }
-                    }
+                    SettingsChoiceRow(options = com.example.scanpro.data.ReviewMode.entries, selected = reviewMode, onSelect = onReviewModeChange) { stringResource(it.labelRes) }
                     InsetDivider()
                     SettingsRow(
                         icon = Icons.Rounded.PictureAsPdf,
@@ -538,20 +513,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_pdf_quality_title),
                         subtitle = stringResource(R.string.settings_pdf_quality_body)
                     )
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
-                        PdfQuality.entries.forEachIndexed { index, quality ->
-                            SegmentedButton(
-                                selected = quality == pdfQuality,
-                                onClick = { onPdfQualityChange(quality) },
-                                shape = SegmentedButtonDefaults.itemShape(index, PdfQuality.entries.size),
-                                modifier = Modifier.fillMaxHeight(),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            ) { Text(stringResource(quality.labelRes)) }
-                        }
-                    }
+                    SettingsChoiceRow(options = PdfQuality.entries, selected = pdfQuality, onSelect = onPdfQualityChange) { stringResource(it.labelRes) }
                     InsetDivider()
                     SettingsRow(
                         icon = Icons.Rounded.Title,
@@ -1011,4 +973,49 @@ private fun PrivacyDialog(onDismiss: () -> Unit) {
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_privacy_dialog_ok)) } }
     )
+}
+
+/**
+ * A short pick-one list. Side by side as segments normally; as a vertical list of radio rows when the text is
+ * large, because three segments a third of a phone wide break words in the middle ("Alway/s", "If need/ed", R43).
+ */
+@Composable
+private fun <T> SettingsChoiceRow(options: List<T>, selected: T, onSelect: (T) -> Unit, label: @Composable (T) -> String) {
+    if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f) {
+        androidx.compose.foundation.layout.Column(
+            Modifier.fillMaxWidth().selectableGroup().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)
+        ) {
+            options.forEach { option ->
+                androidx.compose.foundation.layout.Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .selectable(selected = option == selected, onClick = { onSelect(option) }, role = Role.RadioButton)
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.RadioButton(selected = option == selected, onClick = null)
+                    androidx.compose.foundation.layout.Spacer(Modifier.width(12.dp))
+                    Text(label(option), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
+    } else {
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+            options.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = option == selected,
+                    onClick = { onSelect(option) },
+                    shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                    // Every segment as tall as the tallest, so a label that wraps ("System default" on a narrow
+                    // phone) doesn't leave the outline stepped.
+                    modifier = Modifier.fillMaxHeight(),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) { Text(label(option)) }
+            }
+        }
+    }
 }

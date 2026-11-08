@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.scanpro.core.designsystem.FitText
 import com.example.scanpro.core.designsystem.cappedFontScale
 
 /** Windows at least this wide (tablets, unfolded foldables, split-screen on a large display) get a side rail. */
@@ -168,14 +169,12 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
         Spacer(Modifier.height(4.dp))
         // The bar has a fixed height and a quarter of the width: at a 150 % font size "Settings" lost its last letter
         // and the labels were cut at the bottom, so the label grows at most 1.3 times and ends in … if still too long.
-        Text(
+        // FitText shrinks a label that is still too long in a long language (Tamil) instead of cutting it.
+        FitText(
             label,
             style = MaterialTheme.typography.labelMedium.cappedFontScale(),
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            color = tint,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis
+            color = tint
         )
     }
 }
@@ -216,6 +215,9 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan
     // A phone on its side is wide enough for the rail but only about 360 dp tall: the Scan label and the gaps are
     // dropped there, and the tabs scroll, so the last tab (Settings) is never cut off at the bottom.
     val short = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } < SHORT_WINDOW_DP.dp
+    // At a large font size on such a phone, four labelled tabs do not fit the height (the last label was cut off
+    // at the bottom, R44): only the selected tab then shows its label, and the others keep it as their description.
+    val compactLabels = short && LocalDensity.current.fontScale > 1.3f
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         header = {
@@ -245,15 +247,18 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan
                 NavigationRailItem(
                     selected = selected,
                     onClick = { onTab(tab.route) },
-                    // The rail always shows the label, so a described icon would be read twice.
-                    icon = { Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null) },
+                    // With the label always shown, a described icon would be read twice; with it hidden the icon says it.
+                    icon = {
+                        Icon(
+                            if (selected) tab.selectedIcon else tab.icon,
+                            contentDescription = if (compactLabels) stringResource(tab.label) else null
+                        )
+                    },
+                    alwaysShowLabel = !compactLabels,
                     label = {
-                        Text(
+                        FitText(
                             stringResource(tab.label),
-                            style = MaterialTheme.typography.labelMedium.cappedFontScale(),
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis
+                            style = MaterialTheme.typography.labelMedium.cappedFontScale()
                         )
                     }
                 )
