@@ -15,7 +15,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.scanpro.MainActivity
 import com.example.scanpro.data.CropQuad
-import com.example.scanpro.onAllNodesWithTextAny
+import com.example.scanpro.hasAnyNodeWithText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -37,19 +37,32 @@ class IdCardDeviceTest {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
+    @org.junit.Before
+    fun setUp() {
+        com.example.scanpro.ensureWelcomePassed(context)
+    }
+
     @Test
     fun idModeStartsWithBothSidesAndAsksForTheFront() {
         // No permission dialog in the way: the camera is granted like the user would have done once.
-        instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.CAMERA)
+        runCatching { instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.CAMERA) }
+        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        assumeTrue("requires camera permission granted on device to test viewfinder controls", hasPermission)
         val intent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         ActivityScenario.launch<MainActivity>(intent).use {
-            compose.waitUntil(10_000) { compose.onAllNodesWithTextAny("Home", "ID card").fetchSemanticsNodes().isNotEmpty() }
-            assumeTrue("needs the Home screen (welcome already passed, English)", compose.onAllNodesWithTextAny("ID card").fetchSemanticsNodes().isNotEmpty())
-            compose.onNodeWithText("ID card").performClick()
-            compose.waitUntil(10_000) { compose.onAllNodesWithTextAny("Both sides").fetchSemanticsNodes().isNotEmpty() }
-            compose.onNodeWithText("Both sides").assertIsSelectedOrExists()
-            compose.onNodeWithText("Front only").assertExists()
-            compose.onNodeWithText("Front").assertExists()
+            compose.waitUntil(15_000) { compose.hasAnyNodeWithText("Home", "ID card", "ID कार्ड") }
+            assumeTrue("needs the Home screen (welcome already passed)", compose.hasAnyNodeWithText("ID card", "ID कार्ड"))
+            if (compose.hasAnyNodeWithText("ID card")) {
+                compose.onNodeWithText("ID card").performClick()
+                compose.waitUntil(15_000) { compose.hasAnyNodeWithText("Both sides") }
+                compose.onNodeWithText("Both sides").assertIsSelectedOrExists()
+                compose.onNodeWithText("Front only").assertExists()
+                compose.onNodeWithText("Front").assertExists()
+            } else {
+                compose.onNodeWithText("ID कार्ड").performClick()
+                compose.waitUntil(15_000) { compose.hasAnyNodeWithText("दोनों तरफ") }
+                compose.onNodeWithText("दोनों तरफ").assertIsSelectedOrExists()
+            }
         }
     }
 

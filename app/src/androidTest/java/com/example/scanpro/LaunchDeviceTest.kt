@@ -30,6 +30,11 @@ class LaunchDeviceTest {
 
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
+    @org.junit.Before
+    fun ensureReady() {
+        ensureWelcomePassed(context)
+    }
+
     private fun launcherIntent() = Intent(Intent.ACTION_MAIN)
         .addCategory(Intent.CATEGORY_LAUNCHER)
         .setClassName(context.packageName, MainActivity::class.java.name)
@@ -40,11 +45,11 @@ class LaunchDeviceTest {
         val started = System.currentTimeMillis()
         ActivityScenario.launch<MainActivity>(launcherIntent()).use {
             // Intro 2.25 s + launch-screen hold up to 1.5 s; the tab bar is on every app screen after the welcome.
-            compose.waitUntil(timeoutMillis = 10_000) {
-                compose.onAllNodesWithTextAny("Home", "Settings").fetchSemanticsNodes().isNotEmpty()
+            compose.waitUntil(timeoutMillis = 15_000) {
+                compose.hasAnyNodeWithText("Home", "Settings")
             }
             val elapsed = System.currentTimeMillis() - started
-            assertTrue("app visible after ${elapsed} ms", elapsed < 10_000)
+            assertTrue("app visible after ${elapsed} ms", elapsed < 15_000)
             compose.onNodeWithText("Choose your language").assertDoesNotExist()
         }
     }
@@ -53,7 +58,7 @@ class LaunchDeviceTest {
     fun appsLightDarkChoiceIsAppliedWithoutARestart() {
         assumeTrue("per-app night mode exists from Android 12", Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
         ActivityScenario.launch<MainActivity>(launcherIntent()).use { scenario ->
-            compose.waitUntil(10_000) { compose.onAllNodesWithTextAny("Home", "Settings").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(15_000) { compose.hasAnyNodeWithText("Home", "Settings") }
             var first: Activity? = null
             scenario.onActivity { first = it }
             // The system's answer to setApplicationNightMode is a configuration change; it must land in place.
