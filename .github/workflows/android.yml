@@ -1,16 +1,23 @@
-# Builds and checks every push and pull request:
-#   1. unit tests and lint
-#   2. the Play bundle (translation as an on-demand module)
-#   3. the sideload APKs (one per CPU type plus universal, translation built in)
-#   4. an APK size report with a budget, so a dependency that silently adds megabytes fails the build
+# Android CI: unit tests and lint, the Play bundle (translation as an on-demand module), the sideload
+# APKs (one per CPU type plus universal, translation built in) and an APK size report with a budget,
+# so a dependency that silently adds megabytes fails the build.
+# Runs on pushes to main and the working branch and on pull requests; docs-only changes are skipped.
+# Artifacts are uploaded only on a manual run; test reports only when a run fails; both are kept 3 days.
+
 name: Android CI
 
 on:
   push:
+    # The working branch is listed too: the owner checks CI on it before merging to main.
+    branches: [main, claude/awesome-clarke-ussjo3]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
   pull_request:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
+  workflow_dispatch:
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -25,7 +32,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -34,11 +41,14 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # main and the working branch save the Gradle cache; PRs just read it.
       - uses: gradle/actions/setup-gradle@v4
         with:
           # Write the cache from the working branch too, so the Gradle distribution and dependencies are not
           # downloaded on every run (the branch is the only one that builds; main never does).
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/claude/awesome-clarke-ussjo3' }}
+
+      - run: chmod +x ./gradlew
 
       - name: Unit tests, lint and Play bundle
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:bundleRelease $CI_GRADLE
@@ -50,7 +60,7 @@ jobs:
         run: scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-and-lint-reports
@@ -61,6 +71,7 @@ jobs:
           retention-days: 3
 
       - name: Build outputs
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: release-outputs

@@ -314,10 +314,10 @@ internal fun LibraryScreen(
         onMoveToRecycleBin = { onBulkDelete(setOf(doc.id)) }
     )
     var deleteFolderOpen by rememberSaveable { mutableStateOf(false) }
-    var renameMergeTarget by remember { mutableStateOf<String?>(null) }
+    var renameMergeTarget by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    var renameFolderSource by remember { mutableStateOf<String?>(null) }
-    var lockFolderOpen by remember { mutableStateOf<String?>(null) }
+    var renameFolderSource by rememberSaveable { mutableStateOf<String?>(null) }
+    var lockFolderOpen by rememberSaveable { mutableStateOf<String?>(null) }
     val deviceUnlock = com.example.scanpro.core.security.LocalDeviceUnlock.current
     var sortMenuOpen by remember { mutableStateOf(false) }
     var moreMenuOpen by remember { mutableStateOf(false) }
@@ -985,7 +985,9 @@ private fun HomeDashboard(
     val recent = overview.recent
     val documentCount = overview.documentCount
     val wide = com.example.scanpro.navigation.isWideWindow()
-    val listState = rememberLazyListState()
+    // R42: a plain `remember`, not the saved state LazyColumn creates by default. Coming back to Home from another
+    // tab restored a scroll offset of about 14 dp that hid the search pill's top; Home now always opens at the top.
+    val listState = remember { androidx.compose.foundation.lazy.LazyListState() }
 
     // Keep the search launcher unclipped at the top unless the user has actively scrolled.
     // An item entering at the bottom (e.g. tips card) must never pull the list down.
@@ -998,14 +1000,13 @@ private fun HomeDashboard(
             listState.scrollToItem(0, 0)
         }
     }
-
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize().widthIn(max = if (wide) 1100.dp else 720.dp),
         contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
+        item(key = "search") {
             SearchLauncher(onClick = onSearch, modifier = Modifier.padding(horizontal = 16.dp))
         }
         if (keptScanCount > 0) {

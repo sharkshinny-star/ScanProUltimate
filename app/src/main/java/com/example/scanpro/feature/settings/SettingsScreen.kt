@@ -149,6 +149,7 @@ fun SettingsRoute(
     val defaultScanMode by viewModel.defaultScanMode.collectAsStateWithLifecycle()
     val defaultFilter by viewModel.defaultFilter.collectAsStateWithLifecycle()
     val reviewMode by viewModel.reviewMode.collectAsStateWithLifecycle()
+    val namePattern by viewModel.namePattern.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val notifyFinished by viewModel.notifyFinished.collectAsStateWithLifecycle()
     val notifyFailures by viewModel.notifyFailures.collectAsStateWithLifecycle()
@@ -186,6 +187,8 @@ fun SettingsRoute(
         onDefaultFilterChange = viewModel::setDefaultFilter,
         reviewMode = reviewMode,
         onReviewModeChange = viewModel::setReviewMode,
+        namePattern = namePattern,
+        onNamePatternChange = viewModel::setNamePattern,
         pdfQuality = pdfQuality,
         autoTitle = autoTitle,
         appLock = appLock,
@@ -242,6 +245,8 @@ fun SettingsScreen(
     onDefaultFilterChange: (com.example.scanpro.data.PageFilter?) -> Unit = {},
     reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.WHEN_NEEDED,
     onReviewModeChange: (com.example.scanpro.data.ReviewMode) -> Unit = {},
+    namePattern: String = "",
+    onNamePatternChange: (String) -> Unit = {},
     onTrashRetentionChange: (Int) -> Unit = {},
     onDefaultOcrScriptChange: (OcrScript) -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
@@ -252,8 +257,8 @@ fun SettingsScreen(
     var whatsNewOpen by rememberSaveable { mutableStateOf(false) }
     // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive works
     // too); restore reads one such file back. Documents never leave the device otherwise.
-    var backupFolder by remember { mutableStateOf<Uri?>(null) }
-    var backupToRestore by remember { mutableStateOf<Uri?>(null) }
+    var backupFolder by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var backupToRestore by rememberSaveable { mutableStateOf<Uri?>(null) }
     val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let {
             runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
@@ -553,6 +558,33 @@ fun SettingsScreen(
                         checked = autoTitle,
                         onCheckedChange = onAutoTitleChange
                     )
+                    InsetDivider()
+                    // Name pattern (R34): tokens {text} {mode} {date} {time}; blank keeps the automatic name.
+                    var patternOpen by remember { mutableStateOf(false) }
+                    SettingsRow(
+                        icon = Icons.Rounded.Title,
+                        tone = TileTone.Slate,
+                        title = stringResource(R.string.settings_name_pattern_title),
+                        subtitle = stringResource(R.string.settings_name_pattern_body),
+                        trailing = {
+                            Text(
+                                namePattern.ifBlank { stringResource(R.string.settings_default_filter_automatic) },
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1
+                            )
+                        },
+                        onClick = { patternOpen = true }
+                    )
+                    if (patternOpen) {
+                        com.example.scanpro.core.designsystem.TextInputDialog(
+                            title = stringResource(R.string.settings_name_pattern_title),
+                            initial = namePattern,
+                            label = stringResource(R.string.settings_name_pattern_label),
+                            allowBlank = true,
+                            onDismiss = { patternOpen = false }
+                        ) { onNamePatternChange(it); patternOpen = false }
+                    }
                     InsetDivider()
                     var scriptMenuOpen by remember { mutableStateOf(false) }
                     val scriptLabel = stringResource(defaultOcrScript.labelRes)

@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +54,6 @@ import com.example.scanpro.imaging.ImageProcessor
 import com.example.scanpro.intelligence.OcrLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.runtime.mutableIntStateOf
 
 /** A replacement for one line of printed words: its box on the page (fractions) and the new text. */
 data class TextEdit(val left: Float, val top: Float, val right: Float, val bottom: Float, val text: String)
@@ -73,8 +73,8 @@ fun EditTextDialog(
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(imagePath, 1600) }
     }
     val lines = remember(words) { OcrLayout.lines(words) }
-    var selected by remember { mutableIntStateOf(-1) }
-    var text by remember { mutableStateOf("") }
+    var selected by rememberSaveable { mutableStateOf(-1) }
+    var text by rememberSaveable { mutableStateOf("") }
     val blue = MaterialTheme.colorScheme.primary
     val pagePreview = stringResource(R.string.a11y_page_preview)
 

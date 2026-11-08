@@ -23,4 +23,7 @@
     <string name="common_on">ஆன்</string>
     <string name="common_off">ஆஃப்</string>
     <string name="language_picker_title">உங்கள் மொழியைத் தேர்வுசெய்யுங்கள்</string>
+    <string name="widget_scan">ஸ்கேன்</string>
+    <string name="widget_import">இறக்குமதி</string>
+    <string name="widget_description">முகப்புத் திரையிலிருந்து ஸ்கேன், அடையாள அட்டை அல்லது இறக்குமதியைத் தொடங்குங்கள்</string>
 </resources>

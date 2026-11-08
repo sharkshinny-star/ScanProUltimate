@@ -85,6 +85,9 @@
     <string name="settings_link_unavailable">यह लिंक खोलने के लिए कोई ऐप नहीं है</string>
     <string name="settings_smart_titles_title">स्मार्ट टाइटल</string>
     <string name="settings_smart_titles_body">नए स्कैन का नाम उनके टेक्स्ट से रखें</string>
+    <string name="settings_name_pattern_title">नाम का पैटर्न</string>
+    <string name="settings_name_pattern_body">अपने-आप, या {text}, {mode}, {date} और {time} से अपना, जैसे \"{mode} {date}\"</string>
+    <string name="settings_name_pattern_label">पैटर्न</string>
     <string name="settings_app_lock_title">ऐप लॉक</string>
     <string name="settings_app_lock_body">फ़िंगरप्रिंट, फ़ेस या स्क्रीन लॉक से अनलॉक करें</string>
     <string name="settings_share_with_friends">ScanPro शेयर करें</string>

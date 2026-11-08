@@ -23,4 +23,7 @@
     <string name="common_on">ಆನ್</string>
     <string name="common_off">ಆಫ್</string>
     <string name="language_picker_title">ನಿಮ್ಮ ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="widget_scan">ಸ್ಕ್ಯಾನ್</string>
+    <string name="widget_import">ಆಮದು</string>
+    <string name="widget_description">ಹೋಮ್ ಸ್ಕ್ರೀನ್‌ನಿಂದ ಸ್ಕ್ಯಾನ್, ಗುರುತಿನ ಚೀಟಿ ಅಥವಾ ಆಮದನ್ನು ಪ್ರಾರಂಭಿಸಿ</string>
 </resources>

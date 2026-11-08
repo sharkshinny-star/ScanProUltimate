@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x1 home-screen widget (R33): Scan, ID card, Import. RemoteViews allow only these view types. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@drawable/widget_background"
+    android:padding="6dp">
+
+    <LinearLayout
+        android:id="@+id/widget_scan"
+        style="@style/ScanProWidgetButton"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_widget_scan"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetLabel"
+            android:text="@string/widget_scan" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_id_card"
+        style="@style/ScanProWidgetButton"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_widget_id_card"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetLabel"
+            android:text="@string/lib_quick_id_card" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_import"
+        style="@style/ScanProWidgetButton"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_widget_import"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetLabel"
+            android:text="@string/widget_import" />
+    </LinearLayout>
+</LinearLayout>

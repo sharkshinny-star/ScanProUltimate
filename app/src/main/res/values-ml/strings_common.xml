@@ -23,4 +23,7 @@
     <string name="common_on">ഓൺ</string>
     <string name="common_off">ഓഫ്</string>
     <string name="language_picker_title">നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക</string>
+    <string name="widget_scan">സ്കാൻ</string>
+    <string name="widget_import">ഇമ്പോർട്ട്</string>
+    <string name="widget_description">ഹോം സ്ക്രീനിൽ നിന്ന് സ്കാൻ, ഐഡി കാർഡ് അല്ലെങ്കിൽ ഇമ്പോർട്ട് തുടങ്ങുക</string>
 </resources>

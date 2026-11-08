@@ -23,4 +23,7 @@
     <string name="common_on">चालू</string>
     <string name="common_off">बंद</string>
     <string name="language_picker_title">अपनी भाषा चुनें</string>
+    <string name="widget_scan">स्कैन</string>
+    <string name="widget_import">इम्पोर्ट</string>
+    <string name="widget_description">अपनी होम स्क्रीन से स्कैन, पहचान पत्र या इम्पोर्ट शुरू करें</string>
 </resources>

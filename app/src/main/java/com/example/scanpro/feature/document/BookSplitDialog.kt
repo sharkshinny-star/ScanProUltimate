@@ -16,9 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -46,7 +47,7 @@ fun BookSplitDialog(
     val bitmap by produceState<Bitmap?>(initialValue = null, imagePath) {
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(imagePath, 1400) }
     }
-    var fraction by remember { mutableFloatStateOf(0.5f) }
+    var fraction by rememberSaveable { mutableStateOf(0.5f) }
     val pagePreview = stringResource(R.string.a11y_page_preview)
 
     AlertDialog(

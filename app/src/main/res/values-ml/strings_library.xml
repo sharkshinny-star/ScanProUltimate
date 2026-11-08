@@ -85,6 +85,9 @@
     <string name="settings_link_unavailable">ഈ ലിങ്ക് തുറക്കാൻ ഒരു ആപ്പും ഇല്ല</string>
     <string name="settings_smart_titles_title">സ്മാർട്ട് പേരുകൾ</string>
     <string name="settings_smart_titles_body">പുതിയ സ്കാനുകൾക്ക് അവയിലെ ടെക്സ്റ്റിൽ നിന്ന് പേര് നൽകുക</string>
+    <string name="settings_name_pattern_title">പേരിന്റെ മാതൃക</string>
+    <string name="settings_name_pattern_body">സ്വയമേവ, അല്ലെങ്കിൽ {text}, {mode}, {date}, {time} ഉപയോഗിച്ച് നിങ്ങളുടേത്, ഉദാ. \"{mode} {date}\"</string>
+    <string name="settings_name_pattern_label">മാതൃക</string>
     <string name="settings_app_lock_title">ആപ്പ് ലോക്ക്</string>
     <string name="settings_app_lock_body">ഫിംഗർപ്രിന്റ്, ഫേസ് അല്ലെങ്കിൽ സ്ക്രീൻ ലോക്ക് ഉപയോഗിച്ച് അൺലോക്ക് ചെയ്യുക</string>
     <string name="settings_share_with_friends">ScanPro പങ്കിടുക</string>

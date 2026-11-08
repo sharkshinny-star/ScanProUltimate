@@ -38,6 +38,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,20 +101,27 @@ fun PenDialog(
     val bitmap by produceState<Bitmap?>(initialValue = null, imagePath) {
         value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(imagePath, 1600) }
     }
-    val strokes = remember { mutableStateListOf<InkStroke>() }
+    // Saved across rotation and theme changes; Back asks before throwing a drawing away.
+    val strokes = rememberSaveable(saver = InkStrokesSaver) { mutableStateListOf<InkStroke>() }
     var current by remember { mutableStateOf<List<NormalizedPoint>>(emptyList()) }
-    var colour by remember { mutableStateOf(PenColour.BLUE) }
-    var width by remember { mutableStateOf(PenWidth.MEDIUM) }
+    var colour by rememberSaveable { mutableStateOf(PenColour.BLUE) }
+    var width by rememberSaveable { mutableStateOf(PenWidth.MEDIUM) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    val close = { if (strokes.isNotEmpty()) confirmDiscard = true else onDismiss() }
     val pagePreview = stringResource(R.string.a11y_page_preview)
 
+    if (confirmDiscard) {
+        DiscardEditsDialog(onKeepEditing = { confirmDiscard = false }, onDiscard = { confirmDiscard = false; onDismiss() })
+    }
+
     androidx.compose.ui.window.Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = close,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
+                    IconButton(onClick = close) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close)) }
                     Text(stringResource(R.string.doc_pen), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).padding(start = 4.dp))
                     IconButton(enabled = strokes.isNotEmpty(), onClick = { strokes.removeAt(strokes.lastIndex) }) {
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.doc_undo_last_stroke))
@@ -266,3 +276,23 @@ private fun thinPoints(points: List<NormalizedPoint>): List<NormalizedPoint> {
     if (out.last() != points.last()) out += points.last()
     return out
 }
+
+/** Keeps the pen strokes through a recreation: one entry per stroke, "argb|width|x,y;x,y;…". */
+private val InkStrokesSaver = Saver<SnapshotStateList<InkStroke>, List<String>>(
+    save = { list -> list.map { s -> "${s.color}|${s.width}|" + s.points.joinToString(";") { "${it.x},${it.y}" } } },
+    restore = { saved ->
+        mutableStateListOf<InkStroke>().apply {
+            saved.forEach { entry ->
+                val parts = entry.split('|', limit = 3)
+                val color = parts.getOrNull(0)?.toIntOrNull() ?: return@forEach
+                val width = parts.getOrNull(1)?.toFloatOrNull() ?: return@forEach
+                val points = parts.getOrNull(2).orEmpty().split(';').mapNotNull { pair ->
+                    val x = pair.substringBefore(',').toFloatOrNull()
+                    val y = pair.substringAfter(',').toFloatOrNull()
+                    if (x != null && y != null) NormalizedPoint(x, y) else null
+                }
+                add(InkStroke(points, color, width))
+            }
+        }
+    }
+)

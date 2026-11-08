@@ -119,7 +119,7 @@ fun CropEditorDialog(
         var activeCorner by remember { mutableIntStateOf(0) }
         var draggingCorner by remember { mutableStateOf(false) }
         // Curve mode: the middle handles bend their edges instead of moving them.
-        var curveMode by remember(initial) { mutableStateOf(initial.isCurved) }
+        var curveMode by rememberSaveable(initial) { mutableStateOf(initial.isCurved) }
         val latestCurveMode by rememberUpdatedState(curveMode)
 
         // The outline and its handles use the same mint as the live scanner, so "found page" looks the same everywhere.

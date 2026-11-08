@@ -24,4 +24,7 @@
     <string name="common_off">Off</string>
     <!-- First-launch language picker -->
     <string name="language_picker_title">Choose your language</string>
+    <string name="widget_scan">Scan</string>
+    <string name="widget_import">Import</string>
+    <string name="widget_description">Start a scan, an ID card or an import from your home screen</string>
 </resources>

@@ -35,7 +35,7 @@ The app follows the layered, package-by-feature structure recommended in Android
   (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
   survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).
 - **Data layer (`data/`)**: `DocumentLibrary` exposes the active, trash and storage flows every screen
-  observes and is refreshed after each operation; `DocumentRepository` does the work.
+  observes and is refreshed after each operation; `DocumentRepository` is a facade that delegates (R9): `DocumentStore` holds the shared database access, per-document PDF locks, undo history, saving and PDF rebuilding; `DocumentCatalog`, `DocumentTrash`, `DocumentImporter`, `PageEditor`, `PageOrganiser` and `DocumentExporter` (all in `data/`) do the work on top of it.
 
 Hilt supplies repository/database/settings/work dependencies. WorkManager is used for periodic library maintenance.
 
@@ -259,6 +259,18 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **Book mode two-page capture (R29/F80).** `imaging/BookSpread.kt`: `halves` splits a width at a fraction (clamped to
+  20-80 %), `ordered` gives reading order, `split` cuts the spread along its outline (`cropSourceToBitmap`, 3800 px)
+  and writes the two halves. The camera does it in the capture's background outline step for `ScanMode.BOOK` with a
+  two-page layout, replacing the raw spread in `pages`; `SpineGuide` draws the dashed line over the live outline.
+- **Name pattern (R34/F79).** `imaging/ScanTitle.build(pattern, smartTitle, mode, created, fallback)`: blank pattern
+  gives the smart title or the fallback as before; otherwise `{text}`/`{mode}`/`{date}`/`{time}` expand and `tidy`
+  removes the separators an empty token leaves. `SettingsStore.namePattern` feeds both `DocumentRepository` import
+  paths; a name typed on the review still wins.
+- **Quick Settings tile and widget (R33/F78).** `widget/ScanTileService` and `widget/ScanWidgetProvider` (RemoteViews,
+  `res/layout/widget_scan.xml`) start `MainActivity` with the shortcut actions `ACTION_SCAN_NOW` (optionally
+  `EXTRA_SCAN_MODE`, e.g. ID_CARD) and the new `ACTION_IMPORT_IMAGES`; `AppViewModel.requestScan(mode)` carries the
+  mode to the camera route. No new dependency.
 - **Files sort direction and recent searches (R35/F76).** `LibrarySort` carries each key's default direction and
   its two direction labels; the DAO's paged queries take `ascending` and order with two CASE expressions, so the
   list stays a database page in either direction; `SettingsStore.librarySortAscending` (null = the key's default)

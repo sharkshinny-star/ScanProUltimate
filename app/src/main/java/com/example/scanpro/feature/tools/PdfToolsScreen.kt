@@ -99,7 +99,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -317,11 +316,12 @@ fun PdfToolsScreen(
         viewModel.rememberPdfs(listOf(uri))
         startTool(tool, uri)
     }
-    // Files picked for Merge are shown in a list to put in order before merging.
-    var ordering by remember { mutableStateOf<List<Uri>?>(null) }
+    // Files picked for Merge or Images to PDF are shown in a list to put in order before the tool runs:
+    // the picker's order is not the order they were tapped in.
+    var ordering by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf<List<Uri>?>(null) }
     // Images picked for Images to PDF are shown with thumbnails, reordering, and crop editing before conversion.
-    var imagesToOrder by remember { mutableStateOf<List<Uri>?>(null) }
-    var imagesToConvert by remember { mutableStateOf<List<Uri>?>(null) }
+    var imagesToOrder by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf<List<Uri>?>(null) }
+    var imagesToConvert by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf<List<Uri>?>(null) }
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty() && selectedTool == "merge") {
             viewModel.rememberPdfs(uris)
@@ -596,10 +596,10 @@ private fun CompressPdfDialog(
     onConfirm: (preset: CompressionPreset, customTargetBytes: Long?) -> Unit
 ) {
     var originalSize by remember { mutableLongStateOf(0L) }
-    var preset by remember { mutableStateOf(CompressionPreset.BALANCED) }
-    var isCustomTarget by remember { mutableStateOf(false) }
-    var targetInput by remember { mutableStateOf("") }
-    var targetUnit by remember { mutableStateOf("KB") }
+    var preset by rememberSaveable { mutableStateOf(CompressionPreset.BALANCED) }
+    var isCustomTarget by rememberSaveable { mutableStateOf(false) }
+    var targetInput by rememberSaveable { mutableStateOf("") }
+    var targetUnit by rememberSaveable { mutableStateOf("KB") }
 
     LaunchedEffect(uri) {
         withContext(Dispatchers.IO) {
@@ -931,10 +931,10 @@ private fun PdfToImagesDialog(
     onConfirm: (format: ImageExportFormat, pages: List<Int>?, scale: Float) -> Unit
 ) {
     val context = LocalContext.current
-    var format by remember { mutableStateOf(ImageExportFormat.JPEG) }
-    var scale by remember { mutableFloatStateOf(2.5f) }
-    var allPages by remember { mutableStateOf(true) }
-    var rangesText by remember { mutableStateOf("") }
+    var format by rememberSaveable { mutableStateOf(ImageExportFormat.JPEG) }
+    var scale by rememberSaveable { mutableStateOf(2.5f) }
+    var allPages by rememberSaveable { mutableStateOf(true) }
+    var rangesText by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var pageCount by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(uri) {
@@ -1295,8 +1295,8 @@ private fun OrderedImageRow(
 /** Page size and quality for Images to PDF, the two settings the engine already takes. */
 @Composable
 private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (PdfPageSize, PdfQuality) -> Unit) {
-    var size by remember { mutableStateOf(PdfPageSize.AUTO) }
-    var quality by remember { mutableStateOf(PdfQuality.BALANCED) }
+    var size by rememberSaveable { mutableStateOf(PdfPageSize.AUTO) }
+    var quality by rememberSaveable { mutableStateOf(PdfQuality.BALANCED) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(pluralStringResource(R.plurals.tools_img2pdf_title, count, count)) },
@@ -1942,9 +1942,9 @@ private fun SplitDialog(
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
-    var mode by remember { mutableStateOf(SplitMode.SINGLE_PAGES) }
-    var rangesText by remember { mutableStateOf("") }
-    var chunkSizeText by remember { mutableStateOf("2") }
+    var mode by rememberSaveable { mutableStateOf(SplitMode.SINGLE_PAGES) }
+    var rangesText by rememberSaveable { mutableStateOf("") }
+    var chunkSizeText by rememberSaveable { mutableStateOf("2") }
     var error by remember { mutableStateOf<String?>(null) }
     // The page count makes the ranges checkable before the split starts.
     var pageCount by remember { mutableStateOf<Int?>(null) }
@@ -2305,6 +2305,17 @@ private fun PdfPageOrganizerSheet(
         }
     }
 
+    // Closing with deletes, moves or rotations that were not applied asks first.
+    var confirmClose by rememberSaveable { mutableStateOf(false) }
+    val requestClose = { if (undoStack.isNotEmpty()) confirmClose = true else onClose() }
+    androidx.activity.compose.BackHandler(enabled = undoStack.isNotEmpty()) { confirmClose = true }
+    if (confirmClose) {
+        com.example.scanpro.feature.document.DiscardEditsDialog(
+            onKeepEditing = { confirmClose = false },
+            onDiscard = { confirmClose = false; onClose() }
+        )
+    }
+
     // Shown inside the Tools tab, which already keeps clear of the status bar and the bottom bar: taking those insets
     // again here left a dark band under the pages and a gap above the title.
     Scaffold(
@@ -2327,7 +2338,7 @@ private fun PdfPageOrganizerSheet(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
+                    IconButton(onClick = requestClose) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close))
                     }
                 },
@@ -2639,3 +2650,9 @@ private val CompressionPreset.descriptionRes: Int
         CompressionPreset.BALANCED -> R.string.tools_compress_preset_balanced_desc
         CompressionPreset.MAXIMUM -> R.string.tools_compress_preset_maximum_desc
     }
+
+/** Keeps the files picked for Merge or Images to PDF through a rotation (null when nothing is picked). */
+private val UriListSaver = androidx.compose.runtime.saveable.Saver<List<Uri>?, java.util.ArrayList<String>>(
+    save = { list -> list?.let { java.util.ArrayList(it.map(Uri::toString)) } },
+    restore = { saved -> saved.map(Uri::parse) }
+)

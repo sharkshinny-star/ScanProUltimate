@@ -484,31 +484,31 @@ internal fun DocumentDetailScreen(
     }
     // The translate controls unfold under the Text tab's chips only when asked for.
     var translateOpen by rememberSaveable(document.id) { mutableStateOf(false) }
-    var renameOpen by remember { mutableStateOf(false) }
+    var renameOpen by rememberSaveable { mutableStateOf(false) }
     // The action waiting for "replace your corrections?" to be answered.
     var reOcrConfirm by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var splitAllOpen by remember { mutableStateOf(false) }
-    var tagsOpen by remember { mutableStateOf(false) }
-    var folderOpen by remember { mutableStateOf(false) }
-    var signatureOpen by remember { mutableStateOf(false) }
+    var splitAllOpen by rememberSaveable { mutableStateOf(false) }
+    var tagsOpen by rememberSaveable { mutableStateOf(false) }
+    var folderOpen by rememberSaveable { mutableStateOf(false) }
+    var signatureOpen by rememberSaveable { mutableStateOf(false) }
     var pendingSignature by remember { mutableStateOf<PendingSignature?>(null) }
-    var watermarkOpen by remember { mutableStateOf(false) }
-    var annotationTextOpen by remember { mutableStateOf(false) }
-    var cropOpen by remember { mutableStateOf(false) }
+    var watermarkOpen by rememberSaveable { mutableStateOf(false) }
+    var annotationTextOpen by rememberSaveable { mutableStateOf(false) }
+    var cropOpen by rememberSaveable { mutableStateOf(false) }
     var bookSplitOpen by rememberSaveable { mutableStateOf(false) }
     var markupOpen by rememberSaveable { mutableStateOf(false) }
     var editTextOpen by rememberSaveable { mutableStateOf(false) }
     var eraserOpen by rememberSaveable { mutableStateOf(false) }
     var penOpen by rememberSaveable { mutableStateOf(false) }
-    var adjustmentsOpen by remember { mutableStateOf(false) }
-    var mergeOpen by remember { mutableStateOf(false) }
-    var deletePageOpen by remember { mutableStateOf(false) }
-    var deleteDocumentOpen by remember { mutableStateOf(false) }
-    var passwordOpen by remember { mutableStateOf(false) }
-    var backupPasswordOpen by remember { mutableStateOf(false) }
-    var ocrEditOpen by remember { mutableStateOf(false) }
-    var menuOpen by remember { mutableStateOf(false) }
-    var detailsOpen by remember { mutableStateOf(false) }
+    var adjustmentsOpen by rememberSaveable { mutableStateOf(false) }
+    var mergeOpen by rememberSaveable { mutableStateOf(false) }
+    var deletePageOpen by rememberSaveable { mutableStateOf(false) }
+    var deleteDocumentOpen by rememberSaveable { mutableStateOf(false) }
+    var passwordOpen by rememberSaveable { mutableStateOf(false) }
+    var backupPasswordOpen by rememberSaveable { mutableStateOf(false) }
+    var ocrEditOpen by rememberSaveable { mutableStateOf(false) }
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
+    var detailsOpen by rememberSaveable { mutableStateOf(false) }
     var pdfSettingsOpen by rememberSaveable { mutableStateOf(false) }
     // Every way of getting the document out of the app, from the share icon in the top bar.
     var exportOpen by rememberSaveable { mutableStateOf(false) }
@@ -1328,7 +1328,7 @@ internal fun DocumentDetailScreen(
     }
 
     if (mergeOpen) {
-        var mergeQuery by remember { mutableStateOf("") }
+        var mergeQuery by rememberSaveable { mutableStateOf("") }
         val candidates = remember(otherDocuments, mergeQuery) {
             otherDocuments.filter { mergeQuery.isBlank() || it.title.contains(mergeQuery, ignoreCase = true) }
                 .sortedByDescending { it.updatedAt }

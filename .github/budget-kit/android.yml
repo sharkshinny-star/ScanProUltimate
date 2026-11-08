@@ -1,0 +1,53 @@
+# Android / Gradle build.
+# Put in .github/workflows/android.yml of Android repos.
+# If the Android app lives in a subfolder (e.g. android/), set APP_DIR below
+# and change the paths filter to that folder.
+
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
+  pull_request:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'supabase/**']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_DIR: .
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Only main saves the Gradle cache; other branches and PRs just read it.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - run: chmod +x ./gradlew
+      - run: ./gradlew assembleDebug --no-daemon
+
+      # APK is uploaded only when you start the run by hand, and kept 1 day.
+      - if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: ${{ env.APP_DIR }}/app/build/outputs/apk/debug/*.apk
+          retention-days: 1

@@ -149,6 +149,10 @@
     <string name="scan_ev">EV</string>
     <string name="scan_id_front_only">सिर्फ़ आगे</string>
     <string name="scan_id_both_sides">दोनों तरफ़</string>
+    <string name="scan_book_one_page">एक पेज</string>
+    <string name="scan_book_two_pages">दो पेज</string>
+    <string name="scan_book_two_pages_rtl">दो पेज, दायाँ पहले</string>
+    <string name="scan_status_spread_split">फैले पन्ने को पेज %1$d और %2$d में बाँटा</string>
     <string name="scan_take_photo">फ़ोटो लें</string>
     <string name="scan_import_photos">फ़ोटो इंपोर्ट करें</string>
     <string name="scan_permission_title">कैमरा अनुमति</string>

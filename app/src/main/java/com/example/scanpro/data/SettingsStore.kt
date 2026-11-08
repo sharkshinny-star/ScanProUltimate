@@ -82,6 +82,14 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.scanProSettings.edit { it[keyAutoTitle] = value }
     }
 
+    private val keyNamePattern = stringPreferencesKey("name_pattern")
+
+    /** Name pattern for new scans (R34, `imaging/ScanTitle`); blank for the automatic name. */
+    val namePattern: Flow<String> = preferences.map { it[keyNamePattern].orEmpty() }.distinctUntilChanged()
+    suspend fun setNamePattern(value: String) {
+        context.scanProSettings.edit { if (value.isBlank()) it.remove(keyNamePattern) else it[keyNamePattern] = value.trim() }
+    }
+
     private val keyWelcomeSeen = booleanPreferencesKey("welcome_seen")
 
     /** False until the first-run welcome has been shown and closed. */

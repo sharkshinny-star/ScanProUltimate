@@ -73,6 +73,8 @@ class SettingsViewModel @Inject constructor(
 
     fun setPdfQuality(value: PdfQuality) { viewModelScope.launch { settings.setPdfQuality(value) } }
     fun setAutoTitle(value: Boolean) { viewModelScope.launch { settings.setAutoTitle(value) } }
+    val namePattern = settings.namePattern.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+    fun setNamePattern(value: String) { viewModelScope.launch { settings.setNamePattern(value) } }
     fun setThemeMode(value: ThemeMode) { viewModelScope.launch { settings.setThemeMode(value) } }
     fun setDynamicColor(value: Boolean) { viewModelScope.launch { settings.setDynamicColor(value) } }
     val accentPalette = settings.accentPalette.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccentPalette.INDIGO)

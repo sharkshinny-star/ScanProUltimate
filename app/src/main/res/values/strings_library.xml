@@ -93,6 +93,9 @@
     <string name="settings_link_unavailable">No app can open this link</string>
     <string name="settings_smart_titles_title">Smart titles</string>
     <string name="settings_smart_titles_body">Name new scans from the text they contain</string>
+    <string name="settings_name_pattern_title">Name pattern</string>
+    <string name="settings_name_pattern_body">Automatic, or your own with {text}, {mode}, {date} and {time}, e.g. \"{mode} {date}\"</string>
+    <string name="settings_name_pattern_label">Pattern</string>
     <string name="settings_app_lock_title">App lock</string>
     <string name="settings_app_lock_body">Unlock with fingerprint, face or your screen lock</string>
     <string name="settings_share_with_friends">Share ScanPro</string>

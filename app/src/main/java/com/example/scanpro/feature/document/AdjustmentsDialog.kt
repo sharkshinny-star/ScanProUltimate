@@ -23,9 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
@@ -55,12 +55,12 @@ fun AdjustmentsDialog(
     /** The new settings, and whether the shadow and finger clean-up should go to every page. */
     onConfirm: (PageAdjustments, Boolean) -> Unit
 ) {
-    var allPages by remember(page.id) { mutableStateOf(false) }
-    var brightness by remember(page.id, page.adjustments) { mutableFloatStateOf(page.adjustments.brightness) }
-    var contrast by remember(page.id, page.adjustments) { mutableFloatStateOf(page.adjustments.contrast) }
-    var saturation by remember(page.id, page.adjustments) { mutableFloatStateOf(page.adjustments.saturation) }
-    var removeShadows by remember(page.id, page.adjustments) { mutableStateOf(page.adjustments.removeShadows) }
-    var removeFingers by remember(page.id, page.adjustments) { mutableStateOf(page.adjustments.removeFingers) }
+    var allPages by rememberSaveable(page.id) { mutableStateOf(false) }
+    var brightness by rememberSaveable(page.id, page.adjustments) { mutableStateOf(page.adjustments.brightness) }
+    var contrast by rememberSaveable(page.id, page.adjustments) { mutableStateOf(page.adjustments.contrast) }
+    var saturation by rememberSaveable(page.id, page.adjustments) { mutableStateOf(page.adjustments.saturation) }
+    var removeShadows by rememberSaveable(page.id, page.adjustments) { mutableStateOf(page.adjustments.removeShadows) }
+    var removeFingers by rememberSaveable(page.id, page.adjustments) { mutableStateOf(page.adjustments.removeFingers) }
     val adjustments = PageAdjustments(brightness, contrast, saturation, removeShadows, removeFingers).normalized()
 
     val preview by produceState<Bitmap?>(

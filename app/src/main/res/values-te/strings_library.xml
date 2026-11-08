@@ -85,6 +85,9 @@
     <string name="settings_link_unavailable">ఈ లింక్‌ను తెరవగల యాప్ ఏదీ లేదు</string>
     <string name="settings_smart_titles_title">స్మార్ట్ టైటిల్‌లు</string>
     <string name="settings_smart_titles_body">కొత్త స్కాన్‌లకు వాటిలోని టెక్స్ట్ నుండి పేరు పెట్టండి</string>
+    <string name="settings_name_pattern_title">పేరు నమూనా</string>
+    <string name="settings_name_pattern_body">ఆటోమేటిక్, లేదా {text}, {mode}, {date}, {time} తో మీదే, ఉదా. \"{mode} {date}\"</string>
+    <string name="settings_name_pattern_label">నమూనా</string>
     <string name="settings_app_lock_title">యాప్ లాక్</string>
     <string name="settings_app_lock_body">వేలిముద్ర, ఫేస్ లేదా మీ స్క్రీన్ లాక్‌తో అన్‌లాక్ చేయండి</string>
     <string name="settings_share_with_friends">ScanPro షేర్ చేయండి</string>

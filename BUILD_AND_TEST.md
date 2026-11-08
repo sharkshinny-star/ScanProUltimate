@@ -39,16 +39,16 @@ Gradle properties:
 | `-Pscanpro.composeMetrics=true` | Compose compiler metrics in `build/compose_metrics` |
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
-CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
+CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report, on pushes to `main`, pull requests and manual runs (20-minute timeout; artifacts only on manual runs). Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
 
 ## Latest results (2026-11-08, `d97deab` + F67 ID card page; and the raised CI limits, cloud container with the SDK installed by hand)
 
 | Check | Result |
 |---|---|
-| `:app:testDebugUnitTest` | 392 tests: 329 passed, 63 skipped (opt-in), 0 failed (includes F71 `AppDiagnosticsTest` 6, F72 & F73 `PdfToolsFeaturesTest` 7) |
+| `:app:testDebugUnitTest` | Full run passed: 378+ tests, 30 skipped, 0 failed (includes F81 DocumentRepository split, F82 Compress PDF validation & ResultDialog, F71 AppDiagnostics, F72 & F73 features). |
 | `:app:assembleDebug` | Build finished successfully. Stream installed and verified on OnePlus CPH2569 (`dc6b0551`). |
-| `:app:lintDebug` | 0 errors |
-| Clean CI-style build (before the F66 edits, on `068feba`): `clean`, then `testDebugUnitTest lintDebug bundleRelease`, then sideload `assembleRelease`, all with `--no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m` | Passed: 10 m 22 s + 3 m 28 s. Peak resident memory of all Java processes summed about 8.1 GB (shared pages counted more than once, so an over-estimate). **CI run 75 on `a502f3b` passed end to end under these limits** (build step 19.5 min, whole job about 25 min), the first green run since run 44 |
+| `:app:lintDebug` | 0 errors, 2 warnings (Gradle 9.9.0 available; `doc_share_as_pdf_hint` unused). |
+| Clean CI-style build (before the F66 edits, on `068feba`): `clean`, then `testDebugUnitTest lintDebug bundleRelease`, then sideload `assembleRelease`, all with `--no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m` | Passed: 10 m 22 s + 3 m 28 s. Peak resident memory of all Java processes summed about 8.1 GB (shared pages counted more than once, so an over-estimate). **CI runs 75 (`a502f3b`), 78 (`3888dd2`) and 83 (`6f483d9`, after the wrapper timeout fix) passed end to end under these limits** (build step 19-25 min, whole job 25-35 min); runs 80-82 failed only on the Gradle download, see Known errors |
 | Not run | Release builds after the F66 edits; device checks. CI run 73 (`068feba`) failed with `OutOfMemoryError: Java heap space` in the Kotlin compiler under the first limits (Gradle 1.5 GB, Kotlin daemon 1 GB); runs 68-72 were runner shutdowns about 12 minutes in |
 
 Earlier results (2026-11-08, `18c89a5`):

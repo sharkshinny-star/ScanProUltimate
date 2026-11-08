@@ -2,4 +2,6 @@
 <resources>
     <!-- Brand colours in dark mode -->
     <color name="scanpro_splash_icon_bg">#4457E6</color>
+    <color name="scanpro_widget_background">#1C1F2B</color>
+    <color name="scanpro_widget_button">#4C5BE8</color>
 </resources>

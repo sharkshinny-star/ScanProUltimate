@@ -113,6 +113,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
+import kotlinx.coroutines.flow.update
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -254,10 +255,10 @@ fun CameraScannerScreen(
     // Grid and spirit level are off unless switched on in the menu: the live outline is guidance enough.
     var showGrid by remember { mutableStateOf(prefs.getBoolean("grid", false)) }
     var showLevel by remember { mutableStateOf(prefs.getBoolean("level", false)) }
-    var overflowOpen by remember { mutableStateOf(false) }
+    var overflowOpen by rememberSaveable { mutableStateOf(false) }
     val onLabel = stringResource(R.string.common_on)
     val offLabel = stringResource(R.string.common_off)
-    var showAdjustments by remember { mutableStateOf(false) }
+    var showAdjustments by rememberSaveable { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
     var zoomRatio by remember { mutableFloatStateOf(1f) }
@@ -279,6 +280,10 @@ fun CameraScannerScreen(
     var scanBothSides by rememberSaveable { mutableStateOf(true) }
     // The one page both sides were put on (IdCardComposer), once Done was tapped after the second side.
     var idComposite by rememberSaveable { mutableStateOf<String?>(null) }
+    // Book mode (R29): 0 one page per shot, 1 two pages left first, 2 two pages right first; and the halves made so far,
+    // which fast save trusts like the ID composite (they are cut out already).
+    var bookLayout by rememberSaveable { mutableStateOf(1) }
+    var bookHalves by rememberSaveable { mutableStateOf(listOf<String>()) }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
     // than saving at once, whatever "Check pages before saving" says.
     var returnToReview by rememberSaveable { mutableStateOf(false) }
@@ -321,9 +326,30 @@ fun CameraScannerScreen(
             }
         )
     ) { mutableStateMapOf<String, PageFilter>() }
-    // Brightness / contrast / saturation chosen on the review screen, per page (keyed like filters). Not saved across
-    // process death: the sliders start at zero again, which is what they show.
-    val adjustments = remember { mutableStateMapOf<String, PageAdjustments>() }
+    // Brightness / contrast / saturation chosen on the review screen, per page (keyed like filters). Saved across
+    // rotation and process death as "b|c|s|shadows|fingers|key" strings.
+    val adjustments = rememberSaveable(
+        saver = listSaver(
+            save = { map ->
+                map.map { (k, v) -> "${v.brightness}|${v.contrast}|${v.saturation}|${v.removeShadows}|${v.removeFingers}|$k" }
+            },
+            restore = { saved ->
+                mutableStateMapOf<String, PageAdjustments>().apply {
+                    saved.forEach { entry ->
+                        val p = entry.split('|', limit = 6)
+                        if (p.size == 6) {
+                            val b = p[0].toFloatOrNull()
+                            val c = p[1].toFloatOrNull()
+                            val s = p[2].toFloatOrNull()
+                            if (b != null && c != null && s != null) {
+                                put(p[5], PageAdjustments(b, c, s, p[3].toBoolean(), p[4].toBoolean()).normalized())
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    ) { mutableStateMapOf<String, PageAdjustments>() }
     // What the review should point out per page (blurred, glare, too dark), keyed like filters. Worked out in the
     // background for every page as it arrives (captures, retakes and gallery picks alike); not saved, it is simply
     // worked out again after a restart.
@@ -350,7 +376,7 @@ fun CameraScannerScreen(
         else -> 100
     }
 
-    var confirmQuit by remember { mutableStateOf(false) }
+    var confirmQuit by rememberSaveable { mutableStateOf(false) }
     // Closing with captured pages would discard them, so ask first.
     val retaking = retakeIndex in pages.indices
     val requestClose = {
@@ -508,7 +534,7 @@ fun CameraScannerScreen(
         processing = true
         status = resources.getString(R.string.scan_status_checking_pages)
         val snapshot = pages.toList()
-        val trusted = snapshot.indices.filter { snapshot[it].toString() == idComposite }.toSet()
+        val trusted = snapshot.indices.filter { snapshot[it].toString() == idComposite || snapshot[it].toString() in bookHalves }.toSet()
         scope.launch {
             // Whatever is still missing (Done tapped before the background work landed) is worked out once here, from
             // a single decode and detection per page, and kept, so saving does not do it again.
@@ -645,7 +671,14 @@ fun CameraScannerScreen(
                     // The screen was closed while the shutter was running; launching on its cancelled
                     // scope would skip the cleanup below, so drop the raw file here.
                     if (disposed.get()) {
-                        raw.delete()
+                        // A rotation recreated the screen while the shutter ran: hand the photo to the new
+                        // composition (same session folder) instead of losing the page.
+                        val rotating = (context as? android.app.Activity)?.isChangingConfigurations == true
+                        if (rotating && raw.exists()) {
+                            lateCaptures.update { it + (sessionId to (it[sessionId].orEmpty() + Uri.fromFile(raw).toString())) }
+                        } else {
+                            raw.delete()
+                        }
                         return
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
@@ -683,6 +716,27 @@ fun CameraScannerScreen(
                             }.getOrNull()
                         }
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
+                        // Book mode, two pages: the spread is cut out and split at the spine into two pages (R29).
+                        if (scanMode == ScanMode.BOOK && bookLayout != 0 && !replacing && quad != null && pages.contains(captured)) {
+                            val leftFile = File(sessionDir, "raw_${id}_left.jpg")
+                            val rightFile = File(sessionDir, "raw_${id}_right.jpg")
+                            val ok = withContext(Dispatchers.Default) {
+                                runCatching { com.example.scanpro.imaging.BookSpread.split(raw, quad, leftFile, rightFile) }.isSuccess
+                            }
+                            val at = pages.indexOf(captured)
+                            if (ok && at >= 0) {
+                                val halves = com.example.scanpro.imaging.BookSpread.ordered(Uri.fromFile(leftFile), Uri.fromFile(rightFile), leftFirst = bookLayout == 1)
+                                pages.removeAt(at)
+                                pages.addAll(at, halves)
+                                quads.remove(captured.toString())
+                                halves.forEach { quads[it.toString()] = CropQuad.DEFAULT }
+                                bookHalves = bookHalves + halves.map { it.toString() }
+                                deleteInBackground(raw)
+                                status = resources.getString(R.string.scan_status_spread_split, at + 1, at + 2)
+                            } else {
+                                leftFile.delete(); rightFile.delete()
+                            }
+                        }
                     }
                     status = when {
                         replacing -> resources.getString(R.string.scan_status_page_retaken, retakeIndex + 1)
@@ -880,6 +934,15 @@ fun CameraScannerScreen(
         }
     }
 
+    // Photos finished by the previous incarnation of this screen while it was being rotated.
+    LaunchedEffect(sessionId) {
+        lateCaptures.collect { waiting ->
+            val late = waiting[sessionId] ?: return@collect
+            lateCaptures.update { it - sessionId }
+            late.map(Uri::parse).forEach { uri -> if (!pages.contains(uri) && pages.size < pageLimit) pages.add(uri) }
+        }
+    }
+
     // Clear out sessions abandoned by a crash or process death more than a day ago.
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -1051,6 +1114,7 @@ fun CameraScannerScreen(
         }
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             DocumentBoundaryOverlay(detection = detection, quad = shownQuad, stable = stable, accent = scanLine)
+            if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = shownQuad, accent = scanLine)
         }
         if (scanMode == ScanMode.ID_CARD) {
             IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
@@ -1354,6 +1418,19 @@ fun CameraScannerScreen(
             }
 
             // Mode tabs. Receipt, Whiteboard and Book live in the overflow menu under "Docs".
+            // Book mode adds One page / Two pages (left first) / Two pages, right first (R29).
+            if (scanMode == ScanMode.BOOK) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    listOf(0 to R.string.scan_book_one_page, 1 to R.string.scan_book_two_pages, 2 to R.string.scan_book_two_pages_rtl).forEach { (layout, text) ->
+                        ModeTab(stringResource(text), selected = bookLayout == layout, enabled = pages.isEmpty() && retakeOfPage == null) {
+                            if (pages.isEmpty() && retakeOfPage == null) bookLayout = layout
+                        }
+                    }
+                }
+            }
             // ID cards add a Front only / Both sides row; the mode tabs stay, so a wrong tap is undone with another tap.
             if (scanMode == ScanMode.ID_CARD) {
                 Row(
@@ -1934,6 +2011,27 @@ private fun ThirdsGrid() {
     }
 }
 
+/** Book mode, two pages (R29): a dashed line down the middle of the live outline, where the spread will be split. */
+@Composable
+private fun SpineGuide(detection: DocumentDetection?, quad: CropQuad?, accent: Color) {
+    Canvas(Modifier.fillMaxSize()) {
+        val result = detection ?: return@Canvas
+        val outline = quad ?: return@Canvas
+        val frameWidth = result.frameWidth.toFloat().coerceAtLeast(1f)
+        val frameHeight = result.frameHeight.toFloat().coerceAtLeast(1f)
+        val scale = minOf(size.width / frameWidth, size.height / frameHeight)
+        val left = (size.width - frameWidth * scale) / 2f
+        val top = (size.height - frameHeight * scale) / 2f
+        fun point(x: Float, y: Float): Offset = Offset(left + x * frameWidth * scale, top + y * frameHeight * scale)
+        val topMid = point((outline.topLeft.x + outline.topRight.x) / 2f, (outline.topLeft.y + outline.topRight.y) / 2f)
+        val bottomMid = point((outline.bottomLeft.x + outline.bottomRight.x) / 2f, (outline.bottomLeft.y + outline.bottomRight.y) / 2f)
+        drawLine(
+            accent.copy(alpha = 0.9f), topMid, bottomMid, strokeWidth = 3f, cap = StrokeCap.Round,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 10f))
+        )
+    }
+}
+
 /**
  * The page outline over the preview: a faint fill, an edge line and bracket corners. White while the page
  * is being tracked; mint, thicker and filled a touch more once it is steady. [quad] is the smoothed outline;
@@ -2054,3 +2152,6 @@ internal const val SESSION_IMPORT_FAILED = ".import_failed"
  * runs low, and a finished scan waiting for its import exists nowhere else.
  */
 internal fun scannerSessionRoot(context: android.content.Context) = File(context.filesDir, SESSION_ROOT)
+
+/** Raw photos whose shutter finished during a rotation, by scanner session id; the recreated screen adopts them. */
+private val lateCaptures = kotlinx.coroutines.flow.MutableStateFlow<Map<String, List<String>>>(emptyMap())

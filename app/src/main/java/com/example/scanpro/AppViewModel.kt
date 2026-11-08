@@ -174,7 +174,10 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    fun requestScan() { _scanRequested.value = true }
+    /** The camera mode a scan request asked for (a ScanMode name), blank for the default (R33). */
+    private val _scanRequestMode = MutableStateFlow("")
+    val scanRequestMode: StateFlow<String> = _scanRequestMode.asStateFlow()
+    fun requestScan(mode: String = "") { _scanRequestMode.value = mode; _scanRequested.value = true }
     fun clearScanRequest() { _scanRequested.value = false }
 
     private val _destinationRequest = MutableStateFlow<String?>(null)
