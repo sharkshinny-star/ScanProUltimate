@@ -260,6 +260,7 @@ object PdfToolsEngine {
         try {
             val originalSize = tempFile.length()
             PDDocument().use { extractedDoc -> loadPdf(tempFile).use { doc ->
+                userRequire(doc.numberOfPages > 1, R.string.tools_extract_single_page_desc)
                 selectedPageIndices.forEachIndexed { index, pageIdx ->
                     if (!coroutineContext.isActive) throw InterruptedException("Extract operation cancelled")
                     onProgress(index + 1, selectedPageIndices.size, AppStrings.get(R.string.tools_progress_extracting_page, index + 1, selectedPageIndices.size))

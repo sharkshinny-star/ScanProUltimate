@@ -259,14 +259,32 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **Files sort direction and recent searches (R35/F76).** `LibrarySort` carries each key's default direction and
+  its two direction labels; the DAO's paged queries take `ascending` and order with two CASE expressions, so the
+  list stays a database page in either direction; `SettingsStore.librarySortAscending` (null = the key's default)
+  and `recentSearches` (JSON list, `RecentSearches.add` keeps eight, newest first, no repeats) back the UI. Tags (F77):
+  `LibraryOverview.tags` lists every tag in use (from `tags_json`), the paged queries take a `tag` matched as a whole
+  quoted JSON string, and `TagsSheet` / `TagFilterSheet` edit and filter by them.
+- **Duplicate-aware auto-capture (R32/F75).** `scanner/PageSignature.kt`: `PageSignature.of` shrinks the page inside
+  its outline to 32 x 32 and normalises brightness and contrast; `isSamePage` compares mean difference against 0.22.
+  `OpenCvDocumentAnalyzer` keeps the signature of each auto-capture and, on a would-be capture, skips a matching
+  page (guidance `SAME_PAGE`); `SharpnessGate` makes it wait for a frame about as sharp as the recent steady ones.
+- **Share PDF card (R28/F73).** `imaging/PdfShare.kt` holds the maths: `extrapolate` (two sample pages rendered
+  through `PdfExporter`, scaled to the page count), `pickQuality` (best quality under a size target, else Small) and
+  `shrinkPlan` (lower qualities, then Small at 1000/800/600 px) with `build` running the plan until the file fits.
+  `DocumentRepository.estimatePdfSizes`/`exportPdfSelection` wire it; `SharePdfSheet` (opened from the Export sheet's
+  PDF row) shows page ticks, the three qualities with "≈ size", and the Keep-under chips.
 - **Fast save from the camera (R26/F68).** `data/ReviewMode` (Settings › Scanning › Check pages before saving; default
   If needed) reaches `CameraScannerScreen` through `AppViewModel`/`ScanProNavHost`. `scanner/FastSave.kt` holds the
   rule: a page needs a look when its crop is the whole frame (no outline found) or the F64 quality check flagged it.
-  `reviewOrSave()` runs on Done: Always opens the review; otherwise it fills in any missing crop or quality result in
-  the background and either calls `saveReviewed()` directly or opens the review on the first page that needs a look.
+  `reviewOrSave()` runs on Done: `FastSave.reviewWithoutChecking` (Always, a retake of a saved page, or the review
+  was left via Add page / Back) opens the review at once; otherwise missing crop and quality results are worked out
+  from one decode per page (`OpenCvScanProcessor.inspect`) and stored, the composed ID page is trusted, and it either
+  calls `saveReviewed()` or opens the review on the first page that needs a look.
 - **ID card: both sides on one page.** `scanner/IdCardComposer.kt` cuts each side out of its photo along the guide
   crop (`ImageProcessor.cropSourceToNewFile`), scales both to the same width and places them on a white A4-shaped
-  page, front above back, with a hairline border. The camera does this when Done is tapped after the second side
+  page, front above back, with a hairline border (`ImageProcessor.cropSourceToBitmap`: one decode per side, no temporary
+  file). The camera does this when Done is tapped after the second side
   (`CameraScannerScreen.finishScan`), replacing the two captures with the one page, so the review, the filters and
   the saved document all see a single page. Retake on that page clears it and starts both sides again.
 - **Instrumented tests** (`app/src/androidTest`): `AppSmokeTest` plus, from 2026-11-08, device tests for the launch
@@ -281,6 +299,8 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   sheets back until it ends, and the crash prompt waits too. It replaced the animated splash icon (`ic_launcher_splash`).
 
 ## 13. Modules and dependencies
+
+All dependency coordinates live in `gradle/libs.versions.toml` (F71, 2026-11-08): `:app` uses `libs.*` accessors with shared `[versions]` refs for Compose BOM, CameraX, Room, Hilt, ML Kit and the test libraries, like `:translate` and `:baselineprofile` before it; lint's `UseTomlInstead` is on.
 
 | Module | Purpose |
 |---|---|

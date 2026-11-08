@@ -6,8 +6,10 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.content.FileProvider
 import com.example.scanpro.BuildConfig
 import androidx.core.net.toUri
+import com.example.scanpro.core.diagnostics.AppDiagnostics
 
 /**
  * Where feedback goes. Fill these in before release: the address receives "Give feedback", "Report an
@@ -45,29 +47,89 @@ enum class SupportDelivery(@param:StringRes private val confirmationRes: Int) {
 }
 
 fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
-    val subject = context.getString(topic.subjectRes)
-    val body = "${context.getString(topic.promptRes)}\n\n\n—\n${supportDetails()}"
+    AppDiagnostics.recordEvent("Support", "Contact support initiated for topic: ${topic.name}")
+
+    val isIssue = topic == SupportTopic.ISSUE
+    val reportUri = if (isIssue) {
+        runCatching {
+            val reportFile = AppDiagnostics.generateReportFile(context)
+            FileProvider.getUriForFile(context, "${context.packageName}.files", reportFile)
+        }.getOrNull()
+    } else null
+
+    val subject = if (isIssue) {
+        "${context.getString(topic.subjectRes)} [${BuildConfig.VERSION_NAME} - ${Build.MANUFACTURER} ${Build.MODEL}]"
+    } else {
+        context.getString(topic.subjectRes)
+    }
+
+    val body = if (isIssue) {
+        val sysSummary = AppDiagnostics.buildSystemInfo(context)
+        val recentCrash = AppDiagnostics.getRecentCrashReport(context)
+        val crashSection = if (!recentCrash.isNullOrBlank()) {
+            "[Recent Crash Detected]\n${recentCrash.take(1000)}\n(Full crash trace included in attached report)\n"
+        } else {
+            "[Recent Crash: None]"
+        }
+
+        """
+        |${context.getString(topic.promptRes)}
+        |
+        |
+        |—
+        |[System Diagnostics]
+        |$sysSummary
+        |
+        |$crashSection
+        |
+        |(Full diagnostic report and recent app logs are attached as scanpro_issue_report.txt)
+        """.trimMargin()
+    } else {
+        "${context.getString(topic.promptRes)}\n\n\n—\n${supportDetails()}"
+    }
+
     val email = Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
         putExtra(Intent.EXTRA_EMAIL, arrayOf(SupportLinks.EMAIL))
         putExtra(Intent.EXTRA_SUBJECT, subject)
         putExtra(Intent.EXTRA_TEXT, body)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (reportUri != null) {
+            putExtra(Intent.EXTRA_STREAM, reportUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
     }
     try {
         context.startActivity(email)
         return SupportDelivery.EMAIL
     } catch (_: ActivityNotFoundException) {
     }
+
     val share = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
+        putExtra(Intent.EXTRA_EMAIL, arrayOf(SupportLinks.EMAIL))
         putExtra(Intent.EXTRA_SUBJECT, subject)
         putExtra(Intent.EXTRA_TEXT, context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n\n$body")
+        if (reportUri != null) {
+            putExtra(Intent.EXTRA_STREAM, reportUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+    }
+    val chooser = Intent.createChooser(share, subject).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     return try {
-        context.startActivity(Intent.createChooser(share, subject))
+        context.startActivity(chooser)
         SupportDelivery.SHARE
     } catch (_: ActivityNotFoundException) {
-        copyText(context, context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n" + context.getString(R.string.support_subject_line, subject) + "\n\n$body")
+        val clipboardContent = if (isIssue) {
+            context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n" +
+                context.getString(R.string.support_subject_line, subject) + "\n\n$body\n\n" +
+                AppDiagnostics.buildFullReport(context)
+        } else {
+            context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n" +
+                context.getString(R.string.support_subject_line, subject) + "\n\n$body"
+        }
+        copyText(context, clipboardContent)
         SupportDelivery.CLIPBOARD
     }
 }
-

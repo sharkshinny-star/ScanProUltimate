@@ -3,6 +3,7 @@ package com.example.scanpro.feature.tools
 import androidx.compose.material.icons.filled.Article
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -68,6 +69,7 @@ import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -77,6 +79,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -459,9 +462,9 @@ fun PdfToolsScreen(
                     context = context,
                     uri = uri,
                     onDismiss = { showCompressDialog = false },
-                    onConfirm = { preset ->
+                    onConfirm = { preset, customTargetBytes ->
                         showCompressDialog = false
-                        viewModel.compress(uri, preset)
+                        viewModel.compress(uri, preset, customTargetBytes)
                     }
                 )
             }
@@ -590,10 +593,13 @@ private fun CompressPdfDialog(
     context: android.content.Context,
     uri: Uri,
     onDismiss: () -> Unit,
-    onConfirm: (preset: CompressionPreset) -> Unit
+    onConfirm: (preset: CompressionPreset, customTargetBytes: Long?) -> Unit
 ) {
     var originalSize by remember { mutableLongStateOf(0L) }
     var preset by remember { mutableStateOf(CompressionPreset.BALANCED) }
+    var isCustomTarget by remember { mutableStateOf(false) }
+    var targetInput by remember { mutableStateOf("") }
+    var targetUnit by remember { mutableStateOf("KB") }
 
     LaunchedEffect(uri) {
         withContext(Dispatchers.IO) {
@@ -603,35 +609,296 @@ private fun CompressPdfDialog(
         }
     }
 
+    val customBytes: Long? = remember(targetInput, targetUnit) {
+        val number = targetInput.trim().toDoubleOrNull()
+        if (number != null && number > 0.0) {
+            if (targetUnit == "MB") {
+                (number * 1024.0 * 1024.0).toLong()
+            } else {
+                (number * 1024.0).toLong()
+            }
+        } else null
+    }
+
+    val isTargetTooLarge = isCustomTarget && customBytes != null && originalSize > 0 && customBytes >= originalSize
+    val isTargetZero = isCustomTarget && targetInput.isNotBlank() && (customBytes == null || customBytes <= 0)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.tools_compress_pdf)) },
         text = {
-            Column {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(stringResource(R.string.tools_compress_current_size), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatBytes(LocalContext.current, originalSize), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(R.string.tools_compress_current_size),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            formatBytes(LocalContext.current, originalSize),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                // Three real presets rather than a slider: the engine has three settings, and how much a
-                // file shrinks depends on what is in it, so no number is promised up front.
+
                 CompressionPreset.entries.forEach { item ->
+                    val isSelected = !isCustomTarget && preset == item
+                    val estFraction = when (item) {
+                        CompressionPreset.HIGH -> 0.65f
+                        CompressionPreset.BALANCED -> 0.40f
+                        CompressionPreset.MAXIMUM -> 0.20f
+                    }
+                    val estBytes = (originalSize * estFraction).toLong()
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { preset = item }
-                            .padding(vertical = 6.dp)
+                            .clickable {
+                                isCustomTarget = false
+                                preset = item
+                            }
+                            .padding(vertical = 4.dp, horizontal = 2.dp)
                     ) {
-                        RadioButton(selected = preset == item, onClick = { preset = item })
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(stringResource(item.labelRes), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                            Text(stringResource(item.descriptionRes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = {
+                                isCustomTarget = false
+                                preset = item
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(item.labelRes),
+                                fontWeight = FontWeight.SemiBold,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                stringResource(item.descriptionRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (originalSize > 0) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier.align(Alignment.CenterVertically)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.tools_compress_estimated_tag, formatBytes(LocalContext.current, estBytes)),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                     }
                 }
+
+                // 4th option: Custom Target Size
+                val isCustomSelected = isCustomTarget
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { isCustomTarget = true }
+                        .padding(vertical = 4.dp, horizontal = 2.dp)
+                ) {
+                    RadioButton(
+                        selected = isCustomSelected,
+                        onClick = { isCustomTarget = true }
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.tools_compress_preset_custom),
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            stringResource(R.string.tools_compress_preset_custom_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (isCustomSelected && customBytes != null && customBytes > 0 && !isTargetTooLarge) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.tools_compress_estimated_tag, formatBytes(LocalContext.current, customBytes)),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+                }
+
+                if (isCustomTarget) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = targetInput,
+                            onValueChange = { text ->
+                                if (text.isEmpty() || text.matches(Regex("""^\d*\.?\d*$"""))) {
+                                    targetInput = text
+                                }
+                            },
+                            label = { Text(stringResource(R.string.tools_compress_custom_target_hint)) },
+                            placeholder = { Text(if (targetUnit == "KB") "e.g. 500" else "e.g. 0.5") },
+                            singleLine = true,
+                            isError = isTargetTooLarge || isTargetZero,
+                            supportingText = {
+                                if (isTargetTooLarge) {
+                                    Text(
+                                        stringResource(R.string.tools_compress_err_target_larger, formatBytes(LocalContext.current, originalSize)),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                } else if (isTargetZero) {
+                                    Text(
+                                        stringResource(R.string.tools_compress_err_target_positive),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                } else if (customBytes != null && customBytes > 0 && originalSize > 0) {
+                                    val saved = originalSize - customBytes
+                                    val pct = ((saved.toDouble() / originalSize.toDouble()) * 100).toInt().coerceIn(1, 95)
+                                    Text(stringResource(R.string.tools_compress_target_valid_hint, pct))
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Row(
+                            modifier = Modifier.padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            FilterChip(
+                                selected = targetUnit == "KB",
+                                onClick = { targetUnit = "KB" },
+                                label = { Text(stringResource(R.string.tools_compress_unit_kb)) }
+                            )
+                            FilterChip(
+                                selected = targetUnit == "MB",
+                                onClick = { targetUnit = "MB" },
+                                label = { Text(stringResource(R.string.tools_compress_unit_mb)) }
+                            )
+                        }
+                    }
+                }
+
+                if (originalSize > 0) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    if (isTargetTooLarge) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Text(
+                                    text = stringResource(
+                                        R.string.tools_compress_warning_larger_than_original,
+                                        formatBytes(LocalContext.current, originalSize)
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    } else if (!isCustomTarget || (customBytes != null && customBytes > 0)) {
+                        val (summaryBytes, summaryPercent) = if (isCustomTarget) {
+                            val bytes = customBytes ?: (originalSize * 0.40f).toLong()
+                            val pct = (((originalSize - bytes).toDouble() / originalSize.toDouble()) * 100).toInt().coerceIn(1, 95)
+                            bytes to pct
+                        } else {
+                            val fraction = when (preset) {
+                                CompressionPreset.HIGH -> 0.65f
+                                CompressionPreset.BALANCED -> 0.40f
+                                CompressionPreset.MAXIMUM -> 0.20f
+                            }
+                            val pct = when (preset) {
+                                CompressionPreset.HIGH -> 35
+                                CompressionPreset.BALANCED -> 60
+                                CompressionPreset.MAXIMUM -> 80
+                            }
+                            (originalSize * fraction).toLong() to pct
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Compress,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Text(
+                                    text = stringResource(
+                                        R.string.tools_compress_expected_summary,
+                                        formatBytes(LocalContext.current, summaryBytes),
+                                        formatBytes(LocalContext.current, originalSize),
+                                        summaryPercent
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     stringResource(R.string.tools_compress_note),
@@ -641,7 +908,13 @@ private fun CompressPdfDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(preset) }) {
+            val canConfirm = if (isCustomTarget) {
+                customBytes != null && customBytes > 0 && (originalSize <= 0 || customBytes < originalSize)
+            } else true
+            Button(
+                onClick = { onConfirm(preset, if (isCustomTarget) customBytes else null) },
+                enabled = canConfirm
+            ) {
                 Text(stringResource(R.string.tools_compress_pdf))
             }
         },
@@ -1203,51 +1476,86 @@ private fun ProcessingOverlay(
     label: String,
     onCancel: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)
+    Dialog(
+        onDismissRequest = onCancel,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        BackHandler(onBack = onCancel)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
+            contentAlignment = Alignment.Center
+        ) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .padding(24.dp),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(44.dp),
+                        strokeWidth = 3.5.dp
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    val defaultTitle = stringResource(R.string.tools_processing_pdf)
+                    val showSubtitle = label.isNotBlank() && label != defaultTitle
+                    val title = if (total > 0 && showSubtitle) defaultTitle else label.ifBlank { defaultTitle }
+
                     Text(
-                        text = stringResource(R.string.tools_processing_pdf),
+                        text = title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        // Screen readers hear each step as it changes.
-                        modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
-                    )
-                    if (total > 0) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        LinearProgressIndicator(
-                            progress = { (current.toFloat() / total.toFloat()).coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
+
+                    if (total > 0 && showSubtitle) {
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = stringResource(R.string.tools_progress_count, current, total),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    if (total > 0) {
+                        LinearProgressIndicator(
+                            progress = { (current.toFloat() / total.toFloat()).coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = stringResource(R.string.tools_progress_count, current, total),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(20.dp))
                     OutlinedButton(onClick = onCancel) {
                         Text(stringResource(R.string.common_cancel))
@@ -1274,6 +1582,12 @@ private fun ResultDialog(
         }
     )
 
+    val isCompression = result.originalSizeBytes > 0 && result.outputSizeBytes > 0
+    val savedBytes = if (isCompression) (result.originalSizeBytes - result.outputSizeBytes).coerceAtLeast(0L) else 0L
+    val savingsPct = if (isCompression) {
+        ((savedBytes.toDouble() / result.originalSizeBytes.toDouble()) * 100).toInt().coerceIn(0, 99)
+    } else 0
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -1282,7 +1596,14 @@ private fun ResultDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(result.outputFile.nameWithoutExtension, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(
+                    text = result.outputFile.nameWithoutExtension,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
                 }
@@ -1293,71 +1614,198 @@ private fun ResultDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = result.message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Primary Action Buttons: Preview PDF
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onView,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                if (isCompression) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(if (result.outputFile.extension.equals("pdf", ignoreCase = true)) R.string.tools_result_preview_pdf else R.string.tools_result_open))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(14.dp)
+                        ) {
+                            if (savingsPct > 0) {
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(bottom = 10.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Compress,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.tools_result_saved_badge, savingsPct),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        stringResource(R.string.tools_result_original_label),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        formatBytes(context, result.originalSizeBytes),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        stringResource(R.string.tools_result_compressed_label),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        formatBytes(context, result.outputSizeBytes),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
                     }
+                } else {
+                    Text(
+                        text = result.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Direct Quick Action Cards: Share & Save PDF to Local
-                Row(
+                // Primary Action Button: Preview PDF
+                FilledTonalButton(
+                    onClick = onView,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Card(
-                        onClick = { shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name) },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                        shape = CircleShape,
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.common_share), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                        }
-                    }
-
-                    Card(
-                        onClick = onSaveAs,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                        shape = CircleShape,
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(Icons.Default.Download, contentDescription = saveLabel, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                        }
-                    }
+                    Icon(
+                        Icons.Default.Visibility,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        stringResource(
+                            if (result.outputFile.extension.equals("pdf", ignoreCase = true))
+                                R.string.tools_result_preview_pdf
+                            else
+                                R.string.tools_result_open
+                        ),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Quick Actions: Share & Save PDF with icon and label grouped vertically
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(stringResource(R.string.common_share), style = MaterialTheme.typography.labelSmall)
-                    Text(stringResource(R.string.tools_share_save_to_device), style = MaterialTheme.typography.labelSmall)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name)
+                            }
+                            .padding(8.dp)
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = CircleShape,
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = stringResource(R.string.common_share),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            stringResource(R.string.common_share),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSaveAs() }
+                            .padding(8.dp)
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = CircleShape,
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                Icon(
+                                    Icons.Default.Download,
+                                    contentDescription = saveLabel,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            stringResource(R.string.tools_share_save_to_device),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) { Text(stringResource(R.string.common_done)) }
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(stringResource(R.string.common_done))
+            }
         }
     )
 }
@@ -1757,11 +2205,12 @@ private fun PdfPageOrganizerSheet(
     val keptCount = pages.count { it.selected }
     var previewPage by remember { mutableStateOf<ThumbnailPageModel?>(null) }
 
-    if (mode == "organize") {
+    if (mode == "organize" || mode == "extract") {
         if (isLoading) {
+            val titleRes = if (mode == "extract") R.string.tools_organizer_extract_title else R.string.tools_organizer_organize_title
             AlertDialog(
                 onDismissRequest = onClose,
-                title = { Text(stringResource(R.string.tools_organizer_organize_title)) },
+                title = { Text(stringResource(titleRes)) },
                 text = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -1790,7 +2239,7 @@ private fun PdfPageOrganizerSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.Description,
+                            if (mode == "extract") Icons.AutoMirrored.Filled.DriveFileMove else Icons.Default.Description,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -1799,7 +2248,7 @@ private fun PdfPageOrganizerSheet(
                 },
                 title = {
                     Text(
-                        stringResource(R.string.tools_organize_single_page_title),
+                        stringResource(if (mode == "extract") R.string.tools_extract_single_page_title else R.string.tools_organize_single_page_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -1827,7 +2276,7 @@ private fun PdfPageOrganizerSheet(
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    stringResource(R.string.tools_organize_single_page_hint),
+                                    stringResource(if (mode == "extract") R.string.tools_extract_single_page_hint else R.string.tools_organize_single_page_hint),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -1836,7 +2285,7 @@ private fun PdfPageOrganizerSheet(
                         }
                         Spacer(Modifier.height(14.dp))
                         Text(
-                            stringResource(R.string.tools_organize_single_page_desc),
+                            stringResource(if (mode == "extract") R.string.tools_extract_single_page_desc else R.string.tools_organize_single_page_desc),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center

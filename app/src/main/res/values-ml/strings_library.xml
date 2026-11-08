@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">സമീപകാലം</string>
     <string name="lib_sort_name">പേര്</string>
     <string name="lib_sort_size">വലുപ്പം</string>
+    <string name="lib_sort_created">സൃഷ്ടിച്ച തീയതി</string>
+    <string name="lib_sort_newest_first">പുതിയത് ആദ്യം</string>
+    <string name="lib_sort_oldest_first">പഴയത് ആദ്യം</string>
+    <string name="lib_sort_a_to_z">A മുതൽ Z</string>
+    <string name="lib_sort_z_to_a">Z മുതൽ A</string>
+    <string name="lib_sort_largest_first">വലുത് ആദ്യം</string>
+    <string name="lib_sort_smallest_first">ചെറുത് ആദ്യം</string>
+    <string name="lib_recent_searches">സമീപകാല തിരയലുകൾ</string>
+    <string name="lib_recent_searches_clear">മായ്ക്കുക</string>
     <string name="lib_menu_import_photos">ഫോട്ടോകൾ ഇംപോർട്ട് ചെയ്യുക</string>
     <string name="lib_menu_import_pdf">PDF ഇംപോർട്ട് ചെയ്യുക</string>
     <string name="lib_menu_rename_folder">ഫോൾഡറിന്റെ പേര് മാറ്റുക</string>
@@ -25,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">റീസൈക്കിൾ ബിൻ (%1$d)</string>
     <string name="lib_scan">സ്കാൻ</string>
     <string name="lib_filter_all">എല്ലാം</string>
+    <string name="lib_filter_tags">ടാഗുകൾ</string>
+    <string name="lib_filter_all_tags">എല്ലാ ടാഗുകളും</string>
     <string name="lib_filter_favorites">പ്രിയപ്പെട്ടവ</string>
     <string name="lib_empty_no_matching">യോജിക്കുന്ന ഡോക്യുമെന്റുകളൊന്നുമില്ല</string>
     <string name="lib_empty_hint">ഒരു പേജ് സ്കാൻ ചെയ്യൂ, അല്ലെങ്കിൽ നിങ്ങളുടെ കൈയിലുള്ള ഫോട്ടോകളോ PDF-ഓ ചേർക്കൂ.</string>
@@ -181,7 +192,7 @@
     <string name="settings_rate_subtitle">Google Play-ൽ റേറ്റിംഗ് നൽകുക</string>
     <string name="settings_feedback_subtitle">എന്ത് നന്നായി, എന്ത് ശരിയായില്ല എന്ന് പറയൂ</string>
     <string name="settings_report_issue_title">ഒരു പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക</string>
-    <string name="settings_report_issue_subtitle">ആപ്പ്, ഡിവൈസ് വിവരങ്ങൾ സ്വയം ചേർക്കും</string>
+    <string name="settings_report_issue_subtitle">ആപ്പ് ലോഗുകളും ഡിവൈസ് വിവരങ്ങളും സ്വയം ചേർക്കും</string>
     <string name="settings_share_subtitle">Play Store ലിങ്ക് ഒരു സുഹൃത്തിന് അയയ്ക്കുക</string>
     <string name="settings_library_title">നിങ്ങളുടെ ലൈബ്രറി</string>
     <string name="settings_library_subtitle">ഈ ഡിവൈസിൽ മാത്രം സൂക്ഷിച്ചിരിക്കുന്നു</string>

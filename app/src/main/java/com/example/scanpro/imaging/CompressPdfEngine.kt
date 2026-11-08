@@ -58,7 +58,9 @@ object CompressPdfEngine {
         inputUri: Uri,
         preset: CompressionPreset,
         /** Where the result goes; under cache/exports, the only cache folder the FileProvider can share. */
-        outputFile: File = PdfToolsEngine.outputLocation(context, "compressed_${UUID.randomUUID()}.pdf")
+        outputFile: File = PdfToolsEngine.outputLocation(context, "compressed_${UUID.randomUUID()}.pdf"),
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        customTargetBytes: Long? = null
     ): CompressionResult = withContext(Dispatchers.IO) {
         val outputDir = outputFile.parentFile!!.apply { mkdirs() }
         val tempInput = File(outputDir, "temp_in_${UUID.randomUUID()}.pdf")
@@ -69,13 +71,25 @@ object CompressPdfEngine {
             } ?: userError(R.string.err_could_not_open_input_pdf)
 
             val originalSize = tempInput.length()
+            if (customTargetBytes != null && originalSize > 0 && customTargetBytes >= originalSize) {
+                userError(R.string.tools_compress_err_target_larger_engine)
+            }
             val pageTotal = runCatching { PDDocument.load(tempInput, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { it.numberOfPages } }.getOrDefault(1)
             val hasSearchableText = checkSearchableText(tempInput)
+
+            val (effectiveScale, effectiveQuality) = if (customTargetBytes != null && customTargetBytes > 0L && originalSize > 0L) {
+                val ratio = (customTargetBytes.toDouble() / originalSize.toDouble()).coerceIn(0.05, 1.2)
+                val scale = (Math.sqrt(ratio) * 0.9).toFloat().coerceIn(0.25f, 0.95f)
+                val quality = (30 + (ratio * 55)).toInt().coerceIn(30, 92)
+                scale to quality
+            } else {
+                preset.targetScale to preset.jpegQuality
+            }
 
             if (hasSearchableText) {
                 // Strategy A: Preserve vector text/OCR layers while recompressing embedded images
                 val success = runCatching {
-                    recompressEmbeddedImages(tempInput, outputFile, preset)
+                    recompressEmbeddedImages(context, tempInput, outputFile, effectiveScale, effectiveQuality, onProgress)
                     true
                 }.getOrDefault(false)
 
@@ -91,7 +105,7 @@ object CompressPdfEngine {
             }
 
             // Strategy B: Rasterise pages at downscaled target resolution & rebuild PDF
-            rasterCompressPdf(context, tempInput, outputFile, preset)
+            rasterCompressPdf(context, tempInput, outputFile, effectiveScale, effectiveQuality, onProgress)
 
             // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.
             // The original is untouched, so whatever text it had is still there.
@@ -127,25 +141,27 @@ object CompressPdfEngine {
     }.getOrDefault(false)
 
     private suspend fun recompressEmbeddedImages(
+        context: Context,
         inputPdf: File,
         outputPdf: File,
-        preset: CompressionPreset
+        targetScale: Float,
+        jpegQuality: Int,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ) {
         with(PdfToolsEngine) {
             PDDocument.load(inputPdf, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
         }.use { pdDoc ->
-            // Pages often share one resource dictionary or one image (a logo, a background). Each original image is
-            // recompressed once and reused; without this a shared image was shrunk again on every page.
+            val totalPages = pdDoc.numberOfPages
             val replaced = HashMap<com.tom_roush.pdfbox.cos.COSBase, PDImageXObject>()
             val produced = HashSet<com.tom_roush.pdfbox.cos.COSBase>()
-            for (page in pdDoc.pages) {
-                val resources = page.resources ?: continue
+            pdDoc.pages.forEachIndexed { index, page ->
+                currentCoroutineContext().ensureActive()
+                val pageLabel = context.getString(R.string.tools_compress_progress_page, index + 1, totalPages)
+                onProgress(index + 1, totalPages, pageLabel)
+                val resources = page.resources ?: return@forEachIndexed
                 for (xObjectName in resources.xObjectNames) {
-                    // Cancel stops at the next image rather than after the whole file.
                     currentCoroutineContext().ensureActive()
                     val xObject = resources.getXObject(xObjectName)
-                    // Stencil masks (1-bit text layers of scanner PDFs, painted in the fill colour) are already tiny
-                    // and cannot be expressed as a JPEG: re-encoding one paints an opaque picture over the page.
                     if (xObject is PDImageXObject && !xObject.isStencil) {
                         val original = xObject.cosObject
                         if (original in produced) continue
@@ -155,11 +171,11 @@ object CompressPdfEngine {
                             continue
                         }
                         val bitmap = xObject.image ?: continue
-                        val scaledW = (bitmap.width * preset.targetScale).toInt().coerceAtLeast(1)
-                        val scaledH = (bitmap.height * preset.targetScale).toInt().coerceAtLeast(1)
+                        val scaledW = (bitmap.width * targetScale).toInt().coerceAtLeast(1)
+                        val scaledH = (bitmap.height * targetScale).toInt().coerceAtLeast(1)
                         val scaledBitmap = bitmap.scale(scaledW, scaledH, true)
                         try {
-                            val recompressedImage = JPEGFactory.createFromImage(pdDoc, scaledBitmap, preset.jpegQuality / 100f)
+                            val recompressedImage = JPEGFactory.createFromImage(pdDoc, scaledBitmap, jpegQuality / 100f)
                             replaced[original] = recompressedImage
                             produced += recompressedImage.cosObject
                             resources.put(xObjectName, recompressedImage)
@@ -169,6 +185,7 @@ object CompressPdfEngine {
                     }
                 }
             }
+            onProgress(totalPages, totalPages, context.getString(R.string.tools_compress_progress_rebuilding))
             pdDoc.save(outputPdf)
         }
     }
@@ -177,7 +194,9 @@ object CompressPdfEngine {
         context: Context,
         inputPdf: File,
         outputPdf: File,
-        preset: CompressionPreset
+        targetScale: Float,
+        jpegQuality: Int,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ) {
         val renderDir = File(context.cacheDir, "raster_${UUID.randomUUID()}").apply { mkdirs() }
         val pages = mutableListOf<ScanPage>()
@@ -185,10 +204,13 @@ object CompressPdfEngine {
         try {
             ParcelFileDescriptor.open(inputPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
                 PdfRenderer(descriptor).use { renderer ->
-                    for (index in 0 until renderer.pageCount) {
+                    val totalPages = renderer.pageCount
+                    for (index in 0 until totalPages) {
                         currentCoroutineContext().ensureActive()
+                        val pageLabel = context.getString(R.string.tools_compress_progress_page, index + 1, totalPages)
+                        onProgress(index + 1, totalPages, pageLabel)
                         renderer.openPage(index).use { page ->
-                            val scale = preset.targetScale * 2.0f
+                            val scale = targetScale * 2.0f
                             val width = (page.width * scale).toInt().coerceAtLeast(1)
                             val height = (page.height * scale).toInt().coerceAtLeast(1)
                             val bitmap = createBitmap(width, height)
@@ -196,7 +218,7 @@ object CompressPdfEngine {
                             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
                             val pageFile = File(renderDir, "page_${index.toString().padStart(3, '0')}.jpg")
-                            ImageProcessor.saveBitmapJpeg(bitmap, pageFile, preset.jpegQuality)
+                            ImageProcessor.saveBitmapJpeg(bitmap, pageFile, jpegQuality)
                             bitmap.recycle()
 
                             pages.add(
@@ -213,11 +235,14 @@ object CompressPdfEngine {
                 }
             }
 
-            val pdfQuality = when (preset) {
-                CompressionPreset.HIGH -> PdfQuality.HIGH
-                CompressionPreset.BALANCED -> PdfQuality.BALANCED
-                CompressionPreset.MAXIMUM -> PdfQuality.SMALL
+            val pdfQuality = when {
+                jpegQuality >= 80 -> PdfQuality.HIGH
+                jpegQuality >= 65 -> PdfQuality.BALANCED
+                else -> PdfQuality.SMALL
             }
+
+            val rebuildingLabel = context.getString(R.string.tools_compress_progress_rebuilding)
+            onProgress(pages.size, pages.size, rebuildingLabel)
 
             PdfExporter.export(
                 pages = pages,
@@ -225,7 +250,10 @@ object CompressPdfEngine {
                 quality = pdfQuality,
                 pageSize = PdfPageSize.AUTO,
                 searchable = false,
-                pageNumbers = false
+                pageNumbers = false,
+                beforePage = { number, total ->
+                    onProgress(number, total, rebuildingLabel)
+                }
             )
         } finally {
             renderDir.deleteRecursively()

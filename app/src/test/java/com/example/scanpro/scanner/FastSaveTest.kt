@@ -32,6 +32,21 @@ class FastSaveTest {
     }
 
     @Test
+    fun `a composed ID page is trusted although it fills its frame`() {
+        val needing = FastSave.pagesNeedingReview(listOf(CropQuad.DEFAULT, CropQuad.DEFAULT), listOf(emptySet(), emptySet()), trusted = setOf(0))
+        assertEquals("only the untrusted whole-frame page", listOf(1), needing)
+    }
+
+    @Test
+    fun `Always, a retake and coming back from the review skip the check`() {
+        assertTrue(FastSave.reviewWithoutChecking(ReviewMode.ALWAYS, retaking = false, returnToReview = false))
+        assertTrue(FastSave.reviewWithoutChecking(ReviewMode.NEVER, retaking = true, returnToReview = false))
+        assertTrue(FastSave.reviewWithoutChecking(ReviewMode.WHEN_NEEDED, retaking = false, returnToReview = true))
+        assertFalse(FastSave.reviewWithoutChecking(ReviewMode.WHEN_NEEDED, retaking = false, returnToReview = false))
+        assertFalse(FastSave.reviewWithoutChecking(ReviewMode.NEVER, retaking = false, returnToReview = false))
+    }
+
+    @Test
     fun `the setting decides`() {
         assertTrue(FastSave.shouldReview(ReviewMode.ALWAYS, emptyList()))
         assertFalse(FastSave.shouldReview(ReviewMode.NEVER, listOf(0)))

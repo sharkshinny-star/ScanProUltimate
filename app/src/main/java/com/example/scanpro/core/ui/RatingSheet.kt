@@ -1,5 +1,6 @@
 package com.example.scanpro.core.ui
 
+import androidx.compose.ui.graphics.luminance
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -67,7 +68,12 @@ private val COPY = listOf(
     RatingCopy("🤩", R.string.rate_title_5, R.string.rate_body_5, R.string.rate_label_5)
 )
 
-private val Gold = Color(0xFFFFB800)
+/**
+ * Star gold with enough contrast for an icon (WCAG 3:1) in both themes: #FFB800 is 10.9:1 on the dark window but
+ * only 1.7:1 on white, so the light theme uses the deeper gold the favourites mark already uses (3.4:1).
+ */
+private val Gold: Color
+    @Composable get() = if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) Color(0xFFFFB800) else Color(0xFFC47A00)
 
 /**
  * The one-time rating sheet, shown after the first saved document (the owner's "ScanPro New Look" design): an

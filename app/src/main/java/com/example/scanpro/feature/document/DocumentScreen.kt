@@ -291,9 +291,13 @@ fun DocumentRoute(
         onBack = onBack,
         onRename = viewModel::rename,
         onTags = viewModel::setTags,
+        libraryTags = viewModel.libraryTags.collectAsStateWithLifecycle().value,
         onFolder = viewModel::setFolder,
         onToggleFavorite = viewModel::toggleFavorite,
         onPdfQuality = viewModel::setPdfQuality,
+        pdfSizeEstimates = viewModel.pdfSizeEstimates.collectAsStateWithLifecycle().value,
+        onEstimatePdfSizes = viewModel::estimatePdfSizes,
+        onSharePdfSelection = viewModel::sharePdfSelection,
         onPdfPageSize = viewModel::setPdfPageSize,
         onSearchablePdf = viewModel::setSearchablePdf,
         onPageNumbers = viewModel::setPageNumbers,
@@ -364,9 +368,15 @@ internal fun DocumentDetailScreen(
     onBack: () -> Unit,
     onRename: (String) -> Unit,
     onTags: (String) -> Unit,
+    /** Tags in use across the library, offered as chips in the Tags sheet (R35). */
+    libraryTags: List<String> = emptyList(),
     onFolder: (String) -> Unit,
     onToggleFavorite: () -> Unit,
     onPdfQuality: (PdfQuality) -> Unit,
+    /** Share PDF card (R28): estimates for a page choice, how to ask for them, and the share itself. */
+    pdfSizeEstimates: Pair<Set<String>, Map<PdfQuality, Long>>? = null,
+    onEstimatePdfSizes: (Set<String>) -> Unit = {},
+    onSharePdfSelection: (Set<String>, PdfQuality, Long?) -> Unit = { _, _, _ -> },
     onPdfPageSize: (PdfPageSize) -> Unit,
     onSearchablePdf: (Boolean) -> Unit,
     onPageNumbers: (Boolean) -> Unit,
@@ -502,6 +512,7 @@ internal fun DocumentDetailScreen(
     var pdfSettingsOpen by rememberSaveable { mutableStateOf(false) }
     // Every way of getting the document out of the app, from the share icon in the top bar.
     var exportOpen by rememberSaveable { mutableStateOf(false) }
+    var sharePdfOpen by rememberSaveable { mutableStateOf(false) }
     // The rest of the per-page tools, from a long press on a page.
     var pageSheetOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -1007,7 +1018,7 @@ internal fun DocumentDetailScreen(
                     stringResource(R.string.doc_export_pdf),
                     if (document.searchablePdf) stringResource(R.string.doc_export_pdf_hint_searchable, quality, pageSize) else stringResource(R.string.doc_export_pdf_hint, quality, pageSize),
                     !busy,
-                    run(sharePdfNow)
+                    run { sharePdfOpen = true }
                 )
                 ExportRow(Icons.Default.Lock, stringResource(R.string.doc_protected_pdf), stringResource(R.string.doc_protected_pdf_hint), !busy, run { passwordOpen = true })
                 ExportRow(Icons.Default.Image, stringResource(R.string.doc_share_as_images), stringResource(R.string.doc_share_as_images_hint), !busy, run { shareImages(context, document) })
@@ -1085,6 +1096,18 @@ internal fun DocumentDetailScreen(
         }
     }
 
+    if (sharePdfOpen) {
+        SharePdfSheet(
+            pages = pages,
+            preferredQuality = document.pdfQuality,
+            estimates = pdfSizeEstimates?.second,
+            busy = busy,
+            onEstimate = onEstimatePdfSizes,
+            onShare = onSharePdfSelection,
+            onDismiss = { sharePdfOpen = false }
+        )
+    }
+
     if (pdfSettingsOpen) {
         ModalBottomSheet(onDismissRequest = { pdfSettingsOpen = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             Column(
@@ -1148,7 +1171,7 @@ internal fun DocumentDetailScreen(
             onConfirm = { splitAllOpen = false; onSplitDocument() }
         )
     }
-    if (tagsOpen) TextInputDialog(stringResource(R.string.doc_document_tags), document.tags.joinToString(", "), stringResource(R.string.doc_comma_separated_tags), allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
+    if (tagsOpen) TagsSheet(current = document.tags, suggestions = libraryTags, onDismiss = { tagsOpen = false }) { onTags(it.joinToString(", ")); tagsOpen = false }
     if (folderOpen) TextInputDialog(stringResource(R.string.doc_move_to_folder), document.folderName, stringResource(R.string.doc_folder_name), allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
 
     if (watermarkOpen) WatermarkDialog(onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }

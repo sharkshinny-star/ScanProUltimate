@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">ఇటీవలివి</string>
     <string name="lib_sort_name">పేరు</string>
     <string name="lib_sort_size">సైజ్</string>
+    <string name="lib_sort_created">సృష్టించిన తేదీ</string>
+    <string name="lib_sort_newest_first">కొత్తవి ముందు</string>
+    <string name="lib_sort_oldest_first">పాతవి ముందు</string>
+    <string name="lib_sort_a_to_z">A నుండి Z</string>
+    <string name="lib_sort_z_to_a">Z నుండి A</string>
+    <string name="lib_sort_largest_first">పెద్దవి ముందు</string>
+    <string name="lib_sort_smallest_first">చిన్నవి ముందు</string>
+    <string name="lib_recent_searches">ఇటీవలి శోధనలు</string>
+    <string name="lib_recent_searches_clear">తొలగించు</string>
     <string name="lib_menu_import_photos">ఫోటోలు ఇంపోర్ట్ చేయండి</string>
     <string name="lib_menu_import_pdf">PDF ఇంపోర్ట్ చేయండి</string>
     <string name="lib_menu_rename_folder">ఫోల్డర్ పేరు మార్చండి</string>
@@ -25,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">రీసైకిల్ బిన్ (%1$d)</string>
     <string name="lib_scan">స్కాన్</string>
     <string name="lib_filter_all">అన్నీ</string>
+    <string name="lib_filter_tags">ట్యాగ్‌లు</string>
+    <string name="lib_filter_all_tags">అన్ని ట్యాగ్‌లు</string>
     <string name="lib_filter_favorites">ఇష్టమైనవి</string>
     <string name="lib_empty_no_matching">సరిపోయే డాక్యుమెంట్‌లు లేవు</string>
     <string name="lib_empty_hint">ఒక పేజీని స్కాన్ చేయండి, లేదా మీ దగ్గర ఉన్న ఫోటోలు లేదా PDF తీసుకురండి.</string>
@@ -181,7 +192,7 @@
     <string name="settings_rate_subtitle">Google Playలో రేటింగ్ ఇవ్వండి</string>
     <string name="settings_feedback_subtitle">ఏది పనిచేస్తోంది, ఏది పనిచేయట్లేదో మాకు చెప్పండి</string>
     <string name="settings_report_issue_title">సమస్యను రిపోర్ట్ చేయండి</string>
-    <string name="settings_report_issue_subtitle">యాప్, డివైజ్ వివరాలు మీ కోసం నింపబడతాయి</string>
+    <string name="settings_report_issue_subtitle">యాప్ లాగ్‌లు, డివైజ్ వివరాలు మీ కోసం నింపబడతాయి</string>
     <string name="settings_share_subtitle">Play Store లింక్‌ను స్నేహితుడికి పంపండి</string>
     <string name="settings_library_title">మీ లైబ్రరీ</string>
     <string name="settings_library_subtitle">ఈ డివైజ్‌లో మాత్రమే స్టోర్ అవుతుంది</string>

@@ -29,6 +29,24 @@ class LibraryFiltersTest {
     }
 
     @Test
+    fun `date created and the other direction`() {
+        val created = listOf(doc("x", "x", 1, 1).copy(createdAt = 5), doc("y", "y", 2, 2).copy(createdAt = 9), doc("z", "z", 3, 3).copy(createdAt = 1))
+        assertEquals(listOf("y", "x", "z"), ids(created.filteredAndSorted("", false, LibrarySort.CREATED)))
+        assertEquals(listOf("z", "x", "y"), ids(created.filteredAndSorted("", false, LibrarySort.CREATED, ascending = true)))
+        assertEquals("oldest first", listOf("b", "c", "a", "d"), ids(docs.filteredAndSorted("", false, LibrarySort.UPDATED, ascending = true)))
+        assertEquals("Z to A", listOf("d", "c", "a", "b"), ids(docs.filteredAndSorted("", false, LibrarySort.NAME, ascending = false)))
+        assertEquals("smallest first", listOf("a", "d", "c", "b"), ids(docs.filteredAndSorted("", false, LibrarySort.SIZE, ascending = true)))
+    }
+
+    @Test
+    fun `a tag matches whole, ignoring case`() {
+        val tagged = listOf(doc("t", "t", 1, 1).copy(tags = listOf("Tax", "2026")), doc("u", "u", 2, 2).copy(tags = listOf("taxi")), doc("v", "v", 3, 3))
+        assertEquals(listOf("t"), ids(tagged.filteredAndSorted("", false, LibrarySort.UPDATED, tag = "tax")))
+        assertEquals("no tag keeps everything", 3, tagged.filteredAndSorted("", false, LibrarySort.UPDATED, tag = "").size)
+        assertEquals("whole tag only", emptyList<String>(), ids(tagged.filteredAndSorted("", false, LibrarySort.UPDATED, tag = "ta")))
+    }
+
+    @Test
     fun `names sort ignoring case`() {
         // "apple" (lower case) comes before "Banana" (upper case).
         assertEquals("b", docs.filteredAndSorted("", false, LibrarySort.NAME).first().id)

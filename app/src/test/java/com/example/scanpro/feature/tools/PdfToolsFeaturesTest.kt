@@ -111,12 +111,69 @@ class PdfToolsFeaturesTest {
     }
 
     @Test
+    fun extractPagesRejectsSinglePageDocument() = kotlinx.coroutines.runBlocking {
+        val dir = File(app.cacheDir, "test_extract_${System.currentTimeMillis()}").apply { mkdirs() }
+        val singlePagePdf = File(dir, "one_page.pdf")
+        val document = com.tom_roush.pdfbox.pdmodel.PDDocument()
+        document.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+        document.save(singlePagePdf)
+        document.close()
+
+        val outFile = File(dir, "extracted.pdf")
+        var thrown = false
+        try {
+            com.example.scanpro.imaging.PdfToolsEngine.extractPages(
+                context = app,
+                inputUri = android.net.Uri.fromFile(singlePagePdf),
+                selectedPageIndices = listOf(0),
+                outputFile = outFile
+            )
+        } catch (e: Exception) {
+            thrown = true
+            assertTrue(e.message?.contains("1 page") == true || e is com.example.scanpro.core.text.UserFacingException)
+        }
+        assertTrue("Extracting from a 1-page PDF must be rejected", thrown)
+    }
+
+    @Test
     fun toolsCardStringsReflectRenamedMergeAndSplitPdf() {
         assertEquals("Merge PDF", app.getString(com.example.scanpro.R.string.tools_card_merge))
         assertEquals("Split PDF", app.getString(com.example.scanpro.R.string.tools_card_split))
         assertEquals("Organise PDF", app.getString(com.example.scanpro.R.string.tools_card_organize))
         assertEquals("Organise PDF", app.getString(com.example.scanpro.R.string.tools_tile_organize))
+        assertEquals("Extract Pages", app.getString(com.example.scanpro.R.string.tools_card_extract))
+        assertEquals("Extract Pages", app.getString(com.example.scanpro.R.string.tools_tile_extract))
         assertTrue(app.getString(com.example.scanpro.R.string.tools_split_single_page_desc).contains("1 page"))
         assertTrue(app.getString(com.example.scanpro.R.string.tools_organize_single_page_desc).contains("1 page"))
+        assertTrue(app.getString(com.example.scanpro.R.string.tools_extract_single_page_desc).contains("1 page"))
+    }
+
+    @Test
+    fun compressPdfRejectsTargetSizeLargerThanOriginal() = kotlinx.coroutines.runBlocking {
+        val dir = File(app.cacheDir, "test_compress_${System.currentTimeMillis()}").apply { mkdirs() }
+        val testPdf = File(dir, "doc.pdf")
+        val document = com.tom_roush.pdfbox.pdmodel.PDDocument()
+        document.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+        document.save(testPdf)
+        document.close()
+
+        val fileSize = testPdf.length()
+        val targetLarger = fileSize + 1024L
+        val outFile = File(dir, "compressed.pdf")
+
+        var thrown = false
+        try {
+            com.example.scanpro.imaging.CompressPdfEngine.compressPdf(
+                context = app,
+                inputUri = android.net.Uri.fromFile(testPdf),
+                preset = com.example.scanpro.imaging.CompressionPreset.BALANCED,
+                outputFile = outFile,
+                customTargetBytes = targetLarger
+            )
+        } catch (e: Exception) {
+            thrown = true
+            assertTrue(e is com.example.scanpro.core.text.UserFacingException)
+        }
+        assertTrue("Target size larger than original must be rejected", thrown)
     }
 }

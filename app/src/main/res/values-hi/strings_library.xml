@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">हाल के</string>
     <string name="lib_sort_name">नाम</string>
     <string name="lib_sort_size">साइज़</string>
+    <string name="lib_sort_created">बनाने की तारीख</string>
+    <string name="lib_sort_newest_first">सबसे नया पहले</string>
+    <string name="lib_sort_oldest_first">सबसे पुराना पहले</string>
+    <string name="lib_sort_a_to_z">A से Z</string>
+    <string name="lib_sort_z_to_a">Z से A</string>
+    <string name="lib_sort_largest_first">सबसे बड़ा पहले</string>
+    <string name="lib_sort_smallest_first">सबसे छोटा पहले</string>
+    <string name="lib_recent_searches">हाल की खोजें</string>
+    <string name="lib_recent_searches_clear">साफ़ करें</string>
     <string name="lib_menu_import_photos">फ़ोटो इंपोर्ट करें</string>
     <string name="lib_menu_import_pdf">PDF इंपोर्ट करें</string>
     <string name="lib_menu_rename_folder">फ़ोल्डर का नाम बदलें</string>
@@ -25,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">रीसायकल बिन (%1$d)</string>
     <string name="lib_scan">स्कैन</string>
     <string name="lib_filter_all">सभी</string>
+    <string name="lib_filter_tags">टैग</string>
+    <string name="lib_filter_all_tags">सभी टैग</string>
     <string name="lib_filter_favorites">पसंदीदा</string>
     <string name="lib_empty_no_matching">कोई मिलता-जुलता डॉक्यूमेंट नहीं</string>
     <string name="lib_empty_hint">कोई पेज स्कैन करें, या अपनी फ़ोटो या PDF लाएं।</string>
@@ -181,7 +192,7 @@
     <string name="settings_rate_subtitle">Google Play पर रेटिंग दें</string>
     <string name="settings_feedback_subtitle">बताएं क्या अच्छा चल रहा है और क्या नहीं</string>
     <string name="settings_report_issue_title">समस्या बताएं</string>
-    <string name="settings_report_issue_subtitle">ऐप और डिवाइस की जानकारी अपने आप भर दी जाती है</string>
+    <string name="settings_report_issue_subtitle">ऐप लॉग और डिवाइस की जानकारी अपने आप भर दी जाती है</string>
     <string name="settings_share_subtitle">दोस्त को Play Store लिंक भेजें</string>
     <string name="settings_library_title">आपकी लाइब्रेरी</string>
     <string name="settings_library_subtitle">सिर्फ़ इसी डिवाइस पर सेव</string>

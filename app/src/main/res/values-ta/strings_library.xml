@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">சமீபத்தியவை</string>
     <string name="lib_sort_name">பெயர்</string>
     <string name="lib_sort_size">அளவு</string>
+    <string name="lib_sort_created">உருவாக்கிய தேதி</string>
+    <string name="lib_sort_newest_first">புதியது முதலில்</string>
+    <string name="lib_sort_oldest_first">பழையது முதலில்</string>
+    <string name="lib_sort_a_to_z">A முதல் Z</string>
+    <string name="lib_sort_z_to_a">Z முதல் A</string>
+    <string name="lib_sort_largest_first">பெரியது முதலில்</string>
+    <string name="lib_sort_smallest_first">சிறியது முதலில்</string>
+    <string name="lib_recent_searches">சமீபத்திய தேடல்கள்</string>
+    <string name="lib_recent_searches_clear">அழி</string>
     <string name="lib_menu_import_photos">ஃபோட்டோக்களை இறக்குமதி செய்</string>
     <string name="lib_menu_import_pdf">PDF இறக்குமதி செய்</string>
     <string name="lib_menu_rename_folder">ஃபோல்டர் பெயரை மாற்று</string>
@@ -25,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">குப்பைத் தொட்டி (%1$d)</string>
     <string name="lib_scan">ஸ்கேன்</string>
     <string name="lib_filter_all">அனைத்தும்</string>
+    <string name="lib_filter_tags">குறிச்சொற்கள்</string>
+    <string name="lib_filter_all_tags">அனைத்து குறிச்சொற்கள்</string>
     <string name="lib_filter_favorites">பிடித்தவை</string>
     <string name="lib_empty_no_matching">பொருந்தும் ஆவணங்கள் இல்லை</string>
     <string name="lib_empty_hint">ஒரு பக்கத்தை ஸ்கேன் செய்யுங்கள், அல்லது ஏற்கெனவே உள்ள ஃபோட்டோக்கள் அல்லது PDF-ஐக் கொண்டு வாருங்கள்.</string>
@@ -181,7 +192,7 @@
     <string name="settings_rate_subtitle">Google Play-இல் மதிப்பீடு அளியுங்கள்</string>
     <string name="settings_feedback_subtitle">எது வேலை செய்கிறது, எது இல்லை என்று சொல்லுங்கள்</string>
     <string name="settings_report_issue_title">பிரச்சனையைப் புகாரளி</string>
-    <string name="settings_report_issue_subtitle">ஆப் மற்றும் சாதன விவரங்கள் தானாக நிரப்பப்படும்</string>
+    <string name="settings_report_issue_subtitle">ஆப் பதிவுகள் மற்றும் சாதன விவரங்கள் தானாக நிரப்பப்படும்</string>
     <string name="settings_share_subtitle">Play Store லிங்கை நண்பருக்கு அனுப்புங்கள்</string>
     <string name="settings_library_title">உங்கள் லைப்ரரி</string>
     <string name="settings_library_subtitle">இந்தச் சாதனத்தில் மட்டுமே சேமிக்கப்படுகிறது</string>

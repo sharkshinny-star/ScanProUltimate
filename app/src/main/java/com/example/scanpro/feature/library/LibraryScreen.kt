@@ -1,5 +1,10 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.material.icons.rounded.Tag
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AssistChip
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloat
@@ -155,7 +160,10 @@ fun LibraryRoute(
     val overview by viewModel.overview.collectAsStateWithLifecycle()
     val folder by viewModel.folder.collectAsStateWithLifecycle()
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
+    val tag by viewModel.tag.collectAsStateWithLifecycle()
     val sort by viewModel.sort.collectAsStateWithLifecycle()
+    val sortAscending by viewModel.sortAscending.collectAsStateWithLifecycle()
+    val recentSearches by viewModel.recentSearches.collectAsStateWithLifecycle()
     // Home shows the few newest documents from the overview; only the Files and Search lists page the database.
     val items = if (mode == ScanProDestinations.HOME) null else viewModel.documents.collectAsLazyPagingItems()
     val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
@@ -180,8 +188,15 @@ fun LibraryRoute(
         onSetFolderLocked = viewModel::setFolderLocked,
         onUnlockFolder = viewModel::unlockFolder,
         onFavoritesOnlyChange = viewModel::setFavoritesOnly,
+        tag = tag,
+        onTagChange = viewModel::setTag,
         savedGrid = savedGrid,
         onSortChange = viewModel::setSort,
+        sortAscending = sortAscending,
+        onSortAscendingChange = viewModel::setSortAscending,
+        recentSearches = recentSearches,
+        onRecordSearch = viewModel::recordSearch,
+        onClearRecentSearches = viewModel::clearRecentSearches,
         onGridChange = viewModel::setLibraryGrid,
         onStop = viewModel::stopCurrent,
         onMoveToFolder = viewModel::moveToFolder,
@@ -196,7 +211,8 @@ fun LibraryRoute(
         busyLabel = busyLabel,
         snackbarHostState = snackbarHostState,
         onQueryChange = viewModel::setQuery,
-        onOpenDocument = onOpenDocument,
+        // Opening a result from Search keeps the term for next time (R35).
+        onOpenDocument = { id -> if (mode == ScanProDestinations.SEARCH && query.isNotBlank()) viewModel.recordSearch(query); onOpenDocument(id) },
         onStartScan = { onStartScan(if (mode == ScanProDestinations.FILES) folder else "") },
         onImportImages = onImportImages,
         onImportPdf = onImportPdf,
@@ -256,6 +272,15 @@ internal fun LibraryScreen(
     onBulkDelete: (Set<String>) -> Boolean,
     savedGrid: Boolean = true,
     onSortChange: (LibrarySort) -> Unit = {},
+    /** Tag filter (R35): the chosen tag, blank for none; the tags in use come from [overview]. */
+    tag: String = "",
+    onTagChange: (String) -> Unit = {},
+    /** Sort direction and recent searches (R35). */
+    sortAscending: Boolean = sort.defaultAscending,
+    onSortAscendingChange: (Boolean) -> Unit = {},
+    recentSearches: List<String> = emptyList(),
+    onRecordSearch: (String) -> Unit = {},
+    onClearRecentSearches: () -> Unit = {},
     onGridChange: (Boolean) -> Unit = {},
     onStop: () -> Unit = {},
     onMoveToFolder: (Set<String>, String) -> Unit = { _, _ -> },
@@ -472,6 +497,18 @@ internal fun LibraryScreen(
                                             }
                                         )
                                     }
+                                    HorizontalDivider()
+                                    // The direction, in the key's own words: Newest / Oldest first, A to Z / Z to A, Largest / Smallest first.
+                                    listOf(true to sort.ascendingLabel, false to sort.descendingLabel).forEach { (asc, label) ->
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(label)) },
+                                            trailingIcon = { if (sortAscending == asc) Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.lib_cd_selected)) },
+                                            onClick = {
+                                                onSortAscendingChange(asc)
+                                                sortMenuOpen = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                             if (mode == ScanProDestinations.FILES) IconButton(onClick = { onGridChange(!gridMode) }) {
@@ -570,19 +607,41 @@ internal fun LibraryScreen(
                         SearchField(
                             query = query,
                             onQueryChange = onQueryChange,
+                            onSubmit = onRecordSearch,
                             focusRequester = searchFocus,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                         )
+                        // Recent searches while the field is empty (R35): one tap searches again.
+                        if (query.isBlank() && recentSearches.isNotEmpty()) {
+                            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(R.string.lib_recent_searches), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                                TextButton(onClick = onClearRecentSearches) { Text(stringResource(R.string.lib_recent_searches_clear)) }
+                            }
+                            FlowRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                recentSearches.forEach { term ->
+                                    AssistChip(onClick = { onQueryChange(term); onRecordSearch(term) }, label = { Text(term, maxLines = 1, overflow = TextOverflow.Ellipsis) })
+                                }
+                            }
+                        }
                     }
 
                     // Folder/favourite filters only earn their space once there is something to filter.
-                    if (overview.documentCount > 0 && (folders.isNotEmpty() || overview.favoriteCount > 0 || favoritesOnly)) {
+                    var tagSheetOpen by rememberSaveable { mutableStateOf(false) }
+                    if (overview.documentCount > 0 && (folders.isNotEmpty() || overview.favoriteCount > 0 || favoritesOnly || overview.tags.isNotEmpty() || tag.isNotBlank())) {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             item {
-                                LibraryChip(selected = folder.isBlank() && !favoritesOnly, label = stringResource(R.string.lib_filter_all)) { onFolderChange(""); onFavoritesOnlyChange(false) }
+                                LibraryChip(selected = folder.isBlank() && !favoritesOnly && tag.isBlank(), label = stringResource(R.string.lib_filter_all)) { onFolderChange(""); onFavoritesOnlyChange(false); onTagChange("") }
+                            }
+                            if (overview.tags.isNotEmpty() || tag.isNotBlank()) item {
+                                // One Tags chip; it names the tag while one is chosen and opens the sheet to change it.
+                                LibraryChip(
+                                    selected = tag.isNotBlank(),
+                                    label = tag.ifBlank { stringResource(R.string.lib_filter_tags) },
+                                    icon = Icons.Rounded.Tag
+                                ) { tagSheetOpen = true }
                             }
                             item {
                                 LibraryChip(
@@ -610,6 +669,15 @@ internal fun LibraryScreen(
                                 }
                             }
                         }
+                    }
+
+                    if (tagSheetOpen) {
+                        TagFilterSheet(
+                            tags = overview.tags,
+                            selected = tag,
+                            onSelect = { onTagChange(it); tagSheetOpen = false },
+                            onDismiss = { tagSheetOpen = false }
+                        )
                     }
 
                     val list = items
@@ -753,6 +821,23 @@ internal fun LibraryScreen(
 // Files and search pieces
 // ---------------------------------------------------------------------------------------------
 
+/** The tags in use as chips, one selectable, plus All tags to clear the filter (R35). */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun TagFilterSheet(tags: List<String>, selected: String, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
+            Text(stringResource(R.string.lib_filter_tags), style = MaterialTheme.typography.titleLarge)
+            FlowRow(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = selected.isBlank(), onClick = { onSelect("") }, label = { Text(stringResource(R.string.lib_filter_all_tags)) })
+                tags.forEach { t ->
+                    FilterChip(selected = t.equals(selected, ignoreCase = true), onClick = { onSelect(t) }, label = { Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis) })
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun LibraryChip(selected: Boolean, label: String, icon: ImageVector? = null, onClick: () -> Unit) {
     FilterChip(
@@ -777,12 +862,14 @@ private fun LibraryChip(selected: Boolean, label: String, icon: ImageVector? = n
 }
 
 @Composable
-private fun SearchField(query: String, onQueryChange: (String) -> Unit, focusRequester: FocusRequester, modifier: Modifier = Modifier) {
+private fun SearchField(query: String, onQueryChange: (String) -> Unit, onSubmit: (String) -> Unit, focusRequester: FocusRequester, modifier: Modifier = Modifier) {
     TextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth().focusRequester(focusRequester),
         singleLine = true,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+        keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { if (query.isNotBlank()) onSubmit(query) }),
         placeholder = { Text(stringResource(R.string.lib_search_field_placeholder)) },
         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
         trailingIcon = {

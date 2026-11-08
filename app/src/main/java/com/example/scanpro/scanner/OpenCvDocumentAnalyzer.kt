@@ -28,6 +28,9 @@ class OpenCvDocumentAnalyzer(
     private var armed = true
     private var lostFrames = 0
     private var capturedQuad: CropQuad? = null
+    // R32: what the page just captured looked like, and the sharpness of the recent steady frames.
+    private var capturedSignature: FloatArray? = null
+    private val recentBlur = ArrayDeque<Double>()
 
     @Volatile
     var autoCaptureEnabled: Boolean = true
@@ -76,10 +79,11 @@ class OpenCvDocumentAnalyzer(
             val gray = toRotatedGrayMat(image).croppedToViewport(image)
             try {
                 val raw = DocumentEdgeDetector.detect(gray)
-                val result = raw.copy(guidance = steadyGuidance(raw.guidance))
+                var result = raw.copy(guidance = steadyGuidance(raw.guidance))
                 val stable = updateStability(result)
                 val progress = (stableFrames.toFloat() / STEADY_FRAMES).coerceIn(0f, 1f)
-                main.post { if (!closed) onDetection(result, stable, progress) }
+                // Sharpness of the steady frames so far, so the shutter can wait for a sharp one.
+                if (stable) { recentBlur.addLast(result.blurScore); while (recentBlur.size > SharpnessGate.WINDOW) recentBlur.removeFirst() } else recentBlur.clear()
 
                 // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -92,11 +96,25 @@ class OpenCvDocumentAnalyzer(
                         averageCornerMovement(captured, current) > 0.12f
                     if (lostFrames >= 8 || differentPage) armed = true
                 }
-                if (autoCaptureEnabled && armed && stable && result.isReady && now - lastAutoCaptureAt > 2200L) {
+                val candidate = autoCaptureEnabled && armed && stable && result.isReady && now - lastAutoCaptureAt > 2200L
+                var duplicate = false
+                var signature: FloatArray? = null
+                if (candidate) {
+                    // The same page back in view (put down and picked up, or never moved) is not captured twice.
+                    signature = result.quad?.let { runCatching { PageSignature.of(gray, it) }.getOrNull() }
+                    val last = capturedSignature
+                    duplicate = signature != null && last != null && PageSignature.isSamePage(signature, last)
+                    if (duplicate) result = result.copy(guidance = Guidance.SAME_PAGE)
+                }
+                main.post { if (!closed) onDetection(result, stable, progress) }
+
+                if (candidate && !duplicate && SharpnessGate.shouldFire(recentBlur, result.blurScore)) {
                     armed = false
                     capturedQuad = result.quad
+                    capturedSignature = signature
                     lastAutoCaptureAt = now
                     stableFrames = 0
+                    recentBlur.clear()
                     main.post { if (!closed) onAutoCapture() }
                 }
             } finally {

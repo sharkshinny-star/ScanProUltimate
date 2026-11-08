@@ -12,7 +12,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
@@ -42,14 +41,12 @@ class LaunchDeviceTest {
 
     @Test
     fun launcherStartPlaysTheIntroAndReachesTheApp() {
-        val started = System.currentTimeMillis()
         ActivityScenario.launch<MainActivity>(launcherIntent()).use {
-            // Intro 2.25 s + launch-screen hold up to 1.5 s; the tab bar is on every app screen after the welcome.
+            // Intro 2.25 s + launch-screen hold up to 1.5 s, then the app; the tab bar is on every screen after the welcome.
+            // 15 s leaves room for slow physical hardware; the wait itself is the timing check.
             compose.waitUntil(timeoutMillis = 15_000) {
                 compose.hasAnyNodeWithText("Home", "Settings")
             }
-            val elapsed = System.currentTimeMillis() - started
-            assertTrue("app visible after ${elapsed} ms", elapsed < 15_000)
             compose.onNodeWithText("Choose your language").assertDoesNotExist()
         }
     }

@@ -124,6 +124,7 @@
     <string name="scan_guidance_hold_steady">Hold steady · the image is blurry</string>
     <string name="scan_guidance_move_closer">Move closer and centre the page</string>
     <string name="scan_guidance_ready">Ready</string>
+    <string name="scan_guidance_same_page">Same page as the last one · turn the page</string>
     <string name="scan_status_front_ready">Front ready · capture the back</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d page ready</item>
@@ -133,6 +134,9 @@
     <string name="scan_status_capturing">Capturing…</string>
     <string name="scan_status_front_saved">Front saved · now capture the back</string>
     <string name="scan_status_id_ready">ID capture ready · tap Done</string>
+    <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">Page %1$d removed</string>
+    <string name="scan_status_page_restored">Page %1$d is back</string>
+    <string name="scan_strip_page_needs_look">Page %1$d, may need a look</string>
     <string name="scan_status_checking_pages">Checking pages…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d page needs a look</item>

@@ -205,15 +205,20 @@ object ImageProcessor {
     }
 
     fun cropSourceToNewFile(source: File, destination: File, quad: CropQuad) {
-        var bitmap = decodeScaled(source.absolutePath, 4200) ?: userError(R.string.err_could_not_decode_source)
-        val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
-        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
-        val cropped = bitmap.then { cropPage(it, quad) }
+        val cropped = cropSourceToBitmap(source, quad, 4200)
         try {
             saveJpeg(cropped, destination, 98)
         } finally {
             cropped.recycle()
         }
+    }
+
+    /** [source] decoded to at most [maxDimension] px, turned upright and cut along [quad]; the caller recycles it. */
+    fun cropSourceToBitmap(source: File, quad: CropQuad, maxDimension: Int): Bitmap {
+        var bitmap = decodeScaled(source.absolutePath, maxDimension) ?: userError(R.string.err_could_not_decode_source)
+        val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
+        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
+        return bitmap.then { cropPage(it, quad) }
     }
 
 

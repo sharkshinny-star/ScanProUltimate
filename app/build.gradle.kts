@@ -169,7 +169,7 @@ hilt {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
+    val composeBom = platform(libs.androidx.compose.bom)
     @Suppress("AvoidDuplicateDependencies")
     //noinspection GradleDependency
     implementation(composeBom)
@@ -177,109 +177,108 @@ dependencies {
     //noinspection GradleDependency
     androidTestImplementation(composeBom)
 
-    implementation("androidx.core:core-ktx:1.19.1")
+    implementation(libs.androidx.core.ktx)
     // One launch-screen implementation for every Android version, with a dark variant and a custom exit animation.
-    implementation("androidx.core:core-splashscreen:1.2.0")
+    implementation(libs.androidx.core.splashscreen)
     // Applies the libraries' bundled Compose baseline profiles on installs that bypass Play, so first runs are smoother.
-    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
+    implementation(libs.androidx.profileinstaller)
     // Measured startup profile, recorded on a device by the :baselineprofile module.
     baselineProfile(project(":baselineprofile"))
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.fragment:fragment-ktx:1.9.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
-    implementation("androidx.navigation:navigation-compose:2.10.2")
-    implementation("androidx.datastore:datastore-preferences:1.3.0")
-    implementation("androidx.biometric:biometric:1.1.0")
-    implementation("androidx.exifinterface:exifinterface:1.4.2")
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.exifinterface)
 
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     // CameraX primary scanner.
-    val cameraX = "1.6.2"
-    implementation("androidx.camera:camera-core:$cameraX")
-    implementation("androidx.camera:camera-camera2:$cameraX")
-    implementation("androidx.camera:camera-lifecycle:$cameraX")
-    implementation("androidx.camera:camera-view:$cameraX")
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
 
     // OpenCV 4.14 trimmed to core, imgproc and photo: a fifth of the Maven artifact's native code.
     // Built from unmodified sources by scripts/opencv/build-opencv-android.sh (see scripts/opencv/README.md).
     implementation(project(":opencv"))
 
     // Google scanner remains as a compatibility fallback.
-    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
+    implementation(libs.play.services.mlkit.document.scanner)
     // Text recognition and barcode scanning run in Google Play services, so their engines and models (about
     // 16 MB per CPU type for OCR alone) are not shipped inside the app. Latin OCR and barcodes are fetched at
     // install time (see AndroidManifest); the other scripts download the first time they are used.
     // -Pscanpro.bundledMl=true ships the models inside the APK instead (about 16 MB larger per CPU type), for
     // phones and test devices without a usable Google Play services. The code is the same either way.
     if (providers.gradleProperty("scanpro.bundledMl").orNull == "true") {
-        implementation("com.google.mlkit:text-recognition:16.0.1")
-        implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
-        implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
-        implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
-        implementation("com.google.mlkit:text-recognition-korean:16.0.1")
-        implementation("com.google.mlkit:barcode-scanning:17.3.0")
+        implementation(libs.mlkit.text.recognition)
+        implementation(libs.mlkit.text.recognition.devanagari)
+        implementation(libs.mlkit.text.recognition.chinese)
+        implementation(libs.mlkit.text.recognition.japanese)
+        implementation(libs.mlkit.text.recognition.korean)
+        implementation(libs.mlkit.barcode.scanning)
     } else {
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.2")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.2")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.2")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-japanese:16.0.2")
-        implementation("com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.2")
-        implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+        implementation(libs.play.services.mlkit.text.recognition)
+        implementation(libs.play.services.mlkit.text.recognition.devanagari)
+        implementation(libs.play.services.mlkit.text.recognition.chinese)
+        implementation(libs.play.services.mlkit.text.recognition.japanese)
+        implementation(libs.play.services.mlkit.text.recognition.korean)
+        implementation(libs.play.services.mlkit.barcode.scanning)
     }
     // ML Kit Translate and language identification live in the on-demand :translate module, or in the app
     // itself for sideload builds.
     implementation(libs.mlkit.common)
-    implementation("com.google.android.play:feature-delivery:2.1.0")
+    implementation(libs.play.feature.delivery)
     if (sideload) {
         implementation(libs.translate)
         implementation(libs.language.id)
     }
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
+    implementation(libs.kotlinx.coroutines.play.services)
     // Google Play In-App Review: asked for once, quietly, after a few successful scans.
-    implementation("com.google.android.play:review-ktx:2.0.2")
+    implementation(libs.play.review.ktx)
 
     // Room + Hilt + WorkManager.
-    implementation("androidx.room:room-runtime:2.8.5")
-    implementation("androidx.room:room-ktx:2.8.5")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
     // The Files list is paged from the database instead of held in memory.
-    implementation("androidx.room:room-paging:2.8.5")
-    implementation("androidx.paging:paging-runtime:3.5.3")
-    implementation("androidx.paging:paging-compose:3.5.3")
-    ksp("androidx.room:room-compiler:2.8.5")
+    implementation(libs.androidx.room.paging)
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+    ksp(libs.androidx.room.compiler)
 
-    implementation("com.google.dagger:hilt-android:2.60.1")
-    ksp("com.google.dagger:hilt-compiler:2.60.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.4.0")
-    implementation("androidx.hilt:hilt-work:1.4.0")
-    ksp("androidx.hilt:hilt-compiler:1.4.0")
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
-    implementation("androidx.work:work-runtime-ktx:2.12.0")
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Apache-2.0 PDF engine for merge/split/import and password protection.
-    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    implementation(libs.pdfbox.android)
 
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit4)
     // Runs the real Android framework of each version on the JVM: the launch smoke test starts the app on API 24 to 36.
-    testImplementation("org.robolectric:robolectric:4.17")
-    testImplementation("androidx.test:core-ktx:1.7.0")
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
     // Screenshot tests: the real Compose screens rendered on the JVM (ScreenScreenshotTest).
-    testImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
-    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
     // The real org.json: the Android jar's version only has stubs, and the backup format is JSON.
-    testImplementation("org.json:json:20260814")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
-    androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation(libs.org.json)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
 androidComponents {

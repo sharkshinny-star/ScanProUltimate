@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.animation.core.animateFloat
@@ -244,7 +245,7 @@ fun CameraScannerScreen(
     val torchEnabled = flashMode == FlashMode.TORCH
     fun setFlash(mode: FlashMode) {
         flashMode = mode
-        prefs.edit().putString("flash", mode.name).apply()
+        prefs.edit { putString("flash", mode.name) }
     }
     var detectMode by rememberSaveable {
         // Manual by default (owner decision): auto-capture surprised people; it is one tap away in the top menu.
@@ -278,6 +279,11 @@ fun CameraScannerScreen(
     var scanBothSides by rememberSaveable { mutableStateOf(true) }
     // The one page both sides were put on (IdCardComposer), once Done was tapped after the second side.
     var idComposite by rememberSaveable { mutableStateOf<String?>(null) }
+    // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
+    // than saving at once, whatever "Check pages before saving" says.
+    var returnToReview by rememberSaveable { mutableStateOf(false) }
+    // A page removed from the strip with a long press (R30): kept for a few seconds so Undo can put it back.
+    var pendingDelete by remember { mutableStateOf<PendingDelete?>(null) }
     val pages = rememberSaveable(
         saver = listSaver(save = { list -> list.map(Uri::toString) }, restore = { saved -> mutableStateListOf(*saved.map(Uri::parse).toTypedArray()) })
     ) { mutableStateListOf<Uri>() }
@@ -342,15 +348,6 @@ fun CameraScannerScreen(
         retakeOfPage != null -> 1
         scanMode == ScanMode.ID_CARD -> if (scanBothSides && idComposite == null) 2 else 1
         else -> 100
-    }
-
-    var pendingDeletion by remember { mutableStateOf<DeletedCapture?>(null) }
-    LaunchedEffect(pendingDeletion) {
-        if (pendingDeletion != null) {
-            delay(4000)
-            pendingDeletion?.let { deleteInBackground(File(it.uri.path.orEmpty())) }
-            pendingDeletion = null
-        }
     }
 
     var confirmQuit by remember { mutableStateOf(false) }
@@ -502,7 +499,8 @@ fun CameraScannerScreen(
      * saved straight away unless the setting says to review the pages that need a look, and some do.
      */
     fun reviewOrSave() {
-        if (reviewMode == com.example.scanpro.data.ReviewMode.ALWAYS || retakeOfPage != null) {
+        if (FastSave.reviewWithoutChecking(reviewMode, retaking = retakeOfPage != null, returnToReview = returnToReview)) {
+            returnToReview = false
             reviewIndex = pages.lastIndex
             reviewing = true
             return
@@ -510,16 +508,34 @@ fun CameraScannerScreen(
         processing = true
         status = resources.getString(R.string.scan_status_checking_pages)
         val snapshot = pages.toList()
+        val trusted = snapshot.indices.filter { snapshot[it].toString() == idComposite }.toSet()
         scope.launch {
-            val needing = withContext(Dispatchers.Default) {
-                val crops = snapshot.map { uri ->
-                    quads[uri.toString()] ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
+            // Whatever is still missing (Done tapped before the background work landed) is worked out once here, from
+            // a single decode and detection per page, and kept, so saving does not do it again.
+            val (crops, issues) = withContext(Dispatchers.Default) {
+                val crops = ArrayList<CropQuad>(snapshot.size)
+                val issues = ArrayList<Set<PageIssue>>(snapshot.size)
+                snapshot.forEachIndexed { i, uri ->
+                    val key = uri.toString()
+                    var crop = quads[key]
+                    var issue = quality[key]
+                    if (i in trusted) issue = issue ?: emptySet()
+                    if (crop == null && issue == null) {
+                        runCatching { OpenCvScanProcessor.inspect(File(uri.path.orEmpty())) }.getOrNull()?.let { (c, q) -> crop = c; issue = q }
+                    }
+                    crops += crop ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
+                    issues += issue ?: runCatching { OpenCvScanProcessor.assessQuality(File(uri.path.orEmpty())) }.getOrDefault(emptySet())
                 }
-                val issues = snapshot.map { uri ->
-                    quality[uri.toString()] ?: runCatching { OpenCvScanProcessor.assessQuality(File(uri.path.orEmpty())) }.getOrDefault(emptySet())
-                }
-                FastSave.pagesNeedingReview(crops, issues)
+                crops to issues
             }
+            snapshot.forEachIndexed { i, uri ->
+                val key = uri.toString()
+                if (pages.contains(uri)) {
+                    if (quads[key] == null) quads[key] = crops[i]
+                    if (quality[key] == null) quality[key] = issues[i]
+                }
+            }
+            val needing = FastSave.pagesNeedingReview(crops, issues, trusted)
             processing = false
             if (snapshot != pages.toList()) {
                 // Pages changed while checking (a retake landed): just show the review.
@@ -535,7 +551,18 @@ fun CameraScannerScreen(
         }
     }
 
+    // A removed page's file goes after six seconds without Undo; Done settles it at once.
+    LaunchedEffect(pendingDelete) {
+        val deleted = pendingDelete ?: return@LaunchedEffect
+        kotlinx.coroutines.delay(6_000)
+        if (pendingDelete === deleted) {
+            pendingDelete = null
+            deleteInBackground(File(deleted.uri.path.orEmpty()))
+        }
+    }
+
     fun finishScan() {
+        pendingDelete?.let { deleteInBackground(File(it.uri.path.orEmpty())); pendingDelete = null }
         if (completed || pages.isEmpty() || processing) return
         // Both sides of an ID card go onto one page before the review, so what is reviewed is what gets saved.
         if (scanMode == ScanMode.ID_CARD && scanBothSides && idComposite == null && pages.size == 2 && retakeOfPage == null) {
@@ -558,7 +585,6 @@ fun CameraScannerScreen(
                     pages.add(uri)
                     quads[uri.toString()] = CropQuad.DEFAULT
                     idComposite = uri.toString()
-                    status = resources.getString(R.string.scan_status_id_ready)
                     reviewOrSave()
                 } else {
                     // The two sides stay as two pages rather than losing the capture, and are shown for a look.
@@ -923,8 +949,8 @@ fun CameraScannerScreen(
             index = reviewIndex,
             processing = processing,
             onIndexChange = { reviewIndex = it },
-            onAdd = { retakeIndex = -1; reviewing = false },
-            onBack = { retakeIndex = -1; reviewing = false },
+            onAdd = { retakeIndex = -1; returnToReview = true; reviewing = false },
+            onBack = { retakeIndex = -1; returnToReview = true; reviewing = false },
             onDone = ::saveReviewed,
             onRetake = {
                 if (idComposite != null && pages.getOrNull(reviewIndex)?.toString() == idComposite) {
@@ -1131,7 +1157,7 @@ fun CameraScannerScreen(
             AlertDialog(
                 onDismissRequest = { confirmQuit = false },
                 title = { Text(stringResource(R.string.scan_quit_title)) },
-                text = { Text(stringResource(R.string.scan_quit_body)) },
+                text = { androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { Text(stringResource(R.string.scan_quit_body)) } },
                 confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.common_cancel)) } }
             )
@@ -1239,42 +1265,6 @@ fun CameraScannerScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (pendingDeletion != null) {
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = Color.Black.copy(alpha = 0.85f),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.scan_page_deleted),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        Text(
-                            stringResource(R.string.common_undo),
-                            color = QualityAmber,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable {
-                                pendingDeletion?.let { deleted ->
-                                    val targetIndex = deleted.index.coerceAtMost(pages.size)
-                                    pages.add(targetIndex, deleted.uri)
-                                    val k = deleted.uri.toString()
-                                    deleted.quad?.let { quads[k] = it }
-                                    deleted.filter?.let { filters[k] = it }
-                                    deleted.quality?.let { quality[k] = it }
-                                }
-                                pendingDeletion = null
-                            }
-                        )
-                    }
-                }
-            }
             // The pages so far, newest last; tap one to check it in the review step. Every capture lands here and
             // Done finishes, so there is no Single/Batch choice to make first.
             if (pages.isNotEmpty()) {
@@ -1283,33 +1273,51 @@ fun CameraScannerScreen(
                     quads = quads,
                     filters = filters,
                     quality = quality,
-                    sessionFilter = sessionFilter,
+                    // The same fallback the save uses, so a thumbnail shows the look the page will get.
+                    sessionFilter = sessionFilter ?: defaultFilter ?: scanMode.defaultFilter,
                     onOpen = { index ->
                         reviewIndex = index
                         reviewing = true
                     },
                     onDelete = { index ->
-                        if (index in pages.indices) {
-                            val removed = pages.removeAt(index)
-                            val k = removed.toString()
-                            val q = quads.remove(k)
-                            val f = filters.remove(k)
-                            val issues = quality.remove(k)
-                            pendingDeletion?.let { prev -> deleteInBackground(File(prev.uri.path.orEmpty())) }
-                            pendingDeletion = DeletedCapture(removed, index, q, f, issues)
-                        }
+                        val uri = pages.getOrNull(index) ?: return@CapturedStrip
+                        val key = uri.toString()
+                        pendingDelete?.let { deleteInBackground(File(it.uri.path.orEmpty())) }
+                        pendingDelete = PendingDelete(uri, index, quads[key], filters[key], adjustments[key], idComposite == key)
+                        quads.remove(key); filters.remove(key); adjustments.remove(key)
+                        if (idComposite == key) idComposite = null
+                        pages.removeAt(index)
+                        status = resources.getString(R.string.scan_status_page_removed, index + 1)
                     }
                 )
                 Spacer(Modifier.height(8.dp))
             }
             if (status != null) {
                 Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
-                    Text(
-                        status.orEmpty(),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            status.orEmpty(),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
+                        )
+                        pendingDelete?.let { deleted ->
+                            // Undo puts the page back where it was, with its outline, filter and sliders.
+                            TextButton(onClick = {
+                                val at = deleted.index.coerceAtMost(pages.size)
+                                pages.add(at, deleted.uri)
+                                val key = deleted.uri.toString()
+                                deleted.quad?.let { quads[key] = it }
+                                deleted.filter?.let { filters[key] = it }
+                                deleted.adjustments?.let { adjustments[key] = it }
+                                if (deleted.wasComposite) idComposite = key
+                                pendingDelete = null
+                                status = resources.getString(R.string.scan_status_page_restored, at + 1)
+                            }, contentPadding = PaddingValues(horizontal = 12.dp)) {
+                                Text(stringResource(R.string.common_undo), color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -1807,7 +1815,14 @@ private fun LevelBubble(tilt: Offset, accent: Color, modifier: Modifier = Modifi
     }
 }
 
-/** Thumbnails of the pages captured so far: cropped, filtered, with quality warning and long-press to delete (R30). */
+/** A page removed from the strip, held until Undo or the timeout (R30). */
+private class PendingDelete(val uri: Uri, val index: Int, val quad: CropQuad?, val filter: PageFilter?, val adjustments: PageAdjustments?, val wasComposite: Boolean)
+
+/**
+ * The pages so far (R30, after Adobe Scan and Genius Scan): each drawn cut out and filtered the way it will be saved,
+ * redrawn when its outline arrives from the background, with an amber mark on a page that needs a look (no outline
+ * found, blurred, glare or too dark). Tap opens the review on it; a long press removes it, with Undo.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun CapturedStrip(
@@ -1836,6 +1851,7 @@ internal fun CapturedStrip(
             } else {
                 stringResource(R.string.scan_review_page_n, index + 1)
             }
+            // Keyed on the outline and filter too, so the thumbnail is redrawn when either changes.
             val cacheKey = "$key#${quad?.let { "${it.topLeft},${it.topRight},${it.bottomRight},${it.bottomLeft}" }}#$filter"
             val bitmap by produceState<Bitmap?>(initialValue = cache[cacheKey], cacheKey) {
                 if (value == null) {
@@ -1862,7 +1878,7 @@ internal fun CapturedStrip(
                     .size(44.dp, 58.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color.White.copy(alpha = 0.1f))
-                    .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                    .border(1.dp, if (flagged) QualityAmber else Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
                     .combinedClickable(
                         onClick = { onOpen(index) },
                         onLongClick = {
@@ -2038,12 +2054,3 @@ internal const val SESSION_IMPORT_FAILED = ".import_failed"
  * runs low, and a finished scan waiting for its import exists nowhere else.
  */
 internal fun scannerSessionRoot(context: android.content.Context) = File(context.filesDir, SESSION_ROOT)
-
-/** A captured page removed from the strip, held until undo or timeout (R30). */
-private data class DeletedCapture(
-    val uri: Uri,
-    val index: Int,
-    val quad: CropQuad?,
-    val filter: PageFilter?,
-    val quality: Set<PageIssue>?
-)

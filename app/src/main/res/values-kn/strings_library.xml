@@ -18,6 +18,15 @@
     <string name="lib_sort_recent">ಇತ್ತೀಚಿನವು</string>
     <string name="lib_sort_name">ಹೆಸರು</string>
     <string name="lib_sort_size">ಗಾತ್ರ</string>
+    <string name="lib_sort_created">ರಚಿಸಿದ ದಿನಾಂಕ</string>
+    <string name="lib_sort_newest_first">ಹೊಸದು ಮೊದಲು</string>
+    <string name="lib_sort_oldest_first">ಹಳೆಯದು ಮೊದಲು</string>
+    <string name="lib_sort_a_to_z">A ಯಿಂದ Z</string>
+    <string name="lib_sort_z_to_a">Z ಯಿಂದ A</string>
+    <string name="lib_sort_largest_first">ದೊಡ್ಡದು ಮೊದಲು</string>
+    <string name="lib_sort_smallest_first">ಚಿಕ್ಕದು ಮೊದಲು</string>
+    <string name="lib_recent_searches">ಇತ್ತೀಚಿನ ಹುಡುಕಾಟಗಳು</string>
+    <string name="lib_recent_searches_clear">ಅಳಿಸಿ</string>
     <string name="lib_menu_import_photos">ಫೋಟೋ ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
     <string name="lib_menu_import_pdf">PDF ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
     <string name="lib_menu_rename_folder">ಫೋಲ್ಡರ್ ಹೆಸರು ಬದಲಿಸಿ</string>
@@ -25,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">ರೀಸೈಕಲ್ ಬಿನ್ (%1$d)</string>
     <string name="lib_scan">ಸ್ಕ್ಯಾನ್</string>
     <string name="lib_filter_all">ಎಲ್ಲಾ</string>
+    <string name="lib_filter_tags">ಟ್ಯಾಗ್‌ಗಳು</string>
+    <string name="lib_filter_all_tags">ಎಲ್ಲಾ ಟ್ಯಾಗ್‌ಗಳು</string>
     <string name="lib_filter_favorites">ಮೆಚ್ಚಿನವು</string>
     <string name="lib_empty_no_matching">ಹೊಂದುವ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳಿಲ್ಲ</string>
     <string name="lib_empty_hint">ಒಂದು ಪುಟ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ, ಅಥವಾ ನಿಮ್ಮಲ್ಲಿರುವ ಫೋಟೋಗಳು ಅಥವಾ PDF ತನ್ನಿ.</string>
@@ -181,7 +192,7 @@
     <string name="settings_rate_subtitle">Google Play ನಲ್ಲಿ ರೇಟಿಂಗ್ ನೀಡಿ</string>
     <string name="settings_feedback_subtitle">ಯಾವುದು ಕೆಲಸ ಮಾಡುತ್ತದೆ, ಯಾವುದು ಇಲ್ಲ ಎಂದು ತಿಳಿಸಿ</string>
     <string name="settings_report_issue_title">ಸಮಸ್ಯೆ ವರದಿ ಮಾಡಿ</string>
-    <string name="settings_report_issue_subtitle">ಆ್ಯಪ್ ಮತ್ತು ಸಾಧನದ ವಿವರಗಳು ತಾನಾಗಿ ತುಂಬಲ್ಪಡುತ್ತವೆ</string>
+    <string name="settings_report_issue_subtitle">ಆ್ಯಪ್ ಲಾಗ್‌ಗಳು ಮತ್ತು ಸಾಧನದ ವಿವರಗಳು ತಾನಾಗಿ ತುಂಬಲ್ಪಡುತ್ತವೆ</string>
     <string name="settings_share_subtitle">Play Store ಲಿಂಕ್ ಅನ್ನು ಸ್ನೇಹಿತರಿಗೆ ಕಳುಹಿಸಿ</string>
     <string name="settings_library_title">ನಿಮ್ಮ ಲೈಬ್ರರಿ</string>
     <string name="settings_library_subtitle">ಈ ಸಾಧನದಲ್ಲಿ ಮಾತ್ರ ಸಂಗ್ರಹಿಸಲಾಗಿದೆ</string>

@@ -13,6 +13,14 @@
     <string name="doc_clean_up">ಕ್ಲೀನ್ ಅಪ್</string>
     <string name="doc_sign">ಸಹಿ</string>
     <string name="doc_share_pdf">PDF ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="doc_share_pdf_pages_all">ಎಲ್ಲಾ ಪುಟಗಳು</string>
+    <string name="doc_share_pdf_pages_some" tools:ignore="PluralsCandidate">%2$d ರಲ್ಲಿ %1$d ಪುಟಗಳು</string>
+    <string name="doc_share_pdf_select_all">ಎಲ್ಲಾ</string>
+    <string name="doc_share_pdf_estimating">ಲೆಕ್ಕ ಹಾಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="doc_share_pdf_about">≈ %1$s</string>
+    <string name="doc_share_pdf_keep_under">ಇದಕ್ಕಿಂತ ಕಡಿಮೆ ಇರಲಿ</string>
+    <string name="doc_share_pdf_no_limit">ಮಿತಿ ಇಲ್ಲ</string>
+    <string name="doc_share_pdf_will_shrink">Small ಕೂಡ %1$s ಗಿಂತ ದೊಡ್ಡದು; ಪುಟಗಳನ್ನು ಇನ್ನಷ್ಟು ಕುಗ್ಗಿಸಲಾಗುತ್ತದೆ</string>
     <string name="doc_tab_text">ಪಠ್ಯ</string>
     <string name="doc_tab_insights">ಒಳನೋಟಗಳು</string>
     <string name="doc_tab_pdf_settings">PDF ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
@@ -51,7 +59,10 @@
     <string name="doc_rename_document">ಡಾಕ್ಯುಮೆಂಟ್ ಹೆಸರು ಬದಲಿಸಿ</string>
     <string name="doc_name">ಹೆಸರು</string>
     <string name="doc_document_tags">ಡಾಕ್ಯುಮೆಂಟ್ ಟ್ಯಾಗ್‌ಗಳು</string>
-    <string name="doc_comma_separated_tags">ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿದ ಟ್ಯಾಗ್‌ಗಳು</string>
+    <string name="doc_add_tag">ಟ್ಯಾಗ್ ಸೇರಿಸಿ</string>
+    <string name="doc_no_tags_yet">ಇನ್ನೂ ಟ್ಯಾಗ್‌ಗಳಿಲ್ಲ</string>
+    <string name="doc_tags_in_use">ಬಳಕೆಯಲ್ಲಿರುವ ಟ್ಯಾಗ್‌ಗಳು</string>
+    <string name="doc_remove_tag">%1$s ತೆಗೆದುಹಾಕಿ</string>
     <string name="doc_folder_name">ಫೋಲ್ಡರ್ ಹೆಸರು</string>
     <string name="doc_rotate">ತಿರುಗಿಸಿ</string>
     <string name="doc_move_left">ಎಡಕ್ಕೆ ಸರಿಸಿ</string>

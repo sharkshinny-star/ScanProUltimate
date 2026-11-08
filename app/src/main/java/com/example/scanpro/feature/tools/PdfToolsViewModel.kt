@@ -216,8 +216,8 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun compress(uri: Uri, preset: CompressionPreset) = launchTool(R.string.msg_tools_compressing, R.string.msg_tools_compression_failed) {
-        val res = CompressPdfEngine.compressPdf(context, uri, preset, named(uri, "compressed"))
+    fun compress(uri: Uri, preset: CompressionPreset, customTargetBytes: Long? = null) = launchTool(R.string.msg_tools_compressing, R.string.msg_tools_compression_failed) {
+        val res = CompressPdfEngine.compressPdf(context, uri, preset, named(uri, "compressed"), ::report, customTargetBytes)
         PdfToolResult(
             outputFile = res.outputFile,
             pageCount = res.pageCount,
