@@ -1,5 +1,7 @@
 package com.example.scanpro.scanner
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.animation.core.animateFloat
@@ -276,6 +278,8 @@ fun CameraScannerScreen(
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
     // than saving at once, whatever "Check pages before saving" says.
     var returnToReview by rememberSaveable { mutableStateOf(false) }
+    // A page removed from the strip with a long press (R30): kept for a few seconds so Undo can put it back.
+    var pendingDelete by remember { mutableStateOf<PendingDelete?>(null) }
     val pages = rememberSaveable(
         saver = listSaver(save = { list -> list.map(Uri::toString) }, restore = { saved -> mutableStateListOf(*saved.map(Uri::parse).toTypedArray()) })
     ) { mutableStateListOf<Uri>() }
@@ -543,7 +547,18 @@ fun CameraScannerScreen(
         }
     }
 
+    // A removed page's file goes after six seconds without Undo; Done settles it at once.
+    LaunchedEffect(pendingDelete) {
+        val deleted = pendingDelete ?: return@LaunchedEffect
+        kotlinx.coroutines.delay(6_000)
+        if (pendingDelete === deleted) {
+            pendingDelete = null
+            deleteInBackground(File(deleted.uri.path.orEmpty()))
+        }
+    }
+
     fun finishScan() {
+        pendingDelete?.let { deleteInBackground(File(it.uri.path.orEmpty())); pendingDelete = null }
         if (completed || pages.isEmpty() || processing) return
         // Both sides of an ID card go onto one page before the review, so what is reviewed is what gets saved.
         if (scanMode == ScanMode.ID_CARD && scanBothSides && idComposite == null && pages.size == 2 && retakeOfPage == null) {
@@ -1251,21 +1266,53 @@ fun CameraScannerScreen(
             if (pages.isNotEmpty()) {
                 CapturedStrip(
                     pages = pages,
+                    quads = quads,
+                    filters = filters,
+                    fallbackFilter = sessionFilter ?: defaultFilter ?: scanMode.defaultFilter,
+                    quality = quality,
                     onOpen = { index ->
                         reviewIndex = index
                         reviewing = true
+                    },
+                    onDelete = { index ->
+                        val uri = pages.getOrNull(index) ?: return@CapturedStrip
+                        val key = uri.toString()
+                        pendingDelete?.let { deleteInBackground(File(it.uri.path.orEmpty())) }
+                        pendingDelete = PendingDelete(uri, index, quads[key], filters[key], adjustments[key], idComposite == key)
+                        quads.remove(key); filters.remove(key); adjustments.remove(key)
+                        if (idComposite == key) idComposite = null
+                        pages.removeAt(index)
+                        status = resources.getString(R.string.scan_status_page_removed, index + 1)
                     }
                 )
                 Spacer(Modifier.height(8.dp))
             }
             if (status != null) {
                 Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
-                    Text(
-                        status.orEmpty(),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            status.orEmpty(),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
+                        )
+                        pendingDelete?.let { deleted ->
+                            // Undo puts the page back where it was, with its outline, filter and sliders.
+                            TextButton(onClick = {
+                                val at = deleted.index.coerceAtMost(pages.size)
+                                pages.add(at, deleted.uri)
+                                val key = deleted.uri.toString()
+                                deleted.quad?.let { quads[key] = it }
+                                deleted.filter?.let { filters[key] = it }
+                                deleted.adjustments?.let { adjustments[key] = it }
+                                if (deleted.wasComposite) idComposite = key
+                                pendingDelete = null
+                                status = resources.getString(R.string.scan_status_page_restored, at + 1)
+                            }, contentPadding = PaddingValues(horizontal = 12.dp)) {
+                                Text(stringResource(R.string.common_undo), color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -1763,20 +1810,46 @@ private fun LevelBubble(tilt: Offset, accent: Color, modifier: Modifier = Modifi
     }
 }
 
-/** Thumbnails of the pages captured so far, decoded small and kept while the screen lives. */
+/** A page removed from the strip, held until Undo or the timeout (R30). */
+private class PendingDelete(val uri: Uri, val index: Int, val quad: CropQuad?, val filter: PageFilter?, val adjustments: PageAdjustments?, val wasComposite: Boolean)
+
+/**
+ * The pages so far (R30, after Adobe Scan and Genius Scan): each drawn cut out and filtered the way it will be saved,
+ * redrawn when its outline arrives from the background, with an amber mark on a page that needs a look (no outline
+ * found, blurred, glare or too dark). Tap opens the review on it; a long press removes it, with Undo.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun CapturedStrip(pages: List<Uri>, onOpen: (Int) -> Unit) {
+private fun CapturedStrip(
+    pages: List<Uri>,
+    quads: Map<String, CropQuad>,
+    filters: Map<String, PageFilter>,
+    fallbackFilter: PageFilter,
+    quality: Map<String, Set<PageIssue>>,
+    onOpen: (Int) -> Unit,
+    onDelete: (Int) -> Unit
+) {
     val cache = remember { HashMap<String, Bitmap>() }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     LaunchedEffect(pages.size) { if (pages.isNotEmpty()) listState.animateScrollToItem(pages.lastIndex) }
     LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
             val key = uri.toString()
+            val quad = quads[key]
+            val filter = filters[key] ?: fallbackFilter
+            val needsLook = quality[key]?.isNotEmpty() == true || quad?.isIdentity() == true
             val pageLabel = stringResource(R.string.scan_review_page_n, index + 1)
-            val bitmap by produceState(initialValue = cache[key], key) {
+            val lookLabel = stringResource(R.string.scan_strip_page_needs_look, index + 1)
+            // Keyed on the outline and filter too, so the thumbnail is redrawn when either changes.
+            val renderKey = "$key|$quad|$filter"
+            val bitmap by produceState(initialValue = cache[renderKey], renderKey) {
                 if (value == null) {
-                    value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160) }
-                    value?.let { cache[key] = it }
+                    value = withContext(Dispatchers.Default) {
+                        val file = File(uri.path.orEmpty())
+                        runCatching { if (quad != null) ImageProcessor.renderPreview(file, filter, 0, quad, maxDimension = 160) else null }.getOrNull()
+                            ?: runCatching { ImageProcessor.decodeOrientedScaled(file.absolutePath, 160) }.getOrNull()
+                    }
+                    value?.let { cache[renderKey] = it }
                 }
             }
             Box(
@@ -1784,12 +1857,15 @@ private fun CapturedStrip(pages: List<Uri>, onOpen: (Int) -> Unit) {
                     .size(44.dp, 58.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color.White.copy(alpha = 0.1f))
-                    .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
-                    .clickable { onOpen(index) }
-                    .semantics { contentDescription = pageLabel },
+                    .border(1.dp, if (needsLook) Color(0xFFFFB300) else Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                    .combinedClickable(onClick = { onOpen(index) }, onLongClick = { onDelete(index) })
+                    .semantics { contentDescription = if (needsLook) lookLabel else pageLabel },
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                if (needsLook) {
+                    Box(Modifier.align(Alignment.TopStart).padding(3.dp).size(8.dp).background(Color(0xFFFFB300), androidx.compose.foundation.shape.CircleShape))
+                }
                 Text(
                     "${index + 1}",
                     color = Color.White,

@@ -116,6 +116,9 @@
     <string name="scan_status_capturing">എടുക്കുന്നു…</string>
     <string name="scan_status_front_saved">മുൻവശം സേവ് ചെയ്തു · ഇനി പിൻവശം എടുക്കുക</string>
     <string name="scan_status_id_ready">ഐഡി തയ്യാർ · പൂർത്തിയായി ടാപ്പ് ചെയ്യുക</string>
+    <string name="scan_status_page_removed">പേജ് %1$d നീക്കം ചെയ്തു</string>
+    <string name="scan_status_page_restored">പേജ് %1$d തിരികെ വന്നു</string>
+    <string name="scan_strip_page_needs_look">പേജ് %1$d, നോക്കേണ്ടി വന്നേക്കാം</string>
     <string name="scan_status_checking_pages">പേജുകൾ പരിശോധിക്കുന്നു…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d പേജ് നോക്കണം</item>

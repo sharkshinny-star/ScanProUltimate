@@ -133,6 +133,9 @@
     <string name="scan_status_capturing">Capturing…</string>
     <string name="scan_status_front_saved">Front saved · now capture the back</string>
     <string name="scan_status_id_ready">ID capture ready · tap Done</string>
+    <string name="scan_status_page_removed">Page %1$d removed</string>
+    <string name="scan_status_page_restored">Page %1$d is back</string>
+    <string name="scan_strip_page_needs_look">Page %1$d, may need a look</string>
     <string name="scan_status_checking_pages">Checking pages…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d page needs a look</item>

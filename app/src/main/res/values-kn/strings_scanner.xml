@@ -116,6 +116,9 @@
     <string name="scan_status_capturing">ತೆಗೆಯಲಾಗುತ್ತಿದೆ…</string>
     <string name="scan_status_front_saved">ಮುಂಭಾಗ ಉಳಿಸಲಾಗಿದೆ · ಈಗ ಹಿಂಭಾಗ ತೆಗೆಯಿರಿ</string>
     <string name="scan_status_id_ready">ID ಸಿದ್ಧ · ಮುಗಿದಿದೆ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="scan_status_page_removed">ಪುಟ %1$d ತೆಗೆದುಹಾಕಲಾಗಿದೆ</string>
+    <string name="scan_status_page_restored">ಪುಟ %1$d ಮರಳಿ ಬಂದಿದೆ</string>
+    <string name="scan_strip_page_needs_look">ಪುಟ %1$d, ನೋಡಬೇಕಾಗಬಹುದು</string>
     <string name="scan_status_checking_pages">ಪುಟಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d ಪುಟವನ್ನು ನೋಡಬೇಕು</item>

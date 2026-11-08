@@ -116,6 +116,9 @@
     <string name="scan_status_capturing">படம் எடுக்கப்படுகிறது…</string>
     <string name="scan_status_front_saved">முன்பக்கம் சேமிக்கப்பட்டது · இப்போது பின்பக்கத்தை எடுங்கள்</string>
     <string name="scan_status_id_ready">ID தயார் · முடிந்தது என்பதைத் தட்டவும்</string>
+    <string name="scan_status_page_removed">பக்கம் %1$d நீக்கப்பட்டது</string>
+    <string name="scan_status_page_restored">பக்கம் %1$d மீண்டும் வந்தது</string>
+    <string name="scan_strip_page_needs_look">பக்கம் %1$d, பார்க்க வேண்டியிருக்கலாம்</string>
     <string name="scan_status_checking_pages">பக்கங்கள் சரிபார்க்கப்படுகின்றன…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d பக்கத்தைப் பார்க்க வேண்டும்</item>
