@@ -101,6 +101,10 @@
     <string name="viewer_print_save_as_pdf">ప్రింట్ / PDFగా సేవ్ చేయండి</string>
     <string name="viewer_could_not_open_file">ఫైల్‌ను తెరవలేకపోయాం</string>
     <string name="viewer_load_failed">డాక్యుమెంట్‌ను లోడ్ చేయలేకపోయాం</string>
+    <string name="viewer_access_lost">ఈ ఫైల్‌ను ScanPro ఇకపై తెరవలేదు. అది వేరే చోటికి మార్చబడి ఉండవచ్చు, తొలగించబడి ఉండవచ్చు లేదా దానికి ఉన్న యాక్సెస్ గడువు ముగిసి ఉండవచ్చు. ఫైల్‌ను మళ్లీ ఎంచుకోండి.</string>
+    <string name="tools_recent_unavailable">ఈ ఫైల్ ఇకపై తెరవడం సాధ్యం కాదు. అది మార్చబడి లేదా తొలగించబడి ఉండవచ్చు, అందుకే ఇటీవలి జాబితా నుండి తీసివేశాం.</string>
+    <string name="tools_img2pdf_crop_failed_title">పేజీని క్రాప్ చేయలేకపోయాం</string>
+    <string name="tools_img2pdf_crop_failed">ఫోటోను క్రాప్ చేయలేకపోయాం, కాబట్టి అది మునుపటిలాగే ఉంటుంది. మళ్లీ ప్రయత్నించండి లేదా జాబితా నుండి తీసివేయండి.</string>
     <string name="viewer_loading_document">డాక్యుమెంట్ లోడ్ అవుతోంది…</string>
     <string name="viewer_unknown_error">తెలియని లోపం</string>
     <string name="viewer_page_counter">%1$d / %2$d</string>

@@ -123,6 +123,10 @@
     <!-- Viewer: document body and states -->
     <string name="viewer_could_not_open_file">Could not open file</string>
     <string name="viewer_load_failed">Failed to load document</string>
+    <string name="viewer_access_lost">ScanPro can no longer open this file. It may have been moved or deleted, or access to it has expired. Choose the file again.</string>
+    <string name="tools_recent_unavailable">This file can\'t be opened any more. It may have been moved or deleted, so it was removed from Recent.</string>
+    <string name="tools_img2pdf_crop_failed_title">Couldn\'t crop this page</string>
+    <string name="tools_img2pdf_crop_failed">The photo could not be cropped, so it keeps its original shape. Try again, or remove it from the list.</string>
     <string name="viewer_loading_document">Loading document…</string>
     <string name="viewer_unknown_error">Unknown error</string>
     <string name="viewer_page_counter">%1$d / %2$d</string>

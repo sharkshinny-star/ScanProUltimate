@@ -101,6 +101,10 @@
     <string name="viewer_print_save_as_pdf">प्रिंट करें / PDF के रूप में सेव करें</string>
     <string name="viewer_could_not_open_file">फ़ाइल खुल नहीं सकी</string>
     <string name="viewer_load_failed">डॉक्यूमेंट लोड नहीं हो सका</string>
+    <string name="viewer_access_lost">ScanPro अब यह फ़ाइल नहीं खोल सकता। हो सकता है इसे हटा दिया गया हो या इसकी पहुंच की अवधि खत्म हो गई हो। फ़ाइल दोबारा चुनें।</string>
+    <string name="tools_recent_unavailable">यह फ़ाइल अब नहीं खुल सकती। हो सकता है इसे हटा दिया गया हो या दूसरी जगह ले जाया गया हो, इसलिए इसे हाल की सूची से हटा दिया गया।</string>
+    <string name="tools_img2pdf_crop_failed_title">पेज क्रॉप नहीं हो सका</string>
+    <string name="tools_img2pdf_crop_failed">फ़ोटो क्रॉप नहीं हो सकी, इसलिए वह पहले जैसी ही रहेगी। दोबारा कोशिश करें या उसे सूची से हटा दें।</string>
     <string name="viewer_loading_document">डॉक्यूमेंट लोड हो रहा है…</string>
     <string name="viewer_unknown_error">अनजानी गड़बड़ी</string>
     <string name="viewer_page_counter">%1$d / %2$d</string>

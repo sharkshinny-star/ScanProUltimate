@@ -101,6 +101,10 @@
     <string name="viewer_print_save_as_pdf">ಪ್ರಿಂಟ್ / PDF ಆಗಿ ಉಳಿಸಿ</string>
     <string name="viewer_could_not_open_file">ಫೈಲ್ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ</string>
     <string name="viewer_load_failed">ಡಾಕ್ಯುಮೆಂಟ್ ಲೋಡ್ ಆಗಲಿಲ್ಲ</string>
+    <string name="viewer_access_lost">ScanPro ಈ ಫೈಲ್ ಅನ್ನು ಇನ್ನು ತೆರೆಯಲು ಸಾಧ್ಯವಿಲ್ಲ. ಅದನ್ನು ಸರಿಸಿರಬಹುದು, ಅಳಿಸಿರಬಹುದು ಅಥವಾ ಅದರ ಪ್ರವೇಶದ ಅವಧಿ ಮುಗಿದಿರಬಹುದು. ಫೈಲ್ ಅನ್ನು ಮತ್ತೆ ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="tools_recent_unavailable">ಈ ಫೈಲ್ ಇನ್ನು ತೆರೆಯಲು ಆಗುವುದಿಲ್ಲ. ಅದನ್ನು ಸರಿಸಿರಬಹುದು ಅಥವಾ ಅಳಿಸಿರಬಹುದು, ಆದ್ದರಿಂದ ಇತ್ತೀಚಿನ ಪಟ್ಟಿಯಿಂದ ತೆಗೆದುಹಾಕಲಾಗಿದೆ.</string>
+    <string name="tools_img2pdf_crop_failed_title">ಪುಟವನ್ನು ಕ್ರಾಪ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ</string>
+    <string name="tools_img2pdf_crop_failed">ಫೋಟೋವನ್ನು ಕ್ರಾಪ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದು ಮೊದಲಿನಂತೆಯೇ ಇರುತ್ತದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ ಅಥವಾ ಪಟ್ಟಿಯಿಂದ ತೆಗೆದುಹಾಕಿ.</string>
     <string name="viewer_loading_document">ಡಾಕ್ಯುಮೆಂಟ್ ಲೋಡ್ ಆಗುತ್ತಿದೆ…</string>
     <string name="viewer_unknown_error">ಗೊತ್ತಿಲ್ಲದ ದೋಷ</string>
     <string name="viewer_page_counter">%1$d / %2$d</string>

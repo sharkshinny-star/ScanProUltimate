@@ -101,6 +101,10 @@
     <string name="viewer_print_save_as_pdf">പ്രിന്റ് / PDF ആയി സേവ് ചെയ്യുക</string>
     <string name="viewer_could_not_open_file">ഫയൽ തുറക്കാനായില്ല</string>
     <string name="viewer_load_failed">ഡോക്യുമെന്റ് ലോഡ് ചെയ്യാനായില്ല</string>
+    <string name="viewer_access_lost">ഈ ഫയൽ ScanPro-യ്ക്ക് ഇനി തുറക്കാനാകില്ല. അത് മാറ്റുകയോ ഇല്ലാതാക്കുകയോ ചെയ്തിരിക്കാം, അല്ലെങ്കിൽ അതിനുള്ള ആക്സസ് കാലഹരണപ്പെട്ടിരിക്കാം. ഫയൽ വീണ്ടും തിരഞ്ഞെടുക്കുക.</string>
+    <string name="tools_recent_unavailable">ഈ ഫയൽ ഇനി തുറക്കാനാകില്ല. അത് മാറ്റുകയോ ഇല്ലാതാക്കുകയോ ചെയ്തിരിക്കാം, അതിനാൽ സമീപകാല പട്ടികയിൽ നിന്ന് നീക്കം ചെയ്തു.</string>
+    <string name="tools_img2pdf_crop_failed_title">പേജ് ക്രോപ്പ് ചെയ്യാനായില്ല</string>
+    <string name="tools_img2pdf_crop_failed">ഫോട്ടോ ക്രോപ്പ് ചെയ്യാനായില്ല, അതിനാൽ അത് പഴയതുപോലെ തന്നെ തുടരും. വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ പട്ടികയിൽ നിന്ന് നീക്കം ചെയ്യുക.</string>
     <string name="viewer_loading_document">ഡോക്യുമെന്റ് ലോഡ് ചെയ്യുന്നു…</string>
     <string name="viewer_unknown_error">അജ്ഞാത പിശക്</string>
     <string name="viewer_page_counter">%1$d / %2$d</string>
