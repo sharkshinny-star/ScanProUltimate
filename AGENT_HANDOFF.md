@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-07 (CI artifacts now kept 3 days, `retention-days: 3`, to stay inside the free 500 MB storage; not run. Earlier: archived old ScanPro's Firebase client in `docs/archive/`; reference docs checked against `git log`)
+Last updated: 2026-11-08 (CI memory limits for the free 7 GB runner after repeated runner shutdowns; full tests 336/0 failed and lint 0 errors run on `18c89a5` + this change; `retention-days: 3`). Release builds and devices not run.
 
 ## 1. Current state
 

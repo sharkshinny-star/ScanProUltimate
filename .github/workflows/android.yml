@@ -16,6 +16,12 @@ concurrency:
 permissions:
   contents: read
 
+# The free private-repo runner has ~7 GB RAM; the default 4 GB Gradle + 4 GB test heaps got the runner killed mid-build.
+env:
+  CI_GRADLE: >-
+    --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx1536m
+    -Pkotlin.daemon.jvmargs=-Xmx1g -Pscanpro.testHeap=2560m
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,10 +39,10 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Unit tests, lint and Play bundle
-        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:bundleRelease --no-daemon
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:bundleRelease $CI_GRADLE
 
       - name: Sideload APKs
-        run: ./gradlew -Pscanpro.sideload=true :app:assembleRelease --no-daemon
+        run: ./gradlew -Pscanpro.sideload=true :app:assembleRelease $CI_GRADLE
 
       - name: Size report
         run: scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release >> "$GITHUB_STEP_SUMMARY"

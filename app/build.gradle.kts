@@ -108,7 +108,8 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
             // Each Android version Robolectric loads is a few hundred MB of framework classes.
-            it.maxHeapSize = "4g"
+            // CI (7 GB runner) passes -Pscanpro.testHeap=2560m; locally the default stays 4g.
+            it.maxHeapSize = providers.gradleProperty("scanpro.testHeap").getOrElse("4g")
             // Robolectric's Android 16 reads file-descriptor internals that Java 21 keeps closed by default.
             it.jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED", "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
             // Robolectric fetches each Android version itself; Google's mirror of Maven Central avoids rate limits.
