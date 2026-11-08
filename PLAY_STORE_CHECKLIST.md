@@ -30,8 +30,8 @@ Current intended permissions are deliberately narrow. Re-check the merged releas
 - [ ] File sharing uses `FileProvider`/content URIs with temporary grants.
 - [ ] App-private documents are not silently uploaded.
 - [ ] Translation model downloads and Google document-scanner fallback behaviour are accurately disclosed in the privacy policy if shipped.
-- [ ] Data Safety form matches the exact production build and any analytics/crash SDKs you add later.
-- [ ] Data Safety form and privacy policy cover ML Kit's API usage and performance metrics (see `AUDIT_FINDINGS.md` R13; check Google's current ML Kit data disclosure).
+- [x] Data Safety form submitted by the owner 2026-11-08 (F88); re-check when SDKs change. Matches the exact production build and any analytics/crash SDKs you add later.
+- [x] Data Safety form (submitted) covers ML Kit's API usage; the privacy policy must say the same once hosted. Covers ML Kit's API usage and performance metrics (see `AUDIT_FINDINGS.md` R13; check Google's current ML Kit data disclosure).
 - [ ] Host the final privacy policy at a public HTTPS URL and link it in Play Console and the app where required.
 - [ ] Review encrypted `.scanpro` backup behaviour and warn users that losing the password means losing access to that backup.
 
