@@ -69,7 +69,10 @@
     <string name="doc_rename_document">Rename document</string>
     <string name="doc_name">Name</string>
     <string name="doc_document_tags">Document tags</string>
-    <string name="doc_comma_separated_tags">Comma-separated tags</string>
+    <string name="doc_add_tag">Add a tag</string>
+    <string name="doc_no_tags_yet">No tags yet</string>
+    <string name="doc_tags_in_use">Tags in use</string>
+    <string name="doc_remove_tag">Remove %1$s</string>
     <string name="doc_folder_name">Folder name</string>
 
     <!-- Document screen: More sheet -->

@@ -59,7 +59,10 @@
     <string name="doc_rename_document">डॉक्यूमेंट का नाम बदलें</string>
     <string name="doc_name">नाम</string>
     <string name="doc_document_tags">डॉक्यूमेंट टैग</string>
-    <string name="doc_comma_separated_tags">कॉमा से अलग किए गए टैग</string>
+    <string name="doc_add_tag">टैग जोड़ें</string>
+    <string name="doc_no_tags_yet">अभी कोई टैग नहीं</string>
+    <string name="doc_tags_in_use">इस्तेमाल में टैग</string>
+    <string name="doc_remove_tag">%1$s हटाएँ</string>
     <string name="doc_folder_name">फ़ोल्डर का नाम</string>
     <string name="doc_rotate">घुमाएं</string>
     <string name="doc_move_left">बाईं ओर ले जाएं</string>

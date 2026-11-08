@@ -39,6 +39,14 @@ class LibraryFiltersTest {
     }
 
     @Test
+    fun `a tag matches whole, ignoring case`() {
+        val tagged = listOf(doc("t", "t", 1, 1).copy(tags = listOf("Tax", "2026")), doc("u", "u", 2, 2).copy(tags = listOf("taxi")), doc("v", "v", 3, 3))
+        assertEquals(listOf("t"), ids(tagged.filteredAndSorted("", false, LibrarySort.UPDATED, tag = "tax")))
+        assertEquals("no tag keeps everything", 3, tagged.filteredAndSorted("", false, LibrarySort.UPDATED, tag = "").size)
+        assertEquals("whole tag only", emptyList<String>(), ids(tagged.filteredAndSorted("", false, LibrarySort.UPDATED, tag = "ta")))
+    }
+
+    @Test
     fun `names sort ignoring case`() {
         // "apple" (lower case) comes before "Banana" (upper case).
         assertEquals("b", docs.filteredAndSorted("", false, LibrarySort.NAME).first().id)

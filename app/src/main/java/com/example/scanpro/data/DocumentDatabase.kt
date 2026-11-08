@@ -122,30 +122,34 @@ internal interface ScanDao {
     @Query(
         "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
             "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "AND (:tag = '' OR LOWER(d.tags_json) LIKE '%\"' || LOWER(:tag) || '\"%') " +
             "ORDER BY (CASE WHEN :ascending = 1 THEN d.updated_at END) ASC, (CASE WHEN :ascending = 0 THEN d.updated_at END) DESC, d.id"
     )
-    fun pagedByUpdated(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
+    fun pagedByUpdated(folder: String, favoritesOnly: Boolean, tag: String, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
 
     @Query(
         "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
             "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "AND (:tag = '' OR LOWER(d.tags_json) LIKE '%\"' || LOWER(:tag) || '\"%') " +
             "ORDER BY (CASE WHEN :ascending = 1 THEN d.created_at END) ASC, (CASE WHEN :ascending = 0 THEN d.created_at END) DESC, d.id"
     )
-    fun pagedByCreated(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
+    fun pagedByCreated(folder: String, favoritesOnly: Boolean, tag: String, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
 
     @Query(
         "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
             "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "AND (:tag = '' OR LOWER(d.tags_json) LIKE '%\"' || LOWER(:tag) || '\"%') " +
             "ORDER BY (CASE WHEN :ascending = 1 THEN d.title END) COLLATE NOCASE ASC, (CASE WHEN :ascending = 0 THEN d.title END) COLLATE NOCASE DESC, d.id"
     )
-    fun pagedByName(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
+    fun pagedByName(folder: String, favoritesOnly: Boolean, tag: String, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
 
     @Query(
         "SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 " +
             "AND (:folder = '' OR TRIM(d.folder_name) = :folder COLLATE NOCASE) AND (:favoritesOnly = 0 OR d.is_favorite = 1) " +
+            "AND (:tag = '' OR LOWER(d.tags_json) LIKE '%\"' || LOWER(:tag) || '\"%') " +
             "ORDER BY (CASE WHEN :ascending = 1 THEN d.size_bytes END) ASC, (CASE WHEN :ascending = 0 THEN d.size_bytes END) DESC, d.id"
     )
-    fun pagedBySize(folder: String, favoritesOnly: Boolean, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
+    fun pagedBySize(folder: String, favoritesOnly: Boolean, tag: String, ascending: Boolean): PagingSource<Int, DocumentSummaryRow>
 
     @Query("SELECT COUNT(*) FROM documents WHERE trashed_at = 0")
     fun countActive(): Int
@@ -155,6 +159,9 @@ internal interface ScanDao {
 
     @Query("SELECT DISTINCT TRIM(folder_name) FROM documents WHERE trashed_at = 0 AND TRIM(folder_name) != ''")
     fun loadFolderNames(): List<String>
+
+    @Query("SELECT DISTINCT tags_json FROM documents WHERE trashed_at = 0 AND tags_json != '' AND tags_json != '[]'")
+    fun loadTagsJson(): List<String>
 
     @Query("SELECT $SUMMARY_COLUMNS FROM documents d WHERE d.trashed_at = 0 ORDER BY d.updated_at DESC, d.id LIMIT :limit")
     fun loadRecentSummaries(limit: Int): List<DocumentSummaryRow>
@@ -313,13 +320,15 @@ class DocumentDatabase @Inject constructor(
      * The Files list as pages of summaries, straight from the database: it stays current by itself, because
      * Room invalidates the source whenever the documents or pages tables change.
      */
-    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort, ascending: Boolean = sort.defaultAscending): Flow<PagingData<DocumentSummary>> =
+    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort, ascending: Boolean = sort.defaultAscending, tag: String = ""): Flow<PagingData<DocumentSummary>> =
         Pager(PagingConfig(pageSize = 30, prefetchDistance = 30, enablePlaceholders = false)) {
+            // The tag is matched as a whole JSON string, quotes included, so "tax" does not match "taxi".
+            val wantedTag = JsonCodec.encodeStringList(listOf(tag.trim())).removePrefix("[").removeSuffix("]").removeSurrounding("\"").takeIf { tag.isNotBlank() }.orEmpty()
             when (sort) {
-                LibrarySort.UPDATED -> dao.pagedByUpdated(folder.trim(), favoritesOnly, ascending)
-                LibrarySort.CREATED -> dao.pagedByCreated(folder.trim(), favoritesOnly, ascending)
-                LibrarySort.NAME -> dao.pagedByName(folder.trim(), favoritesOnly, ascending)
-                LibrarySort.SIZE -> dao.pagedBySize(folder.trim(), favoritesOnly, ascending)
+                LibrarySort.UPDATED -> dao.pagedByUpdated(folder.trim(), favoritesOnly, wantedTag, ascending)
+                LibrarySort.CREATED -> dao.pagedByCreated(folder.trim(), favoritesOnly, wantedTag, ascending)
+                LibrarySort.NAME -> dao.pagedByName(folder.trim(), favoritesOnly, wantedTag, ascending)
+                LibrarySort.SIZE -> dao.pagedBySize(folder.trim(), favoritesOnly, wantedTag, ascending)
             }
         }.flow.map { data -> data.map { row -> row.toSummary() } }
 
@@ -329,6 +338,8 @@ class DocumentDatabase @Inject constructor(
             favoriteCount = dao.countFavorites(),
             // One entry per folder whatever the case of its name, as the filter itself ignores case.
             folders = dao.loadFolderNames().distinctBy { it.lowercase() }.sortedBy { it.lowercase() },
+            tags = dao.loadTagsJson().flatMap { JsonCodec.decodeStringList(it) }.map { it.trim() }.filter { it.isNotEmpty() }
+                .distinctBy { it.lowercase() }.sortedBy { it.lowercase() },
             recent = dao.loadRecentSummaries(recentLimit).map { it.toSummary() }
         )
     }

@@ -59,7 +59,10 @@
     <string name="doc_rename_document">ಡಾಕ್ಯುಮೆಂಟ್ ಹೆಸರು ಬದಲಿಸಿ</string>
     <string name="doc_name">ಹೆಸರು</string>
     <string name="doc_document_tags">ಡಾಕ್ಯುಮೆಂಟ್ ಟ್ಯಾಗ್‌ಗಳು</string>
-    <string name="doc_comma_separated_tags">ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿದ ಟ್ಯಾಗ್‌ಗಳು</string>
+    <string name="doc_add_tag">ಟ್ಯಾಗ್ ಸೇರಿಸಿ</string>
+    <string name="doc_no_tags_yet">ಇನ್ನೂ ಟ್ಯಾಗ್‌ಗಳಿಲ್ಲ</string>
+    <string name="doc_tags_in_use">ಬಳಕೆಯಲ್ಲಿರುವ ಟ್ಯಾಗ್‌ಗಳು</string>
+    <string name="doc_remove_tag">%1$s ತೆಗೆದುಹಾಕಿ</string>
     <string name="doc_folder_name">ಫೋಲ್ಡರ್ ಹೆಸರು</string>
     <string name="doc_rotate">ತಿರುಗಿಸಿ</string>
     <string name="doc_move_left">ಎಡಕ್ಕೆ ಸರಿಸಿ</string>

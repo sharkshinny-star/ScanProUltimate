@@ -114,6 +114,8 @@ class DocumentViewModel @Inject constructor(
 
     fun stopCurrent() = operations.cancelCurrent()
     fun setTags(tags: String) = editor.submit(id, DocumentEdit.SetTags(tags))
+    /** Every tag in use in the library, for the Tags sheet's chips (R35). */
+    val libraryTags: StateFlow<List<String>> = library.overview.map { it.tags }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), library.overview.value.tags)
     fun setFolder(folder: String) = editor.submit(id, DocumentEdit.SetFolder(folder))
     fun toggleFavorite() = editor.submit(id, DocumentEdit.ToggleFavorite)
 

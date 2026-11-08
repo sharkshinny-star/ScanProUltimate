@@ -241,7 +241,7 @@ fun CameraScannerScreen(
     val torchEnabled = flashMode == FlashMode.TORCH
     fun setFlash(mode: FlashMode) {
         flashMode = mode
-        prefs.edit().putString("flash", mode.name).apply()
+        prefs.edit { putString("flash", mode.name) }
     }
     var detectMode by rememberSaveable {
         // Manual by default (owner decision): auto-capture surprised people; it is one tap away in the top menu.

@@ -34,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">ರೀಸೈಕಲ್ ಬಿನ್ (%1$d)</string>
     <string name="lib_scan">ಸ್ಕ್ಯಾನ್</string>
     <string name="lib_filter_all">ಎಲ್ಲಾ</string>
+    <string name="lib_filter_tags">ಟ್ಯಾಗ್‌ಗಳು</string>
+    <string name="lib_filter_all_tags">ಎಲ್ಲಾ ಟ್ಯಾಗ್‌ಗಳು</string>
     <string name="lib_filter_favorites">ಮೆಚ್ಚಿನವು</string>
     <string name="lib_empty_no_matching">ಹೊಂದುವ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳಿಲ್ಲ</string>
     <string name="lib_empty_hint">ಒಂದು ಪುಟ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ, ಅಥವಾ ನಿಮ್ಮಲ್ಲಿರುವ ಫೋಟೋಗಳು ಅಥವಾ PDF ತನ್ನಿ.</string>

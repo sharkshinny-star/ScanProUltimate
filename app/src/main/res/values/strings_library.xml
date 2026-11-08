@@ -35,6 +35,8 @@
     <string name="lib_scan">Scan</string>
 
     <string name="lib_filter_all">All</string>
+    <string name="lib_filter_tags">Tags</string>
+    <string name="lib_filter_all_tags">All tags</string>
     <string name="lib_filter_favorites">Favourites</string>
     <string name="lib_empty_no_matching">No matching documents</string>
     <string name="lib_empty_hint">Scan a page, or bring in photos or a PDF you already have.</string>

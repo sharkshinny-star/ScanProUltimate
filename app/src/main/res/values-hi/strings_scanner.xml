@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="main_compat_scanner_no_pages">कम्पैटिबिलिटी स्कैनर से कोई पेज नहीं मिला</string>
     <string name="main_screen_lock_removed">इस डिवाइस पर अब स्क्रीन लॉक नहीं है, इसलिए ऐप लॉक बंद कर दिया गया</string>
     <string name="main_compat_scanner_unavailable">इस डिवाइस पर कम्पैटिबिलिटी स्कैनर उपलब्ध नहीं है</string>
@@ -117,7 +117,7 @@
     <string name="scan_status_capturing">फ़ोटो ली जा रही है…</string>
     <string name="scan_status_front_saved">आगे का हिस्सा सेव हुआ · अब पीछे का लें</string>
     <string name="scan_status_id_ready">ID तैयार · हो गया पर टैप करें</string>
-    <string name="scan_status_page_removed">पेज %1$d हटाया गया</string>
+    <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">पेज %1$d हटाया गया</string>
     <string name="scan_status_page_restored">पेज %1$d वापस आ गया</string>
     <string name="scan_strip_page_needs_look">पेज %1$d, देखना पड़ सकता है</string>
     <string name="scan_status_checking_pages">पेज जाँचे जा रहे हैं…</string>

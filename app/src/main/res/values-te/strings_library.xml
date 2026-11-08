@@ -34,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">రీసైకిల్ బిన్ (%1$d)</string>
     <string name="lib_scan">స్కాన్</string>
     <string name="lib_filter_all">అన్నీ</string>
+    <string name="lib_filter_tags">ట్యాగ్‌లు</string>
+    <string name="lib_filter_all_tags">అన్ని ట్యాగ్‌లు</string>
     <string name="lib_filter_favorites">ఇష్టమైనవి</string>
     <string name="lib_empty_no_matching">సరిపోయే డాక్యుమెంట్‌లు లేవు</string>
     <string name="lib_empty_hint">ఒక పేజీని స్కాన్ చేయండి, లేదా మీ దగ్గర ఉన్న ఫోటోలు లేదా PDF తీసుకురండి.</string>

@@ -12,11 +12,14 @@ internal fun List<DocumentSummary>.filteredAndSorted(
     folder: String,
     favoritesOnly: Boolean,
     sort: LibrarySort,
-    ascending: Boolean = sort.defaultAscending
+    ascending: Boolean = sort.defaultAscending,
+    tag: String = ""
 ): List<DocumentSummary> {
     val wanted = folder.trim()
+    val wantedTag = tag.trim()
     val kept = filter { wanted.isEmpty() || it.folderName.trim().equals(wanted, ignoreCase = true) }
         .filter { !favoritesOnly || it.isFavorite }
+        .filter { wantedTag.isEmpty() || it.tags.any { t -> t.trim().equals(wantedTag, ignoreCase = true) } }
     val ordered = when (sort) {
         LibrarySort.UPDATED -> kept.sortedBy { it.updatedAt }
         LibrarySort.CREATED -> kept.sortedBy { it.createdAt }

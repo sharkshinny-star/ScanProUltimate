@@ -81,7 +81,7 @@ class DocumentRepository @Inject constructor(
         db.loadTrashSummaries()
     }
     /** The Files list as pages; see [DocumentDatabase.pagedSummaries]. */
-    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort, ascending: Boolean = sort.defaultAscending) = db.pagedSummaries(folder, favoritesOnly, sort, ascending)
+    fun pagedSummaries(folder: String, favoritesOnly: Boolean, sort: LibrarySort, ascending: Boolean = sort.defaultAscending, tag: String = "") = db.pagedSummaries(folder, favoritesOnly, sort, ascending, tag)
     suspend fun loadOverview(recentLimit: Int): LibraryOverview = withContext(Dispatchers.IO) { db.loadOverview(recentLimit) }
     suspend fun loadOtherSummaries(excludeId: String, limit: Int): List<DocumentSummary> =
         withContext(Dispatchers.IO) { db.loadOtherSummaries(excludeId, limit) }

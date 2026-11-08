@@ -62,6 +62,8 @@ data class LibraryOverview(
     val documentCount: Int = 0,
     val favoriteCount: Int = 0,
     val folders: List<String> = emptyList(),
+    /** Every tag in use on an active document, one entry per spelling ignoring case, sorted (R35). */
+    val tags: List<String> = emptyList(),
     val recent: List<DocumentSummary> = emptyList(),
     val revision: Long = 0L
 )

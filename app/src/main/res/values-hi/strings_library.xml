@@ -34,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">रीसायकल बिन (%1$d)</string>
     <string name="lib_scan">स्कैन</string>
     <string name="lib_filter_all">सभी</string>
+    <string name="lib_filter_tags">टैग</string>
+    <string name="lib_filter_all_tags">सभी टैग</string>
     <string name="lib_filter_favorites">पसंदीदा</string>
     <string name="lib_empty_no_matching">कोई मिलता-जुलता डॉक्यूमेंट नहीं</string>
     <string name="lib_empty_hint">कोई पेज स्कैन करें, या अपनी फ़ोटो या PDF लाएं।</string>

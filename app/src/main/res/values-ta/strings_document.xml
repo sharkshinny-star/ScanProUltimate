@@ -59,7 +59,10 @@
     <string name="doc_rename_document">ஆவணத்தின் பெயரை மாற்று</string>
     <string name="doc_name">பெயர்</string>
     <string name="doc_document_tags">ஆவண டேக்குகள்</string>
-    <string name="doc_comma_separated_tags">கமாவால் பிரித்த டேக்குகள்</string>
+    <string name="doc_add_tag">குறிச்சொல் சேர்</string>
+    <string name="doc_no_tags_yet">இன்னும் குறிச்சொற்கள் இல்லை</string>
+    <string name="doc_tags_in_use">பயன்பாட்டில் உள்ள குறிச்சொற்கள்</string>
+    <string name="doc_remove_tag">%1$s ஐ நீக்கு</string>
     <string name="doc_folder_name">ஃபோல்டர் பெயர்</string>
     <string name="doc_rotate">சுழற்று</string>
     <string name="doc_move_left">இடப்புறம் நகர்த்து</string>

@@ -291,6 +291,7 @@ fun DocumentRoute(
         onBack = onBack,
         onRename = viewModel::rename,
         onTags = viewModel::setTags,
+        libraryTags = viewModel.libraryTags.collectAsStateWithLifecycle().value,
         onFolder = viewModel::setFolder,
         onToggleFavorite = viewModel::toggleFavorite,
         onPdfQuality = viewModel::setPdfQuality,
@@ -367,6 +368,8 @@ internal fun DocumentDetailScreen(
     onBack: () -> Unit,
     onRename: (String) -> Unit,
     onTags: (String) -> Unit,
+    /** Tags in use across the library, offered as chips in the Tags sheet (R35). */
+    libraryTags: List<String> = emptyList(),
     onFolder: (String) -> Unit,
     onToggleFavorite: () -> Unit,
     onPdfQuality: (PdfQuality) -> Unit,
@@ -1168,7 +1171,7 @@ internal fun DocumentDetailScreen(
             onConfirm = { splitAllOpen = false; onSplitDocument() }
         )
     }
-    if (tagsOpen) TextInputDialog(stringResource(R.string.doc_document_tags), document.tags.joinToString(", "), stringResource(R.string.doc_comma_separated_tags), allowBlank = true, onDismiss = { tagsOpen = false }) { onTags(it); tagsOpen = false }
+    if (tagsOpen) TagsSheet(current = document.tags, suggestions = libraryTags, onDismiss = { tagsOpen = false }) { onTags(it.joinToString(", ")); tagsOpen = false }
     if (folderOpen) TextInputDialog(stringResource(R.string.doc_move_to_folder), document.folderName, stringResource(R.string.doc_folder_name), allowBlank = true, onDismiss = { folderOpen = false }) { onFolder(it); folderOpen = false }
 
     if (watermarkOpen) WatermarkDialog(onDismiss = { watermarkOpen = false }) { onWatermark(it); watermarkOpen = false }

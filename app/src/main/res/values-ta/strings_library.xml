@@ -34,6 +34,8 @@
     <string name="lib_menu_recycle_bin_count">குப்பைத் தொட்டி (%1$d)</string>
     <string name="lib_scan">ஸ்கேன்</string>
     <string name="lib_filter_all">அனைத்தும்</string>
+    <string name="lib_filter_tags">குறிச்சொற்கள்</string>
+    <string name="lib_filter_all_tags">அனைத்து குறிச்சொற்கள்</string>
     <string name="lib_filter_favorites">பிடித்தவை</string>
     <string name="lib_empty_no_matching">பொருந்தும் ஆவணங்கள் இல்லை</string>
     <string name="lib_empty_hint">ஒரு பக்கத்தை ஸ்கேன் செய்யுங்கள், அல்லது ஏற்கெனவே உள்ள ஃபோட்டோக்கள் அல்லது PDF-ஐக் கொண்டு வாருங்கள்.</string>

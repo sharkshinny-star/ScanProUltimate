@@ -59,7 +59,10 @@
     <string name="doc_rename_document">ഡോക്യുമെന്റിന്റെ പേര് മാറ്റുക</string>
     <string name="doc_name">പേര്</string>
     <string name="doc_document_tags">ഡോക്യുമെന്റ് ടാഗുകൾ</string>
-    <string name="doc_comma_separated_tags">കോമ ഇട്ട് വേർതിരിച്ച ടാഗുകൾ</string>
+    <string name="doc_add_tag">ടാഗ് ചേർക്കുക</string>
+    <string name="doc_no_tags_yet">ഇതുവരെ ടാഗുകളില്ല</string>
+    <string name="doc_tags_in_use">ഉപയോഗത്തിലുള്ള ടാഗുകൾ</string>
+    <string name="doc_remove_tag">%1$s നീക്കം ചെയ്യുക</string>
     <string name="doc_folder_name">ഫോൾഡറിന്റെ പേര്</string>
     <string name="doc_rotate">തിരിക്കുക</string>
     <string name="doc_move_left">ഇടത്തേക്ക് നീക്കുക</string>

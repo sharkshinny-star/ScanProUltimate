@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="main_compat_scanner_no_pages">కంపాటిబిలిటీ స్కానర్ ఏ పేజీలనూ ఇవ్వలేదు</string>
     <string name="main_screen_lock_removed">ఈ డివైజ్‌లో ఇప్పుడు స్క్రీన్ లాక్ లేదు, కాబట్టి యాప్ లాక్ ఆఫ్ చేయబడింది</string>
     <string name="main_compat_scanner_unavailable">ఈ డివైజ్‌లో కంపాటిబిలిటీ స్కానర్ అందుబాటులో లేదు</string>
@@ -117,7 +117,7 @@
     <string name="scan_status_capturing">క్యాప్చర్ చేస్తోంది…</string>
     <string name="scan_status_front_saved">ముందు వైపు సేవ్ అయింది · ఇప్పుడు వెనుక వైపు తీయండి</string>
     <string name="scan_status_id_ready">ID క్యాప్చర్ సిద్ధం · పూర్తయింది నొక్కండి</string>
-    <string name="scan_status_page_removed">పేజీ %1$d తీసివేయబడింది</string>
+    <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">పేజీ %1$d తీసివేయబడింది</string>
     <string name="scan_status_page_restored">పేజీ %1$d తిరిగి వచ్చింది</string>
     <string name="scan_strip_page_needs_look">పేజీ %1$d, చూడాల్సి రావచ్చు</string>
     <string name="scan_status_checking_pages">పేజీలను తనిఖీ చేస్తోంది…</string>

@@ -68,6 +68,9 @@ class LibraryViewModel @Inject constructor(
 
     fun setFolder(value: String) { savedState[KEY_FOLDER] = value }
     fun setFavoritesOnly(value: Boolean) { savedState[KEY_FAVORITES] = value }
+    /** Files tag filter (R35): blank for none. */
+    val tag: StateFlow<String> = savedState.getStateFlow(KEY_TAG, "")
+    fun setTag(value: String) { savedState[KEY_TAG] = value }
     fun setSort(value: LibrarySort) { viewModelScope.launch { settings.setLibrarySort(value.name); settings.setLibrarySortAscending(null) } }
 
     /** Sort direction (R35): the saved choice, or the key's own default when none was made. */
@@ -112,13 +115,13 @@ class LibraryViewModel @Inject constructor(
      */
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val documents: Flow<PagingData<DocumentSummary>> =
-        combine(_query.debounce(180.milliseconds), folder, favoritesOnly, combine(sort, sortAscending) { k, a -> k to a }, folderLock.hidden) { query, folder, favorites, (sort, ascending), hidden -> Filters(query, folder, favorites, sort, ascending) to hidden }
+        combine(_query.debounce(180.milliseconds), folder, favoritesOnly, combine(sort, sortAscending, tag) { k, a, t -> Triple(k, a, t) }, folderLock.hidden) { query, folder, favorites, (sort, ascending, tag), hidden -> Filters(query, folder, favorites, sort, ascending, tag) to hidden }
             .flatMapLatest { (f, hidden) ->
                 // A closed locked folder shows nothing, and its documents stay out of All, favourites and search.
                 if (com.example.scanpro.core.security.FolderLock.hides(hidden, f.folder)) {
                     flow { emit(PagingData.empty()) }
                 } else if (f.query.isBlank()) {
-                    repository.pagedSummaries(f.folder, f.favoritesOnly, f.sort, f.ascending)
+                    repository.pagedSummaries(f.folder, f.favoritesOnly, f.sort, f.ascending, f.tag)
                         .map { page -> if (hidden.isEmpty()) page else page.filter { !it.inHidden(hidden) } }
                 } else {
                     flow { emit(PagingData.from(searchResults(f).filterNot { it.inHidden(hidden) })) }
@@ -126,7 +129,7 @@ class LibraryViewModel @Inject constructor(
             }
             .cachedIn(viewModelScope)
 
-    private data class Filters(val query: String, val folder: String, val favoritesOnly: Boolean, val sort: LibrarySort, val ascending: Boolean)
+    private data class Filters(val query: String, val folder: String, val favoritesOnly: Boolean, val sort: LibrarySort, val ascending: Boolean, val tag: String)
 
     private suspend fun searchResults(f: Filters): List<DocumentSummary> {
         val found = try {
@@ -137,7 +140,7 @@ class LibraryViewModel @Inject constructor(
         } catch (_: Exception) {
             emptyList()
         }
-        return found.filteredAndSorted(f.folder, f.favoritesOnly, f.sort, f.ascending)
+        return found.filteredAndSorted(f.folder, f.favoritesOnly, f.sort, f.ascending, f.tag)
     }
 
     val trashCount: StateFlow<Int> = library.trash
@@ -247,6 +250,7 @@ class LibraryViewModel @Inject constructor(
     private companion object {
         const val KEY_FOLDER = "folder"
         const val KEY_FAVORITES = "favoritesOnly"
+        const val KEY_TAG = "tag"
     }
 }
 

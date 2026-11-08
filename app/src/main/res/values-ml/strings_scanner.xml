@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="main_compat_scanner_no_pages">കോംപാറ്റിബിലിറ്റി സ്കാനർ പേജുകളൊന്നും നൽകിയില്ല</string>
     <string name="main_screen_lock_removed">ഈ ഡിവൈസിൽ ഇപ്പോൾ സ്ക്രീൻ ലോക്ക് ഇല്ലാത്തതിനാൽ ആപ്പ് ലോക്ക് ഓഫാക്കി</string>
     <string name="main_compat_scanner_unavailable">ഈ ഡിവൈസിൽ കോംപാറ്റിബിലിറ്റി സ്കാനർ ലഭ്യമല്ല</string>
@@ -117,7 +117,7 @@
     <string name="scan_status_capturing">എടുക്കുന്നു…</string>
     <string name="scan_status_front_saved">മുൻവശം സേവ് ചെയ്തു · ഇനി പിൻവശം എടുക്കുക</string>
     <string name="scan_status_id_ready">ഐഡി തയ്യാർ · പൂർത്തിയായി ടാപ്പ് ചെയ്യുക</string>
-    <string name="scan_status_page_removed">പേജ് %1$d നീക്കം ചെയ്തു</string>
+    <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">പേജ് %1$d നീക്കം ചെയ്തു</string>
     <string name="scan_status_page_restored">പേജ് %1$d തിരികെ വന്നു</string>
     <string name="scan_strip_page_needs_look">പേജ് %1$d, നോക്കേണ്ടി വന്നേക്കാം</string>
     <string name="scan_status_checking_pages">പേജുകൾ പരിശോധിക്കുന്നു…</string>

@@ -262,7 +262,9 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
 - **Files sort direction and recent searches (R35/F76).** `LibrarySort` carries each key's default direction and
   its two direction labels; the DAO's paged queries take `ascending` and order with two CASE expressions, so the
   list stays a database page in either direction; `SettingsStore.librarySortAscending` (null = the key's default)
-  and `recentSearches` (JSON list, `RecentSearches.add` keeps eight, newest first, no repeats) back the UI.
+  and `recentSearches` (JSON list, `RecentSearches.add` keeps eight, newest first, no repeats) back the UI. Tags (F77):
+  `LibraryOverview.tags` lists every tag in use (from `tags_json`), the paged queries take a `tag` matched as a whole
+  quoted JSON string, and `TagsSheet` / `TagFilterSheet` edit and filter by them.
 - **Duplicate-aware auto-capture (R32/F75).** `scanner/PageSignature.kt`: `PageSignature.of` shrinks the page inside
   its outline to 32 x 32 and normalises brightness and contrast; `isSamePage` compares mean difference against 0.22.
   `OpenCvDocumentAnalyzer` keeps the signature of each auto-capture and, on a would-be capture, skips a matching
