@@ -195,7 +195,8 @@ class DocumentRepository @Inject constructor(
             }
             val fallbackTitle = context.getString(R.string.doc_title_imported, SimpleDateFormat("yyyy-MM-dd HH-mm", Locale.getDefault()).format(Date(created)))
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
-            val title = if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
+            val smart = if (autoTitle) SmartTitle.fromOcr(allText, "").takeIf { it.isNotBlank() } else null
+            val title = com.example.scanpro.imaging.ScanTitle.build(settings.namePattern.first(), smart, context.getString(ScanMode.DOCUMENT.labelRes), created, fallbackTitle)
             val pdf = File(folder, "document.pdf")
             val doc = ScanDocument(
                 id = id,
@@ -1192,8 +1193,11 @@ class DocumentRepository @Inject constructor(
                 else -> "${context.getString(mode.labelRes)} $stamp"
             }
             val allText = pages.joinToString("\n", transform = ScanPage::ocrText)
+            // The typed name wins; otherwise the smart title (when on) goes through the name pattern (R34), which
+            // with no pattern set gives the smart title or the mode-and-date fallback as before.
+            val smart = if (autoTitle) SmartTitle.fromOcr(allText, "").takeIf { it.isNotBlank() } else null
             val title = userTitle?.trim()?.takeIf { it.isNotEmpty() }?.take(MAX_TITLE_LENGTH)
-                ?: if (autoTitle) SmartTitle.fromOcr(allText, fallbackTitle) else fallbackTitle
+                ?: com.example.scanpro.imaging.ScanTitle.build(settings.namePattern.first(), smart, context.getString(mode.labelRes), created, fallbackTitle)
             val doc = ScanDocument(
                 id = id,
                 title = title,

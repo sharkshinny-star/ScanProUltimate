@@ -42,6 +42,5 @@ see `TOOLS_IMPROVEMENTS.md`.
 | R18 | P3 | UX | `feature/trash/TrashScreen.kt`, `feature/document/DocumentScreen.kt`, `feature/settings/SettingsScreen.kt`, `feature/library/DocumentCards.kt` | From the screenshot review (360 dp phone), not changed (the Recycle bin actions were moved under the notice in F43): | Owner picks; Empty into ⋮ is the cheapest. |
 | R21 | P3 | Security | `MainActivity.handleIntent` | The exported activity accepts the internal actions (open document, recycle bin, settings, unsaved scans, scan) from any app. | Optional: route notification and shortcut actions through a non-exported trampoline activity. |
 | R22 | P3 | Privacy | `core/crash/CrashReporter.kt` | Crash reports include exception messages, which can hold file names derived from document titles. | Optional: replace paths under `filesDir`/`cacheDir` with placeholders before writing. |
-| R34 | P3 | UX / i18n | `imaging/SmartTitle.kt` | Competitor comparison 2026-11-04 (CamScanner, Adobe Scan, OKEN, ACE, Microsoft Lens, Genius Scan; | Give SmartTitle a string provider with the document-kind labels in all six languages; optional name pattern in Settings (mode, date, first line). |
 
 Fixed items and their evidence are in the "Fixed" table of `AUDIT_FINDINGS.md`; build and test results in `BUILD_AND_TEST.md`.
