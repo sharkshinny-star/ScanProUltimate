@@ -36,7 +36,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          # Write the cache from the working branch too, so the Gradle distribution and dependencies are not
+          # downloaded on every run (the branch is the only one that builds; main never does).
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/claude/awesome-clarke-ussjo3' }}
 
       - name: Unit tests, lint and Play bundle
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:bundleRelease $CI_GRADLE

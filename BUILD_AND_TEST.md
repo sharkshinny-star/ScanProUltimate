@@ -186,6 +186,7 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 
 ## Known errors and workarounds
 
+| CI runs 80-82 (2026-11-08) failed in under a minute: `Downloading https://services.gradle.org/distributions/gradle-9.8.2-bin.zip failed: timeout (10000ms)`, one attempt | The wrapper's 10 s timeout with `retries=0`, and CI's cache was read-only off `main`, so the distribution was fetched every run. Fixed: `networkTimeout=60000`, `retries=3`, `retryBackOffMs=2000` in `gradle-wrapper.properties`; the cache is written from the working branch too. Not a code failure; re-run if it recurs. |
 | Problem | Fix |
 |---|---|
 | Maven Central HTTP 429 in cloud containers | Add `~/.gradle/init.d/central-mirror.gradle` that replaces `mavenCentral()` with `https://maven-central.storage-download.googleapis.com/maven2/`. Local only; never commit it. |
