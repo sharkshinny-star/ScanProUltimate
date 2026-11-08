@@ -42,6 +42,7 @@ import com.example.scanpro.core.ui.RatingSheet
 import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.core.ui.SupportTopic
 import com.example.scanpro.core.ui.contactSupport
+import kotlinx.coroutines.launch
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
 import com.example.scanpro.navigation.ScanProDestinations
@@ -62,6 +63,7 @@ fun ScanProApp(
     launchSettled: Boolean = true
 ) {
     val context = LocalContext.current
+    val supportScope = androidx.compose.runtime.rememberCoroutineScope()
     val libraryRevision by viewModel.libraryRevision.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val exportArtifact by viewModel.exportArtifact.collectAsStateWithLifecycle()
@@ -87,7 +89,7 @@ fun ScanProApp(
             },
             onSendFeedback = {
                 viewModel.markRatingShown()
-                contactSupport(context, SupportTopic.FEEDBACK)
+                supportScope.launch { contactSupport(context, SupportTopic.FEEDBACK) }
             }
         )
     }

@@ -232,6 +232,7 @@ fun CameraScannerScreen(
     var shownQuad by remember { mutableStateOf<CropQuad?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
+    var boundUseCases by remember { mutableStateOf<List<androidx.camera.core.UseCase>>(emptyList()) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     // A camera problem the user has to act on (camera busy, disabled, failed to open); shown in every mode.
     var cameraError by remember { mutableStateOf<String?>(null) }
@@ -795,6 +796,7 @@ fun CameraScannerScreen(
             cameraProvider?.unbindAll()
             imageCapture = null
             boundCamera = null
+            boundUseCases = emptyList()
             return@LaunchedEffect
         }
         val future = ProcessCameraProvider.getInstance(context)
@@ -854,6 +856,7 @@ fun CameraScannerScreen(
                 }
                 imageCapture = capture
                 boundCamera = camera
+                boundUseCases = listOf(preview, capture, analysis)
                 cameraError = null
                 // Errors after binding (another app took the camera, device policy, a fold closing) arrive here.
                 camera.cameraInfo.cameraState.observe(lifecycleOwner) { state ->
@@ -885,6 +888,11 @@ fun CameraScannerScreen(
     }
 
     // Volume keys take a photo while this screen can; presses arrive from the activity.
+    // The screen is not restarted on rotation, so the camera must be told the new rotation (see followDisplayRotation).
+    DisposableEffect(boundUseCases) {
+        val stop = if (boundUseCases.isEmpty()) ({}) else followDisplayRotation(context, previewView, boundUseCases)
+        onDispose(stop)
+    }
     DisposableEffect(reviewing, barcodeMode, permissionGranted) {
         HardwareShutter.active = permissionGranted && !reviewing && !barcodeMode
         onDispose { HardwareShutter.active = false }

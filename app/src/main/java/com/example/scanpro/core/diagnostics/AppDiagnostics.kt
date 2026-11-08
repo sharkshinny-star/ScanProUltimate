@@ -1,5 +1,6 @@
 package com.example.scanpro.core.diagnostics
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.content.res.Configuration
@@ -23,6 +24,29 @@ object AppDiagnostics {
     private const val MAX_IN_MEMORY_LOGS = 100
     private val inMemoryLogs = ArrayDeque<String>(MAX_IN_MEMORY_LOGS)
 
+    /**
+     * Takes what is private out of text that is about to leave the phone in a report: the app's folder paths, other
+     * apps' content links, and the names of exported files (they come from document titles). Pure, so it can be
+     * tested; [redact] fills in this app's paths.
+     */
+    internal fun redactPaths(text: String, appPaths: List<String>, packageName: String): String {
+        var out = text
+        appPaths.filter { it.isNotBlank() }.distinct().sortedByDescending { it.length }.forEach { out = out.replace(it, "<app>") }
+        out = out.replace(Regex("/data/(?:user/\\d+|data)/" + Regex.escape(packageName)), "<app>")
+        out = out.replace(Regex("(exports/)[^\\s\"')\\]]+"), "$1<file>")
+        out = out.replace(Regex("content://[^\\s\"')\\]]+"), "<content-uri>")
+        return out
+    }
+
+    fun redact(context: Context, text: String): String = redactPaths(
+        text,
+        listOfNotNull(
+            context.filesDir?.absolutePath, context.cacheDir?.absolutePath, context.dataDir?.absolutePath,
+            context.getExternalFilesDir(null)?.absolutePath, context.externalCacheDir?.absolutePath
+        ),
+        context.packageName
+    )
+
     @Synchronized
     fun recordEvent(tag: String, message: String) {
         val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
@@ -41,15 +65,17 @@ object AppDiagnostics {
      * Collects the last [maxLines] lines of logcat for this app process.
      */
     fun collectLogcat(maxLines: Int = 150): String = runCatching {
-        val myPid = Process.myPid()
-        val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "time", "-t", maxLines.toString(), "--pid=$myPid"))
-        val lines = process.inputStream.bufferedReader().use { it.readLines() }
-        if (lines.isNotEmpty()) {
-            lines.takeLast(maxLines).joinToString("\n")
-        } else {
-            val fallbackProc = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "time", "-t", maxLines.toString()))
-            fallbackProc.inputStream.bufferedReader().use { it.readLines().takeLast(maxLines).joinToString("\n") }
+        fun dump(vararg args: String): List<String> {
+            val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "time", "-t", maxLines.toString()) + args)
+            // "-d" dumps and exits, but never leave the process behind if reading fails or it stalls.
+            return try {
+                process.inputStream.bufferedReader().use { it.readLines() }
+            } finally {
+                process.destroy()
+            }
         }
+        val lines = dump("--pid=${Process.myPid()}").ifEmpty { dump() }
+        lines.takeLast(maxLines).joinToString("\n")
     }.getOrDefault("")
 
     /**
@@ -60,12 +86,15 @@ object AppDiagnostics {
         dir.listFiles { f -> f.isFile && f.name.endsWith(".txt") }
             ?.maxByOrNull { it.lastModified() }
             ?.readText()
+            ?.let { redact(context, it) }
     }.getOrNull()
 
     /**
      * Compiles a comprehensive diagnostic report of the system, hardware, memory, storage,
      * display, and environment.
      */
+    // The free space is shown as information only; allocatable bytes (which count clearable caches) are not what is meant.
+    @SuppressLint("UsableSpace")
     fun buildSystemInfo(context: Context): String = buildString {
         val res = context.resources
         val dm = res.displayMetrics
@@ -149,14 +178,14 @@ object AppDiagnostics {
             appendLine("================================================================")
             appendLine("IN-APP EVENT TRAIL (${inMemory.size} events)")
             appendLine("================================================================")
-            inMemory.forEach { appendLine(it) }
+            inMemory.forEach { appendLine(redact(context, it)) }
             appendLine()
         }
 
         appendLine("================================================================")
         appendLine("SYSTEM LOGCAT (RECENT)")
         appendLine("================================================================")
-        val logcat = collectLogcat(150)
+        val logcat = redact(context, collectLogcat(150))
         if (logcat.isNotBlank()) {
             appendLine(logcat.trim())
         } else {

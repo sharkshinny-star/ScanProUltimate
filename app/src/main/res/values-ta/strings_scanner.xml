@@ -27,6 +27,7 @@
     <string name="ui_permissions_not_now">இப்போது வேண்டாம்</string>
     <string name="ui_scanned_page">ஸ்கேன் செய்த பக்கம்</string>
     <string name="ui_password_label">பாஸ்வேர்டு</string>
+    <string name="support_report_notice">இந்தச் செய்தியில் சாதன விவரங்களும் சமீபத்திய ஆப் பதிவுகளும் உள்ளன. அனுப்பும் முன் பார்த்து, தனிப்பட்டவற்றை நீக்கவும்.</string>
     <string name="ui_password_confirm_label">கடவுச்சொல்லை மீண்டும் உள்ளிடவும்</string>
     <string name="ui_password_mismatch">கடவுச்சொற்கள் பொருந்தவில்லை</string>
     <string name="ui_password_show">கடவுச்சொல்லைக் காட்டு</string>
@@ -124,7 +125,6 @@
     <string name="scan_status_id_ready">ID தயார் · முடிந்தது என்பதைத் தட்டவும்</string>
     <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">பக்கம் %1$d நீக்கப்பட்டது</string>
     <string name="scan_status_page_restored">பக்கம் %1$d மீண்டும் வந்தது</string>
-    <string name="scan_strip_page_needs_look">பக்கம் %1$d, பார்க்க வேண்டியிருக்கலாம்</string>
     <string name="scan_status_checking_pages">பக்கங்கள் சரிபார்க்கப்படுகின்றன…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d பக்கத்தைப் பார்க்க வேண்டும்</item>
@@ -159,7 +159,7 @@
     <string name="scan_book_one_page">ஒரு பக்கம்</string>
     <string name="scan_book_two_pages">இரு பக்கங்கள்</string>
     <string name="scan_book_two_pages_rtl">இரு பக்கங்கள், வலது முதலில்</string>
-    <string name="scan_status_spread_split">விரிப்பு %1$d மற்றும் %2$d பக்கங்களாகப் பிரிக்கப்பட்டது</string>
+    <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">விரிப்பு %1$d மற்றும் %2$d பக்கங்களாகப் பிரிக்கப்பட்டது</string>
     <string name="scan_take_photo">ஃபோட்டோ எடு</string>
     <string name="scan_import_photos">ஃபோட்டோக்களை இறக்குமதி செய்</string>
     <string name="scan_permission_title">கேமரா அனுமதி</string>
@@ -259,6 +259,5 @@
     <string name="scan_quality_dark">இந்தப் பக்கம் மிகவும் இருட்டாகத் தெரிகிறது</string>
     <string name="scan_quality_retake">மீண்டும் எடு</string>
     <string name="scan_quality_page_flagged">பக்கம் %1$d, மீண்டும் எடுக்க வேண்டியிருக்கலாம்</string>
-    <string name="scan_page_deleted">பக்கம் நீக்கப்பட்டது</string>
     <string name="scan_strip_delete_hint">நீக்க நீண்ட நேரம் அழுத்தவும்</string>
 </resources>

@@ -384,11 +384,11 @@ class MainActivity : FragmentActivity() {
             ACTION_IMPORT_IMAGES -> imageImportLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             ACTION_REPORT_ISSUE -> {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_REPORT_ISSUE)
-                contactSupport(this, SupportTopic.ISSUE)
+                lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.ISSUE) }
             }
             ACTION_GIVE_FEEDBACK -> {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_GIVE_FEEDBACK)
-                contactSupport(this, SupportTopic.FEEDBACK)
+                lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.FEEDBACK) }
             }
             // Shortcuts pinned from an earlier build still carry the old single support action.
             ACTION_SUPPORT -> openPlayStoreListing(this)

@@ -27,6 +27,7 @@
     <string name="ui_permissions_not_now">अभी नहीं</string>
     <string name="ui_scanned_page">स्कैन किया गया पेज</string>
     <string name="ui_password_label">पासवर्ड</string>
+    <string name="support_report_notice">इस संदेश में डिवाइस की जानकारी और ऐप के हाल के लॉग शामिल हैं। भेजने से पहले इसे देख लें और जो निजी हो उसे हटा दें।</string>
     <string name="ui_password_confirm_label">पासवर्ड दोबारा दर्ज करें</string>
     <string name="ui_password_mismatch">पासवर्ड मेल नहीं खाते</string>
     <string name="ui_password_show">पासवर्ड दिखाएँ</string>
@@ -124,7 +125,6 @@
     <string name="scan_status_id_ready">ID तैयार · हो गया पर टैप करें</string>
     <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">पेज %1$d हटाया गया</string>
     <string name="scan_status_page_restored">पेज %1$d वापस आ गया</string>
-    <string name="scan_strip_page_needs_look">पेज %1$d, देखना पड़ सकता है</string>
     <string name="scan_status_checking_pages">पेज जाँचे जा रहे हैं…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d पेज को देखना होगा</item>
@@ -159,7 +159,7 @@
     <string name="scan_book_one_page">एक पेज</string>
     <string name="scan_book_two_pages">दो पेज</string>
     <string name="scan_book_two_pages_rtl">दो पेज, दायाँ पहले</string>
-    <string name="scan_status_spread_split">फैले पन्ने को पेज %1$d और %2$d में बाँटा</string>
+    <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">फैले पन्ने को पेज %1$d और %2$d में बाँटा</string>
     <string name="scan_take_photo">फ़ोटो लें</string>
     <string name="scan_import_photos">फ़ोटो इंपोर्ट करें</string>
     <string name="scan_permission_title">कैमरा अनुमति</string>
@@ -259,6 +259,5 @@
     <string name="scan_quality_dark">यह पेज बहुत गहरा लग रहा है</string>
     <string name="scan_quality_retake">फिर से लें</string>
     <string name="scan_quality_page_flagged">पेज %1$d, शायद फिर से लेना पड़े</string>
-    <string name="scan_page_deleted">पृष्ठ हटा दिया गया</string>
     <string name="scan_strip_delete_hint">हटाने के लिए देर तक दबाएं</string>
 </resources>

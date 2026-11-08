@@ -27,6 +27,7 @@
     <string name="ui_permissions_not_now">ಈಗ ಬೇಡ</string>
     <string name="ui_scanned_page">ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟ</string>
     <string name="ui_password_label">ಪಾಸ್‌ವರ್ಡ್</string>
+    <string name="support_report_notice">ಈ ಸಂದೇಶದಲ್ಲಿ ಸಾಧನದ ವಿವರಗಳು ಮತ್ತು ಆ್ಯಪ್‌ನ ಇತ್ತೀಚಿನ ಲಾಗ್‌ಗಳು ಇವೆ. ಕಳುಹಿಸುವ ಮೊದಲು ಪರಿಶೀಲಿಸಿ, ಖಾಸಗಿಯಾದದ್ದನ್ನು ಅಳಿಸಿ.</string>
     <string name="ui_password_confirm_label">ಪಾಸ್‌ವರ್ಡ್ ಮತ್ತೊಮ್ಮೆ ನಮೂದಿಸಿ</string>
     <string name="ui_password_mismatch">ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ</string>
     <string name="ui_password_show">ಪಾಸ್‌ವರ್ಡ್ ತೋರಿಸಿ</string>
@@ -124,7 +125,6 @@
     <string name="scan_status_id_ready">ID ಸಿದ್ಧ · ಮುಗಿದಿದೆ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
     <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">ಪುಟ %1$d ತೆಗೆದುಹಾಕಲಾಗಿದೆ</string>
     <string name="scan_status_page_restored">ಪುಟ %1$d ಮರಳಿ ಬಂದಿದೆ</string>
-    <string name="scan_strip_page_needs_look">ಪುಟ %1$d, ನೋಡಬೇಕಾಗಬಹುದು</string>
     <string name="scan_status_checking_pages">ಪುಟಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d ಪುಟವನ್ನು ನೋಡಬೇಕು</item>
@@ -159,7 +159,7 @@
     <string name="scan_book_one_page">ಒಂದು ಪುಟ</string>
     <string name="scan_book_two_pages">ಎರಡು ಪುಟಗಳು</string>
     <string name="scan_book_two_pages_rtl">ಎರಡು ಪುಟಗಳು, ಬಲ ಮೊದಲು</string>
-    <string name="scan_status_spread_split">ಹರಡಿದ ಪುಟವನ್ನು %1$d ಮತ್ತು %2$d ಪುಟಗಳಾಗಿ ವಿಭಜಿಸಲಾಗಿದೆ</string>
+    <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">ಹರಡಿದ ಪುಟವನ್ನು %1$d ಮತ್ತು %2$d ಪುಟಗಳಾಗಿ ವಿಭಜಿಸಲಾಗಿದೆ</string>
     <string name="scan_take_photo">ಫೋಟೋ ತೆಗೆಯಿರಿ</string>
     <string name="scan_import_photos">ಫೋಟೋ ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
     <string name="scan_permission_title">ಕ್ಯಾಮೆರಾ ಅನುಮತಿ</string>
@@ -259,6 +259,5 @@
     <string name="scan_quality_dark">ಈ ಪುಟ ತುಂಬಾ ಕತ್ತಲಾಗಿ ಕಾಣುತ್ತದೆ</string>
     <string name="scan_quality_retake">ಮತ್ತೆ ತೆಗೆಯಿರಿ</string>
     <string name="scan_quality_page_flagged">ಪುಟ %1$d, ಮತ್ತೆ ತೆಗೆಯಬೇಕಾಗಬಹುದು</string>
-    <string name="scan_page_deleted">ಪುಟವನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
     <string name="scan_strip_delete_hint">ಅಳಿಸಲು ದೀರ್ಘವಾಗಿ ಒತ್ತಿರಿ</string>
 </resources>

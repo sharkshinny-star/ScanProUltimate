@@ -991,7 +991,8 @@ private fun HomeDashboard(
 
     // Keep the search launcher unclipped at the top unless the user has actively scrolled.
     // An item entering at the bottom (e.g. tips card) must never pull the list down.
-    var userScrolled by rememberSaveable { mutableStateOf(false) }
+    // Not saved, like the list state: Home opens at the top on each visit, so the safety net below is armed again too.
+    var userScrolled by remember { mutableStateOf(false) }
     LaunchedEffect(listState.isScrollInProgress) {
         if (listState.isScrollInProgress) userScrolled = true
     }

@@ -10,6 +10,8 @@ import androidx.core.content.FileProvider
 import com.example.scanpro.BuildConfig
 import androidx.core.net.toUri
 import com.example.scanpro.core.diagnostics.AppDiagnostics
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Where feedback goes. Fill these in before release: the address receives "Give feedback", "Report an
@@ -46,16 +48,29 @@ enum class SupportDelivery(@param:StringRes private val confirmationRes: Int) {
         if (this == CLIPBOARD) context.getString(confirmationRes, SupportLinks.EMAIL) else context.getString(confirmationRes)
 }
 
-fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
+/**
+ * Opens the mail app (or the share sheet, or the clipboard) with a support message. An issue report is built here,
+ * on a background thread: it reads the system log, measures the cache folder and writes a file, none of which may
+ * block the screen. The report has the app's folder paths, other apps' links and exported file names taken out
+ * (see [AppDiagnostics.redact]), and the message says what is in it, because the user sends it.
+ */
+suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
     AppDiagnostics.recordEvent("Support", "Contact support initiated for topic: ${topic.name}")
 
     val isIssue = topic == SupportTopic.ISSUE
-    val reportUri = if (isIssue) {
-        runCatching {
-            val reportFile = AppDiagnostics.generateReportFile(context)
-            FileProvider.getUriForFile(context, "${context.packageName}.files", reportFile)
-        }.getOrNull()
+    class IssueParts(val reportUri: android.net.Uri?, val sysSummary: String, val recentCrash: String?)
+    val parts = if (isIssue) {
+        withContext(Dispatchers.IO) {
+            IssueParts(
+                reportUri = runCatching {
+                    FileProvider.getUriForFile(context, "${context.packageName}.files", AppDiagnostics.generateReportFile(context))
+                }.getOrNull(),
+                sysSummary = AppDiagnostics.buildSystemInfo(context),
+                recentCrash = AppDiagnostics.getRecentCrashReport(context)
+            )
+        }
     } else null
+    val reportUri = parts?.reportUri
 
     val subject = if (isIssue) {
         "${context.getString(topic.subjectRes)} [${BuildConfig.VERSION_NAME} - ${Build.MANUFACTURER} ${Build.MODEL}]"
@@ -63,11 +78,9 @@ fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
         context.getString(topic.subjectRes)
     }
 
-    val body = if (isIssue) {
-        val sysSummary = AppDiagnostics.buildSystemInfo(context)
-        val recentCrash = AppDiagnostics.getRecentCrashReport(context)
-        val crashSection = if (!recentCrash.isNullOrBlank()) {
-            "[Recent Crash Detected]\n${recentCrash.take(1000)}\n(Full crash trace included in attached report)\n"
+    val body = if (parts != null) {
+        val crashSection = if (!parts.recentCrash.isNullOrBlank()) {
+            "[Recent Crash Detected]\n${parts.recentCrash.take(1000)}\n(Full crash trace included in attached report)\n"
         } else {
             "[Recent Crash: None]"
         }
@@ -77,8 +90,10 @@ fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
         |
         |
         |—
+        |${context.getString(R.string.support_report_notice)}
+        |
         |[System Diagnostics]
-        |$sysSummary
+        |${parts.sysSummary}
         |
         |$crashSection
         |
@@ -124,7 +139,7 @@ fun contactSupport(context: Context, topic: SupportTopic): SupportDelivery {
         val clipboardContent = if (isIssue) {
             context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n" +
                 context.getString(R.string.support_subject_line, subject) + "\n\n$body\n\n" +
-                AppDiagnostics.buildFullReport(context)
+                withContext(Dispatchers.IO) { AppDiagnostics.buildFullReport(context) }
         } else {
             context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n" +
                 context.getString(R.string.support_subject_line, subject) + "\n\n$body"

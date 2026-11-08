@@ -33,6 +33,7 @@
     <!-- Design system components: thumbnails and shared dialogs -->
     <string name="ui_scanned_page">Scanned page</string>
     <string name="ui_password_label">Password</string>
+    <string name="support_report_notice">This message includes device details and recent app logs. Check it before you send it and delete anything private.</string>
     <string name="ui_password_confirm_label">Enter the password again</string>
     <string name="ui_password_mismatch">The passwords don\'t match</string>
     <string name="ui_password_show">Show password</string>
@@ -141,7 +142,6 @@
     <string name="scan_status_id_ready">ID capture ready · tap Done</string>
     <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">Page %1$d removed</string>
     <string name="scan_status_page_restored">Page %1$d is back</string>
-    <string name="scan_strip_page_needs_look">Page %1$d, may need a look</string>
     <string name="scan_status_checking_pages">Checking pages…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d page needs a look</item>
@@ -180,7 +180,7 @@
     <string name="scan_book_one_page">One page</string>
     <string name="scan_book_two_pages">Two pages</string>
     <string name="scan_book_two_pages_rtl">Two pages, right first</string>
-    <string name="scan_status_spread_split">Spread split into pages %1$d and %2$d</string>
+    <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">Spread split into pages %1$d and %2$d</string>
     <string name="scan_take_photo">Take photo</string>
     <string name="scan_import_photos">Import photos</string>
     <string name="scan_permission_title">Camera permission</string>
@@ -282,6 +282,5 @@
     <string name="scan_quality_retake">Retake</string>
     <string name="scan_quality_page_flagged">Page %1$d, may need a retake</string>
     <!-- Captured strip: R30 quick delete -->
-    <string name="scan_page_deleted">Page deleted</string>
     <string name="scan_strip_delete_hint">Long-press to delete</string>
 </resources>

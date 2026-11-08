@@ -52,6 +52,10 @@ data class CompressionResult(
 }
 
 object CompressPdfEngine {
+    private const val MAX_TARGET_PASSES = 3
+    private const val MIN_TARGET_SCALE = 0.25f
+    private const val MIN_TARGET_QUALITY = 30
+
 
     suspend fun compressPdf(
         context: Context,
@@ -86,40 +90,62 @@ object CompressPdfEngine {
                 preset.targetScale to preset.jpegQuality
             }
 
-            if (hasSearchableText) {
-                // Strategy A: Preserve vector text/OCR layers while recompressing embedded images
-                val success = runCatching {
-                    recompressEmbeddedImages(context, tempInput, outputFile, effectiveScale, effectiveQuality, onProgress)
-                    true
-                }.getOrDefault(false)
+            // One pass at a given scale and quality; the custom-target loop below runs it again, tighter, if the result is too big.
+            suspend fun attempt(scale: Float, quality: Int): CompressionResult {
+                if (hasSearchableText) {
+                    // Strategy A: Preserve vector text/OCR layers while recompressing embedded images
+                    val success = runCatching {
+                        recompressEmbeddedImages(context, tempInput, outputFile, scale, quality, onProgress)
+                        true
+                    }.getOrDefault(false)
 
-                if (success && outputFile.exists() && outputFile.length() < originalSize) {
-                    return@withContext CompressionResult(
-                        outputFile = outputFile,
-                        pageCount = pageTotal,
-                        originalSizeBytes = originalSize,
-                        compressedSizeBytes = outputFile.length(),
-                        isSearchablePreserved = true
-                    )
+                    if (success && outputFile.exists() && outputFile.length() < originalSize) {
+                        return CompressionResult(
+                            outputFile = outputFile,
+                            pageCount = pageTotal,
+                            originalSizeBytes = originalSize,
+                            compressedSizeBytes = outputFile.length(),
+                            isSearchablePreserved = true
+                        )
+                    }
                 }
+
+                // Strategy B: Rasterise pages at downscaled target resolution & rebuild PDF
+                rasterCompressPdf(context, tempInput, outputFile, scale, quality, onProgress)
+
+                // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.
+                // The original is untouched, so whatever text it had is still there.
+                val keptOriginal = outputFile.length() !in 1L until originalSize
+                if (keptOriginal) tempInput.copyTo(outputFile, overwrite = true)
+                val finalSize = outputFile.length()
+                return CompressionResult(
+                    outputFile = outputFile,
+                    pageCount = pageTotal,
+                    originalSizeBytes = originalSize,
+                    compressedSizeBytes = if (finalSize > 0) finalSize else originalSize,
+                    // Only a rebuilt file that had text lost it; the untouched original, or one with no text, lost nothing.
+                    isSearchablePreserved = keptOriginal || !hasSearchableText
+                )
             }
 
-            // Strategy B: Rasterise pages at downscaled target resolution & rebuild PDF
-            rasterCompressPdf(context, tempInput, outputFile, effectiveScale, effectiveQuality, onProgress)
-
-            // A scan that was already small can grow when rebuilt; keep the original rather than a bigger file.
-            // The original is untouched, so whatever text it had is still there.
-            val keptOriginal = outputFile.length() !in 1L until originalSize
-            if (keptOriginal) tempInput.copyTo(outputFile, overwrite = true)
-            val finalSize = outputFile.length()
-            return@withContext CompressionResult(
-                outputFile = outputFile,
-                pageCount = pageTotal,
-                originalSizeBytes = originalSize,
-                compressedSizeBytes = if (finalSize > 0) finalSize else originalSize,
-                // Only a rebuilt file that had text lost it; the untouched original, or one with no text, lost nothing.
-                isSearchablePreserved = keptOriginal || !hasSearchableText
-            )
+            var scale = effectiveScale
+            var quality = effectiveQuality
+            var result = attempt(scale, quality)
+            // The scale and quality above are an estimate from the size ratio, not a promise. Check the file and,
+            // while it is still over the target, squeeze harder (a few passes at most) instead of handing back a
+            // file the user asked to be smaller than it is.
+            if (customTargetBytes != null && customTargetBytes > 0L) {
+                var passes = 0
+                while (result.compressedSizeBytes > customTargetBytes && passes < MAX_TARGET_PASSES &&
+                    (scale > MIN_TARGET_SCALE || quality > MIN_TARGET_QUALITY)
+                ) {
+                    passes++
+                    scale = (scale * 0.8f).coerceAtLeast(MIN_TARGET_SCALE)
+                    quality = (quality - 12).coerceAtLeast(MIN_TARGET_QUALITY)
+                    result = attempt(scale, quality)
+                }
+            }
+            return@withContext result
         } catch (error: Throwable) {
             outputFile.delete()
             throw error

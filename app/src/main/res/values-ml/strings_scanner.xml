@@ -27,6 +27,7 @@
     <string name="ui_permissions_not_now">ഇപ്പോൾ വേണ്ട</string>
     <string name="ui_scanned_page">സ്കാൻ ചെയ്ത പേജ്</string>
     <string name="ui_password_label">പാസ്‌വേഡ്</string>
+    <string name="support_report_notice">ഈ സന്ദേശത്തിൽ ഉപകരണ വിവരങ്ങളും ആപ്പിന്റെ സമീപകാല ലോഗുകളും ഉൾപ്പെടുന്നു. അയയ്ക്കുന്നതിന് മുമ്പ് പരിശോധിച്ച് സ്വകാര്യമായവ ഒഴിവാക്കുക.</string>
     <string name="ui_password_confirm_label">പാസ്‌വേഡ് വീണ്ടും നൽകുക</string>
     <string name="ui_password_mismatch">പാസ്‌വേഡുകൾ പൊരുത്തപ്പെടുന്നില്ല</string>
     <string name="ui_password_show">പാസ്‌വേഡ് കാണിക്കുക</string>
@@ -124,7 +125,6 @@
     <string name="scan_status_id_ready">ഐഡി തയ്യാർ · പൂർത്തിയായി ടാപ്പ് ചെയ്യുക</string>
     <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">പേജ് %1$d നീക്കം ചെയ്തു</string>
     <string name="scan_status_page_restored">പേജ് %1$d തിരികെ വന്നു</string>
-    <string name="scan_strip_page_needs_look">പേജ് %1$d, നോക്കേണ്ടി വന്നേക്കാം</string>
     <string name="scan_status_checking_pages">പേജുകൾ പരിശോധിക്കുന്നു…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d പേജ് നോക്കണം</item>
@@ -159,7 +159,7 @@
     <string name="scan_book_one_page">ഒരു പേജ്</string>
     <string name="scan_book_two_pages">രണ്ട് പേജുകൾ</string>
     <string name="scan_book_two_pages_rtl">രണ്ട് പേജുകൾ, വലത് ആദ്യം</string>
-    <string name="scan_status_spread_split">സ്പ്രെഡ് %1$d, %2$d പേജുകളായി വിഭജിച്ചു</string>
+    <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">സ്പ്രെഡ് %1$d, %2$d പേജുകളായി വിഭജിച്ചു</string>
     <string name="scan_take_photo">ഫോട്ടോ എടുക്കുക</string>
     <string name="scan_import_photos">ഫോട്ടോകൾ ഇംപോർട്ട് ചെയ്യുക</string>
     <string name="scan_permission_title">ക്യാമറ അനുമതി</string>
@@ -259,6 +259,5 @@
     <string name="scan_quality_dark">ഈ പേജ് വളരെ ഇരുണ്ടതായി തോന്നുന്നു</string>
     <string name="scan_quality_retake">വീണ്ടും എടുക്കുക</string>
     <string name="scan_quality_page_flagged">പേജ് %1$d, വീണ്ടും എടുക്കേണ്ടി വന്നേക്കാം</string>
-    <string name="scan_page_deleted">പേജ് ഇല്ലാതാക്കി</string>
     <string name="scan_strip_delete_hint">ഇല്ലാതാക്കാൻ ദീർಘനേരം അമർത്തുക</string>
 </resources>

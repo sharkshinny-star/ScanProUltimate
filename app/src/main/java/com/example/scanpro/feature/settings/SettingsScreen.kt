@@ -307,8 +307,10 @@ fun SettingsScreen(
     val termsUrl = BuildConfig.TERMS_URL.ifBlank { SupportLinks.TERMS_OF_USE_URL }
     val scope = rememberCoroutineScope()
     val contact: (SupportTopic) -> Unit = { topic ->
-        val delivery = contactSupport(context, topic)
-        scope.launch { snackbarHostState.showSnackbar(delivery.confirmation(context)) }
+        scope.launch {
+            val delivery = contactSupport(context, topic)
+            snackbarHostState.showSnackbar(delivery.confirmation(context))
+        }
     }
     if (privacyOpen) PrivacyDialog(onDismiss = { privacyOpen = false })
     if (whatsNewOpen) {

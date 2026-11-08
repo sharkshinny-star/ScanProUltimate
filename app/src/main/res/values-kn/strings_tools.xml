@@ -143,7 +143,6 @@
     <string name="tools_order_move_down">ಕೆಳಗೆ ಸರಿಸಿ</string>
     <string name="tools_img2pdf_order_hint">PDF ರಚಿಸುವ ಮೊದಲು ಪುಟಗಳ ಕ್ರಮವನ್ನು ಹೊಂದಿಸಿ, ಚಿತ್ರಗಳನ್ನು ಕ್ರಾಪ್ ಮಾಡಿ ಅಥವಾ ತೆಗೆದುಹಾಕಿ.</string>
     <string name="tools_img2pdf_crop_button">ಕ್ರಾಪ್</string>
-    <string name="tools_img2pdf_crop_cd">ಚಿತ್ರ %1$d ಅನ್ನು ಕ್ರಾಪ್ ಮಾಡಿ</string>
     <string name="tools_img2pdf_remove_cd">ಚಿತ್ರ %1$d ತೆಗೆದುಹಾಕಿ</string>
     <string name="tools_organizer_preview_page">ಪುಟ %1$d ಮುನ್ನೋಟ</string>
     <plurals name="tools_img2pdf_title">

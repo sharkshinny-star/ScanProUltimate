@@ -66,7 +66,7 @@ class AppDiagnosticsTest {
 
     @Test
     fun contactSupportWithIssueGeneratesReportAndDelivers() {
-        val delivery = contactSupport(app, SupportTopic.ISSUE)
+        val delivery = kotlinx.coroutines.runBlocking { contactSupport(app, SupportTopic.ISSUE) }
         assertNotNull(delivery)
         val exportFile = File(app.cacheDir, "exports/scanpro_issue_report.txt")
         assertTrue("Exported diagnostic report file must exist after reporting an issue", exportFile.exists())

@@ -32,15 +32,25 @@ class RecentPdfStore @Inject constructor(@ApplicationContext private val context
     private val _items = MutableStateFlow<List<RecentPdf>>(emptyList())
     val items: StateFlow<List<RecentPdf>> = _items.asStateFlow()
 
+    @Volatile private var loaded = false
+
     init {
-        CoroutineScope(Dispatchers.IO).launch {
-            _items.value = load()
-        }
+        // Read off the main thread (StrictMode). Anything that changes the list loads first if this has not finished,
+        // so an entry added in the first moments cannot overwrite the saved list with a list of one.
+        CoroutineScope(Dispatchers.IO).launch { loadOnce() }
+    }
+
+    @Synchronized
+    private fun loadOnce() {
+        if (loaded) return
+        _items.value = load()
+        loaded = true
     }
 
     /** Records [uri] as just opened. Picker results can be kept across restarts; other links are kept only while they last. */
     @Synchronized
     fun add(uri: Uri, fallbackName: String = "PDF document") {
+        loadOnce()
         if (uri.scheme != "content") return
         runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
         val entry = RecentPdf(uri, displayName(uri) ?: fallbackName, System.currentTimeMillis())
@@ -51,12 +61,14 @@ class RecentPdfStore @Inject constructor(@ApplicationContext private val context
 
     @Synchronized
     fun remove(uri: Uri) {
+        loadOnce()
         release(uri)
         save(_items.value.filterNot { it.uri == uri })
     }
 
     @Synchronized
     fun clear() {
+        loadOnce()
         _items.value.forEach { release(it.uri) }
         save(emptyList())
     }
@@ -64,6 +76,7 @@ class RecentPdfStore @Inject constructor(@ApplicationContext private val context
     /** Drops entries whose file was deleted or whose access was revoked. */
     @Synchronized
     fun prune() {
+        loadOnce()
         val granted = context.contentResolver.persistedUriPermissions.filter { it.isReadPermission }.map { it.uri }.toSet()
         // The grant can outlive the file; a provider that no longer knows the document returns no row.
         val alive = _items.value.filter { it.uri in granted && displayName(it.uri) != null }

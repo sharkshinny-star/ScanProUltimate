@@ -27,6 +27,7 @@
     <string name="ui_permissions_not_now">ఇప్పుడు కాదు</string>
     <string name="ui_scanned_page">స్కాన్ చేసిన పేజీ</string>
     <string name="ui_password_label">పాస్‌వర్డ్</string>
+    <string name="support_report_notice">ఈ సందేశంలో పరికర వివరాలు మరియు యాప్ ఇటీవలి లాగ్‌లు ఉన్నాయి. పంపే ముందు చూసి, ప్రైవేట్ వాటిని తొలగించండి.</string>
     <string name="ui_password_confirm_label">పాస్‌వర్డ్‌ను మళ్లీ నమోదు చేయండి</string>
     <string name="ui_password_mismatch">పాస్‌వర్డ్‌లు సరిపోలలేదు</string>
     <string name="ui_password_show">పాస్‌వర్డ్ చూపించు</string>
@@ -124,7 +125,6 @@
     <string name="scan_status_id_ready">ID క్యాప్చర్ సిద్ధం · పూర్తయింది నొక్కండి</string>
     <string name="scan_status_page_removed" tools:ignore="PluralsCandidate">పేజీ %1$d తీసివేయబడింది</string>
     <string name="scan_status_page_restored">పేజీ %1$d తిరిగి వచ్చింది</string>
-    <string name="scan_strip_page_needs_look">పేజీ %1$d, చూడాల్సి రావచ్చు</string>
     <string name="scan_status_checking_pages">పేజీలను తనిఖీ చేస్తోంది…</string>
     <plurals name="scan_status_pages_need_look">
         <item quantity="one">%d పేజీని చూడాలి</item>
@@ -159,7 +159,7 @@
     <string name="scan_book_one_page">ఒక పేజీ</string>
     <string name="scan_book_two_pages">రెండు పేజీలు</string>
     <string name="scan_book_two_pages_rtl">రెండు పేజీలు, కుడి ముందు</string>
-    <string name="scan_status_spread_split">స్ప్రెడ్ %1$d, %2$d పేజీలుగా విభజించబడింది</string>
+    <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">స్ప్రెడ్ %1$d, %2$d పేజీలుగా విభజించబడింది</string>
     <string name="scan_take_photo">ఫోటో తీయండి</string>
     <string name="scan_import_photos">ఫోటోలు ఇంపోర్ట్ చేయండి</string>
     <string name="scan_permission_title">కెమెరా అనుమతి</string>
@@ -259,6 +259,5 @@
     <string name="scan_quality_dark">ఈ పేజీ చాలా చీకటిగా ఉంది</string>
     <string name="scan_quality_retake">మళ్లీ తీయండి</string>
     <string name="scan_quality_page_flagged">పేజీ %1$d, మళ్లీ తీయవలసి రావచ్చు</string>
-    <string name="scan_page_deleted">పేజీ తొలగించబడింది</string>
     <string name="scan_strip_delete_hint">తొలగించడానికి ఎక్కువసేపు నొక్కండి</string>
 </resources>

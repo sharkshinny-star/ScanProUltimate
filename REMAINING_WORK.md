@@ -34,8 +34,14 @@ R9 and F82-F84.
     Wi-Fi code (no password), a calendar code (start, end), TalkBack on the sliders, 48 dp targets, a failed translation.
 12. Rotation pass (review branch R38, now compiled): rotate in the camera adjustments, Pen, PDF viewer search and dialogs
     and check state survives; then `ARTEMIS_SCREEN_TEST_PLAN.md` for every screen.
-13. Document tab labels in Hindi, Tamil and Telugu: check they do not truncate (R41, needs a device).
-14. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings added since F64 (R19, R36; the F73-F80
+13. Camera after a rotation (F86): open the camera, turn the phone, take a page in each orientation; no page may be saved
+    sideways and the outline must still match the page.
+14. Report an issue (F86): Settings > Report an issue opens the mail draft without a pause, the attached
+    `scanpro_issue_report.txt` has no folder paths or file names, and the draft says what it contains.
+15. Compress to a target size (F86): choose a target well below the file's size and check the result is at or under it,
+    or as close as the file allows.
+16. Document tab labels in Hindi, Tamil and Telugu: check they do not truncate (R41, needs a device).
+17. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings added since F64 (R19, R36; the F73-F80
    strings are drafts). Marathi, Gujarati, Bengali and Punjabi are deliberately not added (owner decision).
 
 ## Owner decisions (resolved 2026-11-08)
