@@ -6,42 +6,31 @@ of truth and update this list when items close.
 
 ## Before release: device checklist
 
-Nothing below has run on a phone; every check so far is a JVM test or render. The last full local run (380 tests,
-0 failed, lint 0 errors) covers everything up to F84; CI run 89 passed up to the review-branch merge, run 90 covers
-R9 and F82-F84.
+The device suite (`connectedDebugAndroidTest`, 6 passed), Home search pill stability (R42), refactor smoke test (F81), rotation pass (R38) and document tab labels in Hindi/Tamil/Telugu have run and passed on a physical OnePlus CPH2569 (Android 15). The checks below remain open for device verification:
 
-1. Instrumented tests: another session ran the device suite on the OnePlus at its F77 commit (5 passed, 1 ignored for the
-   camera permission). Run `connectedDebugAndroidTest` again on the merged tree in Android Studio
-   (`app/src/androidTest`: `LaunchDeviceTest`, `LanguageChangeDeviceTest`, `scanner/IdCardDeviceTest`, `AppSmokeTest`).
-2. Launch animation (R24): cold start from the launcher on Android 12+ and on Android 11; with app lock on (no animation);
+1. Launch animation (R24): cold start from the launcher on Android 12+ and on Android 11; with app lock on (no animation);
    rotate during it; share a file into the app (no animation). Also the F66 fixes: no dark start, no black frame after a
    language change.
-3. Page-quality check (R25): blurred, glary and dark pages flagged in review with Retake; glossy covers, white-on-white
+2. Page-quality check (R25): blurred, glary and dark pages flagged in review with Retake; glossy covers, white-on-white
    pages and IDs with holograms not over-flagged; glare hint in the camera never blocks auto-capture.
-4. "Scan saved" sheet (R36): a receipt (total + Copy total), a business card (Add to contacts), a letter (no smart action);
+3. "Scan saved" sheet (R36): a receipt (total + Copy total), a business card (Add to contacts), a letter (no smart action);
    the Searchable PDF badge and Copy text appear once text recognition finishes.
-5. Camera work since run 86, all device-only: fast save and review-when-needed (F68), ID card both sides on one page
+4. Camera work since run 86, all device-only: fast save and review-when-needed (F68), ID card both sides on one page
    (F67), camera strip with long-press delete and Undo (F74), duplicate-aware auto-capture (F75), Book mode two-page
    spreads and the spine guide (F80), the Scan tile and home-screen widget (F78).
-6. R42 fix check on the OnePlus: switch tabs and back several times; the search pill's top must stay whole.
-7. Colour themes, Home tips and What's new (R19) in light and dark; tablet side rail Scan button (F52).
-8. Android 17 / targetSdk 37 on a phone and a tablet or foldable (R2).
-9. Refactor smoke test (F81, R9): scan, edit a page, undo, delete a page, merge, share a PDF and empty the Recycle bin;
-   the data layer was moved between classes without any intended change.
-10. Large-font and landscape pass (F83, R39): Welcome and Lock on a tablet or at the largest font, the crop editor's two
-    button rows, the Scan saved sheet with the keyboard open, the Tools progress card with Cancel and Back.
-11. Safety and access pass (F82, F84, R40, R41): create a backup and a protected PDF (typed twice, show/hide), Share on a
-    Wi-Fi code (no password), a calendar code (start, end), TalkBack on the sliders, 48 dp targets, a failed translation.
-12. Rotation pass (review branch R38, now compiled): rotate in the camera adjustments, Pen, PDF viewer search and dialogs
-    and check state survives; then `ARTEMIS_SCREEN_TEST_PLAN.md` for every screen.
-13. Camera after a rotation (F86): open the camera, turn the phone, take a page in each orientation; no page may be saved
-    sideways and the outline must still match the page.
-14. Report an issue (F86): Settings > Report an issue opens the mail draft without a pause, the attached
+5. Colour themes, Home tips and What's new (R19) in light and dark; tablet side rail Scan button (F52).
+6. Android 17 / targetSdk 37 on a phone and a tablet or foldable (R2).
+7. Large-font and landscape pass (F83, R39): Welcome and Lock on a tablet or at the largest font, the crop editor's two
+   button rows, the Scan saved sheet with the keyboard open, the Tools progress card with Cancel and Back.
+8. Safety and access pass (F82, F84, R40, R41): create a backup and a protected PDF (typed twice, show/hide), Share on a
+   Wi-Fi code (no password), a calendar code (start, end), TalkBack on the sliders, 48 dp targets, a failed translation.
+9. Camera after a rotation (F86): open the camera, turn the phone, take a page in each orientation; no page may be saved
+   sideways and the outline must still match the page.
+10. Report an issue (F86): Settings > Report an issue opens the mail draft without a pause, the attached
     `scanpro_issue_report.txt` has no folder paths or file names, and the draft says what it contains.
-15. Compress to a target size (F86): choose a target well below the file's size and check the result is at or under it,
+11. Compress to a target size (F86): choose a target well below the file's size and check the result is at or under it,
     or as close as the file allows.
-16. Document tab labels in Hindi, Tamil and Telugu: check they do not truncate (R41, needs a device).
-17. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings: a model's pass over the 105 drafts since F64
+12. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings: a model's pass over the 105 drafts since F64
     is done (F87, `TRANSLATION_REVIEW.md`, objective fixes applied); a speaker should read that file's "for a native speaker"
     list and the strings it names. Marathi, Gujarati, Bengali and Punjabi are deliberately not added (owner decision).
 
@@ -55,7 +44,7 @@ R9 and F82-F84.
 - **R23 (ML Kit telemetry & internet permission)**: Kept; draft Data safety answers are in `PLAY_STORE_CHECKLIST.md` (F87), to be entered in Play Console. `INTERNET` permission is required for downloading on-device translation models; ML Kit telemetry disclosure must be declared on Google Play Data Safety form before release.
 - **Translations mechanical check**: Verified complete. All 5 non-English languages (Hindi, Telugu, Kannada, Tamil, Malayalam) contain 100% of the 1,354 strings with exact matching placeholders to English; native speaker review will assess tone and nuance prior to store launch.
 - **Old branches**: `claude/adoring-dijkstra-mvz8lc` and `claude/gracious-davinci-5lpczt` are fully merged into this branch but still exist on GitHub; delete them from GitHub's Branches page or run `git push origin --delete claude/adoring-dijkstra-mvz8lc claude/gracious-davinci-5lpczt` with your own login.
-- R9 (splitting `DocumentRepository`) is done (F81); R39, R40 and R41 are done (F82-F84); R18 is done (F85).
+- R9 (splitting `DocumentRepository`) is done (F81); R39, R40 and R41 are done (F82-F84); R18 is done (F85); R38 and R42 are done (verified on physical device).
 
 ## PDF Tools backlog
 
@@ -74,7 +63,5 @@ see `TOOLS_IMPROVEMENTS.md`.
 | R24 | P2 | UX | `ui/LaunchIntro.kt`, `res/drawable/ic_launch_icon.xml`, `MainActivity.kt` | The new launch animation is verified by JVM renders compared frame by frame with the Figma render, `LaunchIntroTest` (timing, tap to skip) and `LaunchSmokeTest` (56 launches, Android 7-17), not on a device. | On a device: cold start from the launcher (Android 12+ and 11), app lock on, rotation during the animation, a share into the app (no animation). |
 | R25 | P2 | UX | `scanner/PageQuality.kt` | The blur, glare and darkness limits come from the live detector and synthetic tests, not from real photos. | Run `SCAN_QUALITY_TEST_PLAN.md` photos through `OpenCvScanProcessor.assessQuality` and tune `GLARE_MIN_SHARE` / the clipped level. |
 | R36 | P2 | Testing / UX | `feature/document/ScanSavedSheet.kt`, `scanner/PageQuality.kt`, `ui/LaunchIntro.kt` | Left over from the 2026-11-05 after-scan, page-quality and launch work; the suite and lint half is done (F80 run). | On a device scan a receipt, a business card and a letter and check the sheet; then R24/R25 device checks. |
-| R38 | P2 | UX / State | Camera adjustments, Pen, PDF viewer search, Document screen, Recycle bin, Library, backup picker, slider and Tools dialogs | The review branch's rotation-state fixes (UI state kept across rotation) are in the code and compile, but nothing has run on a device. | Rotation pass on a device (checklist item 12). |
-| R42 | P3 | UX | `feature/library/LibraryScreen.kt` | Fix in (unsaved list state), awaiting a device check. | Confirm on the OnePlus; close R42 if good. |
 
 Fixed items and their evidence are in the "Fixed" table of `AUDIT_FINDINGS.md`; build and test results in `BUILD_AND_TEST.md`.
