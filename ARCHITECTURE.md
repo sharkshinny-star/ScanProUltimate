@@ -35,7 +35,7 @@ The app follows the layered, package-by-feature structure recommended in Android
   (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
   survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).
 - **Data layer (`data/`)**: `DocumentLibrary` exposes the active, trash and storage flows every screen
-  observes and is refreshed after each operation; `DocumentRepository` does the work; its exports (PNG, PDF selection, ID copy, long image, text, Word, Excel, protected PDF, encrypted backups) live in `DocumentExporter`, which the repository wraps with one-line delegates (R9 step 1).
+  observes and is refreshed after each operation; `DocumentRepository` is a facade that delegates (R9): `DocumentStore` holds the shared database access, per-document PDF locks, undo history, saving and PDF rebuilding; `DocumentCatalog`, `DocumentTrash`, `DocumentImporter`, `PageEditor`, `PageOrganiser` and `DocumentExporter` (all in `data/`) do the work on top of it.
 
 Hilt supplies repository/database/settings/work dependencies. WorkManager is used for periodic library maintenance.
 

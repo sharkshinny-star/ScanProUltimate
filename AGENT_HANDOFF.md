@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (merged the Artemis device test plan and the static screen review R38-R41 from the review branch, our Home scroll item is now R42; merged the budget-rules branch and the Artemis review branch; R38 fix awaiting a device check; R9 step 1: exports split into DocumentExporter; REMAINING_WORK.md refreshed after F80; F71 and F72 close R37 and R17; F68 fast save and its review fixes; F67 ID card page; F66 launch; CI green on runs 75, 78 and 83, wrapper download timeout fixed). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
+Last updated: 2026-11-08 (F81 closes R9: `DocumentRepository` split into a store, catalogue, trash, importer, page editor, page organiser and exporter behind an unchanged facade; merged the Artemis device test plan and the static screen review R38-R41 from the review branch, our Home scroll item is now R42; merged the budget-rules branch and the Artemis review branch; R38 fix awaiting a device check; R9 step 1: exports split into DocumentExporter; REMAINING_WORK.md refreshed after F80; F71 and F72 close R37 and R17; F68 fast save and its review fixes; F67 ID card page; F66 launch; CI green on runs 75, 78 and 83, wrapper download timeout fixed). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
 
 ## 1. Current state
 
@@ -33,6 +33,7 @@ Last updated: 2026-11-08 (merged the Artemis device test plan and the static scr
 
 | Commit | What |
 |---|---|
+| next | F81 closes R9: `DocumentRepository` (1,600 lines) is now a 234-line facade over `DocumentStore` (shared locks, history, saving, PDF rebuild), `DocumentCatalog`, `DocumentTrash`, `DocumentImporter`, `PageEditor`, `PageOrganiser` and `DocumentExporter`. Public API unchanged (79 members compared); no behaviour change intended; not seen on a device. |
 | next | F80 closes R29: Book mode One page / Two pages / Two pages right first, dashed spine on the live outline, each capture cut out and split into two pages (`imaging/BookSpread.kt`). `BookSpreadTest` (3). Last of the competitor leftovers R26-R35. |
 | next | F79 closes R34: Settings › Scanning › Name pattern with {text} {mode} {date} {time} (`imaging/ScanTitle.kt`), applied in both import paths after the smart title; the typed name still wins. Kind labels stay English by the owner's R11 decision. `ScanTitleTest` (3). |
 | next | F78 closes R33: Quick Settings "Scan" tile and a 2x1 widget (Scan, ID card, Import) through intents MainActivity already handles; scan request carries a mode. Not tried on a device. |
