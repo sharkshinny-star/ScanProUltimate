@@ -6,7 +6,7 @@ of truth and update this list when items close.
 
 ## Before release: device checklist
 
-The device suite (`connectedDebugAndroidTest`, 6 passed), Home search pill stability (R42), refactor smoke test (F81), rotation pass (R38) and document tab labels in Hindi/Tamil/Telugu have run and passed on a physical OnePlus CPH2569 (Android 15). The checks below remain open for device verification:
+The device suite (`connectedDebugAndroidTest`, 6 passed), Home search pill stability (R42), refactor smoke test (F81), rotation pass (R38) and document tab labels in Hindi and Telugu have run and passed (Tamil wraps a tab mid-word: R46) on a physical OnePlus CPH2569 (Android 15). The checks below remain open for device verification:
 
 1. Launch animation (R24): cold start from the launcher on Android 12+ and on Android 11; with app lock on (no animation);
    rotate during it; share a file into the app (no animation). Also the F66 fixes: no dark start, no black frame after a
@@ -56,6 +56,10 @@ see `TOOLS_IMPROVEMENTS.md`.
 
 | ID | Priority | Area | Where | Open issue | Next step |
 |---|---|---|---|---|---|
+| R43 | P2 | UX / Layout | Settings review-mode picker | At font scale 2 the Always / If needed / Never picker breaks words mid-word. | Vertical radio rows at large fonts. |
+| R44 | P2 | UX / Layout | Landscape side rail, landscape camera panel | At font scale 2 the rail's last label is cut off and the camera panel's mode button shows "Ma". | Scrollable rail; minimum width or wrapping for the button. |
+| R45 | P3 | UX / Layout | Adjust page (landscape) | Filter thumbnails show only a thin strip. | Minimum height or scrolling. |
+| R46 | P3 | i18n / Layout | Tamil bottom bar and document tabs | Labels truncate or wrap mid-word. | Shorter Tamil labels or two-line labels. |
 | R2 | P1 | Compat | `app/build.gradle.kts` `targetSdk = 37` | Raised to 37 (Android 17) after a code review against the Android 17 behaviour changes (see F12). | Device-test on Android 17, including a large screen. |
 | R7 | P1 | Testing | whole app | Nothing verified on a device. | Device pass; Compose UI tests in CI on an emulator; golden comparison for the screenshots. |
 | R19 | P2 | UX | `core/designsystem/Palettes.kt`, `core/designsystem/PalettePicker.kt`, `feature/library/HomeTips.kt`, `ui/WhatsNewSheet.kt`, `res/values-*/strings_themes_tips.xml` | Colour themes, Home tips and the What's new sheet are verified only by JVM renders (`ColourThemeScreenshotTest`) and tests. | Device pass through each colour theme in light and dark; native-speaker review of `strings_themes_tips.xml`. |

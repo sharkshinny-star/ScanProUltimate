@@ -57,7 +57,7 @@ When you choose Share, Print, or Save a copy, the app provides the selected file
 
 ## 10. Trash and deletion
 
-Deleted documents can be moved to a local trash area so they can be restored. The app can permanently purge items after the configured retention period (currently designed around 30 days) or when you explicitly empty trash/permanently delete an item. Device backups, files you manually exported, or copies held by other apps are outside this local deletion process.
+Deleted documents can be moved to a local trash area so they can be restored. The app can permanently purge items after the configured retention period (7 days by default; Settings offers 7, 14 or 30) or when you explicitly empty trash/permanently delete an item. Device backups, files you manually exported, or copies held by other apps are outside this local deletion process.
 
 ## 11. Data we do not intentionally require for the core app
 
