@@ -13,6 +13,14 @@
     <string name="doc_clean_up">Clean up</string>
     <string name="doc_sign">Sign</string>
     <string name="doc_share_pdf">Share PDF</string>
+    <string name="doc_share_pdf_pages_all">All pages</string>
+    <string name="doc_share_pdf_pages_some" tools:ignore="PluralsCandidate">%1$d of %2$d pages</string>
+    <string name="doc_share_pdf_select_all">All</string>
+    <string name="doc_share_pdf_estimating">Working out…</string>
+    <string name="doc_share_pdf_about">≈ %1$s</string>
+    <string name="doc_share_pdf_keep_under">Keep under</string>
+    <string name="doc_share_pdf_no_limit">No limit</string>
+    <string name="doc_share_pdf_will_shrink">Even Small is over %1$s; the pages will be shrunk further to fit</string>
 
     <!-- Document screen: page header, thumbnails and tabs -->
     <string name="doc_tab_text">Text</string>

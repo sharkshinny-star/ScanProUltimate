@@ -259,6 +259,11 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **Share PDF card (R28/F73).** `imaging/PdfShare.kt` holds the maths: `extrapolate` (two sample pages rendered
+  through `PdfExporter`, scaled to the page count), `pickQuality` (best quality under a size target, else Small) and
+  `shrinkPlan` (lower qualities, then Small at 1000/800/600 px) with `build` running the plan until the file fits.
+  `DocumentRepository.estimatePdfSizes`/`exportPdfSelection` wire it; `SharePdfSheet` (opened from the Export sheet's
+  PDF row) shows page ticks, the three qualities with "≈ size", and the Keep-under chips.
 - **Fast save from the camera (R26/F68).** `data/ReviewMode` (Settings › Scanning › Check pages before saving; default
   If needed) reaches `CameraScannerScreen` through `AppViewModel`/`ScanProNavHost`. `scanner/FastSave.kt` holds the
   rule: a page needs a look when its crop is the whole frame (no outline found) or the F64 quality check flagged it.

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="doc_unavailable">ஆவணம் கிடைக்கவில்லை</string>
     <string name="doc_could_not_save_pdf">PDF-ஐச் சேமிக்க முடியவில்லை</string>
     <string name="doc_drive_not_installed">Google Drive நிறுவப்படவில்லை. எங்கே சேமிப்பது என்று தேர்வுசெய்யுங்கள்.</string>
@@ -13,6 +13,14 @@
     <string name="doc_clean_up">சுத்தம் செய்</string>
     <string name="doc_sign">கையொப்பம்</string>
     <string name="doc_share_pdf">PDF பகிர்</string>
+    <string name="doc_share_pdf_pages_all">அனைத்துப் பக்கங்களும்</string>
+    <string name="doc_share_pdf_pages_some" tools:ignore="PluralsCandidate">%2$d இல் %1$d பக்கங்கள்</string>
+    <string name="doc_share_pdf_select_all">அனைத்தும்</string>
+    <string name="doc_share_pdf_estimating">கணக்கிடுகிறது…</string>
+    <string name="doc_share_pdf_about">≈ %1$s</string>
+    <string name="doc_share_pdf_keep_under">இதற்குக் கீழ் வைக்க</string>
+    <string name="doc_share_pdf_no_limit">வரம்பு இல்லை</string>
+    <string name="doc_share_pdf_will_shrink">Small கூட %1$s ஐ விட பெரியது; பக்கங்கள் மேலும் சுருக்கப்படும்</string>
     <string name="doc_tab_text">உரை</string>
     <string name="doc_tab_insights">நுண்ணறிவு</string>
     <string name="doc_tab_pdf_settings">PDF அமைப்புகள்</string>

@@ -875,6 +875,24 @@ class DocumentRepository @Inject constructor(
         expired.size
     }
 
+    /** Share PDF card (R28): estimated size per quality for [pageIds] (all pages when empty), from a trial render. */
+    suspend fun estimatePdfSizes(id: String, pageIds: Set<String>): Map<PdfQuality, Long> = withContext(Dispatchers.IO) {
+        val doc = requireDocument(id)
+        val pages = doc.pages.sortedBy { it.position }.filter { pageIds.isEmpty() || it.id in pageIds }
+        PdfQuality.entries.associateWith { quality ->
+            val scratch = freshExportFile("estimate", "pdf")
+            com.example.scanpro.imaging.PdfShare.estimate(pages, quality, doc.pdfPageSize, doc.searchablePdf, doc.pageNumbers, scratch)
+        }
+    }
+
+    /** Share PDF card (R28): [pageIds] (all when empty) at [quality], shrunk to fit under [maxBytes] when set. */
+    suspend fun exportPdfSelection(id: String, pageIds: Set<String>, quality: PdfQuality, maxBytes: Long?): File = withContext(Dispatchers.IO) {
+        val doc = requireDocument(id)
+        val pages = doc.pages.sortedBy { it.position }.filter { pageIds.isEmpty() || it.id in pageIds }
+        val file = freshExportFile(safeName(doc.title), "pdf")
+        com.example.scanpro.imaging.PdfShare.build(pages, file, quality, doc.pdfPageSize, doc.searchablePdf, doc.pageNumbers, maxBytes).file
+    }
+
     suspend fun exportIdCopy(id: String): File = withContext(Dispatchers.IO) {
         val doc = requireDocument(id)
         val file = freshExportFile("${safeName(doc.title)}_ID", "pdf")

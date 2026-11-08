@@ -33,6 +33,7 @@ Last updated: 2026-11-08 (F71 and F72 close R37 and R17; F68 fast save and its r
 
 | Commit | What |
 |---|---|
+| next | F73 closes R28: Share PDF card from the Export sheet's PDF row: page ticks, a size estimate per quality from a two-page trial render, "Keep under" 1/5/10 MB that picks the quality and shrinks further if needed (`imaging/PdfShare.kt`, `SharePdfSheet.kt`). `PdfShareTest` (3), `SharePdfSheetTest`. |
 | next | Small items: F71 closes R37 (`:app` dependencies in `libs.versions.toml`, `UseTomlInstead` back on); F72 closes R17 (star gold 3.4:1 in the light theme, scrolling text in the crash, quit-scanning and delete-signature dialogs); stale R27/R31 rows removed from `REMAINING_WORK.md`. |
 | next | Code review of the session's work (7 findings, all fixed): composed ID page trusted by fast save; Done after Add page/Back returns to the review; one decode for missing crop + quality (`OpenCvScanProcessor.inspect`), results kept; `ImageProcessor.cropSourceToBitmap` for the ID composer; dead status line and a redundant device-test assertion removed; `FastSave.reviewWithoutChecking` tested. 344 tests, 30 skipped, 0 failed; lint 0 errors. |
 | `83243c2` | F69: torch bug fixed (the toggle wrote a flag the flash effect never watched); one top-bar flash button (Off/Auto/On/Torch, amber when lit, remembered between scans); review opens on the finished page with Crop · Filters · Adjust tools (closes R27, R31). Verified on the OnePlus. |

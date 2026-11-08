@@ -214,6 +214,24 @@ class DocumentViewModel @Inject constructor(
 
     fun splitDocument() = editor.submit(id, DocumentEdit.SplitDocument)
 
+    // Share PDF card (R28): the page choice the estimates were made for, and the estimates.
+    private val _pdfSizeEstimates = kotlinx.coroutines.flow.MutableStateFlow<Pair<Set<String>, Map<PdfQuality, Long>>?>(null)
+    val pdfSizeEstimates: StateFlow<Pair<Set<String>, Map<PdfQuality, Long>>?> = _pdfSizeEstimates
+
+    /** Works out the size per quality for [pageIds] in the background, once per page choice. */
+    fun estimatePdfSizes(pageIds: Set<String>) {
+        if (_pdfSizeEstimates.value?.first == pageIds) return
+        viewModelScope.launch {
+            val sizes = runCatching { repository.estimatePdfSizes(id, pageIds) }.getOrNull() ?: return@launch
+            _pdfSizeEstimates.value = pageIds to sizes
+        }
+    }
+
+    fun sharePdfSelection(pageIds: Set<String>, quality: PdfQuality, maxBytes: Long?) = run(R.string.msg_preparing_pdf, null) {
+        val file = repository.exportPdfSelection(id, pageIds, quality, maxBytes)
+        operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", context.getString(R.string.core_share_pdf)))
+    }
+
     fun exportIdCopy() = run(R.string.msg_creating_id_copy, null) {
         val file = repository.exportIdCopy(id)
         operations.publishExport(ExportArtifact(file.absolutePath, "application/pdf", context.getString(R.string.msg_share_id_copy)))

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="doc_unavailable">ഡോക്യുമെന്റ് ലഭ്യമല്ല</string>
     <string name="doc_could_not_save_pdf">PDF സേവ് ചെയ്യാനായില്ല</string>
     <string name="doc_drive_not_installed">Google Drive ഇൻസ്റ്റാൾ ചെയ്തിട്ടില്ല. എവിടെ സേവ് ചെയ്യണമെന്ന് തിരഞ്ഞെടുക്കുക.</string>
@@ -13,6 +13,14 @@
     <string name="doc_clean_up">വൃത്തിയാക്കുക</string>
     <string name="doc_sign">ഒപ്പിടുക</string>
     <string name="doc_share_pdf">PDF പങ്കിടുക</string>
+    <string name="doc_share_pdf_pages_all">എല്ലാ പേജുകളും</string>
+    <string name="doc_share_pdf_pages_some" tools:ignore="PluralsCandidate">%2$d ൽ %1$d പേജുകൾ</string>
+    <string name="doc_share_pdf_select_all">എല്ലാം</string>
+    <string name="doc_share_pdf_estimating">കണക്കാക്കുന്നു…</string>
+    <string name="doc_share_pdf_about">≈ %1$s</string>
+    <string name="doc_share_pdf_keep_under">ഇതിൽ താഴെ നിർത്തുക</string>
+    <string name="doc_share_pdf_no_limit">പരിധിയില്ല</string>
+    <string name="doc_share_pdf_will_shrink">Small പോലും %1$s നേക്കാൾ വലുതാണ്; പേജുകൾ കൂടുതൽ ചെറുതാക്കും</string>
     <string name="doc_tab_text">ടെക്സ്റ്റ്</string>
     <string name="doc_tab_insights">വിവരങ്ങൾ</string>
     <string name="doc_tab_pdf_settings">PDF ക്രമീകരണങ്ങൾ</string>

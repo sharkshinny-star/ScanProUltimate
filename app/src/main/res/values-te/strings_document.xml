@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="doc_unavailable">డాక్యుమెంట్ అందుబాటులో లేదు</string>
     <string name="doc_could_not_save_pdf">PDFని సేవ్ చేయలేకపోయాం</string>
     <string name="doc_drive_not_installed">Google Drive ఇన్‌స్టాల్ కాలేదు. ఎక్కడ సేవ్ చేయాలో ఎంచుకోండి.</string>
@@ -13,6 +13,14 @@
     <string name="doc_clean_up">క్లీన్ చేయండి</string>
     <string name="doc_sign">సంతకం</string>
     <string name="doc_share_pdf">PDF షేర్ చేయండి</string>
+    <string name="doc_share_pdf_pages_all">అన్ని పేజీలు</string>
+    <string name="doc_share_pdf_pages_some" tools:ignore="PluralsCandidate">%2$d లో %1$d పేజీలు</string>
+    <string name="doc_share_pdf_select_all">అన్నీ</string>
+    <string name="doc_share_pdf_estimating">లెక్కిస్తోంది…</string>
+    <string name="doc_share_pdf_about">≈ %1$s</string>
+    <string name="doc_share_pdf_keep_under">దీని లోపు ఉంచండి</string>
+    <string name="doc_share_pdf_no_limit">పరిమితి లేదు</string>
+    <string name="doc_share_pdf_will_shrink">Small కూడా %1$s కంటే పెద్దది; పేజీలను మరింత కుదిస్తాం</string>
     <string name="doc_tab_text">టెక్స్ట్</string>
     <string name="doc_tab_insights">విశ్లేషణ</string>
     <string name="doc_tab_pdf_settings">PDF సెట్టింగ్‌లు</string>
