@@ -38,16 +38,23 @@ class ScanReviewSlidersTest {
     private val b = Uri.parse("file:///nowhere/b.jpg")
     private val c = Uri.parse("file:///nowhere/c.jpg")
     private val pages = mutableStateListOf(a, b, c)
+    private val quads = mutableStateMapOf<String, CropQuad>()
+    private val filters = mutableStateMapOf<String, PageFilter>()
     private val adjustments = mutableStateMapOf<String, PageAdjustments>()
     private val brighter = reviewAdjustments(20, 10, 0)
 
-    private fun show() = compose.setContent {
-        ScanProTheme(themeMode = ThemeMode.LIGHT) {
-            ScanReviewScreen(
-                pages = pages, quads = mutableStateMapOf<String, CropQuad>(), filters = mutableStateMapOf<String, PageFilter>(),
-                adjustments = adjustments, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {}, index = 0,
-                processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}
-            )
+    private fun show(openAdjust: Boolean = true) {
+        compose.setContent {
+            ScanProTheme(themeMode = ThemeMode.LIGHT) {
+                ScanReviewScreen(
+                    pages = pages, quads = quads, filters = filters,
+                    adjustments = adjustments, defaultFilter = PageFilter.ORIGINAL, onDefaultFilterChange = {}, index = 0,
+                    processing = false, onIndexChange = {}, onAdd = {}, onBack = {}, onDone = {}
+                )
+            }
+        }
+        if (openAdjust) {
+            compose.onNode(hasText(app.getString(R.string.scan_review_adjust), substring = true) and hasClickAction()).performClick()
         }
     }
 

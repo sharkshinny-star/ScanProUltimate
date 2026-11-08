@@ -188,7 +188,6 @@
     <string name="scan_error_camera_stream">इस डिवाइस पर कैमरा प्रीव्यू शुरू नहीं कर सका।</string>
     <string name="scan_error_camera_stopped">कैमरे ने काम करना बंद कर दिया। फिर से कोशिश करें या कम्पैटिबिलिटी स्कैनर इस्तेमाल करें।</string>
     <string name="scan_flash_state">फ़्लैश: %1$s</string>
-    <string name="scan_torch">टॉर्च</string>
     <string name="scan_zoom_level">ज़ूम %1$s</string>
     <plurals name="scan_pages_in_batch">
         <item quantity="one">बैच में %1$d पेज</item>

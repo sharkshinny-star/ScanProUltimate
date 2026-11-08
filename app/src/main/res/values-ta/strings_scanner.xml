@@ -188,7 +188,6 @@
     <string name="scan_error_camera_stream">இந்தச் சாதனத்தில் கேமரா முன்னோட்டத்தைத் தொடங்க முடியவில்லை.</string>
     <string name="scan_error_camera_stopped">கேமரா வேலை செய்வதை நிறுத்திவிட்டது. மீண்டும் முயலுங்கள் அல்லது இணக்க ஸ்கேனரைப் பயன்படுத்துங்கள்.</string>
     <string name="scan_flash_state">ஃபிளாஷ்: %1$s</string>
-    <string name="scan_torch">டார்ச்</string>
     <string name="scan_zoom_level">ஜூம் %1$s</string>
     <plurals name="scan_pages_in_batch">
         <item quantity="one">தொகுப்பில் %1$d பக்கம்</item>

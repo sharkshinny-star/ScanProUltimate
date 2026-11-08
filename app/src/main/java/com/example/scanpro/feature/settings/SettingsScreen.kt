@@ -96,6 +96,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.scanpro.core.designsystem.cappedFontScale
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -733,8 +734,10 @@ private fun Stat(modifier: Modifier, value: String, label: String) {
                 softWrap = false,
                 autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = valueStyle.fontSize)
             )
-            // Two lines, so "in recycle bin" (and longer translations) isn't cut to its first word.
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            // Two lines, so "in recycle bin" (and longer translations) isn't cut to its first word. A third of a phone's
+            // width can't hold "documents" at a 150 % font size (it broke as "docume / nts"), so the label grows at
+            // most 1.2 times.
+            Text(label, style = MaterialTheme.typography.labelSmall.cappedFontScale(1.2f), color = MaterialTheme.colorScheme.onSurfaceVariant, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }

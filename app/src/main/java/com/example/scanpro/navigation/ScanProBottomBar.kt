@@ -59,9 +59,16 @@ import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.ScanProTheme
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.scanpro.core.designsystem.cappedFontScale
 
 /** Windows at least this wide (tablets, unfolded foldables, split-screen on a large display) get a side rail. */
 const val WIDE_WINDOW_DP = 600
+
+/** Windows shorter than this (a phone on its side) get the compact side rail. */
+private const val SHORT_WINDOW_DP = 480
 
 @Composable
 fun isWideWindow(): Boolean {
@@ -159,12 +166,16 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
             Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.height(4.dp))
+        // The bar has a fixed height and a quarter of the width: at a 150 % font size "Settings" lost its last letter
+        // and the labels were cut at the bottom, so the label grows at most 1.3 times and ends in … if still too long.
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.cappedFontScale(),
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             color = tint,
-            maxLines = 1
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -202,18 +213,33 @@ fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: android
 /** Side navigation for wide windows; shows the same tabs as the bottom bar, with the scan button on top. */
 @Composable
 fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan: () -> Unit = {}) {
+    // A phone on its side is wide enough for the rail but only about 360 dp tall: the Scan label and the gaps are
+    // dropped there, and the tabs scroll, so the last tab (Settings) is never cut off at the bottom.
+    val short = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } < SHORT_WINDOW_DP.dp
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         header = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = if (short) 4.dp else 8.dp, bottom = if (short) 4.dp else 12.dp)
+            ) {
                 ScanButton(onClick = onScan, size = 56.dp)
-                Spacer(Modifier.height(6.dp))
-                Text(stringResource(R.string.lib_scan), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                if (!short) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        stringResource(R.string.lib_scan),
+                        style = MaterialTheme.typography.labelMedium.cappedFontScale(),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     ) {
-        Spacer(Modifier.height(8.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (!short) Spacer(Modifier.height(8.dp))
+        Column(
+            modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(if (short) 0.dp else 4.dp)
+        ) {
             tabs.forEach { tab ->
                 val selected = selectedRoute == tab.route
                 NavigationRailItem(
@@ -221,7 +247,15 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan
                     onClick = { onTab(tab.route) },
                     // The rail always shows the label, so a described icon would be read twice.
                     icon = { Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null) },
-                    label = { Text(stringResource(tab.label)) }
+                    label = {
+                        Text(
+                            stringResource(tab.label),
+                            style = MaterialTheme.typography.labelMedium.cappedFontScale(),
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 )
             }
         }

@@ -284,7 +284,7 @@ dependencies {
 
 androidComponents {
     beforeVariants { variantBuilder ->
-        (variantBuilder as? com.android.build.api.variant.HasUnitTestBuilder)?.enableUnitTest = true
+        (variantBuilder as? com.android.build.api.variant.HasUnitTestBuilder)?.enableUnitTest = variantBuilder.name == "debug"
     }
 }
 

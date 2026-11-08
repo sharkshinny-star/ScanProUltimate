@@ -188,7 +188,6 @@
     <string name="scan_error_camera_stream">ഈ ഡിവൈസിൽ ക്യാമറയ്ക്ക് പ്രിവ്യൂ തുടങ്ങാനായില്ല.</string>
     <string name="scan_error_camera_stopped">ക്യാമറ പ്രവർത്തനം നിർത്തി. വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ കോംപാറ്റിബിലിറ്റി സ്കാനർ ഉപയോഗിക്കുക.</string>
     <string name="scan_flash_state">ഫ്ലാഷ്: %1$s</string>
-    <string name="scan_torch">ടോർച്ച്</string>
     <string name="scan_zoom_level">സൂം %1$s</string>
     <plurals name="scan_pages_in_batch">
         <item quantity="one">ബാച്ചിൽ %1$d പേജ്</item>

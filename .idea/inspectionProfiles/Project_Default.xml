@@ -43,6 +43,8 @@
         <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
         <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
       </scope>
+      <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
+      <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
     </inspection_tool>
     <inspection_tool class="EnhancedSwitchMigration" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
@@ -115,6 +117,14 @@
         <option name="REPORT_ANNOTATION_NOT_PROPAGATED_TO_OVERRIDERS" value="true" />
         <option name="REPORT_NULLS_PASSED_TO_NON_ANNOTATED_METHOD" value="true" />
       </scope>
+      <option name="REPORT_NULLABLE_METHOD_OVERRIDES_NOTNULL" value="true" />
+      <option name="REPORT_NOT_ANNOTATED_METHOD_OVERRIDES_NOTNULL" value="true" />
+      <option name="REPORT_NOTNULL_PARAMETER_OVERRIDES_NULLABLE" value="true" />
+      <option name="REPORT_NOT_ANNOTATED_PARAMETER_OVERRIDES_NOTNULL" value="true" />
+      <option name="REPORT_NOT_ANNOTATED_GETTER" value="true" />
+      <option name="REPORT_NOT_ANNOTATED_SETTER_PARAMETER" value="true" />
+      <option name="REPORT_ANNOTATION_NOT_PROPAGATED_TO_OVERRIDERS" value="true" />
+      <option name="REPORT_NULLS_PASSED_TO_NON_ANNOTATED_METHOD" value="true" />
     </inspection_tool>
     <inspection_tool class="ObjectEqualsCanBeEquality" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
@@ -126,11 +136,13 @@
       <scope name="OpenCV (generated)" level="WARNING" enabled="false">
         <option name="m_ignoreExpressionsContainingConstants" value="true" />
       </scope>
+      <option name="m_ignoreExpressionsContainingConstants" value="true" />
     </inspection_tool>
     <inspection_tool class="PointlessBitwiseExpression" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="OpenCV (generated)" level="WARNING" enabled="false">
         <option name="m_ignoreExpressionsContainingConstants" value="true" />
       </scope>
+      <option name="m_ignoreExpressionsContainingConstants" value="true" />
     </inspection_tool>
     <inspection_tool class="RedundantArrayCreation" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="OpenCV (generated)" level="WARNING" enabled="false" />
@@ -189,6 +201,8 @@
         <option name="m_ignoreImmediatelyReturnedVariables" value="false" />
         <option name="m_ignoreAnnotatedVariables" value="false" />
       </scope>
+      <option name="m_ignoreImmediatelyReturnedVariables" value="false" />
+      <option name="m_ignoreAnnotatedVariables" value="false" />
     </inspection_tool>
     <inspection_tool class="UnnecessaryReturn" enabled="true" level="WARNING" enabled_by_default="true">
       <scope name="OpenCV (generated)" level="WARNING" enabled="false" />

@@ -106,10 +106,6 @@ class AppViewModel @Inject constructor(
         .map<AccentPalette, AccentPalette?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** Set from the welcome's "Make it yours" page; Settings has its own controls. */
-    fun setThemeMode(value: ThemeMode) { viewModelScope.launch { settings.setThemeMode(value) } }
-    fun setAccentPalette(value: AccentPalette) { viewModelScope.launch { settings.setAccentPalette(value) } }
-
     /**
      * True once for people updating from a release before [WHATS_NEW_VERSION], after the welcome is
      * known to have been seen (so a new install never gets both).

@@ -226,14 +226,21 @@ fun CameraScannerScreen(
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var boundCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
-    // Off, auto, on (fires with the shutter) or torch (steady light for dark rooms).
-    var flashMode by rememberSaveable { mutableStateOf(FlashMode.OFF) }
-    // The torch is its own switch (the top-right button); flashMode is the flash for the photo itself.
-    var torchOn by rememberSaveable { mutableStateOf(false) }
-    val torchEnabled = torchOn
     // A camera problem the user has to act on (camera busy, disabled, failed to open); shown in every mode.
     var cameraError by remember { mutableStateOf<String?>(null) }
     val prefs = remember { context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE) }
+    // One flash control for the photo flash and the torch together, in the top bar where CamScanner, Adobe Scan and
+    // Lens keep theirs (R31): Off, Auto and On fire with the shutter; Torch is a steady light for dark rooms.
+    // Remembered between scans, like the detect mode. (A separate torch switch used to write a flag this screen's
+    // flash effect never watched, so the torch button often did nothing until the camera restarted.)
+    var flashMode by rememberSaveable {
+        mutableStateOf(runCatching { FlashMode.valueOf(prefs.getString("flash", null).orEmpty()) }.getOrDefault(FlashMode.OFF))
+    }
+    val torchEnabled = flashMode == FlashMode.TORCH
+    fun setFlash(mode: FlashMode) {
+        flashMode = mode
+        prefs.edit().putString("flash", mode.name).apply()
+    }
     var detectMode by rememberSaveable {
         // Manual by default (owner decision): auto-capture surprised people; it is one tap away in the top menu.
         mutableStateOf(runCatching { DetectMode.valueOf(prefs.getString("detect", null).orEmpty()) }.getOrDefault(DetectMode.MANUAL))
@@ -856,6 +863,7 @@ fun CameraScannerScreen(
     }
 
     LaunchedEffect(flashMode, boundCamera, resumeCount) {
+        // torchEnabled follows flashMode, one of this effect's keys, so Torch applies the moment it is picked.
         boundCamera?.cameraControl?.enableTorch(torchEnabled)
         imageCapture?.flashMode = when (flashMode) {
             FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO
@@ -1035,7 +1043,7 @@ fun CameraScannerScreen(
             val dark = detection?.isDark == true && !torchEnabled
             val found = stable && detection?.isReady == true
             Surface(
-                onClick = { torchOn = true },
+                onClick = { setFlash(FlashMode.TORCH) },
                 enabled = dark,
                 modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 62.dp, end = panelClearance),
                 shape = RoundedCornerShape(16.dp),
@@ -1134,15 +1142,27 @@ fun CameraScannerScreen(
                 Spacer(Modifier.width(1.dp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                val torchLabel = stringResource(R.string.scan_torch)
+                // One flash button cycling Off → Auto → On → Torch (R31); amber while any light is chosen.
+                val flashState = stringResource(R.string.scan_flash_state, stringResource(flashMode.labelRes))
+                val flashActive = flashMode != FlashMode.OFF
                 Surface(
                     shape = CircleShape,
-                    color = if (torchOn) TorchOn else CameraGlass,
-                    contentColor = if (torchOn) Color(0xFF222222) else Color.White,
-                    modifier = Modifier.semantics { stateDescription = if (torchOn) onLabel else offLabel }
+                    color = if (flashActive) TorchOn else CameraGlass,
+                    contentColor = if (flashActive) Color(0xFF222222) else Color.White
                 ) {
-                    IconButton(onClick = { torchOn = !torchOn }) {
-                        Icon(Icons.Default.Bolt, contentDescription = torchLabel)
+                    IconButton(onClick = {
+                        val cycle = FlashMode.entries
+                        setFlash(cycle[(cycle.indexOf(flashMode) + 1) % cycle.size])
+                    }) {
+                        Icon(
+                            when (flashMode) {
+                                FlashMode.AUTO -> Icons.Default.FlashAuto
+                                FlashMode.ON -> Icons.Default.FlashOn
+                                FlashMode.TORCH -> Icons.Default.Bolt
+                                else -> Icons.Default.FlashOff
+                            },
+                            contentDescription = flashState
+                        )
                     }
                 }
                 Box {
@@ -1152,23 +1172,6 @@ fun CameraScannerScreen(
                         }
                     }
                     DropdownMenu(expanded = overflowOpen, onDismissRequest = { overflowOpen = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.scan_flash_state, stringResource(flashMode.labelRes))) },
-                            leadingIcon = {
-                                Icon(
-                                    when (flashMode) {
-                                        FlashMode.AUTO -> Icons.Default.FlashAuto
-                                        FlashMode.ON -> Icons.Default.FlashOn
-                                        else -> Icons.Default.FlashOff
-                                    },
-                                    contentDescription = null
-                                )
-                            },
-                            onClick = {
-                                val cycle = listOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON)
-                                flashMode = cycle[(cycle.indexOf(flashMode) + 1) % cycle.size]
-                            }
-                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(if (showAdjustments) R.string.scan_hide_zoom_exposure else R.string.scan_zoom_exposure)) },
                             onClick = { showAdjustments = !showAdjustments; overflowOpen = false }

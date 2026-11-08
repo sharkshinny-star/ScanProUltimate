@@ -188,7 +188,6 @@
     <string name="scan_error_camera_stream">ಈ ಸಾಧನದಲ್ಲಿ ಕ್ಯಾಮೆರಾ ಪ್ರಿವ್ಯೂ ಆರಂಭಿಸಲು ಆಗಲಿಲ್ಲ.</string>
     <string name="scan_error_camera_stopped">ಕ್ಯಾಮೆರಾ ಕೆಲಸ ನಿಲ್ಲಿಸಿತು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ ಅಥವಾ ಹೊಂದಾಣಿಕೆ ಸ್ಕ್ಯಾನರ್ ಬಳಸಿ.</string>
     <string name="scan_flash_state">ಫ್ಲ್ಯಾಶ್: %1$s</string>
-    <string name="scan_torch">ಟಾರ್ಚ್</string>
     <string name="scan_zoom_level">ಜೂಮ್ %1$s</string>
     <plurals name="scan_pages_in_batch">
         <item quantity="one">ಬ್ಯಾಚ್‌ನಲ್ಲಿ %1$d ಪುಟ</item>

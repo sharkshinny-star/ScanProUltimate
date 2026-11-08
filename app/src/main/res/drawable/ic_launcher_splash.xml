@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Animated launch-screen icon for Light Theme (Android 12+): the launcher mark assembles itself in one second. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <!-- Background: Light brand gradient with soft radial glow -->
+            <path android:pathData="M0,0h108v108h-108z">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:type="linear"
+                        android:startX="0"
+                        android:startY="0"
+                        android:endX="108"
+                        android:endY="108"
+                        android:startColor="#3346D3"
+                        android:endColor="#6E5BE6" />
+                </aapt:attr>
+            </path>
+            <path android:pathData="M0,0h108v108h-108z">
+                <aapt:attr name="android:fillColor">
+                    <gradient
+                        android:type="radial"
+                        android:centerX="18"
+                        android:centerY="14"
+                        android:gradientRadius="70"
+                        android:startColor="#33FFFFFF"
+                        android:endColor="#00FFFFFF" />
+                </aapt:attr>
+            </path>
+
+            <!-- Android 12+ shows only a circle two-thirds as wide as this canvas (radius 36 around the centre). The
+                 brackets reached the canvas corners, so only stubs showed, like white bites out of the tile; the
+                 whole mark is drawn at 70 % so the bracket corners (about 34 from the centre) sit inside it. -->
+            <group
+                android:pivotX="54"
+                android:pivotY="54"
+                android:scaleX="0.7"
+                android:scaleY="0.7">
+            <group
+                android:name="sheet"
+                android:pivotX="54"
+                android:pivotY="55"
+                android:scaleX="0.8"
+                android:scaleY="0.8">
+                <path
+                    android:name="shadow"
+                    android:fillColor="#000000"
+                    android:fillAlpha="0"
+                    android:pathData="M37,29h26l12,12v38.5a5,5 0 0,1 -5,5h-33a5,5 0 0,1 -5,-5v-45.5a5,5 0 0,1 5,-5z" />
+                <path
+                    android:name="paper"
+                    android:fillColor="#F3F4FA"
+                    android:fillAlpha="0"
+                    android:pathData="M36,26h26l12,12v40a5,5 0 0,1 -5,5h-33a5,5 0 0,1 -5,-5v-47a5,5 0 0,1 5,-5z" />
+                <path
+                    android:name="fold"
+                    android:fillColor="#B9C0FF"
+                    android:fillAlpha="0"
+                    android:pathData="M62,26v8a4,4 0 0,0 4,4h8z" />
+                <path
+                    android:name="text"
+                    android:fillColor="#3346D3"
+                    android:fillAlpha="0"
+                    android:pathData="M43,44h15a2,2 0 0,1 0,4h-15a2,2 0 0,1 0,-4zM43,63h20a2,2 0 0,1 0,4h-20a2,2 0 0,1 0,-4z" />
+            </group>
+
+            <group
+                android:name="scan"
+                android:translateY="-24">
+                <path
+                    android:name="scanLine"
+                    android:pathData="M24,55.5h60"
+                    android:strokeAlpha="0"
+                    android:strokeColor="#3DE3B2"
+                    android:strokeLineCap="round"
+                    android:strokeWidth="5" />
+            </group>
+
+            <group
+                android:name="brackets"
+                android:pivotX="54"
+                android:pivotY="54"
+                android:scaleX="1.3"
+                android:scaleY="1.3">
+                <path
+                    android:name="bracketPaths"
+                    android:pathData="M32,20h-8a4,4 0 0,0 -4,4v8M76,20h8a4,4 0 0,1 4,4v8M32,88h-8a4,4 0 0,1 -4,-4v-8M76,88h8a4,4 0 0,0 4,-4v-8"
+                    android:strokeAlpha="0"
+                    android:strokeColor="#FFFFFF"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:strokeWidth="4.5" />
+            </group>
+            </group>
+        </vector>
+    </aapt:attr>
+
+    <!-- 0–280 ms: brackets snap in -->
+    <target android:name="brackets">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="scaleX" android:duration="280" android:valueFrom="1.3" android:valueTo="1"
+                    android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleY" android:duration="280" android:valueFrom="1.3" android:valueTo="1"
+                    android:interpolator="@android:interpolator/overshoot" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="bracketPaths">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="strokeAlpha" android:duration="180" android:valueFrom="0" android:valueTo="1" />
+        </aapt:attr>
+    </target>
+
+    <!-- 120–420 ms: the sheet appears -->
+    <target android:name="sheet">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="scaleX" android:startOffset="120" android:duration="300" android:valueFrom="0.8"
+                    android:valueTo="1" android:interpolator="@android:interpolator/decelerate_cubic" />
+                <objectAnimator android:propertyName="scaleY" android:startOffset="120" android:duration="300" android:valueFrom="0.8"
+                    android:valueTo="1" android:interpolator="@android:interpolator/decelerate_cubic" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="paper">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="fillAlpha" android:startOffset="120" android:duration="220" android:valueFrom="0" android:valueTo="1" />
+        </aapt:attr>
+    </target>
+    <target android:name="fold">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="fillAlpha" android:startOffset="200" android:duration="220" android:valueFrom="0" android:valueTo="1" />
+        </aapt:attr>
+    </target>
+    <target android:name="shadow">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="fillAlpha" android:startOffset="200" android:duration="220" android:valueFrom="0" android:valueTo="0.22" />
+        </aapt:attr>
+    </target>
+
+    <!-- 380–1000 ms: the scan line sweeps down the page, then settles in the centre -->
+    <target android:name="scanLine">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="strokeAlpha" android:startOffset="380" android:duration="120" android:valueFrom="0" android:valueTo="1" />
+        </aapt:attr>
+    </target>
+    <target android:name="scan">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator android:propertyName="translateY" android:startOffset="380" android:duration="380" android:valueFrom="-24"
+                    android:valueTo="22" android:interpolator="@android:interpolator/accelerate_decelerate" />
+                <objectAnimator android:propertyName="translateY" android:duration="240" android:valueFrom="22" android:valueTo="0"
+                    android:interpolator="@android:interpolator/decelerate_cubic" />
+                <!-- Then it keeps scanning, gently, for as long as the app takes to load: a logo that stops moving
+                     during a cold start reads as a frozen app. The in-app launch animation (LaunchIntro, START_AT)
+                     picks up with the line low on the page settling to the centre, so it continues the motion. -->
+                <objectAnimator android:duration="1400" android:repeatCount="infinite" android:repeatMode="restart">
+                    <propertyValuesHolder android:propertyName="translateY" android:valueType="floatType">
+                        <keyframe android:fraction="0" android:value="0" />
+                        <keyframe android:fraction="0.5" android:value="18"
+                            android:interpolator="@android:interpolator/accelerate_decelerate" />
+                        <keyframe android:fraction="1" android:value="0"
+                            android:interpolator="@android:interpolator/accelerate_decelerate" />
+                    </propertyValuesHolder>
+                </objectAnimator>
+            </set>
+        </aapt:attr>
+    </target>
+    <!-- The text lines are "read" as the line passes them -->
+    <target android:name="text">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="fillAlpha" android:startOffset="480" android:duration="300" android:valueFrom="0" android:valueTo="0.65" />
+        </aapt:attr>
+    </target>
+</animated-vector>

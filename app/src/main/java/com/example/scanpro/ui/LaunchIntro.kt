@@ -67,7 +67,19 @@ import kotlin.math.roundToInt
  *   1.52-1.78  the icon zooms through and is gone before the app shows
  *   1.66-2.25  the colour crossfades into the app, which settles from 104 % (MainActivity, started by onReveal)
  * A tap skips to the zoom. One clock drives everything and is read only while drawing, so nothing recomposes per frame.
+ *
+ * Since the animated launch icon (res/drawable/ic_launcher_splash.xml) the system screen already builds the icon
+ * (brackets, page, scan sweep) and keeps its scan line moving while the app loads. Playing 0.00-0.60 here as well
+ * showed the same build-up twice, after a wait, and the launch felt stuck (owner, 2026-11-08, after it was stretched
+ * to 3 s). So the animation now starts at [START_AT], with the scan line on its way back up and the brackets about to
+ * snap, and plays at 1x: 1.65 s from the app's first frame to the app, a tap still skipping to the zoom.
  */
+
+/** Where this animation picks up from the system launch screen, which has just built the icon itself. */
+private const val START_AT = 0.60f
+
+/** Real seconds per timeline second; 1 = as designed. Raise it to slow the whole animation down evenly. */
+private const val PLAYBACK_STRETCH = 1f
 
 /** Exit start: where a tap skips to. */
 private const val EXIT_AT = 1.52f
@@ -162,7 +174,7 @@ private val IconCorner = 38.dp
 @Composable
 fun LaunchIntro(dark: Boolean, onReveal: () -> Unit, onFinished: () -> Unit, modifier: Modifier = Modifier) {
     val background = colorResource(if (dark) R.color.scanpro_window_dark else R.color.scanpro_window_light)
-    val clock = remember { Animatable(0f) }
+    val clock = remember { Animatable(START_AT) }
     val scope = rememberCoroutineScope()
     val reveal by rememberUpdatedState(onReveal)
     val finished by rememberUpdatedState(onFinished)
@@ -173,7 +185,7 @@ fun LaunchIntro(dark: Boolean, onReveal: () -> Unit, onFinished: () -> Unit, mod
         state.job = scope.launch {
             clock.snapTo(from)
             suspend fun runTo(target: Float) {
-                val ms = ((target - clock.value) * 1000f).roundToInt()
+                val ms = ((target - clock.value) * 1000f * PLAYBACK_STRETCH).roundToInt()
                 if (ms > 0) clock.animateTo(target, tween(ms, easing = LinearEasing))
             }
             runTo(REVEAL_AT)
@@ -185,7 +197,7 @@ fun LaunchIntro(dark: Boolean, onReveal: () -> Unit, onFinished: () -> Unit, mod
             finished()
         }
     }
-    LaunchedEffect(Unit) { play(0f) }
+    LaunchedEffect(Unit) { play(START_AT) }
 
     BoxWithConstraints(
         modifier

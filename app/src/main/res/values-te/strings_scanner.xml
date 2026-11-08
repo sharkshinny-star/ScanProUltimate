@@ -188,7 +188,6 @@
     <string name="scan_error_camera_stream">ఈ డివైజ్‌లో కెమెరా ప్రివ్యూ మొదలుపెట్టలేకపోయింది.</string>
     <string name="scan_error_camera_stopped">కెమెరా పనిచేయడం ఆగిపోయింది. మళ్లీ ప్రయత్నించండి లేదా కంపాటిబిలిటీ స్కానర్ వాడండి.</string>
     <string name="scan_flash_state">ఫ్లాష్: %1$s</string>
-    <string name="scan_torch">టార్చ్</string>
     <string name="scan_zoom_level">జూమ్ %1$s</string>
     <plurals name="scan_pages_in_batch">
         <item quantity="one">బ్యాచ్‌లో %1$d పేజీ</item>

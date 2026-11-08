@@ -40,9 +40,8 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -74,6 +73,7 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var notifications: AppNotifications
     @Inject lateinit var documentEditor: DocumentEditor
     @Inject lateinit var folderLock: com.example.scanpro.core.security.FolderLock
+    private val interpolator = FastOutSlowInInterpolator()
 
     private val compatibilityScanner by lazy {
         val options = GmsDocumentScannerOptions.Builder()
@@ -139,7 +139,6 @@ class MainActivity : FragmentActivity() {
             // No translucent scrim behind the gesture bar; the status bar never had one on these versions.
             window.isNavigationBarContrastEnforced = false
         }
-        hideSystemNavigationBars()
         publishShortcuts()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -148,7 +147,7 @@ class MainActivity : FragmentActivity() {
                 kotlinx.coroutines.flow.combine(viewModel.appLockEnabled, folderLock.locked, folderLock.hidden) { appLocked, locked, hidden ->
                     appLocked != false || locked.any { it !in hidden }
                 }.collect { secure ->
-                    if (secure) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    if (secure && !BuildConfig.DEBUG) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                     else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                 }
             }
@@ -195,7 +194,6 @@ class MainActivity : FragmentActivity() {
                     val style = if (dark) SystemBarStyle.dark(transparent) else SystemBarStyle.light(transparent, transparent)
                     enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
-                    hideSystemNavigationBars()
                     onDispose { }
                 }
                 ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = theme.dynamicColor, palette = theme.palette) {
@@ -281,8 +279,16 @@ class MainActivity : FragmentActivity() {
      */
     private fun showLaunchScreenUntilReady(splash: androidx.core.splashscreen.SplashScreen) {
         val startedAt = SystemClock.uptimeMillis()
+        var logged = false
         splash.setKeepOnScreenCondition {
-            !viewModel.launchStateReady && SystemClock.uptimeMillis() - startedAt < LAUNCH_SCREEN_MAX_HOLD_MS
+            val ready = viewModel.launchStateReady
+            val keep = !ready && SystemClock.uptimeMillis() - startedAt < LAUNCH_SCREEN_MAX_HOLD_MS
+            // Debug builds log how long the launch screen waited, and whether the settings or the time cap ended it.
+            if (!keep && !logged && BuildConfig.DEBUG) {
+                logged = true
+                android.util.Log.d("ScanProLaunch", "launch screen released after ${SystemClock.uptimeMillis() - startedAt} ms, settings ready=$ready")
+            }
+            keep
         }
         splash.setOnExitAnimationListener { provider ->
             provider.view.animate()
@@ -454,20 +460,6 @@ class MainActivity : FragmentActivity() {
                 )
             )
         }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            hideSystemNavigationBars()
-        }
-    }
-
-    private fun hideSystemNavigationBars() {
-        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        insetsController.hide(WindowInsetsCompat.Type.navigationBars())
-        insetsController.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 
     override fun onStop() {

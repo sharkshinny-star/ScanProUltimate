@@ -63,6 +63,16 @@ Earlier results (2026-11-08, `18c89a5`):
 
 Earlier results (2026-11-05):
 
+**2026-11-08, combined tree (merge `2dc8429` = F66–F68 committed, plus uncommitted F69/F70):** `:app:testDebugUnitTest` 356 tests, 297 passed, 59 skipped (opt-in), 0 failed; `:app:assembleDebug` passes. This is the first run with the fast save (F68) and the flash/review changes (F69) together. Not run: lint, release builds; the combined build is **not yet on the phone** (disconnected). Beware: the merge plus a stale editor save had reverted `AUDIT_FINDINGS.md`/`AGENT_HANDOFF.md`; both were reconstructed by hand afterwards (F68 row restored, mine renumbered F69/F70).
+
+**2026-11-08, local Mac, working tree on `259deeb` (uncommitted changes included):** `:app:testDebugUnitTest` 350 tests, 291 passed, 59 skipped (opt-in), 0 failed. **First device run:** `AppSmokeTest` passed (1/1) on a OnePlus CPH2569, Android 15 (API 35), arm64; installed with `adb install -r` and run with `am instrument`, not `connectedDebugAndroidTest`, which uninstalls the app and its data. The shell needs `JAVA_HOME` set to Android Studio's JBR (`/Applications/Android Studio.app/Contents/jbr/Contents/Home`); without it `./gradlew` fails at once, and old XML results look like a pass. ColorOS asks on the phone to allow each USB install. Not run: lint, release builds, manual device checks.
+
+**2026-11-08, after the device layout pass (F70; this run predates the fast-save commit `c27ad4b`, whose F68 is unrelated), working tree on `6ddbdf5`:** `:app:assembleDebug` passed, no warnings in the touched files; `:app:testDebugUnitTest` 352 tests, 293 passed, 59 skipped, 0 failed. The layout pass itself (Home, Files, Tools, Settings, camera, launch screen; light and dark; 150 % font; landscape) ran on the previous build. The fixed build is **not yet installed or seen on the phone** (its install did not complete). Not run: lint, release builds.
+
+**2026-11-08, scanning fixes (F69):** `ScanReview*` tests 13/13 on the final tree; `:app:assembleDebug` passes. On the phone (one build before the final polish): torch lights the moment it is picked, the flash button cycles Off/Auto/On/Torch, the review opens on the finished page, Crop restores the handles. The final build (Crop panel without sliders) is built but **not yet installed** (the phone disconnected). Full suite and lint not re-run after F69.
+
+**2026-11-08, launch timing on the OnePlus (debug build):** first frame (`am start -W` TotalTime) 2.7 s uncompiled, 1.4-1.9 s after `cmd package compile -m speed-profile` (close to a Play install); the `ScanProLaunch` log shows the settings were ready each time (0.9-1.4 s), so the 1.5 s cap is not what ends the wait. A release build with R8 and the baseline profile should be faster; not measured (outputs unsigned). `LaunchIntroTest` 3/3 and `LaunchSmokeTest` 70/70 pass after the launch change.
+
 ## Latest results (2026-11-05, F48 review fix and uiautomator 2.4.1, run on `263325d` + that commit, before rebasing onto `959ce27`; the rebased tree compiles)
 
 | Check | Result |

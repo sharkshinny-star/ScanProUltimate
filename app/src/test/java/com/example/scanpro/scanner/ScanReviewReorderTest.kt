@@ -44,9 +44,6 @@ class ScanReviewReorderTest {
     private val filters = mutableStateMapOf<String, PageFilter>()
     private var index by mutableIntStateOf(0)
 
-    private val quads = mutableStateMapOf<String, CropQuad>()
-    private val filters = mutableStateMapOf<String, PageFilter>()
-
     private fun show() = compose.setContent {
         ScanProTheme(themeMode = ThemeMode.LIGHT) {
             ScanReviewScreen(

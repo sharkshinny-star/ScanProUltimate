@@ -105,6 +105,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.core.designsystem.BrandLockup
@@ -1002,15 +1003,19 @@ private fun SearchLauncher(onClick: () -> Unit, modifier: Modifier = Modifier) {
         onClick = onClick,
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = modifier.fillMaxWidth().height(52.dp)
+        // At least 52dp, taller if the font needs it; one line, so at a large font size the hint ends in … instead
+        // of wrapping and having its second line cut off by a fixed height.
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp)
     ) {
-        Row(Modifier.padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 18.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(12.dp))
             Text(
                 stringResource(R.string.lib_home_search_launcher),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -1067,7 +1072,9 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     )
                     // The brand glyph, large and faint, running off the right edge.
                     // Kept to the right third so the faint glyph (and its scan line) never runs behind the text.
-                    val glyph = size.height * 1.05f
+                    // Capped by the width too: a large font makes the card taller, and a glyph sized by height alone
+                    // then grew leftwards behind the text and the button.
+                    val glyph = minOf(size.height * 1.05f, size.width * 0.75f)
                     val left = size.width - glyph * 0.62f
                     val top = (size.height - glyph) / 2f
                     translate(left = left, top = top) {
@@ -1134,7 +1141,16 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
             ) {
                 Icon(Icons.Rounded.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.lib_hero_start_scanning), fontWeight = FontWeight.Bold)
+                // One line: at a large font size the label shrinks to fit rather than breaking onto two lines.
+                val labelStyle = MaterialTheme.typography.labelLarge
+                Text(
+                    stringResource(R.string.lib_hero_start_scanning),
+                    style = labelStyle,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    softWrap = false,
+                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = labelStyle.fontSize)
+                )
             }
         }
     }

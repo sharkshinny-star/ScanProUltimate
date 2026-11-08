@@ -63,14 +63,16 @@ class LaunchIntroTest {
     }
 
     @Test
-    fun revealsAt1720msAndFinishesAt2250ms() {
+    fun revealsAt1120msAndFinishesAt1650ms() {
+        // Timeline 1.72 s and 2.25 s, starting at 0.60 s (START_AT, the system screen built the icon) at 1x.
         show()
-        compose.mainClock.advanceTimeBy(1_650)
+        compose.mainClock.advanceTimeBy(1_050)
         assertEquals(0, reveals)
         compose.mainClock.advanceTimeBy(150)
         assertEquals(1, reveals)
-        assertEquals(0, finishes)
-        compose.mainClock.advanceTimeBy(500)
+        compose.mainClock.advanceTimeBy(350)
+        assertEquals("not over before 1.65 s", 0, finishes)
+        compose.mainClock.advanceTimeBy(150)
         assertEquals(1, finishes)
         compose.mainClock.advanceTimeBy(1_000)
         assertEquals("reveal runs once", 1, reveals)
@@ -82,7 +84,7 @@ class LaunchIntroTest {
         show()
         compose.mainClock.advanceTimeBy(200)
         compose.onRoot().performTouchInput { click(center) }
-        // From the exit start (1.52 s) the reveal is 0.20 s away and the end 0.73 s.
+        // From the exit start (timeline 1.52 s) the reveal is 0.20 s away and the end 0.73 s.
         compose.mainClock.advanceTimeBy(300)
         assertEquals(1, reveals)
         compose.mainClock.advanceTimeBy(550)
@@ -93,9 +95,11 @@ class LaunchIntroTest {
     fun framesForComparisonWithFigma() {
         show()
         var elapsed = 0L
-        listOf(0L, 100L, 350L, 600L, 800L, 1_000L, 1_200L, 1_400L, 1_550L, 1_650L, 1_800L, 2_050L).forEach { at ->
-            compose.mainClock.advanceTimeBy(at - elapsed)
-            elapsed = at
+        // Frames named by timeline time; the animation starts at timeline 0.60 s (START_AT) and plays at 1x.
+        listOf(600L, 800L, 1_000L, 1_200L, 1_400L, 1_550L, 1_650L, 1_800L, 2_050L).forEach { at ->
+            val real = at - 600
+            compose.mainClock.advanceTimeBy(real - elapsed)
+            elapsed = real
             capture("intro_%04d".format(at))
         }
     }

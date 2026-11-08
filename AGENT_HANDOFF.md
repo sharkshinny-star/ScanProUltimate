@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (F67: ID card scans both sides by default and puts them on one page, front above back; F66: launch animation and theme/language hand-over; CI limits raised, run 75 passed end to end under them, the first green run since 44). Release builds last run locally 2026-11-08; devices not run.
+Last updated: 2026-11-08. Today, three threads: **F66/F67/F68** (committed: launch animation and theme/language hand-over; ID card both sides on one page; fast save from the camera, closing R26) and, **uncommitted in this working tree**, F69 (torch bug fixed, one top-bar flash control closes R31, result-first review closes R27; seen on the phone) and F70 (device layout pass on a OnePlus CPH2569: nav bar, landscape rail, 150 % font, launch icon and launch feel; R38 opened). Careful: the merge `2dc8429` and a stale-editor save had dropped the F66–F68 rows and this file's updates; restored by hand, so trust `git log` over older copies of these docs.
 
 ## 1. Current state
 
@@ -20,7 +20,8 @@ Last updated: 2026-11-08 (F67: ID card scans both sides by default and puts them
 - **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`, by hand on 2026-10-30/31; their commits were recorded in this branch's history on 2026-11-05 by a history-only merge (`-s ours`, no file changes), so `git rev-list HEAD..origin/<branch>` is empty for every branch.
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
 - **Builds (latest full run, see `BUILD_AND_TEST.md` "Latest results"):** 320 unit tests, 0 failed; lint 0 issues; bundle and sideload release builds pass. That run predates F65: the full unit-test and lint run on the current tree is still owed (R36). Last 16 KB alignment check: 2026-11-04, `b76720c`.
-- **Not verified:** nothing has run on a device or emulator. Camera, PDF tools, app lock, notifications and backup/restore
+- **Not verified:** on a device, only this (OnePlus CPH2569, Android 15, 2026-11-08): `AppSmokeTest` passes; the F69/F70 fixes were seen working (flash/torch, result-first review, layout at 150 % font and landscape, launch icon). Camera end-to-end saving, PDF tools, app lock, notifications and backup/restore
+  are otherwise untested in practice. Camera, PDF tools, app lock, notifications and backup/restore
   are untested in practice. No instrumented tests beyond `AppSmokeTest`; `ScreenScreenshotTest` (opt-in) renders 12 screens
   in light and dark for review but asserts nothing.
 - **Figma review board:** "ScanPro UI review (real app screens)", https://www.figma.com/design/iHjKny6T0cokWhVhglDkTB, the owner's Starter-plan file
@@ -32,8 +33,12 @@ Last updated: 2026-11-08 (F67: ID card scans both sides by default and puts them
 
 | Commit | What |
 |---|---|
-| next | F67: ID card mode defaults to Both sides; Done after the second side composes one page (front at the top, back below, white A4 shape, `IdCardComposer`) before the review; Retake there re-shoots both sides. `IdCardComposerTest` (2). 338 tests 0 failed, lint 0 errors. |
-| next | F66 from the owner's screen recording: launch animation 2.25 s (was 1.6 s), wordmark held, indigo-azure-teal flood; the intro follows the app's theme and `MainActivity` sets the system's per-app night mode so the Android 12+ launch screen matches from the next start; `configChanges="locale\|layoutDirection\|uiMode"` so the language picker's Continue (and theme changes) no longer restart the activity (the black frame). CI: Gradle 3 GB, Kotlin compiler in-process, test heap 2.5 GB (run 73 OOMed at 1.5 GB); tests 336/0, lint 0 errors, bundle and sideload builds pass locally under those limits. |
+| not committed | F69: torch bug fixed (the toggle wrote a flag the flash effect never watched); one top-bar flash button (Off/Auto/On/Torch, amber when lit, remembered between scans); review opens on the finished page with Crop · Filters · Adjust tools (closes R27, R31). Verified on the OnePlus. |
+| not committed | F70: device layout pass (OnePlus, Android 15): navigation bar no longer hidden, landscape side rail fits, 150 % font fixes (bottom bar, search pill, hero, stat tiles), launch-icon brackets inside the system's circle; launch no longer feels stuck (the system icon keeps scanning while the app loads; `LaunchIntro` starts at 0.60 s). R38 opened (Home scrolls itself ~14 dp). |
+| `c27ad4b` | F68 (closes R26): fast save from the camera. `ReviewMode` setting (Always / If needed / Never, default If needed) in Settings › Scanning; `FastSave` decides from the per-page crop and quality; `CameraScannerScreen.reviewOrSave` saves on Done or opens the review on the first page that needs a look. `FastSaveTest` (4); 342 tests 0 failed; lint 0 errors. |
+| `3888dd2` | Instrumented tests for the launch, the in-place language change and ID cards, to run from Android Studio (written, not run). |
+| `a502f3b` | F67: ID card mode defaults to Both sides; Done after the second side composes one page (front at the top, back below, white A4 shape, `IdCardComposer`) before the review; Retake there re-shoots both sides. `IdCardComposerTest` (2). 338 tests 0 failed, lint 0 errors. |
+| `d97deab` | F66 from the owner's screen recording: launch animation 2.25 s (was 1.6 s), wordmark held, indigo-azure-teal flood; the intro follows the app's theme and `MainActivity` sets the system's per-app night mode so the Android 12+ launch screen matches from the next start; `configChanges="locale\|layoutDirection\|uiMode"` so the language picker's Continue (and theme changes) no longer restart the activity (the black frame). CI heaps capped for the free runner; tests 336/0, lint 0 errors. |
 | next | `docs/archive/`: old ScanPro repo's `FirebaseCloudClient.kt` kept as `.txt` (not compiled, API key redacted) for possible future cloud sync. Old ScanPro repo compared: nothing else worth porting. |
 | `0284287` | `TOOLS_IMPROVEMENTS.md`: PDF Tools backlog (7 items, related R7/R28, device checks for F48–F50). |
 | `ef2f3b2` | History-only merge of `main` and the three older branches (`-s ours`, no file changes). |

@@ -251,7 +251,7 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
 - **Launch animation.** Designed and assessed in Figma (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi: frame
   `2:2` holds the keyframes, `6:2` the spec) and drawn by `ui/LaunchIntro.kt` from the same keyframe table: the icon is
   pressed, the scan line writes the page, the brackets lock on, an indigo-azure-teal flood fills the screen, "ScanPro"
-  rises and holds, the icon zooms through into the app (2.25 s, the Figma 1.6 s timeline stretched after the owner
+  rises and holds, the icon zooms through into the app (the system launch screen now builds the icon and keeps its scan line moving while the app loads, `ic_launcher_splash.xml`; the in-app part starts at timeline 0.60 s, `START_AT`, so the build-up is not shown twice, and runs 1.65 s at 1x; a 3.0 s stretch felt stuck, 2026-11-08. The 2.25 s timeline is the Figma 1.6 s one stretched after the owner
   found it a blink; tap to skip). It is drawn in the app's own light/dark theme, and `MainActivity` passes that choice
   to the system (`UiModeManager.setApplicationNightMode`, Android 12+), so the system launch screen is in the same
   mode from the next start. The system launch screen shows its first frame

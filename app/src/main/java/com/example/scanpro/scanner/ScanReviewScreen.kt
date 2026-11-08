@@ -248,6 +248,20 @@ fun ScanReviewScreen(
         withContext(Dispatchers.Default) { runCatching { ImageProcessor.filterUncropped(image, pageFilter, pageAdjustments) }.getOrNull() }
             ?.let { filteredView = it }
     }
+    // The Result view: the page cut out along its outline, straightened and filtered, the way it will be saved
+    // (Adobe Scan, Lens and Genius Scan show the result, not the raw photo). Rendered a moment after the last
+    // change so corner drags and slider moves stay smooth; the previous render stays up meanwhile.
+    var resultPreview by remember(key, rotationTick) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(bitmap, previewQuad, pageFilter, pageAdjustments, rotationTick) {
+        if (bitmap == null) return@LaunchedEffect
+        val quad = previewQuad ?: return@LaunchedEffect
+        delay(150.milliseconds)
+        withContext(Dispatchers.IO) {
+            runCatching {
+                ImageProcessor.renderPreview(java.io.File(uri.path.orEmpty()), pageFilter, 0, quad, pageAdjustments, maxDimension = 1400)
+            }.getOrNull()
+        }?.let { resultPreview = it }
+    }
 
     // Pages that have not been outlined yet (imports, or captures not seen before) are detected on first view.
     LaunchedEffect(bitmap) {
@@ -431,6 +445,8 @@ fun ScanReviewScreen(
                                 quads[key] = start.straightened()
                             } else {
                                 curveMode = true
+                                // The bend handles live on the Crop view, so it comes up with them.
+                                panel = PANEL_CROP
                                 // Start from the page's own edges; the orange handles then fine-tune each bend.
                                 scope.launch {
                                     val estimated = withContext(Dispatchers.Default) {
@@ -520,7 +536,7 @@ fun ScanReviewScreen(
             val quad = quads[key]
             if (image == null || quad == null) {
                 CircularProgressIndicator(color = primary)
-            } else {
+            } else if (panel == PANEL_CROP) {
                 CropCanvas(
                     image = image,
                     display = filteredView ?: image,
@@ -530,6 +546,19 @@ fun ScanReviewScreen(
                     accent = primary,
                     onCropChange = { quads[key] = it }
                 )
+            } else {
+                // The finished page (R27); the raw photo with its corner handles is one tap away on the Crop tool.
+                val result = resultPreview
+                if (result != null) {
+                    Image(
+                        bitmap = result.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    CircularProgressIndicator(color = primary)
+                }
             }
         } } }
 
@@ -553,6 +582,11 @@ fun ScanReviewScreen(
             Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            FilterChip(
+                selected = panel == PANEL_CROP,
+                onClick = { panel = PANEL_CROP },
+                label = { Text(stringResource(R.string.doc_crop)) }
+            )
             FilterChip(
                 selected = panel == PANEL_FILTERS,
                 onClick = { panel = PANEL_FILTERS },
@@ -583,7 +617,7 @@ fun ScanReviewScreen(
                 modifier = Modifier.padding(horizontal = 8.dp)
             ) { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) }
         }
-        } else {
+        } else if (panel == PANEL_ADJUST) {
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
             AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
@@ -972,6 +1006,7 @@ private fun SaveOptionCell(
 
 private const val PANEL_FILTERS = 0
 private const val PANEL_ADJUST = 1
+private const val PANEL_CROP = 2
 
 /** One slider row: label · slider · value, with the value as a whole number from −50 to 50. */
 @Composable

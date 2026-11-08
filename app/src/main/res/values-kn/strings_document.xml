@@ -146,7 +146,6 @@
     </plurals>
     <string name="doc_pages_and_size">%1$s · %2$s</string>
     <string name="doc_share_as_pdf">PDF ಆಗಿ ಹಂಚಿಕೊಳ್ಳಿ</string>
-    <string name="doc_share_as_pdf_hint">ಇಮೇಲ್, WhatsApp, Gmail ಮತ್ತು ಇತರ ಆ್ಯಪ್‌ಗಳು</string>
     <string name="doc_share_as_jpg">JPG ಆಗಿ ಹಂಚಿಕೊಳ್ಳಿ</string>
     <string name="doc_share_as_jpg_hint">ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಚಿತ್ರ</string>
     <string name="doc_save_to_google_drive">Google Drive ಗೆ ಉಳಿಸಿ</string>
