@@ -1,6 +1,6 @@
 # Remaining work
 
-Everything still open on `claude/awesome-clarke-ussjo3`, as of 2026-11-08 (after F80, commit `a71c550`). Generated from the "Open" table in
+Everything still open on `claude/awesome-clarke-ussjo3`, as of 2026-11-08 (after R38 and R9 step 1, commit `08188db`; CI run 87 passed on F80, the run after this covers R9 step 1 and R38). Generated from the "Open" table in
 `AUDIT_FINDINGS.md`, which holds the full problem description and evidence for each ID; keep that table as the source
 of truth and update this list when items close.
 
