@@ -934,7 +934,7 @@ private fun ReviewFilmstrip(
 }
 
 /** Amber for "worth a look": readable on the dark thumbnail badge and as the notice's icon in both themes. */
-private val QualityAmber = androidx.compose.ui.graphics.Color(0xFFFFB13D)
+internal val QualityAmber = androidx.compose.ui.graphics.Color(0xFFFFB13D)
 
 /**
  * Over the top of the page: what looks wrong with it (all issues, most serious first) and, where the page can be shot

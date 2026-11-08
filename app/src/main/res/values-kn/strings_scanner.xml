@@ -244,4 +244,6 @@
     <string name="scan_quality_dark">ಈ ಪುಟ ತುಂಬಾ ಕತ್ತಲಾಗಿ ಕಾಣುತ್ತದೆ</string>
     <string name="scan_quality_retake">ಮತ್ತೆ ತೆಗೆಯಿರಿ</string>
     <string name="scan_quality_page_flagged">ಪುಟ %1$d, ಮತ್ತೆ ತೆಗೆಯಬೇಕಾಗಬಹುದು</string>
+    <string name="scan_page_deleted">ಪುಟವನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
+    <string name="scan_strip_delete_hint">ಅಳಿಸಲು ದೀರ್ಘವಾಗಿ ಒತ್ತಿರಿ</string>
 </resources>

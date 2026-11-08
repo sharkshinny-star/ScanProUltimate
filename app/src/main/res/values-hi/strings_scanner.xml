@@ -244,4 +244,6 @@
     <string name="scan_quality_dark">यह पेज बहुत गहरा लग रहा है</string>
     <string name="scan_quality_retake">फिर से लें</string>
     <string name="scan_quality_page_flagged">पेज %1$d, शायद फिर से लेना पड़े</string>
+    <string name="scan_page_deleted">पृष्ठ हटा दिया गया</string>
+    <string name="scan_strip_delete_hint">हटाने के लिए देर तक दबाएं</string>
 </resources>

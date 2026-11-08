@@ -244,4 +244,6 @@
     <string name="scan_quality_dark">இந்தப் பக்கம் மிகவும் இருட்டாகத் தெரிகிறது</string>
     <string name="scan_quality_retake">மீண்டும் எடு</string>
     <string name="scan_quality_page_flagged">பக்கம் %1$d, மீண்டும் எடுக்க வேண்டியிருக்கலாம்</string>
+    <string name="scan_page_deleted">பக்கம் நீக்கப்பட்டது</string>
+    <string name="scan_strip_delete_hint">நீக்க நீண்ட நேரம் அழுத்தவும்</string>
 </resources>

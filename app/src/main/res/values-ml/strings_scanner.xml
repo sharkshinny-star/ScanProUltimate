@@ -244,4 +244,6 @@
     <string name="scan_quality_dark">ഈ പേജ് വളരെ ഇരുണ്ടതായി തോന്നുന്നു</string>
     <string name="scan_quality_retake">വീണ്ടും എടുക്കുക</string>
     <string name="scan_quality_page_flagged">പേജ് %1$d, വീണ്ടും എടുക്കേണ്ടി വന്നേക്കാം</string>
+    <string name="scan_page_deleted">പേജ് ഇല്ലാതാക്കി</string>
+    <string name="scan_strip_delete_hint">ഇല്ലാതാക്കാൻ ദീർಘനേരം അമർത്തുക</string>
 </resources>

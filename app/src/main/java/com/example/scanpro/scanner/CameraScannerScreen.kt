@@ -43,10 +43,12 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -80,6 +82,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -131,8 +134,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -337,6 +342,15 @@ fun CameraScannerScreen(
         retakeOfPage != null -> 1
         scanMode == ScanMode.ID_CARD -> if (scanBothSides && idComposite == null) 2 else 1
         else -> 100
+    }
+
+    var pendingDeletion by remember { mutableStateOf<DeletedCapture?>(null) }
+    LaunchedEffect(pendingDeletion) {
+        if (pendingDeletion != null) {
+            delay(4000)
+            pendingDeletion?.let { deleteInBackground(File(it.uri.path.orEmpty())) }
+            pendingDeletion = null
+        }
     }
 
     var confirmQuit by remember { mutableStateOf(false) }
@@ -1225,14 +1239,65 @@ fun CameraScannerScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (pendingDeletion != null) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color.Black.copy(alpha = 0.85f),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.scan_page_deleted),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Text(
+                            stringResource(R.string.common_undo),
+                            color = QualityAmber,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable {
+                                pendingDeletion?.let { deleted ->
+                                    val targetIndex = deleted.index.coerceAtMost(pages.size)
+                                    pages.add(targetIndex, deleted.uri)
+                                    val k = deleted.uri.toString()
+                                    deleted.quad?.let { quads[k] = it }
+                                    deleted.filter?.let { filters[k] = it }
+                                    deleted.quality?.let { quality[k] = it }
+                                }
+                                pendingDeletion = null
+                            }
+                        )
+                    }
+                }
+            }
             // The pages so far, newest last; tap one to check it in the review step. Every capture lands here and
             // Done finishes, so there is no Single/Batch choice to make first.
             if (pages.isNotEmpty()) {
                 CapturedStrip(
                     pages = pages,
+                    quads = quads,
+                    filters = filters,
+                    quality = quality,
+                    sessionFilter = sessionFilter,
                     onOpen = { index ->
                         reviewIndex = index
                         reviewing = true
+                    },
+                    onDelete = { index ->
+                        if (index in pages.indices) {
+                            val removed = pages.removeAt(index)
+                            val k = removed.toString()
+                            val q = quads.remove(k)
+                            val f = filters.remove(k)
+                            val issues = quality.remove(k)
+                            pendingDeletion?.let { prev -> deleteInBackground(File(prev.uri.path.orEmpty())) }
+                            pendingDeletion = DeletedCapture(removed, index, q, f, issues)
+                        }
                     }
                 )
                 Spacer(Modifier.height(8.dp))
@@ -1742,20 +1807,54 @@ private fun LevelBubble(tilt: Offset, accent: Color, modifier: Modifier = Modifi
     }
 }
 
-/** Thumbnails of the pages captured so far, decoded small and kept while the screen lives. */
+/** Thumbnails of the pages captured so far: cropped, filtered, with quality warning and long-press to delete (R30). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CapturedStrip(pages: List<Uri>, onOpen: (Int) -> Unit) {
+internal fun CapturedStrip(
+    pages: List<Uri>,
+    quads: Map<String, CropQuad>,
+    filters: Map<String, PageFilter>,
+    quality: Map<String, Set<PageIssue>>,
+    sessionFilter: PageFilter?,
+    onOpen: (Int) -> Unit,
+    onDelete: (Int) -> Unit
+) {
     val cache = remember { HashMap<String, Bitmap>() }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val haptic = LocalHapticFeedback.current
+    val deleteHint = stringResource(R.string.scan_strip_delete_hint)
     LaunchedEffect(pages.size) { if (pages.isNotEmpty()) listState.animateScrollToItem(pages.lastIndex) }
     LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
             val key = uri.toString()
-            val pageLabel = stringResource(R.string.scan_review_page_n, index + 1)
-            val bitmap by produceState(initialValue = cache[key], key) {
+            val quad = quads[key]
+            val filter = filters[key] ?: sessionFilter ?: PageFilter.AUTO
+            val issues = quality[key].orEmpty()
+            val flagged = (quad != null && quad.isIdentity()) || issues.isNotEmpty()
+            val pageLabel = if (flagged) {
+                stringResource(R.string.scan_quality_page_flagged, index + 1)
+            } else {
+                stringResource(R.string.scan_review_page_n, index + 1)
+            }
+            val cacheKey = "$key#${quad?.let { "${it.topLeft},${it.topRight},${it.bottomRight},${it.bottomLeft}" }}#$filter"
+            val bitmap by produceState<Bitmap?>(initialValue = cache[cacheKey], cacheKey) {
                 if (value == null) {
-                    value = withContext(Dispatchers.IO) { ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160) }
-                    value?.let { cache[key] = it }
+                    value = withContext(Dispatchers.IO) {
+                        val file = File(uri.path.orEmpty())
+                        if (!file.exists()) return@withContext null
+                        runCatching {
+                            ImageProcessor.renderPreview(
+                                source = file,
+                                filter = filter,
+                                manualRotationDegrees = 0,
+                                crop = quad ?: CropQuad.DEFAULT,
+                                maxDimension = 160
+                            )
+                        }.getOrNull() ?: runCatching {
+                            ImageProcessor.decodeOrientedScaled(uri.path.orEmpty(), 160)
+                        }.getOrNull()
+                    }
+                    value?.let { cache[cacheKey] = it }
                 }
             }
             Box(
@@ -1764,11 +1863,38 @@ private fun CapturedStrip(pages: List<Uri>, onOpen: (Int) -> Unit) {
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color.White.copy(alpha = 0.1f))
                     .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
-                    .clickable { onOpen(index) }
-                    .semantics { contentDescription = pageLabel },
+                    .combinedClickable(
+                        onClick = { onOpen(index) },
+                        onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onDelete(index)
+                        }
+                    )
+                    .semantics {
+                        contentDescription = "$pageLabel. $deleteHint"
+                        customActions = listOf(
+                            CustomAccessibilityAction(deleteHint) {
+                                onDelete(index)
+                                true
+                            }
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize()) }
+                if (flagged) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = QualityAmber,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(2.dp)
+                            .size(14.dp)
+                            .background(Color.Black.copy(alpha = 0.55f), CircleShape)
+                            .padding(1.5.dp)
+                    )
+                }
                 Text(
                     "${index + 1}",
                     color = Color.White,
@@ -1912,3 +2038,12 @@ internal const val SESSION_IMPORT_FAILED = ".import_failed"
  * runs low, and a finished scan waiting for its import exists nowhere else.
  */
 internal fun scannerSessionRoot(context: android.content.Context) = File(context.filesDir, SESSION_ROOT)
+
+/** A captured page removed from the strip, held until undo or timeout (R30). */
+private data class DeletedCapture(
+    val uri: Uri,
+    val index: Int,
+    val quad: CropQuad?,
+    val filter: PageFilter?,
+    val quality: Set<PageIssue>?
+)
