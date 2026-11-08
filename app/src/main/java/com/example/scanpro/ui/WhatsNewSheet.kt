@@ -17,8 +17,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ColorLens
+import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.TipsAndUpdates
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +47,8 @@ import com.example.scanpro.core.designsystem.TileTone
 private class NewThing(val icon: ImageVector, val tone: TileTone, @StringRes val title: Int, @StringRes val body: Int)
 
 private val newThings = listOf(
+    NewThing(Icons.Filled.Crop, TileTone.Teal, R.string.whats_new_images_to_pdf_title, R.string.whats_new_images_to_pdf_body),
+    NewThing(Icons.Rounded.PictureAsPdf, TileTone.Indigo, R.string.whats_new_pdf_tools_title, R.string.whats_new_pdf_tools_body),
     NewThing(Icons.Rounded.ColorLens, TileTone.Rose, R.string.whats_new_themes_title, R.string.whats_new_themes_body),
     NewThing(Icons.Rounded.TipsAndUpdates, TileTone.Amber, R.string.whats_new_tips_title, R.string.whats_new_tips_body)
 )

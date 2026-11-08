@@ -2,12 +2,18 @@
 <resources>
     <!-- Colour themes, Home tips and the What's new sheet -->
     <string name="whats_new_title">ScanPro-യിൽ പുതിയത്</string>
+    <string name="whats_new_images_to_pdf_title">ചിത്രങ്ങളിൽ നിന്ന് PDF: പുനഃക്രമീകരിക്കുക &amp; ക്രോപ്പ് ചെയ്യുക</string>
+    <string name="whats_new_images_to_pdf_body">PDF സൃഷ്ടിക്കുന്നതിന് മുമ്പ് തിരഞ്ഞെടുത്ത ഫോട്ടോകൾ പുനഃക്രമീകരിക്കുക, പേജുകൾ തിരിക്കുക, പെർസ്പെക്റ്റീവ് കോണുകൾ ക്രമീകരിക്കുക.</string>
+    <string name="whats_new_pdf_tools_title">PDF ക്രമീകരിക്കുക, ലയിപ്പിക്കുക, വിഭജിക്കുക</string>
+    <string name="whats_new_pdf_tools_body">പേജുകൾ എളുപ്പത്തിൽ പുനഃക്രമീകരിക്കുക അല്ലെങ്കിൽ സംയോജിപ്പിക്കുക. സിംഗിൾ പേജ് ഡോക്യുമെന്റുകൾ അസാധുവായ വിഭജനത്തിൽ നിന്നോ പുനഃക്രമീകരണത്തിൽ നിന്നോ സ്വയമേവ സംരക്ഷിക്കപ്പെടുന്നു.</string>
     <string name="whats_new_themes_title">കളർ തീമുകൾ</string>
     <string name="whats_new_themes_body">മുഴുവൻ ആപ്പിനും ഇൻഡിഗോ, ഓഷ്യൻ, എമറാൾഡ്, സൺസെറ്റ് അല്ലെങ്കിൽ ബെറി നിറം, ലൈറ്റിലോ ഡാർക്കിലോ. ക്രമീകരണങ്ങൾ › രൂപം.</string>
     <string name="whats_new_tips_title">ഹോമിൽ നുറുങ്ങുകൾ</string>
     <string name="whats_new_tips_body">നിങ്ങൾ ഇതുവരെ പരീക്ഷിക്കാത്ത ഒരു സവിശേഷതയെക്കുറിച്ചുള്ള ചെറിയ നുറുങ്ങ്. ക്രമീകരണങ്ങളിൽ ഇവ ഓഫാക്കാം.</string>
     <string name="whats_new_pick_colours">നിങ്ങളുടെ നിറങ്ങൾ തിരഞ്ഞെടുക്കുക</string>
     <string name="whats_new_got_it">ശരി</string>
+    <string name="settings_whats_new_title">ScanPro-യിൽ പുതിയത്</string>
+    <string name="settings_whats_new_subtitle">ഏറ്റവും പുതിയ സവിശേഷതകളും മെച്ചപ്പെടുത്തലുകളും പര്യവേക്ഷണം ചെയ്യുക</string>
     <string name="data_palette_indigo">ഇൻഡിഗോ</string>
     <string name="data_palette_ocean">ഓഷ്യൻ</string>
     <string name="data_palette_emerald">എമറാൾഡ്</string>

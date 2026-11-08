@@ -24,12 +24,18 @@
     <string name="crash_share_subject">ScanPro crash report</string>
     <!-- One-time "What's new" sheet for people updating (ui/WhatsNewSheet.kt) -->
     <string name="whats_new_title">What\'s new in ScanPro</string>
+    <string name="whats_new_images_to_pdf_title">Images to PDF reorder &amp; crop</string>
+    <string name="whats_new_images_to_pdf_body">Rearrange selected photos, rotate pages, and fine-tune perspective corners before creating your PDF.</string>
+    <string name="whats_new_pdf_tools_title">Organise, Merge &amp; Split PDF</string>
+    <string name="whats_new_pdf_tools_body">Rearrange or combine pages seamlessly. Single-page documents are automatically protected from invalid splits or reordering.</string>
     <string name="whats_new_themes_title">Colour themes</string>
     <string name="whats_new_themes_body">Dress the whole app in Indigo, Ocean, Emerald, Sunset or Berry, in light or dark. Settings › Appearance.</string>
     <string name="whats_new_tips_title">Tips on Home</string>
     <string name="whats_new_tips_body">A short tip about a feature you may not have tried. You can turn them off in Settings.</string>
     <string name="whats_new_pick_colours">Choose your colours</string>
     <string name="whats_new_got_it">Got it</string>
+    <string name="settings_whats_new_title">What\'s new in ScanPro</string>
+    <string name="settings_whats_new_subtitle">Explore the latest features and improvements</string>
     <!-- Under the wordmark in the launch animation (ui/LaunchIntro.kt) -->
     <string name="launch_tagline">Scan. Search. Share.</string>
 </resources>

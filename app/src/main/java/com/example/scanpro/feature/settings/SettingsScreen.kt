@@ -1,9 +1,11 @@
 package com.example.scanpro.feature.settings
 
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.CameraAlt
 import com.example.scanpro.core.ui.findActivity
+import com.example.scanpro.ui.WhatsNewSheet
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -247,6 +249,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     var languageDialogOpen by rememberSaveable { mutableStateOf(false) }
     var privacyOpen by rememberSaveable { mutableStateOf(false) }
+    var whatsNewOpen by rememberSaveable { mutableStateOf(false) }
     // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive works
     // too); restore reads one such file back. Documents never leave the device otherwise.
     var backupFolder by remember { mutableStateOf<Uri?>(null) }
@@ -302,6 +305,12 @@ fun SettingsScreen(
         scope.launch { snackbarHostState.showSnackbar(delivery.confirmation(context)) }
     }
     if (privacyOpen) PrivacyDialog(onDismiss = { privacyOpen = false })
+    if (whatsNewOpen) {
+        WhatsNewSheet(
+            onPickColours = { whatsNewOpen = false },
+            onDismiss = { whatsNewOpen = false }
+        )
+    }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
@@ -636,6 +645,15 @@ fun SettingsScreen(
                 NotificationsSection(notifications)
 
                 SettingsSection(stringResource(R.string.settings_section_support)) {
+                    SettingsRow(
+                        icon = Icons.Rounded.AutoAwesome,
+                        tone = TileTone.Amber,
+                        title = stringResource(R.string.settings_whats_new_title),
+                        subtitle = stringResource(R.string.settings_whats_new_subtitle),
+                        trailing = { Chevron() },
+                        onClick = { whatsNewOpen = true }
+                    )
+                    InsetDivider()
                     SettingsRow(
                         icon = Icons.Rounded.Star,
                         tone = TileTone.Amber,

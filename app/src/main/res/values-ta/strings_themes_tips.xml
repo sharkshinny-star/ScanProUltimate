@@ -2,12 +2,18 @@
 <resources>
     <!-- Colour themes, Home tips and the What's new sheet -->
     <string name="whats_new_title">ScanPro இல் புதியவை</string>
+    <string name="whats_new_images_to_pdf_title">படங்களை PDF ஆக்குக: மறுவரிசைப்படுத்து &amp; க்ராப் செய்க</string>
+    <string name="whats_new_images_to_pdf_body">PDF உருவாக்கும் முன் தேர்ந்தெடுக்கப்பட்ட புகைப்படங்களை மறுவரிசைப்படுத்தவும், சுழற்றவும் மற்றும் மூலைகளை சரிசெய்யவும்.</string>
+    <string name="whats_new_pdf_tools_title">PDF ஒழுங்கமை, இணை &amp; பிரி</string>
+    <string name="whats_new_pdf_tools_body">பக்கங்களை எளிதாக மறுவரிசைப்படுத்துங்கள் அல்லது இணையுங்கள். ஒற்றைப் பக்க ஆவணங்கள் தவறான பிரிப்பு அல்லது மறுவரிசையிலிருந்து தானாகப் பாதுகாக்கப்படுகின்றன.</string>
     <string name="whats_new_themes_title">வண்ணத் தீம்கள்</string>
     <string name="whats_new_themes_body">முழு ஆப்பிற்கும் இண்டிகோ, ஓஷன், எமரால்டு, சன்செட் அல்லது பெர்ரி நிறம், லைட் அல்லது டார்க்கில். அமைப்புகள் › தோற்றம்.</string>
     <string name="whats_new_tips_title">முகப்பில் குறிப்புகள்</string>
     <string name="whats_new_tips_body">நீங்கள் இன்னும் முயற்சிக்காத அம்சம் பற்றிய சிறு குறிப்பு. அமைப்புகளில் இவற்றை அணைக்கலாம்.</string>
     <string name="whats_new_pick_colours">உங்கள் நிறங்களைத் தேர்ந்தெடு</string>
     <string name="whats_new_got_it">சரி</string>
+    <string name="settings_whats_new_title">ScanPro இல் புதியவை</string>
+    <string name="settings_whats_new_subtitle">சமீபத்திய அம்சங்கள் மற்றும் மேம்பாடுகளை ஆராயுங்கள்</string>
     <string name="data_palette_indigo">இண்டிகோ</string>
     <string name="data_palette_ocean">ஓஷன்</string>
     <string name="data_palette_emerald">எமரால்டு</string>

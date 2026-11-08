@@ -262,4 +262,4 @@ val TRASH_RETENTION_CHOICES = listOf(7, 14, 30)
  * something worth telling existing users about; everyone who has not seen that version yet sees it once.
  * New installs skip it: the welcome already covers everything.
  */
-const val WHATS_NEW_VERSION = 1
+const val WHATS_NEW_VERSION = 2
