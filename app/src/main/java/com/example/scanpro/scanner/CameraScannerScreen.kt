@@ -175,6 +175,8 @@ import kotlinx.coroutines.withContext
 /** How the live preview helps: Auto captures by itself, Manual only outlines the page, No detect does neither. */
 private enum class DetectMode(@StringRes val label: Int) { AUTO(R.string.scan_detect_auto), MANUAL(R.string.scan_detect_manual), NO_DETECT(R.string.scan_detect_no_detect) }
 
+private var oldSessionsCleaned = false
+
 @Composable
 fun CameraScannerScreen(
     /** Mode to open in: a [ScanMode] name, "QR", or empty for the usual document mode. */
@@ -212,7 +214,7 @@ fun CameraScannerScreen(
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
     val previewView = remember {
         PreviewView(context).apply {
-            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
             scaleType = PreviewView.ScaleType.FIT_CENTER
             // The screen must not dim or lock while someone lines up a page.
             keepScreenOn = true
@@ -369,8 +371,8 @@ fun CameraScannerScreen(
     }
     // Starts from the mode's usual look; the last filter picked becomes the default for the rest of the session.
     var sessionFilter by rememberSaveable { mutableStateOf<PageFilter?>(null) }
-    // Bumped on every resume: CameraX resets torch, zoom and exposure when the camera restarts.
-    var resumeCount by remember { mutableIntStateOf(0) }
+    // Bumped when the user asks to retry camera opening after an error.
+    var retryTrigger by remember { mutableIntStateOf(0) }
     val pageLimit = when {
         retakeOfPage != null -> 1
         scanMode == ScanMode.ID_CARD -> if (scanBothSides && idComposite == null) 2 else 1
@@ -790,7 +792,7 @@ fun CameraScannerScreen(
 
     // Re-keyed on `reviewing`: the camera is released while the review step is up, so the preview and
     // OpenCV analysis stop costing battery behind a screen that doesn't show them, and bound again after.
-    LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, resumeCount) {
+    LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, retryTrigger) {
         if (!permissionGranted) return@LaunchedEffect
         if (reviewing) {
             cameraProvider?.unbindAll()
@@ -805,6 +807,10 @@ fun CameraScannerScreen(
             if (disposed.get()) return@addListener
             runCatching {
                 val provider = future.get()
+                if (disposed.get()) {
+                    provider.unbindAll()
+                    return@addListener
+                }
                 cameraProvider = provider
                 // The same 4:3 field of view for preview, capture and analysis, so what the overlay outlines is what is saved.
                 val selector = ResolutionSelector.Builder()
@@ -832,28 +838,15 @@ fun CameraScannerScreen(
                     .also { it.setAnalyzer(analysisExecutor, frameAnalyzer) }
 
                 provider.unbindAll()
-                // A shared view port crops all three streams to one region, so analysis coordinates line up with
-                // the preview and the saved photo. It can be unavailable before the first layout; bind without it then.
-                val viewPort = previewView.viewPort
-                if (viewPort == null && !previewView.isLaidOut) {
-                    // First bind before layout: bind again once the view has a size, so analysis lines up with the preview.
-                    previewView.post { if (!disposed.get() && previewView.viewPort != null) resumeCount++ }
-                }
+                if (disposed.get()) return@addListener
+
                 // Tablets and Chromebooks may only have a front or external camera; any camera beats none.
                 val cameraSelector = when {
                     provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
                     provider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA
                     else -> CameraSelector.Builder().build()
                 }
-                val camera = if (viewPort != null) {
-                    provider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(preview).addUseCase(capture).addUseCase(analysis).build()
-                    )
-                } else {
-                    provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, capture, analysis)
-                }
+                val camera = provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, capture, analysis)
                 imageCapture = capture
                 boundCamera = camera
                 boundUseCases = listOf(preview, capture, analysis)
@@ -931,7 +924,8 @@ fun CameraScannerScreen(
         onDispose {
             disposed.set(true)
             cameraProvider?.unbindAll()
-            analysisExecutor.shutdown()
+            runCatching { ProcessCameraProvider.getInstance(context).get().unbindAll() }
+            analysisExecutor.shutdownNow()
             barcodeAnalyzer.close()
             // Leaving without Done discards the session's captures. A rotation recreates the screen
             // with the same saved pages, so keep the files then.
@@ -951,20 +945,22 @@ fun CameraScannerScreen(
         }
     }
 
-    // Clear out sessions abandoned by a crash or process death more than a day ago.
+    // Clear out sessions abandoned by a crash or process death more than a day ago (once per app process).
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            val cutoff = System.currentTimeMillis() - 24L * 60 * 60 * 1000
-            scannerSessionRoot(context).listFiles()
-                ?.filter { it.name != sessionId && it.lastModified() < cutoff && !File(it, SESSION_PENDING_IMPORT).exists() }
-                ?.forEach { it.deleteRecursively() }
+        if (!oldSessionsCleaned) {
+            oldSessionsCleaned = true
+            withContext(Dispatchers.IO) {
+                val cutoff = System.currentTimeMillis() - 24L * 60 * 60 * 1000
+                scannerSessionRoot(context).listFiles()
+                    ?.filter { it.name != sessionId && it.lastModified() < cutoff && !File(it, SESSION_PENDING_IMPORT).exists() }
+                    ?.forEach { it.deleteRecursively() }
+            }
         }
     }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                resumeCount++
                 // Granted in Settings and came back: the panel must go without a tap.
                 permissionGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
             }
@@ -973,7 +969,7 @@ fun CameraScannerScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(flashMode, boundCamera, resumeCount) {
+    LaunchedEffect(flashMode, boundCamera) {
         // torchEnabled follows flashMode, one of this effect's keys, so Torch applies the moment it is picked.
         boundCamera?.cameraControl?.enableTorch(torchEnabled)
         imageCapture?.flashMode = when (flashMode) {
@@ -983,11 +979,11 @@ fun CameraScannerScreen(
         }
     }
 
-    LaunchedEffect(zoomRatio, maxZoomRatio, boundCamera, resumeCount) {
+    LaunchedEffect(zoomRatio, maxZoomRatio, boundCamera) {
         boundCamera?.cameraControl?.setZoomRatio(zoomRatio.coerceIn(1f, maxZoomRatio))
     }
 
-    LaunchedEffect(exposureIndex, exposureMin, exposureMax, boundCamera, resumeCount) {
+    LaunchedEffect(exposureIndex, exposureMin, exposureMax, boundCamera) {
         if (exposureMin < exposureMax) {
             boundCamera?.cameraControl?.setExposureCompensationIndex(
                 exposureIndex.coerceIn(exposureMin, exposureMax)
@@ -1209,7 +1205,7 @@ fun CameraScannerScreen(
                     Text(problem, color = Color.White, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { cameraError = null; resumeCount++ }) { Text(stringResource(R.string.common_retry), color = Color.White) }
+                        TextButton(onClick = { cameraError = null; retryTrigger++ }) { Text(stringResource(R.string.common_retry), color = Color.White) }
                         TextButton(onClick = onFallbackScanner) { Text(stringResource(R.string.scan_compat_scanner), color = scanLine) }
                     }
                 }
@@ -1510,7 +1506,7 @@ fun CameraScannerScreen(
                 horizontalArrangement = if (landscape) Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally) else Arrangement.SpaceBetween,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(if (landscape) Modifier.widthIn(min = 52.dp) else Modifier.width(104.dp), contentAlignment = Alignment.CenterStart) {
+                Box(if (landscape) Modifier.fillMaxWidth() else Modifier.width(104.dp), contentAlignment = if (landscape) Alignment.Center else Alignment.CenterStart) {
                     val importLabel = stringResource(if (barcodeMode) R.string.scan_qr_from_image else R.string.scan_import_photos)
                     BottomPill(
                         onClick = {
@@ -1569,7 +1565,7 @@ fun CameraScannerScreen(
                 }
                 }
 
-                Box(if (landscape) Modifier.widthIn(min = 52.dp) else Modifier.width(104.dp), contentAlignment = Alignment.CenterEnd) {
+                Box(if (landscape) Modifier.fillMaxWidth() else Modifier.width(104.dp), contentAlignment = if (landscape) Alignment.Center else Alignment.CenterEnd) {
                     if (pages.isNotEmpty()) {
                         // The page count; tapping it finishes the scan.
                         val doneLabel = stringResource(R.string.common_done)

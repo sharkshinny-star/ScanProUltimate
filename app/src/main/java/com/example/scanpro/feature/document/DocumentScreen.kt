@@ -1353,7 +1353,7 @@ internal fun DocumentDetailScreen(
                     if (candidates.isEmpty()) {
                         Text(stringResource(R.string.doc_no_documents_match), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 220.dp)) {
                         items(candidates, key = { it.id }) { other ->
                             TextButton(
                                 modifier = Modifier.fillMaxWidth(),

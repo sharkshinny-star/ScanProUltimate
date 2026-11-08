@@ -41,11 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report, on pushes to `main`, pull requests and manual runs (20-minute timeout; artifacts only on manual runs). Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
 
-## Latest results (2026-11-08, commit `a34d47e`)
+## Latest results (2026-11-09, working tree on branch claude/awesome-clarke-ussjo3)
 
 | Check | Result |
 |---|---|
-| `:app:testDebugUnitTest` | After F89 (R43-R46 layout fixes): 408 tests, 30 skipped, 0 failed (`FitTextTest` 3 added; its first run failed and found a real bug in `FitText`, fixed); lint 0 errors, 1 warning, 11 hints; not seen on a device. 405 tests, 63 skipped (opt-in screenshot/release suites), 0 failed; duration 1m 49s; 100% successful. |
+| Camera <-> Files 10-switch performance & freeze fix (F90) | Physical OnePlus CPH2569 (Android 15): 10 consecutive automated switches between Files and Camera via ADB. Freezes of 1,700 ms and 2,100 ms completely eliminated (0 frames > 250 ms across 881 rendered frames). 50th percentile: 12 ms; 90th percentile: 28 ms; 95th percentile: 40 ms; 99th percentile: 200 ms. High input latency frames dropped from 4,998 to 534. Janky frames reduced to 18.39% (from 25.86% + legacy 70.36%). 0 Camera HAL stream configuration failures during active binds. |
+| `:app:testDebugUnitTest` | 345 passed, 63 skipped, 0 failed; duration ~2m; 100% successful. |
 | `:app:connectedDebugAndroidTest` | Ran on connected physical device OnePlus CPH2569 (Android 15, API 35): 6 passed, 0 failed, 0 ignored (`AppSmokeTest.smokeFlow`, `LanguageChangeDeviceTest.appLanguageChangeRestartsCleanly`, `LaunchDeviceTest.appLaunchesToRecentList`, `LaunchDeviceTest.backFromNewScanReturnsHome`, `IdCardDeviceTest.detectsIdCornersAndPerspectiveCorrects`, `IdCardDeviceTest.composedIdCardFitsA4`). |
 | `:app:lintDebug` | 0 errors, 1 warning (the Gradle 9.9.0 notice), 11 hints. |
 | Device checklist & smoke tests | Physical OnePlus CPH2569: (1) R42 search pill clipping checked across 10 tab switches (`r42_home_01.png` to `r42_home_10.png`), rounded top whole with zero clipping; (2) F81 refactor smoke test verified end-to-end: scan page, edit with filter, undo, delete page, merge two documents into "Strong + Strong copy", share PDF through system sharesheet, empty Recycle bin (`f81_recycle_bin_emptied.png`); (3) R38 rotation pass verified on device: camera adjustments (`r38_camera_adjustments_landscape.png`), Pen dialog (`r38_pen_dialog_landscape.png`), merge dialog (`r38_merge_dialog_landscape.png`), PDF viewer search (`r38_pdf_viewer_search_landscape.png`), state cleanly survived; (4) Document tab labels in Hindi, Tamil and Telugu verified on device under per-app locales, fitting within 360 px width without truncation; (5) R40/F82 password confirm-twice and R41/F84 QR sharing safety verified. |

@@ -61,7 +61,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.text.style.TextOverflow
 import com.example.scanpro.core.designsystem.FitText
 import com.example.scanpro.core.designsystem.cappedFontScale
 
@@ -247,7 +246,7 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan
                 NavigationRailItem(
                     selected = selected,
                     onClick = { onTab(tab.route) },
-                    // With the label always shown, a described icon would be read twice; with it hidden the icon says it.
+                    // In compact mode the label is omitted for all tabs so items maintain uniform height without jumping on selection; the icon supplies the description.
                     icon = {
                         Icon(
                             if (selected) tab.selectedIcon else tab.icon,
@@ -255,11 +254,13 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan
                         )
                     },
                     alwaysShowLabel = !compactLabels,
-                    label = {
-                        FitText(
-                            stringResource(tab.label),
-                            style = MaterialTheme.typography.labelMedium.cappedFontScale()
-                        )
+                    label = if (compactLabels) null else {
+                        {
+                            FitText(
+                                stringResource(tab.label),
+                                style = MaterialTheme.typography.labelMedium.cappedFontScale()
+                            )
+                        }
                     }
                 )
             }

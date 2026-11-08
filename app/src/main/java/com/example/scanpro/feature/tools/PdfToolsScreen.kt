@@ -1034,7 +1034,7 @@ private fun OrderFilesDialog(
             Column {
                 Text(stringResource(R.string.tools_order_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
-                androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 380.dp)) {
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 240.dp)) {
                     itemsIndexed(order, key = { _, uri -> uri.toString() }) { index, uri ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.tools_order_position, index + 1), style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(28.dp))

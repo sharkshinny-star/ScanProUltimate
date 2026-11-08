@@ -35,8 +35,10 @@ The device suite (`connectedDebugAndroidTest`, 6 passed), Home search pill stabi
     list and the strings it names. Marathi, Gujarati, Bengali and Punjabi are deliberately not added (owner decision).
 
 18. Layout fixes from the screenshots (F89): at font scale 2 the Settings pickers are radio rows and no word breaks; in
-    landscape at font scale 2 all four rail tabs fit; the landscape camera panel shows the Auto/Manual pill whole; the landscape
-    Adjust page filter thumbnails are readable; in Tamil the bottom bar, rail and document tabs fit on one line.
+    landscape at font scale 2 all four rail tabs fit uniformly without jumping; the landscape camera panel controls stack
+    symmetrically down the centre axis and show whole; the landscape Adjust page filter thumbnails are readable; in Tamil
+    the bottom bar, rail and document tabs fit on one line; long status subtitles marquee smoothly; landscape dialog heights
+    remain comfortably within screen boundaries (OrderFilesDialog 240 dp, merge dialog 220 dp).
 
 ## Owner decisions (resolved 2026-11-08)
 
