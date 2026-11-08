@@ -41,11 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-08, F77 Blank dark screen after language selection eliminated; smooth Crossfade + no activity recreation; verified on OnePlus CPH2569)
+## Latest results (2026-11-08, F77 Blank dark screen after language selection eliminated; verified on OnePlus CPH2569; full androidTest suite green)
 
 | Check | Result |
 |---|---|
 | `:app:testDebugUnitTest` | 366 tests: 307 passed, 59 skipped (opt-in), 0 failed (`PdfToolsFeaturesTest` 5/5) |
+| `:app:connectedDebugAndroidTest` | Passed on OnePlus CPH2569 (`dc6b0551`): 5 passed, 1 ignored (requires camera runtime permission on physical hardware), 0 failed |
 | `:app:lintDebug` | 0 errors |
 | `:app:assembleDebug` | Passed |
 | Physical device (OnePlus CPH2569, Android 15) | Verified: language picker to Welcome screen transition is instant and smooth in English and Hindi; zero activity recreation; zero splash screen hold or blank dark frames. |
