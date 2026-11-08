@@ -16,7 +16,7 @@ Last updated: 2026-11-09 (F94: Polish touch target sizing, button padding, permi
 
 ## 1. Current state
 
-- **Branch:** `claude/awesome-clarke-ussjo3` on `codingking155/ScanProUltimate`. Work is committed locally (3 commits ahead of origin); push via IDE or personal access token.
+- **Branch:** `claude/awesome-clarke-ussjo3` on `codingking155/ScanProUltimate`. Fully up to date with origin at commit `9690ffa`.
 - **Merged into it:** `main`, `claude/adoring-euler-5s8pn0`, `claude/compassionate-turing-m8ylcw`, `claude/sweet-mccarthy-jajb5j`, by hand on 2026-10-30/31; their commits were recorded in this branch's history on 2026-11-05 by a history-only merge (`-s ours`, no file changes), so `git rev-list HEAD..origin/<branch>` is empty for every branch.
   The other branches add nothing beyond this one. Conflicts were resolved by hand, keeping the more advanced side or combining both.
 - **Builds (latest full run, see `BUILD_AND_TEST.md` "Latest results"):** 405 unit tests (0 failed, 63 skipped); `connectedDebugAndroidTest` on physical OnePlus CPH2569 (6/6 passed); lint 0 errors, 1 warning (Gradle 9.9.0 notice).
