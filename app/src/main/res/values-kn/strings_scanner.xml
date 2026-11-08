@@ -116,6 +116,9 @@
     <string name="scan_status_capturing">ತೆಗೆಯಲಾಗುತ್ತಿದೆ…</string>
     <string name="scan_status_front_saved">ಮುಂಭಾಗ ಉಳಿಸಲಾಗಿದೆ · ಈಗ ಹಿಂಭಾಗ ತೆಗೆಯಿರಿ</string>
     <string name="scan_status_id_ready">ID ಸಿದ್ಧ · ಮುಗಿದಿದೆ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="scan_status_id_composing">ಎರಡೂ ಬದಿಗಳನ್ನು ಒಂದೇ ಪುಟದಲ್ಲಿ ಇಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="scan_status_id_compose_failed">ಎರಡೂ ಬದಿಗಳನ್ನು ಒಂದೇ ಪುಟದಲ್ಲಿ ಇಡಲಾಗಲಿಲ್ಲ; ಅವು ಎರಡು ಪುಟಗಳಾಗಿ ಉಳಿದಿವೆ</string>
+    <string name="scan_status_id_retake">ಎರಡೂ ಬದಿಗಳು ಮತ್ತೆ: ಮೊದಲು ಮುಂಭಾಗವನ್ನು ಸೆರೆಹಿಡಿಯಿರಿ</string>
     <string name="scan_status_page_captured">ಪುಟ %1$d ತೆಗೆಯಲಾಗಿದೆ</string>
     <string name="scan_id_side_front">ಮುಂಭಾಗ</string>
     <string name="scan_id_side_back">ಹಿಂಭಾಗ</string>
@@ -219,7 +222,7 @@
     <string name="scan_hint_document">ಪುಟಗಳು, ಪತ್ರಗಳು ಮತ್ತು ಫಾರ್ಮ್‌ಗಳು</string>
     <string name="scan_hint_receipt">ಬಿಲ್‌ಗಳು ಮತ್ತು ರಸೀದಿಗಳು</string>
     <string name="scan_hint_whiteboard">ವೈಟ್‌ಬೋರ್ಡ್ ಅನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸುತ್ತದೆ</string>
-    <string name="scan_hint_id_card">ನಿಜವಾದ ಬಣ್ಣಗಳನ್ನು ಉಳಿಸುತ್ತದೆ; ಮುಂಭಾಗ ಮಾತ್ರ ಅಥವಾ ಎರಡೂ ಬದಿ</string>
+    <string name="scan_hint_id_card">ಮುಂಭಾಗ ಮತ್ತು ಹಿಂಭಾಗ ಒಂದೇ ಪುಟದಲ್ಲಿ; ನಿಜವಾದ ಬಣ್ಣಗಳು ಉಳಿಯುತ್ತವೆ</string>
     <string name="scan_hint_book">ಪುಸ್ತಕದ ಪುಟಗಳು</string>
     <string name="scan_hint_text">ಸ್ಕ್ಯಾನ್ ಉಳಿಸಿ ಅದರ ಪಠ್ಯವನ್ನು ನಕಲಿಸುತ್ತದೆ</string>
     <string name="scan_hint_qr">QR ಕೋಡ್ ಮತ್ತು ಬಾರ್‌ಕೋಡ್‌ಗಳನ್ನು ಓದುತ್ತದೆ</string>

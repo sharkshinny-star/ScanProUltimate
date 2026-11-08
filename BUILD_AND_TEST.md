@@ -41,12 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-08, `068feba` + F66 launch changes and the raised CI limits, cloud container with the SDK installed by hand)
+## Latest results (2026-11-08, `d97deab` + F67 ID card page; and the raised CI limits, cloud container with the SDK installed by hand)
 
 | Check | Result |
 |---|---|
-| `:app:testDebugUnitTest` | 336 tests: 306 passed, 30 skipped (opt-in), 0 failed; `LaunchIntroTest` (3) on the new 2.25 s timeline, its 12 frames looked at |
-| `:app:lintDebug` | 0 errors, 2 warnings (not inspected) |
+| `:app:testDebugUnitTest` | 338 tests: 308 passed, 30 skipped (opt-in), 0 failed (after F67: `IdCardComposerTest` 2 added); `LaunchIntroTest` (3) on the new 2.25 s timeline, its 12 frames looked at |
+| `:app:lintDebug` | 0 errors, 2 warnings (Gradle 9.9.0 available; `doc_share_as_pdf_hint` unused) |
 | Clean CI-style build (before the F66 edits, on `068feba`): `clean`, then `testDebugUnitTest lintDebug bundleRelease`, then sideload `assembleRelease`, all with `--no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m` | Passed: 10 m 22 s + 3 m 28 s. Peak resident memory of all Java processes summed about 8.1 GB (shared pages counted more than once, so an over-estimate); whether it fits the free 7 GB runner is only known from the next CI run |
 | Not run | Release builds after the F66 edits; device checks. CI run 73 (`068feba`) failed with `OutOfMemoryError: Java heap space` in the Kotlin compiler under the first limits (Gradle 1.5 GB, Kotlin daemon 1 GB); runs 68-72 were runner shutdowns about 12 minutes in |
 

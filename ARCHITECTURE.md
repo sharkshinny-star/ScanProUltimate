@@ -259,6 +259,11 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **ID card: both sides on one page.** `scanner/IdCardComposer.kt` cuts each side out of its photo along the guide
+  crop (`ImageProcessor.cropSourceToNewFile`), scales both to the same width and places them on a white A4-shaped
+  page, front above back, with a hairline border. The camera does this when Done is tapped after the second side
+  (`CameraScannerScreen.finishScan`), replacing the two captures with the one page, so the review, the filters and
+  the saved document all see a single page. Retake on that page clears it and starts both sides again.
 - **Language and theme changes without a restart.** `MainActivity` declares `configChanges="locale|layoutDirection|uiMode"`:
   the Android 13+ per-app language change and the per-app night mode arrive as `onConfigurationChanged` (Compose re-reads
   `LocalConfiguration`; launcher shortcuts are republished) instead of recreating the activity, which showed a black

@@ -133,6 +133,9 @@
     <string name="scan_status_capturing">Capturing…</string>
     <string name="scan_status_front_saved">Front saved · now capture the back</string>
     <string name="scan_status_id_ready">ID capture ready · tap Done</string>
+    <string name="scan_status_id_composing">Placing both sides on one page…</string>
+    <string name="scan_status_id_compose_failed">Couldn’t put both sides on one page; they are kept as two pages</string>
+    <string name="scan_status_id_retake">Both sides again: capture the front first</string>
     <string name="scan_status_page_captured" tools:ignore="PluralsCandidate">Page %1$d captured</string>
     <!-- Side of an ID card, not the navigation "Back" -->
     <string name="scan_id_side_front">Front</string>
@@ -240,7 +243,7 @@
     <string name="scan_hint_document">Pages, letters and forms</string>
     <string name="scan_hint_receipt">Bills and receipts</string>
     <string name="scan_hint_whiteboard">Cleans up a whiteboard</string>
-    <string name="scan_hint_id_card">Keeps true colours; front only or both sides</string>
+    <string name="scan_hint_id_card">Front and back on one page; keeps true colours</string>
     <string name="scan_hint_book">Pages from a book</string>
     <string name="scan_hint_text">Saves the scan and copies its text</string>
     <string name="scan_hint_qr">Reads QR codes and barcodes</string>

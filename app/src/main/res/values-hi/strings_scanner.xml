@@ -116,6 +116,9 @@
     <string name="scan_status_capturing">फ़ोटो ली जा रही है…</string>
     <string name="scan_status_front_saved">आगे का हिस्सा सेव हुआ · अब पीछे का लें</string>
     <string name="scan_status_id_ready">ID तैयार · हो गया पर टैप करें</string>
+    <string name="scan_status_id_composing">दोनों तरफ़ को एक पेज पर रखा जा रहा है…</string>
+    <string name="scan_status_id_compose_failed">दोनों तरफ़ को एक पेज पर नहीं रख सके; वे दो पेज के रूप में रखे गए हैं</string>
+    <string name="scan_status_id_retake">दोनों तरफ़ फिर से: पहले सामने वाला हिस्सा लें</string>
     <string name="scan_status_page_captured">पेज %1$d लिया गया</string>
     <string name="scan_id_side_front">आगे</string>
     <string name="scan_id_side_back">पीछे</string>
@@ -219,7 +222,7 @@
     <string name="scan_hint_document">पेज, पत्र और फ़ॉर्म</string>
     <string name="scan_hint_receipt">बिल और रसीदें</string>
     <string name="scan_hint_whiteboard">व्हाइटबोर्ड को साफ़ करता है</string>
-    <string name="scan_hint_id_card">असली रंग रखता है; सिर्फ़ सामने या दोनों तरफ़</string>
+    <string name="scan_hint_id_card">आगे और पीछे एक ही पेज पर; असली रंग बने रहते हैं</string>
     <string name="scan_hint_book">किताब के पन्ने</string>
     <string name="scan_hint_text">स्कैन सहेजता है और उसका टेक्स्ट कॉपी करता है</string>
     <string name="scan_hint_qr">QR कोड और बारकोड पढ़ता है</string>

@@ -260,7 +260,10 @@ fun CameraScannerScreen(
     // Saveable, so captured pages survive rotation and process death instead of being lost (and
     // their files orphaned) when the activity is recreated.
     var scanMode by rememberSaveable { mutableStateOf(ScanMode.entries.firstOrNull { it.name == initialMode } ?: ScanMode.DOCUMENT) }
-    var scanBothSides by rememberSaveable { mutableStateOf(false) }
+    // Both sides by default: the owner's ID cards are two-sided and both belong on one page (front above back).
+    var scanBothSides by rememberSaveable { mutableStateOf(true) }
+    // The one page both sides were put on (IdCardComposer), once Done was tapped after the second side.
+    var idComposite by rememberSaveable { mutableStateOf<String?>(null) }
     val pages = rememberSaveable(
         saver = listSaver(save = { list -> list.map(Uri::toString) }, restore = { saved -> mutableStateListOf(*saved.map(Uri::parse).toTypedArray()) })
     ) { mutableStateListOf<Uri>() }
@@ -323,7 +326,7 @@ fun CameraScannerScreen(
     var resumeCount by remember { mutableIntStateOf(0) }
     val pageLimit = when {
         retakeOfPage != null -> 1
-        scanMode == ScanMode.ID_CARD -> if (scanBothSides) 2 else 1
+        scanMode == ScanMode.ID_CARD -> if (scanBothSides && idComposite == null) 2 else 1
         else -> 100
     }
 
@@ -446,10 +449,40 @@ fun CameraScannerScreen(
 
     /** Opens the review step on the newest page. */
     fun finishScan() {
-        if (!completed && pages.isNotEmpty()) {
-            reviewIndex = pages.lastIndex
-            reviewing = true
+        if (completed || pages.isEmpty() || processing) return
+        // Both sides of an ID card go onto one page before the review, so what is reviewed is what gets saved.
+        if (scanMode == ScanMode.ID_CARD && scanBothSides && idComposite == null && pages.size == 2 && retakeOfPage == null) {
+            processing = true
+            status = resources.getString(R.string.scan_status_id_composing)
+            val (front, back) = pages.toList()
+            val frontQuad = quads[front.toString()]
+            val backQuad = quads[back.toString()]
+            val composed = File(sessionDir, "id_${UUID.randomUUID()}.jpg")
+            scope.launch {
+                val ok = withContext(Dispatchers.Default) {
+                    runCatching {
+                        IdCardComposer.compose(File(front.path.orEmpty()), frontQuad, File(back.path.orEmpty()), backQuad, composed)
+                    }.isSuccess
+                }
+                processing = false
+                if (ok) {
+                    val uri = Uri.fromFile(composed)
+                    pages.clear()
+                    pages.add(uri)
+                    quads[uri.toString()] = CropQuad.DEFAULT
+                    idComposite = uri.toString()
+                    status = resources.getString(R.string.scan_status_id_ready)
+                } else {
+                    // The two sides stay as two pages rather than losing the capture.
+                    status = resources.getString(R.string.scan_status_id_compose_failed)
+                }
+                reviewIndex = pages.lastIndex
+                reviewing = true
+            }
+            return
         }
+        reviewIndex = pages.lastIndex
+        reviewing = true
     }
 
     /** Applies each page's confirmed crop, then hands the finished images to the importer. */
@@ -830,8 +863,19 @@ fun CameraScannerScreen(
             onBack = { retakeIndex = -1; reviewing = false },
             onDone = ::saveReviewed,
             onRetake = {
-                retakeIndex = reviewIndex.coerceIn(0, pages.lastIndex)
-                status = resources.getString(R.string.scan_status_retaking_page, retakeIndex + 1)
+                if (idComposite != null && pages.getOrNull(reviewIndex)?.toString() == idComposite) {
+                    // The composed ID page can only be shot again as a whole: both sides, front first.
+                    val composed = pages[reviewIndex]
+                    pages.clear()
+                    quads.remove(composed.toString())
+                    deleteInBackground(File(composed.path.orEmpty()))
+                    idComposite = null
+                    retakeIndex = -1
+                    status = resources.getString(R.string.scan_status_id_retake)
+                } else {
+                    retakeIndex = reviewIndex.coerceIn(0, pages.lastIndex)
+                    status = resources.getString(R.string.scan_status_retaking_page, retakeIndex + 1)
+                }
                 reviewing = false
             },
             name = documentName,

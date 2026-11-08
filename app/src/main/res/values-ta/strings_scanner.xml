@@ -116,6 +116,9 @@
     <string name="scan_status_capturing">படம் எடுக்கப்படுகிறது…</string>
     <string name="scan_status_front_saved">முன்பக்கம் சேமிக்கப்பட்டது · இப்போது பின்பக்கத்தை எடுங்கள்</string>
     <string name="scan_status_id_ready">ID தயார் · முடிந்தது என்பதைத் தட்டவும்</string>
+    <string name="scan_status_id_composing">இரு பக்கங்களையும் ஒரே பக்கத்தில் வைக்கிறது…</string>
+    <string name="scan_status_id_compose_failed">இரு பக்கங்களையும் ஒரே பக்கத்தில் வைக்க முடியவில்லை; அவை இரண்டு பக்கங்களாக உள்ளன</string>
+    <string name="scan_status_id_retake">இரு பக்கங்களும் மீண்டும்: முதலில் முன்பக்கத்தைப் பிடிக்கவும்</string>
     <string name="scan_status_page_captured">பக்கம் %1$d எடுக்கப்பட்டது</string>
     <string name="scan_id_side_front">முன்பக்கம்</string>
     <string name="scan_id_side_back">பின்பக்கம்</string>
@@ -219,7 +222,7 @@
     <string name="scan_hint_document">பக்கங்கள், கடிதங்கள், படிவங்கள்</string>
     <string name="scan_hint_receipt">பில்கள் மற்றும் ரசீதுகள்</string>
     <string name="scan_hint_whiteboard">வைட்போர்டை தெளிவாக்கும்</string>
-    <string name="scan_hint_id_card">உண்மையான நிறங்களை வைத்திருக்கும்; முன்புறம் மட்டும் அல்லது இருபுறமும்</string>
+    <string name="scan_hint_id_card">முன்னும் பின்னும் ஒரே பக்கத்தில்; உண்மையான நிறங்கள் அப்படியே</string>
     <string name="scan_hint_book">புத்தகப் பக்கங்கள்</string>
     <string name="scan_hint_text">ஸ்கேனைச் சேமித்து அதன் உரையை நகலெடுக்கும்</string>
     <string name="scan_hint_qr">QR குறியீடுகள், பார்கோடுகளைப் படிக்கும்</string>
