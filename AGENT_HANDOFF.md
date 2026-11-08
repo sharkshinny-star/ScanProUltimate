@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (F87: translation review of the 105 draft strings with objective fixes and `TRANSLATION_REVIEW.md`, draft Play Data safety answers; F86: review follow-ups for the local-machine commits (camera rotation, background redacted issue report, verified compress target, recent PDFs load guard, lint clean-up, Home scroll check); F85 closes R18: Recycle bin actions on small phones; F82-F84 close R40, R39 and R41: confirm-twice password dialog with show/hide, large-font and landscape layout fixes, and the smaller safety, access and data items; F81 closes R9: `DocumentRepository` split into a store, catalogue, trash, importer, page editor, page organiser and exporter behind an unchanged facade; merged F71-F78 features, Artemis device test plan, rotation state fixes, and launcher icon updates).
+Last updated: 2026-11-08 (F88 closes R23: Play Data safety form submitted by the owner; F87: translation review of the 105 draft strings with objective fixes and `TRANSLATION_REVIEW.md`, draft Play Data safety answers; F86: review follow-ups for the local-machine commits (camera rotation, background redacted issue report, verified compress target, recent PDFs load guard, lint clean-up, Home scroll check); F85 closes R18: Recycle bin actions on small phones; F82-F84 close R40, R39 and R41: confirm-twice password dialog with show/hide, large-font and landscape layout fixes, and the smaller safety, access and data items; F81 closes R9: `DocumentRepository` split into a store, catalogue, trash, importer, page editor, page organiser and exporter behind an unchanged facade; merged F71-F78 features, Artemis device test plan, rotation state fixes, and launcher icon updates).
 
 ## 1. Current state
 
@@ -31,6 +31,7 @@ Last updated: 2026-11-08 (F87: translation review of the 105 draft strings with 
 | Commit | What |
 |---|---|
 | next | Device checklist & smoke tests pass: connectedDebugAndroidTest (6/6 passed on OnePlus CPH2569); R42 search pill clipping verified absent across 10 tab transitions; F81 refactor smoke test verified (scan, filter edit, undo, delete page, merge, share PDF, empty Recycle bin); R38 rotation state verified (camera adjustments, Pen, PDF viewer search, merge dialog); document tab labels in Hindi, Tamil and Telugu verified fitting cleanly on device under per-app locales. Closes R38 and R42. |
+| next | F88 closes R23: the owner submitted the Play Data safety form from the draft in `PLAY_STORE_CHECKLIST.md` (Diagnostics, Other app performance data, Device or other IDs; collected, required, Analytics). The form is in Play Console, so what was entered is the owner's record; the choice on ticking Shared is not recorded. Privacy policy hosting remains. |
 | next | F87: model review of the 105 strings added since F64 in all five languages (`TRANSLATION_REVIEW.md`): English tokens inside sentences, second words for page/document/compress/size, a wrong Telugu verb and a Tamil ambiguity fixed; judgement calls listed for a native speaker. Draft Play Data safety answers added to `PLAY_STORE_CHECKLIST.md` from Google's ML Kit disclosure page. |
 | next | F86: review follow-ups for the commits made on the owner's machine: camera follows the screen rotation (the activity no longer restarts), issue report built in the background with paths, links and file names removed, compress-to-size checks the result and squeezes again, recent PDFs cannot be overwritten by an early add, three unused strings removed, Home scroll safety net re-arms each visit. `AppDiagnosticsRedactTest` (5). Not seen on a device. |
 | next | F85 closes R18: Recycle bin actions on small phones. "Empty" moved from the button row under the notice into the TopAppBar ⋮ dropdown menu in `TrashScreen.kt`, and "Restore all" spans full width below retention notice. |
@@ -137,8 +138,8 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 6. **R20: no encryption at rest.** The library relies on Android's file-based encryption and the sandbox; app lock and locked
    folders are UI gates. On a rooted or forensically extracted phone, documents are readable. Fixing it (Keystore-backed
    encryption of page files and the database) is architectural: ask the owner and document it first.
-7. **R23: ML Kit usage metrics.** ML Kit's logging transport ships in the release build and the app holds `INTERNET`; Google says
-   the APIs report usage and performance metrics (no content). Declare it in the Play Data safety form and the final policy.
+7. **R23: ML Kit usage metrics: closed (F88).** The owner submitted the Play Data safety form on 2026-11-08. Left: host the
+   privacy policy at a public HTTPS URL and keep it consistent with the form.
 8. **Security changes not device-tested:** password keyboards (F57), launcher/shortcut/notification/share launches with
    `taskAffinity=""` (F58; owner decided 2026-11-05 to keep Android 7–10, so no `minSdk 30`), backup speed with 600k rounds on a low-end phone (F53). R21 and R22 are low priority.
 
