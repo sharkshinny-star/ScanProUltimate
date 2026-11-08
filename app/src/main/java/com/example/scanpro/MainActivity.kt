@@ -124,7 +124,9 @@ class MainActivity : FragmentActivity() {
         // reopening from Recents go straight to the app, and a recreation never replays it. App lock also skips it
         // (decided once the setting has loaded): the lock screen asks for a fingerprint straight away.
         introWanted = freshLaunch && isLauncherIntent(intent) && !launchedFromHistory(intent) && animationsEnabled()
-        if (splash != null) showLaunchScreenUntilReady(splash) else holdFirstFrameUntilReady()
+        if (freshLaunch) {
+            if (splash != null) showLaunchScreenUntilReady(splash) else holdFirstFrameUntilReady()
+        }
         // Edits that were still waiting when the app was last stopped run now, once per process.
         documentEditor.resumeInterrupted()
         // A recreated activity (rotation, theme change) still holds the original intent; only act on it once.

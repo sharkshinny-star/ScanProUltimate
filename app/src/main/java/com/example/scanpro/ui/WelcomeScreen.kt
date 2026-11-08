@@ -215,10 +215,10 @@ private fun OnboardingPage(
     fun Modifier.enter(order: Int): Modifier {
         val progress by animateFloatAsState(
             targetValue = if (entered) 1f else 0f,
-            animationSpec = tween(durationMillis = 520, delayMillis = 90 + order * 110, easing = FastOutSlowInEasing),
+            animationSpec = tween(durationMillis = 360, delayMillis = order * 60, easing = FastOutSlowInEasing),
             label = "enter$order"
         )
-        return graphicsLayer { alpha = progress; translationY = (1f - progress) * 36.dp.toPx() }
+        return graphicsLayer { alpha = progress; translationY = (1f - progress) * 20.dp.toPx() }
     }
 
     AuroraBackground(

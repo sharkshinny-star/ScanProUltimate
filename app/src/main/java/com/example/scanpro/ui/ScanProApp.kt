@@ -1,5 +1,7 @@
 package com.example.scanpro.ui
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import com.example.scanpro.core.ui.findActivity
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -130,143 +132,151 @@ fun ScanProApp(
     // Also before the navigation effects below: they need the NavHost, which isn't composed while the picker is
     // up (a "Scan" shortcut or notification opened before a language was chosen crashed the app).
     var languageChosen by rememberSaveable { mutableStateOf(com.example.scanpro.core.text.AppLocale.isChosen(context)) }
-    if (!languageChosen) {
-        LanguagePickerScreen(initial = com.example.scanpro.core.text.AppLocale.current(context) ?: com.example.scanpro.core.text.AppLocale.suggested()) { tag ->
-            languageChosen = true
-            context.findActivity()?.let { com.example.scanpro.core.text.AppLocale.apply(it, tag) }
-        }
-        return
-    }
-
-    // Launcher "Scan" shortcut: open the camera once the library is unlocked.
-    LaunchedEffect(scanRequested) {
-        if (scanRequested) {
-            navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true }
-            viewModel.clearScanRequest()
-        }
-    }
-
-    // A reminder notification's screen (recycle bin, settings), also only once the library is unlocked.
-    LaunchedEffect(destinationRequest) {
-        val route = destinationRequest ?: return@LaunchedEffect
-        navController.navigate(route) { launchSingleTop = true }
-        viewModel.clearDestinationRequest()
-    }
-
-    // A finished camera scan opens its new document once the library has picked it up. This sits
-    // below the lock gate: navigating before the NavHost has set its graph would crash.
-    LaunchedEffect(openDocumentRequest, libraryRevision) {
-        val id = openDocumentRequest ?: return@LaunchedEffect
-        if (viewModel.documentExists(id)) {
-            navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
-            viewModel.clearOpenDocumentRequest()
-        }
-    }
-
-    // A scan that finished in the background opens by itself only if the user is on a top-level screen. Anywhere else
-    // (editing a document, scanning again) it would pull them away from what they are doing, so it is announced with
-    // an Open button instead.
-    LaunchedEffect(openWhenIdleRequest, libraryRevision) {
-        val id = openWhenIdleRequest ?: return@LaunchedEffect
-        if (viewModel.documentExists(id)) {
-            viewModel.clearOpenWhenIdleRequest()
-            val route = navController.currentBackStackEntry?.destination?.route
-            if (route == null || route in ScanProDestinations.topLevel) {
-                navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
-            } else {
-                viewModel.announceScanSaved(id)
+    Crossfade(
+        targetState = languageChosen,
+        animationSpec = tween(durationMillis = 260),
+        label = "languagePickerCrossfade"
+    ) { chosen ->
+        if (!chosen) {
+            LanguagePickerScreen(
+                initial = com.example.scanpro.core.text.AppLocale.current(context)
+                    ?: com.example.scanpro.core.text.AppLocale.suggested()
+            ) { tag ->
+                languageChosen = true
+                context.findActivity()?.let { com.example.scanpro.core.text.AppLocale.apply(it, tag) }
             }
-        }
-    }
+        } else {
+            // Launcher "Scan" shortcut: open the camera once the library is unlocked.
+            LaunchedEffect(scanRequested) {
+                if (scanRequested) {
+                    navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true }
+                    viewModel.clearScanRequest()
+                }
+            }
 
-    pdfPasswordRequest?.let { request ->
-        var password by remember(request) { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = viewModel::cancelPdfPassword,
-            title = { Text(stringResource(R.string.ui_pdf_password_title)) },
-            text = {
-                Column {
-                    Text(stringResource(R.string.ui_pdf_password_body))
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        singleLine = true,
-                        isError = request.wrongPassword,
-                        label = { Text(stringResource(R.string.ui_password_label)) },
-                        visualTransformation = PasswordVisualTransformation(),
-                        // A password type keeps the keyboard from learning the password or suggesting it later.
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        modifier = Modifier.padding(top = 12.dp)
-                    )
-                    if (request.wrongPassword) {
-                        Text(stringResource(R.string.ui_pdf_password_wrong), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+            // A reminder notification's screen (recycle bin, settings), also only once the library is unlocked.
+            LaunchedEffect(destinationRequest) {
+                val route = destinationRequest ?: return@LaunchedEffect
+                navController.navigate(route) { launchSingleTop = true }
+                viewModel.clearDestinationRequest()
+            }
+
+            // A finished camera scan opens its new document once the library has picked it up. This sits
+            // below the lock gate: navigating before the NavHost has set its graph would crash.
+            LaunchedEffect(openDocumentRequest, libraryRevision) {
+                val id = openDocumentRequest ?: return@LaunchedEffect
+                if (viewModel.documentExists(id)) {
+                    navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
+                    viewModel.clearOpenDocumentRequest()
+                }
+            }
+
+            // A scan that finished in the background opens by itself only if the user is on a top-level screen. Anywhere else
+            // (editing a document, scanning again) it would pull them away from what they are doing, so it is announced with
+            // an Open button instead.
+            LaunchedEffect(openWhenIdleRequest, libraryRevision) {
+                val id = openWhenIdleRequest ?: return@LaunchedEffect
+                if (viewModel.documentExists(id)) {
+                    viewModel.clearOpenWhenIdleRequest()
+                    val route = navController.currentBackStackEntry?.destination?.route
+                    if (route == null || route in ScanProDestinations.topLevel) {
+                        navController.navigate(ScanProDestinations.document(id)) { launchSingleTop = true }
+                    } else {
+                        viewModel.announceScanSaved(id)
                     }
                 }
-            },
-            confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { viewModel.importPdf(request.uri, password) }) { Text(stringResource(R.string.ui_pdf_password_import)) } },
-            dismissButton = { TextButton(onClick = viewModel::cancelPdfPassword) { Text(stringResource(R.string.common_cancel)) } }
-        )
-    }
+            }
 
-    // Wide windows keep navigation at the side of the content instead of along the bottom.
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-    val showRail = com.example.scanpro.navigation.isWideWindow() && currentRoute in ScanProDestinations.topLevel
-    val welcomeShowing = welcomeSeen == false
-    Box(Modifier.fillMaxSize()) {
-        // While the welcome covers the app, screen readers must not reach the controls underneath.
-        androidx.compose.foundation.layout.Row(
-            Modifier
-                .fillMaxSize()
-                .then(if (welcomeShowing) Modifier.clearAndSetSemantics { } else Modifier)
-        ) {
-            if (showRail) {
-                ScanProNavigationRail(
-                    selectedRoute = currentRoute.orEmpty(),
-                    onTab = { route -> navController.navigateToTopLevel(route) },
-                    // The rail's scan button did nothing before: it relied on the default no-op.
-                    onScan = { navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true } }
+            pdfPasswordRequest?.let { request ->
+                var password by remember(request) { mutableStateOf("") }
+                AlertDialog(
+                    onDismissRequest = viewModel::cancelPdfPassword,
+                    title = { Text(stringResource(R.string.ui_pdf_password_title)) },
+                    text = {
+                        Column {
+                            Text(stringResource(R.string.ui_pdf_password_body))
+                            OutlinedTextField(
+                                value = password,
+                                onValueChange = { password = it },
+                                singleLine = true,
+                                isError = request.wrongPassword,
+                                label = { Text(stringResource(R.string.ui_password_label)) },
+                                visualTransformation = PasswordVisualTransformation(),
+                                // A password type keeps the keyboard from learning the password or suggesting it later.
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                modifier = Modifier.padding(top = 12.dp)
+                            )
+                            if (request.wrongPassword) {
+                                Text(stringResource(R.string.ui_pdf_password_wrong), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+                            }
+                        }
+                    },
+                    confirmButton = { TextButton(enabled = password.isNotEmpty(), onClick = { viewModel.importPdf(request.uri, password) }) { Text(stringResource(R.string.ui_pdf_password_import)) } },
+                    dismissButton = { TextButton(onClick = viewModel::cancelPdfPassword) { Text(stringResource(R.string.common_cancel)) } }
                 )
             }
-            Box(Modifier.weight(1f).fillMaxSize()) {
-                ScanProNavHost(
-                    navController = navController,
-                    snackbarHostState = snackbarHostState,
-                    onImportImages = onImportImages,
-                    onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
-                    onCameraScanComplete = viewModel::importCameraSession,
-                    onCameraRetakeComplete = viewModel::replacePageFromCamera,
-                    onFallbackScanner = onFallbackScanner,
-                    onAppLockChange = onAppLockChange,
-                    defaultScanMode = viewModel.defaultScanMode.collectAsStateWithLifecycle().value,
-                    saveFolders = viewModel.saveFolders.collectAsStateWithLifecycle().value,
-                    onCameraAppendComplete = viewModel::appendPagesFromCamera,
-                    defaultFilter = viewModel.defaultFilter.collectAsStateWithLifecycle().value,
-                    reviewMode = viewModel.reviewMode.collectAsStateWithLifecycle().value
-                )
+
+            // Wide windows keep navigation at the side of the content instead of along the bottom.
+            val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+            val showRail = com.example.scanpro.navigation.isWideWindow() && currentRoute in ScanProDestinations.topLevel
+            val welcomeShowing = welcomeSeen == false
+            Box(Modifier.fillMaxSize()) {
+                // While the welcome covers the app, screen readers must not reach the controls underneath.
+                androidx.compose.foundation.layout.Row(
+                    Modifier
+                        .fillMaxSize()
+                        .then(if (welcomeShowing) Modifier.clearAndSetSemantics { } else Modifier)
+                ) {
+                    if (showRail) {
+                        ScanProNavigationRail(
+                            selectedRoute = currentRoute.orEmpty(),
+                            onTab = { route -> navController.navigateToTopLevel(route) },
+                            // The rail's scan button did nothing before: it relied on the default no-op.
+                            onScan = { navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true } }
+                        )
+                    }
+                    Box(Modifier.weight(1f).fillMaxSize()) {
+                        ScanProNavHost(
+                            navController = navController,
+                            snackbarHostState = snackbarHostState,
+                            onImportImages = onImportImages,
+                            onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
+                            onCameraScanComplete = viewModel::importCameraSession,
+                            onCameraRetakeComplete = viewModel::replacePageFromCamera,
+                            onFallbackScanner = onFallbackScanner,
+                            onAppLockChange = onAppLockChange,
+                            defaultScanMode = viewModel.defaultScanMode.collectAsStateWithLifecycle().value,
+                            saveFolders = viewModel.saveFolders.collectAsStateWithLifecycle().value,
+                            onCameraAppendComplete = viewModel::appendPagesFromCamera,
+                            defaultFilter = viewModel.defaultFilter.collectAsStateWithLifecycle().value,
+                            reviewMode = viewModel.reviewMode.collectAsStateWithLifecycle().value
+                        )
+                    }
+                }
+
+                // Once, after an update that has something to tell (never together with the welcome or the rating sheet).
+                if (whatsNewDue && !welcomeShowing && !ratingDue && launchSettled) {
+                    WhatsNewSheet(
+                        onPickColours = {
+                            viewModel.markWhatsNewSeen()
+                            navController.navigateToTopLevel(ScanProDestinations.SETTINGS)
+                        },
+                        onDismiss = viewModel::markWhatsNewSeen
+                    )
+                }
+
+                // First launch only, drawn over the app so the library is already there underneath when it
+                // closes; it fades and grows away rather than cutting to the home screen.
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = welcomeShowing,
+                    enter = androidx.compose.animation.EnterTransition.None,
+                    exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(320)) +
+                        androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(320), targetScale = 1.06f)
+                ) {
+                    androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
+                    WelcomeScreen(onGetStarted = viewModel::markWelcomeSeen)
+                }
             }
-        }
-
-        // Once, after an update that has something to tell (never together with the welcome or the rating sheet).
-        if (whatsNewDue && !welcomeShowing && !ratingDue && launchSettled) {
-            WhatsNewSheet(
-                onPickColours = {
-                    viewModel.markWhatsNewSeen()
-                    navController.navigateToTopLevel(ScanProDestinations.SETTINGS)
-                },
-                onDismiss = viewModel::markWhatsNewSeen
-            )
-        }
-
-        // First launch only, drawn over the app so the library is already there underneath when it
-        // closes; it fades and grows away rather than cutting to the home screen.
-        androidx.compose.animation.AnimatedVisibility(
-            visible = welcomeShowing,
-            enter = androidx.compose.animation.EnterTransition.None,
-            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(320)) +
-                androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(320), targetScale = 1.06f)
-        ) {
-            androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
-            WelcomeScreen(onGetStarted = viewModel::markWelcomeSeen)
         }
     }
 }

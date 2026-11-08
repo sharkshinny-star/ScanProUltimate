@@ -60,7 +60,9 @@ object AppLocale {
         val wasSame = current(activity) == tag
         prefs(activity).edit { putBoolean(KEY_CHOSEN, true).putString(KEY_TAG, tag) }
         if (Build.VERSION.SDK_INT >= 33) {
-            activity.getSystemService(LocaleManager::class.java)?.applicationLocales = LocaleList.forLanguageTags(tag)
+            if (!wasSame) {
+                activity.getSystemService(LocaleManager::class.java)?.applicationLocales = LocaleList.forLanguageTags(tag)
+            }
         } else if (!wasSame) {
             // The application's resources were set up in the old language at process start; update them too, so
             // notifications, background messages and AppStrings switch now rather than after a restart.

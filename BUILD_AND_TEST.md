@@ -41,13 +41,14 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-08, F76 Organise renamed to Organise PDF, 1-page organise alert & engine guard, `PdfToolsFeaturesTest` 5/5)
+## Latest results (2026-11-08, F77 Blank dark screen after language selection eliminated; smooth Crossfade + no activity recreation; verified on OnePlus CPH2569)
 
 | Check | Result |
 |---|---|
 | `:app:testDebugUnitTest` | 366 tests: 307 passed, 59 skipped (opt-in), 0 failed (`PdfToolsFeaturesTest` 5/5) |
 | `:app:lintDebug` | 0 errors |
 | `:app:assembleDebug` | Passed |
+| Physical device (OnePlus CPH2569, Android 15) | Verified: language picker to Welcome screen transition is instant and smooth in English and Hindi; zero activity recreation; zero splash screen hold or blank dark frames. |
 | Clean CI-style build (before the F66 edits, on `068feba`): `clean`, then `testDebugUnitTest lintDebug bundleRelease`, then sideload `assembleRelease`, all with `--no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m` | Passed: 10 m 22 s + 3 m 28 s. Peak resident memory of all Java processes summed about 8.1 GB (shared pages counted more than once, so an over-estimate). **CI run 75 on `a502f3b` passed end to end under these limits** (build step 19.5 min, whole job about 25 min), the first green run since run 44 |
 | Device deployment | Deployed debug build to OnePlus CPH2569 (`dc6b0551`); verified camera open/close smoothness, Images to PDF reorder and crop, and Organise pages long-press preview |
 
