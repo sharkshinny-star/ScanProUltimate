@@ -264,6 +264,10 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   page, front above back, with a hairline border. The camera does this when Done is tapped after the second side
   (`CameraScannerScreen.finishScan`), replacing the two captures with the one page, so the review, the filters and
   the saved document all see a single page. Retake on that page clears it and starts both sides again.
+- **Instrumented tests** (`app/src/androidTest`): `AppSmokeTest` plus, from 2026-11-08, device tests for the launch
+  (`LaunchDeviceTest`), the in-place language change (`LanguageChangeDeviceTest`) and ID cards (`IdCardDeviceTest`),
+  all on `createEmptyComposeRule` + `ActivityScenario`, no extra dependencies (the camera permission is granted
+  through `UiAutomation`). They run from Android Studio on a phone or emulator; CI does not run them.
 - **Language and theme changes without a restart.** `MainActivity` declares `configChanges="locale|layoutDirection|uiMode"`:
   the Android 13+ per-app language change and the per-app night mode arrive as `onConfigurationChanged` (Compose re-reads
   `LocalConfiguration`; launcher shortcuts are republished) instead of recreating the activity, which showed a black

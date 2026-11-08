@@ -174,6 +174,26 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 
 `app/src/androidTest`: `AppSmokeTest` (needs a device).
 
+## Device tests (Android Studio, phone or emulator)
+
+`app/src/androidTest` holds instrumented tests for what Robolectric cannot show. Open the project in Android Studio,
+connect a phone with USB debugging (or start an emulator), right-click the test class or `androidTest` folder and
+choose Run; or from a terminal with the device attached:
+
+```bash
+./gradlew :app:connectedDebugAndroidTest
+```
+
+| Class | What it checks | Needs |
+|---|---|---|
+| `AppSmokeTest` | Home shows "ScanPro" and "Start scanning" | welcome passed, English, empty library |
+| `LaunchDeviceTest` | A launcher start reaches the app within 10 s; on Android 12+ the app's light/dark choice is applied without restarting the activity (prints whether it overrides the phone's mode) | welcome passed |
+| `LanguageChangeDeviceTest` | Android 13+: the picker's Continue (Hindi) applies the language in place: same activity, choice recorded with the system. Clears and then restores the "language chosen" flag | Android 13+ |
+| `IdCardDeviceTest` | Home › ID card opens the camera with Both sides selected and asks for the Front; `IdCardComposer` on the phone's own pipeline puts a red front above a blue back on a white A4 page | camera permission granted by the test; Home in English |
+
+Written 2026-11-08 and compiled (`compileDebugAndroidTestKotlin`, lint 0 errors) but **never run on a device** from the
+cloud container; record the first run here (date, device, Android version, pass/fail per class).
+
 ## Known errors and workarounds
 
 | Problem | Fix |
