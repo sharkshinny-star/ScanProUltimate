@@ -41,11 +41,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
 
-## Latest results (2026-11-08, F75 RecentPdfStore async load, F74 camera animation delay eliminated, tool renames to Merge PDF / Split PDF, smart 1-page PDF split alert; `PdfToolsFeaturesTest` 4/4)
+## Latest results (2026-11-08, F76 Organise renamed to Organise PDF, 1-page organise alert & engine guard, `PdfToolsFeaturesTest` 5/5)
 
 | Check | Result |
 |---|---|
-| `:app:testDebugUnitTest` | 365 tests: 306 passed, 59 skipped (opt-in), 0 failed (`PdfToolsFeaturesTest` 4/4) |
+| `:app:testDebugUnitTest` | 366 tests: 307 passed, 59 skipped (opt-in), 0 failed (`PdfToolsFeaturesTest` 5/5) |
 | `:app:lintDebug` | 0 errors |
 | `:app:assembleDebug` | Passed |
 | Clean CI-style build (before the F66 edits, on `068feba`): `clean`, then `testDebugUnitTest lintDebug bundleRelease`, then sideload `assembleRelease`, all with `--no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m` | Passed: 10 m 22 s + 3 m 28 s. Peak resident memory of all Java processes summed about 8.1 GB (shared pages counted more than once, so an over-estimate). **CI run 75 on `a502f3b` passed end to end under these limits** (build step 19.5 min, whole job about 25 min), the first green run since run 44 |

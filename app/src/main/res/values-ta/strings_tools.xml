@@ -40,6 +40,9 @@
     <string name="tools_split_single_page_title">PDF-ஐ பிரிக்க முடியாது</string>
     <string name="tools_split_single_page_hint">இந்த ஆவணத்தில் 1 பக்கம் மட்டுமே உள்ளது</string>
     <string name="tools_split_single_page_desc">இந்த PDF-ல் 1 பக்கம் மட்டுமே உள்ளதால் பிரிக்க இயலாது. பிரிக்க குறைந்தது 2 பக்கங்கள் இருக்க வேண்டும்.</string>
+    <string name="tools_organize_single_page_title">PDF-ஐ ஒழுங்குபடுத்த முடியாது</string>
+    <string name="tools_organize_single_page_hint">இந்த ஆவணத்தில் 1 பக்கம் மட்டுமே உள்ளது</string>
+    <string name="tools_organize_single_page_desc">இந்த PDF-ல் 1 பக்கம் மட்டுமே உள்ளதால் ஒழுங்குபடுத்த இயலாது. ஒழுங்குபடுத்த 2 அல்லது அதற்கு மேற்பட்ட பக்கங்கள் இருக்க வேண்டும்.</string>
     <string name="tools_organizer_protected">இந்த PDF பாஸ்வேர்டால் பாதுகாக்கப்பட்டுள்ளது. முதலில் PDF அன்லாக் கருவி மூலம் அன்லாக் செய்யுங்கள்.</string>
     <string name="tools_organizer_open_failed">இந்த PDF-ஐத் திறக்க முடியவில்லை</string>
     <string name="tools_organizer_extract_title">பிரித்தெடுக்க வேண்டிய பக்கங்களைத் தேர்ந்தெடுங்கள்</string>
@@ -112,7 +115,7 @@
     <string name="tools_section_edit">திருத்து</string>
     <string name="tools_section_convert">மாற்று</string>
     <string name="tools_section_secure">பாதுகாப்பு</string>
-    <string name="tools_tile_organize">ஒழுங்குபடுத்து</string>
+    <string name="tools_tile_organize">PDF ஒழுங்குபடுத்து</string>
     <string name="tools_tile_rotate">சுழற்று</string>
     <string name="tools_tile_extract">பிரித்தெடு</string>
     <string name="tools_card_fill">படிவத்தை நிரப்பு</string>
@@ -122,7 +125,7 @@
     <string name="tools_card_split">PDF பிரி</string>
     <string name="tools_card_extract">பக்கங்களைப் பிரித்தெடு</string>
     <string name="tools_card_rotate">பக்கங்களைச் சுழற்று</string>
-    <string name="tools_card_organize">பக்கங்களை ஒழுங்குபடுத்து</string>
+    <string name="tools_card_organize">PDF ஒழுங்குபடுத்து</string>
     <string name="tools_card_pdf2img">PDF-ஐப் படங்களாக்கு</string>
     <string name="tools_card_protect">பாதுகா</string>
     <string name="tools_card_unlock">அன்லாக்</string>

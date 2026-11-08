@@ -40,6 +40,9 @@
     <string name="tools_split_single_page_title">PDF വിഭജിക്കാൻ കഴിയില്ല</string>
     <string name="tools_split_single_page_hint">ഈ രേഖയിൽ 1 പേജ് മാത്രമേയുള്ളൂ</string>
     <string name="tools_split_single_page_desc">ഈ PDF-ൽ 1 പേജ് മാത്രമേയുള്ളൂ, അതിനാൽ ഇത് കൂടുതൽ വിഭജിക്കാൻ കഴിയില്ല. വിഭജിക്കാൻ 2 അല്ലെങ്കിൽ അതിൽ കൂടുതൽ പേജുകൾ ആവശ്യമാണ്.</string>
+    <string name="tools_organize_single_page_title">PDF ക്രമീകരിക്കാൻ കഴിയില്ല</string>
+    <string name="tools_organize_single_page_hint">ഈ രേഖയിൽ 1 പേജ് മാത്രമേയുള്ളൂ</string>
+    <string name="tools_organize_single_page_desc">ഈ PDF-ൽ 1 പേജ് മാത്രമേയുള്ളൂ, അതിനാൽ ഇത് ക്രമീകരിക്കാൻ കഴിയില്ല. ക്രമീകരിക്കാൻ 2 അല്ലെങ്കിൽ കൂടുതൽ പേജുകൾ ആവശ്യമാണ്.</string>
     <string name="tools_organizer_protected">ഈ PDF പാസ്‌വേഡ് ഉപയോഗിച്ച് സംരക്ഷിച്ചതാണ്. ആദ്യം PDF അൺലോക്ക് ടൂൾ ഉപയോഗിച്ച് അൺലോക്ക് ചെയ്യുക.</string>
     <string name="tools_organizer_open_failed">ഈ PDF തുറക്കാനായില്ല</string>
     <string name="tools_organizer_extract_title">എടുക്കേണ്ട പേജുകൾ തിരഞ്ഞെടുക്കുക</string>
@@ -112,7 +115,7 @@
     <string name="tools_section_edit">എഡിറ്റ്</string>
     <string name="tools_section_convert">മാറ്റുക</string>
     <string name="tools_section_secure">സുരക്ഷ</string>
-    <string name="tools_tile_organize">ക്രമീകരിക്കുക</string>
+    <string name="tools_tile_organize">PDF ക്രമീകരിക്കുക</string>
     <string name="tools_tile_rotate">തിരിക്കുക</string>
     <string name="tools_tile_extract">എടുക്കുക</string>
     <string name="tools_card_fill">ഫോം പൂരിപ്പിക്കുക</string>
@@ -122,7 +125,7 @@
     <string name="tools_card_split">PDF വിഭജിക്കുക</string>
     <string name="tools_card_extract">പേജുകൾ എടുക്കുക</string>
     <string name="tools_card_rotate">പേജുകൾ തിരിക്കുക</string>
-    <string name="tools_card_organize">പേജുകൾ ക്രമീകരിക്കുക</string>
+    <string name="tools_card_organize">PDF ക്രമീകരിക്കുക</string>
     <string name="tools_card_pdf2img">PDF ചിത്രങ്ങളാക്കുക</string>
     <string name="tools_card_protect">സംരക്ഷിക്കുക</string>
     <string name="tools_card_unlock">അൺലോക്ക്</string>

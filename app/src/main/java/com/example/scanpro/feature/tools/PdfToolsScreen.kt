@@ -1757,6 +1757,105 @@ private fun PdfPageOrganizerSheet(
     val keptCount = pages.count { it.selected }
     var previewPage by remember { mutableStateOf<ThumbnailPageModel?>(null) }
 
+    if (mode == "organize") {
+        if (isLoading) {
+            AlertDialog(
+                onDismissRequest = onClose,
+                title = { Text(stringResource(R.string.tools_organizer_organize_title)) },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp)
+                        Text(stringResource(R.string.tools_organizer_opening), style = MaterialTheme.typography.bodyMedium)
+                    }
+                },
+                confirmButton = {},
+                dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.common_cancel)) } }
+            )
+            return
+        }
+
+        if (session?.pageCount == 1) {
+            AlertDialog(
+                onDismissRequest = onClose,
+                icon = {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Description,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        stringResource(R.string.tools_organize_single_page_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                text = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(14.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    stringResource(R.string.tools_organize_single_page_hint),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            stringResource(R.string.tools_organize_single_page_desc),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = onClose,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.common_done))
+                    }
+                }
+            )
+            return
+        }
+    }
+
     // Shown inside the Tools tab, which already keeps clear of the status bar and the bottom bar: taking those insets
     // again here left a dark band under the pages and a gap above the title.
     Scaffold(

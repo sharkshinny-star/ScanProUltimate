@@ -40,6 +40,9 @@
     <string name="tools_split_single_page_title">PDF को विभाजित नहीं किया जा सकता</string>
     <string name="tools_split_single_page_hint">इस दस्तावेज़ में केवल 1 पृष्ठ है</string>
     <string name="tools_split_single_page_desc">इस PDF में केवल 1 पृष्ठ है और इसे आगे विभाजित नहीं किया जा सकता। विभाजित करने के लिए कम से कम 2 पृष्ठ होने चाहिए।</string>
+    <string name="tools_organize_single_page_title">PDF को व्यवस्थित नहीं किया जा सकता</string>
+    <string name="tools_organize_single_page_hint">इस दस्तावेज़ में केवल 1 पृष्ठ है</string>
+    <string name="tools_organize_single_page_desc">इस PDF में केवल 1 पृष्ठ है और इसे व्यवस्थित नहीं किया जा सकता। व्यवस्थित करने के लिए 2 या अधिक पृष्ठ होने चाहिए।</string>
     <string name="tools_organizer_protected">यह PDF पासवर्ड से सुरक्षित है। पहले इसे PDF अनलॉक करें टूल से अनलॉक करें।</string>
     <string name="tools_organizer_open_failed">यह PDF खुल नहीं सकी</string>
     <string name="tools_organizer_extract_title">निकालने के लिए पेज चुनें</string>
@@ -112,7 +115,7 @@
     <string name="tools_section_edit">एडिट</string>
     <string name="tools_section_convert">बदलें</string>
     <string name="tools_section_secure">सुरक्षा</string>
-    <string name="tools_tile_organize">व्यवस्थित करें</string>
+    <string name="tools_tile_organize">PDF व्यवस्थित करें</string>
     <string name="tools_tile_rotate">घुमाएं</string>
     <string name="tools_tile_extract">निकालें</string>
     <string name="tools_card_fill">फ़ॉर्म भरें</string>
@@ -122,7 +125,7 @@
     <string name="tools_card_split">PDF बांटें</string>
     <string name="tools_card_extract">पेज निकालें</string>
     <string name="tools_card_rotate">पेज घुमाएं</string>
-    <string name="tools_card_organize">पेज व्यवस्थित करें</string>
+    <string name="tools_card_organize">PDF व्यवस्थित करें</string>
     <string name="tools_card_pdf2img">PDF से इमेज</string>
     <string name="tools_card_protect">सुरक्षित करें</string>
     <string name="tools_card_unlock">अनलॉक करें</string>

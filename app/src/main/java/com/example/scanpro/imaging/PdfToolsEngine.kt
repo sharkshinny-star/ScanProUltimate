@@ -333,6 +333,7 @@ object PdfToolsEngine {
         try {
             val originalSize = tempFile.length()
             PDDocument().use { newDoc -> loadPdf(tempFile).use { doc ->
+                userRequire(doc.numberOfPages > 1, R.string.tools_organize_single_page_desc)
                 pageSpecs.forEachIndexed { index, spec ->
                     if (!coroutineContext.isActive) throw InterruptedException("Organize operation cancelled")
                     onProgress(index + 1, pageSpecs.size, AppStrings.get(R.string.tools_progress_processing_page, index + 1, pageSpecs.size))

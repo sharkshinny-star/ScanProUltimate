@@ -40,6 +40,9 @@
     <string name="tools_split_single_page_title">PDFను విభజించలేము</string>
     <string name="tools_split_single_page_hint">ఈ పత్రంలో 1 పేజీ మాత్రమే ఉంది</string>
     <string name="tools_split_single_page_desc">ఈ PDFలో 1 పేజీ మాత్రమే ఉంది, దీన్ని విభజించలేము. విభజించడానికి కనీసం 2 పేజీలు ఉండాలి.</string>
+    <string name="tools_organize_single_page_title">PDFను క్రమపరచలేము</string>
+    <string name="tools_organize_single_page_hint">ఈ పత్రంలో 1 పేజీ మాత్రమే ఉంది</string>
+    <string name="tools_organize_single_page_desc">ఈ PDFలో 1 పేజీ మాత్రమే ఉంది, దీన్ని క్రమపరచలేము. క్రమపరచడానికి 2 లేదా అంతకంటే ఎక్కువ పేజీలు ఉండాలి.</string>
     <string name="tools_organizer_protected">ఈ PDF పాస్‌వర్డ్ రక్షణలో ఉంది. ముందు PDF అన్‌లాక్ టూల్‌తో దాన్ని అన్‌లాక్ చేయండి.</string>
     <string name="tools_organizer_open_failed">ఈ PDFని తెరవలేకపోయాం</string>
     <string name="tools_organizer_extract_title">తీయడానికి పేజీలు ఎంచుకోండి</string>
@@ -112,7 +115,7 @@
     <string name="tools_section_edit">ఎడిట్</string>
     <string name="tools_section_convert">మార్చండి</string>
     <string name="tools_section_secure">భద్రత</string>
-    <string name="tools_tile_organize">క్రమపరచండి</string>
+    <string name="tools_tile_organize">PDF క్రమపరచండి</string>
     <string name="tools_tile_rotate">తిప్పండి</string>
     <string name="tools_tile_extract">తీయండి</string>
     <string name="tools_card_fill">ఫారమ్ నింపండి</string>
@@ -122,7 +125,7 @@
     <string name="tools_card_split">PDF విభజించండి</string>
     <string name="tools_card_extract">పేజీలు తీయండి</string>
     <string name="tools_card_rotate">పేజీలు తిప్పండి</string>
-    <string name="tools_card_organize">పేజీలను క్రమపరచండి</string>
+    <string name="tools_card_organize">PDF క్రమపరచండి</string>
     <string name="tools_card_pdf2img">PDF నుండి చిత్రాలు</string>
     <string name="tools_card_protect">రక్షించండి</string>
     <string name="tools_card_unlock">అన్‌లాక్</string>

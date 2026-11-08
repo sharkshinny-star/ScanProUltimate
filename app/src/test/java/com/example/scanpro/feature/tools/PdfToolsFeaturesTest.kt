@@ -86,9 +86,37 @@ class PdfToolsFeaturesTest {
     }
 
     @Test
+    fun organizePagesRejectsSinglePageDocument() = kotlinx.coroutines.runBlocking {
+        val dir = File(app.cacheDir, "test_organize_${System.currentTimeMillis()}").apply { mkdirs() }
+        val singlePagePdf = File(dir, "one_page.pdf")
+        val document = com.tom_roush.pdfbox.pdmodel.PDDocument()
+        document.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+        document.save(singlePagePdf)
+        document.close()
+
+        val outFile = File(dir, "organized.pdf")
+        var thrown = false
+        try {
+            com.example.scanpro.imaging.PdfToolsEngine.organizePages(
+                context = app,
+                inputUri = android.net.Uri.fromFile(singlePagePdf),
+                pageSpecs = listOf(com.example.scanpro.imaging.PageSpec(0, 0)),
+                outputFile = outFile
+            )
+        } catch (e: Exception) {
+            thrown = true
+            assertTrue(e.message?.contains("1 page") == true || e is com.example.scanpro.core.text.UserFacingException)
+        }
+        assertTrue("Organising a 1-page PDF must be rejected", thrown)
+    }
+
+    @Test
     fun toolsCardStringsReflectRenamedMergeAndSplitPdf() {
         assertEquals("Merge PDF", app.getString(com.example.scanpro.R.string.tools_card_merge))
         assertEquals("Split PDF", app.getString(com.example.scanpro.R.string.tools_card_split))
+        assertEquals("Organise PDF", app.getString(com.example.scanpro.R.string.tools_card_organize))
+        assertEquals("Organise PDF", app.getString(com.example.scanpro.R.string.tools_tile_organize))
         assertTrue(app.getString(com.example.scanpro.R.string.tools_split_single_page_desc).contains("1 page"))
+        assertTrue(app.getString(com.example.scanpro.R.string.tools_organize_single_page_desc).contains("1 page"))
     }
 }
