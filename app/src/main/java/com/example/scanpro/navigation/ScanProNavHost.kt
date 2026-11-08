@@ -59,7 +59,9 @@ fun ScanProNavHost(
     onCameraAppendComplete: (String, List<android.net.Uri>, List<CropQuad>, List<PageFilter>, List<PageAdjustments?>) -> Unit = { _, _, _, _, _ -> },
     /** Folders a new scan can be saved into, for the review screen's Folder choice. */
     saveFolders: List<String> = emptyList(),
-    defaultFilter: PageFilter? = null
+    defaultFilter: PageFilter? = null,
+    /** Check pages before saving (Settings): whether the camera's Done opens the review. */
+    reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.ALWAYS
 ) {
     val context = LocalContext.current
     val pdfDocumentTitle = stringResource(R.string.nav_pdf_document)
@@ -155,6 +157,7 @@ fun ScanProNavHost(
                 // A shortcut or quick action names its mode; otherwise the camera opens in the mode chosen in Settings.
                 initialMode = entry.arguments?.getString(ScanProDestinations.CAMERA_MODE_ARG).orEmpty().ifEmpty { defaultScanMode },
                 defaultFilter = defaultFilter,
+                reviewMode = reviewMode,
                 retakeOfPage = retake?.position,
                 folders = saveFolders,
                 initialFolder = entry.arguments?.getString(ScanProDestinations.CAMERA_FOLDER_ARG).orEmpty(),

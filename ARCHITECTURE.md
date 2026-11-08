@@ -259,11 +259,20 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **Fast save from the camera (R26/F68).** `data/ReviewMode` (Settings › Scanning › Check pages before saving; default
+  If needed) reaches `CameraScannerScreen` through `AppViewModel`/`ScanProNavHost`. `scanner/FastSave.kt` holds the
+  rule: a page needs a look when its crop is the whole frame (no outline found) or the F64 quality check flagged it.
+  `reviewOrSave()` runs on Done: Always opens the review; otherwise it fills in any missing crop or quality result in
+  the background and either calls `saveReviewed()` directly or opens the review on the first page that needs a look.
 - **ID card: both sides on one page.** `scanner/IdCardComposer.kt` cuts each side out of its photo along the guide
   crop (`ImageProcessor.cropSourceToNewFile`), scales both to the same width and places them on a white A4-shaped
   page, front above back, with a hairline border. The camera does this when Done is tapped after the second side
   (`CameraScannerScreen.finishScan`), replacing the two captures with the one page, so the review, the filters and
   the saved document all see a single page. Retake on that page clears it and starts both sides again.
+- **Instrumented tests** (`app/src/androidTest`): `AppSmokeTest` plus, from 2026-11-08, device tests for the launch
+  (`LaunchDeviceTest`), the in-place language change (`LanguageChangeDeviceTest`) and ID cards (`IdCardDeviceTest`),
+  all on `createEmptyComposeRule` + `ActivityScenario`, no extra dependencies (the camera permission is granted
+  through `UiAutomation`). They run from Android Studio on a phone or emulator; CI does not run them.
 - **Language and theme changes without a restart.** `MainActivity` declares `configChanges="locale|layoutDirection|uiMode"`:
   the Android 13+ per-app language change and the per-app night mode arrive as `onConfigurationChanged` (Compose re-reads
   `LocalConfiguration`; launcher shortcuts are republished) instead of recreating the activity, which showed a black

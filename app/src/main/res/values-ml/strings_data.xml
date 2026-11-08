@@ -7,6 +7,9 @@
     <string name="data_filter_bw">ബ്ലാക്ക് &amp; വൈറ്റ്</string>
     <string name="data_filter_whiteboard">വൈറ്റ്ബോർഡ്</string>
     <string name="data_pdf_quality_high">ഉയർന്നത്</string>
+    <string name="data_review_mode_always">എപ്പോഴും</string>
+    <string name="data_review_mode_when_needed">ആവശ്യമെങ്കിൽ</string>
+    <string name="data_review_mode_never">ഒരിക്കലും ഇല്ല</string>
     <string name="data_pdf_quality_balanced">ബാലൻസ്ഡ്</string>
     <string name="data_pdf_quality_small">ചെറുത്</string>
     <string name="data_page_size_auto">ഓട്ടോ</string>

@@ -227,6 +227,8 @@
     <string name="settings_default_filter_title">Starting filter</string>
     <string name="settings_default_filter_subtitle">The look new scans start with; you can change it per page</string>
     <string name="settings_default_filter_automatic">Automatic</string>
+    <string name="settings_review_mode_title">Check pages before saving</string>
+    <string name="settings_review_mode_subtitle">If needed: Done saves straight away unless a page has no outline, is blurred, has glare or is too dark. Never: always saves at once with the automatic crop and filter</string>
 
     <!-- Home: "Did you know?" tips (feature/library/HomeTips.kt) -->
     <string name="tip_eyebrow">Did you know?</string>

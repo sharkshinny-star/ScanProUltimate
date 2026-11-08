@@ -88,6 +88,8 @@ class SettingsViewModel @Inject constructor(
     fun setDefaultScanMode(value: String) { viewModelScope.launch { settings.setDefaultScanMode(value) } }
     val defaultFilter = settings.defaultFilter.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     fun setDefaultFilter(value: com.example.scanpro.data.PageFilter?) { viewModelScope.launch { settings.setDefaultFilter(value) } }
+    val reviewMode = settings.reviewMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.example.scanpro.data.ReviewMode.WHEN_NEEDED)
+    fun setReviewMode(value: com.example.scanpro.data.ReviewMode) { viewModelScope.launch { settings.setReviewMode(value) } }
 
     val notifyFinished = settings.notifyFinished.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val notifyFailures = settings.notifyFailures.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)

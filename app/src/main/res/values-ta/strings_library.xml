@@ -207,6 +207,8 @@
     <string name="settings_default_filter_title">தொடக்க ஃபில்டர்</string>
     <string name="settings_default_filter_subtitle">புதிய ஸ்கேன்கள் இந்தத் தோற்றத்துடன் தொடங்கும்; ஒவ்வொரு பக்கத்திலும் மாற்றலாம்</string>
     <string name="settings_default_filter_automatic">தானியங்கி</string>
+    <string name="settings_review_mode_title">சேமிக்கும் முன் பக்கங்களைச் சரிபார்</string>
+    <string name="settings_review_mode_subtitle">தேவைப்பட்டால்: ஒரு பக்கத்தின் விளிம்பு கிடைக்காவிட்டால், மங்கலாக, பளபளப்பாக அல்லது மிகவும் இருளாக இருந்தால் தவிர Done உடனே சேமிக்கும். ஒருபோதும் இல்லை: தானியங்கி வெட்டு மற்றும் வடிகட்டியுடன் எப்போதும் உடனே சேமிக்கும்</string>
     <string name="lib_share_separate">தனித்தனி PDF-கள் (%1$d)</string>
     <string name="lib_share_one_pdf">ஒரே PDF</string>
 </resources>

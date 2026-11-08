@@ -7,6 +7,9 @@
     <string name="data_filter_bw">கருப்பு-வெள்ளை</string>
     <string name="data_filter_whiteboard">வைட்போர்டு</string>
     <string name="data_pdf_quality_high">உயர்</string>
+    <string name="data_review_mode_always">எப்போதும்</string>
+    <string name="data_review_mode_when_needed">தேவைப்பட்டால்</string>
+    <string name="data_review_mode_never">ஒருபோதும்</string>
     <string name="data_pdf_quality_balanced">சமநிலை</string>
     <string name="data_pdf_quality_small">சிறியது</string>
     <string name="data_page_size_auto">ஆட்டோ</string>

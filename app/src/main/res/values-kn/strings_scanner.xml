@@ -116,6 +116,11 @@
     <string name="scan_status_capturing">ತೆಗೆಯಲಾಗುತ್ತಿದೆ…</string>
     <string name="scan_status_front_saved">ಮುಂಭಾಗ ಉಳಿಸಲಾಗಿದೆ · ಈಗ ಹಿಂಭಾಗ ತೆಗೆಯಿರಿ</string>
     <string name="scan_status_id_ready">ID ಸಿದ್ಧ · ಮುಗಿದಿದೆ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="scan_status_checking_pages">ಪುಟಗಳನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <plurals name="scan_status_pages_need_look">
+        <item quantity="one">%d ಪುಟವನ್ನು ನೋಡಬೇಕು</item>
+        <item quantity="other">%d ಪುಟಗಳನ್ನು ನೋಡಬೇಕು</item>
+    </plurals>
     <string name="scan_status_id_composing">ಎರಡೂ ಬದಿಗಳನ್ನು ಒಂದೇ ಪುಟದಲ್ಲಿ ಇಡಲಾಗುತ್ತಿದೆ…</string>
     <string name="scan_status_id_compose_failed">ಎರಡೂ ಬದಿಗಳನ್ನು ಒಂದೇ ಪುಟದಲ್ಲಿ ಇಡಲಾಗಲಿಲ್ಲ; ಅವು ಎರಡು ಪುಟಗಳಾಗಿ ಉಳಿದಿವೆ</string>
     <string name="scan_status_id_retake">ಎರಡೂ ಬದಿಗಳು ಮತ್ತೆ: ಮೊದಲು ಮುಂಭಾಗವನ್ನು ಸೆರೆಹಿಡಿಯಿರಿ</string>

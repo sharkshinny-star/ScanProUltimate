@@ -207,6 +207,8 @@
     <string name="settings_default_filter_title">शुरुआती फ़िल्टर</string>
     <string name="settings_default_filter_subtitle">नए स्कैन इसी लुक से शुरू होते हैं; आप हर पेज पर इसे बदल सकते हैं</string>
     <string name="settings_default_filter_automatic">अपने-आप</string>
+    <string name="settings_review_mode_title">सेव करने से पहले पेज जाँचें</string>
+    <string name="settings_review_mode_subtitle">ज़रूरत पड़ने पर: Done सीधे सेव करता है, जब तक किसी पेज की किनारी न मिले, वह धुँधला हो, चमक हो या बहुत गहरा हो। कभी नहीं: अपने-आप क्रॉप और फ़िल्टर के साथ हमेशा तुरंत सेव</string>
     <string name="lib_share_separate">अलग-अलग PDF (%1$d)</string>
     <string name="lib_share_one_pdf">एक PDF में</string>
 </resources>

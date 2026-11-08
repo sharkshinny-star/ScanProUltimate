@@ -67,6 +67,7 @@ class AppViewModel @Inject constructor(
     /** Camera defaults from Settings: the mode it opens in and the filter new scans start with. */
     val defaultScanMode: StateFlow<String> = settings.defaultScanMode.stateIn(viewModelScope, SharingStarted.Eagerly, ScanMode.DOCUMENT.name)
     val defaultFilter: StateFlow<PageFilter?> = settings.defaultFilter.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val reviewMode: StateFlow<com.example.scanpro.data.ReviewMode> = settings.reviewMode.stateIn(viewModelScope, SharingStarted.Eagerly, com.example.scanpro.data.ReviewMode.WHEN_NEEDED)
 
     val dynamicColor: StateFlow<Boolean> = settings.dynamicColor
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)

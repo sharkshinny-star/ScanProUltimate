@@ -207,6 +207,8 @@
     <string name="settings_default_filter_title">మొదటి ఫిల్టర్</string>
     <string name="settings_default_filter_subtitle">కొత్త స్కాన్‌లు ఈ లుక్‌తో మొదలవుతాయి; ప్రతి పేజీకి మార్చుకోవచ్చు</string>
     <string name="settings_default_filter_automatic">ఆటోమేటిక్</string>
+    <string name="settings_review_mode_title">సేవ్ చేసే ముందు పేజీలను తనిఖీ చేయండి</string>
+    <string name="settings_review_mode_subtitle">అవసరమైతే: పేజీ అంచు దొరకకపోతే, మసకగా, మెరుపుతో లేదా చాలా చీకటిగా ఉంటే తప్ప Done వెంటనే సేవ్ చేస్తుంది. ఎప్పుడూ కాదు: ఆటోమేటిక్ క్రాప్, ఫిల్టర్‌తో ఎల్లప్పుడూ వెంటనే సేవ్</string>
     <string name="lib_share_separate">వేర్వేరు PDFలు (%1$d)</string>
     <string name="lib_share_one_pdf">ఒకే PDF</string>
 </resources>

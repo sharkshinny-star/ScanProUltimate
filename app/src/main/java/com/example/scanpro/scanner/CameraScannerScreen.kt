@@ -174,6 +174,8 @@ fun CameraScannerScreen(
     initialMode: String = "",
     /** Filter new scans start with, from Settings; null keeps each mode's own. */
     defaultFilter: PageFilter? = null,
+    /** Check pages before saving (Settings, R26): ALWAYS opens the review on Done; the others save at once when nothing needs a look. */
+    reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.ALWAYS,
     /** Position of the saved page this session replaces; the session then takes exactly one photo. */
     retakeOfPage: Int? = null,
     onClose: () -> Unit,
@@ -448,43 +450,6 @@ fun CameraScannerScreen(
     }
 
     /** Opens the review step on the newest page. */
-    fun finishScan() {
-        if (completed || pages.isEmpty() || processing) return
-        // Both sides of an ID card go onto one page before the review, so what is reviewed is what gets saved.
-        if (scanMode == ScanMode.ID_CARD && scanBothSides && idComposite == null && pages.size == 2 && retakeOfPage == null) {
-            processing = true
-            status = resources.getString(R.string.scan_status_id_composing)
-            val (front, back) = pages.toList()
-            val frontQuad = quads[front.toString()]
-            val backQuad = quads[back.toString()]
-            val composed = File(sessionDir, "id_${UUID.randomUUID()}.jpg")
-            scope.launch {
-                val ok = withContext(Dispatchers.Default) {
-                    runCatching {
-                        IdCardComposer.compose(File(front.path.orEmpty()), frontQuad, File(back.path.orEmpty()), backQuad, composed)
-                    }.isSuccess
-                }
-                processing = false
-                if (ok) {
-                    val uri = Uri.fromFile(composed)
-                    pages.clear()
-                    pages.add(uri)
-                    quads[uri.toString()] = CropQuad.DEFAULT
-                    idComposite = uri.toString()
-                    status = resources.getString(R.string.scan_status_id_ready)
-                } else {
-                    // The two sides stay as two pages rather than losing the capture.
-                    status = resources.getString(R.string.scan_status_id_compose_failed)
-                }
-                reviewIndex = pages.lastIndex
-                reviewing = true
-            }
-            return
-        }
-        reviewIndex = pages.lastIndex
-        reviewing = true
-    }
-
     /** Applies each page's confirmed crop, then hands the finished images to the importer. */
     fun saveReviewed() {
         // Ignore a second tap during the exit animation; it would import twice.
@@ -509,6 +474,83 @@ fun CameraScannerScreen(
             )
         }
     }
+
+    /**
+     * Fast save (R26): with "Check pages before saving" on Always, or when a saved page is being shot again, Done opens
+     * the review as always. Otherwise every page is checked (outline found? sharp, no glare, not dark?) and the scan is
+     * saved straight away unless the setting says to review the pages that need a look, and some do.
+     */
+    fun reviewOrSave() {
+        if (reviewMode == com.example.scanpro.data.ReviewMode.ALWAYS || retakeOfPage != null) {
+            reviewIndex = pages.lastIndex
+            reviewing = true
+            return
+        }
+        processing = true
+        status = resources.getString(R.string.scan_status_checking_pages)
+        val snapshot = pages.toList()
+        scope.launch {
+            val needing = withContext(Dispatchers.Default) {
+                val crops = snapshot.map { uri ->
+                    quads[uri.toString()] ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
+                }
+                val issues = snapshot.map { uri ->
+                    quality[uri.toString()] ?: runCatching { OpenCvScanProcessor.assessQuality(File(uri.path.orEmpty())) }.getOrDefault(emptySet())
+                }
+                FastSave.pagesNeedingReview(crops, issues)
+            }
+            processing = false
+            if (snapshot != pages.toList()) {
+                // Pages changed while checking (a retake landed): just show the review.
+                reviewIndex = pages.lastIndex
+                reviewing = true
+            } else if (FastSave.shouldReview(reviewMode, needing)) {
+                reviewIndex = needing.firstOrNull() ?: pages.lastIndex
+                if (needing.isNotEmpty()) status = resources.getQuantityString(R.plurals.scan_status_pages_need_look, needing.size, needing.size)
+                reviewing = true
+            } else {
+                saveReviewed()
+            }
+        }
+    }
+
+    fun finishScan() {
+        if (completed || pages.isEmpty() || processing) return
+        // Both sides of an ID card go onto one page before the review, so what is reviewed is what gets saved.
+        if (scanMode == ScanMode.ID_CARD && scanBothSides && idComposite == null && pages.size == 2 && retakeOfPage == null) {
+            processing = true
+            status = resources.getString(R.string.scan_status_id_composing)
+            val (front, back) = pages.toList()
+            val frontQuad = quads[front.toString()]
+            val backQuad = quads[back.toString()]
+            val composed = File(sessionDir, "id_${UUID.randomUUID()}.jpg")
+            scope.launch {
+                val ok = withContext(Dispatchers.Default) {
+                    runCatching {
+                        IdCardComposer.compose(File(front.path.orEmpty()), frontQuad, File(back.path.orEmpty()), backQuad, composed)
+                    }.isSuccess
+                }
+                processing = false
+                if (ok) {
+                    val uri = Uri.fromFile(composed)
+                    pages.clear()
+                    pages.add(uri)
+                    quads[uri.toString()] = CropQuad.DEFAULT
+                    idComposite = uri.toString()
+                    status = resources.getString(R.string.scan_status_id_ready)
+                    reviewOrSave()
+                } else {
+                    // The two sides stay as two pages rather than losing the capture, and are shown for a look.
+                    status = resources.getString(R.string.scan_status_id_compose_failed)
+                    reviewIndex = pages.lastIndex
+                    reviewing = true
+                }
+            }
+            return
+        }
+        reviewOrSave()
+    }
+
 
     // Capture feedback: a quick white flash, then the photo shrinks into the page counter, which gives a bounce.
     val flash = remember { Animatable(0f) }

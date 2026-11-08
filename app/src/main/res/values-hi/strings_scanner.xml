@@ -116,6 +116,11 @@
     <string name="scan_status_capturing">फ़ोटो ली जा रही है…</string>
     <string name="scan_status_front_saved">आगे का हिस्सा सेव हुआ · अब पीछे का लें</string>
     <string name="scan_status_id_ready">ID तैयार · हो गया पर टैप करें</string>
+    <string name="scan_status_checking_pages">पेज जाँचे जा रहे हैं…</string>
+    <plurals name="scan_status_pages_need_look">
+        <item quantity="one">%d पेज को देखना होगा</item>
+        <item quantity="other">%d पेज देखने होंगे</item>
+    </plurals>
     <string name="scan_status_id_composing">दोनों तरफ़ को एक पेज पर रखा जा रहा है…</string>
     <string name="scan_status_id_compose_failed">दोनों तरफ़ को एक पेज पर नहीं रख सके; वे दो पेज के रूप में रखे गए हैं</string>
     <string name="scan_status_id_retake">दोनों तरफ़ फिर से: पहले सामने वाला हिस्सा लें</string>

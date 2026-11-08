@@ -7,6 +7,9 @@
     <string name="data_filter_bw">నలుపు-తెలుపు</string>
     <string name="data_filter_whiteboard">వైట్‌బోర్డ్</string>
     <string name="data_pdf_quality_high">ఎక్కువ</string>
+    <string name="data_review_mode_always">ఎల్లప్పుడూ</string>
+    <string name="data_review_mode_when_needed">అవసరమైతే</string>
+    <string name="data_review_mode_never">ఎప్పుడూ కాదు</string>
     <string name="data_pdf_quality_balanced">మధ్యస్థం</string>
     <string name="data_pdf_quality_small">చిన్నది</string>
     <string name="data_page_size_auto">ఆటో</string>

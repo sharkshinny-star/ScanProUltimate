@@ -207,6 +207,8 @@
     <string name="settings_default_filter_title">തുടക്ക ഫിൽട്ടർ</string>
     <string name="settings_default_filter_subtitle">പുതിയ സ്കാനുകൾ ഈ രൂപത്തിൽ തുടങ്ങും; ഓരോ പേജിലും മാറ്റാം</string>
     <string name="settings_default_filter_automatic">ഓട്ടോമാറ്റിക്</string>
+    <string name="settings_review_mode_title">സേവ് ചെയ്യുന്നതിന് മുമ്പ് പേജുകൾ പരിശോധിക്കുക</string>
+    <string name="settings_review_mode_subtitle">ആവശ്യമെങ്കിൽ: ഒരു പേജിന്റെ അരിക് കണ്ടെത്താനാകാതെയോ, മങ്ങിയതോ, തിളക്കമുള്ളതോ, വളരെ ഇരുണ്ടതോ അല്ലെങ്കിൽ Done ഉടൻ സേവ് ചെയ്യും. ഒരിക്കലും ഇല്ല: ഓട്ടോമാറ്റിക് ക്രോപ്പും ഫിൽട്ടറും ഉപയോഗിച്ച് എപ്പോഴും ഉടൻ സേവ് ചെയ്യും</string>
     <string name="lib_share_separate">വെവ്വേറെ PDF-കൾ (%1$d)</string>
     <string name="lib_share_one_pdf">ഒറ്റ PDF</string>
 </resources>
