@@ -147,6 +147,13 @@
     <string name="tools_order_move_down">नीचे ले जाएं</string>
     <string name="tools_img2pdf_order_hint">PDF बनाने से पहले पेजों का क्रम बदलें, इमेज क्रॉप करें या हटाएं।</string>
     <string name="tools_img2pdf_crop_button">क्रॉप</string>
+    <string name="tools_img2pdf_rotate_button">घुमाएं</string>
+    <string name="tools_img2pdf_rotate_all">सभी घुमाएं</string>
+    <string name="tools_img2pdf_add_images">चित्र जोड़ें</string>
+    <string name="tools_img2pdf_rotate_cd">चित्र %1$d को दक्षिणावर्त घुमाएं</string>
+    <string name="tools_img2pdf_reset_cd">चित्र %1$d को मूल स्थिति में लाएं</string>
+    <string name="tools_img2pdf_crop_cd">चित्र %1$d को काटें</string>
+    <string name="tools_img2pdf_edited_badge">संपादित</string>
     <string name="tools_img2pdf_remove_cd">इमेज %1$d हटाएं</string>
     <string name="tools_organizer_preview_page">पेज %1$d का प्रीव्यू</string>
     <plurals name="tools_img2pdf_title">

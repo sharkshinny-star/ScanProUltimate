@@ -82,10 +82,16 @@ Earlier results (2026-11-05):
 |---|---|
 | `:app:testDebugUnitTest` | 320 tests: 290 passed, 30 skipped (opt-in screenshot and real-photo tests), 0 failed. Includes `PdfPictureTest` (6), `MergePasswordTest` (6), `WelcomePermissionsTest` (5) from F48–F50 |
 | `:app:lintDebug` (analysis rerun) | 0 issues (the `GradleDependency` warning is gone with uiautomator 2.4.1) |
-| `:baselineprofile:compileNonMinifiedReleaseKotlin` | Passed with uiautomator 2.4.1 (earlier in the session; profile not generated, no device) |
-| `:app:bundleRelease` | Passed; AAB 45.9 MB |
-| Sideload `assembleRelease` | Passed; arm64 33.6 MB, armeabi-v7a 25.6 MB, x86_64 39.4 MB, universal 82.7 MB (unsigned) |
-| Not run | Device or emulator, instrumented tests, screenshot renders, `:opencv:lintDebug`, 16 KB alignment |
+## Latest results (2026-11-09, Images to PDF feature audit and overhaul, F92)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin` | Passed, 0 errors |
+| `:app:testDebugUnitTest --tests "com.example.scanpro.feature.tools.PdfToolsFeaturesTest"` | Passed; includes `rotateImageFileProducesRotatedImageForPdf` (aspect ratio transformation verified) |
+| `:app:testDebugUnitTest` | Full suite passed; 0 failures (67 tasks up-to-date/executed) |
+| Release builds, device | Not run |
+
+## Earlier results (2026-11-09, camera/files switching freeze fix, F91)
 
 ## Earlier results (2026-11-05, after-scan sheet F65, on `f93c43c`)
 

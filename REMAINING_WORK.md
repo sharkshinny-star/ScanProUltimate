@@ -39,7 +39,7 @@ The device suite (`connectedDebugAndroidTest`, 6 passed), Home search pill stabi
     symmetrically down the centre axis and show whole; the landscape Adjust page filter thumbnails are readable; in Tamil
     the bottom bar, rail and document tabs fit on one line; long status subtitles marquee smoothly; landscape dialog heights
     remain comfortably within screen boundaries (OrderFilesDialog 240 dp, merge dialog 220 dp).
-19. Images to PDF and Recents (F90): pick three photos, crop one (the dialog shows a spinner, the page changes, a second crop starts from the original photo); open a PDF from a cloud or Downloads provider, close the app completely, reopen it from Recent and confirm the pages show; delete the file and tap its row to see the message.
+19. Images to PDF and Recents (F90, F92): pick three photos, rotate one, crop one, add more images via toolbar, rotate all pages, revert edits, verify rotation preserves crops/order, verify staging cache is purged on dismiss/cancel/completion; open a PDF from a cloud or Downloads provider, close the app completely, reopen it from Recent and confirm the pages show; delete the file and tap its row to see the message.
 20. Camera switching performance (F91): verify fast and smooth switching between Camera and Files with 0 frame drops > 250 ms.
 
 ## Owner decisions (resolved 2026-11-08)

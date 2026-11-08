@@ -433,10 +433,19 @@ class PdfToolsViewModel @Inject constructor(
     fun imagesToPdf(uris: List<Uri>, pageSize: PdfPageSize = PdfPageSize.AUTO, quality: PdfQuality = PdfQuality.BALANCED) =
         launchTool(context.resources.getQuantityString(R.plurals.msg_tools_converting_images, uris.size, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
             val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm", java.util.Locale.getDefault()).format(java.util.Date())
-            PdfToolsEngine.imagesToPdf(
-                context, uris, pageSize, quality,
-                PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report
-            )
+            try {
+                PdfToolsEngine.imagesToPdf(
+                    context, uris, pageSize, quality,
+                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report
+                )
+            } finally {
+                withContext(Dispatchers.IO) {
+                    uris.mapNotNull { it.path?.let(::File)?.parentFile }
+                        .filter { it.name.startsWith("img2pdf_order_") }
+                        .distinct()
+                        .forEach { it.deleteRecursively() }
+                }
+            }
         }
 
     private val _printFallback = MutableStateFlow<Pair<String, String>?>(null)

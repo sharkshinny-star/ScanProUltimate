@@ -61,6 +61,26 @@ class PdfToolsFeaturesTest {
     }
 
     @Test
+    fun rotateImageFileProducesRotatedImageForPdf() {
+        val dir = File(app.cacheDir, "test_rotate_${System.currentTimeMillis()}").apply { mkdirs() }
+        val source = File(dir, "source.png")
+        val bitmap = Bitmap.createBitmap(200, 100, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.RED)
+        }
+        FileOutputStream(source).use {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
+        val dest = File(dir, "rotated.jpg")
+        ImageProcessor.rotateImageFile(source, dest, 90)
+        assertTrue(dest.exists())
+        assertTrue(dest.length() > 0)
+
+        val aspect = ImageProcessor.imageAspect(dest.absolutePath)
+        assertNotNull(aspect)
+        assertEquals(0.5f, aspect ?: 0f, 0.05f)
+    }
+
+    @Test
     fun splitPdfRejectsSinglePageDocument() = kotlinx.coroutines.runBlocking {
         val dir = File(app.cacheDir, "test_split_${System.currentTimeMillis()}").apply { mkdirs() }
         val singlePagePdf = File(dir, "one_page.pdf")

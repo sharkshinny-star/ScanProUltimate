@@ -213,6 +213,23 @@ object ImageProcessor {
         }
     }
 
+    /** Rotates an image file by [degrees] clockwise and writes an upright JPEG to [destination]. */
+    fun rotateImageFile(source: File, destination: File, degrees: Int) {
+        val totalRotation = ((degrees % 360) + 360) % 360
+        if (totalRotation == 0 && source.absolutePath == destination.absolutePath) return
+        var bitmap = decodeScaled(source.absolutePath, 4200) ?: userError(R.string.err_could_not_decode_source)
+        val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
+        val combined = ((exifRotation + totalRotation) % 360 + 360) % 360
+        if (combined != 0) {
+            bitmap = bitmap.then { rotate(it, combined) }
+        }
+        try {
+            saveJpeg(bitmap, destination, 98)
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
     /** [source] decoded to at most [maxDimension] px, turned upright and cut along [quad]; the caller recycles it. */
     fun cropSourceToBitmap(source: File, quad: CropQuad, maxDimension: Int): Bitmap {
         var bitmap = decodeScaled(source.absolutePath, maxDimension) ?: userError(R.string.err_could_not_decode_source)

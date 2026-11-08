@@ -47,6 +47,7 @@ import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Compress
@@ -229,6 +230,13 @@ fun PdfToolsScreen(
     viewModel: PdfToolsViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            context.cacheDir.listFiles { file ->
+                file.isDirectory && (file.name.startsWith("img2pdf_order_") || file.name.startsWith("img2pdf_"))
+            }?.forEach { it.deleteRecursively() }
+        }
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     // Read here: the picker callbacks and dialog buttons below are not composable scopes.
     val pdfDocumentTitle = stringResource(R.string.tools_pdf_document)
@@ -360,7 +368,13 @@ fun PdfToolsScreen(
     imagesToConvert?.let { images ->
         ImagesToPdfDialog(
             count = images.size,
-            onDismiss = { imagesToConvert = null },
+            onDismiss = {
+                images.mapNotNull { it.path?.let(::File)?.parentFile }
+                    .filter { it.name.startsWith("img2pdf_order_") }
+                    .distinct()
+                    .forEach { it.deleteRecursively() }
+                imagesToConvert = null
+            },
             onConfirm = { size, quality ->
                 imagesToConvert = null
                 viewModel.imagesToPdf(images, size, quality)
@@ -1061,11 +1075,42 @@ private data class OrderedImage(
     val file: File,
     val name: String,
     /** The picked photo, untouched: a second crop starts from this, not from the first crop's result. */
-    val original: File = file
+    val original: File = file,
+    val rotation: Int = 0
+) {
+    val isEdited: Boolean get() = file != original || rotation != 0
+}
+
+private val OrderedImageListSaver = androidx.compose.runtime.saveable.listSaver<androidx.compose.runtime.snapshots.SnapshotStateList<OrderedImage>, String>(
+    save = { list ->
+        list.map { item ->
+            "${item.id}|||${item.file.absolutePath}|||${item.name}|||${item.original.absolutePath}|||${item.rotation}"
+        }
+    },
+    restore = { serializedList ->
+        mutableStateListOf<OrderedImage>().apply {
+            serializedList.forEach { str ->
+                val parts = str.split("|||")
+                if (parts.size >= 5) {
+                    add(
+                        OrderedImage(
+                            id = parts[0],
+                            file = File(parts[1]),
+                            name = parts[2],
+                            original = File(parts[3]),
+                            rotation = parts[4].toIntOrNull() ?: 0
+                        )
+                    )
+                }
+            }
+        }
+    }
 )
 
 /**
- * Puts picked images in order, shows their thumbnails, and allows perspective cropping or removal before PDF generation.
+ * Puts picked images in order, shows their thumbnails, and allows perspective cropping, per-image rotation,
+ * adding more images, or removing pages before PDF generation. State is preserved across device rotation,
+ * and staging folders are reliably cleaned up.
  */
 @Composable
 private fun ImagesToPdfOrderDialog(
@@ -1075,61 +1120,171 @@ private fun ImagesToPdfOrderDialog(
     onConfirm: (List<Uri>) -> Unit
 ) {
     val context = LocalContext.current
-    val order = remember { mutableStateListOf<OrderedImage>() }
-    var isLoading by remember { mutableStateOf(true) }
-    var croppingItem by remember { mutableStateOf<OrderedImage?>(null) }
+    val stagingDirPath = rememberSaveable {
+        val dir = File(context.cacheDir, "img2pdf_order_${UUID.randomUUID()}").apply { mkdirs() }
+        dir.absolutePath
+    }
+    val stagingDir = remember(stagingDirPath) { File(stagingDirPath).apply { mkdirs() } }
 
-    LaunchedEffect(initialUris) {
-        withContext(Dispatchers.IO) {
-            val stagingDir = File(context.cacheDir, "img2pdf_order_${UUID.randomUUID()}").apply { mkdirs() }
-            val loaded = initialUris.mapIndexedNotNull { index, uri ->
-                runCatching {
-                    val name = displayName(uri)
-                    val ext = if (name.contains('.')) name.substringAfterLast('.', "jpg") else "jpg"
-                    val file = File(stagingDir, "item_${index}_${System.currentTimeMillis()}.$ext")
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        file.outputStream().use { output -> input.copyTo(output) }
+    val order = rememberSaveable(saver = OrderedImageListSaver) { mutableStateListOf<OrderedImage>() }
+    var isLoading by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) }
+    var croppingItem by remember { mutableStateOf<OrderedImage?>(null) }
+    var cropFailed by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
+    val addImagesLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { newUris ->
+        if (newUris.isNotEmpty()) {
+            isProcessing = true
+            scope.launch {
+                val currentCount = order.size
+                val loaded = withContext(Dispatchers.IO) {
+                    newUris.mapIndexedNotNull { index, uri ->
+                        runCatching {
+                            val name = displayName(uri)
+                            val ext = if (name.contains('.')) name.substringAfterLast('.', "jpg") else "jpg"
+                            val file = File(stagingDir, "item_${currentCount + index}_${System.currentTimeMillis()}.$ext")
+                            context.contentResolver.openInputStream(uri)?.use { input ->
+                                file.outputStream().use { output -> input.copyTo(output) }
+                            }
+                            OrderedImage(file = file, name = name)
+                        }.getOrNull()
                     }
-                    OrderedImage(file = file, name = name)
-                }.getOrNull()
-            }
-            withContext(Dispatchers.Main) {
-                order.clear()
+                }
                 order.addAll(loaded)
-                isLoading = false
+                isProcessing = false
             }
         }
     }
 
-    val scope = rememberCoroutineScope()
-    var isCropping by remember { mutableStateOf(false) }
-    var cropFailed by remember { mutableStateOf(false) }
+    val dismissAndCleanup = {
+        stagingDir.deleteRecursively()
+        onDismiss()
+    }
+
+    LaunchedEffect(initialUris) {
+        if (order.isEmpty()) {
+            isLoading = true
+            val loaded = withContext(Dispatchers.IO) {
+                initialUris.mapIndexedNotNull { index, uri ->
+                    runCatching {
+                        val name = displayName(uri)
+                        val ext = if (name.contains('.')) name.substringAfterLast('.', "jpg") else "jpg"
+                        val file = File(stagingDir, "item_${index}_${System.currentTimeMillis()}.$ext")
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            file.outputStream().use { output -> input.copyTo(output) }
+                        }
+                        OrderedImage(file = file, name = name)
+                    }.getOrNull()
+                }
+            }
+            order.clear()
+            order.addAll(loaded)
+            isLoading = false
+        }
+    }
+
+    val rotateItem: (Int) -> Unit = { index ->
+        val item = order.getOrNull(index)
+        if (item != null) {
+            isProcessing = true
+            scope.launch {
+                val rotated = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val source = item.file
+                        val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.name}.jpg")
+                        ImageProcessor.rotateImageFile(source, dest, 90)
+                        dest
+                    }
+                }
+                isProcessing = false
+                rotated.onSuccess { dest ->
+                    val idx = order.indexOfFirst { it.id == item.id }
+                    if (idx != -1) {
+                        val previous = order[idx].file
+                        order[idx] = order[idx].copy(
+                            file = dest,
+                            rotation = (order[idx].rotation + 90) % 360
+                        )
+                        if (previous != item.original && previous != dest) previous.delete()
+                    } else dest.delete()
+                }
+            }
+        }
+    }
+
+    val rotateAll: () -> Unit = {
+        if (order.isNotEmpty()) {
+            isProcessing = true
+            scope.launch {
+                withContext(Dispatchers.IO) {
+                    order.indices.forEach { index ->
+                        val item = order[index]
+                        runCatching {
+                            val source = item.file
+                            val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.name}.jpg")
+                            ImageProcessor.rotateImageFile(source, dest, 90)
+                            withContext(Dispatchers.Main) {
+                                val previous = order[index].file
+                                order[index] = order[index].copy(
+                                    file = dest,
+                                    rotation = (order[index].rotation + 90) % 360
+                                )
+                                if (previous != item.original && previous != dest) previous.delete()
+                            }
+                        }
+                    }
+                }
+                isProcessing = false
+            }
+        }
+    }
+
+    val resetItem: (Int) -> Unit = { index ->
+        val item = order.getOrNull(index)
+        if (item != null && item.isEdited) {
+            val previous = item.file
+            order[index] = item.copy(file = item.original, rotation = 0)
+            if (previous != item.original) previous.delete()
+        }
+    }
+
+    val removeItem: (Int) -> Unit = { index ->
+        if (index in order.indices) {
+            val removed = order.removeAt(index)
+            if (removed.file != removed.original) removed.file.delete()
+            removed.original.delete()
+        }
+    }
+
     val currentCrop = croppingItem
     if (currentCrop != null) {
         CropEditorDialog(
-            sourcePath = currentCrop.original.absolutePath,
+            sourcePath = currentCrop.file.absolutePath,
             initial = CropQuad(),
             onDismiss = { croppingItem = null },
             onConfirm = { quad ->
                 croppingItem = null
-                isCropping = true
+                isProcessing = true
                 scope.launch {
-                    // A 4200 px photo takes a moment and a lot of memory: off the main thread, and a failure is shown.
                     val cropped = withContext(Dispatchers.IO) {
                         runCatching {
-                            val source = currentCrop.original
-                            val dest = File(source.parentFile, "cropped_${System.currentTimeMillis()}_${source.name}.jpg")
+                            val source = currentCrop.file
+                            val dest = File(stagingDir, "cropped_${System.currentTimeMillis()}_${source.name}.jpg")
                             ImageProcessor.cropSourceToNewFile(source, dest, quad)
                             dest
                         }
                     }
-                    isCropping = false
+                    isProcessing = false
                     cropped.onSuccess { dest ->
                         val idx = order.indexOfFirst { it.id == currentCrop.id }
                         if (idx != -1) {
                             val previous = order[idx].file
                             order[idx] = order[idx].copy(file = dest)
-                            if (previous != currentCrop.original) previous.delete()
+                            if (previous != currentCrop.original && previous != dest) previous.delete()
                         } else dest.delete()
                     }.onFailure { error ->
                         if (error is kotlinx.coroutines.CancellationException) throw error
@@ -1139,6 +1294,7 @@ private fun ImagesToPdfOrderDialog(
             }
         )
     }
+
     if (cropFailed) {
         AlertDialog(
             onDismissRequest = { cropFailed = false },
@@ -1148,11 +1304,31 @@ private fun ImagesToPdfOrderDialog(
         )
     }
 
+    val isShortWindow = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 480
+    val maxListHeight = if (isShortWindow) 220.dp else 400.dp
+
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_order_pages_title)) },
+        onDismissRequest = dismissAndCleanup,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.tools_order_pages_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "${order.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
         text = {
-            if (isLoading || isCropping) {
+            if (isLoading || isProcessing) {
                 Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
@@ -1163,11 +1339,50 @@ private fun ImagesToPdfOrderDialog(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = { addImagesLauncher.launch("image/*") },
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.heightIn(min = 36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(R.string.tools_img2pdf_add_images),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                        TextButton(
+                            onClick = rotateAll,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.heightIn(min = 36.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.RotateRight,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(R.string.tools_img2pdf_rotate_all),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
                     androidx.compose.foundation.lazy.LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 400.dp),
+                            .heightIn(max = maxListHeight),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         itemsIndexed(order, key = { _, item -> item.id }) { index, item ->
@@ -1180,7 +1395,9 @@ private fun ImagesToPdfOrderDialog(
                                 onMoveUp = { order.add(index - 1, order.removeAt(index)) },
                                 onMoveDown = { order.add(index + 1, order.removeAt(index)) },
                                 onCrop = { croppingItem = item },
-                                onRemove = { order.removeAt(index) }
+                                onRotate = { rotateItem(index) },
+                                onReset = { resetItem(index) },
+                                onRemove = { removeItem(index) }
                             )
                         }
                     }
@@ -1190,13 +1407,13 @@ private fun ImagesToPdfOrderDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirm(order.map { Uri.fromFile(it.file) }) },
-                enabled = !isLoading && !isCropping && order.isNotEmpty()
+                enabled = !isLoading && !isProcessing && order.isNotEmpty()
             ) {
                 Text(stringResource(R.string.common_continue))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = dismissAndCleanup) {
                 Text(stringResource(R.string.common_cancel))
             }
         }
@@ -1213,6 +1430,8 @@ private fun OrderedImageRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onCrop: () -> Unit,
+    onRotate: () -> Unit,
+    onReset: () -> Unit,
     onRemove: () -> Unit
 ) {
     val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, item.file) {
@@ -1222,60 +1441,125 @@ private fun OrderedImageRow(
     }
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(10.dp)
         ) {
-            Text(
-                stringResource(R.string.tools_order_position, index + 1),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.widthIn(min = 26.dp)
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable(onClick = onCrop),
-                contentAlignment = Alignment.Center
+            // Top row: Position badge, thumbnail (60dp), filename, and remove button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val bm = thumbnail
-                if (bm != null) {
-                    Image(
-                        bitmap = bm.asImageBitmap(),
-                        contentDescription = stringResource(R.string.tools_page_number, index + 1),
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Text(
+                        "${index + 1}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
-                } else {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable(onClick = onCrop),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val bm = thumbnail
+                    if (bm != null) {
+                        Image(
+                            bitmap = bm.asImageBitmap(),
+                            contentDescription = stringResource(R.string.tools_page_number, index + 1),
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    }
+
+                    if (item.isEdited) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(2.dp)
+                                .size(10.dp)
+                        ) {}
+                    }
+                }
+
+                Spacer(Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (item.isEdited) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.tools_img2pdf_edited_badge),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (item.rotation != 0) {
+                                Text(
+                                    text = " • +${item.rotation}°",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (canRemove) {
+                    IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.tools_img2pdf_remove_cd, index + 1),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.height(8.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(4.dp))
+            // Bottom row: Crop, Rotate, Reset buttons and Move Up/Down
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 OutlinedButton(
                     onClick = onCrop,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    modifier = Modifier.heightIn(min = 36.dp)
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.heightIn(min = 32.dp)
                 ) {
                     Icon(
                         Icons.Default.Crop,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.tools_img2pdf_crop_cd, index + 1),
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(Modifier.width(4.dp))
@@ -1285,38 +1569,67 @@ private fun OrderedImageRow(
                         maxLines = 1
                     )
                 }
-            }
 
-            IconButton(
-                enabled = canMoveUp,
-                onClick = onMoveUp,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    Icons.Default.KeyboardArrowUp,
-                    contentDescription = stringResource(R.string.tools_order_move_up)
-                )
-            }
-            IconButton(
-                enabled = canMoveDown,
-                onClick = onMoveDown,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    Icons.Default.KeyboardArrowDown,
-                    contentDescription = stringResource(R.string.tools_order_move_down)
-                )
-            }
+                Spacer(Modifier.width(6.dp))
 
-            if (canRemove) {
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier.size(40.dp)
+                OutlinedButton(
+                    onClick = onRotate,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.heightIn(min = 32.dp)
                 ) {
                     Icon(
-                        Icons.Default.Close,
-                        contentDescription = stringResource(R.string.tools_img2pdf_remove_cd, index + 1),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        Icons.AutoMirrored.Filled.RotateRight,
+                        contentDescription = stringResource(R.string.tools_img2pdf_rotate_cd, index + 1),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.tools_img2pdf_rotate_button),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1
+                    )
+                }
+
+                if (item.isEdited) {
+                    Spacer(Modifier.width(4.dp))
+                    TextButton(
+                        onClick = onReset,
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.heightIn(min = 32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.RestartAlt,
+                            contentDescription = stringResource(R.string.tools_img2pdf_reset_cd, index + 1),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(2.dp))
+                        Text(
+                            stringResource(R.string.common_reset),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                IconButton(
+                    enabled = canMoveUp,
+                    onClick = onMoveUp,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        contentDescription = stringResource(R.string.tools_order_move_up)
+                    )
+                }
+                IconButton(
+                    enabled = canMoveDown,
+                    onClick = onMoveDown,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowDown,
+                        contentDescription = stringResource(R.string.tools_order_move_down)
                     )
                 }
             }
@@ -1325,6 +1638,7 @@ private fun OrderedImageRow(
 }
 
 /** Page size and quality for Images to PDF, the two settings the engine already takes. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (PdfPageSize, PdfQuality) -> Unit) {
     var size by rememberSaveable { mutableStateOf(PdfPageSize.AUTO) }
@@ -1336,8 +1650,17 @@ private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (Pdf
             Column {
                 Text(stringResource(R.string.tools_img2pdf_page_size), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PdfPageSize.entries.forEach { item -> FilterChip(selected = size == item, onClick = { size = item }, label = { Text(stringResource(item.labelRes)) }) }
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    PdfPageSize.entries.forEach { item ->
+                        FilterChip(
+                            selected = size == item,
+                            onClick = { size = item },
+                            label = { Text(stringResource(item.labelRes)) }
+                        )
+                    }
                 }
                 Text(
                     if (size == PdfPageSize.AUTO) stringResource(R.string.tools_img2pdf_auto_hint) else stringResource(R.string.tools_img2pdf_fitted_hint, stringResource(size.labelRes)),
@@ -1346,8 +1669,17 @@ private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (Pdf
                 Spacer(Modifier.height(14.dp))
                 Text(stringResource(R.string.tools_img2pdf_quality), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PdfQuality.entries.forEach { item -> FilterChip(selected = quality == item, onClick = { quality = item }, label = { Text(stringResource(item.labelRes)) }) }
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    PdfQuality.entries.forEach { item ->
+                        FilterChip(
+                            selected = quality == item,
+                            onClick = { quality = item },
+                            label = { Text(stringResource(item.labelRes)) }
+                        )
+                    }
                 }
             }
         },
