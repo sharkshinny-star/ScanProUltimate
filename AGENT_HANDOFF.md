@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (F67: ID card scans both sides by default and puts them on one page, front above back; F66: launch animation and theme/language hand-over; CI limits raised, run 74 passed its build step under them). Release builds last run locally 2026-11-08; devices not run.
+Last updated: 2026-11-08 (F67: ID card scans both sides by default and puts them on one page, front above back; F66: launch animation and theme/language hand-over; CI limits raised, run 75 passed end to end under them, the first green run since 44). Release builds last run locally 2026-11-08; devices not run.
 
 ## 1. Current state
 
