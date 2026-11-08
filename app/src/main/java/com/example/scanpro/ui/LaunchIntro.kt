@@ -7,7 +7,6 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -57,22 +56,24 @@ import kotlin.math.roundToInt
 
 /*
  * The launch animation, drawn from the Figma design "Launch v2" (file wlMBDKuD8B4ojE2RjQZWYi: frame 2:2 holds the
- * keyframes, 6:2 the written spec; times below are its timeline in seconds). It starts from exactly what the system
- * has just shown (res/drawable/ic_launch_icon.xml: the app-icon tile with a blank page, centred on the window colour):
- *   0.00-0.62  the icon dips and springs; the mint scan line sweeps down the page, the text lines write themselves in
- *   0.44-0.70  the brackets breathe out and snap tight; a white halo ripples out
- *   0.52-0.98  an indigo-violet-orchid-pink flood grows out of the icon until it fills the screen; soft lights drift in
- *   0.70-1.04  "ScanPro" and the tagline rise into place
- *   1.02-1.22  the icon zooms through and is gone before the app shows
- *   1.12-1.60  the colour crossfades into the app, which settles from 104 % (MainActivity, started by onReveal)
+ * keyframes, 6:2 the written spec). The Figma timeline ran 1.6 s and read as a blink on a phone (owner, 2026-11-08), so
+ * every keyframe below is that timeline stretched about 1.4x, with the wordmark held long enough to be read; times are
+ * seconds. It starts from exactly what the system has just shown (res/drawable/ic_launch_icon.xml: the app-icon tile
+ * with a blank page, centred on the window colour):
+ *   0.00-0.72  the icon dips and springs; the mint scan line sweeps down the page, the text lines write themselves in
+ *   0.55-0.86  the brackets breathe out and snap tight; a white halo ripples out
+ *   0.66-1.24  an indigo-azure-teal flood grows out of the icon until it fills the screen; soft lights drift in
+ *   0.92-1.52  "ScanPro" and the tagline rise into place and hold
+ *   1.52-1.78  the icon zooms through and is gone before the app shows
+ *   1.66-2.25  the colour crossfades into the app, which settles from 104 % (MainActivity, started by onReveal)
  * A tap skips to the zoom. One clock drives everything and is read only while drawing, so nothing recomposes per frame.
  */
 
 /** Exit start: where a tap skips to. */
-private const val EXIT_AT = 1.02f
+private const val EXIT_AT = 1.52f
 /** The app starts to show and settle. */
-private const val REVEAL_AT = 1.18f
-private const val END_AT = 1.6f
+private const val REVEAL_AT = 1.72f
+private const val END_AT = 2.25f
 
 private val EaseOut = CubicBezierEasing(0f, 0f, 0.58f, 1f)
 private val EaseIn = CubicBezierEasing(0.42f, 0f, 1f, 1f)
@@ -99,30 +100,30 @@ private fun Array<K>.at(t: Float): Float {
     return last().value
 }
 
-private val IconScale = arrayOf(K(0f, 1f), K(0.1f, 0.92f, EaseOut), K(0.42f, 1.06f, EmphasizedDecelerate), K(0.62f, 1f, EaseInOut), K(1.02f, 1f), K(1.22f, 5f, EmphasizedAccelerate))
-private val IconAlpha = arrayOf(K(1.06f, 1f), K(1.2f, 0f, EaseIn))
-private val ShadowAlpha = arrayOf(K(0f, 0f), K(0.15f, 1f, EaseOut))
+private val IconScale = arrayOf(K(0f, 1f), K(0.1f, 0.92f, EaseOut), K(0.5f, 1.06f, EmphasizedDecelerate), K(0.72f, 1f, EaseInOut), K(1.52f, 1f), K(1.78f, 5f, EmphasizedAccelerate))
+private val IconAlpha = arrayOf(K(1.56f, 1f), K(1.74f, 0f, EaseIn))
+private val ShadowAlpha = arrayOf(K(0f, 0f), K(0.18f, 1f, EaseOut))
 /** Scan line and wake offset, in px of the 144 px icon. */
-private val Sweep = arrayOf(K(0f, -34f), K(0.06f, -34f), K(0.48f, 32.7f, EaseInOut), K(0.74f, 0f, EaseOutBack))
-private val ScanAlpha = arrayOf(K(0f, 0f), K(0.08f, 1f, EaseOut))
-private val WakeAlpha = arrayOf(K(0f, 0f), K(0.1f, 1f, EaseOut), K(0.48f, 1f), K(0.66f, 0f, EaseOut))
-private val Line1Alpha = arrayOf(K(0f, 0f), K(0.22f, 1f, Hold))
-private val Line1Width = arrayOf(K(0.22f, 1f), K(0.38f, 25.33f, EaseOut))
-private val Line2Alpha = arrayOf(K(0f, 0f), K(0.31f, 1f, Hold))
-private val Line2Width = arrayOf(K(0.31f, 1f), K(0.49f, 32f, EaseOut))
-private val BracketScale = arrayOf(K(0f, 1f), K(0.44f, 1.18f, EaseOut), K(0.7f, 1f, EaseOutBack))
-private val HaloAlpha = arrayOf(K(0f, 0f), K(0.62f, 0f), K(0.67f, 0.65f, EaseOut), K(0.9f, 0f, EaseOut))
-private val HaloScale = arrayOf(K(0.62f, 1f), K(0.9f, 1.9f, EaseOut))
+private val Sweep = arrayOf(K(0f, -34f), K(0.08f, -34f), K(0.6f, 32.7f, EaseInOut), K(0.9f, 0f, EaseOutBack))
+private val ScanAlpha = arrayOf(K(0f, 0f), K(0.1f, 1f, EaseOut))
+private val WakeAlpha = arrayOf(K(0f, 0f), K(0.12f, 1f, EaseOut), K(0.6f, 1f), K(0.8f, 0f, EaseOut))
+private val Line1Alpha = arrayOf(K(0f, 0f), K(0.28f, 1f, Hold))
+private val Line1Width = arrayOf(K(0.28f, 1f), K(0.48f, 25.33f, EaseOut))
+private val Line2Alpha = arrayOf(K(0f, 0f), K(0.4f, 1f, Hold))
+private val Line2Width = arrayOf(K(0.4f, 1f), K(0.62f, 32f, EaseOut))
+private val BracketScale = arrayOf(K(0f, 1f), K(0.55f, 1.18f, EaseOut), K(0.86f, 1f, EaseOutBack))
+private val HaloAlpha = arrayOf(K(0f, 0f), K(0.78f, 0f), K(0.84f, 0.65f, EaseOut), K(1.12f, 0f, EaseOut))
+private val HaloScale = arrayOf(K(0.78f, 1f), K(1.12f, 1.9f, EaseOut))
 /** Flood growth: 0 = hidden behind the icon, 1 = covering the screen. */
-private val FloodGrowth = arrayOf(K(0f, 0f), K(0.52f, 0f), K(0.98f, 1f, EmphasizedDecelerate))
-private val FloodAlpha = arrayOf(K(1.12f, 1f), K(1.42f, 0f, EaseInOut))
-private val LightAlpha = arrayOf(K(0f, 0f), K(0.62f, 0f), K(1.0f, 1f, EaseOut), K(1.12f, 1f), K(1.42f, 0f, EaseInOut))
-private val LightDrift = arrayOf(K(0.6f, 0f), K(1.45f, 1f, EaseOut))
-private val WordAlpha = arrayOf(K(0f, 0f), K(0.7f, 0f), K(0.92f, 1f, EaseOut), K(1.0f, 1f), K(1.14f, 0f, EaseIn))
-private val WordRise = arrayOf(K(0.7f, 18f), K(0.98f, 0f, EmphasizedDecelerate), K(1.14f, -10f, EaseIn))
-private val TagAlpha = arrayOf(K(0f, 0f), K(0.8f, 0f), K(0.98f, 1f, EaseOut), K(1.02f, 1f), K(1.14f, 0f, EaseIn))
-private val TagRise = arrayOf(K(0.8f, 12f), K(1.0f, 0f, EmphasizedDecelerate), K(1.14f, -8f, EaseIn))
-private val BackgroundAlpha = arrayOf(K(1.18f, 1f), K(1.42f, 0f, EaseOut))
+private val FloodGrowth = arrayOf(K(0f, 0f), K(0.66f, 0f), K(1.24f, 1f, EmphasizedDecelerate))
+private val FloodAlpha = arrayOf(K(1.66f, 1f), K(2.02f, 0f, EaseInOut))
+private val LightAlpha = arrayOf(K(0f, 0f), K(0.78f, 0f), K(1.3f, 1f, EaseOut), K(1.66f, 1f), K(2.02f, 0f, EaseInOut))
+private val LightDrift = arrayOf(K(0.76f, 0f), K(2.05f, 1f, EaseOut))
+private val WordAlpha = arrayOf(K(0f, 0f), K(0.92f, 0f), K(1.18f, 1f, EaseOut), K(1.52f, 1f), K(1.7f, 0f, EaseIn))
+private val WordRise = arrayOf(K(0.92f, 18f), K(1.26f, 0f, EmphasizedDecelerate), K(1.52f, 0f), K(1.7f, -10f, EaseIn))
+private val TagAlpha = arrayOf(K(0f, 0f), K(1.04f, 0f), K(1.28f, 1f, EaseOut), K(1.54f, 1f), K(1.7f, 0f, EaseIn))
+private val TagRise = arrayOf(K(1.04f, 12f), K(1.32f, 0f, EmphasizedDecelerate), K(1.54f, 0f), K(1.7f, -8f, EaseIn))
+private val BackgroundAlpha = arrayOf(K(1.72f, 1f), K(2.02f, 0f, EaseOut))
 
 // The launcher glyph, in its 108-unit grid (res/drawable/ic_launcher_foreground.xml), drawn over the whole tile.
 private fun path(d: String) = PathParser().parsePathString(d).toPath()
@@ -138,27 +139,29 @@ private val Mint = Color(0xFF2FD6A6)
 private val FoldTint = Color(0xFFC9CEFF)
 private val Ink = Indigo.copy(alpha = 0.55f)
 private val IconShadow = Color(0xFF1B2AA8)
-private val FloodStops = arrayOf(0f to Indigo, 0.42f to Color(0xFF6E4CF0), 0.74f to Color(0xFFB24FE6), 1f to Color(0xFFF062A8))
+/** The flood: deep indigo through the brand indigo and azure to teal, with the mint of the scan line in it. */
+private val FloodStops = arrayOf(0f to Color(0xFF2B37B8), 0.4f to Color(0xFF4356E0), 0.72f to Color(0xFF3D7CF2), 1f to Color(0xFF2BC0B4))
 
 /** A soft light: centre and radius in the 412 x 892 design frame, its colour, and where it drifts to. */
 private class Light(val x: Float, val y: Float, val r: Float, val color: Color, val dx: Float, val dy: Float)
 private val Lights = listOf(
-    Light(40f, 170f, 210f, Mint.copy(alpha = 0.55f), 30f, 24f),
-    Light(400f, 70f, 190f, Color(0xFF38BDF8).copy(alpha = 0.5f), -26f, 20f),
-    Light(310f, 840f, 230f, Color(0xFFFF8AD0).copy(alpha = 0.5f), 20f, -30f)
+    Light(40f, 170f, 210f, Mint.copy(alpha = 0.5f), 30f, 24f),
+    Light(400f, 70f, 190f, Color(0xFF7DD3FC).copy(alpha = 0.45f), -26f, 20f),
+    Light(310f, 840f, 230f, Color(0xFFC7D2FE).copy(alpha = 0.5f), 20f, -30f)
 )
 
 private val IconSize = 144.dp
 private val IconCorner = 38.dp
 
 /**
- * Draws the launch animation over the app. [onReveal] runs once as the app starts to show (the caller settles the
- * app into place then), [onFinished] once the animation is over and can be removed.
+ * Draws the launch animation over the app. [dark] is the app's own theme (the launch screen the system drew just
+ * before is in the same mode from the second start on: MainActivity tells Android the app's choice). [onReveal] runs
+ * once as the app starts to show (the caller settles the app into place then), [onFinished] once the animation is
+ * over and can be removed.
  */
 @Composable
-fun LaunchIntro(onReveal: () -> Unit, onFinished: () -> Unit, modifier: Modifier = Modifier) {
-    // The colour the system launch screen was drawn on, which follows the system's dark mode.
-    val background = colorResource(if (isSystemInDarkTheme()) R.color.scanpro_window_dark else R.color.scanpro_window_light)
+fun LaunchIntro(dark: Boolean, onReveal: () -> Unit, onFinished: () -> Unit, modifier: Modifier = Modifier) {
+    val background = colorResource(if (dark) R.color.scanpro_window_dark else R.color.scanpro_window_light)
     val clock = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val reveal by rememberUpdatedState(onReveal)

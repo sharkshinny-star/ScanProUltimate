@@ -49,7 +49,7 @@ class LaunchIntroTest {
                             }
                         )
                     )
-                    LaunchIntro(onReveal = { reveals++ }, onFinished = { finishes++ })
+                    LaunchIntro(dark = false, onReveal = { reveals++ }, onFinished = { finishes++ })
                 }
             }
         }
@@ -63,14 +63,14 @@ class LaunchIntroTest {
     }
 
     @Test
-    fun revealsAt1180msAndFinishesAt1600ms() {
+    fun revealsAt1720msAndFinishesAt2250ms() {
         show()
-        compose.mainClock.advanceTimeBy(1_100)
+        compose.mainClock.advanceTimeBy(1_650)
         assertEquals(0, reveals)
         compose.mainClock.advanceTimeBy(150)
         assertEquals(1, reveals)
         assertEquals(0, finishes)
-        compose.mainClock.advanceTimeBy(450)
+        compose.mainClock.advanceTimeBy(500)
         assertEquals(1, finishes)
         compose.mainClock.advanceTimeBy(1_000)
         assertEquals("reveal runs once", 1, reveals)
@@ -82,10 +82,10 @@ class LaunchIntroTest {
         show()
         compose.mainClock.advanceTimeBy(200)
         compose.onRoot().performTouchInput { click(center) }
-        // From the exit start (1.02 s) the reveal is 0.16 s away and the end 0.58 s.
-        compose.mainClock.advanceTimeBy(250)
+        // From the exit start (1.52 s) the reveal is 0.20 s away and the end 0.73 s.
+        compose.mainClock.advanceTimeBy(300)
         assertEquals(1, reveals)
-        compose.mainClock.advanceTimeBy(450)
+        compose.mainClock.advanceTimeBy(550)
         assertEquals(1, finishes)
     }
 
@@ -93,7 +93,7 @@ class LaunchIntroTest {
     fun framesForComparisonWithFigma() {
         show()
         var elapsed = 0L
-        listOf(0L, 100L, 300L, 450L, 600L, 750L, 900L, 1_050L, 1_100L, 1_200L, 1_300L, 1_450L).forEach { at ->
+        listOf(0L, 100L, 350L, 600L, 800L, 1_000L, 1_200L, 1_400L, 1_550L, 1_650L, 1_800L, 2_050L).forEach { at ->
             compose.mainClock.advanceTimeBy(at - elapsed)
             elapsed = at
             capture("intro_%04d".format(at))

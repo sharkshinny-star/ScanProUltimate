@@ -19,8 +19,8 @@ permissions:
 # The free private-repo runner has ~7 GB RAM; the default 4 GB Gradle + 4 GB test heaps got the runner killed mid-build.
 env:
   CI_GRADLE: >-
-    --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx1536m
-    -Pkotlin.daemon.jvmargs=-Xmx1g -Pscanpro.testHeap=2560m
+    --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g
+    -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m
 
 jobs:
   build:

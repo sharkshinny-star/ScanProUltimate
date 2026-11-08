@@ -52,8 +52,9 @@ object AppLocale {
     }
 
     /**
-     * Switches the app to [tag] and remembers that a choice was made. On Android 13+ the system recreates the
-     * activity; on older versions [activity] is recreated here so the new language takes effect at once.
+     * Switches the app to [tag] and remembers that a choice was made. On Android 13+ the system applies the new
+     * language in place (MainActivity handles locale configuration changes, so there is no restart and no blank
+     * frame); on older versions [activity] is recreated here so the new language takes effect at once.
      */
     fun apply(activity: Activity, tag: String) {
         val wasSame = current(activity) == tag

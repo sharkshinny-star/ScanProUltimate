@@ -175,6 +175,11 @@ class MainActivity : FragmentActivity() {
                 ThemeMode.DARK -> true
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
+            // Android 12+ draws the launch screen before the app runs, in the mode it believes the app is in. Tell it
+            // the app's choice (kept by the system), so from the next start the launch screen is light for a light
+            // app on a dark phone, instead of a dark launch screen cutting to a light app. The resulting
+            // configuration change is handled in place (manifest configChanges), so nothing restarts.
+            LaunchedEffect(mode) { applyAppNightMode(mode) }
             // A change of light/dark, colour theme or wallpaper colours crossfades rather than snapping.
             ThemeTransition(AppTheme(targetDark, palette, dynamicColor)) { theme ->
                 val dark = theme.dark
@@ -226,6 +231,7 @@ class MainActivity : FragmentActivity() {
                     }
                     if (playIntro) {
                         LaunchIntro(
+                            dark = dark,
                             onReveal = {
                                 launchScope.launch {
                                     settle.snapTo(1.04f)
@@ -240,6 +246,28 @@ class MainActivity : FragmentActivity() {
         }
       }
         }
+
+    /** The system's per-app dark mode (Android 12+): what it draws the launch screen in. */
+    private fun applyAppNightMode(mode: ThemeMode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        val manager = getSystemService(android.app.UiModeManager::class.java) ?: return
+        val night = when (mode) {
+            ThemeMode.LIGHT -> android.app.UiModeManager.MODE_NIGHT_NO
+            ThemeMode.DARK -> android.app.UiModeManager.MODE_NIGHT_YES
+            ThemeMode.SYSTEM -> android.app.UiModeManager.MODE_NIGHT_AUTO
+        }
+        runCatching { manager.setApplicationNightMode(night) }
+    }
+
+    /**
+     * Language and light/dark changes arrive here instead of restarting the activity (manifest configChanges): Compose
+     * re-reads its configuration, so the screen that asked for the change stays up, with no blank frame between an
+     * old and a new activity. Only the launcher shortcuts hold strings outside Compose, so they are published again.
+     */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        publishShortcuts()
+    }
 
     /**
      * Keeps the launch screen up until the saved theme, lock and welcome settings have loaded (normally a few
