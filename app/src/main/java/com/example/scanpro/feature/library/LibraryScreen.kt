@@ -979,12 +979,16 @@ private fun HomeDashboard(
     val recent = overview.recent
     val documentCount = overview.documentCount
     val wide = com.example.scanpro.navigation.isWideWindow()
+    // R38: a plain `remember`, not the saved state LazyColumn creates by default. Coming back to Home from another
+    // tab restored a scroll offset of about 14 dp that hid the search pill's top; Home now always opens at the top.
+    val listState = remember { androidx.compose.foundation.lazy.LazyListState() }
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().widthIn(max = if (wide) 1100.dp else 720.dp),
         contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
+        item(key = "search") {
             SearchLauncher(onClick = onSearch, modifier = Modifier.padding(horizontal = 16.dp))
         }
         if (keptScanCount > 0) {
