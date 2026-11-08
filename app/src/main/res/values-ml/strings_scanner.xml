@@ -113,7 +113,7 @@
     <string name="scan_guidance_hold_steady">അനങ്ങാതെ പിടിക്കുക · ചിത്രം മങ്ങിയിരിക്കുന്നു</string>
     <string name="scan_guidance_move_closer">അടുത്തേക്ക് നീക്കി പേജ് മധ്യത്തിലാക്കുക</string>
     <string name="scan_guidance_ready">തയ്യാർ</string>
-    <string name="scan_guidance_same_page">കഴിഞ്ഞ അതേ പേജ് · പേജ് മറിക്കുക</string>
+    <string name="scan_guidance_same_page">മുമ്പത്തെ അതേ പേജ് · പേജ് മറിക്കുക</string>
     <string name="scan_status_front_ready">മുൻവശം തയ്യാർ · പിൻവശം എടുക്കുക</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d പേജ് തയ്യാർ</item>
@@ -259,5 +259,5 @@
     <string name="scan_quality_dark">ഈ പേജ് വളരെ ഇരുണ്ടതായി തോന്നുന്നു</string>
     <string name="scan_quality_retake">വീണ്ടും എടുക്കുക</string>
     <string name="scan_quality_page_flagged">പേജ് %1$d, വീണ്ടും എടുക്കേണ്ടി വന്നേക്കാം</string>
-    <string name="scan_strip_delete_hint">ഇല്ലാതാക്കാൻ ദീർಘനേരം അമർത്തുക</string>
+    <string name="scan_strip_delete_hint">നീക്കം ചെയ്യാൻ ദീർಘനേരം അമർത്തുക</string>
 </resources>

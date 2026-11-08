@@ -18,9 +18,9 @@
     <string name="doc_share_pdf_select_all">அனைத்தும்</string>
     <string name="doc_share_pdf_estimating">கணக்கிடுகிறது…</string>
     <string name="doc_share_pdf_about">≈ %1$s</string>
-    <string name="doc_share_pdf_keep_under">இதற்குக் கீழ் வைக்க</string>
+    <string name="doc_share_pdf_keep_under">இதற்குக் குறைவாக</string>
     <string name="doc_share_pdf_no_limit">வரம்பு இல்லை</string>
-    <string name="doc_share_pdf_will_shrink">Small கூட %1$s ஐ விட பெரியது; பக்கங்கள் மேலும் சுருக்கப்படும்</string>
+    <string name="doc_share_pdf_will_shrink">"சிறியது" கூட %1$s ஐ விட பெரியது; பக்கங்கள் மேலும் சுருக்கப்படும்</string>
     <string name="doc_tab_text">உரை</string>
     <string name="doc_tab_insights">நுண்ணறிவு</string>
     <string name="doc_tab_pdf_settings">PDF அமைப்புகள்</string>

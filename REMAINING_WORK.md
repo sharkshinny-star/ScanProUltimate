@@ -41,8 +41,9 @@ R9 and F82-F84.
 15. Compress to a target size (F86): choose a target well below the file's size and check the result is at or under it,
     or as close as the file allows.
 16. Document tab labels in Hindi, Tamil and Telugu: check they do not truncate (R41, needs a device).
-17. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings added since F64 (R19, R36; the F73-F80
-   strings are drafts). Marathi, Gujarati, Bengali and Punjabi are deliberately not added (owner decision).
+17. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings: a model's pass over the 105 drafts since F64
+    is done (F87, `TRANSLATION_REVIEW.md`, objective fixes applied); a speaker should read that file's "for a native speaker"
+    list and the strings it names. Marathi, Gujarati, Bengali and Punjabi are deliberately not added (owner decision).
 
 ## Owner decisions (resolved 2026-11-08)
 
@@ -51,7 +52,7 @@ R9 and F82-F84.
 - **R20 (Documents and database encryption at rest)**: Deliberately not changed / skipped. Documents, OCR text and database rely on Android file-based encryption and sandbox security. Encrypting with Keystore/SQLCipher/Tink AEAD adds key-loss risk and runtime performance penalty; app lock provides sufficient protection.
 - **R21 (Exported activity internal actions)**: Deliberately not changed / skipped as low risk. Internal actions accepted via external intents only trigger internal navigation and require device/app unlock.
 - **R22 (Crash reports file names)**: Deliberately not changed / skipped as low risk. Crash reports are strictly local on-device and never leave the device unless explicitly shared by the user.
-- **R23 (ML Kit telemetry & internet permission)**: Kept. `INTERNET` permission is required for downloading on-device translation models; ML Kit telemetry disclosure must be declared on Google Play Data Safety form before release.
+- **R23 (ML Kit telemetry & internet permission)**: Kept; draft Data safety answers are in `PLAY_STORE_CHECKLIST.md` (F87), to be entered in Play Console. `INTERNET` permission is required for downloading on-device translation models; ML Kit telemetry disclosure must be declared on Google Play Data Safety form before release.
 - **Translations mechanical check**: Verified complete. All 5 non-English languages (Hindi, Telugu, Kannada, Tamil, Malayalam) contain 100% of the 1,354 strings with exact matching placeholders to English; native speaker review will assess tone and nuance prior to store launch.
 - **Old branches**: `claude/adoring-dijkstra-mvz8lc` and `claude/gracious-davinci-5lpczt` are fully merged into this branch but still exist on GitHub; delete them from GitHub's Branches page or run `git push origin --delete claude/adoring-dijkstra-mvz8lc claude/gracious-davinci-5lpczt` with your own login.
 - R9 (splitting `DocumentRepository`) is done (F81); R39, R40 and R41 are done (F82-F84); R18 is done (F85).

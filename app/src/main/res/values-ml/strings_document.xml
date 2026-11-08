@@ -20,7 +20,7 @@
     <string name="doc_share_pdf_about">≈ %1$s</string>
     <string name="doc_share_pdf_keep_under">ഇതിൽ താഴെ നിർത്തുക</string>
     <string name="doc_share_pdf_no_limit">പരിധിയില്ല</string>
-    <string name="doc_share_pdf_will_shrink">Small പോലും %1$s നേക്കാൾ വലുതാണ്; പേജുകൾ കൂടുതൽ ചെറുതാക്കും</string>
+    <string name="doc_share_pdf_will_shrink">"ചെറുത്" പോലും %1$s നേക്കാൾ വലുതാണ്; പേജുകൾ കൂടുതൽ ചെറുതാക്കും</string>
     <string name="doc_tab_text">ടെക്സ്റ്റ്</string>
     <string name="doc_tab_insights">വിവരങ്ങൾ</string>
     <string name="doc_tab_pdf_settings">PDF ക്രമീകരണങ്ങൾ</string>

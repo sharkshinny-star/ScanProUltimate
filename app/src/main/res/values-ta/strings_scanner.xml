@@ -130,8 +130,8 @@
         <item quantity="one">%d பக்கத்தைப் பார்க்க வேண்டும்</item>
         <item quantity="other">%d பக்கங்களைப் பார்க்க வேண்டும்</item>
     </plurals>
-    <string name="scan_status_id_composing">இரு பக்கங்களையும் ஒரே பக்கத்தில் வைக்கிறது…</string>
-    <string name="scan_status_id_compose_failed">இரு பக்கங்களையும் ஒரே பக்கத்தில் வைக்க முடியவில்லை; அவை இரண்டு பக்கங்களாக உள்ளன</string>
+    <string name="scan_status_id_composing">இரு பக்கங்களையும் ஒரே தாளில் வைக்கிறது…</string>
+    <string name="scan_status_id_compose_failed">இரு பக்கங்களையும் ஒரே தாளில் வைக்க முடியவில்லை; அவை இரண்டு பக்கங்களாக உள்ளன</string>
     <string name="scan_status_id_retake">இரு பக்கங்களும் மீண்டும்: முதலில் முன்பக்கத்தைப் பிடிக்கவும்</string>
     <string name="scan_status_page_captured">பக்கம் %1$d எடுக்கப்பட்டது</string>
     <string name="scan_id_side_front">முன்பக்கம்</string>

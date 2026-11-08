@@ -35,6 +35,37 @@ Current intended permissions are deliberately narrow. Re-check the merged releas
 - [ ] Host the final privacy policy at a public HTTPS URL and link it in Play Console and the app where required.
 - [ ] Review encrypted `.scanpro` backup behaviour and warn users that losing the password means losing access to that backup.
 
+### Data safety form: draft answers (2026-11-08, from Google's ML Kit data-disclosure page; re-check that page on the day)
+
+ScanPro itself sends nothing: no analytics, accounts or crash upload (crash reports stay on the phone; the issue report
+is an email the user sends). What leaves the device comes from Google's SDKs in the build: ML Kit text recognition
+(Latin, Devanagari, Chinese, Japanese, Korean), barcode scanning, language ID and translation (`com.google.mlkit:*`),
+and the Play services document scanner and text recognition fallbacks (`com.google.android.gms:play-services-mlkit-*`).
+Google says these collect, over HTTPS, for "diagnostics and usage analytics", and do not pass it to third parties:
+device information (maker, model, OS version and build, ML hardware accelerators), application information (package
+name, version), per-installation identifiers, performance metrics (latency), API configuration (image format and
+resolution), input and output sizes, feature version, event type, error codes, and for translation the configured
+source and destination languages. Play treats an SDK's collection as the app's.
+
+| Form question | Answer | Why |
+|---|---|---|
+| Does the app collect or share any required data types? | Yes | ML Kit's collection above. |
+| Is all collected data encrypted in transit? | Yes | Google states HTTPS. |
+| Do you provide a way for users to request deletion? | No | ML Kit offers none; the app keeps no account or server data. |
+| **App info and performance › Diagnostics** | Collected, not shared; required (cannot be turned off); purpose: Analytics | Performance metrics, event types, error codes, API configuration. |
+| **App info and performance › Other app performance data** | Collected; same | Input/output sizes, feature version. |
+| **Device or other IDs** | Collected, not shared; required; purpose: Analytics | Per-installation identifiers ML Kit lists. |
+| **App activity › Other user-generated content** or **Personal info** | Not collected | Scans, text and photos are processed on the device and never sent. The translation request carries only the chosen language pair, not the text. |
+| Photos and videos | Not collected | Processed on the device only. |
+| Files and docs | Not collected | Same. |
+| Location, Contacts, Messages, Audio, Health, Financial | Not collected | Not requested. A business card's "Add to contacts" opens the Contacts app with prefilled fields; nothing is read. |
+
+Decide before submitting: (1) whether to tick "shared" as well as "collected", since Play's sharing rules treat a transfer
+to an SDK provider as sharing unless the provider acts as your service provider; Google's own Play guidance for its SDKs
+is the reference. (2) Add the same list to the privacy policy (`PRIVACY_POLICY_TEMPLATE.md` already has the ML Kit
+paragraph; keep the two consistent). (3) The `INTERNET` permission exists only for translation model downloads; say so in
+the "Data collected" explanations if the form asks.
+
 ## 4. Scanner quality acceptance
 
 - [ ] A4/Letter pages: straight-on, 15°, 30°, and strong perspective angles.

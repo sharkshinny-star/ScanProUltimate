@@ -113,7 +113,7 @@
     <string name="scan_guidance_hold_steady">కదలకుండా పట్టుకోండి · చిత్రం మసకగా ఉంది</string>
     <string name="scan_guidance_move_closer">దగ్గరగా వెళ్లి పేజీని మధ్యలో ఉంచండి</string>
     <string name="scan_guidance_ready">సిద్ధం</string>
-    <string name="scan_guidance_same_page">చివరిదే పేజీ · పేజీ తిప్పండి</string>
+    <string name="scan_guidance_same_page">ముందు తీసిన పేజీయే · పేజీ తిప్పండి</string>
     <string name="scan_status_front_ready">ముందు వైపు సిద్ధం · వెనుక వైపు తీయండి</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d పేజీ సిద్ధం</item>

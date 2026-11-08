@@ -30,8 +30,8 @@
     <string name="support_report_notice">इस संदेश में डिवाइस की जानकारी और ऐप के हाल के लॉग शामिल हैं। भेजने से पहले इसे देख लें और जो निजी हो उसे हटा दें।</string>
     <string name="ui_password_confirm_label">पासवर्ड दोबारा दर्ज करें</string>
     <string name="ui_password_mismatch">पासवर्ड मेल नहीं खाते</string>
-    <string name="ui_password_show">पासवर्ड दिखाएँ</string>
-    <string name="ui_password_hide">पासवर्ड छिपाएँ</string>
+    <string name="ui_password_show">पासवर्ड दिखाएं</string>
+    <string name="ui_password_hide">पासवर्ड छिपाएं</string>
     <plurals name="ui_password_minimum_chars">
         <item quantity="one">कम से कम %1$d अक्षर</item>
         <item quantity="other">कम से कम %1$d अक्षर</item>

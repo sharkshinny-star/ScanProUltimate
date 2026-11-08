@@ -171,12 +171,12 @@
     <string name="tools_compress_expected_summary">ನಿರೀಕ್ಷಿತ ಗಾತ್ರ: ~%1$s (ಮೂಲ: %2$s, ~%3$d%% ಚಿಕ್ಕದು)</string>
     <string name="tools_compress_err_target_larger">ಪ್ರಸ್ತುತ ಗಾತ್ರಕ್ಕಿಂತ (%1$s) ಕಡಿಮೆಯಾಗಿರಬೇಕು</string>
     <string name="tools_compress_err_target_positive">0 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಗಾತ್ರ ನಮೂದಿಸಿ</string>
-    <string name="tools_compress_target_valid_hint">~%1$d%% ಸಣ್ಣದು</string>
+    <string name="tools_compress_target_valid_hint">~%1$d%% ಚಿಕ್ಕದು</string>
     <string name="tools_compress_warning_larger_than_original">ಗುರಿಯ ಗಾತ್ರವು ಪ್ರಸ್ತುತ ಫೈಲ್ ಗಾತ್ರಕ್ಕಿಂತ (%1$s) ದೊಡ್ಡದಾಗಿರಲು ಸಾಧ್ಯವಿಲ್ಲ. ದಯವಿಟ್ಟು ಚಿಕ್ಕ ಗಾತ್ರವನ್ನು ನಮೂದಿಸಿ.</string>
     <string name="tools_compress_err_target_larger_engine">ಗುರಿ ಗಾತ್ರವು ಪ್ರಸ್ತುತ ಫೈಲ್ ಗಾತ್ರಕ್ಕಿಂತ ಕಡಿಮೆಯಾಗಿರಬೇಕು</string>
     <string name="tools_result_original_label">ಮೂಲ</string>
-    <string name="tools_result_compressed_label">ಕುಗ್ಗಿಸಲಾಗಿದೆ</string>
-    <string name="tools_result_saved_badge">%1$d%% ಸಣ್ಣದು</string>
+    <string name="tools_result_compressed_label">ಕಂಪ್ರೆಸ್ ಮಾಡಲಾಗಿದೆ</string>
+    <string name="tools_result_saved_badge">%1$d%% ಚಿಕ್ಕದು</string>
     <string name="tools_compress_progress_page">%1$d / %2$d ಪುಟವನ್ನು ಕಂಪ್ರೆಸ್ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
     <string name="tools_compress_progress_rebuilding">ಕಂಪ್ರೆಸ್ ಮಾಡಿದ PDF ಅನ್ನು ರಚಿಸಲಾಗುತ್ತಿದೆ…</string>
     <string name="tools_pdf2img_dialog_title">PDF ನಿಂದ ಚಿತ್ರಗಳು</string>

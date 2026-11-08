@@ -20,7 +20,7 @@
     <string name="doc_share_pdf_about">≈ %1$s</string>
     <string name="doc_share_pdf_keep_under">इससे कम रखें</string>
     <string name="doc_share_pdf_no_limit">कोई सीमा नहीं</string>
-    <string name="doc_share_pdf_will_shrink">Small भी %1$s से बड़ा है; पेज और छोटे किए जाएँगे</string>
+    <string name="doc_share_pdf_will_shrink">"छोटा" भी %1$s से बड़ा है; पेज और छोटे किए जाएँगे</string>
     <string name="doc_tab_text">टेक्स्ट</string>
     <string name="doc_tab_insights">जानकारियां</string>
     <string name="doc_tab_pdf_settings">PDF सेटिंग्स</string>
@@ -62,7 +62,7 @@
     <string name="doc_add_tag">टैग जोड़ें</string>
     <string name="doc_no_tags_yet">अभी कोई टैग नहीं</string>
     <string name="doc_tags_in_use">इस्तेमाल में टैग</string>
-    <string name="doc_remove_tag">%1$s हटाएँ</string>
+    <string name="doc_remove_tag">%1$s हटाएं</string>
     <string name="doc_folder_name">फ़ोल्डर का नाम</string>
     <string name="doc_rotate">घुमाएं</string>
     <string name="doc_move_left">बाईं ओर ले जाएं</string>

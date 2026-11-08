@@ -168,7 +168,7 @@
     <string name="tools_compress_unit_kb">KB</string>
     <string name="tools_compress_unit_mb">MB</string>
     <string name="tools_compress_estimated_tag">~%1$s</string>
-    <string name="tools_compress_expected_summary">எதிர்பார்க்கப்படும் அளவு: ~%1$s (அசல்: %2$s, ~%3$d%% குறைவு)</string>
+    <string name="tools_compress_expected_summary">எதிர்பார்க்கப்படும் அளவு: ~%1$s (அசல்: %2$s, ~%3$d%% சிறியது)</string>
     <string name="tools_compress_err_target_larger">தற்போதைய அளவை (%1$s) விட குறைவாக இருக்க வேண்டும்</string>
     <string name="tools_compress_err_target_positive">0 ஐ விட பெரிய அளவை உள்ளிடவும்</string>
     <string name="tools_compress_target_valid_hint">~%1$d%% சிறியது</string>
