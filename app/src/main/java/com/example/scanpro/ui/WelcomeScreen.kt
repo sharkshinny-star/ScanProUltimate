@@ -234,7 +234,8 @@ private fun OnboardingPage(
                 .navigationBarsPadding(),
             contentAlignment = Alignment.TopCenter
         ) {
-            Column(Modifier.fillMaxSize().widthIn(max = 600.dp)) {
+            // widthIn before fillMaxSize: the other way round, fillMaxSize pins the width and the 600 dp cap never applies.
+            Column(Modifier.widthIn(max = 600.dp).fillMaxSize()) {
                 BrandLockup(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp).enter(0))
                 Column(
                     Modifier

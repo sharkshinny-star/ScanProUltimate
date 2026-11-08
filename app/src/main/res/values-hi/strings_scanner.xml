@@ -27,6 +27,10 @@
     <string name="ui_permissions_not_now">अभी नहीं</string>
     <string name="ui_scanned_page">स्कैन किया गया पेज</string>
     <string name="ui_password_label">पासवर्ड</string>
+    <string name="ui_password_confirm_label">पासवर्ड दोबारा दर्ज करें</string>
+    <string name="ui_password_mismatch">पासवर्ड मेल नहीं खाते</string>
+    <string name="ui_password_show">पासवर्ड दिखाएँ</string>
+    <string name="ui_password_hide">पासवर्ड छिपाएँ</string>
     <plurals name="ui_password_minimum_chars">
         <item quantity="one">कम से कम %1$d अक्षर</item>
         <item quantity="other">कम से कम %1$d अक्षर</item>
@@ -71,6 +75,7 @@
     <string name="nav_pdf_document">PDF डॉक्यूमेंट</string>
     <string name="scan_code_open_link">लिंक खोलें</string>
     <string name="scan_code_copy_wifi_password">Wi-Fi पासवर्ड कॉपी करें</string>
+    <string name="scan_code_share_wifi">वाई-फ़ाई नेटवर्क: %1$s (पासवर्ड शामिल नहीं)</string>
     <string name="scan_code_clip_wifi_password">Wi-Fi पासवर्ड</string>
     <string name="scan_code_open_wifi_settings">Wi-Fi सेटिंग्स खोलें</string>
     <string name="scan_code_add_to_contacts">कॉन्टैक्ट में जोड़ें</string>
@@ -147,6 +152,8 @@
     <string name="scan_zoom_exposure">एक्सपोज़र</string>
     <string name="scan_compat_scanner">कम्पैटिबिलिटी स्कैनर</string>
     <string name="scan_ev">EV</string>
+    <string name="doc_split_position">विभाजन की स्थिति</string>
+    <string name="scan_exposure">एक्सपोज़र</string>
     <string name="scan_id_front_only">सिर्फ़ आगे</string>
     <string name="scan_id_both_sides">दोनों तरफ़</string>
     <string name="scan_book_one_page">एक पेज</string>

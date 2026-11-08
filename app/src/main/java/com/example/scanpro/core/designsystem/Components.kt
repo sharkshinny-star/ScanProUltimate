@@ -45,6 +45,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
@@ -222,9 +225,26 @@ fun PasswordInputDialog(
     onDismiss: () -> Unit,
     /** Shown in the error colour below [message], for something the user must know before going ahead. */
     warning: String? = null,
+    /**
+     * Asks for the password twice. Use it when the password is being created (a backup, a protected copy): a
+     * typo there gives a file nobody can open, and nothing can be recovered. Not for entering an old one.
+     */
+    confirmTwice: Boolean = false,
     onConfirm: (String) -> Unit
 ) {
-    var value by remember { mutableStateOf("") }
+    var value by rememberSaveable { mutableStateOf("") }
+    var again by rememberSaveable { mutableStateOf("") }
+    var visible by rememberSaveable { mutableStateOf(false) }
+    val mismatch = confirmTwice && again.isNotEmpty() && again != value
+    val transformation = if (visible) VisualTransformation.None else PasswordVisualTransformation()
+    val toggle: @Composable () -> Unit = {
+        androidx.compose.material3.IconButton(onClick = { visible = !visible }) {
+            androidx.compose.material3.Icon(
+                if (visible) androidx.compose.material.icons.Icons.Rounded.VisibilityOff else androidx.compose.material.icons.Icons.Rounded.Visibility,
+                contentDescription = stringResource(if (visible) R.string.ui_password_hide else R.string.ui_password_show)
+            )
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -242,15 +262,30 @@ fun PasswordInputDialog(
                     label = { Text(stringResource(R.string.ui_password_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = transformation,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon = toggle,
                     supportingText = { Text(pluralStringResource(R.plurals.ui_password_minimum_chars, minimumLength, minimumLength)) }
                 )
+                if (confirmTwice) {
+                    androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
+                    OutlinedTextField(
+                        value = again,
+                        onValueChange = { again = it },
+                        label = { Text(stringResource(R.string.ui_password_confirm_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        isError = mismatch,
+                        visualTransformation = transformation,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        supportingText = if (mismatch) ({ Text(stringResource(R.string.ui_password_mismatch)) }) else null
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
-                enabled = value.length >= minimumLength,
+                enabled = value.length >= minimumLength && (!confirmTwice || again == value),
                 onClick = { onConfirm(value) }
             ) { Text(confirmLabel) }
         },

@@ -135,8 +135,9 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                         )
                     }
                 }
-                Text(stringResource(R.string.doc_transparency, 100 - (opacity * 100).roundToInt()), style = MaterialTheme.typography.labelLarge)
-                Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.1f..1f)
+                val transparencyLabel = stringResource(R.string.doc_transparency, 100 - (opacity * 100).roundToInt())
+                Text(transparencyLabel, style = MaterialTheme.typography.labelLarge)
+                Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.1f..1f, modifier = Modifier.semantics { contentDescription = transparencyLabel })
             }
         },
         confirmButton = {

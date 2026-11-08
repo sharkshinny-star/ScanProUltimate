@@ -38,6 +38,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -88,6 +92,7 @@ import kotlin.math.hypot
 private val RotateLeftIcon: ImageVector = Icons.Filled.Rotate90DegreesCcw
 private val RotateRightIcon: ImageVector = Icons.Filled.Rotate90DegreesCw
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun CropEditorDialog(
     sourcePath: String,
@@ -105,6 +110,7 @@ fun CropEditorDialog(
     // Held above the dialog and saved, so a rotation keeps the outline the user has drawn.
     var crop by rememberSaveable(initial, saver = CropStateSaver) { mutableStateOf(initial) }
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    var panelHeightPx by remember { mutableIntStateOf(0) }
     // Back and the arrow ask first once the outline differs from where it started.
     val close = { if (crop != initial) confirmDiscard = true else onDismiss() }
     Dialog(
@@ -158,7 +164,8 @@ fun CropEditorDialog(
                     .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .padding(top = 56.dp, bottom = 180.dp, start = 16.dp, end = 16.dp),
+                    // The bottom panel's real height, not a guess: it grows at large font sizes and wraps in landscape.
+                    .padding(top = 56.dp, bottom = if (panelHeightPx > 0) with(LocalDensity.current) { panelHeightPx.toDp() } + 8.dp else 180.dp, start = 16.dp, end = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let { image ->
@@ -308,16 +315,17 @@ fun CropEditorDialog(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .onSizeChanged { panelHeightPx = it.height }
                     .background(DarkChrome.panel, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     .navigationBarsPadding()
                     .padding(vertical = 12.dp)
             ) {
                 // Page Navigation Bar (e.g. 1/1 + Add Page)
-                Row(
+                FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    itemVerticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Surface(
@@ -350,11 +358,12 @@ fun CropEditorDialog(
                         Surface(
                             onClick = onAddPage,
                             shape = RoundedCornerShape(24.dp),
-                            color = Color.White.copy(alpha = 0.12f)
+                            color = Color.White.copy(alpha = 0.12f),
+                            modifier = Modifier.heightIn(min = 48.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                modifier = Modifier.heightIn(min = 48.dp).padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -367,11 +376,11 @@ fun CropEditorDialog(
                 Spacer(Modifier.height(8.dp))
 
                 // Bottom Tool Actions (Auto crop, No crop, Left, Right, Done)
-                Row(
+                FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    itemVerticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     DarkToolAction(

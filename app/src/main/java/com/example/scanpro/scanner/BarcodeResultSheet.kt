@@ -161,6 +161,9 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                                 putExtra(CalendarContract.Events.TITLE, event.summary)
                                 putExtra(CalendarContract.Events.EVENT_LOCATION, event.location)
                                 putExtra(CalendarContract.Events.DESCRIPTION, event.description)
+                                calendarMillis(event.start)?.let { putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, it) }
+                                calendarMillis(event.end)?.let { putExtra(CalendarContract.EXTRA_EVENT_END_TIME, it) }
+                                if (event.start?.rawValue?.length?.let { it <= 8 } == true) putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                             }
                         )
                     }
@@ -168,7 +171,9 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
             }
             Action(Icons.Default.ContentCopy, stringResource(R.string.scan_code_copy), null) { copy(context, resources.getString(R.string.scan_code_clip_scanned_code), raw, sensitive = code.valueType == Barcode.TYPE_WIFI) }
             Action(Icons.Default.Share, stringResource(R.string.common_share), null) {
-                start(context, Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, raw), resources.getString(R.string.common_share)))
+                // The sheet hides a Wi-Fi password (it has its own sensitive copy button), so Share must not send it either.
+                val shared = if (code.valueType == Barcode.TYPE_WIFI) resources.getString(R.string.scan_code_share_wifi, code.wifi?.ssid.orEmpty()) else raw
+                start(context, Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, shared), resources.getString(R.string.common_share)))
             }
             Action(Icons.Default.QrCodeScanner, stringResource(R.string.scan_code_scan_another), null, onScanAgain)
             Spacer(Modifier.height(16.dp))
@@ -249,6 +254,19 @@ private fun copy(context: Context, label: String, text: String, sensitive: Boole
     if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, context.getString(R.string.scan_code_copied), Toast.LENGTH_SHORT).show()
 }
 
+/** The `T:`/`H:`/`S:` parts of a Wi-Fi code, split on `;` but not on an escaped `\;` inside a name or password. */
+internal fun wifiFields(raw: String): List<String> = raw.removePrefix("WIFI:").split(Regex("(?<!\\\\);"))
+
+/** A calendar code's date and time as milliseconds (UTC when the code says so, else this device's zone); null when absent. */
+internal fun calendarMillis(time: Barcode.CalendarDateTime?): Long? {
+    if (time == null || time.year <= 0) return null
+    val zone = if (time.isUtc) java.util.TimeZone.getTimeZone("UTC") else java.util.TimeZone.getDefault()
+    return java.util.Calendar.getInstance(zone).apply {
+        clear()
+        set(time.year, time.month - 1, time.day, time.hours.coerceAtLeast(0), time.minutes.coerceAtLeast(0), time.seconds.coerceAtLeast(0))
+    }.timeInMillis
+}
+
 /** Android 11+: the system "Save this network?" request for a scanned Wi-Fi code; null on older versions or odd codes. */
 private fun wifiAddIntent(wifi: Barcode.WiFi, raw: String): Intent? {
     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
@@ -256,7 +274,7 @@ private fun wifiAddIntent(wifi: Barcode.WiFi, raw: String): Intent? {
     val password = wifi.password.orEmpty()
     val builder = android.net.wifi.WifiNetworkSuggestion.Builder().setSsid(ssid)
     // ML Kit reports WPA3 (T:SAE) as WPA and drops the hidden flag (H:true), so read both from the raw text.
-    val fields = raw.removePrefix("WIFI:").split(';')
+    val fields = wifiFields(raw)
     val sae = fields.any { it.equals("T:SAE", ignoreCase = true) || it.equals("T:WPA3", ignoreCase = true) }
     if (fields.any { it.equals("H:true", ignoreCase = true) }) builder.setIsHiddenSsid(true)
     runCatching {

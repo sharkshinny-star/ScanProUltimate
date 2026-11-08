@@ -27,6 +27,10 @@
     <string name="ui_permissions_not_now">ఇప్పుడు కాదు</string>
     <string name="ui_scanned_page">స్కాన్ చేసిన పేజీ</string>
     <string name="ui_password_label">పాస్‌వర్డ్</string>
+    <string name="ui_password_confirm_label">పాస్‌వర్డ్‌ను మళ్లీ నమోదు చేయండి</string>
+    <string name="ui_password_mismatch">పాస్‌వర్డ్‌లు సరిపోలలేదు</string>
+    <string name="ui_password_show">పాస్‌వర్డ్ చూపించు</string>
+    <string name="ui_password_hide">పాస్‌వర్డ్ దాచు</string>
     <plurals name="ui_password_minimum_chars">
         <item quantity="one">కనీసం %1$d అక్షరం</item>
         <item quantity="other">కనీసం %1$d అక్షరాలు</item>
@@ -71,6 +75,7 @@
     <string name="nav_pdf_document">PDF డాక్యుమెంట్</string>
     <string name="scan_code_open_link">లింక్ తెరవండి</string>
     <string name="scan_code_copy_wifi_password">Wi-Fi పాస్‌వర్డ్ కాపీ చేయండి</string>
+    <string name="scan_code_share_wifi">వై-ఫై నెట్‌వర్క్: %1$s (పాస్‌వర్డ్ చేర్చలేదు)</string>
     <string name="scan_code_clip_wifi_password">Wi-Fi పాస్‌వర్డ్</string>
     <string name="scan_code_open_wifi_settings">Wi-Fi సెట్టింగ్‌లు తెరవండి</string>
     <string name="scan_code_add_to_contacts">కాంటాక్ట్స్‌కి జోడించండి</string>
@@ -147,6 +152,8 @@
     <string name="scan_zoom_exposure">ఎక్స్‌పోజర్</string>
     <string name="scan_compat_scanner">కంపాటిబిలిటీ స్కానర్</string>
     <string name="scan_ev">EV</string>
+    <string name="doc_split_position">విభజన స్థానం</string>
+    <string name="scan_exposure">ఎక్స్‌పోజర్</string>
     <string name="scan_id_front_only">ముందు వైపు మాత్రమే</string>
     <string name="scan_id_both_sides">రెండు వైపులా</string>
     <string name="scan_book_one_page">ఒక పేజీ</string>

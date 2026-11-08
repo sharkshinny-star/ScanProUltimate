@@ -27,6 +27,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
@@ -172,5 +174,5 @@ private fun AdjustmentSlider(
         Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
         Text(display, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-    Slider(value = value, onValueChange = onValueChange, valueRange = range)
+    Slider(value = value, onValueChange = onValueChange, valueRange = range, modifier = Modifier.semantics { contentDescription = label })
 }

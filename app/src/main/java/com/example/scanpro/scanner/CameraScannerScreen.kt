@@ -1396,6 +1396,7 @@ fun CameraScannerScreen(
                     }
                 }
                 if (exposureMin < exposureMax) {
+                    val exposureDescription = stringResource(R.string.scan_exposure)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.scan_ev), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         Slider(
@@ -1404,7 +1405,7 @@ fun CameraScannerScreen(
                             onValueChange = { exposureIndex = it.roundToInt().coerceIn(exposureMin, exposureMax) },
                             valueRange = exposureMin.toFloat()..exposureMax.toFloat(),
                             steps = (exposureMax - exposureMin - 1).coerceAtLeast(0),
-                            modifier = Modifier.weight(1f).padding(horizontal = 10.dp)
+                            modifier = Modifier.weight(1f).padding(horizontal = 10.dp).semantics { contentDescription = exposureDescription }
                         )
                         val exposureLabel = if (exposureIndex > 0) "+$exposureIndex" else exposureIndex.toString()
                         Text(exposureLabel, color = Color.White, style = MaterialTheme.typography.labelSmall)
@@ -1931,7 +1932,8 @@ private fun CapturedStrip(
             }
             Box(
                 Modifier
-                    .size(44.dp, 58.dp)
+                    // 48 dp wide, the smallest touch target Android recommends (it was 44 dp).
+                    .size(48.dp, 62.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(Color.White.copy(alpha = 0.1f))
                     .border(1.dp, if (needsLook) Color(0xFFFFB300) else Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
