@@ -118,6 +118,7 @@ P2 correctness/UX/i18n, P3 cleanup. Add new findings with the next free ID; neve
 
 ## Deliberately not changed
 
+- No Marathi, Gujarati, Bengali or Punjabi (owner decision, 2026-11-08): the six languages shipped stay as they are.
 - `minSdk` stays 24 (owner decision, 2026-11-05): raising it to 30 would fully close task hijacking (F58) but drop Android 7–10 users. The app-side mitigation in F58 stays; don't raise `minSdk` for this reason without asking the owner.
 - Smart titles ("Receipt from …") and suggested tags stay English (owner decision, 2026-10-31, closes R11): they are stored
   document data and search tags, so one language keeps search and folders consistent across language changes.
