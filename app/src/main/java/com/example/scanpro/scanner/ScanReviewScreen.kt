@@ -3,7 +3,6 @@ package com.example.scanpro.scanner
 import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.filled.Folder
 import com.example.scanpro.feature.library.FolderPickerDialog
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Edit
 import com.example.scanpro.core.designsystem.TextInputDialog
 import androidx.compose.ui.semantics.customActions

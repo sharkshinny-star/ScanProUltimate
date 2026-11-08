@@ -680,7 +680,8 @@ internal fun DocumentDetailScreen(
                             Box {
                                 FilledTonalButton(
                                     onClick = { if (onAddPagesWithCamera != null) addChoice = true else pickPhotos() },
-                                    enabled = !busy
+                                    enabled = !busy,
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
@@ -699,8 +700,16 @@ internal fun DocumentDetailScreen(
                                     )
                                 }
                             }
-                            OutlinedButton(onClick = { splitAllOpen = true }, enabled = !busy && document.pageCount > 1) { Text(stringResource(R.string.doc_split)) }
-                            OutlinedButton(onClick = { mergeOpen = true }, enabled = !busy && otherDocuments.isNotEmpty()) { Text(stringResource(R.string.doc_merge)) }
+                            OutlinedButton(
+                                onClick = { splitAllOpen = true },
+                                enabled = !busy && document.pageCount > 1,
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            ) { Text(stringResource(R.string.doc_split)) }
+                            OutlinedButton(
+                                onClick = { mergeOpen = true },
+                                enabled = !busy && otherDocuments.isNotEmpty(),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            ) { Text(stringResource(R.string.doc_merge)) }
                         }
                     }
                 }
@@ -1530,7 +1539,7 @@ private fun PageCell(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(40.dp)
+                .heightIn(min = 44.dp)
         ) {
             Text(
                 "${index + 1}",
@@ -1550,7 +1559,7 @@ private fun PageCell(
 @Composable
 private fun MoveButton(icon: ImageVector, label: String, enabled: Boolean, onClick: (() -> Unit)?) {
     val active = enabled && onClick != null
-    IconButton(onClick = onClick ?: {}, enabled = active, modifier = Modifier.size(40.dp)) {
+    IconButton(onClick = onClick ?: {}, enabled = active, modifier = Modifier.sizeIn(minWidth = 44.dp, minHeight = 44.dp)) {
         // An explicit tint overrides the button's disabled colour, so the dimming is applied here.
         val tint = MaterialTheme.colorScheme.onSurfaceVariant.let { if (active) it else it.copy(alpha = 0.3f) }
         Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp), tint = tint)

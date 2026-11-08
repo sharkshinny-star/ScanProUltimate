@@ -1730,6 +1730,7 @@ private fun ToolTileGrid(tools: List<PdfToolCard>, onClick: (PdfToolCard) -> Uni
                             textAlign = TextAlign.Center,
                             maxLines = 2,
                             minLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                             lineHeight = MaterialTheme.typography.labelMedium.lineHeight
                         )
                     }

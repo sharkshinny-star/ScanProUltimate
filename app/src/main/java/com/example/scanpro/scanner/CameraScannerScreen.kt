@@ -1729,7 +1729,7 @@ private fun BottomPill(
         color = color,
         contentColor = contentColor,
         border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White.copy(alpha = if (color == Color.White.copy(alpha = 0.1f)) 0.5f else 0f)),
-        modifier = modifier.sizeIn(minWidth = 46.dp, minHeight = 46.dp).alpha(if (enabled) 1f else 0.5f)
+        modifier = modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).alpha(if (enabled) 1f else 0.5f)
     ) {
         Box(Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) { content() }
     }
@@ -1788,11 +1788,11 @@ private fun PermissionPanel(askable: Boolean, onRequest: () -> Unit, onFallback:
                 Text(stringResource(if (askable) R.string.scan_permission_body else R.string.scan_permission_denied_body))
                 Spacer(Modifier.height(16.dp))
                 // After "Don't ask again" the system dialog no longer appears; settings is the only way back.
-                if (askable) Button(onClick = onRequest) { Text(stringResource(R.string.scan_permission_allow)) }
-                else Button(onClick = openSettings) { Text(stringResource(R.string.scan_permission_open_settings)) }
-                if (askable) TextButton(onClick = openSettings) { Text(stringResource(R.string.scan_permission_open_settings)) }
-                OutlinedButton(onClick = onFallback, modifier = Modifier.padding(top = 8.dp)) { Text(stringResource(R.string.scan_permission_use_compat)) }
-                TextButton(onClick = onClose) { Text(stringResource(R.string.common_cancel)) }
+                if (askable) Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.scan_permission_allow)) }
+                else Button(onClick = openSettings, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.scan_permission_open_settings)) }
+                if (askable) TextButton(onClick = openSettings, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.scan_permission_open_settings)) }
+                OutlinedButton(onClick = onFallback, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) { Text(stringResource(R.string.scan_permission_use_compat)) }
+                TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.common_cancel)) }
             }
         }
     }
