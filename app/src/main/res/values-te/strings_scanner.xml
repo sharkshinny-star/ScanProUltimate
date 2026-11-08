@@ -116,6 +116,11 @@
     <string name="scan_status_capturing">క్యాప్చర్ చేస్తోంది…</string>
     <string name="scan_status_front_saved">ముందు వైపు సేవ్ అయింది · ఇప్పుడు వెనుక వైపు తీయండి</string>
     <string name="scan_status_id_ready">ID క్యాప్చర్ సిద్ధం · పూర్తయింది నొక్కండి</string>
+    <string name="scan_status_checking_pages">పేజీలను తనిఖీ చేస్తోంది…</string>
+    <plurals name="scan_status_pages_need_look">
+        <item quantity="one">%d పేజీని చూడాలి</item>
+        <item quantity="other">%d పేజీలను చూడాలి</item>
+    </plurals>
     <string name="scan_status_id_composing">రెండు వైపులను ఒకే పేజీలో పెడుతోంది…</string>
     <string name="scan_status_id_compose_failed">రెండు వైపులను ఒకే పేజీలో పెట్టలేకపోయాం; అవి రెండు పేజీలుగా ఉంచబడ్డాయి</string>
     <string name="scan_status_id_retake">రెండు వైపులూ మళ్ళీ: ముందుగా ముందు వైపు తీయండి</string>

@@ -133,6 +133,11 @@
     <string name="scan_status_capturing">Capturing…</string>
     <string name="scan_status_front_saved">Front saved · now capture the back</string>
     <string name="scan_status_id_ready">ID capture ready · tap Done</string>
+    <string name="scan_status_checking_pages">Checking pages…</string>
+    <plurals name="scan_status_pages_need_look">
+        <item quantity="one">%d page needs a look</item>
+        <item quantity="other">%d pages need a look</item>
+    </plurals>
     <string name="scan_status_id_composing">Placing both sides on one page…</string>
     <string name="scan_status_id_compose_failed">Couldn’t put both sides on one page; they are kept as two pages</string>
     <string name="scan_status_id_retake">Both sides again: capture the front first</string>

@@ -1,6 +1,7 @@
 package com.example.scanpro.feature.settings
 
 import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.CameraAlt
 import com.example.scanpro.core.ui.findActivity
 import android.Manifest
@@ -145,6 +146,7 @@ fun SettingsRoute(
     val defaultOcrScript by viewModel.defaultOcrScript.collectAsStateWithLifecycle()
     val defaultScanMode by viewModel.defaultScanMode.collectAsStateWithLifecycle()
     val defaultFilter by viewModel.defaultFilter.collectAsStateWithLifecycle()
+    val reviewMode by viewModel.reviewMode.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val notifyFinished by viewModel.notifyFinished.collectAsStateWithLifecycle()
     val notifyFailures by viewModel.notifyFailures.collectAsStateWithLifecycle()
@@ -180,6 +182,8 @@ fun SettingsRoute(
         onDefaultScanModeChange = viewModel::setDefaultScanMode,
         defaultFilter = defaultFilter,
         onDefaultFilterChange = viewModel::setDefaultFilter,
+        reviewMode = reviewMode,
+        onReviewModeChange = viewModel::setReviewMode,
         pdfQuality = pdfQuality,
         autoTitle = autoTitle,
         appLock = appLock,
@@ -234,6 +238,8 @@ fun SettingsScreen(
     onDefaultScanModeChange: (String) -> Unit = {},
     defaultFilter: com.example.scanpro.data.PageFilter? = null,
     onDefaultFilterChange: (com.example.scanpro.data.PageFilter?) -> Unit = {},
+    reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.WHEN_NEEDED,
+    onReviewModeChange: (com.example.scanpro.data.ReviewMode) -> Unit = {},
     onTrashRetentionChange: (Int) -> Unit = {},
     onDefaultOcrScriptChange: (OcrScript) -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
@@ -486,6 +492,28 @@ fun SettingsScreen(
                         },
                         onClick = { filterMenuOpen = true }
                     )
+                    InsetDivider()
+                    // Fast save (R26): Done in the camera saves straight away unless a page needs a look.
+                    SettingsRow(
+                        icon = Icons.Rounded.Checklist,
+                        tone = TileTone.Teal,
+                        title = stringResource(R.string.settings_review_mode_title),
+                        subtitle = stringResource(R.string.settings_review_mode_subtitle)
+                    )
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+                        com.example.scanpro.data.ReviewMode.entries.forEachIndexed { index, mode ->
+                            SegmentedButton(
+                                selected = mode == reviewMode,
+                                onClick = { onReviewModeChange(mode) },
+                                shape = SegmentedButtonDefaults.itemShape(index, com.example.scanpro.data.ReviewMode.entries.size),
+                                modifier = Modifier.fillMaxHeight(),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            ) { Text(stringResource(mode.labelRes)) }
+                        }
+                    }
                     InsetDivider()
                     SettingsRow(
                         icon = Icons.Rounded.PictureAsPdf,

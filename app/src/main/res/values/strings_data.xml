@@ -9,6 +9,9 @@
     <string name="data_filter_whiteboard">Whiteboard</string>
 
     <string name="data_pdf_quality_high">High</string>
+    <string name="data_review_mode_always">Always</string>
+    <string name="data_review_mode_when_needed">If needed</string>
+    <string name="data_review_mode_never">Never</string>
     <string name="data_pdf_quality_balanced">Balanced</string>
     <string name="data_pdf_quality_small">Small</string>
 

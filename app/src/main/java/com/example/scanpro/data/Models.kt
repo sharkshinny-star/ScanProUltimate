@@ -15,6 +15,14 @@ enum class PageFilter(@StringRes val labelRes: Int) {
     WHITEBOARD(R.string.data_filter_whiteboard)
 }
 
+/** Settings › Scanning › Check pages before saving (R26): when the camera's Done opens the review. */
+enum class ReviewMode(@StringRes val labelRes: Int) {
+    ALWAYS(R.string.data_review_mode_always),
+    /** Only when a page needs a look: no outline found, or blurred, glare or too dark. */
+    WHEN_NEEDED(R.string.data_review_mode_when_needed),
+    NEVER(R.string.data_review_mode_never)
+}
+
 enum class PdfQuality(@StringRes val labelRes: Int, val maxImageDimension: Int) {
     HIGH(R.string.data_pdf_quality_high, 3200),
     BALANCED(R.string.data_pdf_quality_balanced, 2200),

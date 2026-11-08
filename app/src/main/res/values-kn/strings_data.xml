@@ -7,6 +7,9 @@
     <string name="data_filter_bw">ಕಪ್ಪು&amp;ಬಿಳುಪು</string>
     <string name="data_filter_whiteboard">ವೈಟ್‌ಬೋರ್ಡ್</string>
     <string name="data_pdf_quality_high">ಹೆಚ್ಚು</string>
+    <string name="data_review_mode_always">ಯಾವಾಗಲೂ</string>
+    <string name="data_review_mode_when_needed">ಅಗತ್ಯವಿದ್ದರೆ</string>
+    <string name="data_review_mode_never">ಎಂದಿಗೂ ಇಲ್ಲ</string>
     <string name="data_pdf_quality_balanced">ಸಮತೋಲನ</string>
     <string name="data_pdf_quality_small">ಚಿಕ್ಕದು</string>
     <string name="data_page_size_auto">ಆಟೋ</string>

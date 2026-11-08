@@ -116,6 +116,11 @@
     <string name="scan_status_capturing">படம் எடுக்கப்படுகிறது…</string>
     <string name="scan_status_front_saved">முன்பக்கம் சேமிக்கப்பட்டது · இப்போது பின்பக்கத்தை எடுங்கள்</string>
     <string name="scan_status_id_ready">ID தயார் · முடிந்தது என்பதைத் தட்டவும்</string>
+    <string name="scan_status_checking_pages">பக்கங்கள் சரிபார்க்கப்படுகின்றன…</string>
+    <plurals name="scan_status_pages_need_look">
+        <item quantity="one">%d பக்கத்தைப் பார்க்க வேண்டும்</item>
+        <item quantity="other">%d பக்கங்களைப் பார்க்க வேண்டும்</item>
+    </plurals>
     <string name="scan_status_id_composing">இரு பக்கங்களையும் ஒரே பக்கத்தில் வைக்கிறது…</string>
     <string name="scan_status_id_compose_failed">இரு பக்கங்களையும் ஒரே பக்கத்தில் வைக்க முடியவில்லை; அவை இரண்டு பக்கங்களாக உள்ளன</string>
     <string name="scan_status_id_retake">இரு பக்கங்களும் மீண்டும்: முதலில் முன்பக்கத்தைப் பிடிக்கவும்</string>

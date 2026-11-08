@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (F67: ID card scans both sides by default and puts them on one page, front above back; F66: launch animation and theme/language hand-over; CI limits raised, run 75 passed end to end under them, the first green run since 44). Instrumented tests for F66/F67 written and compiled, not run (owner runs them from Android Studio). Release builds last run locally 2026-11-08; devices not run.
+Last updated: 2026-11-08 (F68 closes R26: Settings › Scanning › Check pages before saving, default If needed, so Done in the camera saves at once unless a page needs a look; F67 ID card page; F66 launch; CI green on runs 75 and 78). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
 
 ## 1. Current state
 
@@ -32,6 +32,7 @@ Last updated: 2026-11-08 (F67: ID card scans both sides by default and puts them
 
 | Commit | What |
 |---|---|
+| next | F68 (closes R26): fast save from the camera. `ReviewMode` setting (Always / If needed / Never, default If needed) in Settings › Scanning; `FastSave` decides from the per-page crop and quality; `CameraScannerScreen.reviewOrSave` saves on Done or opens the review on the first page that needs a look. `FastSaveTest` (4); 342 tests 0 failed; lint 0 errors. |
 | next | Instrumented tests for the owner to run from Android Studio: `LaunchDeviceTest`, `LanguageChangeDeviceTest`, `IdCardDeviceTest` (+ `DeviceTestSupport`), see `BUILD_AND_TEST.md` "Device tests". Compiled, lint 0 errors, not run. |
 | next | F67: ID card mode defaults to Both sides; Done after the second side composes one page (front at the top, back below, white A4 shape, `IdCardComposer`) before the review; Retake there re-shoots both sides. `IdCardComposerTest` (2). 338 tests 0 failed, lint 0 errors. |
 | next | F66 from the owner's screen recording: launch animation 2.25 s (was 1.6 s), wordmark held, indigo-azure-teal flood; the intro follows the app's theme and `MainActivity` sets the system's per-app night mode so the Android 12+ launch screen matches from the next start; `configChanges="locale\|layoutDirection\|uiMode"` so the language picker's Continue (and theme changes) no longer restart the activity (the black frame). CI: Gradle 3 GB, Kotlin compiler in-process, test heap 2.5 GB (run 73 OOMed at 1.5 GB); tests 336/0, lint 0 errors, bundle and sideload builds pass locally under those limits. |
@@ -129,7 +130,7 @@ All open work in one list, with a device checklist: `REMAINING_WORK.md` (generat
    F65, R36); device pass of the launch animation (R24), page-quality limits on real photos (R25) and the "Scan saved"
    sheet with a receipt, a business card and a letter (R36); native-speaker check of the new strings (R19); the
    competitor leftovers R26-R35.
-2. Competitor-comparison leftovers, open as R26 to R35 in `AUDIT_FINDINGS.md`, roughly in value order: fast save from the camera (R26), review shows the finished page with crop on request (R27), Share PDF card with size estimates (R28), Book mode spread split (R29), cropped camera thumbnails with quick delete (R30), one flash button (R31, owner decision), duplicate-aware auto-capture (R32), Quick Settings tile and widget (R33), localised smart titles and a name pattern (R34), tags, sort and recent searches (R35). Already done from the same comparison: F44-F47, F51, F61-F63.
+2. Competitor-comparison leftovers, open as R26 to R35 in `AUDIT_FINDINGS.md`, roughly in value order (R26 done as F68): review shows the finished page with crop on request (R27), Share PDF card with size estimates (R28), Book mode spread split (R29), cropped camera thumbnails with quick delete (R30), one flash button (R31, owner decision), duplicate-aware auto-capture (R32), Quick Settings tile and widget (R33), localised smart titles and a name pattern (R34), tags, sort and recent searches (R35). Already done from the same comparison: F44-F47, F51, F61-F63.
 3. From the owner's Play Store comparison: P3 done (PowerPoint export dropped at the owner's request). The four extra languages (Marathi, Gujarati, Bengali, Punjabi) are **dropped** (owner decision, 2026-11-08); the app stays at English, Hindi, Tamil, Telugu, Kannada and Malayalam (R19 native check still open).
 4. Run on a device or emulator; record results in `BUILD_AND_TEST.md`.
 5. Try Office to PDF on a device with a real .docx, .xlsx and a page saved from Chrome (⋮ › Download).

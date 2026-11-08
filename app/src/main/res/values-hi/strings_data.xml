@@ -7,6 +7,9 @@
     <string name="data_filter_bw">ब्लैक &amp; व्हाइट</string>
     <string name="data_filter_whiteboard">व्हाइटबोर्ड</string>
     <string name="data_pdf_quality_high">हाई</string>
+    <string name="data_review_mode_always">हमेशा</string>
+    <string name="data_review_mode_when_needed">ज़रूरत पर</string>
+    <string name="data_review_mode_never">कभी नहीं</string>
     <string name="data_pdf_quality_balanced">बैलेंस्ड</string>
     <string name="data_pdf_quality_small">छोटा</string>
     <string name="data_page_size_auto">ऑटो</string>

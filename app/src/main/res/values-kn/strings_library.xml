@@ -204,6 +204,8 @@
     <string name="settings_default_filter_title">ಆರಂಭದ ಫಿಲ್ಟರ್</string>
     <string name="settings_default_filter_subtitle">ಹೊಸ ಸ್ಕ್ಯಾನ್‌ಗಳು ಈ ಲುಕ್‌ನಿಂದ ಆರಂಭವಾಗುತ್ತವೆ; ಪ್ರತಿ ಪುಟಕ್ಕೂ ಬದಲಾಯಿಸಬಹುದು</string>
     <string name="settings_default_filter_automatic">ಸ್ವಯಂಚಾಲಿತ</string>
+    <string name="settings_review_mode_title">ಉಳಿಸುವ ಮೊದಲು ಪುಟಗಳನ್ನು ಪರಿಶೀಲಿಸಿ</string>
+    <string name="settings_review_mode_subtitle">ಅಗತ್ಯವಿದ್ದರೆ: ಪುಟದ ಅಂಚು ಸಿಗದಿದ್ದರೆ, ಮಸುಕಾಗಿದ್ದರೆ, ಹೊಳಪು ಇದ್ದರೆ ಅಥವಾ ತುಂಬಾ ಕತ್ತಲಾಗಿದ್ದರೆ ಹೊರತು Done ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ. ಎಂದಿಗೂ ಇಲ್ಲ: ಸ್ವಯಂಚಾಲಿತ ಕ್ರಾಪ್ ಮತ್ತು ಫಿಲ್ಟರ್‌ನೊಂದಿಗೆ ಯಾವಾಗಲೂ ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ</string>
     <string name="lib_share_separate">ಪ್ರತ್ಯೇಕ PDF ಗಳು (%1$d)</string>
     <string name="lib_share_one_pdf">ಒಂದೇ PDF</string>
 </resources>

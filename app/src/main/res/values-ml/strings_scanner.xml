@@ -116,6 +116,11 @@
     <string name="scan_status_capturing">എടുക്കുന്നു…</string>
     <string name="scan_status_front_saved">മുൻവശം സേവ് ചെയ്തു · ഇനി പിൻവശം എടുക്കുക</string>
     <string name="scan_status_id_ready">ഐഡി തയ്യാർ · പൂർത്തിയായി ടാപ്പ് ചെയ്യുക</string>
+    <string name="scan_status_checking_pages">പേജുകൾ പരിശോധിക്കുന്നു…</string>
+    <plurals name="scan_status_pages_need_look">
+        <item quantity="one">%d പേജ് നോക്കണം</item>
+        <item quantity="other">%d പേജുകൾ നോക്കണം</item>
+    </plurals>
     <string name="scan_status_id_composing">രണ്ട് വശങ്ങളും ഒരേ പേജിൽ വയ്ക്കുന്നു…</string>
     <string name="scan_status_id_compose_failed">രണ്ട് വശങ്ങളും ഒരേ പേജിൽ വയ്ക്കാനായില്ല; അവ രണ്ട് പേജുകളായി സൂക്ഷിച്ചിരിക്കുന്നു</string>
     <string name="scan_status_id_retake">രണ്ട് വശങ്ങളും വീണ്ടും: ആദ്യം മുൻവശം എടുക്കുക</string>

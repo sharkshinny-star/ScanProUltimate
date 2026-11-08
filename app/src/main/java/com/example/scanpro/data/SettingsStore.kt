@@ -95,6 +95,17 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.scanProSettings.edit { it[keyAppLock] = value }
     }
 
+    private val keyReviewMode = stringPreferencesKey("review_mode")
+
+    /** Check pages before saving (R26). Default: only pages that need it, the fast save the owner asked for. */
+    val reviewMode: Flow<ReviewMode> = preferences.map { p ->
+        runCatching { ReviewMode.valueOf(p[keyReviewMode] ?: ReviewMode.WHEN_NEEDED.name) }.getOrDefault(ReviewMode.WHEN_NEEDED)
+    }.distinctUntilChanged()
+
+    suspend fun setReviewMode(value: ReviewMode) {
+        context.scanProSettings.edit { it[keyReviewMode] = value.name }
+    }
+
     private val keyThemeMode = stringPreferencesKey("theme_mode")
 
     // The theme a tap just picked, applied before the write reaches disk so the switch feels instant.
