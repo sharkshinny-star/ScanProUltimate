@@ -377,8 +377,9 @@ class MainActivity : FragmentActivity() {
             ACTION_SCAN_NOW -> {
                 // Launchers rank shortcuts by how often each is used.
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
-                viewModel.requestScan()
+                viewModel.requestScan(intent.getStringExtra(EXTRA_SCAN_MODE).orEmpty())
             }
+            ACTION_IMPORT_IMAGES -> imageImportLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             ACTION_REPORT_ISSUE -> {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_REPORT_ISSUE)
                 contactSupport(this, SupportTopic.ISSUE)
@@ -543,7 +544,10 @@ class MainActivity : FragmentActivity() {
     companion object {
         private const val LOCK_TIMEOUT_MS = 30_000L
         private const val LAUNCH_SCREEN_MAX_HOLD_MS = 1_500L
-        private const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+        const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
+        /** Widget and tile (R33): the camera mode to open in (a ScanMode name), and the image picker straight away. */
+        const val EXTRA_SCAN_MODE = "scanMode"
+        const val ACTION_IMPORT_IMAGES = "com.example.scanpro.action.IMPORT_IMAGES"
         /** From notifications: open a document ([EXTRA_DOCUMENT_ID]), the recycle bin or settings, after unlock. */
         const val ACTION_OPEN_DOCUMENT = "com.example.scanpro.action.OPEN_DOCUMENT"
         const val ACTION_OPEN_TRASH = "com.example.scanpro.action.OPEN_TRASH"

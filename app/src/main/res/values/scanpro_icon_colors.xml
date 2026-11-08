@@ -5,4 +5,9 @@
     <color name="scanpro_window_light">#F7F8FC</color>
     <color name="scanpro_window_dark">#0F1118</color>
     <color name="scanpro_splash_icon_bg">#3346D3</color>
+    <!-- Home-screen widget (R33): light surface, brand indigo buttons -->
+    <color name="scanpro_widget_background">#F7F8FC</color>
+    <color name="scanpro_widget_button">#3346D3</color>
+    <color name="scanpro_widget_icon">#FFFFFF</color>
+    <color name="scanpro_widget_text">#FFFFFF</color>
 </resources>

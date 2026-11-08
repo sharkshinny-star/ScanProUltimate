@@ -259,6 +259,10 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **Quick Settings tile and widget (R33/F78).** `widget/ScanTileService` and `widget/ScanWidgetProvider` (RemoteViews,
+  `res/layout/widget_scan.xml`) start `MainActivity` with the shortcut actions `ACTION_SCAN_NOW` (optionally
+  `EXTRA_SCAN_MODE`, e.g. ID_CARD) and the new `ACTION_IMPORT_IMAGES`; `AppViewModel.requestScan(mode)` carries the
+  mode to the camera route. No new dependency.
 - **Files sort direction and recent searches (R35/F76).** `LibrarySort` carries each key's default direction and
   its two direction labels; the DAO's paged queries take `ascending` and order with two CASE expressions, so the
   list stays a database page in either direction; `SettingsStore.librarySortAscending` (null = the key's default)

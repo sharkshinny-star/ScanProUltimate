@@ -23,4 +23,7 @@
     <string name="common_on">ఆన్</string>
     <string name="common_off">ఆఫ్</string>
     <string name="language_picker_title">మీ భాషను ఎంచుకోండి</string>
+    <string name="widget_scan">స్కాన్</string>
+    <string name="widget_import">దిగుమతి</string>
+    <string name="widget_description">హోమ్ స్క్రీన్ నుండి స్కాన్, ID కార్డ్ లేదా దిగుమతిని ప్రారంభించండి</string>
 </resources>

@@ -33,6 +33,7 @@ Last updated: 2026-11-08 (F71 and F72 close R37 and R17; F68 fast save and its r
 
 | Commit | What |
 |---|---|
+| next | F78 closes R33: Quick Settings "Scan" tile and a 2x1 widget (Scan, ID card, Import) through intents MainActivity already handles; scan request carries a mode. Not tried on a device. |
 | next | F77 closes R35: Tags sheet with chips on the document (`TagsSheet.kt`), Tags filter chip and sheet in Files, tag as a whole-string query parameter. `LibraryFiltersTest` +1. |
 | next | F76 (half of R35): Files sort by Date created and in either direction (query parameter, resets with the key); Search keeps the last eight terms as chips with Clear. `LibraryFiltersTest` +1, `RecentSearchesTest` (2). Tags half of R35 still open. |
 | next | F75 closes R32: duplicate-aware auto-capture (32x32 page signature, "Same page · turn the page" guidance) and the shutter waits for a sharp steady frame (`PageSignature.kt`). `PageSignatureTest` (4). |

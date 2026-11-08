@@ -141,7 +141,8 @@ fun ScanProApp(
     // Launcher "Scan" shortcut: open the camera once the library is unlocked.
     LaunchedEffect(scanRequested) {
         if (scanRequested) {
-            navController.navigate(ScanProDestinations.CAMERA) { launchSingleTop = true }
+            val mode = viewModel.scanRequestMode.value
+            navController.navigate(if (mode.isBlank()) ScanProDestinations.CAMERA else ScanProDestinations.camera(mode)) { launchSingleTop = true }
             viewModel.clearScanRequest()
         }
     }
