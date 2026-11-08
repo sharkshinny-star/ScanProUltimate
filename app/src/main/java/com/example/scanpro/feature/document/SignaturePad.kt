@@ -196,7 +196,7 @@ fun SignaturePadDialog(
         AlertDialog(
             onDismissRequest = { deleting = null },
             title = { Text(stringResource(R.string.doc_delete_saved_signature)) },
-            text = { Text(stringResource(R.string.doc_delete_saved_signature_message)) },
+            text = { androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { Text(stringResource(R.string.doc_delete_saved_signature_message)) } },
             confirmButton = { TextButton(onClick = { onDeleteSaved(file); deleting = null }) { Text(stringResource(R.string.common_delete)) } },
             dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.common_cancel)) } }
         )

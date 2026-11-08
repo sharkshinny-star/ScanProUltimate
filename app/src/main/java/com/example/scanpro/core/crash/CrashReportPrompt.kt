@@ -1,5 +1,6 @@
 package com.example.scanpro.core.crash
 
+import androidx.compose.foundation.verticalScroll
 import android.content.Intent
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -33,7 +34,8 @@ fun CrashReportPrompt() {
     AlertDialog(
         onDismissRequest = { done() },
         title = { Text(stringResource(R.string.crash_prompt_title)) },
-        text = { Text(stringResource(R.string.crash_prompt_body)) },
+        // Scrolls, so the body stays reachable at large font sizes and in landscape (R17).
+        text = { androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { Text(stringResource(R.string.crash_prompt_body)) } },
         confirmButton = {
             val subject = stringResource(R.string.crash_share_subject)
             val chooserTitle = stringResource(R.string.crash_prompt_share)

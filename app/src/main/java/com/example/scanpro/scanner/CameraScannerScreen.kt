@@ -1138,7 +1138,7 @@ fun CameraScannerScreen(
             AlertDialog(
                 onDismissRequest = { confirmQuit = false },
                 title = { Text(stringResource(R.string.scan_quit_title)) },
-                text = { Text(stringResource(R.string.scan_quit_body)) },
+                text = { androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { Text(stringResource(R.string.scan_quit_body)) } },
                 confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.common_cancel)) } }
             )

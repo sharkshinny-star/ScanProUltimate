@@ -285,6 +285,8 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
 
 ## 13. Modules and dependencies
 
+All dependency coordinates live in `gradle/libs.versions.toml` (F71, 2026-11-08): `:app` uses `libs.*` accessors with shared `[versions]` refs for Compose BOM, CameraX, Room, Hilt, ML Kit and the test libraries, like `:translate` and `:baselineprofile` before it; lint's `UseTomlInstead` is on.
+
 | Module | Purpose |
 |---|---|
 | `:app` | The application (`com.scanpro.app`), package `com.example.scanpro` |

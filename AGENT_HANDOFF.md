@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08. Today, three threads: **F66/F67/F68** (committed: launch animation and theme/language hand-over; ID card both sides on one page; fast save from the camera, closing R26) and, committed as `83243c2`, F69 (torch bug fixed, one top-bar flash control closes R31, result-first review closes R27; seen on the phone) and F70 (device layout pass on a OnePlus CPH2569: nav bar, landscape rail, 150 % font, launch icon and launch feel; R38 opened). Careful: the merge `2dc8429` and a stale-editor save had dropped the F66–F68 rows and this file's updates; restored by hand, so trust `git log` over older copies of these docs. Then: code-review fixes for F68 (7 findings, all fixed, see `BUILD_AND_TEST.md`).
+Last updated: 2026-11-08 (F71 and F72 close R37 and R17; F68 fast save and its review fixes; F67 ID card page; F66 launch; CI green on runs 75, 78 and 83, wrapper download timeout fixed). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
 
 ## 1. Current state
 
@@ -33,6 +33,7 @@ Last updated: 2026-11-08. Today, three threads: **F66/F67/F68** (committed: laun
 
 | Commit | What |
 |---|---|
+| next | Small items: F71 closes R37 (`:app` dependencies in `libs.versions.toml`, `UseTomlInstead` back on); F72 closes R17 (star gold 3.4:1 in the light theme, scrolling text in the crash, quit-scanning and delete-signature dialogs); stale R27/R31 rows removed from `REMAINING_WORK.md`. |
 | next | Code review of the session's work (7 findings, all fixed): composed ID page trusted by fast save; Done after Add page/Back returns to the review; one decode for missing crop + quality (`OpenCvScanProcessor.inspect`), results kept; `ImageProcessor.cropSourceToBitmap` for the ID composer; dead status line and a redundant device-test assertion removed; `FastSave.reviewWithoutChecking` tested. 344 tests, 30 skipped, 0 failed; lint 0 errors. |
 | `83243c2` | F69: torch bug fixed (the toggle wrote a flag the flash effect never watched); one top-bar flash button (Off/Auto/On/Torch, amber when lit, remembered between scans); review opens on the finished page with Crop · Filters · Adjust tools (closes R27, R31). Verified on the OnePlus. |
 | `83243c2` | F70: device layout pass (OnePlus, Android 15): navigation bar no longer hidden, landscape side rail fits, 150 % font fixes (bottom bar, search pill, hero, stat tiles), launch-icon brackets inside the system's circle; launch no longer feels stuck (the system icon keeps scanning while the app loads; `LaunchIntro` starts at 0.60 s). R38 opened (Home scrolls itself ~14 dp). |
