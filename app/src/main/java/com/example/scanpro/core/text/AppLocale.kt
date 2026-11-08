@@ -85,4 +85,19 @@ object AppLocale {
         val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
         return base.createConfigurationContext(config)
     }
+
+    /**
+     * [wrap] for an activity's base context. A plain configuration context makes system services think they were
+     * not created by an activity, so printing crashed ("Can print only from an activity") on Android 12 and older
+     * with an in-app language chosen. A theme wrapper that only overrides the configuration (what AppCompat does)
+     * keeps the activity as the owner of those services.
+     */
+    fun wrapForActivity(base: Context): Context {
+        if (Build.VERSION.SDK_INT >= 33) return base
+        val tag = prefs(base).getString(KEY_TAG, null) ?: return base
+        val locale = Locale.forLanguageTag(tag)
+        Locale.setDefault(locale)
+        val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
+        return android.view.ContextThemeWrapper(base, 0).apply { applyOverrideConfiguration(config) }
+    }
 }

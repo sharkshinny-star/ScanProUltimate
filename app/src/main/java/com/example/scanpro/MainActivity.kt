@@ -109,7 +109,7 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun attachBaseContext(newBase: android.content.Context) {
-        super.attachBaseContext(com.example.scanpro.core.text.AppLocale.wrap(newBase))
+        super.attachBaseContext(com.example.scanpro.core.text.AppLocale.wrapForActivity(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

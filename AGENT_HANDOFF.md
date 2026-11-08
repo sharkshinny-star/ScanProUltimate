@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-09 (F95: Camera exit blank screen fix with TextureView COMPATIBLE mode and cold start launch intro animation race/hang fix; F94: Polish touch target sizing, button padding, permission panel layout; F93: Polish launch transitions, crop decoding resilience, review autosizing; F92: Images to PDF feature audit and overall improvements).
+Last updated: 2026-11-09 (F96: print crash from the owner's device log with an in-app language on Android 12 and older, and share-sheet read grants for every file share; F95: Camera exit blank screen fix with TextureView COMPATIBLE mode and cold start launch intro animation race/hang fix; F94: Polish touch target sizing, button padding, permission panel layout; F93: Polish launch transitions, crop decoding resilience, review autosizing; F92: Images to PDF feature audit and overall improvements).
 
 ## 1. Current state
 
@@ -30,6 +30,7 @@ Last updated: 2026-11-09 (F95: Camera exit blank screen fix with TextureView COM
 
 | Commit | What |
 |---|---|
+| next | F96: device log shows `Can print only from an activity` crash (fixed with `AppLocale.wrapForActivity`) and share-sheet permission denials (links now also in clip data). Needs a device check: print with an in-app language chosen on Android 12 or older, and share PNG pages. |
 | next | F95: Camera exit blank screen and cold start launch intro animation fix: Reverted `PreviewView` to `COMPATIBLE` (TextureView) so live preview frames smoothly slide out with Compose controls on back press without punching a black hole; removed blocking `unbindAll()` in `onDispose`; resolved Compose race condition during app lock loading in `MainActivity.kt` that skipped `LaunchIntro`; immediate splash screen dismissal (`provider.remove()`) when intro is active; 350ms safety timeout on splash fade to prevent ColorOS/OnePlus `withEndAction` animator hangs; added missing `sizeIn` import in `DocumentScreen.kt`. |
 | next | F94: Touch target sizing, button padding, and permission panel polish: minimum 48dp on camera `BottomPill` and document `MoveButton`, `fillMaxWidth` on permission panel actions, consistent `contentPadding` on document Add/Split/Merge buttons, and `TextOverflow.Ellipsis` on tool grid card labels. |
 | next | F93: Launch transitions, crop decoding resilience, and review autosizing: smooth splash screen handover, fallback paths and multi-tier downsampling (2000, 1400, 1000 px) in `CropEditorDialog` with error fallback screen, `.jpg` source extension in `DocumentImporter` and `PageOrganiser`, responsive `FlowRow` in `HomeTips` and `EmptyLibrary`, and `TextAutoSize` in `QuickActions` and `ScanReviewScreen`. |

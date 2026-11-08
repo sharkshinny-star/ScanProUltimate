@@ -62,7 +62,7 @@ fun sharePdfs(context: Context, documents: List<ScanDocument>) {
                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
             }
         }
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.grantReadTo(uris)
         context.startActivity(Intent.createChooser(intent, context.getString(if (uris.size == 1) R.string.core_share_pdf else R.string.core_share_pdfs)))
     }
 }
@@ -88,8 +88,8 @@ fun shareImages(context: Context, document: ScanDocument) {
         type = "image/jpeg"
         if (single) putExtra(Intent.EXTRA_STREAM, uris.first())
         else putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
+    intent.grantReadTo(uris)
     context.startActivity(Intent.createChooser(intent, context.getString(if (single) R.string.core_share_jpg else R.string.core_share_jpg_pages)))
 }
 
@@ -210,8 +210,20 @@ fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: St
             putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
         }
     }
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    intent.grantReadTo(uris)
     context.startActivity(Intent.createChooser(intent, chooserTitle))
+}
+
+/**
+ * Lets the share sheet itself, and the app picked in it, read [uris]. The links also go in the clip data: some
+ * system share sheets read the files for their previews from there and are refused ("requires the provider be
+ * exported, or grantUriPermission()") when only the extras carry them.
+ */
+private fun Intent.grantReadTo(uris: List<Uri>) {
+    if (uris.isNotEmpty()) {
+        clipData = ClipData.newRawUri(null, uris.first()).also { clip -> uris.drop(1).forEach { clip.addItem(ClipData.Item(it)) } }
+    }
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 }
 
 /** Shares a content link ScanPro can read, such as a PDF picked from another app, passing on read access. */
