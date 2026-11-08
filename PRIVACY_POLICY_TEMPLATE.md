@@ -1,5 +1,7 @@
 # Privacy Policy Template — ScanPro Ultimate
 
+> **The publishable page is `docs/privacy-policy/index.html`** (finished text; only the owner's details are left to fill). This file is the older template; if you change one, change the other.
+>
 > **Template only.** Replace bracketed fields and have the final policy reviewed for the countries where you distribute the app. The published policy must describe the exact production build, including any analytics, ads, billing, sync, account, or cloud-AI services you later add.
 
 **Effective date:** [DATE]  

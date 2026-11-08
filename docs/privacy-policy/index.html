@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScanPro Privacy Policy</title>
+<meta name="description" content="How ScanPro handles your documents, scans and data. Documents stay on your device.">
+<style>
+  :root { --bg:#ffffff; --fg:#1b1f24; --muted:#555d68; --line:#dde1e6; --accent:#2b37b8; --card:#f5f6f9; --fill:#fff1b8; --fillfg:#5a4300; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151a; --fg:#e8eaee; --muted:#a3abb6; --line:#2b3038; --accent:#8da0ff; --card:#1a1e25; --fill:#4a3d12; --fillfg:#ffe9a6; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width:44rem; margin:0 auto; padding:2rem 1rem 4rem; }
+  h1 { font-size:2rem; line-height:1.2; margin:0 0 .25rem; }
+  h2 { font-size:1.25rem; margin:2.2rem 0 .5rem; padding-top:.4rem; border-top:1px solid var(--line); }
+  p, li { max-width:70ch; }
+  a { color:var(--accent); }
+  .meta { color:var(--muted); margin:0 0 1.5rem; }
+  .summary { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.25rem; margin:1.25rem 0; }
+  .summary ul { margin:.4rem 0 0; padding-left:1.2rem; }
+  table { border-collapse:collapse; width:100%; margin:.75rem 0; font-size:.95rem; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  mark.fill { background:var(--fill); color:var(--fillfg); padding:0 .25em; border-radius:4px; }
+  .draft { background:var(--fill); color:var(--fillfg); border-radius:10px; padding:.75rem 1rem; margin:0 0 1.5rem; font-size:.95rem; }
+  footer { margin-top:3rem; color:var(--muted); font-size:.9rem; }
+</style>
+</head>
+<body>
+<main>
+
+<div class="draft" id="draft-note"><strong>Before you publish:</strong> fill every highlighted field, check the children's section against your Play target-audience answer, then delete this box. <code>grep -c 'class="fill"' index.html</code> must print 0.</div>
+
+<h1>ScanPro Privacy Policy</h1>
+<p class="meta"><strong>Effective:</strong> <mark class="fill">[DATE, e.g. 8 November 2026]</mark><br>
+<strong>Developer:</strong> <mark class="fill">[LEGAL NAME]</mark><br>
+<strong>Contact:</strong> <a href="mailto:support@scanpro.app">support@scanpro.app</a> <mark class="fill">[confirm this is your real address]</mark><br>
+<strong>This page:</strong> <mark class="fill">[THE HTTPS ADDRESS WHERE THIS PAGE IS HOSTED]</mark></p>
+
+<div class="summary">
+<strong>In short</strong>
+<ul>
+  <li>Your scans, photos, recognised text and documents stay on your phone. ScanPro has no account and no server of its own, and it does not show ads.</li>
+  <li>Google's ML Kit, which powers text recognition, barcode scanning, translation and the document-scanner fallback, sends Google small diagnostic reports. They never contain your images or text.</li>
+  <li>Translation downloads its language models over the internet. That is the only reason the app needs a network connection.</li>
+  <li>Nothing leaves your phone unless you share, export or email it yourself.</li>
+</ul>
+</div>
+
+<h2>1. What ScanPro is</h2>
+<p>ScanPro is an offline-first document scanner for Android. It captures pages with the camera, tidies and crops them, recognises their text, builds PDFs and keeps a searchable library. Documents, page images, recognised text, notes, tags and settings are stored in the app's private storage on your device. The core scanning workflow needs no account.</p>
+
+<h2>2. Camera, photos and files</h2>
+<p>The app asks for camera access when you scan. Camera frames are used on the device to find the page edges, judge blur and lighting, and take the picture. Photos and files are imported through Android's Photo Picker and file picker, so the app sees only what you choose. It does not ask for access to all your files. For PDFs you open from other apps, Android keeps a read permission for those files so that you can reopen them from Recent. You can remove them from that list at any time.</p>
+
+<h2>3. Text recognition and other features that run on your device</h2>
+<p>Text recognition, barcode and QR scanning, language detection, and the document-insight features (for example spotting a receipt total or a business card) run on your device. Recognised text is stored locally so you can search it, correct it, copy it and export it. Scanning a business card offers to open your Contacts app with the details filled in; ScanPro does not read your contacts. Scanning a Wi-Fi code can open Android's own "save this network" prompt; the password is never included when you share the code.</p>
+
+<h2>4. Google ML Kit and the diagnostic data it sends</h2>
+<p>ScanPro uses Google's ML Kit libraries for text recognition (Latin, Devanagari, Chinese, Japanese and Korean), barcode scanning, language identification, translation and, on compatible phones, Google's document-scanner fallback. According to Google's <a href="https://developers.google.com/ml-kit/android-data-disclosure">ML Kit data disclosure</a>, these libraries send Google the following over HTTPS, for diagnostics and usage analytics, and do not pass it to third parties:</p>
+<table>
+  <tr><th>What</th><th>Examples</th></tr>
+  <tr><td>Device information</td><td>Manufacturer, model, Android version and build</td></tr>
+  <tr><td>Application information</td><td>The app's package name and version</td></tr>
+  <tr><td>A per-installation identifier</td><td>Used by Google to count installations, not to identify you</td></tr>
+  <tr><td>Performance and settings</td><td>How long a recognition took, the image format and size it ran with, the library version</td></tr>
+  <tr><td>Events and errors</td><td>That a model loaded, ran or failed, with an error code</td></tr>
+  <tr><td>Translation only</td><td>The languages you chose to translate from and to</td></tr>
+</table>
+<p>This does not include your images, scans or recognised text, and the app has no setting that turns it off. It is declared in ScanPro's Google Play Data safety form as Diagnostics, Other app performance data, and Device or other IDs, collected for analytics. Google's own privacy policy applies to what Google receives.</p>
+
+<h2>5. Translation</h2>
+<p>If you use translation, ML Kit downloads the language model it needs. The text is then translated on your device. The download is the only network use in the app. The text you translate is not sent anywhere.</p>
+
+<h2>6. Where your documents are kept</h2>
+<p>Documents are stored in the app's private storage and indexed there for search. They stay available without an internet connection until you delete them, clear the app's data or uninstall the app. The optional app lock uses your phone's biometrics or screen lock to control who can open the app. It is an access control, not a separate encryption of your library; the files rely on Android's own protection of app storage. ScanPro's data is excluded from Google's cloud backup, so it is never copied to a server that way. When you set up a new phone with Android's phone-to-phone transfer, your library and settings can move across, protected in transit by Android.</p>
+
+<h2>7. Encrypted backups and protected PDFs</h2>
+<p>You can export a backup file, or a copy of a document, protected with a password you choose. Backups are encrypted with a key derived from that password. We cannot recover the password: if you forget it, that backup cannot be opened. You are asked to type the password twice to avoid typing mistakes. A password-protected PDF is only as strong as its password and the program that opens it.</p>
+
+<h2>8. Sharing, printing and saving copies</h2>
+<p>When you share, print or save a copy, ScanPro hands the file to Android or to the app you choose, using a temporary permission for that one file. From then on, the privacy practices of that app or service apply. Temporary files made for sharing are cleared automatically once they are a day old.</p>
+
+<h2>9. Recycle bin</h2>
+<p>Deleted documents go to a Recycle bin on your device so you can restore them. They are removed for good after the retention period set in Settings (30 days unless you change it), or when you empty the bin or delete an item permanently. Copies you exported, shared or saved elsewhere are not affected.</p>
+
+<h2>10. Notifications and background work</h2>
+<p>Saving a large scan or import can continue in the background; Android shows a notification while it does, and a notification when a scan could not be saved or a Recycle bin item is about to expire. You can turn the Recycle bin reminder off in ScanPro's Settings, and all notifications off in Android settings.</p>
+
+<h2>11. Messages you send us</h2>
+<p>"Send feedback" and "Report an issue" open your email app with a message already filled in. An issue report includes your app version, phone model, Android version, screen and memory details, recent app events, and the last crash if there was one. The app takes folder paths, links to other apps' files and exported file names out of it first, and says what it contains. Nothing is sent until you press Send in your email app, and you can read and edit it before then. We use what you send only to answer you and to fix the problem.</p>
+
+<h2>12. What ScanPro does not collect</h2>
+<p>ScanPro does not ask for your location, contacts, microphone, call history, text messages or access to all files. It has no account system, no advertising and no analytics or crash-reporting service of its own. The diagnostics in section 4 come from Google's libraries, not from ScanPro.</p>
+
+<h2>13. Security</h2>
+<p>ScanPro keeps your data in Android's private app storage, shares files only through temporary permissions, offers an optional biometric lock, and encrypts backups with a password. No software is perfectly secure. Keep Android up to date and protect your phone with a strong screen lock.</p>
+
+<h2>14. Children</h2>
+<p><mark class="fill">[Confirm against your Play target-audience answer. If the app is not for children: "ScanPro is not directed at children under 13 and we do not knowingly collect personal information from them."]</mark></p>
+
+<h2>15. Your choices and your rights</h2>
+<p>Because your documents stay on your phone, you control them: you can view, correct, export and delete them in the app, and removing the app removes its data. We hold no copy and no account, so there is nothing on our side to look up or delete. For diagnostic data held by Google, see Google's privacy policy. Depending on where you live you may have further rights under local law; write to us at the address below and we will help where we can.</p>
+
+<h2>16. Changes to this policy</h2>
+<p>We may update this policy when the app or the law changes. The current version and its effective date are always on this page, and we will describe significant changes in the app's release notes.</p>
+
+<h2>17. Contact</h2>
+<p><mark class="fill">[LEGAL NAME]</mark><br>
+<a href="mailto:support@scanpro.app">support@scanpro.app</a> <mark class="fill">[confirm]</mark><br>
+<mark class="fill">[POSTAL ADDRESS, if your country or Play requires one]</mark></p>
+
+<footer>This policy describes ScanPro as shipped. It must be updated, and so must the Google Play Data safety form, before a build adds analytics, advertising, accounts, cloud storage or any server-side feature.</footer>
+
+</main>
+</body>
+</html>

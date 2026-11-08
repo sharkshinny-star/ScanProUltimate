@@ -32,7 +32,7 @@ Current intended permissions are deliberately narrow. Re-check the merged releas
 - [ ] Translation model downloads and Google document-scanner fallback behaviour are accurately disclosed in the privacy policy if shipped.
 - [x] Data Safety form submitted by the owner 2026-11-08 (F88); re-check when SDKs change. Matches the exact production build and any analytics/crash SDKs you add later.
 - [x] Data Safety form (submitted) covers ML Kit's API usage; the privacy policy must say the same once hosted. Covers ML Kit's API usage and performance metrics (see `AUDIT_FINDINGS.md` R13; check Google's current ML Kit data disclosure).
-- [ ] Host the final privacy policy at a public HTTPS URL and link it in Play Console and the app where required.
+- [ ] Host the final privacy policy (`docs/privacy-policy/index.html`: fill the 8 highlighted fields, delete the yellow box, check `grep -c 'class="fill"'` prints 0) at a public HTTPS URL and link it in Play Console and the app where required.
 - [ ] Review encrypted `.scanpro` backup behaviour and warn users that losing the password means losing access to that backup.
 
 ### Data safety form: draft answers (2026-11-08, from Google's ML Kit data-disclosure page; re-check that page on the day)
