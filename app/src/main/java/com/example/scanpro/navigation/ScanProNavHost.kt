@@ -3,7 +3,9 @@ package com.example.scanpro.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -211,18 +213,20 @@ fun ScanProNavHost(
 
 private const val PushDuration = 260
 private const val FadeThroughDuration = 210
+private const val SheetEnterDuration = 220
+private const val SheetExitDuration = 200
 
 private fun NavBackStackEntry.isTopLevel() = destination.route in ScanProDestinations.topLevel
-private fun NavBackStackEntry.isSheetLike() = destination.route == ScanProDestinations.CAMERA_ROUTE
+private fun NavBackStackEntry.isSheetLike() = destination.route?.startsWith("camera") == true
 
 /** The transition for the screen coming in. */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Boolean): EnterTransition = when {
     // Returning to a tab or moving between tabs: fade through.
     !pop && targetState.isTopLevel() && initialState.isTopLevel() ->
         fadeIn(tween(FadeThroughDuration, delayMillis = 60)) + scaleIn(tween(FadeThroughDuration, delayMillis = 60), initialScale = 0.96f)
-    // Sheet rising from bottom: opaque slide up over the stationary caller screen (no premature fade in).
+    // Sheet rising from bottom: opaque slide up over the stationary caller screen with maximum initial velocity on frame 1.
     !pop && targetState.isSheetLike() ->
-        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(PushDuration, easing = FastOutSlowInEasing))
+        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(SheetEnterDuration, easing = LinearOutSlowInEasing))
     // Sheet popping back to caller: caller is already rendered and stationary underneath.
     pop && initialState.isSheetLike() -> EnterTransition.None
     pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it / 4 }) +
@@ -236,9 +240,9 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(pop: Boole
     !pop && targetState.isTopLevel() && initialState.isTopLevel() -> fadeOut(tween(90))
     // Sheet rising on top: the caller screen stays stationary and fully visible underneath.
     !pop && targetState.isSheetLike() -> ExitTransition.None
-    // Sheet popping: slides smoothly down to uncover caller (no fade out revealing blank canvas).
+    // Sheet popping: drops immediately off-screen accelerating downward with zero hesitation.
     pop && initialState.isSheetLike() ->
-        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(PushDuration, easing = FastOutSlowInEasing))
+        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(SheetExitDuration, easing = FastOutLinearInEasing))
     pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it }) +
         fadeOut(tween(PushDuration / 2))
     else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it / 4 }) +

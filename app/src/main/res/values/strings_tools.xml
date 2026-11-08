@@ -49,6 +49,9 @@
 
     <!-- Tools: split dialog -->
     <string name="tools_split_title">Split PDF Options</string>
+    <string name="tools_split_single_page_title">Cannot split PDF</string>
+    <string name="tools_split_single_page_hint">Only 1 page in this document</string>
+    <string name="tools_split_single_page_desc">This PDF contains only 1 page and cannot be split further. Documents must have 2 or more pages to be split.</string>
 
     <!-- Tools: page organiser (organise / extract / rotate) -->
     <string name="tools_organizer_protected">This PDF is password-protected. Unlock it first with the Unlock PDF tool.</string>
@@ -142,8 +145,8 @@
     <string name="tools_card_fill">Fill form</string>
     <string name="tools_card_ocr">Make searchable</string>
     <string name="tools_card_compress">Compress</string>
-    <string name="tools_card_merge">Merge</string>
-    <string name="tools_card_split">Split</string>
+    <string name="tools_card_merge">Merge PDF</string>
+    <string name="tools_card_split">Split PDF</string>
     <string name="tools_card_extract">Extract pages</string>
     <string name="tools_card_rotate">Rotate pages</string>
     <string name="tools_card_organize">Organise pages</string>

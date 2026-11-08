@@ -37,6 +37,9 @@
     </plurals>
     <string name="tools_password_enter">PDF-இன் பாஸ்வேர்டை உள்ளிடுங்கள்</string>
     <string name="tools_split_title">PDF பிரிக்கும் விருப்பங்கள்</string>
+    <string name="tools_split_single_page_title">PDF-ஐ பிரிக்க முடியாது</string>
+    <string name="tools_split_single_page_hint">இந்த ஆவணத்தில் 1 பக்கம் மட்டுமே உள்ளது</string>
+    <string name="tools_split_single_page_desc">இந்த PDF-ல் 1 பக்கம் மட்டுமே உள்ளதால் பிரிக்க இயலாது. பிரிக்க குறைந்தது 2 பக்கங்கள் இருக்க வேண்டும்.</string>
     <string name="tools_organizer_protected">இந்த PDF பாஸ்வேர்டால் பாதுகாக்கப்பட்டுள்ளது. முதலில் PDF அன்லாக் கருவி மூலம் அன்லாக் செய்யுங்கள்.</string>
     <string name="tools_organizer_open_failed">இந்த PDF-ஐத் திறக்க முடியவில்லை</string>
     <string name="tools_organizer_extract_title">பிரித்தெடுக்க வேண்டிய பக்கங்களைத் தேர்ந்தெடுங்கள்</string>
@@ -115,8 +118,8 @@
     <string name="tools_card_fill">படிவத்தை நிரப்பு</string>
     <string name="tools_card_ocr">தேடக்கூடியதாக்கு</string>
     <string name="tools_card_compress">சுருக்கு</string>
-    <string name="tools_card_merge">இணை</string>
-    <string name="tools_card_split">பிரி</string>
+    <string name="tools_card_merge">PDF இணை</string>
+    <string name="tools_card_split">PDF பிரி</string>
     <string name="tools_card_extract">பக்கங்களைப் பிரித்தெடு</string>
     <string name="tools_card_rotate">பக்கங்களைச் சுழற்று</string>
     <string name="tools_card_organize">பக்கங்களை ஒழுங்குபடுத்து</string>

@@ -37,6 +37,9 @@
     </plurals>
     <string name="tools_password_enter">PDF పాస్‌వర్డ్ నమోదు చేయండి</string>
     <string name="tools_split_title">PDF విభజన ఆప్షన్‌లు</string>
+    <string name="tools_split_single_page_title">PDFను విభజించలేము</string>
+    <string name="tools_split_single_page_hint">ఈ పత్రంలో 1 పేజీ మాత్రమే ఉంది</string>
+    <string name="tools_split_single_page_desc">ఈ PDFలో 1 పేజీ మాత్రమే ఉంది, దీన్ని విభజించలేము. విభజించడానికి కనీసం 2 పేజీలు ఉండాలి.</string>
     <string name="tools_organizer_protected">ఈ PDF పాస్‌వర్డ్ రక్షణలో ఉంది. ముందు PDF అన్‌లాక్ టూల్‌తో దాన్ని అన్‌లాక్ చేయండి.</string>
     <string name="tools_organizer_open_failed">ఈ PDFని తెరవలేకపోయాం</string>
     <string name="tools_organizer_extract_title">తీయడానికి పేజీలు ఎంచుకోండి</string>
@@ -115,8 +118,8 @@
     <string name="tools_card_fill">ఫారమ్ నింపండి</string>
     <string name="tools_card_ocr">సెర్చ్ చేయగలిగేలా చేయండి</string>
     <string name="tools_card_compress">కంప్రెస్</string>
-    <string name="tools_card_merge">కలపండి</string>
-    <string name="tools_card_split">విభజించండి</string>
+    <string name="tools_card_merge">PDF కలపండి</string>
+    <string name="tools_card_split">PDF విభజించండి</string>
     <string name="tools_card_extract">పేజీలు తీయండి</string>
     <string name="tools_card_rotate">పేజీలు తిప్పండి</string>
     <string name="tools_card_organize">పేజీలను క్రమపరచండి</string>

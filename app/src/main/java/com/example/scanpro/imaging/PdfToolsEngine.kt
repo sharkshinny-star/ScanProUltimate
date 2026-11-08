@@ -189,6 +189,7 @@ object PdfToolsEngine {
             loadPdf(tempFile).use { doc ->
                 val totalPages = doc.numberOfPages
                 userRequire(totalPages > 0, R.string.tools_err_no_pages)
+                userRequire(totalPages > 1, R.string.tools_split_single_page_desc)
 
                 when (mode) {
                     SplitMode.SINGLE_PAGES -> {

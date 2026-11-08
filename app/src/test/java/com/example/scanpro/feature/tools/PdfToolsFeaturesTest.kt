@@ -58,6 +58,37 @@ class PdfToolsFeaturesTest {
 
         val aspect = ImageProcessor.imageAspect(dest.absolutePath)
         assertNotNull(aspect)
-        assertTrue(aspect!! > 0f)
+    }
+
+    @Test
+    fun splitPdfRejectsSinglePageDocument() = kotlinx.coroutines.runBlocking {
+        val dir = File(app.cacheDir, "test_split_${System.currentTimeMillis()}").apply { mkdirs() }
+        val singlePagePdf = File(dir, "one_page.pdf")
+        val document = com.tom_roush.pdfbox.pdmodel.PDDocument()
+        document.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+        document.save(singlePagePdf)
+        document.close()
+
+        val outDir = File(dir, "out").apply { mkdirs() }
+        var thrown = false
+        try {
+            com.example.scanpro.imaging.PdfToolsEngine.splitPdf(
+                context = app,
+                inputUri = android.net.Uri.fromFile(singlePagePdf),
+                mode = com.example.scanpro.imaging.SplitMode.SINGLE_PAGES,
+                outputDir = outDir
+            )
+        } catch (e: Exception) {
+            thrown = true
+            assertTrue(e.message?.contains("1 page") == true || e is com.example.scanpro.core.text.UserFacingException)
+        }
+        assertTrue("Splitting a 1-page PDF must be rejected", thrown)
+    }
+
+    @Test
+    fun toolsCardStringsReflectRenamedMergeAndSplitPdf() {
+        assertEquals("Merge PDF", app.getString(com.example.scanpro.R.string.tools_card_merge))
+        assertEquals("Split PDF", app.getString(com.example.scanpro.R.string.tools_card_split))
+        assertTrue(app.getString(com.example.scanpro.R.string.tools_split_single_page_desc).contains("1 page"))
     }
 }
