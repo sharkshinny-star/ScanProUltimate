@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (R38 fix awaiting a device check; R9 step 1: exports split into DocumentExporter; REMAINING_WORK.md refreshed after F80; F71 and F72 close R37 and R17; F68 fast save and its review fixes; F67 ID card page; F66 launch; CI green on runs 75, 78 and 83, wrapper download timeout fixed). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
+Last updated: 2026-11-08 (merged the budget-rules branch and the Artemis review branch; R38 fix awaiting a device check; R9 step 1: exports split into DocumentExporter; REMAINING_WORK.md refreshed after F80; F71 and F72 close R37 and R17; F68 fast save and its review fixes; F67 ID card page; F66 launch; CI green on runs 75, 78 and 83, wrapper download timeout fixed). Instrumented tests for F66/F67 written, not run. Release builds last run locally 2026-11-08; devices not run.
 
 ## 1. Current state
 
@@ -49,6 +49,7 @@ Last updated: 2026-11-08 (R38 fix awaiting a device check; R9 step 1: exports sp
 | `3888dd2` | Instrumented tests for the launch, the in-place language change and ID cards, to run from Android Studio (written, not run). |
 | `a502f3b` | F67: ID card mode defaults to Both sides; Done after the second side composes one page (front at the top, back below, white A4 shape, `IdCardComposer`) before the review; Retake there re-shoots both sides. `IdCardComposerTest` (2). 338 tests 0 failed, lint 0 errors. |
 | `d97deab` | F66 from the owner's screen recording: launch animation 2.25 s (was 1.6 s), wordmark held, indigo-azure-teal flood; the intro follows the app's theme and `MainActivity` sets the system's per-app night mode so the Android 12+ launch screen matches from the next start; `configChanges="locale\|layoutDirection\|uiMode"` so the language picker's Continue (and theme changes) no longer restart the activity (the black frame). CI heaps capped for the free runner; tests 336/0, lint 0 errors. |
+| (this commit) | GitHub Actions budget kit: `AGENTS.md` (push in batches, `[skip ci]` for docs), templates in `.github/budget-kit/`, `android.yml` now runs on main and PRs only, docs-skipped, 45-minute timeout (our runs take 25-31 minutes), artifacts 1 day and only on manual runs. Not run on a real runner. |
 | next | `docs/archive/`: old ScanPro repo's `FirebaseCloudClient.kt` kept as `.txt` (not compiled, API key redacted) for possible future cloud sync. Old ScanPro repo compared: nothing else worth porting. |
 | `0284287` | `TOOLS_IMPROVEMENTS.md`: PDF Tools backlog (7 items, related R7/R28, device checks for F48–F50). |
 | `ef2f3b2` | History-only merge of `main` and the three older branches (`-s ours`, no file changes). |

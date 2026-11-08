@@ -39,7 +39,7 @@ Gradle properties:
 | `-Pscanpro.composeMetrics=true` | Compose compiler metrics in `build/compose_metrics` |
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
-CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report.
+CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report, on pushes to `main`, pull requests and manual runs (20-minute timeout; artifacts only on manual runs). Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
 
 ## Latest results (2026-11-08, `d97deab` + F67 ID card page; and the raised CI limits, cloud container with the SDK installed by hand)
 

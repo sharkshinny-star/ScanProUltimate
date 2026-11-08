@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # Notes for AI agents
 
 Start with `AGENT_HANDOFF.md`: current state, completed work, open issues and next steps.
