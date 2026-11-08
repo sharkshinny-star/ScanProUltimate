@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -346,6 +347,11 @@ internal fun LibraryScreen(
 
     val selecting = selected.isNotEmpty()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    LaunchedEffect(mode) {
+        if (mode == ScanProDestinations.HOME) {
+            scrollBehavior.state.contentOffset = 0f
+        }
+    }
     val topBarColors = TopAppBarDefaults.topAppBarColors(
         containerColor = MaterialTheme.colorScheme.background,
         scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -892,7 +898,22 @@ private fun HomeDashboard(
     val recent = overview.recent
     val documentCount = overview.documentCount
     val wide = com.example.scanpro.navigation.isWideWindow()
+    val listState = rememberLazyListState()
+
+    // Keep the search launcher unclipped at the top unless the user has actively scrolled.
+    // An item entering at the bottom (e.g. tips card) must never pull the list down.
+    var userScrolled by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) userScrolled = true
+    }
+    LaunchedEffect(showTips, documentCount, recent.size) {
+        if (!userScrolled && listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset > 0) {
+            listState.scrollToItem(0, 0)
+        }
+    }
+
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().widthIn(max = if (wide) 1100.dp else 720.dp),
         contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -958,7 +979,7 @@ private fun HomeDashboard(
                 HomeTipCard(
                     onAction = onTipAction,
                     onHide = onHideTips,
-                    modifier = Modifier.padding(horizontal = 16.dp).animateItem()
+                    modifier = Modifier.padding(horizontal = 16.dp).animateItem(placementSpec = null)
                 )
             }
         }
