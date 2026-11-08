@@ -56,14 +56,8 @@ object IdCardComposer {
      */
     fun compose(front: File, frontQuad: CropQuad?, back: File, backQuad: CropQuad?, destination: File) {
         val sides = listOf(front to frontQuad, back to backQuad).map { (file, quad) ->
-            // The crop goes through the same path as a normal page, so the two sides match a single-side scan.
-            val cut = File(destination.parentFile, destination.nameWithoutExtension + "_" + file.nameWithoutExtension + ".jpg")
-            ImageProcessor.cropSourceToNewFile(file, cut, quad ?: CropQuad.DEFAULT)
-            try {
-                ImageProcessor.decodeOrientedScaled(cut.absolutePath, MAX_CARD_WIDTH) ?: error("Could not decode ${file.name}")
-            } finally {
-                cut.delete()
-            }
+            // The same crop as a normal page, straight to a bitmap: one decode per side, no temporary file.
+            ImageProcessor.cropSourceToBitmap(file, quad ?: CropQuad.DEFAULT, MAX_CARD_WIDTH * 12 / 10)
         }
         val (frontBitmap, backBitmap) = sides
         try {

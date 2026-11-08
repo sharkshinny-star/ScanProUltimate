@@ -273,6 +273,9 @@ fun CameraScannerScreen(
     var scanBothSides by rememberSaveable { mutableStateOf(true) }
     // The one page both sides were put on (IdCardComposer), once Done was tapped after the second side.
     var idComposite by rememberSaveable { mutableStateOf<String?>(null) }
+    // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
+    // than saving at once, whatever "Check pages before saving" says.
+    var returnToReview by rememberSaveable { mutableStateOf(false) }
     val pages = rememberSaveable(
         saver = listSaver(save = { list -> list.map(Uri::toString) }, restore = { saved -> mutableStateListOf(*saved.map(Uri::parse).toTypedArray()) })
     ) { mutableStateListOf<Uri>() }
@@ -488,7 +491,8 @@ fun CameraScannerScreen(
      * saved straight away unless the setting says to review the pages that need a look, and some do.
      */
     fun reviewOrSave() {
-        if (reviewMode == com.example.scanpro.data.ReviewMode.ALWAYS || retakeOfPage != null) {
+        if (FastSave.reviewWithoutChecking(reviewMode, retaking = retakeOfPage != null, returnToReview = returnToReview)) {
+            returnToReview = false
             reviewIndex = pages.lastIndex
             reviewing = true
             return
@@ -496,16 +500,34 @@ fun CameraScannerScreen(
         processing = true
         status = resources.getString(R.string.scan_status_checking_pages)
         val snapshot = pages.toList()
+        val trusted = snapshot.indices.filter { snapshot[it].toString() == idComposite }.toSet()
         scope.launch {
-            val needing = withContext(Dispatchers.Default) {
-                val crops = snapshot.map { uri ->
-                    quads[uri.toString()] ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
+            // Whatever is still missing (Done tapped before the background work landed) is worked out once here, from
+            // a single decode and detection per page, and kept, so saving does not do it again.
+            val (crops, issues) = withContext(Dispatchers.Default) {
+                val crops = ArrayList<CropQuad>(snapshot.size)
+                val issues = ArrayList<Set<PageIssue>>(snapshot.size)
+                snapshot.forEachIndexed { i, uri ->
+                    val key = uri.toString()
+                    var crop = quads[key]
+                    var issue = quality[key]
+                    if (i in trusted) issue = issue ?: emptySet()
+                    if (crop == null && issue == null) {
+                        runCatching { OpenCvScanProcessor.inspect(File(uri.path.orEmpty())) }.getOrNull()?.let { (c, q) -> crop = c; issue = q }
+                    }
+                    crops += crop ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
+                    issues += issue ?: runCatching { OpenCvScanProcessor.assessQuality(File(uri.path.orEmpty())) }.getOrDefault(emptySet())
                 }
-                val issues = snapshot.map { uri ->
-                    quality[uri.toString()] ?: runCatching { OpenCvScanProcessor.assessQuality(File(uri.path.orEmpty())) }.getOrDefault(emptySet())
-                }
-                FastSave.pagesNeedingReview(crops, issues)
+                crops to issues
             }
+            snapshot.forEachIndexed { i, uri ->
+                val key = uri.toString()
+                if (pages.contains(uri)) {
+                    if (quads[key] == null) quads[key] = crops[i]
+                    if (quality[key] == null) quality[key] = issues[i]
+                }
+            }
+            val needing = FastSave.pagesNeedingReview(crops, issues, trusted)
             processing = false
             if (snapshot != pages.toList()) {
                 // Pages changed while checking (a retake landed): just show the review.
@@ -544,7 +566,6 @@ fun CameraScannerScreen(
                     pages.add(uri)
                     quads[uri.toString()] = CropQuad.DEFAULT
                     idComposite = uri.toString()
-                    status = resources.getString(R.string.scan_status_id_ready)
                     reviewOrSave()
                 } else {
                     // The two sides stay as two pages rather than losing the capture, and are shown for a look.
@@ -909,8 +930,8 @@ fun CameraScannerScreen(
             index = reviewIndex,
             processing = processing,
             onIndexChange = { reviewIndex = it },
-            onAdd = { retakeIndex = -1; reviewing = false },
-            onBack = { retakeIndex = -1; reviewing = false },
+            onAdd = { retakeIndex = -1; returnToReview = true; reviewing = false },
+            onBack = { retakeIndex = -1; returnToReview = true; reviewing = false },
             onDone = ::saveReviewed,
             onRetake = {
                 if (idComposite != null && pages.getOrNull(reviewIndex)?.toString() == idComposite) {

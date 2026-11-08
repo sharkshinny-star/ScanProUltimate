@@ -49,6 +49,18 @@ object OpenCvScanProcessor {
         }
     }
 
+    /** [detectCrop] and [assessQuality] from one decode and one detection, for when both are still missing. */
+    fun inspect(source: File): Pair<CropQuad, Set<PageIssue>> {
+        val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT to emptySet()
+        return try {
+            val detection = DocumentEdgeDetector.detect(bitmap)
+            val quad = detection.quad
+            (if (quad != null && detection.confidence >= 0.34f) quad else CropQuad.DEFAULT) to PageQuality.issues(detection)
+        } finally {
+            if (!bitmap.isRecycled) bitmap.recycle()
+        }
+    }
+
     fun detectCrop(source: File): CropQuad {
         val bitmap = ImageProcessor.decodeOrientedScaled(source.absolutePath, 1600) ?: return CropQuad.DEFAULT
         return try {

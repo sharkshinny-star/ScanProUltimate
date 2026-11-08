@@ -262,11 +262,14 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
 - **Fast save from the camera (R26/F68).** `data/ReviewMode` (Settings › Scanning › Check pages before saving; default
   If needed) reaches `CameraScannerScreen` through `AppViewModel`/`ScanProNavHost`. `scanner/FastSave.kt` holds the
   rule: a page needs a look when its crop is the whole frame (no outline found) or the F64 quality check flagged it.
-  `reviewOrSave()` runs on Done: Always opens the review; otherwise it fills in any missing crop or quality result in
-  the background and either calls `saveReviewed()` directly or opens the review on the first page that needs a look.
+  `reviewOrSave()` runs on Done: `FastSave.reviewWithoutChecking` (Always, a retake of a saved page, or the review
+  was left via Add page / Back) opens the review at once; otherwise missing crop and quality results are worked out
+  from one decode per page (`OpenCvScanProcessor.inspect`) and stored, the composed ID page is trusted, and it either
+  calls `saveReviewed()` or opens the review on the first page that needs a look.
 - **ID card: both sides on one page.** `scanner/IdCardComposer.kt` cuts each side out of its photo along the guide
   crop (`ImageProcessor.cropSourceToNewFile`), scales both to the same width and places them on a white A4-shaped
-  page, front above back, with a hairline border. The camera does this when Done is tapped after the second side
+  page, front above back, with a hairline border (`ImageProcessor.cropSourceToBitmap`: one decode per side, no temporary
+  file). The camera does this when Done is tapped after the second side
   (`CameraScannerScreen.finishScan`), replacing the two captures with the one page, so the review, the filters and
   the saved document all see a single page. Retake on that page clears it and starts both sides again.
 - **Instrumented tests** (`app/src/androidTest`): `AppSmokeTest` plus, from 2026-11-08, device tests for the launch
