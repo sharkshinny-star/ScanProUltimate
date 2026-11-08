@@ -107,6 +107,7 @@
     <string name="scan_guidance_hold_steady">ಸ್ಥಿರವಾಗಿ ಹಿಡಿಯಿರಿ · ಚಿತ್ರ ಮಸುಕಾಗಿದೆ</string>
     <string name="scan_guidance_move_closer">ಹತ್ತಿರ ತನ್ನಿ, ಪುಟವನ್ನು ಮಧ್ಯದಲ್ಲಿಡಿ</string>
     <string name="scan_guidance_ready">ಸಿದ್ಧ</string>
+    <string name="scan_guidance_same_page">ಹಿಂದಿನದೇ ಪುಟ · ಪುಟ ತಿರುಗಿಸಿ</string>
     <string name="scan_status_front_ready">ಮುಂಭಾಗ ಸಿದ್ಧ · ಹಿಂಭಾಗ ತೆಗೆಯಿರಿ</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d ಪುಟ ಸಿದ್ಧ</item>

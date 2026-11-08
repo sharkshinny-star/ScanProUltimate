@@ -33,6 +33,7 @@ Last updated: 2026-11-08 (F71 and F72 close R37 and R17; F68 fast save and its r
 
 | Commit | What |
 |---|---|
+| next | F75 closes R32: duplicate-aware auto-capture (32x32 page signature, "Same page · turn the page" guidance) and the shutter waits for a sharp steady frame (`PageSignature.kt`). `PageSignatureTest` (4). |
 | next | F74 closes R30: camera page strip draws each page cropped and filtered (redrawn when the outline lands), amber mark on pages that need a look, long-press removes with Undo (file deleted after 6 s or at Done). |
 | next | F73 closes R28: Share PDF card from the Export sheet's PDF row: page ticks, a size estimate per quality from a two-page trial render, "Keep under" 1/5/10 MB that picks the quality and shrinks further if needed (`imaging/PdfShare.kt`, `SharePdfSheet.kt`). `PdfShareTest` (3), `SharePdfSheetTest`. |
 | next | Small items: F71 closes R37 (`:app` dependencies in `libs.versions.toml`, `UseTomlInstead` back on); F72 closes R17 (star gold 3.4:1 in the light theme, scrolling text in the crash, quit-scanning and delete-signature dialogs); stale R27/R31 rows removed from `REMAINING_WORK.md`. |

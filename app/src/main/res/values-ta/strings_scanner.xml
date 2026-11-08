@@ -107,6 +107,7 @@
     <string name="scan_guidance_hold_steady">அசையாமல் பிடியுங்கள் · படம் மங்கலாக உள்ளது</string>
     <string name="scan_guidance_move_closer">அருகில் சென்று பக்கத்தை நடுவில் வையுங்கள்</string>
     <string name="scan_guidance_ready">தயார்</string>
+    <string name="scan_guidance_same_page">கடைசியாக எடுத்த அதே பக்கம் · பக்கத்தைத் திருப்புங்கள்</string>
     <string name="scan_status_front_ready">முன்பக்கம் தயார் · பின்பக்கத்தை எடுங்கள்</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d பக்கம் தயார்</item>

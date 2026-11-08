@@ -58,6 +58,8 @@ enum class Guidance(@StringRes val labelRes: Int) {
     MOVE_CLOSER(R.string.scan_guidance_move_closer),
     /** A hint only: glare does not hold back the capture (glossy paper under a ceiling light would never be taken). */
     GLARE(R.string.scan_guidance_glare),
+    /** Auto-capture only: this is the page just taken (R32), so the shutter waits for the next one. */
+    SAME_PAGE(R.string.scan_guidance_same_page),
     READY(R.string.scan_guidance_ready)
 }
 

@@ -107,6 +107,7 @@
     <string name="scan_guidance_hold_steady">അനങ്ങാതെ പിടിക്കുക · ചിത്രം മങ്ങിയിരിക്കുന്നു</string>
     <string name="scan_guidance_move_closer">അടുത്തേക്ക് നീക്കി പേജ് മധ്യത്തിലാക്കുക</string>
     <string name="scan_guidance_ready">തയ്യാർ</string>
+    <string name="scan_guidance_same_page">കഴിഞ്ഞ അതേ പേജ് · പേജ് മറിക്കുക</string>
     <string name="scan_status_front_ready">മുൻവശം തയ്യാർ · പിൻവശം എടുക്കുക</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d പേജ് തയ്യാർ</item>

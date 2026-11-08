@@ -107,6 +107,7 @@
     <string name="scan_guidance_hold_steady">फ़ोन स्थिर रखें · इमेज धुंधली है</string>
     <string name="scan_guidance_move_closer">पास लाएं और पेज को बीच में रखें</string>
     <string name="scan_guidance_ready">तैयार</string>
+    <string name="scan_guidance_same_page">पिछले वाला ही पेज · पेज पलटें</string>
     <string name="scan_status_front_ready">आगे का हिस्सा तैयार · अब पीछे का लें</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d पेज तैयार</item>

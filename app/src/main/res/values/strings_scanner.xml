@@ -124,6 +124,7 @@
     <string name="scan_guidance_hold_steady">Hold steady · the image is blurry</string>
     <string name="scan_guidance_move_closer">Move closer and centre the page</string>
     <string name="scan_guidance_ready">Ready</string>
+    <string name="scan_guidance_same_page">Same page as the last one · turn the page</string>
     <string name="scan_status_front_ready">Front ready · capture the back</string>
     <plurals name="scan_status_pages_ready">
         <item quantity="one">%1$d page ready</item>

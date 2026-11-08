@@ -259,6 +259,10 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **Duplicate-aware auto-capture (R32/F75).** `scanner/PageSignature.kt`: `PageSignature.of` shrinks the page inside
+  its outline to 32 x 32 and normalises brightness and contrast; `isSamePage` compares mean difference against 0.22.
+  `OpenCvDocumentAnalyzer` keeps the signature of each auto-capture and, on a would-be capture, skips a matching
+  page (guidance `SAME_PAGE`); `SharpnessGate` makes it wait for a frame about as sharp as the recent steady ones.
 - **Share PDF card (R28/F73).** `imaging/PdfShare.kt` holds the maths: `extrapolate` (two sample pages rendered
   through `PdfExporter`, scaled to the page count), `pickQuality` (best quality under a size target, else Small) and
   `shrinkPlan` (lower qualities, then Small at 1000/800/600 px) with `build` running the plan until the file fits.
