@@ -109,6 +109,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
+import kotlinx.coroutines.flow.update
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -544,7 +545,14 @@ fun CameraScannerScreen(
                     // The screen was closed while the shutter was running; launching on its cancelled
                     // scope would skip the cleanup below, so drop the raw file here.
                     if (disposed.get()) {
-                        raw.delete()
+                        // A rotation recreated the screen while the shutter ran: hand the photo to the new
+                        // composition (same session folder) instead of losing the page.
+                        val rotating = (context as? android.app.Activity)?.isChangingConfigurations == true
+                        if (rotating && raw.exists()) {
+                            lateCaptures.update { it + (sessionId to (it[sessionId].orEmpty() + Uri.fromFile(raw).toString())) }
+                        } else {
+                            raw.delete()
+                        }
                         return
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
@@ -776,6 +784,15 @@ fun CameraScannerScreen(
             // Up to a hundred large JPEGs: not on the main thread during the exit animation.
             if (!completed && !changingConfigurations) Thread { sessionDir.deleteRecursively() }.start()
             analyzer.close()
+        }
+    }
+
+    // Photos finished by the previous incarnation of this screen while it was being rotated.
+    LaunchedEffect(sessionId) {
+        lateCaptures.collect { waiting ->
+            val late = waiting[sessionId] ?: return@collect
+            lateCaptures.update { it - sessionId }
+            late.map(Uri::parse).forEach { uri -> if (!pages.contains(uri) && pages.size < pageLimit) pages.add(uri) }
         }
     }
 
@@ -1844,3 +1861,6 @@ internal const val SESSION_IMPORT_FAILED = ".import_failed"
  * runs low, and a finished scan waiting for its import exists nowhere else.
  */
 internal fun scannerSessionRoot(context: android.content.Context) = File(context.filesDir, SESSION_ROOT)
+
+/** Raw photos whose shutter finished during a rotation, by scanner session id; the recreated screen adopts them. */
+private val lateCaptures = kotlinx.coroutines.flow.MutableStateFlow<Map<String, List<String>>>(emptyMap())

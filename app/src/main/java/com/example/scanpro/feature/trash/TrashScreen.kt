@@ -116,7 +116,7 @@ internal fun TrashScreen(
 ) {
     var sortOption by rememberSaveable { mutableStateOf(TrashSortOption.EXPIRY) }
     var showEmptyDialog by rememberSaveable { mutableStateOf(false) }
-    var deleteSingleDoc by remember { mutableStateOf<DocumentSummary?>(null) }
+    var deleteSingleDocId by rememberSaveable { mutableStateOf<String?>(null) }
     var activeMenuDocId by rememberSaveable { mutableStateOf<String?>(null) }
 
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -332,7 +332,7 @@ internal fun TrashScreen(
                                             leadingIcon = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                                             onClick = {
                                                 activeMenuDocId = null
-                                                deleteSingleDoc = doc
+                                                deleteSingleDocId = doc.id
                                             }
                                         )
                                     }
@@ -345,15 +345,15 @@ internal fun TrashScreen(
         }
     }
 
-    if (deleteSingleDoc != null) {
+    if (deleteSingleDocId != null) {
         ConfirmDialog(
             title = stringResource(R.string.trash_delete_dialog_title),
             message = stringResource(R.string.trash_delete_dialog_message),
             confirmLabel = stringResource(R.string.common_delete),
-            onDismiss = { deleteSingleDoc = null },
+            onDismiss = { deleteSingleDocId = null },
             onConfirm = {
-                val id = deleteSingleDoc?.id
-                deleteSingleDoc = null
+                val id = deleteSingleDocId
+                deleteSingleDocId = null
                 if (id != null) onDeleteForever(id)
             }
         )

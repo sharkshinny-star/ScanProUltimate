@@ -53,8 +53,9 @@ fun LockScreen(onUnlock: () -> Unit, snackbarHostState: SnackbarHostState) {
     var prompted by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         if (!prompted) {
-            prompted = true
             delay(350.milliseconds)
+            // Marked only now: a rotation inside the delay cancels this effect and must let it run again.
+            prompted = true
             onUnlock()
         }
     }
