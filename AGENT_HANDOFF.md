@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-08 (F82-F84 close R40, R39 and R41: confirm-twice password dialog with show/hide, large-font and landscape layout fixes, and the smaller safety, access and data items; F81 closes R9: `DocumentRepository` split into a store, catalogue, trash, importer, page editor, page organiser and exporter behind an unchanged facade; merged F71-F78 features, Artemis device test plan, rotation state fixes, and launcher icon updates).
+Last updated: 2026-11-08 (F81 closes R9: `DocumentRepository` split into a store, catalogue, trash, importer, page editor, page organiser and exporter behind an unchanged facade; merged F71-F78 features, Artemis device test plan, rotation state fixes, and launcher icon updates).
 
 ## 1. Current state
 
@@ -33,7 +33,6 @@ Last updated: 2026-11-08 (F82-F84 close R40, R39 and R41: confirm-twice password
 
 | Commit | What |
 |---|---|
-| next | F82-F84 close R40, R39, R41: passwords typed twice when created (backup, protected PDF) with show/hide; Welcome, Lock, crop editor, Scan saved sheet and Tools progress card fixed for tablets, large fonts and landscape; Wi-Fi share without the password, calendar times, escaped `;`, 48 dp touch targets, slider and emoji labels, viewer crash guard, fixed error texts, Book split failure message. `BarcodeWifiFieldsTest` (2). Not seen on a device. |
 | next | F81 closes R9: `DocumentRepository` (1,600 lines) is now a 234-line facade over `DocumentStore` (shared locks, history, saving, PDF rebuild), `DocumentCatalog`, `DocumentTrash`, `DocumentImporter`, `PageEditor`, `PageOrganiser` and `DocumentExporter`. Public API unchanged (79 members compared); no behaviour change intended; not seen on a device. |
 | next | F80 closes R29: Book mode One page / Two pages / Two pages right first, dashed spine on the live outline, each capture cut out and split into two pages (`imaging/BookSpread.kt`). `BookSpreadTest` (3). Last of the competitor leftovers R26-R35. |
 | next | F79 closes R34: Settings › Scanning › Name pattern with {text} {mode} {date} {time} (`imaging/ScanTitle.kt`), applied in both import paths after the smart title; the typed name still wins. Kind labels stay English by the owner's R11 decision. `ScanTitleTest` (3). |

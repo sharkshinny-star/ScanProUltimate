@@ -37,7 +37,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -118,6 +117,7 @@ internal fun TrashScreen(
     var showEmptyDialog by rememberSaveable { mutableStateOf(false) }
     var deleteSingleDocId by rememberSaveable { mutableStateOf<String?>(null) }
     var activeMenuDocId by rememberSaveable { mutableStateOf<String?>(null) }
+    var topMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -149,6 +149,28 @@ internal fun TrashScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
+                actions = {
+                    if (documents.isNotEmpty()) {
+                        Box {
+                            IconButton(onClick = { topMenuExpanded = true }, enabled = !busy) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.trash_cd_more_actions))
+                            }
+                            DropdownMenu(
+                                expanded = topMenuExpanded,
+                                onDismissRequest = { topMenuExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.trash_empty_action), color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        topMenuExpanded = false
+                                        showEmptyDialog = true
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -205,27 +227,17 @@ internal fun TrashScreen(
                     }
                 }
 
-                // Under the notice rather than in the title bar, where the two text actions crowded the title and
-                // longer translations would collide with it.
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                // "Restore all" sits under the notice with full width; "Empty" moved into the top bar's ⋮ menu (R18).
+                OutlinedButton(
+                    enabled = !busy,
+                    onClick = onRestoreAll,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    OutlinedButton(enabled = !busy, onClick = onRestoreAll, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.trash_restore_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                    OutlinedButton(
-                        enabled = !busy,
-                        onClick = { showEmptyDialog = true },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.trash_empty_action), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
+                    Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.trash_restore_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
                 LazyRow(
