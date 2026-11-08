@@ -33,6 +33,7 @@ Last updated: 2026-11-08 (F71 and F72 close R37 and R17; F68 fast save and its r
 
 | Commit | What |
 |---|---|
+| next | F80 closes R29: Book mode One page / Two pages / Two pages right first, dashed spine on the live outline, each capture cut out and split into two pages (`imaging/BookSpread.kt`). `BookSpreadTest` (3). Last of the competitor leftovers R26-R35. |
 | next | F79 closes R34: Settings › Scanning › Name pattern with {text} {mode} {date} {time} (`imaging/ScanTitle.kt`), applied in both import paths after the smart title; the typed name still wins. Kind labels stay English by the owner's R11 decision. `ScanTitleTest` (3). |
 | next | F78 closes R33: Quick Settings "Scan" tile and a 2x1 widget (Scan, ID card, Import) through intents MainActivity already handles; scan request carries a mode. Not tried on a device. |
 | next | F77 closes R35: Tags sheet with chips on the document (`TagsSheet.kt`), Tags filter chip and sheet in Files, tag as a whole-string query parameter. `LibraryFiltersTest` +1. |

@@ -149,6 +149,10 @@
     <string name="scan_ev">EV</string>
     <string name="scan_id_front_only">ಮುಂಭಾಗ ಮಾತ್ರ</string>
     <string name="scan_id_both_sides">ಎರಡೂ ಬದಿ</string>
+    <string name="scan_book_one_page">ಒಂದು ಪುಟ</string>
+    <string name="scan_book_two_pages">ಎರಡು ಪುಟಗಳು</string>
+    <string name="scan_book_two_pages_rtl">ಎರಡು ಪುಟಗಳು, ಬಲ ಮೊದಲು</string>
+    <string name="scan_status_spread_split">ಹರಡಿದ ಪುಟವನ್ನು %1$d ಮತ್ತು %2$d ಪುಟಗಳಾಗಿ ವಿಭಜಿಸಲಾಗಿದೆ</string>
     <string name="scan_take_photo">ಫೋಟೋ ತೆಗೆಯಿರಿ</string>
     <string name="scan_import_photos">ಫೋಟೋ ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
     <string name="scan_permission_title">ಕ್ಯಾಮೆರಾ ಅನುಮತಿ</string>

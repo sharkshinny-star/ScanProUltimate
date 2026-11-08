@@ -170,6 +170,10 @@
     <string name="scan_ev">EV</string>
     <string name="scan_id_front_only">Front only</string>
     <string name="scan_id_both_sides">Both sides</string>
+    <string name="scan_book_one_page">One page</string>
+    <string name="scan_book_two_pages">Two pages</string>
+    <string name="scan_book_two_pages_rtl">Two pages, right first</string>
+    <string name="scan_status_spread_split">Spread split into pages %1$d and %2$d</string>
     <string name="scan_take_photo">Take photo</string>
     <string name="scan_import_photos">Import photos</string>
     <string name="scan_permission_title">Camera permission</string>

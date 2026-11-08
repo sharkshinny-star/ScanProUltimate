@@ -149,6 +149,10 @@
     <string name="scan_ev">EV</string>
     <string name="scan_id_front_only">முன்பக்கம் மட்டும்</string>
     <string name="scan_id_both_sides">இரு பக்கங்களும்</string>
+    <string name="scan_book_one_page">ஒரு பக்கம்</string>
+    <string name="scan_book_two_pages">இரு பக்கங்கள்</string>
+    <string name="scan_book_two_pages_rtl">இரு பக்கங்கள், வலது முதலில்</string>
+    <string name="scan_status_spread_split">விரிப்பு %1$d மற்றும் %2$d பக்கங்களாகப் பிரிக்கப்பட்டது</string>
     <string name="scan_take_photo">ஃபோட்டோ எடு</string>
     <string name="scan_import_photos">ஃபோட்டோக்களை இறக்குமதி செய்</string>
     <string name="scan_permission_title">கேமரா அனுமதி</string>

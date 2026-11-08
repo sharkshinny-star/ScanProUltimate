@@ -259,6 +259,10 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   the hand-over is invisible; when the animation plays the system screen just fades out in 120 ms. It plays only for a
   plain launcher start (not shortcuts, shares, notifications, Recents or a recreation), not with app lock on and not
   when system animations are off (`MainActivity.introWanted`). One clock drives it, read only while drawing.
+- **Book mode two-page capture (R29/F80).** `imaging/BookSpread.kt`: `halves` splits a width at a fraction (clamped to
+  20-80 %), `ordered` gives reading order, `split` cuts the spread along its outline (`cropSourceToBitmap`, 3800 px)
+  and writes the two halves. The camera does it in the capture's background outline step for `ScanMode.BOOK` with a
+  two-page layout, replacing the raw spread in `pages`; `SpineGuide` draws the dashed line over the live outline.
 - **Name pattern (R34/F79).** `imaging/ScanTitle.build(pattern, smartTitle, mode, created, fallback)`: blank pattern
   gives the smart title or the fallback as before; otherwise `{text}`/`{mode}`/`{date}`/`{time}` expand and `tidy`
   removes the separators an empty token leaves. `SettingsStore.namePattern` feeds both `DocumentRepository` import
