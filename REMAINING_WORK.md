@@ -47,6 +47,7 @@ R9 and F82-F84.
 - **R22 (Crash reports file names)**: Deliberately not changed / skipped as low risk. Crash reports are strictly local on-device and never leave the device unless explicitly shared by the user.
 - **R23 (ML Kit telemetry & internet permission)**: Kept. `INTERNET` permission is required for downloading on-device translation models; ML Kit telemetry disclosure must be declared on Google Play Data Safety form before release.
 - **Translations mechanical check**: Verified complete. All 5 non-English languages (Hindi, Telugu, Kannada, Tamil, Malayalam) contain 100% of the 1,354 strings with exact matching placeholders to English; native speaker review will assess tone and nuance prior to store launch.
+- **Old branches**: `claude/adoring-dijkstra-mvz8lc` and `claude/gracious-davinci-5lpczt` are fully merged into this branch but still exist on GitHub; delete them from GitHub's Branches page or run `git push origin --delete claude/adoring-dijkstra-mvz8lc claude/gracious-davinci-5lpczt` with your own login.
 - R9 (splitting `DocumentRepository`) is done (F81); R39, R40 and R41 are done (F82-F84); R18 is done (F85).
 
 ## PDF Tools backlog
