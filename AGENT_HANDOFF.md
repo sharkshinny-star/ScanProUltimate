@@ -33,6 +33,10 @@ Last updated: 2026-11-08 (F81 closes R9: `DocumentRepository` split into a store
 
 | Commit | What |
 |---|---|
+| next | F85 closes R18: Recycle bin actions on small phones. "Empty" moved into the TopAppBar ⋮ dropdown menu in `TrashScreen.kt`, and "Restore all" spans full width below retention notice. |
+| next | F84 closes R41: Safety, a11y, touch targets 48 dp, Wi-Fi QR password exclusion during share, TalkBack labels for sliders. |
+| next | F83 closes R39: Tablet and large-font layouts (Welcome, Lock, Crop editor, Scan saved sheet, Tools progress card). |
+| next | F82 closes R40: Backup password confirmation field and show/hide password toggle. |
 | next | F81 closes R9: `DocumentRepository` (1,600 lines) is now a 234-line facade over `DocumentStore` (shared locks, history, saving, PDF rebuild), `DocumentCatalog`, `DocumentTrash`, `DocumentImporter`, `PageEditor`, `PageOrganiser` and `DocumentExporter`. Public API unchanged (79 members compared); no behaviour change intended; not seen on a device. |
 | next | F80 closes R29: Book mode One page / Two pages / Two pages right first, dashed spine on the live outline, each capture cut out and split into two pages (`imaging/BookSpread.kt`). `BookSpreadTest` (3). Last of the competitor leftovers R26-R35. |
 | next | F79 closes R34: Settings › Scanning › Name pattern with {text} {mode} {date} {time} (`imaging/ScanTitle.kt`), applied in both import paths after the smart title; the typed name still wins. Kind labels stay English by the owner's R11 decision. `ScanTitleTest` (3). |

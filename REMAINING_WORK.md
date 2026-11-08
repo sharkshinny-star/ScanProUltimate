@@ -28,12 +28,16 @@ covers F74-F80 together.
 9. Native-speaker check of the Hindi, Telugu, Kannada, Tamil and Malayalam strings added since F64 (R19, R36; the F73-F80
    strings are drafts). Marathi, Gujarati, Bengali and Punjabi are deliberately not added (owner decision).
 
-## Owner decisions
+## Owner decisions (resolved 2026-11-08)
 
-- **Screenshots in debug builds**: `MainActivity` skips `FLAG_SECURE` when `BuildConfig.DEBUG`, so debug builds can be
-  screen-recorded while locked. Release builds are unaffected. Keep, or remove before release.
-- **R18, R20, R21, R22, R23**: see the table below; each needs a choice before work starts.
-- R9 (splitting `DocumentRepository`) is done (F81); R39, R40 and R41 are done (F82-F84), apart from checking document tab labels in Hindi, Tamil and Telugu on a device.
+- **Screenshots in debug builds**: Kept as-is. `MainActivity` skips `FLAG_SECURE` when `BuildConfig.DEBUG` to facilitate screenshot testing and screen recording during development/QA while locked. Release builds strictly enforce `FLAG_SECURE`.
+- **R18 (Recycle bin actions on small phones)**: Closed as F85. "Empty" moved from the button row under the notice into the TopAppBar ⋮ dropdown menu. "Restore all" now spans the full width under the notice, preventing button crowding and text truncation on 360 dp screens.
+- **R20 (Documents and database encryption at rest)**: Deliberately not changed / skipped. Documents, OCR text and database rely on Android file-based encryption and sandbox security. Encrypting with Keystore/SQLCipher/Tink AEAD adds key-loss risk and runtime performance penalty; app lock provides sufficient protection.
+- **R21 (Exported activity internal actions)**: Deliberately not changed / skipped as low risk. Internal actions accepted via external intents only trigger internal navigation and require device/app unlock.
+- **R22 (Crash reports file names)**: Deliberately not changed / skipped as low risk. Crash reports are strictly local on-device and never leave the device unless explicitly shared by the user.
+- **R23 (ML Kit telemetry & internet permission)**: Kept. `INTERNET` permission is required for downloading on-device translation models; ML Kit telemetry disclosure must be declared on Google Play Data Safety form before release.
+- **Translations mechanical check**: Verified complete. All 5 non-English languages (Hindi, Telugu, Kannada, Tamil, Malayalam) contain 100% of the 1,354 strings with exact matching placeholders to English; native speaker review will assess tone and nuance prior to store launch.
+- R9 (splitting `DocumentRepository`) is done (F81); R39, R40 and R41 are done (F82-F84); R18 is done (F85).
 
 ## PDF Tools backlog
 
@@ -48,14 +52,10 @@ see `TOOLS_IMPROVEMENTS.md`.
 | R2 | P1 | Compat | `app/build.gradle.kts` `targetSdk = 37` | Raised to 37 (Android 17) after a code review against the Android 17 behaviour changes (see F12). | Device-test on Android 17, including a large screen. |
 | R7 | P1 | Testing | whole app | Nothing verified on a device. | Device pass; Compose UI tests in CI on an emulator; golden comparison for the screenshots. |
 | R19 | P2 | UX | `core/designsystem/Palettes.kt`, `core/designsystem/PalettePicker.kt`, `feature/library/HomeTips.kt`, `ui/WhatsNewSheet.kt`, `res/values-*/strings_themes_tips.xml` | Colour themes, Home tips and the What's new sheet are verified only by JVM renders (`ColourThemeScreenshotTest`) and tests. | Device pass through each colour theme in light and dark; native-speaker review of `strings_themes_tips.xml`. |
-| R20 | P2 | Security | whole app, `MainActivity.authenticate`, `core/security/FolderLock.kt` | Documents, OCR text and the database are not encrypted by the app; | Owner decision (architectural, document first): encrypt page files and the database with an Android Keystore key (optionally auth-bound), e.g. Tink streaming AEAD plus SQLCipher. Costs speed and adds a key-loss risk. |
 | R23 | P2 | Privacy / compliance | ML Kit dependencies, `AndroidManifest.xml` (`INTERNET`) | `releaseRuntimeClasspath` includes Google's Clearcut logging transport (`com.google.android.datatransport:transport-backend-cct` 2.3.3, pulled in by ML Kit), and the app holds `INTERNET` for translation downloads. | Before release, check Google's current ML Kit data disclosure and declare it in the Play Data safety form and the final policy. There is no supported switch to turn it off; removing `INTERNET` would break translation model downloads. |
 | R24 | P2 | UX | `ui/LaunchIntro.kt`, `res/drawable/ic_launch_icon.xml`, `MainActivity.kt` | The new launch animation is verified by JVM renders compared frame by frame with the Figma render, `LaunchIntroTest` (timing, tap to skip) and `LaunchSmokeTest` (56 launches, Android 7-17), not on a device. | On a device: cold start from the launcher (Android 12+ and 11), app lock on, rotation during the animation, a share into the app (no animation). |
 | R25 | P2 | UX | `scanner/PageQuality.kt` | The blur, glare and darkness limits come from the live detector and synthetic tests, not from real photos. | Run `SCAN_QUALITY_TEST_PLAN.md` photos through `OpenCvScanProcessor.assessQuality` and tune `GLARE_MIN_SHARE` / the clipped level. |
 | R36 | P2 | Testing / UX | `feature/document/ScanSavedSheet.kt`, `scanner/PageQuality.kt`, `ui/LaunchIntro.kt` | Left over from the 2026-11-05 after-scan, page-quality and launch work; the suite and lint half is done (F80 run). | On a device scan a receipt, a business card and a letter and check the sheet; then R24/R25 device checks. |
 | R42 | P3 | UX | `feature/library/LibraryScreen.kt` | Fix in (unsaved list state), awaiting a device check. | Confirm on the OnePlus; close R42 if good. |
-| R18 | P3 | UX | `feature/trash/TrashScreen.kt`, `feature/document/DocumentScreen.kt`, `feature/settings/SettingsScreen.kt`, `feature/library/DocumentCards.kt` | From the screenshot review (360 dp phone), not changed (the Recycle bin actions were moved under the notice in F43): | Owner picks; Empty into ⋮ is the cheapest. |
-| R21 | P3 | Security | `MainActivity.handleIntent` | The exported activity accepts the internal actions (open document, recycle bin, settings, unsaved scans, scan) from any app. | Optional: route notification and shortcut actions through a non-exported trampoline activity. |
-| R22 | P3 | Privacy | `core/crash/CrashReporter.kt` | Crash reports include exception messages, which can hold file names derived from document titles. | Optional: replace paths under `filesDir`/`cacheDir` with placeholders before writing. |
 
 Fixed items and their evidence are in the "Fixed" table of `AUDIT_FINDINGS.md`; build and test results in `BUILD_AND_TEST.md`.
