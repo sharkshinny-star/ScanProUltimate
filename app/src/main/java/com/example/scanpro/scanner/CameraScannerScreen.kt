@@ -111,6 +111,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
+import kotlinx.coroutines.flow.update
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -250,10 +251,10 @@ fun CameraScannerScreen(
     // Grid and spirit level are off unless switched on in the menu: the live outline is guidance enough.
     var showGrid by remember { mutableStateOf(prefs.getBoolean("grid", false)) }
     var showLevel by remember { mutableStateOf(prefs.getBoolean("level", false)) }
-    var overflowOpen by remember { mutableStateOf(false) }
+    var overflowOpen by rememberSaveable { mutableStateOf(false) }
     val onLabel = stringResource(R.string.common_on)
     val offLabel = stringResource(R.string.common_off)
-    var showAdjustments by remember { mutableStateOf(false) }
+    var showAdjustments by rememberSaveable { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
     var zoomRatio by remember { mutableFloatStateOf(1f) }
@@ -321,9 +322,30 @@ fun CameraScannerScreen(
             }
         )
     ) { mutableStateMapOf<String, PageFilter>() }
-    // Brightness / contrast / saturation chosen on the review screen, per page (keyed like filters). Not saved across
-    // process death: the sliders start at zero again, which is what they show.
-    val adjustments = remember { mutableStateMapOf<String, PageAdjustments>() }
+    // Brightness / contrast / saturation chosen on the review screen, per page (keyed like filters). Saved across
+    // rotation and process death as "b|c|s|shadows|fingers|key" strings.
+    val adjustments = rememberSaveable(
+        saver = listSaver(
+            save = { map ->
+                map.map { (k, v) -> "${v.brightness}|${v.contrast}|${v.saturation}|${v.removeShadows}|${v.removeFingers}|$k" }
+            },
+            restore = { saved ->
+                mutableStateMapOf<String, PageAdjustments>().apply {
+                    saved.forEach { entry ->
+                        val p = entry.split('|', limit = 6)
+                        if (p.size == 6) {
+                            val b = p[0].toFloatOrNull()
+                            val c = p[1].toFloatOrNull()
+                            val s = p[2].toFloatOrNull()
+                            if (b != null && c != null && s != null) {
+                                put(p[5], PageAdjustments(b, c, s, p[3].toBoolean(), p[4].toBoolean()).normalized())
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    ) { mutableStateMapOf<String, PageAdjustments>() }
     // What the review should point out per page (blurred, glare, too dark), keyed like filters. Worked out in the
     // background for every page as it arrives (captures, retakes and gallery picks alike); not saved, it is simply
     // worked out again after a restart.
@@ -350,7 +372,7 @@ fun CameraScannerScreen(
         else -> 100
     }
 
-    var confirmQuit by remember { mutableStateOf(false) }
+    var confirmQuit by rememberSaveable { mutableStateOf(false) }
     // Closing with captured pages would discard them, so ask first.
     val retaking = retakeIndex in pages.indices
     val requestClose = {
@@ -645,7 +667,14 @@ fun CameraScannerScreen(
                     // The screen was closed while the shutter was running; launching on its cancelled
                     // scope would skip the cleanup below, so drop the raw file here.
                     if (disposed.get()) {
-                        raw.delete()
+                        // A rotation recreated the screen while the shutter ran: hand the photo to the new
+                        // composition (same session folder) instead of losing the page.
+                        val rotating = (context as? android.app.Activity)?.isChangingConfigurations == true
+                        if (rotating && raw.exists()) {
+                            lateCaptures.update { it + (sessionId to (it[sessionId].orEmpty() + Uri.fromFile(raw).toString())) }
+                        } else {
+                            raw.delete()
+                        }
                         return
                     }
                     // Keep the raw photo: cropping happens in the review step, from the full-size original.
@@ -898,6 +927,15 @@ fun CameraScannerScreen(
             // Up to a hundred large JPEGs: not on the main thread during the exit animation.
             if (!completed && !changingConfigurations) Thread { sessionDir.deleteRecursively() }.start()
             analyzer.close()
+        }
+    }
+
+    // Photos finished by the previous incarnation of this screen while it was being rotated.
+    LaunchedEffect(sessionId) {
+        lateCaptures.collect { waiting ->
+            val late = waiting[sessionId] ?: return@collect
+            lateCaptures.update { it - sessionId }
+            late.map(Uri::parse).forEach { uri -> if (!pages.contains(uri) && pages.size < pageLimit) pages.add(uri) }
         }
     }
 
@@ -2069,3 +2107,6 @@ internal const val SESSION_IMPORT_FAILED = ".import_failed"
  * runs low, and a finished scan waiting for its import exists nowhere else.
  */
 internal fun scannerSessionRoot(context: android.content.Context) = File(context.filesDir, SESSION_ROOT)
+
+/** Raw photos whose shutter finished during a rotation, by scanner session id; the recreated screen adopts them. */
+private val lateCaptures = kotlinx.coroutines.flow.MutableStateFlow<Map<String, List<String>>>(emptyMap())

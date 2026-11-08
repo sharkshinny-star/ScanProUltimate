@@ -313,10 +313,10 @@ internal fun LibraryScreen(
         onMoveToRecycleBin = { onBulkDelete(setOf(doc.id)) }
     )
     var deleteFolderOpen by rememberSaveable { mutableStateOf(false) }
-    var renameMergeTarget by remember { mutableStateOf<String?>(null) }
+    var renameMergeTarget by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    var renameFolderSource by remember { mutableStateOf<String?>(null) }
-    var lockFolderOpen by remember { mutableStateOf<String?>(null) }
+    var renameFolderSource by rememberSaveable { mutableStateOf<String?>(null) }
+    var lockFolderOpen by rememberSaveable { mutableStateOf<String?>(null) }
     val deviceUnlock = com.example.scanpro.core.security.LocalDeviceUnlock.current
     var sortMenuOpen by remember { mutableStateOf(false) }
     var moreMenuOpen by remember { mutableStateOf(false) }
@@ -979,7 +979,7 @@ private fun HomeDashboard(
     val recent = overview.recent
     val documentCount = overview.documentCount
     val wide = com.example.scanpro.navigation.isWideWindow()
-    // R38: a plain `remember`, not the saved state LazyColumn creates by default. Coming back to Home from another
+    // R42: a plain `remember`, not the saved state LazyColumn creates by default. Coming back to Home from another
     // tab restored a scroll offset of about 14 dp that hid the search pill's top; Home now always opens at the top.
     val listState = remember { androidx.compose.foundation.lazy.LazyListState() }
     LazyColumn(
