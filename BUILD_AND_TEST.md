@@ -45,6 +45,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 
 | Check | Result |
 |---|---|
+| `:app:testDebugUnitTest` (F100 Adobe Scan post-scan review experience overhaul) | 483 tests run, 0 failed; `ScanReviewCropControlsTest` passed; `ScanReviewSlidersTest`, `ScanReviewNamingTest`, `ScanReviewQualityTest`, `ScanReviewReorderTest` 100% passed; `:app:compileDebugKotlin` and `:app:assembleDebug` passed cleanly. |
 | `:app:testDebugUnitTest` (F99 Adaptive layout for small screens) | All UI and Library tests passed (`WelcomePermissionsTest`, `HomeScrollTest`, `ScanReviewCropControlsTest`). Verified `assertIsDisplayed()` for notifications permission and tip next action button; `:app:compileDebugKotlin` and tests clean. |
 | `:app:testDebugUnitTest` (F97 Convert tools overhaul) | 353 passed, 63 skipped, 0 failed; `PdfToolsFeaturesTest` 11 passed (empty image list rejection, password-protected PDF rejection, Office/HTML/Markdown MIME types detection); `:app:assembleDebug` passed. |
 | `:app:testDebugUnitTest` (F96, rebased tree at `2149caf`, 2026-11-09) | 413 tests, 30 skipped, 0 failed (412 before the rebase onto F91-F95); `:app:compileDebugKotlin` clean; not seen on a device |
