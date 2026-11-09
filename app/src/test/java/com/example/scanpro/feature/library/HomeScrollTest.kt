@@ -127,4 +127,24 @@ class HomeScrollTest {
         // Search launcher must still be displayed at the top
         compose.onNodeWithText(searchHint).assertIsDisplayed()
     }
+
+    @Test
+    fun `empty library home displays tip card next button adaptively`() {
+        val emptyOverview = LibraryOverview(
+            recent = emptyList(),
+            documentCount = 0,
+            favoriteCount = 0,
+            folders = emptyList()
+        )
+        compose.setContent {
+            ScanProTheme(themeMode = ThemeMode.LIGHT) {
+                LibraryScreenForTest(overview = emptyOverview, showTips = true)
+            }
+        }
+
+        // On empty library, Search launcher, hero, and tip card with Next tip are displayed
+        val searchHint = app.getString(R.string.lib_home_search_launcher)
+        compose.onNodeWithText(searchHint).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.tip_next)).assertIsDisplayed()
+    }
 }

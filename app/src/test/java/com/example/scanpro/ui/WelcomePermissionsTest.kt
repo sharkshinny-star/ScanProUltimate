@@ -49,8 +49,8 @@ class WelcomePermissionsTest {
         showAndGetStarted()
 
         compose.onNodeWithText(text(R.string.ui_permissions_title)).assertIsDisplayed()
-        compose.onNodeWithText(text(R.string.ui_permission_camera_title)).assertExists()
-        compose.onNodeWithText(text(R.string.ui_permission_notifications_title)).assertExists()
+        compose.onNodeWithText(text(R.string.ui_permission_camera_title)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.ui_permission_notifications_title)).assertIsDisplayed()
         assertEquals(0, finished)
         assertNull(shadowOf(compose.activity).lastRequestedPermission)
     }

@@ -45,6 +45,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 
 | Check | Result |
 |---|---|
+| `:app:testDebugUnitTest` (F99 Adaptive layout for small screens) | All UI and Library tests passed (`WelcomePermissionsTest`, `HomeScrollTest`, `ScanReviewCropControlsTest`). Verified `assertIsDisplayed()` for notifications permission and tip next action button; `:app:compileDebugKotlin` and tests clean. |
 | `:app:testDebugUnitTest` (F97 Convert tools overhaul) | 353 passed, 63 skipped, 0 failed; `PdfToolsFeaturesTest` 11 passed (empty image list rejection, password-protected PDF rejection, Office/HTML/Markdown MIME types detection); `:app:assembleDebug` passed. |
 | `:app:testDebugUnitTest` (F96, rebased tree at `2149caf`, 2026-11-09) | 413 tests, 30 skipped, 0 failed (412 before the rebase onto F91-F95); `:app:compileDebugKotlin` clean; not seen on a device |
 | Camera <-> Files 10-switch performance & freeze fix (F91) | Physical OnePlus CPH2569 (Android 15): 10 consecutive automated switches between Files and Camera via ADB. Freezes of 1,700 ms and 2,100 ms completely eliminated (0 frames > 250 ms across 881 rendered frames). 50th percentile: 12 ms; 90th percentile: 28 ms; 95th percentile: 40 ms; 99th percentile: 200 ms. High input latency frames dropped from 4,998 to 534. Janky frames reduced to 18.39% (from 25.86% + legacy 70.36%). 0 Camera HAL stream configuration failures during active binds. |
