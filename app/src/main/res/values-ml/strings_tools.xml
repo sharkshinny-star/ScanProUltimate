@@ -263,4 +263,66 @@
     <string name="tools_office_note_too_long">ഫയൽ വളരെ വലുതായിരുന്നു; ആദ്യത്തെ 20 MB മാത്രം കാണിക്കുന്നു.</string>
     <string name="tools_office_note_workbook_truncated">ആദ്യത്തെ %1$s സെല്ലുകൾ മാത്രം കാണിക്കുന്നു; വർക്ക്ബുക്കിന്റെ ബാക്കി ഭാഗം പരിവർത്തനം ചെയ്തിട്ടില്ല.</string>
     <string name="tools_office_note_file_truncated">ഫയൽ വളരെ വലുതായിരുന്നു; ആദ്യത്തെ %1$s സെല്ലുകൾ മാത്രം കാണിക്കുന്നു.</string>
+
+    <!-- Image Tools -->
+    <string name="tools_section_image">ഇമേജ് ടൂളുകൾ</string>
+    <string name="tools_card_compress_img">ചിത്രം കംപ്രസ് ചെയ്യുക</string>
+    <string name="tools_tile_compress_img">കംപ്രസ്</string>
+    <string name="tools_card_convert_img">ചിത്രം മാറ്റുക</string>
+    <string name="tools_tile_convert_img">കൺവെർട്ട്</string>
+    <string name="tools_card_resize_img">ചിത്രം റീസൈസ് ചെയ്യുക</string>
+    <string name="tools_tile_resize_img">റീസൈസ്</string>
+
+    <string name="tools_compress_img_title">ചിത്രം കംപ്രസ് ചെയ്യുക</string>
+    <string name="tools_compress_img_target_kb">ലക്ഷ്യ വലിപ്പം (KB)</string>
+    <string name="tools_compress_img_custom_size">ഇഷ്‌ടാനുസൃതം</string>
+    <string name="tools_compress_img_quick_sizes">വേഗത്തിലുള്ള വലിപ്പം</string>
+    <string name="tools_compress_img_mode_target">ലക്ഷ്യ വലിപ്പം</string>
+    <string name="tools_compress_img_mode_quality">ഗുണമേന്മ %</string>
+    <string name="tools_compress_img_quality_label">ഗുണമേന്മ: %1$d%%</string>
+    <string name="tools_compress_img_resolution_label">പരമാവധി റെസല്യൂഷൻ</string>
+    <string name="tools_compress_img_res_auto">ഓട്ടോ</string>
+    <string name="tools_compress_img_res_2048">2048 px</string>
+    <string name="tools_compress_img_res_1600">1600 px</string>
+    <string name="tools_compress_img_res_1280">1280 px</string>
+    <string name="tools_compress_img_res_800">800 px (പാസ്‌പോർട്ട് / ID)</string>
+    <string name="tools_compress_img_action">കംപ്രസ് ചെയ്യുക</string>
+    <string name="tools_compress_img_help">ജോബ് പോർട്ടലുകൾ, പാസ്‌പോർട്ട്/വിസ ഫോട്ടോകൾ, കെവൈസി അപ്‌ലോഡുകൾ എന്നിവയ്ക്കായി വലിപ്പം കുറയ്ക്കുന്നു.</string>
+    <string name="tools_compress_img_success">ചിത്രം %1$d%% ചുരുക്കി (%2$s → %3$s)</string>
+
+    <string name="tools_convert_img_title">ചിത്രം മാറ്റുക</string>
+    <string name="tools_convert_img_format_label">ടാർഗെറ്റ് ഫോർമാറ്റ്</string>
+    <string name="tools_convert_img_format_png">PNG</string>
+    <string name="tools_convert_img_format_png_desc">ഗുണമേന്മ നഷ്ടപ്പെടാതെ 100%% സൂക്ഷിക്കുന്നു (ലോസ്‌ലെസ്സ്).</string>
+    <string name="tools_convert_img_format_jpg">JPG / JPEG</string>
+    <string name="tools_convert_img_format_jpg_desc">ചെറിയ ഫയൽ വലിപ്പം, സാർവത്രിക അനുയോജ്യത. സുതാര്യമായ ഭാഗങ്ങൾ വെളുത്തതാകും.</string>
+    <string name="tools_convert_img_format_webp">WEBP</string>
+    <string name="tools_convert_img_format_webp_desc">മികച്ച കംപ്രഷനുള്ള ആധുനിക വെബ് ഫോർമാറ്റ്.</string>
+    <string name="tools_convert_img_lossless_badge">ലോസ്‌ലെസ്സ് (ഗുണനിലവാര നഷ്ടമില്ല)</string>
+    <string name="tools_convert_img_action">കൺവെർട്ട് ചെയ്യുക</string>
+    <plurals name="tools_convert_img_done">
+        <item quantity="one">%1$d ചിത്രം പരിവർത്തനം ചെയ്തു</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ പരിവർത്തനം ചെയ്തു</item>
+    </plurals>
+
+    <string name="tools_resize_img_title">ചിത്രം റീസൈസ് ചെയ്യുക</string>
+    <string name="tools_resize_img_dimensions">അളവുകൾ (px)</string>
+    <string name="tools_resize_img_width">വീതി (px)</string>
+    <string name="tools_resize_img_height">ഉയരം (px)</string>
+    <string name="tools_resize_img_lock_aspect">ആസ്പെക്റ്റ് റേഷ്യോ നിലനിർത്തുക</string>
+    <string name="tools_resize_img_preset_passport">പാസ്‌പോർട്ട് (600 × 600)</string>
+    <string name="tools_resize_img_preset_fhd">Full HD (1920 × 1080)</string>
+    <string name="tools_resize_img_preset_hd">HD (1280 × 720)</string>
+    <string name="tools_resize_img_preset_avatar">അവതാരം (400 × 400)</string>
+    <string name="tools_resize_img_scale_label">സ്കെയിൽ</string>
+    <string name="tools_resize_img_action">റീസൈസ് ചെയ്യുക</string>
+    <string name="tools_resize_img_success">%1$d × %2$d px ലേക്ക് റീസൈസ് ചെയ്തു (%3$s)</string>
+
+    <string name="tools_progress_compressing_img">ചിത്രം കംപ്രസ് ചെയ്യുന്നു…</string>
+    <string name="tools_progress_converting_img">ചിത്രം മാറ്റുന്നു…</string>
+    <string name="tools_progress_resizing_img">ചിത്രം റീസൈസ് ചെയ്യുന്നു…</string>
+    <string name="tools_err_compress_img">ചിത്രം കംപ്രസ് ചെയ്യാനായില്ല</string>
+    <string name="tools_err_convert_img">ചിത്രം മാറ്റാനായില്ല</string>
+    <string name="tools_err_resize_img">ചിത്രം റീസൈസ് ചെയ്യാനായില്ല</string>
+    <string name="tools_err_invalid_dimensions">അളവുകൾ 10 മുതൽ 8000 പിക്സലുകൾ വരെയായിരിക്കണം</string>
 </resources>

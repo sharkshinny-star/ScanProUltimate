@@ -257,4 +257,64 @@ class PdfToolsFeaturesTest {
         assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.HTML, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/xhtml+xml", "page.xhtml"))
         assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.HTML, com.example.scanpro.imaging.OfficeToHtml.kindOf("message/rfc822", "email.mhtml"))
     }
+
+    @Test
+    fun splitPdfNamesFilesWithSourceBaseNamePrefix() = kotlinx.coroutines.runBlocking {
+        val dir = File(app.cacheDir, "test_split_names_${System.currentTimeMillis()}").apply { mkdirs() }
+        val invoicePdf = File(dir, "Invoice.pdf")
+        val doc = com.tom_roush.pdfbox.pdmodel.PDDocument()
+        doc.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+        doc.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+        doc.save(invoicePdf)
+        doc.close()
+
+        val outSingle = File(dir, "out_single").apply { mkdirs() }
+        val singleFiles = com.example.scanpro.imaging.PdfToolsEngine.splitPdf(
+            context = app,
+            inputUri = android.net.Uri.fromFile(invoicePdf),
+            mode = com.example.scanpro.imaging.SplitMode.SINGLE_PAGES,
+            outputDir = outSingle
+        )
+        assertEquals(2, singleFiles.size)
+        assertEquals("Invoice page 001.pdf", singleFiles[0].name)
+        assertEquals("Invoice page 002.pdf", singleFiles[1].name)
+
+        val outRanges = File(dir, "out_ranges").apply { mkdirs() }
+        val rangeFiles = com.example.scanpro.imaging.PdfToolsEngine.splitPdf(
+            context = app,
+            inputUri = android.net.Uri.fromFile(invoicePdf),
+            mode = com.example.scanpro.imaging.SplitMode.PAGE_RANGES,
+            customRangesText = "1-2",
+            outputDir = outRanges
+        )
+        assertEquals(1, rangeFiles.size)
+        assertEquals("Invoice range 1 pages 1 to 2.pdf", rangeFiles[0].name)
+
+        val outParts = File(dir, "out_parts").apply { mkdirs() }
+        val partFiles = com.example.scanpro.imaging.PdfToolsEngine.splitPdf(
+            context = app,
+            inputUri = android.net.Uri.fromFile(invoicePdf),
+            mode = com.example.scanpro.imaging.SplitMode.EVERY_N_PAGES,
+            everyNPages = 1,
+            outputDir = outParts
+        )
+        assertEquals(2, partFiles.size)
+        assertEquals("Invoice part 1 pages 1 to 1.pdf", partFiles[0].name)
+        assertEquals("Invoice part 2 pages 2 to 2.pdf", partFiles[1].name)
+    }
+
+    @Test
+    fun sourceBaseNameGeneratesFileSafePrefixes() {
+        val invoiceUri = android.net.Uri.parse("content://media/external/files/1234/Invoice_2026.pdf")
+        val base1 = com.example.scanpro.imaging.PdfToolsEngine.sourceBaseName(app, invoiceUri)
+        assertEquals("Invoice_2026", base1)
+
+        val fileUri = android.net.Uri.fromFile(java.io.File("/tmp/My Document (Final).pdf"))
+        val base2 = com.example.scanpro.imaging.PdfToolsEngine.sourceBaseName(app, fileUri)
+        assertEquals("My Document (Final)", base2)
+
+        val fallbackUri = android.net.Uri.parse("content://media")
+        val base3 = com.example.scanpro.imaging.PdfToolsEngine.sourceBaseName(app, fallbackUri, fallback = "CustomFallback")
+        assertEquals("CustomFallback", base3)
+    }
 }

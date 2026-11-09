@@ -293,4 +293,66 @@
     <string name="tools_office_note_too_long">The file was too long; only the first 20 MB are shown.</string>
     <string name="tools_office_note_workbook_truncated">Only the first %1$s cells are shown; the rest of the workbook was not converted.</string>
     <string name="tools_office_note_file_truncated">The file was too large; only the first %1$s cells are shown.</string>
+
+    <!-- Image Tools -->
+    <string name="tools_section_image">Image Tools</string>
+    <string name="tools_card_compress_img">Compress Image</string>
+    <string name="tools_tile_compress_img">Compress</string>
+    <string name="tools_card_convert_img">Convert Image</string>
+    <string name="tools_tile_convert_img">Convert</string>
+    <string name="tools_card_resize_img">Resize Image</string>
+    <string name="tools_tile_resize_img">Resize</string>
+
+    <string name="tools_compress_img_title">Compress Image</string>
+    <string name="tools_compress_img_target_kb">Target size (KB)</string>
+    <string name="tools_compress_img_custom_size">Custom</string>
+    <string name="tools_compress_img_quick_sizes">Quick size</string>
+    <string name="tools_compress_img_mode_target">Target size</string>
+    <string name="tools_compress_img_mode_quality">Quality %</string>
+    <string name="tools_compress_img_quality_label">Quality: %1$d%%</string>
+    <string name="tools_compress_img_resolution_label">Max resolution</string>
+    <string name="tools_compress_img_res_auto">Auto</string>
+    <string name="tools_compress_img_res_2048">2048 px</string>
+    <string name="tools_compress_img_res_1600">1600 px</string>
+    <string name="tools_compress_img_res_1280">1280 px</string>
+    <string name="tools_compress_img_res_800">800 px (Passport / ID)</string>
+    <string name="tools_compress_img_action">Compress</string>
+    <string name="tools_compress_img_help">Optimises file size for job portals, passport/visa photos and KYC uploads.</string>
+    <string name="tools_compress_img_success">Image compressed by %1$d%% (%2$s → %3$s)</string>
+
+    <string name="tools_convert_img_title">Convert Image</string>
+    <string name="tools_convert_img_format_label">Target format</string>
+    <string name="tools_convert_img_format_png">PNG</string>
+    <string name="tools_convert_img_format_png_desc">100% lossless fidelity. Zero compression artifacts. Preserves transparency.</string>
+    <string name="tools_convert_img_format_jpg">JPG / JPEG</string>
+    <string name="tools_convert_img_format_jpg_desc">Small file size, universal compatibility. Clean white background for transparency.</string>
+    <string name="tools_convert_img_format_webp">WEBP</string>
+    <string name="tools_convert_img_format_webp_desc">Modern web format with superior compression efficiency.</string>
+    <string name="tools_convert_img_lossless_badge">Lossless (Zero Quality Loss)</string>
+    <string name="tools_convert_img_action">Convert</string>
+    <plurals name="tools_convert_img_done">
+        <item quantity="one">%1$d image converted</item>
+        <item quantity="other">%1$d images converted</item>
+    </plurals>
+
+    <string name="tools_resize_img_title">Resize Image</string>
+    <string name="tools_resize_img_dimensions">Dimensions (px)</string>
+    <string name="tools_resize_img_width">Width (px)</string>
+    <string name="tools_resize_img_height">Height (px)</string>
+    <string name="tools_resize_img_lock_aspect">Maintain aspect ratio</string>
+    <string name="tools_resize_img_preset_passport">Passport (600 × 600)</string>
+    <string name="tools_resize_img_preset_fhd">Full HD (1920 × 1080)</string>
+    <string name="tools_resize_img_preset_hd">HD (1280 × 720)</string>
+    <string name="tools_resize_img_preset_avatar">Avatar (400 × 400)</string>
+    <string name="tools_resize_img_scale_label">Scale</string>
+    <string name="tools_resize_img_action">Resize</string>
+    <string name="tools_resize_img_success">Resized to %1$d × %2$d px (%3$s)</string>
+
+    <string name="tools_progress_compressing_img">Compressing image…</string>
+    <string name="tools_progress_converting_img">Converting image…</string>
+    <string name="tools_progress_resizing_img">Resizing image…</string>
+    <string name="tools_err_compress_img">Could not compress image</string>
+    <string name="tools_err_convert_img">Could not convert image</string>
+    <string name="tools_err_resize_img">Could not resize image</string>
+    <string name="tools_err_invalid_dimensions">Dimensions must be between 10 and 8000 pixels</string>
 </resources>

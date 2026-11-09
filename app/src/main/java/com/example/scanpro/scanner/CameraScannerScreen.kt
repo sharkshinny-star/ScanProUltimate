@@ -2072,8 +2072,8 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: CropQua
         drawPath(path, color = lineColor.copy(alpha = fillAlpha))
         drawPath(path, color = lineColor.copy(alpha = 0.9f), style = Stroke(width = weight, cap = StrokeCap.Round))
 
-        // Bracket corners: a short run along each edge away from the corner, like a viewfinder.
-        val armLength = (size.minDimension * 0.045f).coerceIn(18f, 44f)
+        // Bracket corners: a short run along each edge away from the corner, plus anchor dot on lock.
+        val armLength = (size.minDimension * 0.052f).coerceIn(20f, 48f)
         for (i in points.indices) {
             val corner = points[i]
             val next = points[(i + 1) % 4]
@@ -2087,6 +2087,10 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: CropQua
             }
             arm(next)
             arm(previous)
+            if (stable) {
+                drawCircle(Color.White, radius = 5f, center = corner)
+                drawCircle(lineColor, radius = 3.5f, center = corner)
+            }
         }
     }
 }

@@ -41,10 +41,16 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report, on pushes to `main`, pull requests and manual runs (20-minute timeout; artifacts only on manual runs). Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
 
-## Latest results (2026-11-09, working tree on branch claude/awesome-clarke-ussjo3)
+## Latest results (2026-11-10, working tree on branch claude/awesome-clarke-ussjo3)
 
 | Check | Result |
 |---|---|
+| `:app:testDebugUnitTest` (F106 Codebase cleanup & compiler warnings resolution) | Non-incremental `:app:compileDebugKotlin` passed with 0 errors and 0 warnings; `ImageToolsEngineTest` and `PdfToolsFeaturesTest` passed cleanly; resolved KSP cache corruption; migrated all deprecated icons to `Icons.AutoMirrored.Filled.*`. |
+| `:app:testDebugUnitTest` (F105 Adobe Scan review & Crop suite) | BUILD SUCCESSFUL in 4m 27s; 100% of unit tests passed (0 failures); `CropEditorDialogTest` passed; `ScanReviewCropControlsTest` passed; `:app:assembleDebug` built and installed on OnePlus CPH2569 (`dc6b0551`). |
+| `:app:testDebugUnitTest` (F104 Image Tools suite) | 8/8 `ImageToolsEngineTest` passed; 13/13 `PdfToolsFeaturesTest` passed; 85/85 passed in imaging suite; `:app:assembleDebug` passed cleanly. |
+| `:app:testDebugUnitTest` (F103 PDF Tools background notifications & export naming improvements) | 13/13 `PdfToolsFeaturesTest` passed; 90 passed, 0 failed in imaging & tools suite; clean compile. |
+| `:app:testDebugUnitTest` (F102 Camera scanner HUD and controls UI/UX overhaul) | 54 scanner unit tests passed (0 failed); `CapturedStripTest` 3/3 passed; `ScanReviewCropControlsTest` passed; clean compile. |
+| `:app:testDebugUnitTest` (F101 End-to-end security and crash hardening) | 483 unit tests passed (0 failed); `Activity` unwrapping for PrintManager; ClipData URI grants; safe divide-by-zero bounds. |
 | `:app:testDebugUnitTest` (F100 Adobe Scan post-scan review experience overhaul) | 483 tests run, 0 failed; `ScanReviewCropControlsTest` passed; `ScanReviewSlidersTest`, `ScanReviewNamingTest`, `ScanReviewQualityTest`, `ScanReviewReorderTest` 100% passed; `:app:compileDebugKotlin` and `:app:assembleDebug` passed cleanly. |
 | `:app:testDebugUnitTest` (F99 Adaptive layout for small screens) | All UI and Library tests passed (`WelcomePermissionsTest`, `HomeScrollTest`, `ScanReviewCropControlsTest`). Verified `assertIsDisplayed()` for notifications permission and tip next action button; `:app:compileDebugKotlin` and tests clean. |
 | `:app:testDebugUnitTest` (F97 Convert tools overhaul) | 353 passed, 63 skipped, 0 failed; `PdfToolsFeaturesTest` 11 passed (empty image list rejection, password-protected PDF rejection, Office/HTML/Markdown MIME types detection); `:app:assembleDebug` passed. |

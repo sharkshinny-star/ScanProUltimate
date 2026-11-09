@@ -34,3 +34,12 @@
 
 # The on-demand translate module's entry point is created by name from TranslationFeature.
 -keep class com.example.scanpro.translate.MlKitTranslator { <init>(); }
+
+# Composition tracing: strip trace strings from release builds to minimize APK size overhead.
+-assumenosideeffects public class androidx.compose.runtime.ComposerKt {
+   boolean isTraceInProgress();
+   void traceEventStart(int,int,int,java.lang.String);
+   void traceEventStart(int,java.lang.String);
+   void traceEventEnd();
+}
+

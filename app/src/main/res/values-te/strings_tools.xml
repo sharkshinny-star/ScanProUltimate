@@ -263,4 +263,66 @@
     <string name="tools_office_note_too_long">ఫైల్ చాలా పెద్దది; మొదటి 20 MB మాత్రమే చూపబడింది.</string>
     <string name="tools_office_note_workbook_truncated">మొదటి %1$s సెల్‌లు మాత్రమే చూపబడ్డాయి; వర్క్‌బుక్‌లోని మిగతా భాగం మార్చబడలేదు.</string>
     <string name="tools_office_note_file_truncated">ఫైల్ చాలా పెద్దది; మొదటి %1$s సెల్‌లు మాత్రమే చూపబడ్డాయి.</string>
+
+    <!-- Image Tools -->
+    <string name="tools_section_image">చిత్ర సాధనాలు</string>
+    <string name="tools_card_compress_img">చిత్రాన్ని కుదించు</string>
+    <string name="tools_tile_compress_img">కంప్రెస్</string>
+    <string name="tools_card_convert_img">చిత్రాన్ని మార్చు</string>
+    <string name="tools_tile_convert_img">కన్వర్ట్</string>
+    <string name="tools_card_resize_img">చిత్ర పరిమాణం మార్చు</string>
+    <string name="tools_tile_resize_img">రీసైజ్</string>
+
+    <string name="tools_compress_img_title">చిత్రాన్ని కుదించు</string>
+    <string name="tools_compress_img_target_kb">లక్ష్య పరిమాణం (KB)</string>
+    <string name="tools_compress_img_custom_size">అనుకూల</string>
+    <string name="tools_compress_img_quick_sizes">శీఘ్ర పరిమాణం</string>
+    <string name="tools_compress_img_mode_target">లక్ష్య పరిమాణం</string>
+    <string name="tools_compress_img_mode_quality">నాణ్యత %</string>
+    <string name="tools_compress_img_quality_label">నాణ్యత: %1$d%%</string>
+    <string name="tools_compress_img_resolution_label">గరిష్ట రిజల్యూషన్</string>
+    <string name="tools_compress_img_res_auto">ఆటో</string>
+    <string name="tools_compress_img_res_2048">2048 px</string>
+    <string name="tools_compress_img_res_1600">1600 px</string>
+    <string name="tools_compress_img_res_1280">1280 px</string>
+    <string name="tools_compress_img_res_800">800 px (పాస్‌పోర్ట్ / ID)</string>
+    <string name="tools_compress_img_action">కుదించు</string>
+    <string name="tools_compress_img_help">జాబ్ పోర్టల్స్, పాస్‌పోర్ట్/వీసా ఫోటోలు మరియు కేవైసీ అప్‌లోడ్‌ల కోసం సైజును ఆప్టిమైజ్ చేస్తుంది.</string>
+    <string name="tools_compress_img_success">చిత్రం %1$d%% కుదించబడింది (%2$s → %3$s)</string>
+
+    <string name="tools_convert_img_title">చిత్రాన్ని మార్చు</string>
+    <string name="tools_convert_img_format_label">టార్గెట్ ఫార్మాట్</string>
+    <string name="tools_convert_img_format_png">PNG</string>
+    <string name="tools_convert_img_format_png_desc">నాణ్యత కోల్పోకుండా 100%% యథాతథంగా ఉంచుతుంది (లాస్‌లెస్).</string>
+    <string name="tools_convert_img_format_jpg">JPG / JPEG</string>
+    <string name="tools_convert_img_format_jpg_desc">చిన్న ఫైల్ పరిమాణం, అన్ని పరికరాలకు అనుకూలం. పారదర్శక భాగాలు తెలుపుగా మారుతాయి.</string>
+    <string name="tools_convert_img_format_webp">WEBP</string>
+    <string name="tools_convert_img_format_webp_desc">ఉత్తమ కంప్రెషన్‌తో ఆధునిక వెబ్ ఫార్మాట్.</string>
+    <string name="tools_convert_img_lossless_badge">లాస్‌లెస్ (నాణ్యత తగ్గదు)</string>
+    <string name="tools_convert_img_action">మార్చు</string>
+    <plurals name="tools_convert_img_done">
+        <item quantity="one">%1$d చిత్రం మార్చబడింది</item>
+        <item quantity="other">%1$d చిత్రాలు మార్చబడ్డాయి</item>
+    </plurals>
+
+    <string name="tools_resize_img_title">చిత్ర పరిమాణం మార్చు</string>
+    <string name="tools_resize_img_dimensions">కొలతలు (px)</string>
+    <string name="tools_resize_img_width">వెడల్పు (px)</string>
+    <string name="tools_resize_img_height">ఎత్తు (px)</string>
+    <string name="tools_resize_img_lock_aspect">నిష్పత్తిని కొనసాగించు</string>
+    <string name="tools_resize_img_preset_passport">పాస్‌పోర్ట్ (600 × 600)</string>
+    <string name="tools_resize_img_preset_fhd">Full HD (1920 × 1080)</string>
+    <string name="tools_resize_img_preset_hd">HD (1280 × 720)</string>
+    <string name="tools_resize_img_preset_avatar">అవతార్ (400 × 400)</string>
+    <string name="tools_resize_img_scale_label">స్కేల్</string>
+    <string name="tools_resize_img_action">పరిమాణం మార్చు</string>
+    <string name="tools_resize_img_success">%1$d × %2$d pxకి మార్చబడింది (%3$s)</string>
+
+    <string name="tools_progress_compressing_img">చిత్రాన్ని కుదిస్తోంది…</string>
+    <string name="tools_progress_converting_img">చిత్రాన్ని మారుస్తోంది…</string>
+    <string name="tools_progress_resizing_img">చిత్ర పరిమాణం మారుస్తోంది…</string>
+    <string name="tools_err_compress_img">చిత్రాన్ని కుదించలేకపోయాం</string>
+    <string name="tools_err_convert_img">చిత్రాన్ని మార్చలేకపోయాం</string>
+    <string name="tools_err_resize_img">పరిమాణం మార్చలేకపోయాం</string>
+    <string name="tools_err_invalid_dimensions">కొలతలు 10 నుండి 8000 పిక్సెల్స్ మధ్య ఉండాలి</string>
 </resources>

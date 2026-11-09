@@ -263,4 +263,66 @@
     <string name="tools_office_note_too_long">फ़ाइल बहुत लंबी थी; केवल पहले 20 MB दिखाए गए हैं।</string>
     <string name="tools_office_note_workbook_truncated">केवल पहले %1$s सेल दिखाए गए हैं; वर्कबुक का बाकी हिस्सा परिवर्तित नहीं किया गया।</string>
     <string name="tools_office_note_file_truncated">फ़ाइल बहुत बड़ी थी; केवल पहले %1$s सेल दिखाए गए हैं।</string>
+
+    <!-- Image Tools -->
+    <string name="tools_section_image">इमेज टूल्स</string>
+    <string name="tools_card_compress_img">इमेज कंप्रेस करें</string>
+    <string name="tools_tile_compress_img">कंप्रेस</string>
+    <string name="tools_card_convert_img">इमेज कनवर्ट करें</string>
+    <string name="tools_tile_convert_img">कनवर्ट</string>
+    <string name="tools_card_resize_img">इमेज रीसाइज़ करें</string>
+    <string name="tools_tile_resize_img">रीसाइज़</string>
+
+    <string name="tools_compress_img_title">इमेज कंप्रेस करें</string>
+    <string name="tools_compress_img_target_kb">टारगेट साइज़ (KB)</string>
+    <string name="tools_compress_img_custom_size">कस्टम</string>
+    <string name="tools_compress_img_quick_sizes">त्वरित साइज़</string>
+    <string name="tools_compress_img_mode_target">टारगेट साइज़</string>
+    <string name="tools_compress_img_mode_quality">क्वालिटी %</string>
+    <string name="tools_compress_img_quality_label">क्वालिटी: %1$d%%</string>
+    <string name="tools_compress_img_resolution_label">अधिकतम रेज़ोल्यूशन</string>
+    <string name="tools_compress_img_res_auto">ऑटो</string>
+    <string name="tools_compress_img_res_2048">2048 px</string>
+    <string name="tools_compress_img_res_1600">1600 px</string>
+    <string name="tools_compress_img_res_1280">1280 px</string>
+    <string name="tools_compress_img_res_800">800 px (पासपोर्ट / ID)</string>
+    <string name="tools_compress_img_action">कंप्रेस करें</string>
+    <string name="tools_compress_img_help">जॉब पोर्टल, पासपोर्ट/वीज़ा फ़ोटो और KYC अपलोड के लिए साइज़ छोटा करता है।</string>
+    <string name="tools_compress_img_success">इमेज %1$d%% छोटी हुई (%2$s → %3$s)</string>
+
+    <string name="tools_convert_img_title">इमेज कनवर्ट करें</string>
+    <string name="tools_convert_img_format_label">टारगेट फ़ॉर्मेट</string>
+    <string name="tools_convert_img_format_png">PNG</string>
+    <string name="tools_convert_img_format_png_desc">100%% बिना क्वालिटी नुकसान के (लॉसलेस)। पारदर्शिता सुरक्षित।</string>
+    <string name="tools_convert_img_format_jpg">JPG / JPEG</string>
+    <string name="tools_convert_img_format_jpg_desc">छोटा फ़ाइल साइज़, सार्वभौमिक संगतता। पारदर्शी भाग सफ़ेद होंगे।</string>
+    <string name="tools_convert_img_format_webp">WEBP</string>
+    <string name="tools_convert_img_format_webp_desc">उत्कृष्ट कंप्रेशन वाला आधुनिक वेब फ़ॉर्मेट।</string>
+    <string name="tools_convert_img_lossless_badge">लॉसलेस (शून्य क्वालिटी नुकसान)</string>
+    <string name="tools_convert_img_action">कनवर्ट करें</string>
+    <plurals name="tools_convert_img_done">
+        <item quantity="one">%1$d इमेज बदली गई</item>
+        <item quantity="other">%1$d इमेज बदली गईं</item>
+    </plurals>
+
+    <string name="tools_resize_img_title">इमेज रीसाइज़ करें</string>
+    <string name="tools_resize_img_dimensions">आयाम (px)</string>
+    <string name="tools_resize_img_width">चौड़ाई (px)</string>
+    <string name="tools_resize_img_height">ऊंचाई (px)</string>
+    <string name="tools_resize_img_lock_aspect">आस्पेक्ट अनुपात बनाए रखें</string>
+    <string name="tools_resize_img_preset_passport">पासपोर्ट (600 × 600)</string>
+    <string name="tools_resize_img_preset_fhd">Full HD (1920 × 1080)</string>
+    <string name="tools_resize_img_preset_hd">HD (1280 × 720)</string>
+    <string name="tools_resize_img_preset_avatar">अवतार (400 × 400)</string>
+    <string name="tools_resize_img_scale_label">स्केल</string>
+    <string name="tools_resize_img_action">रीसाइज़ करें</string>
+    <string name="tools_resize_img_success">%1$d × %2$d px पर रीसाइज़ किया गया (%3$s)</string>
+
+    <string name="tools_progress_compressing_img">इमेज कंप्रेस हो रही है…</string>
+    <string name="tools_progress_converting_img">इमेज कनवर्ट हो रही है…</string>
+    <string name="tools_progress_resizing_img">इमेज रीसाइज़ हो रही है…</string>
+    <string name="tools_err_compress_img">इमेज कंप्रेस नहीं हो सकी</string>
+    <string name="tools_err_convert_img">इमेज कनवर्ट नहीं हो सकी</string>
+    <string name="tools_err_resize_img">इमेज रीसाइज़ नहीं हो सकी</string>
+    <string name="tools_err_invalid_dimensions">आयाम 10 से 8000 पिक्सल के बीच होने चाहिए</string>
 </resources>

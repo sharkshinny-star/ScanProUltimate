@@ -104,6 +104,10 @@
 
         <!-- Custom Hilt WorkerFactory configuration requires WorkManager's default
              AndroidX Startup initialiser to be removed. -->
+        <receiver
+            android:name="androidx.tracing.perfetto.StartupTracingConfigStoreIsEnabledGate"
+            tools:node="remove" />
+
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

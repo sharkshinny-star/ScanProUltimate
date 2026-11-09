@@ -50,6 +50,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -264,7 +265,7 @@ fun ScanReviewScreen(
         delay(150.milliseconds)
         withContext(Dispatchers.IO) {
             runCatching {
-                ImageProcessor.renderPreview(java.io.File(uri.path.orEmpty()), pageFilter, 0, quad, pageAdjustments, maxDimension = 1400)
+                ImageProcessor.renderPreview(File(uri.path.orEmpty()), pageFilter, 0, quad, pageAdjustments, maxDimension = 1400)
             }.getOrNull()
         }?.let { resultPreview = it }
     }
@@ -286,7 +287,7 @@ fun ScanReviewScreen(
         val quad = quads[key] ?: return@LaunchedEffect
         if (snapshot == null) snapshot = ReviewSnapshot(quad, filters[key], adjustments[key])
     }
-    val canUndo = snapshot?.let { it.quad != quads[key] || it.filter != filters[key] || it.adjustments != adjustments[key] } == true
+    val canUndo = snapshot?.let { (it.quad != quads[key]) || (it.filter != filters[key]) || (it.adjustments != adjustments[key]) } == true
     fun undo() {
         val start = snapshot ?: return
         quads[key] = start.quad
@@ -985,17 +986,17 @@ private fun ReviewFilmstrip(
                             .align(Alignment.TopStart)
                             .padding(3.dp)
                             .size(16.dp)
-                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), androidx.compose.foundation.shape.CircleShape)
+                            .background(Color.Black.copy(alpha = 0.55f), CircleShape)
                             .padding(2.dp)
                     )
                 }
                 Text(
                     "${index + 1}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = androidx.compose.ui.graphics.Color.White,
+                    color = Color.White,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), RoundedCornerShape(topStart = 6.dp))
+                        .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(topStart = 6.dp))
                         .padding(horizontal = 4.dp)
                 )
             }
@@ -1015,7 +1016,7 @@ private fun ReviewFilmstrip(
 }
 
 /** Amber for "worth a look": readable on the dark thumbnail badge and as the notice's icon in both themes. */
-internal val QualityAmber = androidx.compose.ui.graphics.Color(0xFFFFB13D)
+internal val QualityAmber = Color(0xFFFFB13D)
 
 /**
  * Over the top of the page: what looks wrong with it (all issues, most serious first) and, where the page can be shot
@@ -1056,11 +1057,11 @@ private fun SaveOptionCell(
     label: String,
     value: String,
     chosen: Boolean,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     enabled: Boolean,
     onClickLabel: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier

@@ -263,4 +263,66 @@
     <string name="tools_office_note_too_long">ಫೈಲ್ ತುಂಬಾ ಉದ್ದವಾಗಿತ್ತು; ಮೊದಲ 20 MB ಮಾತ್ರ ತೋರಿಸಲಾಗಿದೆ.</string>
     <string name="tools_office_note_workbook_truncated">ಮೊದಲ %1$s ಸೆಲ್‌ಗಳನ್ನು ಮಾತ್ರ ತೋರಿಸಲಾಗಿದೆ; ವರ್ಕ್‌ಬುಕ್‌ನ ಉಳಿದ ಭಾಗವನ್ನು ಪರಿವರ್ತಿಸಲಾಗಿಲ್ಲ.</string>
     <string name="tools_office_note_file_truncated">ಫೈಲ್ ತುಂಬಾ ದೊಡ್ಡದಾಗಿತ್ತು; ಮೊದಲ %1$s ಸೆಲ್‌ಗಳನ್ನು ಮಾತ್ರ ತೋರಿಸಲಾಗಿದೆ.</string>
+
+    <!-- Image Tools -->
+    <string name="tools_section_image">ಚಿತ್ರ ಪರಿಕರಗಳು</string>
+    <string name="tools_card_compress_img">ಚಿತ್ರ ಸಂಕುಚಿತಗೊಳಿಸಿ</string>
+    <string name="tools_tile_compress_img">ಸಂಕುಚಿತಗೊಳಿಸಿ</string>
+    <string name="tools_card_convert_img">ಚಿತ್ರ ಪರಿವರ್ತಿಸಿ</string>
+    <string name="tools_tile_convert_img">ಪರಿವರ್ತಿಸಿ</string>
+    <string name="tools_card_resize_img">ಚಿತ್ರ ಮರುಗಾತ್ರಗೊಳಿಸಿ</string>
+    <string name="tools_tile_resize_img">ಮರುಗಾತ್ರಗೊಳಿಸಿ</string>
+
+    <string name="tools_compress_img_title">ಚಿತ್ರ ಸಂಕುಚಿತಗೊಳಿಸಿ</string>
+    <string name="tools_compress_img_target_kb">ಗುರಿ ಗಾತ್ರ (KB)</string>
+    <string name="tools_compress_img_custom_size">ಕಸ್ಟಮ್</string>
+    <string name="tools_compress_img_quick_sizes">ತ್ವರಿತ ಗಾತ್ರ</string>
+    <string name="tools_compress_img_mode_target">ಗುರಿ ಗಾತ್ರ</string>
+    <string name="tools_compress_img_mode_quality">ಗುಣಮಟ್ಟ %</string>
+    <string name="tools_compress_img_quality_label">ಗುಣಮಟ್ಟ: %1$d%%</string>
+    <string name="tools_compress_img_resolution_label">ಗರಿಷ್ಠ ರೆಸಲ್ಯೂಶನ್</string>
+    <string name="tools_compress_img_res_auto">ಸ್ವಯಂಚಾಲಿತ</string>
+    <string name="tools_compress_img_res_2048">2048 px</string>
+    <string name="tools_compress_img_res_1600">1600 px</string>
+    <string name="tools_compress_img_res_1280">1280 px</string>
+    <string name="tools_compress_img_res_800">800 px (ಪಾಸ್‌ಪೋರ್ಟ್ / ID)</string>
+    <string name="tools_compress_img_action">ಸಂಕುಚಿತಗೊಳಿಸಿ</string>
+    <string name="tools_compress_img_help">ಉದ್ಯೋಗ ಅರ್ಜಿ, ಪಾಸ್‌ಪೋರ್ಟ್/ವೀಸಾ ಫೋಟೋ ಮತ್ತು ಕೆವೈಸಿ ಅಪ್‌ಲೋಡ್‌ಗಾಗಿ ಗಾತ್ರ ಕಡಿಮೆ ಮಾಡುತ್ತದೆ.</string>
+    <string name="tools_compress_img_success">ಚಿತ್ರವನ್ನು %1$d%% ಸಂಕುಚಿತಗೊಳಿಸಲಾಗಿದೆ (%2$s → %3$s)</string>
+
+    <string name="tools_convert_img_title">ಚಿತ್ರ ಪರಿವರ್ತಿಸಿ</string>
+    <string name="tools_convert_img_format_label">ಗುರಿ ಸ್ವರೂಪ</string>
+    <string name="tools_convert_img_format_png">PNG</string>
+    <string name="tools_convert_img_format_png_desc">100%% ನಷ್ಟವಿಲ್ಲದ ಗುಣಮಟ್ಟ. ಪಾರದರ್ಶಕತೆ ಉಳಿಯುತ್ತದೆ.</string>
+    <string name="tools_convert_img_format_jpg">JPG / JPEG</string>
+    <string name="tools_convert_img_format_jpg_desc">ಸಣ್ಣ ಫೈಲ್ ಗಾತ್ರ, ಸಾರ್ವತ್ರಿಕ ಹೊಂದಾಣಿಕೆ. ಪಾರದರ್ಶಕ ಭಾಗಗಳು ಬಿಳಿಯಾಗುತ್ತವೆ.</string>
+    <string name="tools_convert_img_format_webp">WEBP</string>
+    <string name="tools_convert_img_format_webp_desc">ಅತ್ಯುತ್ತಮ ಸಂಕೋಚನದೊಂದಿಗೆ ಆಧುನಿಕ ವೆಬ್ ಸ್ವರೂಪ.</string>
+    <string name="tools_convert_img_lossless_badge">ಲಾಸ್‌ಲೆಸ್ (ಶೂನ್ಯ ಗುಣಮಟ್ಟದ ನಷ್ಟ)</string>
+    <string name="tools_convert_img_action">ಪರಿವರ್ತಿಸಿ</string>
+    <plurals name="tools_convert_img_done">
+        <item quantity="one">%1$d ಚಿತ್ರ ಪರಿವರ್ತಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಚಿತ್ರಗಳನ್ನು ಪರಿವರ್ತಿಸಲಾಗಿದೆ</item>
+    </plurals>
+
+    <string name="tools_resize_img_title">ಚಿತ್ರ ಮರುಗಾತ್ರಗೊಳಿಸಿ</string>
+    <string name="tools_resize_img_dimensions">ಆಯಾಮಗಳು (px)</string>
+    <string name="tools_resize_img_width">ಅಗಲ (px)</string>
+    <string name="tools_resize_img_height">ಎತ್ತರ (px)</string>
+    <string name="tools_resize_img_lock_aspect">ಆಕಾರ ಅನುಪಾತ ಕಾಯ್ದುಕೊಳ್ಳಿ</string>
+    <string name="tools_resize_img_preset_passport">ಪಾಸ್‌ಪೋರ್ಟ್ (600 × 600)</string>
+    <string name="tools_resize_img_preset_fhd">Full HD (1920 × 1080)</string>
+    <string name="tools_resize_img_preset_hd">HD (1280 × 720)</string>
+    <string name="tools_resize_img_preset_avatar">ಅವತಾರ್ (400 × 400)</string>
+    <string name="tools_resize_img_scale_label">ಪ್ರಮಾಣ</string>
+    <string name="tools_resize_img_action">ಮರುಗಾತ್ರಗೊಳಿಸಿ</string>
+    <string name="tools_resize_img_success">%1$d × %2$d px ಗೆ ಮರುಗಾತ್ರಗೊಳಿಸಲಾಗಿದೆ (%3$s)</string>
+
+    <string name="tools_progress_compressing_img">ಚಿತ್ರವನ್ನು ಸಂಕುಚಿತಗೊಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_progress_converting_img">ಚಿತ್ರವನ್ನು ಪರಿವರ್ತಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_progress_resizing_img">ಚಿತ್ರವನ್ನು ಮರುಗಾತ್ರಗೊಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_err_compress_img">ಚಿತ್ರವನ್ನು ಸಂಕುಚಿತಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
+    <string name="tools_err_convert_img">ಚಿತ್ರವನ್ನು ಪರಿವರ್ತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
+    <string name="tools_err_resize_img">ಚಿತ್ರವನ್ನು ಮರುಗಾತ್ರಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
+    <string name="tools_err_invalid_dimensions">ಆಯಾಮಗಳು 10 ಮತ್ತು 8000 ಪಿಕ್ಸೆಲ್‌ಗಳ ನಡುವೆ ಇರಬೇಕು</string>
 </resources>

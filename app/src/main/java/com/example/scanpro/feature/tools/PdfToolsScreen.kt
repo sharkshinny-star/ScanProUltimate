@@ -1,6 +1,6 @@
 package com.example.scanpro.feature.tools
 
-import androidx.compose.material.icons.filled.Article
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -43,11 +43,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Compress
@@ -68,6 +70,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Transform
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
@@ -90,12 +93,18 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.example.scanpro.imaging.ImageCompressConfig
+import com.example.scanpro.imaging.ImageMetadata
+import com.example.scanpro.imaging.ImageResizeConfig
+import com.example.scanpro.imaging.ImageToolsEngine
+import kotlin.math.roundToInt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -132,10 +141,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.DarkChrome
 import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
@@ -143,6 +154,7 @@ import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.RecentPdf
+import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.feature.document.CropEditorDialog
 import com.example.scanpro.imaging.CompressionPreset
 import com.example.scanpro.imaging.ImageExportFormat
@@ -189,7 +201,7 @@ private val TOOL_SECTIONS = listOf(
     ToolSection(
         "convert", R.string.tools_section_convert, listOf(
             PdfToolCard("img2pdf", R.string.tools_images_to_pdf, Icons.Default.Image, TileTone.Coral),
-            PdfToolCard("office", R.string.tools_card_office, Icons.Default.Article, TileTone.Sky, label = R.string.tools_tile_office),
+            PdfToolCard("office", R.string.tools_card_office, Icons.AutoMirrored.Filled.Article, TileTone.Sky, label = R.string.tools_tile_office),
             PdfToolCard("ocr", R.string.tools_card_ocr, Icons.Default.FindInPage, TileTone.Teal),
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
             PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral)
@@ -199,6 +211,13 @@ private val TOOL_SECTIONS = listOf(
         "secure", R.string.tools_section_secure, listOf(
             PdfToolCard("protect", R.string.tools_card_protect, Icons.Default.Lock, TileTone.Rose),
             PdfToolCard("unlock", R.string.tools_card_unlock, Icons.Default.LockOpen, TileTone.Rose)
+        )
+    ),
+    ToolSection(
+        "image", R.string.tools_section_image, listOf(
+            PdfToolCard("compress_img", R.string.tools_card_compress_img, Icons.Default.Compress, TileTone.Amber, label = R.string.tools_tile_compress_img),
+            PdfToolCard("convert_img", R.string.tools_card_convert_img, Icons.Default.Transform, TileTone.Teal, label = R.string.tools_tile_convert_img),
+            PdfToolCard("resize_img", R.string.tools_card_resize_img, Icons.Default.AspectRatio, TileTone.Sky, label = R.string.tools_tile_resize_img)
         )
     )
 )
@@ -219,7 +238,7 @@ private val OFFICE_MIME_TYPES = arrayOf(
 private val VIEWER_TOOL = PdfToolCard("viewer", R.string.tools_card_viewer, Icons.Default.Visibility, TileTone.Slate)
 
 /** Every tool, for the "Use with a tool" menu on a recent PDF. */
-private val PDF_TOOLS = TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL
+private val PDF_TOOLS = TOOL_SECTIONS.filter { it.id != "image" }.flatMap { it.tools } + VIEWER_TOOL
 
 private data class ThumbnailPageModel(
     val index: Int,
@@ -243,7 +262,6 @@ fun PdfToolsScreen(
         }
     }
     val snackbarHostState = remember { SnackbarHostState() }
-    // Read here: the picker callbacks and dialog buttons below are not composable scopes.
     val pdfDocumentTitle = stringResource(R.string.tools_pdf_document)
 
     val progress by viewModel.progress.collectAsStateWithLifecycle()
@@ -258,17 +276,18 @@ fun PdfToolsScreen(
     val formSession by viewModel.form.collectAsStateWithLifecycle()
     var showOcrDialog by rememberSaveable { mutableStateOf(false) }
 
-    // Saveable, so an open dialog and the chosen file survive rotation, window resizing and folding.
     var selectedTool by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var pendingImageUris by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf<List<Uri>?>(null) }
     var showCompressDialog by rememberSaveable { mutableStateOf(false) }
+    var showCompressImageDialog by rememberSaveable { mutableStateOf(false) }
+    var showConvertImageDialog by rememberSaveable { mutableStateOf(false) }
+    var showResizeImageDialog by rememberSaveable { mutableStateOf(false) }
     var showPdfToImagesDialog by rememberSaveable { mutableStateOf(false) }
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
 
-    // Show first, clear after: clearing first changes this effect's key, which cancelled the snackbar the moment
-    // it appeared, so no tool message (errors, "wrong password", "cancelled") was ever visible.
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(text)
@@ -283,20 +302,33 @@ fun PdfToolsScreen(
         }
     }
 
-    // SAF save: one launcher per output type, so the system picker suggests the right extension.
     var saveSourceFile by remember { mutableStateOf<File?>(null) }
     fun saveTo(destUri: Uri?) {
         val file = saveSourceFile ?: return
         if (destUri == null) return
-        // The ViewModel does the copy off the main thread and reports through its message flow, so a
-        // rotation during a large copy to a cloud provider neither freezes nor cancels it.
         viewModel.saveTo(file, destUri)
     }
     val saveFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { saveTo(it) }
     val saveZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { saveTo(it) }
     val saveJpegLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
-    // Declared with its own type: a PNG saved through the JPEG launcher is renamed "page.png.jpg" by some providers.
     val savePngLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { saveTo(it) }
+    val saveWebpLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/webp")) { saveTo(it) }
+
+    val singleImagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val tool = selectedTool
+        if (uri == null || tool == null) return@rememberLauncherForActivityResult
+        pendingUri = uri
+        when (tool) {
+            "compress_img" -> showCompressImageDialog = true
+            "resize_img" -> showResizeImageDialog = true
+        }
+    }
+    val multiImagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        if (uris.isNotEmpty() && selectedTool == "convert_img") {
+            pendingImageUris = uris
+            showConvertImageDialog = true
+        }
+    }
 
     fun startTool(tool: String, uri: Uri) {
         selectedTool = tool
@@ -311,14 +343,19 @@ fun PdfToolsScreen(
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
+            "compress_img" -> showCompressImageDialog = true
+            "convert_img" -> {
+                pendingImageUris = listOf(uri)
+                showConvertImageDialog = true
+            }
+            "resize_img" -> showResizeImageDialog = true
         }
     }
-    // Office to PDF: Word, Excel, text, CSV and web pages saved from a browser.
     val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.officeToPdf(uri)
     }
     val printFallback by viewModel.printFallback.collectAsStateWithLifecycle()
-    val activityContext = androidx.compose.ui.platform.LocalContext.current
+    val activityContext = LocalContext.current
     LaunchedEffect(printFallback) {
         val (html, name) = printFallback ?: return@LaunchedEffect
         viewModel.clearPrintFallback()
@@ -330,10 +367,7 @@ fun PdfToolsScreen(
         viewModel.rememberPdfs(listOf(uri))
         startTool(tool, uri)
     }
-    // Files picked for Merge or Images to PDF are shown in a list to put in order before the tool runs:
-    // the picker's order is not the order they were tapped in.
     var ordering by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf<List<Uri>?>(null) }
-    // Images picked for Images to PDF are shown with thumbnails, reordering, and crop editing before conversion.
     var imagesToOrder by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf<List<Uri>?>(null) }
     var imagesToConvert by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf<List<Uri>?>(null) }
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -387,62 +421,32 @@ fun PdfToolsScreen(
         )
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.tools_screen_title)) },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
+    val launchTool: (PdfToolCard) -> Unit = { tool ->
+        selectedTool = tool.id
+        when (tool.id) {
+            "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
+            "img2pdf" -> imagesPicker.launch("image/*")
+            "office" -> officePicker.launch(OFFICE_MIME_TYPES)
+            "compress_img", "resize_img" -> singleImagePicker.launch("image/*")
+            "convert_img" -> multiImagePicker.launch("image/*")
+            else -> singlePdfPicker.launch(arrayOf("application/pdf"))
+        }
+    }
+
+    PdfToolsScreen(
+        recentPdfs = recentPdfs,
+        onOpenPdfViewer = { uri, name ->
+            recentScope.launch { if (viewModel.checkRecent(uri)) onOpenPdfViewer(uri, name) }
+        },
+        onLaunchTool = launchTool,
+        onClearRecentPdfs = viewModel::clearRecentPdfs,
+        onRemoveRecentPdf = { pdf -> viewModel.forgetPdf(pdf.uri) },
+        onUseRecentPdfWithTool = { pdf, tool ->
+            recentScope.launch { if (viewModel.checkRecent(pdf.uri)) startTool(tool, pdf.uri) }
         },
         bottomBar = bottomBar,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            val launchTool: (PdfToolCard) -> Unit = { tool ->
-                selectedTool = tool.id
-                when (tool.id) {
-                    "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
-                    "img2pdf" -> imagesPicker.launch("image/*")
-                    "office" -> officePicker.launch(OFFICE_MIME_TYPES)
-                    else -> singlePdfPicker.launch(arrayOf("application/pdf"))
-                }
-            }
-            LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
-                // The column stops growing past a comfortable width on tablets instead of stretching across the screen.
-                modifier = Modifier.fillMaxSize().widthIn(max = 1100.dp)
-            ) {
-                TOOL_SECTIONS.forEach { section ->
-                    item(key = "section-${section.id}") {
-                        SectionHeader(stringResource(section.title))
-                        ToolTileGrid(section.tools, onClick = launchTool)
-                    }
-                }
-                item(key = "viewer") {
-                    Spacer(Modifier.height(16.dp))
-                    PlainToolRow(VIEWER_TOOL, onClick = { launchTool(VIEWER_TOOL) })
-                }
-                if (recentPdfs.isNotEmpty()) {
-                    item(key = "recent-header") {
-                        RecentPdfsHeader(onClear = viewModel::clearRecentPdfs)
-                    }
-                    items(recentPdfs, key = { it.uri.toString() }, contentType = { "recent_pdf" }) { pdf ->
-                        RecentPdfRow(
-                            pdf = pdf,
-                            onOpen = { recentScope.launch { if (viewModel.checkRecent(pdf.uri)) onOpenPdfViewer(pdf.uri, pdf.name) } },
-                            onUseWith = { tool -> recentScope.launch { if (viewModel.checkRecent(pdf.uri)) startTool(tool, pdf.uri) } },
-                            onRemove = { viewModel.forgetPdf(pdf.uri) }
-                        )
-                    }
-                }
-            }
-
+        snackbarHostState = snackbarHostState,
+        overlayContent = {
             progress?.let { running ->
                 ProcessingOverlay(
                     current = running.current,
@@ -459,7 +463,6 @@ fun PdfToolsScreen(
                     onView = {
                         val file = result.outputFile
                         viewModel.clearResult()
-                        // The built-in viewer only reads PDFs; images and zips open through the share sheet.
                         if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
                         else shareFile(context, file.absolutePath, mimeFor(file), file.name)
                     },
@@ -470,6 +473,7 @@ fun PdfToolsScreen(
                             "application/zip" -> saveZipLauncher.launch(name)
                             "application/pdf" -> saveFileLauncher.launch(name)
                             "image/png" -> savePngLauncher.launch(name)
+                            "image/webp" -> saveWebpLauncher.launch(name)
                             else -> saveJpegLauncher.launch(name)
                         }
                     }
@@ -485,6 +489,47 @@ fun PdfToolsScreen(
                     onConfirm = { preset, customTargetBytes ->
                         showCompressDialog = false
                         viewModel.compress(uri, preset, customTargetBytes)
+                    }
+                )
+            }
+
+            if (showCompressImageDialog && uri != null) {
+                CompressImageDialog(
+                    context = context,
+                    uri = uri,
+                    onDismiss = { showCompressImageDialog = false },
+                    onConfirm = { config ->
+                        showCompressImageDialog = false
+                        viewModel.compressImage(uri, config)
+                    }
+                )
+            }
+
+            pendingImageUris?.let { uris ->
+                if (showConvertImageDialog && uris.isNotEmpty()) {
+                    ConvertImageDialog(
+                        uris = uris,
+                        onDismiss = {
+                            showConvertImageDialog = false
+                            pendingImageUris = null
+                        },
+                        onConfirm = { format, quality ->
+                            showConvertImageDialog = false
+                            pendingImageUris = null
+                            viewModel.convertImage(uris, format, quality)
+                        }
+                    )
+                }
+            }
+
+            if (showResizeImageDialog && uri != null) {
+                ResizeImageDialog(
+                    context = context,
+                    uri = uri,
+                    onDismiss = { showResizeImageDialog = false },
+                    onConfirm = { config ->
+                        showResizeImageDialog = false
+                        viewModel.resizeImage(uri, config)
                     }
                 )
             }
@@ -549,7 +594,6 @@ fun PdfToolsScreen(
                 )
             }
 
-            // Merge reached a protected file. Keyed by the question, so a new file or a retry starts with an empty field.
             mergePassword?.let { request ->
                 key(request.attempt) {
                     PasswordDialog(
@@ -604,6 +648,69 @@ fun PdfToolsScreen(
                     }
                 )
             }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PdfToolsScreen(
+    recentPdfs: List<RecentPdf>,
+    onOpenPdfViewer: (Uri, String) -> Unit = { _, _ -> },
+    onLaunchTool: (PdfToolCard) -> Unit = {},
+    onClearRecentPdfs: () -> Unit = {},
+    onRemoveRecentPdf: (RecentPdf) -> Unit = {},
+    onUseRecentPdfWithTool: (RecentPdf, String) -> Unit = { _, _ -> },
+    bottomBar: @Composable () -> Unit = {},
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    overlayContent: @Composable () -> Unit = {}
+) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.tools_screen_title)) },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
+        },
+        bottomBar = bottomBar,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
+                modifier = Modifier.fillMaxSize().widthIn(max = 1100.dp)
+            ) {
+                TOOL_SECTIONS.forEach { section ->
+                    item(key = "section-${section.id}") {
+                        SectionHeader(stringResource(section.title))
+                        ToolTileGrid(section.tools, onClick = onLaunchTool)
+                    }
+                }
+                item(key = "viewer") {
+                    Spacer(Modifier.height(16.dp))
+                    PlainToolRow(VIEWER_TOOL, onClick = { onLaunchTool(VIEWER_TOOL) })
+                }
+                if (recentPdfs.isNotEmpty()) {
+                    item(key = "recent-header") {
+                        RecentPdfsHeader(onClear = onClearRecentPdfs)
+                    }
+                    items(recentPdfs, key = { it.uri.toString() }, contentType = { "recent_pdf" }) { pdf ->
+                        RecentPdfRow(
+                            pdf = pdf,
+                            onOpen = { onOpenPdfViewer(pdf.uri, pdf.name) },
+                            onUseWith = { tool -> onUseRecentPdfWithTool(pdf, tool) },
+                            onRemove = { onRemoveRecentPdf(pdf) }
+                        )
+                    }
+                }
+            }
+            overlayContent()
         }
     }
 }
@@ -2590,9 +2697,9 @@ private fun PdfPageOrganizerSheet(
                 if (pages.isEmpty()) pages.addAll((0 until preview.pageCount).map { ThumbnailPageModel(it, selected = defaultSelected) })
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
-            } catch (error: SecurityException) {
+            } catch (_: SecurityException) {
                 loadError = protectedError
-            } catch (error: Exception) {
+            } catch (_: Exception) {
                 loadError = openFailedError // not the exception's text: it is English and can contain file paths
             }
         }
@@ -3033,8 +3140,634 @@ private fun PdfPagePreviewDialog(
 private fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "png" -> "image/png"
     "jpg", "jpeg" -> "image/jpeg"
+    "webp" -> "image/webp"
     "zip" -> "application/zip"
     else -> "application/pdf"
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun CompressImageDialog(
+    context: Context,
+    uri: Uri,
+    onDismiss: () -> Unit,
+    onConfirm: (ImageCompressConfig) -> Unit
+) {
+    var metadata by remember { mutableStateOf<ImageMetadata?>(null) }
+    LaunchedEffect(uri) {
+        withContext(Dispatchers.IO) {
+            metadata = ImageToolsEngine.inspectImage(context, uri)
+        }
+    }
+
+    var mode by rememberSaveable { mutableStateOf(0) }
+    var selectedPresetKb by rememberSaveable { mutableStateOf(100) }
+    var customKbInput by rememberSaveable { mutableStateOf("100") }
+    var qualityPercent by rememberSaveable { mutableStateOf(75) }
+    var maxDim by rememberSaveable { mutableStateOf<Int?>(null) }
+    var format by rememberSaveable { mutableStateOf(ImageExportFormat.JPEG) }
+
+    val origBytes = metadata?.sizeBytes ?: 0L
+    val targetKb = if (selectedPresetKb > 0) selectedPresetKb else customKbInput.toIntOrNull() ?: 0
+    val targetBytes = if (mode == 0 && targetKb > 0) targetKb * 1024L else null
+
+    val isTargetLarger = mode == 0 && origBytes > 0 && (targetBytes ?: 0L) >= origBytes
+    val isTargetZero = mode == 0 && targetKb <= 0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tools_compress_img_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                metadata?.let { meta ->
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Column {
+                                Text(
+                                    meta.fileName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    "${formatBytes(context, meta.sizeBytes)} • ${meta.width} × ${meta.height} px",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = mode == 0,
+                        onClick = { mode = 0 },
+                        label = { Text(stringResource(R.string.tools_compress_img_mode_target)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = mode == 1,
+                        onClick = { mode = 1 },
+                        label = { Text(stringResource(R.string.tools_compress_img_mode_quality)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                if (mode == 0) {
+                    Text(
+                        stringResource(R.string.tools_compress_img_quick_sizes),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(50, 100, 200, 500).forEach { kb ->
+                            FilterChip(
+                                selected = selectedPresetKb == kb,
+                                onClick = {
+                                    selectedPresetKb = kb
+                                    customKbInput = kb.toString()
+                                },
+                                label = { Text("$kb KB") }
+                            )
+                        }
+                        FilterChip(
+                            selected = selectedPresetKb == -1,
+                            onClick = { selectedPresetKb = -1 },
+                            label = { Text(stringResource(R.string.tools_compress_img_custom_size)) }
+                        )
+                    }
+
+                    if (selectedPresetKb == -1) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = customKbInput,
+                            onValueChange = { str ->
+                                if (str.isEmpty() || str.all { it.isDigit() }) {
+                                    customKbInput = str
+                                }
+                            },
+                            label = { Text(stringResource(R.string.tools_compress_img_target_kb)) },
+                            suffix = { Text(stringResource(R.string.tools_compress_unit_kb)) },
+                            singleLine = true,
+                            isError = isTargetLarger || isTargetZero,
+                            supportingText = {
+                                if (isTargetLarger) {
+                                    Text(
+                                        stringResource(R.string.tools_compress_err_target_larger, formatBytes(context, origBytes)),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                } else if (isTargetZero) {
+                                    Text(
+                                        stringResource(R.string.tools_compress_err_target_positive),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
+                    Text(
+                        stringResource(R.string.tools_compress_img_quality_label, qualityPercent),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Slider(
+                        value = qualityPercent.toFloat(),
+                        onValueChange = { qualityPercent = it.roundToInt() },
+                        valueRange = 15f..95f,
+                        steps = 15,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    stringResource(R.string.tools_compress_img_resolution_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val resOptions = listOf(
+                        null to stringResource(R.string.tools_compress_img_res_auto),
+                        2048 to stringResource(R.string.tools_compress_img_res_2048),
+                        1600 to stringResource(R.string.tools_compress_img_res_1600),
+                        1280 to stringResource(R.string.tools_compress_img_res_1280),
+                        800 to stringResource(R.string.tools_compress_img_res_800)
+                    )
+                    resOptions.forEach { (dim, label) ->
+                        FilterChip(
+                            selected = maxDim == dim,
+                            onClick = { maxDim = dim },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    stringResource(R.string.tools_convert_img_format_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = format == ImageExportFormat.JPEG,
+                        onClick = { format = ImageExportFormat.JPEG },
+                        label = { Text("JPG") }
+                    )
+                    FilterChip(
+                        selected = format == ImageExportFormat.WEBP,
+                        onClick = { format = ImageExportFormat.WEBP },
+                        label = { Text("WEBP") }
+                    )
+                }
+
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    stringResource(R.string.tools_compress_img_help),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            val canConfirm = if (mode == 0) {
+                targetKb > 0 && !isTargetLarger
+            } else true
+            Button(
+                onClick = {
+                    val config = ImageCompressConfig(
+                        targetSizeBytes = if (mode == 0) targetBytes else null,
+                        qualityPercent = qualityPercent,
+                        maxDimension = maxDim,
+                        outputFormat = format
+                    )
+                    onConfirm(config)
+                },
+                enabled = canConfirm
+            ) {
+                Text(stringResource(R.string.tools_compress_img_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
+}
+
+@Composable
+private fun ConvertImageDialog(
+    uris: List<Uri>,
+    onDismiss: () -> Unit,
+    onConfirm: (targetFormat: ImageExportFormat, quality: Int) -> Unit
+) {
+    var format by rememberSaveable { mutableStateOf(ImageExportFormat.PNG) }
+    var jpegQuality by rememberSaveable { mutableStateOf(92) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (uris.size <= 1) stringResource(R.string.tools_convert_img_title)
+                else stringResource(R.string.tools_convert_img_title) + " (${uris.size})"
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (format == ImageExportFormat.PNG) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = if (format == ImageExportFormat.PNG) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { format = ImageExportFormat.PNG }
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = format == ImageExportFormat.PNG,
+                                onClick = { format = ImageExportFormat.PNG }
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                stringResource(R.string.tools_convert_img_format_png),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            ) {
+                                Text(
+                                    stringResource(R.string.tools_convert_img_lossless_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.tools_convert_img_format_png_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 40.dp, top = 2.dp)
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (format == ImageExportFormat.JPEG) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = if (format == ImageExportFormat.JPEG) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { format = ImageExportFormat.JPEG }
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = format == ImageExportFormat.JPEG,
+                                onClick = { format = ImageExportFormat.JPEG }
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                stringResource(R.string.tools_convert_img_format_jpg),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            stringResource(R.string.tools_convert_img_format_jpg_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 40.dp, top = 2.dp)
+                        )
+                        if (format == ImageExportFormat.JPEG) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                stringResource(R.string.tools_compress_img_quality_label, jpegQuality),
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(start = 40.dp)
+                            )
+                            Slider(
+                                value = jpegQuality.toFloat(),
+                                onValueChange = { jpegQuality = it.roundToInt() },
+                                valueRange = 70f..100f,
+                                steps = 5,
+                                modifier = Modifier.padding(start = 32.dp).fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (format == ImageExportFormat.WEBP) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = if (format == ImageExportFormat.WEBP) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { format = ImageExportFormat.WEBP }
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = format == ImageExportFormat.WEBP,
+                                onClick = { format = ImageExportFormat.WEBP }
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                stringResource(R.string.tools_convert_img_format_webp),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            stringResource(R.string.tools_convert_img_format_webp_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 40.dp, top = 2.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(format, if (format == ImageExportFormat.PNG) 100 else jpegQuality) }) {
+                Text(stringResource(R.string.tools_convert_img_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ResizeImageDialog(
+    context: Context,
+    uri: Uri,
+    onDismiss: () -> Unit,
+    onConfirm: (ImageResizeConfig) -> Unit
+) {
+    var metadata by remember { mutableStateOf<ImageMetadata?>(null) }
+    var widthInput by rememberSaveable { mutableStateOf("") }
+    var heightInput by rememberSaveable { mutableStateOf("") }
+    var lockAspect by rememberSaveable { mutableStateOf(true) }
+    var format by rememberSaveable { mutableStateOf(ImageExportFormat.JPEG) }
+
+    LaunchedEffect(uri) {
+        withContext(Dispatchers.IO) {
+            val meta = ImageToolsEngine.inspectImage(context, uri)
+            metadata = meta
+            if (meta != null && widthInput.isEmpty()) {
+                widthInput = meta.width.toString()
+                heightInput = meta.height.toString()
+            }
+        }
+    }
+
+    val origW = metadata?.width ?: 1
+    val origH = metadata?.height ?: 1
+    val aspectRatio = origW.toFloat() / origH.toFloat()
+
+    val w = widthInput.toIntOrNull() ?: 0
+    val h = heightInput.toIntOrNull() ?: 0
+    val isValid = w in 10..8000 && h in 10..8000
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tools_resize_img_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                metadata?.let { meta ->
+                    Text(
+                        "${meta.fileName} (${meta.width} × ${meta.height} px)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                Text(
+                    stringResource(R.string.tools_compress_img_quick_sizes),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    FilterChip(
+                        selected = w == 600 && h == 600,
+                        onClick = {
+                            lockAspect = false
+                            widthInput = "600"
+                            heightInput = "600"
+                        },
+                        label = { Text(stringResource(R.string.tools_resize_img_preset_passport)) }
+                    )
+                    FilterChip(
+                        selected = w == 400 && h == 400,
+                        onClick = {
+                            lockAspect = false
+                            widthInput = "400"
+                            heightInput = "400"
+                        },
+                        label = { Text(stringResource(R.string.tools_resize_img_preset_avatar)) }
+                    )
+                    FilterChip(
+                        selected = w == 1920 && h == 1080,
+                        onClick = {
+                            lockAspect = false
+                            widthInput = "1920"
+                            heightInput = "1080"
+                        },
+                        label = { Text(stringResource(R.string.tools_resize_img_preset_fhd)) }
+                    )
+                    FilterChip(
+                        selected = w == 1280 && h == 720,
+                        onClick = {
+                            lockAspect = false
+                            widthInput = "1280"
+                            heightInput = "720"
+                        },
+                        label = { Text(stringResource(R.string.tools_resize_img_preset_hd)) }
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = widthInput,
+                        onValueChange = { str ->
+                            if (str.isEmpty() || str.all { it.isDigit() }) {
+                                widthInput = str
+                                if (lockAspect && str.isNotEmpty()) {
+                                    val newW = str.toIntOrNull()
+                                    if (newW != null && newW > 0) {
+                                        heightInput = (newW / aspectRatio).roundToInt().coerceIn(10, 8000).toString()
+                                    }
+                                }
+                            }
+                        },
+                        label = { Text(stringResource(R.string.tools_resize_img_width)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = heightInput,
+                        onValueChange = { str ->
+                            if (str.isEmpty() || str.all { it.isDigit() }) {
+                                heightInput = str
+                                if (lockAspect && str.isNotEmpty()) {
+                                    val newH = str.toIntOrNull()
+                                    if (newH != null && newH > 0) {
+                                        widthInput = (newH * aspectRatio).roundToInt().coerceIn(10, 8000).toString()
+                                    }
+                                }
+                            }
+                        },
+                        label = { Text(stringResource(R.string.tools_resize_img_height)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { lockAspect = !lockAspect },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = lockAspect,
+                        onCheckedChange = { lockAspect = it }
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.tools_resize_img_lock_aspect),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    stringResource(R.string.tools_convert_img_format_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = format == ImageExportFormat.JPEG,
+                        onClick = { format = ImageExportFormat.JPEG },
+                        label = { Text("JPG") }
+                    )
+                    FilterChip(
+                        selected = format == ImageExportFormat.PNG,
+                        onClick = { format = ImageExportFormat.PNG },
+                        label = { Text("PNG") }
+                    )
+                    FilterChip(
+                        selected = format == ImageExportFormat.WEBP,
+                        onClick = { format = ImageExportFormat.WEBP },
+                        label = { Text("WEBP") }
+                    )
+                }
+
+                if (!isValid && (widthInput.isNotEmpty() || heightInput.isNotEmpty())) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        stringResource(R.string.tools_err_invalid_dimensions),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(
+                        ImageResizeConfig(
+                            targetWidth = w,
+                            targetHeight = h,
+                            outputFormat = format
+                        )
+                    )
+                },
+                enabled = isValid
+            ) {
+                Text(stringResource(R.string.tools_resize_img_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
 }
 
 @get:StringRes
@@ -3058,3 +3791,29 @@ private val UriListSaver = androidx.compose.runtime.saveable.Saver<List<Uri>?, j
     save = { list -> list?.let { java.util.ArrayList(it.map(Uri::toString)) } },
     restore = { saved -> saved.map(Uri::parse) }
 )
+
+@Preview(name = "PDF Tools Screen Light")
+@Composable
+fun PdfToolsScreenPreview() {
+    ScanProTheme(themeMode = ThemeMode.LIGHT) {
+        PdfToolsScreen(
+            recentPdfs = listOf(
+                RecentPdf(Uri.parse("content://media/external/file/1"), "Invoice_2025_03.pdf", System.currentTimeMillis()),
+                RecentPdf(Uri.parse("content://media/external/file/2"), "Project_Specification_Draft.pdf", System.currentTimeMillis() - 86400000L)
+            )
+        )
+    }
+}
+
+@Preview(name = "PDF Tools Screen Dark")
+@Composable
+fun PdfToolsScreenDarkPreview() {
+    ScanProTheme(themeMode = ThemeMode.DARK) {
+        PdfToolsScreen(
+            recentPdfs = listOf(
+                RecentPdf(Uri.parse("content://media/external/file/1"), "Invoice_2025_03.pdf", System.currentTimeMillis()),
+                RecentPdf(Uri.parse("content://media/external/file/2"), "Project_Specification_Draft.pdf", System.currentTimeMillis() - 86400000L)
+            )
+        )
+    }
+}

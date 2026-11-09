@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
@@ -647,16 +648,18 @@ internal fun DocumentDetailScreen(
                     item(key = "markup", contentType = "markup", span = { GridItemSpan(maxLineSpan) }) {
                         // Mark-up for the current page; the watermark covers every page, as before.
                         val canMark = !busy && currentPage != null
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true }
-                            ActionChip(Icons.Default.Gesture, stringResource(R.string.doc_pen), canMark) { penOpen = true }
-                            ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true }
-                            ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } }
-                            ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } }
-                            ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true }
+                            item { ActionChip(Icons.Default.Crop, stringResource(R.string.doc_crop), canMark) { cropOpen = true } }
+                            item { ActionChip(Icons.Default.Tune, stringResource(R.string.doc_clean_up), canMark) { adjustmentsOpen = true } }
+                            item { ActionChip(RotateRightIcon, stringResource(R.string.doc_rotate), canMark) { currentPage?.let { onRotate(it.id) } } }
+                            item { ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true } }
+                            item { ActionChip(Icons.Default.Gesture, stringResource(R.string.doc_pen), canMark) { penOpen = true } }
+                            item { ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true } }
+                            item { ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } } }
+                            item { ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } } }
+                            item { ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true } }
                         }
                     }
                     itemsIndexed(pages, key = { _, page -> page.id }, contentType = { _, _ -> "page_cell" }) { index, page ->
@@ -1090,6 +1093,7 @@ internal fun DocumentDetailScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 val hasMarkup = currentPage.annotations.isNotEmpty()
+                SheetRow(Icons.Default.Crop, stringResource(R.string.doc_crop), !busy, run { cropOpen = true })
                 SheetRow(Icons.Default.Tune, stringResource(R.string.doc_clean_up), !busy, run { adjustmentsOpen = true })
                 SheetRow(RotateRightIcon, stringResource(R.string.doc_rotate), !busy, run { onRotate(currentPage.id) })
                 SheetRow(Icons.Default.Replay, stringResource(R.string.doc_retake), !busy, run { onRetakePage(currentPage.id, currentIndex) })
@@ -1321,6 +1325,7 @@ internal fun DocumentDetailScreen(
                 onCrop(currentPage.id, it)
                 cropOpen = false
             },
+            onRotateRight = { onRotate(currentPage.id) },
             pageIndex = currentIndex,
             pageCount = pages.size,
             // Moving to another page keeps the editor open; a changed crop on the page being left is applied first.
@@ -1805,7 +1810,7 @@ private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersi
 @Composable
 private fun LockedFolderGate(folder: String, onBack: () -> Unit, onUnlocked: () -> Unit) {
     val unlock = com.example.scanpro.core.security.LocalDeviceUnlock.current
-    androidx.compose.material3.Surface(Modifier.fillMaxSize()) {
+    Surface(Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().systemBarsPadding().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

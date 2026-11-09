@@ -34,7 +34,7 @@ data class PdfToolResult(
     val pageCount: Int,
     val originalSizeBytes: Long,
     val outputSizeBytes: Long,
-    val message: String
+    val message: String,
 )
 
 enum class SplitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes: Int) {
@@ -45,12 +45,13 @@ enum class SplitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes
 
 data class PageSpec(
     val originalIndex: Int,
-    val rotationDegrees: Int = 0
+    val rotationDegrees: Int = 0,
 )
 
 enum class ImageExportFormat(val extension: String) {
     JPEG("jpg"),
-    PNG("png")
+    PNG("png"),
+    WEBP("webp")
 }
 
 /** How a PDF is protected, as far as opening and editing it goes. */
@@ -184,6 +185,7 @@ object PdfToolsEngine {
         outputDir.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "split_in_${UUID.randomUUID()}.pdf")
         val outputFiles = mutableListOf<File>()
+        val base = sourceBaseName(context, inputUri)
 
         try {
             loadPdf(tempFile).use { doc ->
@@ -196,7 +198,7 @@ object PdfToolsEngine {
                         for (i in 0 until totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(i + 1, totalPages, AppStrings.get(R.string.tools_progress_splitting_page, i + 1, totalPages))
-                            val outFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.pdf")
+                            val outFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.pdf")
                             PDDocument().use { singleDoc ->
                                 singleDoc.addImportedPage(doc.getPage(i))
                                 singleDoc.save(outFile)
@@ -211,8 +213,8 @@ object PdfToolsEngine {
                         while (pageIndex < totalPages) {
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             val end = (pageIndex + chunkSize).coerceAtMost(totalPages)
-                            onProgress(chunkIndex, (totalPages + chunkSize - 1) / chunkSize, AppStrings.get(R.string.tools_progress_splitting_chunk, chunkIndex))
-                            val outFile = File(outputDir, "part_${chunkIndex}_pages_${pageIndex + 1}_to_$end.pdf")
+                            onProgress(chunkIndex, ((totalPages + chunkSize) - 1) / chunkSize, AppStrings.get(R.string.tools_progress_splitting_chunk, chunkIndex))
+                            val outFile = File(outputDir, "$base part $chunkIndex pages ${pageIndex + 1} to $end.pdf")
                             PDDocument().use { chunkDoc ->
                                 for (i in pageIndex until end) chunkDoc.addImportedPage(doc.getPage(i))
                                 chunkDoc.save(outFile)
@@ -228,10 +230,10 @@ object PdfToolsEngine {
                         ranges.forEachIndexed { idx, range ->
                             if (!coroutineContext.isActive) throw InterruptedException("Split operation cancelled")
                             onProgress(idx + 1, ranges.size, AppStrings.get(R.string.tools_progress_extracting_range, idx + 1, ranges.size))
-                            val outFile = File(outputDir, "range_${idx + 1}_pages_${range.first}_to_${range.last}.pdf")
+                            val outFile = File(outputDir, "$base range ${idx + 1} pages ${range.first} to ${range.last}.pdf")
                             PDDocument().use { rangeDoc ->
                                 for (pageNum in range) {
-                                    if (pageNum in 1..totalPages) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
+                                    if ((pageNum in 1..totalPages)) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
                                 }
                                 rangeDoc.save(outFile)
                             }
@@ -448,6 +450,7 @@ object PdfToolsEngine {
         outputDir.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in_${UUID.randomUUID()}.pdf")
         val imageFiles = mutableListOf<File>()
+        val base = sourceBaseName(context, inputUri)
 
         try {
             if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
@@ -457,7 +460,7 @@ object PdfToolsEngine {
                 ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                     PdfRenderer(pfd).use { renderer ->
                         val totalPages = renderer.pageCount
-                        val chosen = pages?.filter { it in 1..totalPages }?.distinct()?.sorted() ?: (1..totalPages).toList()
+                        val chosen = pages?.asSequence()?.filter { it in 1..totalPages }?.distinct()?.sorted()?.toList() ?: (1..totalPages).toList()
                         userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
                         chosen.forEachIndexed { step, pageNumber ->
                             val i = pageNumber - 1
@@ -474,12 +477,19 @@ object PdfToolsEngine {
                                 bitmap.eraseColor(Color.WHITE)
                                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
-                                val imgFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.${format.extension}")
+                                val imgFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.${format.extension}")
                                 FileOutputStream(imgFile).use { out ->
                                     if (format == ImageExportFormat.JPEG) {
                                         bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
-                                    } else {
+                                    } else if (format == ImageExportFormat.PNG) {
                                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                    } else {
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                                            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                                        } else {
+                                            @Suppress("DEPRECATION")
+                                            bitmap.compress(Bitmap.CompressFormat.WEBP, 90, out)
+                                        }
                                     }
                                 }
                                 bitmap.recycle()

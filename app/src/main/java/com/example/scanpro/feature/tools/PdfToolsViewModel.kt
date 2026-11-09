@@ -19,7 +19,11 @@ import com.example.scanpro.imaging.CompressPdfEngine
 import com.example.scanpro.imaging.CompressionPreset
 import com.example.scanpro.imaging.FormField
 import com.example.scanpro.imaging.FormFieldRules
+import com.example.scanpro.imaging.ImageCompressConfig
 import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.ImageMetadata
+import com.example.scanpro.imaging.ImageResizeConfig
+import com.example.scanpro.imaging.ImageToolsEngine
 import com.example.scanpro.imaging.MergePasswordNeededException
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.PdfFormEngine
@@ -66,7 +70,7 @@ data class MergePasswordRequest(
     val index: Int,
     val fileName: String,
     val wrongPassword: Boolean,
-    val attempt: Int
+    val attempt: Int,
 )
 
 /**
@@ -79,7 +83,7 @@ class PdfToolsViewModel @Inject constructor(
     private val recents: RecentPdfStore,
     private val ocr: OcrEngine,
     private val operations: OperationRunner,
-    private val notifications: AppNotifications
+    private val notifications: AppNotifications,
 ) : ViewModel() {
     /** PDFs picked from the device or a cloud app, newest first, to reopen with one tap. */
     val recentPdfs: StateFlow<List<RecentPdf>> = recents.items
@@ -211,18 +215,18 @@ class PdfToolsViewModel @Inject constructor(
             pageCount = files.size,
             originalSizeBytes = 0,
             outputSizeBytes = files.sumOf { it.length() },
-            message = context.resources.getQuantityString(message, files.size, files.size)
+            message = context.resources.getQuantityString(message, files.size, files.size),
         )
     }
 
-    private fun named(uri: Uri, suffix: String, extension: String = "pdf"): java.io.File =
+    private fun named(uri: Uri, suffix: String, extension: String = "pdf"): File =
         PdfToolsEngine.outputLocation(context, "${PdfToolsEngine.sourceBaseName(context, uri)} $suffix.$extension")
 
     /** Runs [work] in a fresh folder that is removed again if the tool fails or is cancelled part-way. */
-    private suspend fun <T> inScratchDir(name: String, work: suspend (java.io.File) -> T): T {
+    private suspend fun <T> inScratchDir(name: String, work: suspend (File) -> T): T {
         val dir = PdfToolsEngine.outputLocation(context, name).apply { mkdirs() }
-        try {
-            return work(dir)
+        return try {
+            work(dir)
         } catch (error: Throwable) {
             dir.deleteRecursively()
             throw error
@@ -269,6 +273,8 @@ class PdfToolsViewModel @Inject constructor(
             // Ask again for the same file, with the error in the dialog (a snackbar would sit behind it).
             _wrongPassword.value = true
             _passwordNeeded.value = uri
+            endedWithQuestion = true
+            notifications.taskFailed(context.getString(R.string.tools_wrong_password_try_again))
             null
         }
     }
@@ -276,8 +282,15 @@ class PdfToolsViewModel @Inject constructor(
     /** Checks how a PDF is protected before asking for a password it may not have. */
     fun inspectForUnlock(uri: Uri) = launchTool(R.string.msg_tools_checking_protection, R.string.msg_tools_read_failed) {
         when (val protection = PdfToolsEngine.inspectProtection(context, uri)) {
-            PdfProtection.PASSWORD_REQUIRED -> _passwordNeeded.value = uri
-            else -> _unlockNotice.value = uri to protection
+            PdfProtection.PASSWORD_REQUIRED -> {
+                _passwordNeeded.value = uri
+                endedWithQuestion = true
+                notifications.taskFailed(context.getString(R.string.tools_password_unlock_prompt))
+            }
+            else -> {
+                _unlockNotice.value = uri to protection
+                endedWithQuestion = true
+            }
         }
         null
     }
@@ -341,7 +354,7 @@ class PdfToolsViewModel @Inject constructor(
     fun submitMergePassword(password: String) {
         val request = _mergePassword.value ?: return
         _mergePassword.value = null
-        mergePasswords = mergePasswords + (request.uris[request.index] to password)
+        mergePasswords += (request.uris[request.index] to password)
         // The run that asked ends right after asking; let it finish before the next one starts.
         val previous = job
         viewModelScope.launch {
@@ -364,7 +377,7 @@ class PdfToolsViewModel @Inject constructor(
         if (fields.isEmpty()) {
             _message.value = context.getString(R.string.msg_tools_no_fillable_fields)
         } else {
-            _form.value = FormSession(uri, fields, fields.associateBy({ it.name }, { it.value }))
+            _form.value = FormSession(uri, fields, fields.associateBy({ it.name }) { it.value })
         }
         null
     }
@@ -440,7 +453,8 @@ class PdfToolsViewModel @Inject constructor(
                 )
             } finally {
                 withContext(Dispatchers.IO) {
-                    uris.mapNotNull { it.path?.let(::File)?.parentFile }
+                    uris.asSequence()
+                        .mapNotNull { it.path?.let(::File)?.parentFile }
                         .filter { it.name.startsWith("img2pdf_order_") }
                         .distinct()
                         .forEach { it.deleteRecursively() }
@@ -471,7 +485,7 @@ class PdfToolsViewModel @Inject constructor(
             fileEmpty = context.getString(R.string.tools_office_note_file_empty),
             fileTooLong = context.getString(R.string.tools_office_note_too_long),
             workbookTruncated = { cells -> context.getString(R.string.tools_office_note_workbook_truncated, cells) },
-            fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) }
+            fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) },
         )
         val html = withContext(Dispatchers.IO) {
             try {
@@ -503,4 +517,27 @@ class PdfToolsViewModel @Inject constructor(
 
     /** A picked file's name, for the ordering step before Merge and Images to PDF. */
     fun displayName(uri: Uri): String = PdfToolsEngine.sourceBaseName(context, uri, context.getString(R.string.tools_file_fallback_name))
+
+    fun compressImage(uri: Uri, config: ImageCompressConfig) =
+        launchTool(R.string.tools_progress_compressing_img, R.string.tools_err_compress_img) {
+            val out = named(uri, "compressed", config.outputFormat.extension)
+            ImageToolsEngine.compressImage(context, uri, config, out, ::report)
+        }
+
+    fun convertImage(uris: List<Uri>, targetFormat: ImageExportFormat, quality: Int = 100) =
+        launchTool(R.string.tools_progress_converting_img, R.string.tools_err_convert_img) {
+            val base = if (uris.size == 1) named(uris.first(), "converted", targetFormat.extension)
+            else PdfToolsEngine.outputLocation(context, "converted_${System.currentTimeMillis()}.${targetFormat.extension}")
+            ImageToolsEngine.convertImage(context, uris, targetFormat, quality, base, ::report)
+        }
+
+    fun resizeImage(uri: Uri, config: ImageResizeConfig) =
+        launchTool(R.string.tools_progress_resizing_img, R.string.tools_err_resize_img) {
+            val out = named(uri, "resized_${config.targetWidth}x${config.targetHeight}", config.outputFormat.extension)
+            ImageToolsEngine.resizeImage(context, uri, config, out, ::report)
+        }
+
+    suspend fun inspectImage(uri: Uri): ImageMetadata? = withContext(Dispatchers.IO) {
+        ImageToolsEngine.inspectImage(context, uri)
+    }
 }

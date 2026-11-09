@@ -263,4 +263,66 @@
     <string name="tools_office_note_too_long">கோப்பு மிக நீளமாக இருந்தது; முதல் 20 MB மட்டுமே காட்டப்படுகிறது.</string>
     <string name="tools_office_note_workbook_truncated">முதல் %1$s செல்கள் மட்டுமே காட்டப்படுகின்றன; ஒர்க்புக்கின் மீதமுள்ள பகுதி மாற்றப்படவில்லை.</string>
     <string name="tools_office_note_file_truncated">கோப்பு மிகப் பெரியதாக இருந்தது; முதல் %1$s செல்கள் மட்டுமே காட்டப்படுகின்றன.</string>
+
+    <!-- Image Tools -->
+    <string name="tools_section_image">படக் கருவிகள்</string>
+    <string name="tools_card_compress_img">படத்தைச் சுருக்கு</string>
+    <string name="tools_tile_compress_img">சுருக்கு</string>
+    <string name="tools_card_convert_img">படத்தை மாற்று</string>
+    <string name="tools_tile_convert_img">மாற்று</string>
+    <string name="tools_card_resize_img">பட அளவை மாற்று</string>
+    <string name="tools_tile_resize_img">மறுஅளவிடு</string>
+
+    <string name="tools_compress_img_title">படத்தைச் சுருக்கு</string>
+    <string name="tools_compress_img_target_kb">இலக்கு அளவு (KB)</string>
+    <string name="tools_compress_img_custom_size">விருப்ப அளவு</string>
+    <string name="tools_compress_img_quick_sizes">விரைவு அளவு</string>
+    <string name="tools_compress_img_mode_target">இலக்கு அளவு</string>
+    <string name="tools_compress_img_mode_quality">தரம் %</string>
+    <string name="tools_compress_img_quality_label">தரம்: %1$d%%</string>
+    <string name="tools_compress_img_resolution_label">அதிகபட்ச தெளிவுத்திறன்</string>
+    <string name="tools_compress_img_res_auto">தானியங்கி</string>
+    <string name="tools_compress_img_res_2048">2048 px</string>
+    <string name="tools_compress_img_res_1600">1600 px</string>
+    <string name="tools_compress_img_res_1280">1280 px</string>
+    <string name="tools_compress_img_res_800">800 px (பாஸ்போர்ட் / அடையாள அட்டை)</string>
+    <string name="tools_compress_img_action">சுருக்கு</string>
+    <string name="tools_compress_img_help">வேலை இணையதளங்கள், பாஸ்போர்ட்/விசா படங்கள் மற்றும் KYC பதிவேற்றங்களுக்காக ஃபைல் அளவைக் குறைக்கிறது.</string>
+    <string name="tools_compress_img_success">படம் %1$d%% சுருக்கப்பட்டது (%2$s → %3$s)</string>
+
+    <string name="tools_convert_img_title">படத்தை மாற்று</string>
+    <string name="tools_convert_img_format_label">இலக்கு வடிவம்</string>
+    <string name="tools_convert_img_format_png">PNG</string>
+    <string name="tools_convert_img_format_png_desc">தர இழப்பு இன்றி 100%% துல்லியமாக மாற்றும் (லாஸ்லெஸ்).</string>
+    <string name="tools_convert_img_format_jpg">JPG / JPEG</string>
+    <string name="tools_convert_img_format_jpg_desc">சிறிய ஃபைல் அளவு, அனைத்து சாதனங்களுக்கும் பொருந்தும். ஒளிபுகும் பகுதிகள் வெள்ளை நிறமாகும்.</string>
+    <string name="tools_convert_img_format_webp">WEBP</string>
+    <string name="tools_convert_img_format_webp_desc">சிறந்த சுருக்கத் திறன் கொண்ட நவீன வலை வடிவம்.</string>
+    <string name="tools_convert_img_lossless_badge">லாஸ்லெஸ் (தர இழப்பற்றது)</string>
+    <string name="tools_convert_img_action">மாற்று</string>
+    <plurals name="tools_convert_img_done">
+        <item quantity="one">%1$d படம் மாற்றப்பட்டது</item>
+        <item quantity="other">%1$d படங்கள் மாற்றப்பட்டன</item>
+    </plurals>
+
+    <string name="tools_resize_img_title">பட அளவை மாற்று</string>
+    <string name="tools_resize_img_dimensions">பரிமாணங்கள் (px)</string>
+    <string name="tools_resize_img_width">அகலம் (px)</string>
+    <string name="tools_resize_img_height">உயரம் (px)</string>
+    <string name="tools_resize_img_lock_aspect">விகிதத்தைப் பேணுக</string>
+    <string name="tools_resize_img_preset_passport">பாஸ்போர்ட் (600 × 600)</string>
+    <string name="tools_resize_img_preset_fhd">Full HD (1920 × 1080)</string>
+    <string name="tools_resize_img_preset_hd">HD (1280 × 720)</string>
+    <string name="tools_resize_img_preset_avatar">அவதார் (400 × 400)</string>
+    <string name="tools_resize_img_scale_label">அளவு</string>
+    <string name="tools_resize_img_action">மறுஅளவிடு</string>
+    <string name="tools_resize_img_success">%1$d × %2$d px அளவுக்கு மாற்றப்பட்டது (%3$s)</string>
+
+    <string name="tools_progress_compressing_img">படம் சுருக்கப்படுகிறது…</string>
+    <string name="tools_progress_converting_img">படம் மாற்றப்படுகிறது…</string>
+    <string name="tools_progress_resizing_img">பட அளவு மாற்றப்படுகிறது…</string>
+    <string name="tools_err_compress_img">படத்தைச் சுருக்க முடியவில்லை</string>
+    <string name="tools_err_convert_img">படத்தை மாற்ற முடியவில்லை</string>
+    <string name="tools_err_resize_img">பட அளவை மாற்ற முடியவில்லை</string>
+    <string name="tools_err_invalid_dimensions">பரிமாணங்கள் 10 முதல் 8000 பிக்சல்களுக்குள் இருக்க வேண்டும்</string>
 </resources>
