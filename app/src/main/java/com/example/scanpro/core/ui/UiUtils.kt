@@ -1,5 +1,6 @@
 package com.example.scanpro.core.ui
 
+import android.app.Activity
 import com.example.scanpro.core.text.AppStrings
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -278,12 +279,25 @@ fun printPdfFile(context: Context, file: File, title: String) {
         Toast.makeText(context, context.getString(R.string.core_pdf_not_found), Toast.LENGTH_SHORT).show()
         return
     }
-    val manager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-    manager.print(
-        title,
-        PdfFilePrintAdapter(file),
-        android.print.PrintAttributes.Builder().build()
-    )
+    val activity = context.findActivity() ?: (context as? Activity)
+    if (activity == null) {
+        Toast.makeText(context, context.getString(R.string.print_err_failed), Toast.LENGTH_SHORT).show()
+        return
+    }
+    val manager = activity.getSystemService(Context.PRINT_SERVICE) as? android.print.PrintManager
+    if (manager == null) {
+        Toast.makeText(context, context.getString(R.string.print_err_failed), Toast.LENGTH_SHORT).show()
+        return
+    }
+    runCatching {
+        manager.print(
+            title,
+            PdfFilePrintAdapter(file),
+            android.print.PrintAttributes.Builder().build()
+        )
+    }.onFailure {
+        Toast.makeText(context, context.getString(R.string.print_err_failed), Toast.LENGTH_SHORT).show()
+    }
 }
 
 fun copyFileToUri(context: Context, sourcePath: String, destination: Uri): Boolean = runCatching {

@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import android.app.Activity
 import android.content.Context
 import android.print.PrintAttributes
 import android.print.PrintManager
@@ -8,6 +9,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import com.example.scanpro.core.ui.findActivity
 import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.coroutines.resume
@@ -50,14 +52,17 @@ object HtmlToPdf {
     }
 
     /**
-     * Fallback: opens the system print dialogue for [html] (the user picks "Save as PDF"). [activityContext] must be
-     * an Activity, as the dialogue needs one.
+     * Fallback: opens the system print dialogue for [html] (the user picks "Save as PDF"). [context] is resolved
+     * to an Activity, as the dialogue needs one.
      */
-    suspend fun printWithDialog(activityContext: Context, html: String, jobName: String) {
-        val webView = withContext(Dispatchers.Main) { load(activityContext, html) }
+    suspend fun printWithDialog(context: Context, html: String, jobName: String) {
+        val activity = context.findActivity() ?: (context as? Activity) ?: return
+        val webView = withContext(Dispatchers.Main) { load(activity, html) }
         withContext(Dispatchers.Main) {
-            val manager = activityContext.getSystemService(PrintManager::class.java) ?: return@withContext
-            manager.print(jobName, webView.createPrintDocumentAdapter(jobName), A4)
+            val manager = activity.getSystemService(PrintManager::class.java) ?: return@withContext
+            runCatching {
+                manager.print(jobName, webView.createPrintDocumentAdapter(jobName), A4)
+            }
         }
     }
 

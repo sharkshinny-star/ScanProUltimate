@@ -466,7 +466,7 @@ object PdfToolsEngine {
 
                             renderer.openPage(i).use { page ->
                                 // Capped so a poster-sized page can't run out of memory.
-                                val scale = minOf(scale, 4000f / maxOf(page.width, page.height))
+                                val scale = minOf(scale, 4000f / maxOf(page.width, page.height).coerceAtLeast(1))
                                 val width = (page.width * scale).toInt().coerceAtLeast(1)
                                 val height = (page.height * scale).toInt().coerceAtLeast(1)
                                 val bitmap = createBitmap(width, height)

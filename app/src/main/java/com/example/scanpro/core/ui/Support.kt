@@ -3,6 +3,7 @@ package com.example.scanpro.core.ui
 import com.example.scanpro.R
 import androidx.annotation.StringRes
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -110,6 +111,7 @@ suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelive
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (reportUri != null) {
             putExtra(Intent.EXTRA_STREAM, reportUri)
+            clipData = ClipData.newRawUri(subject, reportUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
     }
@@ -126,11 +128,13 @@ suspend fun contactSupport(context: Context, topic: SupportTopic): SupportDelive
         putExtra(Intent.EXTRA_TEXT, context.getString(R.string.support_to_line, SupportLinks.EMAIL) + "\n\n$body")
         if (reportUri != null) {
             putExtra(Intent.EXTRA_STREAM, reportUri)
+            clipData = ClipData.newRawUri(subject, reportUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
     }
     val chooser = Intent.createChooser(share, subject).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     return try {
         context.startActivity(chooser)
