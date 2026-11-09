@@ -227,16 +227,38 @@ private fun OnboardingPage(
             // Taps on empty parts of the welcome must not reach the app drawn underneath it.
             .pointerInput(Unit) { detectTapGestures { } }
     ) {
-        Box(
+        BoxWithConstraints(
             Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding(),
             contentAlignment = Alignment.TopCenter
         ) {
+            val maxH = maxHeight
+            val isCompact = maxH < 760.dp
+            val isShort = maxH < 620.dp
+
+            val heroHeight = when {
+                isShort -> 110.dp
+                isCompact -> 150.dp
+                maxH < 840.dp -> 180.dp
+                else -> 220.dp
+            }
+            val topPad = if (isCompact) 8.dp else 16.dp
+            val spacerBeforeHero = if (isCompact) 4.dp else 10.dp
+            val spacerAfterHero = if (isCompact) 10.dp else 20.dp
+            val spacerAfterTitle = if (isCompact) 4.dp else 8.dp
+            val spacerAfterBody = if (isCompact) 10.dp else 18.dp
+            val pointVerticalPadding = if (isCompact) 5.dp else 8.dp
+            val surfaceVerticalPadding = if (isCompact) 4.dp else 6.dp
+            val buttonVerticalPadding = if (isCompact) 8.dp else 12.dp
+
+            val titleStyle = if (isCompact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium
+            val bodyStyle = if (isCompact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge
+
             // widthIn before fillMaxSize: the other way round, fillMaxSize pins the width and the 600 dp cap never applies.
             Column(Modifier.widthIn(max = 600.dp).fillMaxSize()) {
-                BrandLockup(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp).enter(0))
+                BrandLockup(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = topPad).enter(0))
                 Column(
                     Modifier
                         .weight(1f)
@@ -245,36 +267,36 @@ private fun OnboardingPage(
                         .padding(horizontal = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(spacerBeforeHero))
                     HeroIllustration(
                         icon = heroIcon,
                         tone = heroTone,
-                        modifier = Modifier.fillMaxWidth().height(236.dp).enter(1),
+                        modifier = Modifier.fillMaxWidth().height(heroHeight).enter(1),
                         current = entered
                     )
-                    Spacer(Modifier.height(26.dp))
+                    Spacer(Modifier.height(spacerAfterHero))
                     Text(
                         title,
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = titleStyle,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().enter(2)
                     )
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(spacerAfterTitle))
                     Text(
                         body,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = bodyStyle,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth().enter(2)
                     )
-                    Spacer(Modifier.height(22.dp))
+                    Spacer(Modifier.height(spacerAfterBody))
                     Surface(
-                        shape = RoundedCornerShape(22.dp),
+                        shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.7f),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         modifier = Modifier.fillMaxWidth().enter(3)
                     ) {
-                        Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                        Column(Modifier.padding(horizontal = 14.dp, vertical = surfaceVerticalPadding)) {
                             points.forEachIndexed { index, point ->
                                 // Rows step in one after another as the card settles into view.
                                 val reveal by animateFloatAsState(
@@ -286,11 +308,11 @@ private fun OnboardingPage(
                                     Modifier
                                         .fillMaxWidth()
                                         .graphicsLayer { alpha = reveal; translationX = (1f - reveal) * 24.dp.toPx() }
-                                        .padding(vertical = 8.dp),
+                                        .padding(vertical = pointVerticalPadding),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    IconTile(point.icon, point.tone, size = 38.dp, corner = 12.dp, iconSize = 20.dp)
-                                    Spacer(Modifier.width(14.dp))
+                                    IconTile(point.icon, point.tone, size = 36.dp, corner = 11.dp, iconSize = 18.dp)
+                                    Spacer(Modifier.width(12.dp))
                                     if (point.detail == null) {
                                         Text(point.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                                     } else {
@@ -307,14 +329,14 @@ private fun OnboardingPage(
                             }
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
                 }
                 GradientButton(
                     text = primary,
                     icon = Icons.AutoMirrored.Rounded.ArrowForward,
                     onClick = onPrimary,
                     enabled = primaryEnabled,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp).enter(4)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = buttonVerticalPadding).enter(4)
                 )
                 if (secondary != null) {
                     TextButton(
@@ -330,7 +352,7 @@ private fun OnboardingPage(
 
 /**
  * A stack of three sheets with a scan beam sweeping down the front one, and a toned badge holding the
- * page's icon. Drawn in Compose so it follows the theme and scales to any width.
+ * page's icon. Drawn in Compose so it follows the theme and scales to any width and height.
  */
 @Composable
 private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifier = Modifier, current: Boolean = true) {
@@ -370,12 +392,13 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
     val badgeContainer = tone.container()
     val badgeContent = tone.content()
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        val sheetWidth = minOf(maxWidth * 0.46f, 170.dp)
+        val sheetWidth = minOf(maxWidth * 0.44f, maxHeight * 0.65f, 160.dp)
         val sheetHeight = sheetWidth * 1.3f
+        val backOffsetX = (sheetWidth * 0.14f).coerceAtMost(18.dp)
         // Soft halo behind the stack.
         Box(
             Modifier
-                .size(sheetWidth * 1.9f)
+                .size(sheetWidth * 1.8f)
                 .graphicsLayer { scaleX = haloScale; scaleY = haloScale }
                 .background(
                     Brush.radialGradient(listOf(brand.gradientEnd.copy(alpha = 0.22f), Color.Transparent)),
@@ -384,39 +407,39 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         )
         // Two sheets behind, fanned out; the whole stack drifts gently, the back sheets a little more.
         Box(Modifier.graphicsLayer { translationY = bob * 7.dp.toPx(); rotationZ = bob * 1.2f }) {
-            Sheet(sheetWidth, sheetHeight, rotation = -9f, offsetX = (-22).dp, offsetY = 10.dp, alpha = 0.55f, lines = false)
+            Sheet(sheetWidth, sheetHeight, rotation = -9f, offsetX = -backOffsetX - 4.dp, offsetY = 8.dp, alpha = 0.55f, lines = false)
         }
         Box(Modifier.graphicsLayer { translationY = -bob * 5.dp.toPx(); rotationZ = -bob * 0.8f }) {
-            Sheet(sheetWidth, sheetHeight, rotation = 6f, offsetX = 18.dp, offsetY = 6.dp, alpha = 0.75f, lines = false)
+            Sheet(sheetWidth, sheetHeight, rotation = 6f, offsetX = backOffsetX, offsetY = 5.dp, alpha = 0.75f, lines = false)
         }
         // Front sheet with text lines and the beam.
         Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob * 3.dp.toPx() }) {
             Sheet(sheetWidth, sheetHeight, rotation = 0f, offsetX = 0.dp, offsetY = 0.dp, alpha = 1f, lines = true)
-            Canvas(Modifier.size(sheetWidth + 36.dp, sheetHeight)) {
+            Canvas(Modifier.size(sheetWidth + 30.dp, sheetHeight)) {
                 val y = size.height * (0.12f + 0.76f * beamPosition)
                 // Wake of the beam: a faint band fading upwards.
                 drawRect(
                     brush = Brush.verticalGradient(
                         listOf(Color.Transparent, brand.scanLine.copy(alpha = 0.22f)),
-                        startY = y - 70f,
+                        startY = y - 50f,
                         endY = y
                     ),
-                    topLeft = Offset(18f, y - 70f),
-                    size = Size(size.width - 36f, 70f)
+                    topLeft = Offset(14f, y - 50f),
+                    size = Size(size.width - 28f, 50f)
                 )
-                drawLine(brand.scanLine, Offset(0f, y), Offset(size.width, y), strokeWidth = 5f, cap = StrokeCap.Round)
-                drawCircle(brand.scanLine, radius = 7f, center = Offset(0f, y))
-                drawCircle(brand.scanLine, radius = 7f, center = Offset(size.width, y))
+                drawLine(brand.scanLine, Offset(0f, y), Offset(size.width, y), strokeWidth = 4f, cap = StrokeCap.Round)
+                drawCircle(brand.scanLine, radius = 6f, center = Offset(0f, y))
+                drawCircle(brand.scanLine, radius = 6f, center = Offset(size.width, y))
             }
         }
         // Brackets around the whole stack; loose until the page locks on.
         Canvas(
             Modifier
-                .size(sheetWidth + 76.dp, sheetHeight + 44.dp)
+                .size(sheetWidth + 64.dp, sheetHeight + 36.dp)
                 .graphicsLayer { val s = 1f + (1f - lock) * 0.14f; scaleX = s; scaleY = s }
         ) {
-            val l = 28f + (1f - lock) * 10f
-            val stroke = 6f
+            val l = 24f + (1f - lock) * 8f
+            val stroke = 5f
             fun corner(x: Float, y: Float, dx: Float, dy: Float) {
                 drawLine(bracketColor, Offset(x, y), Offset(x + dx * l, y), stroke, StrokeCap.Round)
                 drawLine(bracketColor, Offset(x, y), Offset(x, y + dy * l), stroke, StrokeCap.Round)
@@ -427,17 +450,19 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
             corner(size.width, size.height, -1f, -1f)
         }
         // Icon badge, bottom right.
+        val badgeSize = (sheetWidth * 0.42f).coerceIn(40.dp, 60.dp)
+        val badgeIconSize = (badgeSize * 0.52f).coerceIn(20.dp, 30.dp)
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(18.dp),
             color = badgeContainer,
-            shadowElevation = 8.dp,
+            shadowElevation = 6.dp,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = maxWidth * 0.12f, bottom = 6.dp)
-                .size(64.dp)
+                .padding(end = (maxWidth * 0.12f).coerceAtMost(36.dp), bottom = 4.dp)
+                .size(badgeSize)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = badgeContent, modifier = Modifier.size(32.dp))
+                Icon(icon, contentDescription = null, tint = badgeContent, modifier = Modifier.size(badgeIconSize))
             }
         }
     }

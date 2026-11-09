@@ -10,6 +10,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -106,13 +107,13 @@ internal fun HomeTipCard(onAction: (TipAction) -> Unit, onHide: () -> Unit, modi
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         modifier = modifier.fillMaxWidth()
     ) {
-        Column(Modifier.padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 12.dp)) {
+        Column(Modifier.padding(start = 16.dp, end = 6.dp, top = 4.dp, bottom = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.TipsAndUpdates, contentDescription = null, tint = TileTone.Amber.content(), modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
                 Eyebrow(stringResource(R.string.tip_eyebrow), color = TileTone.Amber.content(), modifier = Modifier.weight(1f))
-                IconButton(onClick = onHide) {
-                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.tip_cd_hide), modifier = Modifier.size(20.dp))
+                IconButton(onClick = onHide, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.tip_cd_hide), modifier = Modifier.size(18.dp))
                 }
             }
             AnimatedContent(
@@ -124,10 +125,10 @@ internal fun HomeTipCard(onAction: (TipAction) -> Unit, onHide: () -> Unit, modi
                 label = "tip"
             ) { shown ->
                 val tip = homeTips[shown]
-                Column(Modifier.padding(end = 12.dp)) {
+                Column(Modifier.padding(end = 10.dp)) {
                     Row(verticalAlignment = Alignment.Top) {
-                        IconTile(tip.icon, tip.tone, size = 44.dp, corner = 14.dp)
-                        Spacer(Modifier.width(14.dp))
+                        IconTile(tip.icon, tip.tone, size = 40.dp, corner = 12.dp)
+                        Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(stringResource(tip.title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(2.dp))
@@ -138,37 +139,40 @@ internal fun HomeTipCard(onAction: (TipAction) -> Unit, onHide: () -> Unit, modi
                             )
                         }
                     }
-                    Spacer(Modifier.height(10.dp))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(start = 58.dp)
-                    ) {
-                        FilledTonalButton(
-                            onClick = { onAction(tip.target) },
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                            modifier = Modifier.defaultMinSize(minHeight = 40.dp)
+                    Spacer(Modifier.height(8.dp))
+                    BoxWithConstraints {
+                        val indent = if (maxWidth < 360.dp) 0.dp else 52.dp
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(start = indent)
                         ) {
-                            Text(
-                                stringResource(tip.action),
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        TextButton(
-                            onClick = { index = (index + 1) % homeTips.size },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                            modifier = Modifier.defaultMinSize(minHeight = 40.dp)
-                        ) {
-                            Text(
-                                stringResource(R.string.tip_next),
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                            FilledTonalButton(
+                                onClick = { onAction(tip.target) },
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                modifier = Modifier.defaultMinSize(minHeight = 36.dp)
+                            ) {
+                                Text(
+                                    stringResource(tip.action),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            TextButton(
+                                onClick = { index = (index + 1) % homeTips.size },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier.defaultMinSize(minHeight = 36.dp)
+                            ) {
+                                Text(
+                                    stringResource(R.string.tip_next),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }

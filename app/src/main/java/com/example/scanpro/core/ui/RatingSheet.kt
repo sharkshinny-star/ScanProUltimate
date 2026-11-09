@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -188,9 +189,12 @@ private fun EmojiDisc(emoji: String, gold: Boolean, motion: Boolean) {
                 Text(
                     emoji,
                     fontSize = 40.sp,
-                    modifier = Modifier
-                        .offset(y = bob.dp)
-                        .scale(if (motion) enter * pop else 1f)
+                    modifier = Modifier.graphicsLayer {
+                        translationY = bob.dp.toPx()
+                        val s = if (motion) enter * pop else 1f
+                        scaleX = s
+                        scaleY = s
+                    }
                 )
             }
         }
@@ -204,14 +208,20 @@ private fun EmojiDisc(emoji: String, gold: Boolean, motion: Boolean) {
 
 @Composable
 private fun Sparkle(modifier: Modifier, delay: Int, motion: Boolean) {
-    val alpha = if (motion) {
+    val animatedAlpha = if (motion) {
         val transition = rememberInfiniteTransition(label = "sparkle")
         transition.animateFloat(
             0f, 1f,
             infiniteRepeatable(tween(900, delayMillis = delay), androidx.compose.animation.core.RepeatMode.Reverse),
             label = "sparkleAlpha"
-        ).value
-    } else 1f
+        )
+    } else null
     // Decoration only: without this TalkBack reads "sparkles" out loud.
-    Text("✨", fontSize = 13.sp, modifier = modifier.alpha(alpha).clearAndSetSemantics { })
+    Text(
+        "✨",
+        fontSize = 13.sp,
+        modifier = modifier
+            .graphicsLayer { alpha = animatedAlpha?.value ?: 1f }
+            .clearAndSetSemantics { }
+    )
 }

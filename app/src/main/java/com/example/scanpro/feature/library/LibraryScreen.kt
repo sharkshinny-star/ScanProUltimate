@@ -702,7 +702,7 @@ internal fun LibraryScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(count = list.itemCount, key = list.itemKey { it.id }) { index ->
+                            items(count = list.itemCount, key = list.itemKey { it.id }, contentType = { "document_grid_card" }) { index ->
                                 val doc = list[index] ?: return@items
                                 DocumentGridCard(
                                     document = doc,
@@ -718,7 +718,7 @@ internal fun LibraryScreen(
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 32.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(count = list.itemCount, key = list.itemKey { it.id }) { index ->
+                            items(count = list.itemCount, key = list.itemKey { it.id }, contentType = { "document_list_card" }) { index ->
                                 val doc = list[index] ?: return@items
                                 DocumentListCard(
                                     document = doc,
@@ -1005,27 +1005,31 @@ private fun HomeDashboard(
             listState.scrollToItem(0, 0)
         }
     }
+    val selectedSet = remember(selected) { selected.toSet() }
+    val columns = if (wide) 4 else 2
+    val chunkedRecent = remember(recent, columns) { recent.chunked(columns) }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize().widthIn(max = if (wide) 1100.dp else 720.dp),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(top = 8.dp, bottom = if (wide) 32.dp else 48.dp),
+        verticalArrangement = Arrangement.spacedBy(if (wide) 16.dp else 12.dp)
     ) {
-        item(key = "search") {
+        item(key = "search", contentType = "search") {
             SearchLauncher(onClick = onSearch, modifier = Modifier.padding(horizontal = 16.dp))
         }
         if (keptScanCount > 0) {
-            item(key = "kept_scans") {
+            item(key = "kept_scans", contentType = "kept_scans") {
                 KeptScansBanner(count = keptScanCount, onClick = onKeptScans, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
         // The promo card is the empty state only: once there are documents, the camera button is the call to action.
         if (documentCount == 0) {
-            item {
+            item(key = "hero", contentType = "hero") {
                 ScanHeroCard(onStartScan = onStartScan, enabled = !busy, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
-        item {
+        item(key = "quick_actions", contentType = "quick_actions") {
             // Four shortcuts, one row. Text, QR, Receipt and Photos live in the camera's mode strip and the Files menu.
             QuickActions(
                 enabled = !busy,
@@ -1039,7 +1043,7 @@ private fun HomeDashboard(
             )
         }
         if (recent.isNotEmpty()) {
-            item {
+            item(key = "recent_header", contentType = "recent_header") {
                 SectionHeader(
                     stringResource(R.string.lib_sort_recent),
                     modifier = Modifier.padding(horizontal = 20.dp),
@@ -1048,8 +1052,7 @@ private fun HomeDashboard(
                 )
             }
             // A grid of large thumbnails, like the leading scanner apps' home screens: two columns on phones.
-            val columns = if (wide) 4 else 2
-            items(recent.chunked(columns), key = { row -> row.first().id }) { row ->
+            items(chunkedRecent, key = { row -> row.first().id }, contentType = { "recent_row" }) { row ->
                 Row(
                     Modifier.padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -1057,7 +1060,7 @@ private fun HomeDashboard(
                     row.forEach { doc ->
                         DocumentRecentCard(
                             document = doc,
-                            selected = doc.id in selected,
+                            selected = doc.id in selectedSet,
                             onClick = { if (selected.isNotEmpty()) onToggleSelection(doc.id) else onOpenDocument(doc.id) },
                             onLongClick = { onToggleSelection(doc.id) },
                             modifier = Modifier.weight(1f)
@@ -1068,7 +1071,7 @@ private fun HomeDashboard(
             }
         }
         if (showTips) {
-            item(key = "tips") {
+            item(key = "tips", contentType = "tips") {
                 HomeTipCard(
                     onAction = onTipAction,
                     onHide = onHideTips,
@@ -1224,11 +1227,11 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     }
                 }
             }
-            .padding(horizontal = 18.dp, vertical = 16.dp)
+            .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
         Column(Modifier.fillMaxWidth(0.68f)) {
             Eyebrow(stringResource(R.string.lib_hero_eyebrow), color = brand.onGradientMuted)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 stringResource(R.string.lib_hero_title),
                 style = MaterialTheme.typography.titleLarge,
@@ -1240,7 +1243,7 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                 style = MaterialTheme.typography.bodySmall,
                 color = brand.onGradientMuted
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
             Button(
                 onClick = onStartScan,
                 enabled = enabled,
@@ -1289,10 +1292,10 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
                             .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
                             .graphicsLayer { alpha = if (enabled) 1f else 0.55f }
-                            .padding(vertical = 12.dp, horizontal = 4.dp)
+                            .padding(vertical = 10.dp, horizontal = 4.dp)
                     ) {
-                        IconTile(action.icon, action.tone, size = 44.dp, corner = 14.dp)
-                        Spacer(Modifier.height(8.dp))
+                        IconTile(action.icon, action.tone, size = 40.dp, corner = 12.dp)
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             action.label,
                             style = MaterialTheme.typography.labelMedium,

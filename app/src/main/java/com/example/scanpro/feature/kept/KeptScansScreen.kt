@@ -131,7 +131,7 @@ internal fun KeptScansScreen(
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
                         )
                     }
-                    items(scans, key = { it.id }) { scan ->
+                    items(scans, key = { it.id }, contentType = { "kept_scan_card" }) { scan ->
                         KeptScanCard(
                             scan = scan,
                             onRetry = { onRetry(scan.id) },

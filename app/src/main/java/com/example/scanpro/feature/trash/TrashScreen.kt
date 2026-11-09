@@ -246,7 +246,7 @@ internal fun TrashScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    items(TrashSortOption.entries) { option ->
+                    items(TrashSortOption.entries, key = { it.name }, contentType = { "trash_sort_chip" }) { option ->
                         FilterChip(
                             selected = sortOption == option,
                             onClick = { sortOption = option },
@@ -273,7 +273,7 @@ internal fun TrashScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(sortedDocuments, key = { it.id }) { doc ->
+                    items(sortedDocuments, key = { it.id }, contentType = { "trash_item" }) { doc ->
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = MaterialTheme.shapes.medium,

@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -643,19 +644,22 @@ internal fun DocumentDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    item(key = "markup", span = { GridItemSpan(maxLineSpan) }) {
+                    item(key = "markup", contentType = "markup", span = { GridItemSpan(maxLineSpan) }) {
                         // Mark-up for the current page; the watermark covers every page, as before.
                         val canMark = !busy && currentPage != null
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item { ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true } }
-                            item { ActionChip(Icons.Default.Gesture, stringResource(R.string.doc_pen), canMark) { penOpen = true } }
-                            item { ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true } }
-                            item { ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } } }
-                            item { ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } } }
-                            item { ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true } }
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ActionChip(Icons.Default.Draw, stringResource(R.string.doc_sign), canMark) { signatureOpen = true }
+                            ActionChip(Icons.Default.Gesture, stringResource(R.string.doc_pen), canMark) { penOpen = true }
+                            ActionChip(Icons.Default.TextFields, stringResource(R.string.doc_text), canMark) { annotationTextOpen = true }
+                            ActionChip(Icons.Default.Highlight, stringResource(R.string.doc_highlight), canMark) { currentPage?.let { onHighlight(it.id) } }
+                            ActionChip(Icons.Default.VisibilityOff, stringResource(R.string.doc_redact), canMark) { currentPage?.let { onRedact(it.id) } }
+                            ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true }
                         }
                     }
-                    itemsIndexed(pages, key = { _, page -> page.id }) { index, page ->
+                    itemsIndexed(pages, key = { _, page -> page.id }, contentType = { _, _ -> "page_cell" }) { index, page ->
                         PageCell(
                             page = page,
                             index = index,
@@ -669,7 +673,7 @@ internal fun DocumentDetailScreen(
                             modifier = Modifier.animateItem()
                         )
                     }
-                    item(key = "organise", span = { GridItemSpan(maxLineSpan) }) {
+                    item(key = "organise", contentType = "organise", span = { GridItemSpan(maxLineSpan) }) {
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -721,68 +725,65 @@ internal fun DocumentDetailScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)
                 ) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        item { ActionChip(Icons.Default.ContentCopy, stringResource(R.string.doc_copy), hasText) { copyText(context, document.ocrText) } }
-                        item {
-                            var exportMenuOpen by remember { mutableStateOf(false) }
-                            Box {
-                                ActionChip(Icons.Default.IosShare, stringResource(R.string.doc_export_txt), true, trailing = Icons.Default.ArrowDropDown) { exportMenuOpen = true }
-                                DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
-                                    val canExport = !busy && hasText
-                                    MenuItem(stringResource(R.string.doc_txt_file), Icons.Default.TextFields, canExport) { exportMenuOpen = false; onExportOcrTextFile() }
-                                    MenuItem(stringResource(R.string.doc_word_file), Icons.Default.Description, canExport) { exportMenuOpen = false; onExportWord() }
-                                    MenuItem(stringResource(R.string.doc_excel_file), Icons.Default.TableChart, canExport) { exportMenuOpen = false; onExportExcel() }
-                                    MenuItem(stringResource(R.string.doc_share_text), Icons.Default.Share) { exportMenuOpen = false; shareOcrText(context, document) }
-                                }
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ActionChip(Icons.Default.ContentCopy, stringResource(R.string.doc_copy), hasText) { copyText(context, document.ocrText) }
+                        var exportMenuOpen by remember { mutableStateOf(false) }
+                        Box {
+                            ActionChip(Icons.Default.IosShare, stringResource(R.string.doc_export_txt), true, trailing = Icons.Default.ArrowDropDown) { exportMenuOpen = true }
+                            DropdownMenu(expanded = exportMenuOpen, onDismissRequest = { exportMenuOpen = false }) {
+                                val canExport = !busy && hasText
+                                MenuItem(stringResource(R.string.doc_txt_file), Icons.Default.TextFields, canExport) { exportMenuOpen = false; onExportOcrTextFile() }
+                                MenuItem(stringResource(R.string.doc_word_file), Icons.Default.Description, canExport) { exportMenuOpen = false; onExportWord() }
+                                MenuItem(stringResource(R.string.doc_excel_file), Icons.Default.TableChart, canExport) { exportMenuOpen = false; onExportExcel() }
+                                MenuItem(stringResource(R.string.doc_share_text), Icons.Default.Share) { exportMenuOpen = false; shareOcrText(context, document) }
                             }
                         }
-                        item {
+                        FilterChip(
+                            selected = translateOpen,
+                            onClick = { translateOpen = !translateOpen },
+                            label = { Text(stringResource(R.string.doc_translate)) },
+                            leadingIcon = { Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize)) }
+                        )
+                        // The script the pages were read in; the menu switches script (reading again) or re-runs OCR.
+                        var scriptMenuOpen by remember { mutableStateOf(false) }
+                        val scriptLabel = stringResource(document.ocrScript.labelRes)
+                        val scriptDescription = stringResource(R.string.doc_ocr_script_current, scriptLabel)
+                        Box {
                             FilterChip(
-                                selected = translateOpen,
-                                onClick = { translateOpen = !translateOpen },
-                                label = { Text(stringResource(R.string.doc_translate)) },
-                                leadingIcon = { Icon(Icons.Default.Translate, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize)) }
+                                selected = true,
+                                onClick = { scriptMenuOpen = true },
+                                label = { Text(scriptLabel) },
+                                trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                                modifier = Modifier.semantics { contentDescription = scriptDescription }
                             )
-                        }
-                        item {
-                            // The script the pages were read in; the menu switches script (reading again) or re-runs OCR.
-                            var scriptMenuOpen by remember { mutableStateOf(false) }
-                            val scriptLabel = stringResource(document.ocrScript.labelRes)
-                            val scriptDescription = stringResource(R.string.doc_ocr_script_current, scriptLabel)
-                            Box {
-                                FilterChip(
-                                    selected = true,
-                                    onClick = { scriptMenuOpen = true },
-                                    label = { Text(scriptLabel) },
-                                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                                    modifier = Modifier.semantics { contentDescription = scriptDescription }
+                            DropdownMenu(expanded = scriptMenuOpen, onDismissRequest = { scriptMenuOpen = false }) {
+                                Text(
+                                    stringResource(R.string.doc_ocr_script),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                                 )
-                                DropdownMenu(expanded = scriptMenuOpen, onDismissRequest = { scriptMenuOpen = false }) {
-                                    Text(
-                                        stringResource(R.string.doc_ocr_script),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                OcrScript.entries.forEach { script ->
+                                    val isSelected = document.ocrScript == script
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(script.labelRes)) },
+                                        // Reading again in another script replaces corrections, so it asks first.
+                                        onClick = {
+                                            scriptMenuOpen = false
+                                            if (pages.any { it.ocrEdited } && !isSelected) reOcrConfirm = { onOcrScript(script) } else onOcrScript(script)
+                                        },
+                                        enabled = !busy,
+                                        trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
+                                        modifier = Modifier.semantics { selected = isSelected }
                                     )
-                                    OcrScript.entries.forEach { script ->
-                                        val isSelected = document.ocrScript == script
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(script.labelRes)) },
-                                            // Reading again in another script replaces corrections, so it asks first.
-                                            onClick = {
-                                                scriptMenuOpen = false
-                                                if (pages.any { it.ocrEdited } && !isSelected) reOcrConfirm = { onOcrScript(script) } else onOcrScript(script)
-                                            },
-                                            enabled = !busy,
-                                            trailingIcon = { if (isSelected) Icon(Icons.Default.Check, contentDescription = null) },
-                                            modifier = Modifier.semantics { selected = isSelected }
-                                        )
-                                    }
-                                    HorizontalDivider()
-                                    MenuItem(stringResource(R.string.doc_rerun_ocr), Icons.Default.Replay, !busy) {
-                                        scriptMenuOpen = false
-                                        if (pages.any { it.ocrEdited }) reOcrConfirm = { onReOcr() } else onReOcr()
-                                    }
+                                }
+                                HorizontalDivider()
+                                MenuItem(stringResource(R.string.doc_rerun_ocr), Icons.Default.Replay, !busy) {
+                                    scriptMenuOpen = false
+                                    if (pages.any { it.ocrEdited }) reOcrConfirm = { onReOcr() } else onReOcr()
                                 }
                             }
                         }

@@ -55,13 +55,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Rotate90DegreesCw
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -577,8 +582,8 @@ fun ScanReviewScreen(
             onMove = ::movePage
         )
 
-        // Filters or Adjust, one panel at a time, as Adobe Scan, CamScanner, OKEN and Lens do: the sliders no longer take
-        // room from the page while nobody is using them. A dot on Adjust says this page's sliders have moved.
+        // Crop, Filters or Adjust, one panel at a time, as Adobe Scan, CamScanner, OKEN and Lens do: the sliders and
+        // crop actions no longer take room from the page while nobody is using them. A dot on Adjust says this page's sliders have moved.
         Row(
             Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -586,38 +591,124 @@ fun ScanReviewScreen(
             FilterChip(
                 selected = panel == PANEL_CROP,
                 onClick = { panel = PANEL_CROP },
+                leadingIcon = { Icon(Icons.Default.Crop, contentDescription = null, Modifier.size(18.dp)) },
                 label = { Text(stringResource(R.string.doc_crop)) }
             )
             FilterChip(
                 selected = panel == PANEL_FILTERS,
                 onClick = { panel = PANEL_FILTERS },
+                leadingIcon = { Icon(Icons.Default.ColorLens, contentDescription = null, Modifier.size(18.dp)) },
                 label = { Text(stringResource(R.string.doc_filters)) }
             )
             FilterChip(
                 selected = panel == PANEL_ADJUST,
                 onClick = { panel = PANEL_ADJUST },
+                leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, Modifier.size(18.dp)) },
                 label = { Text(stringResource(R.string.scan_review_adjust) + if (adjustments[key] != null) " •" else "") }
             )
         }
-        if (panel == PANEL_FILTERS) {
-        FilterStrip(
-            previews = previews,
-            selected = pageFilter,
-            enabled = !blocked,
-            // One rule: a filter applies to this page only. "Use on all pages" below applies it to the whole scan.
-            onSelect = { filter -> filters[key] = filter },
-            modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
-        )
-        if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
-            TextButton(
+        if (panel == PANEL_CROP) {
+            // Dedicated Crop controls directly under the canvas (Adobe Scan style: Auto-detect, No crop, Curve/Straighten).
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    enabled = !blocked && bitmap != null,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    onClick = {
+                        val image = bitmap ?: return@OutlinedButton
+                        scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
+                    }
+                ) {
+                    Icon(Icons.Default.AutoFixHigh, contentDescription = null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.scan_review_auto_detect),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize)
+                    )
+                }
+                OutlinedButton(
+                    enabled = !blocked && bitmap != null,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    onClick = { quads[key] = CropQuad.DEFAULT }
+                ) {
+                    Icon(Icons.Default.Fullscreen, contentDescription = null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.scan_review_no_crop),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize)
+                    )
+                }
+                val curveOn = stringResource(R.string.scan_review_state_on)
+                OutlinedButton(
+                    enabled = !blocked && bitmap != null && quads[key] != null,
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { if (curveMode) stateDescription = curveOn },
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    colors = if (curveMode) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) else ButtonDefaults.outlinedButtonColors(),
+                    onClick = {
+                        val image = bitmap ?: return@OutlinedButton
+                        val start = quads[key] ?: return@OutlinedButton
+                        if (curveMode) {
+                            curveMode = false
+                            quads[key] = start.straightened()
+                        } else {
+                            curveMode = true
+                            scope.launch {
+                                val estimated = withContext(Dispatchers.Default) {
+                                    runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
+                                }
+                                if (curveMode && quads[key] == start) quads[key] = estimated
+                            }
+                        }
+                    }
+                ) {
+                    Icon(Icons.Default.Gesture, contentDescription = null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.scan_review_curve) + if (curveMode) " ✓" else "",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize)
+                    )
+                }
+            }
+        } else if (panel == PANEL_FILTERS) {
+            FilterStrip(
+                previews = previews,
+                selected = pageFilter,
                 enabled = !blocked,
-                onClick = {
-                    pages.forEach { filters[it.toString()] = pageFilter }
-                    onDefaultFilterChange(pageFilter)
-                },
-                modifier = Modifier.padding(horizontal = 8.dp)
-            ) { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) }
-        }
+                // One rule: a filter applies to this page only. "Use on all pages" below applies it to the whole scan.
+                onSelect = { filter -> filters[key] = filter },
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
+            )
+            if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
+                    TextButton(
+                        enabled = !blocked,
+                        onClick = {
+                            pages.forEach { filters[it.toString()] = pageFilter }
+                            onDefaultFilterChange(pageFilter)
+                        },
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    ) {
+                        Icon(Icons.Default.DoneAll, contentDescription = null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes)))
+                    }
+                }
+            }
         } else if (panel == PANEL_ADJUST) {
 
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
@@ -650,9 +741,7 @@ fun ScanReviewScreen(
         message?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
         }
-
-
-        }
+    }
 
         // Name the document before saving, as Adobe Scan and CamScanner allow; left alone, it is named automatically. It sits
         // with the Save button: under the controls in portrait, pinned beside it in landscape.
@@ -688,32 +777,14 @@ fun ScanReviewScreen(
             }
         }
 
-        // Bottom buttons: Auto detect · Rotate · Save (saves every page). One row under the page in portrait; in
-        // landscape they stay pinned at the foot of the side column while the controls above them scroll.
-        val autoDetectButton: @Composable (Modifier) -> Unit = { buttonModifier ->
-            OutlinedButton(
-                enabled = !blocked && bitmap != null,
-                modifier = buttonModifier,
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                onClick = {
-                    val image = bitmap ?: return@OutlinedButton
-                    scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
-                }
-            ) {
-                Text(
-                    stringResource(R.string.scan_review_auto_detect),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelLarge.fontSize)
-                )
-            }
-        }
+        // Bottom buttons: Rotate · Save (saves every page). In Crop mode, Auto detect, No crop and Curve
+        // are located directly in the dedicated crop tool panel above.
         val rotateButton: @Composable () -> Unit = {
             // Tap turns the page clockwise; a long press turns it the other way.
             val rotateEnabled = !blocked
             Box(
                 Modifier
-                    .size(width = 52.dp, height = 40.dp)
+                    .size(width = 52.dp, height = 48.dp)
                     .clip(RoundedCornerShape(50))
                     .border(BorderStroke(1.dp, if (rotateEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)), RoundedCornerShape(50))
                     .combinedClickable(
@@ -760,16 +831,14 @@ fun ScanReviewScreen(
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 stage(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 12.dp))
                 Column(Modifier.width(320.dp).fillMaxHeight()) {
-                    // Auto detect and Rotate scroll with the other controls here. Pinned under them, as before, they
-                    // left the filter thumbnails only a thin strip of the 360 dp height (R45); only the name and Save stay fixed.
+                    // Rotate scrolls with the other controls here; only the name and Save stay fixed.
                     Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                         lowerControls()
                         Row(
                             Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            autoDetectButton(Modifier.weight(1f))
                             rotateButton()
                         }
                     }
@@ -786,7 +855,6 @@ fun ScanReviewScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                autoDetectButton(Modifier)
                 rotateButton()
                 saveButton(Modifier.weight(1f))
             }
@@ -831,7 +899,7 @@ private fun ReviewFilmstrip(
         contentPadding = PaddingValues(horizontal = 12.dp),
         modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
     ) {
-        itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+        itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "review_thumb" }) { index, uri ->
             // A turned page is decoded again: the refresh counter is part of the cache key.
             val cacheKey = "$uri#$refresh"
             val thumbnail by produceState<Bitmap?>(initialValue = cache[cacheKey], cacheKey) {

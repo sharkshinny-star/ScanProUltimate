@@ -578,12 +578,12 @@ fun PdfViewerScreen(
                                     }
                                 }
                             }
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offsetX,
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                                translationX = offsetX
                                 translationY = offsetY
-                            ),
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -609,12 +609,12 @@ fun PdfViewerScreen(
                                     }
                                 }
                             }
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offsetX,
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                                translationX = offsetX
                                 translationY = offsetY
-                            )
+                            }
                     ) {
                         // Taken once here: the list builds its items later, by which time the state may already be cleared.
                         val activeRenderer = pdfRenderer
@@ -625,7 +625,7 @@ fun PdfViewerScreen(
                             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 56.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(pageCount) { index ->
+                            items(count = pageCount, key = { it }, contentType = { "pdf_page" }) { index ->
                                 val renderer = activeRenderer ?: return@items
                                 PdfPageItem(
                                     zoom = settledScale,

@@ -432,7 +432,7 @@ fun PdfToolsScreen(
                     item(key = "recent-header") {
                         RecentPdfsHeader(onClear = viewModel::clearRecentPdfs)
                     }
-                    items(recentPdfs, key = { it.uri.toString() }) { pdf ->
+                    items(recentPdfs, key = { it.uri.toString() }, contentType = { "recent_pdf" }) { pdf ->
                         RecentPdfRow(
                             pdf = pdf,
                             onOpen = { recentScope.launch { if (viewModel.checkRecent(pdf.uri)) onOpenPdfViewer(pdf.uri, pdf.name) } },
@@ -1424,7 +1424,7 @@ private fun ImagesToPdfOrderDialog(
                                 .heightIn(max = maxListHeight),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            itemsIndexed(order, key = { _, item -> item.id }) { index, item ->
+                            itemsIndexed(order, key = { _, item -> item.id }, contentType = { _, _ -> "ordered_image" }) { index, item ->
                                 OrderedImageRow(
                                     index = index,
                                     item = item,
@@ -2826,7 +2826,7 @@ private fun PdfPageOrganizerSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(pages, key = { _, item -> item.index }) { index, item ->
+                    itemsIndexed(pages, key = { _, item -> item.index }, contentType = { _, _ -> "organizer_page" }) { index, item ->
                         OrganizerPageCard(
                             item = item,
                             session = session,
@@ -2926,7 +2926,7 @@ private fun OrganizerPageCard(
                         contentDescription = stringResource(R.string.tools_page_number, item.index + 1),
                         modifier = Modifier
                             .fillMaxSize()
-                            .graphicsLayer(rotationZ = item.rotation.toFloat())
+                            .graphicsLayer { rotationZ = item.rotation.toFloat() }
                     )
                 } else {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -3018,7 +3018,7 @@ private fun PdfPagePreviewDialog(
                             contentDescription = stringResource(R.string.tools_page_number, page.index + 1),
                             modifier = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer(rotationZ = page.rotation.toFloat()),
+                                .graphicsLayer { rotationZ = page.rotation.toFloat() },
                             contentScale = ContentScale.Fit
                         )
                     } else {

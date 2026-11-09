@@ -1925,7 +1925,7 @@ internal fun CapturedStrip(
     val deleteHint = stringResource(R.string.scan_strip_delete_hint)
     LaunchedEffect(pages.size) { if (pages.isNotEmpty()) listState.animateScrollToItem(pages.lastIndex) }
     LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+        itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "captured_thumb" }) { index, uri ->
             val key = uri.toString()
             val quad = quads[key]
             val filter = filters[key] ?: sessionFilter ?: PageFilter.AUTO

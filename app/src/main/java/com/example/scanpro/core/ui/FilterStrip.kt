@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -54,12 +55,12 @@ fun FilterStrip(
     val text = if (onDark) Color.White else MaterialTheme.colorScheme.onSurface
     val frame = if (onDark) Color.White.copy(alpha = 0.25f) else MaterialTheme.colorScheme.outlineVariant
     LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        items(PageFilter.entries, key = { it.name }) { filter ->
+        items(PageFilter.entries, key = { it.name }, contentType = { "filter_item" }) { filter ->
             val isSelected = filter == selected
             Column(
                 Modifier
                     .width(74.dp)
-                    .alpha(if (enabled) 1f else 0.5f)
+                    .graphicsLayer { alpha = if (enabled) 1f else 0.5f }
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(enabled = enabled, role = Role.Tab) { onSelect(filter) }
                     .semantics { this.selected = isSelected },
