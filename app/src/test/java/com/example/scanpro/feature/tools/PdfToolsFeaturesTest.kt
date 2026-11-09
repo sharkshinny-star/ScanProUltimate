@@ -196,4 +196,65 @@ class PdfToolsFeaturesTest {
         }
         assertTrue("Target size larger than original must be rejected", thrown)
     }
+
+    @Test
+    fun imagesToPdfRejectsEmptyImageList() = kotlinx.coroutines.runBlocking {
+        val dir = File(app.cacheDir, "test_img2pdf_empty_${System.currentTimeMillis()}").apply { mkdirs() }
+        val outFile = File(dir, "result.pdf")
+        var thrown = false
+        try {
+            com.example.scanpro.imaging.PdfToolsEngine.imagesToPdf(
+                context = app,
+                imageUris = emptyList(),
+                outputFile = outFile
+            )
+        } catch (e: Exception) {
+            thrown = true
+            assertTrue(e is com.example.scanpro.core.text.UserFacingException)
+        }
+        assertTrue("Empty image list must be rejected", thrown)
+    }
+
+    @Test
+    fun pdfToImagesRejectsPasswordProtectedPdf() = kotlinx.coroutines.runBlocking {
+        val dir = File(app.cacheDir, "test_pdf2img_pw_${System.currentTimeMillis()}").apply { mkdirs() }
+        val sourcePdf = File(dir, "unprotected.pdf")
+        val doc = com.tom_roush.pdfbox.pdmodel.PDDocument()
+        doc.addPage(com.tom_roush.pdfbox.pdmodel.PDPage())
+        doc.save(sourcePdf)
+        doc.close()
+
+        val protectedPdf = File(dir, "protected.pdf")
+        com.example.scanpro.imaging.PdfSecurity.protect(sourcePdf, protectedPdf, "securepass123")
+        assertTrue(protectedPdf.exists())
+
+        val outDir = File(dir, "exported").apply { mkdirs() }
+        var thrown = false
+        try {
+            com.example.scanpro.imaging.PdfToolsEngine.pdfToImages(
+                context = app,
+                inputUri = android.net.Uri.fromFile(protectedPdf),
+                outputDir = outDir
+            )
+        } catch (e: Exception) {
+            thrown = true
+            assertTrue("Expected UserFacingException for password protected PDF, got $e", e is com.example.scanpro.core.text.UserFacingException)
+        }
+        assertTrue("Password protected PDF must be rejected by PDF to images", thrown)
+    }
+
+    @Test
+    fun officeToPdfDetectsSupportedMimeTypes() {
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.DOCX, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "test.docx"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.DOCX, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/vnd.ms-word.document.macroenabled.12", "test.docm"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.XLSX, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "data.xlsx"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.XLSX, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/vnd.ms-excel.sheet.macroenabled.12", "macro.xlsm"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.CSV, com.example.scanpro.imaging.OfficeToHtml.kindOf("text/csv", "report.csv"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.CSV, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/csv", "export.csv"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.TEXT, com.example.scanpro.imaging.OfficeToHtml.kindOf("text/plain", "notes.txt"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.TEXT, com.example.scanpro.imaging.OfficeToHtml.kindOf("text/markdown", "readme.md"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.HTML, com.example.scanpro.imaging.OfficeToHtml.kindOf("text/html", "page.html"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.HTML, com.example.scanpro.imaging.OfficeToHtml.kindOf("application/xhtml+xml", "page.xhtml"))
+        assertEquals(com.example.scanpro.imaging.OfficeToHtml.Kind.HTML, com.example.scanpro.imaging.OfficeToHtml.kindOf("message/rfc822", "email.mhtml"))
+    }
 }

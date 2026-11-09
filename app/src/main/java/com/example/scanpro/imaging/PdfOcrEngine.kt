@@ -18,6 +18,7 @@ import java.io.FileOutputStream
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
 import com.example.scanpro.R
+import com.example.scanpro.core.text.AppStrings
 import com.example.scanpro.core.text.userRequire
 
 /** What "Make searchable" did, page by page. */
@@ -74,7 +75,7 @@ object PdfOcrEngine {
                     PdfRenderer(pfd).use { renderer ->
                         needsText.forEachIndexed { step, index ->
                             if (!coroutineContext.isActive) throw InterruptedException("OCR cancelled")
-                            onProgress(step + 1, needsText.size, "Reading page ${index + 1} of $total…")
+                            onProgress(step + 1, needsText.size, AppStrings.get(R.string.tools_progress_processing_page, index + 1, total))
                             renderPage(renderer, index, pageImage)
                             val result = ocr.recognizeDetailed(pageImage, script)
                             val written = PdfTextLayer.addInvisibleWords(document, document.getPage(index), result.words, font)
@@ -85,7 +86,7 @@ object PdfOcrEngine {
                 if (searchable == 0) {
                     return@withContext PdfOcrOutcome(null, total, 0, total - needsText.size, empty, input.length())
                 }
-                onProgress(needsText.size, needsText.size, "Saving searchable PDF…")
+                onProgress(needsText.size, needsText.size, AppStrings.get(R.string.tools_progress_creating_pdf))
                 outputFile.parentFile?.mkdirs()
                 document.save(outputFile)
                 PdfOcrOutcome(outputFile, total, searchable, total - needsText.size, empty, input.length())

@@ -206,8 +206,13 @@ private val TOOL_SECTIONS = listOf(
 /** What the Office to PDF picker offers; the converter checks the file itself too. */
 private val OFFICE_MIME_TYPES = arrayOf(
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-word.document.macroenabled.12",
+    "application/msword",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "text/plain", "text/csv", "text/comma-separated-values", "text/html",
+    "application/vnd.ms-excel.sheet.macroenabled.12",
+    "application/vnd.ms-excel",
+    "text/plain", "text/csv", "text/comma-separated-values", "application/csv",
+    "text/markdown", "text/html", "application/xhtml+xml",
     "multipart/related", "message/rfc822", "application/x-mimearchive"
 )
 
@@ -939,6 +944,7 @@ private fun CompressPdfDialog(
     )
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun PdfToImagesDialog(
     uri: Uri,
@@ -967,7 +973,10 @@ private fun PdfToImagesDialog(
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(stringResource(R.string.tools_pdf2img_format), style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     ImageExportFormat.entries.forEach { item ->
                         FilterChip(selected = format == item, onClick = { format = item }, label = { Text(item.extension.uppercase()) })
                     }
@@ -975,7 +984,10 @@ private fun PdfToImagesDialog(
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(stringResource(R.string.tools_pdf2img_resolution), style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     listOf(R.string.tools_pdf2img_screen to 1.5f, R.string.tools_pdf2img_sharp to 2.5f, R.string.tools_pdf2img_print to 4f).forEach { (label, value) ->
                         FilterChip(selected = scale == value, onClick = { scale = value }, label = { Text(stringResource(label)) })
                     }
@@ -995,7 +1007,10 @@ private fun PdfToImagesDialog(
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(stringResource(R.string.tools_pdf2img_pages), style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     FilterChip(
                         selected = allPages,
                         onClick = { allPages = true; error = null },
@@ -1150,7 +1165,12 @@ private fun ImagesToPdfOrderDialog(
                             context.contentResolver.openInputStream(uri)?.use { input ->
                                 file.outputStream().use { output -> input.copyTo(output) }
                             }
-                            OrderedImage(file = file, name = name)
+                            if (file.length() > 0 && ImageProcessor.imageAspect(file.absolutePath) != null) {
+                                OrderedImage(file = file, name = name)
+                            } else {
+                                file.delete()
+                                null
+                            }
                         }.getOrNull()
                     }
                 }
@@ -1177,7 +1197,12 @@ private fun ImagesToPdfOrderDialog(
                         context.contentResolver.openInputStream(uri)?.use { input ->
                             file.outputStream().use { output -> input.copyTo(output) }
                         }
-                        OrderedImage(file = file, name = name)
+                        if (file.length() > 0 && ImageProcessor.imageAspect(file.absolutePath) != null) {
+                            OrderedImage(file = file, name = name)
+                        } else {
+                            file.delete()
+                            null
+                        }
                     }.getOrNull()
                 }
             }
@@ -1195,7 +1220,7 @@ private fun ImagesToPdfOrderDialog(
                 val rotated = withContext(Dispatchers.IO) {
                     runCatching {
                         val source = item.file
-                        val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.name}.jpg")
+                        val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
                         ImageProcessor.rotateImageFile(source, dest, 90)
                         dest
                     }
@@ -1225,7 +1250,7 @@ private fun ImagesToPdfOrderDialog(
                         val item = order[index]
                         runCatching {
                             val source = item.file
-                            val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.name}.jpg")
+                            val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
                             ImageProcessor.rotateImageFile(source, dest, 90)
                             withContext(Dispatchers.Main) {
                                 val previous = order[index].file
@@ -1273,7 +1298,7 @@ private fun ImagesToPdfOrderDialog(
                     val cropped = withContext(Dispatchers.IO) {
                         runCatching {
                             val source = currentCrop.file
-                            val dest = File(stagingDir, "cropped_${System.currentTimeMillis()}_${source.name}.jpg")
+                            val dest = File(stagingDir, "cropped_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
                             ImageProcessor.cropSourceToNewFile(source, dest, quad)
                             dest
                         }
@@ -1379,26 +1404,41 @@ private fun ImagesToPdfOrderDialog(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    androidx.compose.foundation.lazy.LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = maxListHeight),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        itemsIndexed(order, key = { _, item -> item.id }) { index, item ->
-                            OrderedImageRow(
-                                index = index,
-                                item = item,
-                                canMoveUp = index > 0,
-                                canMoveDown = index < order.lastIndex,
-                                canRemove = order.size > 1,
-                                onMoveUp = { order.add(index - 1, order.removeAt(index)) },
-                                onMoveDown = { order.add(index + 1, order.removeAt(index)) },
-                                onCrop = { croppingItem = item },
-                                onRotate = { rotateItem(index) },
-                                onReset = { resetItem(index) },
-                                onRemove = { removeItem(index) }
+                    if (order.isEmpty()) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(140.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                stringResource(R.string.tools_err_no_images),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    } else {
+                        androidx.compose.foundation.lazy.LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = maxListHeight),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            itemsIndexed(order, key = { _, item -> item.id }) { index, item ->
+                                OrderedImageRow(
+                                    index = index,
+                                    item = item,
+                                    canMoveUp = index > 0,
+                                    canMoveDown = index < order.lastIndex,
+                                    canRemove = true,
+                                    onMoveUp = { order.add(index - 1, order.removeAt(index)) },
+                                    onMoveDown = { order.add(index + 1, order.removeAt(index)) },
+                                    onCrop = { croppingItem = item },
+                                    onRotate = { rotateItem(index) },
+                                    onReset = { resetItem(index) },
+                                    onRemove = { removeItem(index) }
+                                )
+                            }
                         }
                     }
                 }
@@ -1534,7 +1574,7 @@ private fun OrderedImageRow(
                 if (canRemove) {
                     IconButton(
                         onClick = onRemove,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             Icons.Default.Close,
@@ -1555,7 +1595,7 @@ private fun OrderedImageRow(
                 OutlinedButton(
                     onClick = onCrop,
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                    modifier = Modifier.heightIn(min = 32.dp)
+                    modifier = Modifier.heightIn(min = 36.dp)
                 ) {
                     Icon(
                         Icons.Default.Crop,
@@ -1575,7 +1615,7 @@ private fun OrderedImageRow(
                 OutlinedButton(
                     onClick = onRotate,
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                    modifier = Modifier.heightIn(min = 32.dp)
+                    modifier = Modifier.heightIn(min = 36.dp)
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.RotateRight,
@@ -1595,7 +1635,7 @@ private fun OrderedImageRow(
                     TextButton(
                         onClick = onReset,
                         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-                        modifier = Modifier.heightIn(min = 32.dp)
+                        modifier = Modifier.heightIn(min = 36.dp)
                     ) {
                         Icon(
                             Icons.Default.RestartAlt,
@@ -1615,7 +1655,7 @@ private fun OrderedImageRow(
                 IconButton(
                     enabled = canMoveUp,
                     onClick = onMoveUp,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
@@ -1625,7 +1665,7 @@ private fun OrderedImageRow(
                 IconButton(
                     enabled = canMoveDown,
                     onClick = onMoveDown,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowDown,

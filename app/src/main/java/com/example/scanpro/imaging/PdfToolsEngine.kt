@@ -379,12 +379,14 @@ object PdfToolsEngine {
             imageUris.forEachIndexed { index, uri ->
                 if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
                 onProgress(index + 1, imageUris.size, AppStrings.get(R.string.tools_progress_loading_image, index + 1, imageUris.size))
-                // The picked file byte for byte. It is decoded once, when its page is drawn (PdfExporter.decodePicture
-                // turns it upright and lays it on white), so the PDF is the only compression it goes through.
-                val imgFile = File(tempDir, "img_$index")
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    FileOutputStream(imgFile).use { output -> input.copyTo(output) }
-                } ?: userError(R.string.tools_err_image_unreadable, index + 1)
+                // If the URI is already a local file (e.g. from the ordering staging folder), use it directly
+                // to avoid duplicating hundreds of megabytes of image bytes on disk.
+                val localFile = if (uri.scheme == "file") uri.path?.let(::File)?.takeIf { it.exists() && it.isFile } else null
+                val imgFile = localFile ?: File(tempDir, "img_$index").also { target ->
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        FileOutputStream(target).use { output -> input.copyTo(output) }
+                    } ?: userError(R.string.tools_err_image_unreadable, index + 1)
+                }
                 // Only the header is read here: a file that is not a picture is named before any page is drawn.
                 ImageProcessor.imageAspect(imgFile.absolutePath) ?: userError(R.string.tools_err_image_undecodable, index + 1)
                 originalSize += imgFile.length()
@@ -448,39 +450,46 @@ object PdfToolsEngine {
         val imageFiles = mutableListOf<File>()
 
         try {
-            ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
-                PdfRenderer(pfd).use { renderer ->
-                    val totalPages = renderer.pageCount
-                    val chosen = pages?.filter { it in 1..totalPages }?.distinct()?.sorted() ?: (1..totalPages).toList()
-                    userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
-                    chosen.forEachIndexed { step, pageNumber ->
-                        val i = pageNumber - 1
-                        if (!coroutineContext.isActive) throw InterruptedException("PDF to images operation cancelled")
-                        onProgress(step + 1, chosen.size, AppStrings.get(R.string.tools_progress_exporting_page, pageNumber, format.extension.uppercase()))
+            if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
+                userError(R.string.tools_err_password_protected)
+            }
+            try {
+                ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                    PdfRenderer(pfd).use { renderer ->
+                        val totalPages = renderer.pageCount
+                        val chosen = pages?.filter { it in 1..totalPages }?.distinct()?.sorted() ?: (1..totalPages).toList()
+                        userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
+                        chosen.forEachIndexed { step, pageNumber ->
+                            val i = pageNumber - 1
+                            if (!coroutineContext.isActive) throw InterruptedException("PDF to images operation cancelled")
+                            onProgress(step + 1, chosen.size, AppStrings.get(R.string.tools_progress_exporting_page, pageNumber, format.extension.uppercase()))
 
-                        renderer.openPage(i).use { page ->
-                            // Capped so a poster-sized page can't run out of memory.
-                            val scale = minOf(scale, 4000f / maxOf(page.width, page.height))
-                            val width = (page.width * scale).toInt().coerceAtLeast(1)
-                            val height = (page.height * scale).toInt().coerceAtLeast(1)
-                            val bitmap = createBitmap(width, height)
-                            // PdfRenderer draws onto what is there; transparent pixels turn black in a JPEG.
-                            bitmap.eraseColor(Color.WHITE)
-                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            renderer.openPage(i).use { page ->
+                                // Capped so a poster-sized page can't run out of memory.
+                                val scale = minOf(scale, 4000f / maxOf(page.width, page.height))
+                                val width = (page.width * scale).toInt().coerceAtLeast(1)
+                                val height = (page.height * scale).toInt().coerceAtLeast(1)
+                                val bitmap = createBitmap(width, height)
+                                // PdfRenderer draws onto what is there; transparent pixels turn black in a JPEG.
+                                bitmap.eraseColor(Color.WHITE)
+                                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
-                            val imgFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.${format.extension}")
-                            FileOutputStream(imgFile).use { out ->
-                                if (format == ImageExportFormat.JPEG) {
-                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
-                                } else {
-                                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                val imgFile = File(outputDir, "page_${(i + 1).toString().padStart(3, '0')}.${format.extension}")
+                                FileOutputStream(imgFile).use { out ->
+                                    if (format == ImageExportFormat.JPEG) {
+                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                                    } else {
+                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                    }
                                 }
+                                bitmap.recycle()
+                                imageFiles.add(imgFile)
                             }
-                            bitmap.recycle()
-                            imageFiles.add(imgFile)
                         }
                     }
                 }
+            } catch (securityEx: SecurityException) {
+                userError(R.string.tools_err_password_protected, cause = securityEx)
             }
             return@withContext imageFiles
         } finally {
