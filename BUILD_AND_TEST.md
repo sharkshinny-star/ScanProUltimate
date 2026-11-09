@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-05, security hardening commit on top of `10fa630` (tests, lint, Play bundle). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-09, `a352579` (unit tests rerun after F96; the other rows below keep the date and commit they were run on). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -46,15 +46,15 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 | Check | Result |
 |---|---|
 | `:app:testDebugUnitTest` (F97 Convert tools overhaul) | 353 passed, 63 skipped, 0 failed; `PdfToolsFeaturesTest` 11 passed (empty image list rejection, password-protected PDF rejection, Office/HTML/Markdown MIME types detection); `:app:assembleDebug` passed. |
-| `:app:testDebugUnitTest` (F96, run before rebasing onto F91-F95) | 412 tests, 30 skipped, 0 failed; `:app:compileDebugKotlin` clean; not rerun on the rebased tree; not seen on a device |
+| `:app:testDebugUnitTest` (F96, rebased tree at `2149caf`, 2026-11-09) | 413 tests, 30 skipped, 0 failed (412 before the rebase onto F91-F95); `:app:compileDebugKotlin` clean; not seen on a device |
 | Camera <-> Files 10-switch performance & freeze fix (F91) | Physical OnePlus CPH2569 (Android 15): 10 consecutive automated switches between Files and Camera via ADB. Freezes of 1,700 ms and 2,100 ms completely eliminated (0 frames > 250 ms across 881 rendered frames). 50th percentile: 12 ms; 90th percentile: 28 ms; 95th percentile: 40 ms; 99th percentile: 200 ms. High input latency frames dropped from 4,998 to 534. Janky frames reduced to 18.39% (from 25.86% + legacy 70.36%). 0 Camera HAL stream configuration failures during active binds. |
-| `:app:testDebugUnitTest` | After F90–F95 (Images to PDF overhaul, camera switching freeze fix, launch transitions/autosizing, touch targets and button padding polish, camera exit blank screen and launch intro race fixes): unit tests 100% successful. |
-| `:app:assembleDebug` | Full build with all 74 tasks executed: BUILD SUCCESSFUL in 8m 14s; debug APK generated cleanly and verified installable. |
-| `:app:connectedDebugAndroidTest` | Ran on connected physical device OnePlus CPH2569 (Android 15, API 35): 6 passed, 0 failed, 0 ignored (`AppSmokeTest.smokeFlow`, `LanguageChangeDeviceTest.appLanguageChangeRestartsCleanly`, `LaunchDeviceTest.appLaunchesToRecentList`, `LaunchDeviceTest.backFromNewScanReturnsHome`, `IdCardDeviceTest.detectsIdCornersAndPerspectiveCorrects`, `IdCardDeviceTest.composedIdCardFitsA4`). |
-| `:app:lintDebug` | 0 errors, 1 warning (the Gradle 9.9.0 notice), 11 hints. |
+| `:app:testDebugUnitTest` (F90–F95, run by the other agent, no counts or commit recorded) | Reported successful; superseded by the F96 row above, which reran the whole suite on the combined tree. |
+| `:app:assembleDebug` (2026-11-09, other agent, commit not recorded) | Full build with all 74 tasks executed: BUILD SUCCESSFUL in 8m 14s; debug APK generated cleanly and verified installable. |
+| `:app:connectedDebugAndroidTest` (earlier run, before F96; not rerun) | Ran on connected physical device OnePlus CPH2569 (Android 15, API 35): 6 passed, 0 failed, 0 ignored (`AppSmokeTest.smokeFlow`, `LanguageChangeDeviceTest.appLanguageChangeRestartsCleanly`, `LaunchDeviceTest.appLaunchesToRecentList`, `LaunchDeviceTest.backFromNewScanReturnsHome`, `IdCardDeviceTest.detectsIdCornersAndPerspectiveCorrects`, `IdCardDeviceTest.composedIdCardFitsA4`). |
+| `:app:lintDebug` (earlier run, before F92-F96; not rerun) | 0 errors, 1 warning (the Gradle 9.9.0 notice), 11 hints. |
 | Device checklist & smoke tests | Physical OnePlus CPH2569: (1) R42 search pill clipping checked across 10 tab switches (`r42_home_01.png` to `r42_home_10.png`), rounded top whole with zero clipping; (2) F81 refactor smoke test verified end-to-end: scan page, edit with filter, undo, delete page, merge two documents into "Strong + Strong copy", share PDF through system sharesheet, empty Recycle bin (`f81_recycle_bin_emptied.png`); (3) R38 rotation pass verified on device: camera adjustments (`r38_camera_adjustments_landscape.png`), Pen dialog (`r38_pen_dialog_landscape.png`), merge dialog (`r38_merge_dialog_landscape.png`), PDF viewer search (`r38_pdf_viewer_search_landscape.png`), state cleanly survived; (4) Document tab labels in Hindi, Tamil and Telugu verified on device under per-app locales, fitting within 360 px width without truncation; (5) R40/F82 password confirm-twice and R41/F84 QR sharing safety verified. |
 | Screenshot review (`docs/device-screens`, 33 files, read 2026-11-08) | **Supports:** R42 (the search pill is whole in all 10 Home shots; shot 3 has a OnePlus App Lock banner over it, the pill is unchanged), F81 (empty Recycle bin, which says documents wait 7 days, the real default), the R38 landscape dialogs (Pen, Merge, PDF viewer search, camera adjustments, Adjust page), the Hindi camera, capture, Files and document screens, and Hindi and Telugu document tabs fitting. **Does not show what its name says:** `r40_backup_all_dialog.png` is Android's folder picker ("Can't use this folder"), so the confirm-twice password dialog (R40) is not evidenced; `r39_lockscreen_landscape_font2.png` is Settings and `r39_welcome_landscape_font2.png` is Home, so the Lock and Welcome layouts at large font (R39) are not evidenced; `r39_app_lock_toggled.png` was taken mid-rotation. **Shows problems:** R43 to R46 in `AUDIT_FINDINGS.md`. |
-| Not run | Release signing; tablet and foldable physical hardware tests (R2). |
+| Not run | After F96: lint, `connectedDebugAndroidTest`, `bundleRelease` and the sideload build; on a device, print with an in-app language on Android 12 or older and share PNG pages (F96). Always: release signing; tablet and foldable hardware tests (R2). |
 
 Earlier results (2026-11-08, `18c89a5`):
 
