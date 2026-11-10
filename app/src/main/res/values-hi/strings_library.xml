@@ -233,4 +233,15 @@
     <string name="settings_review_mode_subtitle">ज़रूरत पड़ने पर: "हो गया" सीधे सेव करता है, जब तक किसी पेज की किनारी न मिले, वह धुँधला हो, चमक हो या बहुत गहरा हो। कभी नहीं: अपने-आप क्रॉप और फ़िल्टर के साथ हमेशा तुरंत सेव</string>
     <string name="lib_share_separate">अलग-अलग PDF (%1$d)</string>
     <string name="lib_share_one_pdf">एक PDF में</string>
+    <string name="lib_restore_aside_title">पहले वाली लाइब्रेरी वापस लाएं?</string>
+    <string name="lib_restore_aside_body">ऐप का पुराना वर्ज़न इंस्टॉल होने पर आपकी लाइब्रेरी अलग रख दी गई थी। यह वर्ज़न उसे फिर पढ़ सकता है। क्या उसके दस्तावेज़ वापस लाएं? उसके बाद आपने जो स्कैन किया है, वह जैसा है वैसा ही रहेगा।</string>
+    <string name="lib_restore_aside_confirm">वापस लाएं</string>
+    <string name="lib_restore_aside_later">अभी नहीं</string>
+    <string name="lib_restore_aside_never">दोबारा न पूछें</string>
+    <string name="lib_restore_aside_running">लाइब्रेरी वापस लाई जा रही है…</string>
+    <string name="lib_restore_aside_none">वापस लाने को कुछ नहीं: सभी दस्तावेज़ पहले से लाइब्रेरी में हैं।</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d दस्तावेज़ वापस आया</item>
+        <item quantity="other">%1$d दस्तावेज़ वापस आए</item>
+    </plurals>
 </resources>

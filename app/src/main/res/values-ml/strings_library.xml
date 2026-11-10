@@ -233,4 +233,15 @@
     <string name="settings_review_mode_subtitle">ആവശ്യമെങ്കിൽ: ഒരു പേജിന്റെ അരിക് കണ്ടെത്താനാകാതെയോ, മങ്ങിയതോ, തിളക്കമുള്ളതോ, വളരെ ഇരുണ്ടതോ അല്ലെങ്കിൽ "പൂർത്തിയായി" ഉടൻ സേവ് ചെയ്യും. ഒരിക്കലും ഇല്ല: ഓട്ടോമാറ്റിക് ക്രോപ്പും ഫിൽട്ടറും ഉപയോഗിച്ച് എപ്പോഴും ഉടൻ സേവ് ചെയ്യും</string>
     <string name="lib_share_separate">വെവ്വേറെ PDF-കൾ (%1$d)</string>
     <string name="lib_share_one_pdf">ഒറ്റ PDF</string>
+    <string name="lib_restore_aside_title">മുമ്പത്തെ ലൈബ്രറി പുനഃസ്ഥാപിക്കണോ?</string>
+    <string name="lib_restore_aside_body">ആപ്പിന്റെ പഴയ പതിപ്പ് ഇൻസ്റ്റാൾ ചെയ്തപ്പോൾ നിങ്ങളുടെ ലൈബ്രറി മാറ്റിവച്ചിരുന്നു. ഈ പതിപ്പിന് അത് വീണ്ടും വായിക്കാനാകും. അതിലെ രേഖകൾ പുനഃസ്ഥാപിക്കണോ? അതിനുശേഷം നിങ്ങൾ സ്കാൻ ചെയ്തവ അതുപോലെ തുടരും.</string>
+    <string name="lib_restore_aside_confirm">പുനഃസ്ഥാപിക്കുക</string>
+    <string name="lib_restore_aside_later">ഇപ്പോൾ വേണ്ട</string>
+    <string name="lib_restore_aside_never">വീണ്ടും ചോദിക്കരുത്</string>
+    <string name="lib_restore_aside_running">ലൈബ്രറി പുനഃസ്ഥാപിക്കുന്നു…</string>
+    <string name="lib_restore_aside_none">പുനഃസ്ഥാപിക്കാൻ ഒന്നുമില്ല: എല്ലാ രേഖകളും ഇതിനകം ലൈബ്രറിയിലുണ്ട്.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d രേഖ പുനഃസ്ഥാപിച്ചു</item>
+        <item quantity="other">%1$d രേഖകൾ പുനഃസ്ഥാപിച്ചു</item>
+    </plurals>
 </resources>

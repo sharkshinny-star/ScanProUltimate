@@ -282,4 +282,15 @@
     <string name="tip_theme_action">Pick colours</string>
     <string name="lib_share_separate">Separate PDFs (%1$d)</string>
     <string name="lib_share_one_pdf">One PDF</string>
+    <string name="lib_restore_aside_title">Restore your earlier library?</string>
+    <string name="lib_restore_aside_body">Your library was set aside when an older version of the app was installed. This version can read it again. Restore its documents? Anything you have scanned since stays as it is.</string>
+    <string name="lib_restore_aside_confirm">Restore</string>
+    <string name="lib_restore_aside_later">Not now</string>
+    <string name="lib_restore_aside_never">Do not ask again</string>
+    <string name="lib_restore_aside_running">Restoring your library…</string>
+    <string name="lib_restore_aside_none">Nothing to restore: every document is already in your library.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">Restored %1$d document</item>
+        <item quantity="other">Restored %1$d documents</item>
+    </plurals>
 </resources>

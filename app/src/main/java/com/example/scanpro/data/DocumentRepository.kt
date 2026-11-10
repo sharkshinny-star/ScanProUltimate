@@ -6,6 +6,8 @@ import android.net.Uri
 import com.example.scanpro.imaging.OcrEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +23,7 @@ class PdfPasswordRequiredException(val wrongPassword: Boolean) :
 @Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext context: Context,
-    db: DocumentDatabase,
+    private val db: DocumentDatabase,
     ocr: OcrEngine,
     settings: SettingsStore,
 ) {
@@ -119,6 +121,16 @@ class DocumentRepository @Inject constructor(
 
     /** Rebuilds documents whose files are on the device but whose records are gone; returns how many came back. */
     suspend fun recoverOrphanedDocuments(): Int = recovery.recoverOrphanedDocuments()
+
+    // ---- A library an older build moved aside, readable again by this one
+    @Volatile private var movedAsideDeferred = false
+
+    /** The library to offer back, or null when there is none or the user chose "Not now" in this session. */
+    suspend fun movedAsideLibrary(): MovedAsideLibrary? =
+        if (movedAsideDeferred) null else withContext(Dispatchers.IO) { db.movedAsideLibraries().firstOrNull() }
+    fun deferMovedAsideLibrary() { movedAsideDeferred = true }
+    suspend fun restoreMovedAsideLibrary(library: MovedAsideLibrary): Int = withContext(Dispatchers.IO) { db.restoreMovedAsideLibrary(library) }
+    suspend fun declineMovedAsideLibrary(library: MovedAsideLibrary) = withContext(Dispatchers.IO) { db.declineMovedAsideLibrary(library) }
 
     // ---- PageEditor
     suspend fun applyFilter(documentId: String, pageId: String, filter: PageFilter) = editor.applyFilter(documentId, pageId, filter)

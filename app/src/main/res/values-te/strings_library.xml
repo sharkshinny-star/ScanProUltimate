@@ -233,4 +233,15 @@
     <string name="settings_review_mode_subtitle">అవసరమైతే: పేజీ అంచు దొరకకపోతే, మసకగా, మెరుపుతో లేదా చాలా చీకటిగా ఉంటే తప్ప "పూర్తయింది" వెంటనే సేవ్ చేస్తుంది. ఎప్పుడూ కాదు: ఆటోమేటిక్ క్రాప్, ఫిల్టర్‌తో ఎల్లప్పుడూ వెంటనే సేవ్</string>
     <string name="lib_share_separate">వేర్వేరు PDFలు (%1$d)</string>
     <string name="lib_share_one_pdf">ఒకే PDF</string>
+    <string name="lib_restore_aside_title">మునుపటి లైబ్రరీని పునరుద్ధరించాలా?</string>
+    <string name="lib_restore_aside_body">యాప్ పాత వెర్షన్ ఇన్‌స్టాల్ అయినప్పుడు మీ లైబ్రరీని పక్కన పెట్టారు. ఈ వెర్షన్ దాన్ని మళ్లీ చదవగలదు. అందులోని పత్రాలను పునరుద్ధరించాలా? ఆ తర్వాత మీరు స్కాన్ చేసినవి అలాగే ఉంటాయి.</string>
+    <string name="lib_restore_aside_confirm">పునరుద్ధరించు</string>
+    <string name="lib_restore_aside_later">ఇప్పుడు కాదు</string>
+    <string name="lib_restore_aside_never">మళ్లీ అడగవద్దు</string>
+    <string name="lib_restore_aside_running">లైబ్రరీని పునరుద్ధరిస్తున్నాం…</string>
+    <string name="lib_restore_aside_none">పునరుద్ధరించడానికి ఏమీ లేదు: అన్ని పత్రాలు ఇప్పటికే లైబ్రరీలో ఉన్నాయి.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d పత్రం పునరుద్ధరించబడింది</item>
+        <item quantity="other">%1$d పత్రాలు పునరుద్ధరించబడ్డాయి</item>
+    </plurals>
 </resources>

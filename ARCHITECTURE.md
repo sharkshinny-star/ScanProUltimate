@@ -346,3 +346,7 @@ document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCa
 ## 15. External-service extension points
 
 Cloud sync, accounts, collaboration, subscription entitlements, and server AI are intentionally not mocked. They require real product decisions around authentication, backend storage, key management, privacy consent, billing products, conflict resolution and operational monitoring.
+
+### Moved-aside libraries (item 5)
+
+`setAsideNewerDatabase` moves a database written by a newer schema to `scanpro-room.db.newer-v<N>`. When this build's schema is `>= N`, `DocumentDatabase.movedAsideLibraries()` lists it and `LibraryRoute` offers to restore it. Restoring opens the old file as a second Room database and copies in only documents whose id is missing here and whose folder still exists; nothing is overwritten. The file is then renamed to `.restored-v<N>-<time>` (or `.declined-v<N>-<time>` for "Do not ask again"), never deleted. "Not now" hides the offer for the session only.

@@ -233,4 +233,15 @@
     <string name="settings_review_mode_subtitle">ಅಗತ್ಯವಿದ್ದರೆ: ಪುಟದ ಅಂಚು ಸಿಗದಿದ್ದರೆ, ಮಸುಕಾಗಿದ್ದರೆ, ಹೊಳಪು ಇದ್ದರೆ ಅಥವಾ ತುಂಬಾ ಕತ್ತಲಾಗಿದ್ದರೆ ಹೊರತು "ಮುಗಿದಿದೆ" ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ. ಎಂದಿಗೂ ಇಲ್ಲ: ಸ್ವಯಂಚಾಲಿತ ಕ್ರಾಪ್ ಮತ್ತು ಫಿಲ್ಟರ್‌ನೊಂದಿಗೆ ಯಾವಾಗಲೂ ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ</string>
     <string name="lib_share_separate">ಪ್ರತ್ಯೇಕ PDF ಗಳು (%1$d)</string>
     <string name="lib_share_one_pdf">ಒಂದೇ PDF</string>
+    <string name="lib_restore_aside_title">ಹಿಂದಿನ ಲೈಬ್ರರಿಯನ್ನು ಮರುಸ್ಥಾಪಿಸಬೇಕೆ?</string>
+    <string name="lib_restore_aside_body">ಆಪ್‌ನ ಹಳೆಯ ಆವೃತ್ತಿ ಇನ್‌ಸ್ಟಾಲ್ ಆದಾಗ ನಿಮ್ಮ ಲೈಬ್ರರಿಯನ್ನು ಪಕ್ಕಕ್ಕೆ ಇಡಲಾಗಿತ್ತು. ಈ ಆವೃತ್ತಿ ಅದನ್ನು ಮತ್ತೆ ಓದಬಲ್ಲದು. ಅದರ ದಾಖಲೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಬೇಕೆ? ಅದರ ನಂತರ ನೀವು ಸ್ಕ್ಯಾನ್ ಮಾಡಿದವು ಹಾಗೆಯೇ ಇರುತ್ತವೆ.</string>
+    <string name="lib_restore_aside_confirm">ಮರುಸ್ಥಾಪಿಸಿ</string>
+    <string name="lib_restore_aside_later">ಈಗ ಬೇಡ</string>
+    <string name="lib_restore_aside_never">ಮತ್ತೆ ಕೇಳಬೇಡಿ</string>
+    <string name="lib_restore_aside_running">ಲೈಬ್ರರಿಯನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="lib_restore_aside_none">ಮರುಸ್ಥಾಪಿಸಲು ಏನೂ ಇಲ್ಲ: ಎಲ್ಲಾ ದಾಖಲೆಗಳು ಈಗಾಗಲೇ ಲೈಬ್ರರಿಯಲ್ಲಿವೆ.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d ದಾಖಲೆ ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ದಾಖಲೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
+    </plurals>
 </resources>

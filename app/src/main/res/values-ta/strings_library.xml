@@ -233,4 +233,15 @@
     <string name="settings_review_mode_subtitle">தேவைப்பட்டால்: ஒரு பக்கத்தின் விளிம்பு கிடைக்காவிட்டால், மங்கலாக, பளபளப்பாக அல்லது மிகவும் இருளாக இருந்தால் தவிர "முடிந்தது" உடனே சேமிக்கும். ஒருபோதும் இல்லை: தானியங்கி வெட்டு மற்றும் வடிகட்டியுடன் எப்போதும் உடனே சேமிக்கும்</string>
     <string name="lib_share_separate">தனித்தனி PDF-கள் (%1$d)</string>
     <string name="lib_share_one_pdf">ஒரே PDF</string>
+    <string name="lib_restore_aside_title">முந்தைய நூலகத்தை மீட்டெடுக்கவா?</string>
+    <string name="lib_restore_aside_body">ஆப்பின் பழைய பதிப்பு நிறுவப்பட்டபோது உங்கள் நூலகம் ஒதுக்கி வைக்கப்பட்டது. இந்தப் பதிப்பு அதை மீண்டும் படிக்க முடியும். அதிலுள்ள ஆவணங்களை மீட்டெடுக்கவா? அதன் பிறகு நீங்கள் ஸ்கேன் செய்தவை அப்படியே இருக்கும்.</string>
+    <string name="lib_restore_aside_confirm">மீட்டெடுக்கவும்</string>
+    <string name="lib_restore_aside_later">இப்போது வேண்டாம்</string>
+    <string name="lib_restore_aside_never">மீண்டும் கேட்காதே</string>
+    <string name="lib_restore_aside_running">நூலகம் மீட்டெடுக்கப்படுகிறது…</string>
+    <string name="lib_restore_aside_none">மீட்டெடுக்க எதுவுமில்லை: அனைத்து ஆவணங்களும் ஏற்கனவே நூலகத்தில் உள்ளன.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d ஆவணம் மீட்டெடுக்கப்பட்டது</item>
+        <item quantity="other">%1$d ஆவணங்கள் மீட்டெடுக்கப்பட்டன</item>
+    </plurals>
 </resources>
