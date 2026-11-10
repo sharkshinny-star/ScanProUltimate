@@ -56,6 +56,8 @@ class DocumentRepository @Inject constructor(
     private val history = EditHistory()
     /** Undo and redo steps available per document, for this session. */
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
+    /** Serialises restoring a document from the recycle bin with purging expired ones (purge also runs from the library refresh and a worker). */
+    private val trashLock = Any()
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
@@ -669,8 +671,12 @@ class DocumentRepository @Inject constructor(
         doc.copy(isTrashed = true, trashedAt = now(), updatedAt = now())
     }
 
-    suspend fun restore(id: String) = mutateDocument(id) { doc ->
-        doc.copy(isTrashed = false, trashedAt = 0L, updatedAt = now())
+    suspend fun restore(id: String) = withContext(Dispatchers.IO) {
+        // Under the trash lock, so a purge that is running can't delete the document just after it was restored.
+        synchronized(trashLock) {
+            val doc = requireDocument(id)
+            db.saveDocumentMetadata(doc.copy(isTrashed = false, trashedAt = 0L, updatedAt = now()))
+        }
     }
 
     suspend fun deleteForever(id: String) = withContext(Dispatchers.IO) {
@@ -684,9 +690,12 @@ class DocumentRepository @Inject constructor(
 
     suspend fun purgeExpiredTrash(maxAgeDays: Int = 7): Int = withContext(Dispatchers.IO) {
         val cutoff = now() - maxAgeDays.coerceAtLeast(1) * 24L * 60L * 60L * 1000L
-        val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
-        expired.forEach { deleteDocumentFilesAndRecord(it) }
-        expired.size
+        // The trash is read inside the lock, so a document restored a moment ago is no longer in it.
+        synchronized(trashLock) {
+            val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
+            expired.forEach { deleteDocumentFilesAndRecord(it) }
+            expired.size
+        }
     }
 
     suspend fun exportIdCopy(id: String): File = withContext(Dispatchers.IO) {
