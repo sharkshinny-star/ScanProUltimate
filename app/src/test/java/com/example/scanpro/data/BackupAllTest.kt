@@ -35,7 +35,8 @@ class FakeTreeProvider : ContentProvider() {
 
     @Suppress("DEPRECATION")
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? = when (method) {
-        "android:createDocument" -> if (refuseCreate) null else {
+        // A provider that refuses answers without a uri; a null reply would make DocumentsContract itself throw.
+        "android:createDocument" -> if (refuseCreate) Bundle() else {
             val id = "doc${counter++}"
             files[id] = extras!!.getString("_display_name")!!
             Bundle().apply { putParcelable("uri", DocumentsContract.buildDocumentUri(AUTHORITY, id)) }
