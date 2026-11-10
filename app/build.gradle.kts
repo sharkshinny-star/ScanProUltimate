@@ -175,6 +175,8 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    // Debug builds only: reports leaked activities and bitmaps in a notification. Not shipped in release.
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
 
     // CameraX primary scanner.
     val cameraX = "1.6.2"
