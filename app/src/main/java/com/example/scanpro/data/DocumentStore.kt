@@ -204,6 +204,43 @@ internal class DocumentStore(
         return pdf.length()
     }
 
+    /**
+     * Rebuilds [id]'s PDF with the compact exporter and keeps the new file only when it is smaller, so a PDF written
+     * the old, lossless way (several times larger than needed) shrinks and nothing ever grows. Returns the bytes saved.
+     * A document with edits waiting is rebuilt by [ensurePdfNow] instead, which also clears its stale marker.
+     */
+    internal fun compactPdf(id: String): Long = synchronized(pdfLock(id)) {
+        val doc = requireDocument(id)
+        val pdf = File(doc.pdfPath)
+        if (!pdf.isFile) return@synchronized 0L
+        val before = pdf.length()
+        if (doc.stalePdfMarker.exists()) {
+            ensurePdfNow(id)
+            return@synchronized (before - File(doc.pdfPath).length()).coerceAtLeast(0L)
+        }
+        val partial = File(pdf.parentFile, "${pdf.name}.partial")
+        try {
+            PdfExporter.export(
+                pages = doc.pages.sortedBy { it.position },
+                destination = partial,
+                quality = doc.pdfQuality,
+                pageSize = doc.pdfPageSize,
+                searchable = doc.searchablePdf,
+                pageNumbers = doc.pageNumbers
+            )
+            val after = partial.length()
+            // rename() replaces the old file atomically; only the size column changes, like a deferred rebuild.
+            if (after in 1 until before && partial.renameTo(pdf)) {
+                db.updateSize(id, after)
+                before - after
+            } else {
+                0L
+            }
+        } finally {
+            partial.delete()
+        }
+    }
+
     internal fun regenerateAndSave(document: ScanDocument, touch: Boolean = true): ScanDocument = synchronized(pdfLock(document.id)) {
         val sorted = document.pages.sortedBy { it.position }
         val size = writePdf(document)

@@ -166,6 +166,9 @@
     <string name="scan_detection_mode">Auto capture</string>
     <!-- Camera ⋮ menu switches -->
     <string name="scan_detect_edges">Detect page edges</string>
+    <string name="scan_hd_capture">HD capture</string>
+    <string name="scan_hd_on">HD capture on: sharper pages, a little slower</string>
+    <string name="scan_hd_off">HD capture off</string>
     <string name="scan_show_grid">Grid</string>
     <string name="scan_show_level">Spirit level</string>
     <string name="scan_more_options">More options</string>

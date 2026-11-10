@@ -199,6 +199,11 @@
     <string name="settings_share_subtitle">Play Store లింక్‌ను స్నేహితుడికి పంపండి</string>
     <string name="settings_library_title">మీ లైబ్రరీ</string>
     <string name="settings_library_subtitle">ఈ డివైజ్‌లో మాత్రమే స్టోర్ అవుతుంది</string>
+    <string name="settings_free_space_title">స్థలం ఖాళీ చేయండి</string>
+    <string name="settings_free_space_subtitle">పాత స్కాన్‌లు అవసరమైనదానికంటే పెద్ద PDFలలో సేవ్ అయ్యాయి. వాటిని తిరిగి తయారు చేస్తే %1$s వరకు స్థలం ఖాళీ అవుతుంది, ప్రతి పేజీ మరియు శోధించగల టెక్స్ట్ అలాగే ఉంటాయి.</string>
+    <string name="settings_free_space_action">ఖాళీ చేయండి</string>
+    <string name="settings_free_space_running">స్థలం ఖాళీ చేస్తోంది…</string>
+    <string name="settings_free_space_done">%1$s ఖాళీ అయింది</string>
     <plurals name="settings_stat_documents">
         <item quantity="one">డాక్యుమెంట్</item>
         <item quantity="other">డాక్యుమెంట్‌లు</item>

@@ -12,7 +12,11 @@ data class BusinessCard(
     val website: String? = null,
     val address: String? = null
 ) {
-    val isUseful: Boolean get() = name != null || phones.isNotEmpty() || emails.isNotEmpty()
+    /**
+     * Worth offering "Add to contacts": it must carry a way to reach someone. A capitalised two-word line is not enough,
+     * because it also matches "MacBook Air", a product name or a heading.
+     */
+    val isUseful: Boolean get() = phones.isNotEmpty() || emails.isNotEmpty()
 }
 
 /**

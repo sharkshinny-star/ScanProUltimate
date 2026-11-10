@@ -199,6 +199,11 @@
     <string name="settings_share_subtitle">Play Store ಲಿಂಕ್ ಅನ್ನು ಸ್ನೇಹಿತರಿಗೆ ಕಳುಹಿಸಿ</string>
     <string name="settings_library_title">ನಿಮ್ಮ ಲೈಬ್ರರಿ</string>
     <string name="settings_library_subtitle">ಈ ಸಾಧನದಲ್ಲಿ ಮಾತ್ರ ಸಂಗ್ರಹಿಸಲಾಗಿದೆ</string>
+    <string name="settings_free_space_title">ಜಾಗ ಖಾಲಿ ಮಾಡಿ</string>
+    <string name="settings_free_space_subtitle">ಹಳೆಯ ಸ್ಕ್ಯಾನ್‌ಗಳು ಅಗತ್ಯಕ್ಕಿಂತ ದೊಡ್ಡ PDFಗಳಲ್ಲಿ ಉಳಿದಿವೆ. ಅವನ್ನು ಮರುರಚಿಸಿದರೆ %1$s ವರೆಗೆ ಜಾಗ ಖಾಲಿಯಾಗುತ್ತದೆ; ಪ್ರತಿ ಪುಟ ಮತ್ತು ಹುಡುಕಬಹುದಾದ ಪಠ್ಯ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</string>
+    <string name="settings_free_space_action">ಖಾಲಿ ಮಾಡಿ</string>
+    <string name="settings_free_space_running">ಜಾಗ ಖಾಲಿ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="settings_free_space_done">%1$s ಖಾಲಿಯಾಯಿತು</string>
     <plurals name="settings_stat_documents" tools:ignore="ImpliedQuantity">
         <item quantity="one">ಡಾಕ್ಯುಮೆಂಟ್</item>
         <item quantity="other">ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</item>

@@ -52,4 +52,24 @@ class DocumentIntelligenceEngineTest {
         val text = "TAX INVOICE\nNorthwind Traders Pvt Ltd\nGSTIN 29ABCDE1234F1Z5\nSubtotal INR 900\nAmount due INR 1,062"
         assertEquals("Invoice from Northwind Traders Pvt Ltd · Total INR 1,062", DocumentIntelligenceEngine.analyze(text).summary)
     }
+
+    @Test
+    fun aRealBusinessCardIsRecognised() {
+        val text = "Asha Rao\nDirector, Rao & Sons\nMobile +91 98765 43210\nasha@raoandsons.in\nwww.raoandsons.in"
+        assertEquals(DocumentKind.BUSINESS_CARD, DocumentIntelligenceEngine.analyze(text).kind)
+    }
+
+    @Test
+    fun aPhotoOfALaptopIsNotABusinessCard() {
+        // OCR of a keyboard and a screen: a row of single digits, a stray "manager" and "email", but no way to reach anyone.
+        val text = "esc F1 F2 F3 tab caps lock shift control option command\n1 2 3 4 5 6 7 8 9 0\nQ W E R T Y U I O P\nemail manager mobile"
+        assertTrue(DocumentIntelligenceEngine.analyze(text).kind != DocumentKind.BUSINESS_CARD)
+    }
+
+    @Test
+    fun aLongPageWithAnEmailAddressIsNotABusinessCard() {
+        val text = "Dear team, " + "please read the attached report carefully before the meeting. ".repeat(20) +
+            "Questions to the manager at help@example.com or the mobile desk."
+        assertTrue(DocumentIntelligenceEngine.analyze(text).kind != DocumentKind.BUSINESS_CARD)
+    }
 }

@@ -110,12 +110,15 @@ object DocumentIntelligenceEngine {
             return Regex(head + Regex.escape(t) + tail).containsMatchIn(lower)
         }
         fun score(vararg terms: String) = terms.count { hasTerm(it) }
+        // A business card is short and carries a way to reach someone. One word such as "email" or "manager" on a
+        // laptop screen or a menu is not enough, and the label offers "Add to contacts", so it must not misfire.
+        val looksLikeCard = lower.length <= CARD_MAX_CHARS && (EMAIL.containsMatchIn(lower) || PHONE.containsMatchIn(lower))
         val scores = mapOf(
             DocumentKind.INVOICE to score("invoice", "gstin", "subtotal", "tax invoice", "amount due"),
             DocumentKind.RECEIPT to score("receipt", "cash", "change", "total", "thank you"),
             DocumentKind.CONTRACT to score("agreement", "contract", "party", "whereas", "terms and conditions", "signature"),
             DocumentKind.IDENTITY to score("passport", "date of birth", "nationality", "identity", "aadhaar", "driving licence", "driver license"),
-            DocumentKind.BUSINESS_CARD to score("www.", "mobile", "email", "director", "manager", "linkedin"),
+            DocumentKind.BUSINESS_CARD to if (looksLikeCard) score("www.", "mobile", "email", "director", "manager", "linkedin") else 0,
             DocumentKind.LETTER to score("dear ", "sincerely", "regards", "subject:"),
             DocumentKind.NOTES to score("notes", "todo", "to do", "agenda", "minutes")
         )
@@ -204,6 +207,13 @@ object DocumentIntelligenceEngine {
     private fun tokens(value: String) = value.lowercase(Locale.ROOT)
         .split(Regex("[^\\p{L}\\p{N}]+"))
         .filter { it.isNotBlank() }
+
+    /** Longest text still read as a business card. */
+    private const val CARD_MAX_CHARS = 700
+    private val EMAIL = Regex("[\\w.+-]+@[\\w-]+\\.[\\w.-]+")
+
+    /** A phone-like number: groups of at least two digits, so a keyboard's row of single digits does not count. */
+    private val PHONE = Regex("(?<!\\d)(?:\\+\\d{1,3}[\\s-]?)?\\(?\\d{2,5}\\)?[\\s-]?\\d{3,5}[\\s-]?\\d{3,5}(?!\\d)")
 
     private val GENERIC_HEADINGS = listOf(
         "tax invoice", "invoice", "receipt", "cash receipt", "bill", "bill to", "ship to", "sold to", "original",

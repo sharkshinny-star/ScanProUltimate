@@ -12,6 +12,9 @@ import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
 import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.OcrScript
+import com.example.scanpro.data.OversizedPdfs
+import com.example.scanpro.core.ui.formatBytes
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.SettingsStore
 import com.example.scanpro.data.AccentPalette
@@ -25,6 +28,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/**
+ * Whether the "Free up space" card is shown: there is something to free, and the user has not closed it, or has but a
+ * clearly larger amount (100 MB and half as much again) could be freed now than when they closed it.
+ * [dismissedAt] is the amount the card showed when closed, or negative if it never was.
+ */
+internal fun freeSpaceOffer(found: OversizedPdfs?, dismissedAt: Long): OversizedPdfs? =
+    found?.takeIf { dismissedAt < 0 || it.estimatedBytes > dismissedAt + dismissedAt / 2 + 100_000_000L }
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -35,6 +46,47 @@ class SettingsViewModel @Inject constructor(
     library: DocumentLibrary
 ) : ViewModel() {
     val busy: StateFlow<Boolean> = operations.busy
+
+    // PDFs written by older versions are several times larger than needed; null while none are (or before the check ends).
+    private val _reclaimable = MutableStateFlow<OversizedPdfs?>(null)
+    val reclaimable: StateFlow<OversizedPdfs?> = _reclaimable
+
+    private suspend fun refreshReclaimable() {
+        _reclaimable.value = runCatching { repository.oversizedPdfs() }.getOrNull()?.takeIf { it.count > 0 }
+    }
+
+    init { viewModelScope.launch { refreshReclaimable() } }
+
+    /**
+     * What to offer: the reclaimable PDFs, unless the user closed the card and not much more has piled up since
+     * (it returns when at least 100 MB and half as much again could be freed).
+     */
+    val freeSpaceOffer: StateFlow<OversizedPdfs?> = kotlinx.coroutines.flow.combine(_reclaimable, settings.freeSpaceDismissedBytes, ::freeSpaceOffer)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The user closed the card: stay quiet about the amount it showed. */
+    fun dismissFreeSpace() {
+        val shown = _reclaimable.value?.estimatedBytes ?: return
+        viewModelScope.launch { settings.setFreeSpaceDismissedBytes(shown) }
+    }
+
+    /** Rebuilds the oversized PDFs compactly. Every page and the searchable text stay; a PDF is only replaced by a smaller one. */
+    fun freeUpSpace() {
+        _freeingUp.value = true
+        operations.enqueue(context.getString(R.string.settings_free_space_running), null) {
+            try {
+                val freed = repository.compactPdfs()
+                refreshReclaimable()
+                operations.showMessage(context.getString(R.string.settings_free_space_done, formatBytes(context, freed)))
+            } finally {
+                _freeingUp.value = false
+            }
+        }
+    }
+
+    // True from the tap until the rebuild ends, so the button can say what it is doing (it can take a minute or two).
+    private val _freeingUp = MutableStateFlow(false)
+    val freeingUp: StateFlow<Boolean> = _freeingUp
 
     /** Writes every document as an encrypted package into the folder the user picked; see DocumentRepository.backupAll. */
     fun backupAll(folder: Uri, password: String) {

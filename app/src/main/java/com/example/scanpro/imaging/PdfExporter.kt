@@ -10,8 +10,13 @@ import android.graphics.pdf.PdfDocument
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.ScanPage
+import com.tom_roush.pdfbox.io.MemoryUsageSetting
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
 import java.io.File
 import java.io.FileOutputStream
+import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
 import com.example.scanpro.R
@@ -27,6 +32,19 @@ object PdfExporter {
     private const val LEGAL_HEIGHT = 1008
     private const val MARGIN = 18f
     private const val MAX_WORDS_PER_PAGE = 6000
+
+    /** A page picture waiting to be placed under the page's text layer, as a JPEG file. */
+    internal class PageImage(val index: Int, val file: File, val left: Float, val top: Float, val width: Float, val height: Float, val pageHeight: Int)
+
+    /**
+     * JPEG quality for the page pictures. Android's PdfDocument stores a drawn bitmap as lossless pixels, which made
+     * one scanned page 15 MB; as JPEG it is a few hundred kilobytes and looks the same at these levels.
+     */
+    private fun jpegQualityFor(quality: PdfQuality): Int = when (quality) {
+        PdfQuality.HIGH -> 90
+        PdfQuality.BALANCED -> 80
+        PdfQuality.SMALL -> 65
+    }
 
     /**
      * Writes [pages] as a PDF. [decode] reads each page image at most `maxDimension` pixels on its longer side: scan
@@ -46,6 +64,57 @@ object PdfExporter {
         userRequire(pages.isNotEmpty(), R.string.err_document_has_no_pages)
         destination.parentFile?.mkdirs()
 
+        // The page pictures go in as JPEG under the text layer. If that step fails for any reason, the PDF is
+        // written the old way (larger, but complete): a scan is never lost to a size optimisation.
+        val scratch = File(destination.parentFile ?: File("."), ".pdf_jpeg_${UUID.randomUUID()}")
+        try {
+            scratch.mkdirs()
+            val images = write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, scratch)
+            runCatching { embedJpegs(destination, images) }.getOrElse { failure ->
+                android.util.Log.w("PdfExporter", "JPEG embedding failed; wrote the larger lossless PDF instead", failure)
+                write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, null)
+            }
+        } finally {
+            scratch.deleteRecursively()
+        }
+    }
+
+    /** Places [images] under each page's text, as JPEG, and rewrites [pdf] in place. */
+    internal fun embedJpegs(pdf: File, images: List<PageImage>) {
+        val staged = File(pdf.parentFile, "${pdf.name}.staged")
+        try {
+            PDDocument.load(pdf, MemoryUsageSetting.setupTempFileOnly()).use { doc ->
+                images.forEach { item ->
+                    val image = item.file.inputStream().use { JPEGFactory.createFromStream(doc, it) }
+                    // PREPEND keeps the page picture behind the invisible text; the PDF's y axis runs upwards.
+                    PDPageContentStream(doc, doc.getPage(item.index), PDPageContentStream.AppendMode.PREPEND, true, true).use { stream ->
+                        stream.drawImage(image, item.left, item.pageHeight - item.top - item.height, item.width, item.height)
+                    }
+                }
+                doc.save(staged)
+            }
+            staged.copyTo(pdf, overwrite = true)
+        } finally {
+            staged.delete()
+        }
+    }
+
+    /**
+     * Lays out every page. With [jpegDir] the page pictures are saved there as JPEG and returned for [embedJpegs]; without
+     * it they are drawn straight into the PDF (lossless and large) and the result is empty.
+     */
+    private fun write(
+        pages: List<ScanPage>,
+        destination: File,
+        quality: PdfQuality,
+        pageSize: PdfPageSize,
+        searchable: Boolean,
+        pageNumbers: Boolean,
+        decode: (path: String, maxDimension: Int) -> Bitmap?,
+        beforePage: (number: Int, total: Int) -> Unit,
+        jpegDir: File?
+    ): List<PageImage> {
+        val placed = ArrayList<PageImage>()
         val pdf = PdfDocument()
         try {
             pages.sortedBy { it.position }.forEachIndexed { index, pageModel ->
@@ -57,7 +126,8 @@ object PdfExporter {
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
                 val page = pdf.startPage(info)
                 val canvas = page.canvas
-                canvas.drawColor(Color.WHITE)
+                // With JPEG pictures placed afterwards the page stays unpainted, so they are not covered; viewers show it white.
+                if (jpegDir == null) canvas.drawColor(Color.WHITE)
 
                 val bottomReserve = if (pageNumbers) 18f else 0f
                 val availableWidth = pageWidth - MARGIN * 2
@@ -71,14 +141,23 @@ object PdfExporter {
                 val left = (pageWidth - drawWidth) / 2f
                 val top = (pageHeight - bottomReserve - drawHeight) / 2f
 
-                canvas.drawBitmap(
-                    bitmap,
-                    null,
-                    RectF(left, top, left + drawWidth, top + drawHeight),
-                    Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-                )
-                // The page is drawn; free the decoded bitmap now instead of holding every page until GC.
-                bitmap.recycle()
+                if (jpegDir == null) {
+                    canvas.drawBitmap(
+                        bitmap,
+                        null,
+                        RectF(left, top, left + drawWidth, top + drawHeight),
+                        Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+                    )
+                    // The page is drawn; free the decoded bitmap now instead of holding every page until GC.
+                    bitmap.recycle()
+                } else {
+                    // JPEG has no alpha: anything transparent is laid on white first, as the drawn page would show it.
+                    val flat = onWhite(bitmap)
+                    val file = File(jpegDir, "page_$index.jpg")
+                    ImageProcessor.saveBitmapJpeg(flat, file, jpegQualityFor(quality))
+                    flat.recycle()
+                    placed += PageImage(index, file, left, top, drawWidth, drawHeight, pageHeight)
+                }
 
                 if (searchable && pageModel.ocrText.isNotBlank()) {
                     // Android PdfDocument records Canvas text as PDF text operators. The text is drawn in a colour
@@ -138,6 +217,7 @@ object PdfExporter {
         } finally {
             pdf.close()
         }
+        return placed
     }
 
     /**

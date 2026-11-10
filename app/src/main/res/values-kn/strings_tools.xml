@@ -356,6 +356,7 @@
     <string name="tools_watermark_quick_draft">DRAFT</string>
     <string name="tools_watermark_quick_copy">COPY</string>
     <string name="tools_watermark_quick_approved">APPROVED</string>
+    <string name="tools_watermark_latin_only">ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳು, ಅಂಕೆಗಳು ಮತ್ತು ಸಾಮಾನ್ಯ ಚಿಹ್ನೆಗಳನ್ನು ಬಳಸಿ: PDF ಫಾಂಟ್ ಬೇರೆ ಲಿಪಿಗಳನ್ನು ಬರೆಯಲಾರದು.</string>
     <string name="tools_watermark_angle_label">ಓರಿಯಂಟೇಶನ್</string>
     <string name="tools_watermark_angle_diagonal">ಓರೆಯಾದ (45°)</string>
     <string name="tools_watermark_angle_horizontal">ಸಮತಲ (0°)</string>

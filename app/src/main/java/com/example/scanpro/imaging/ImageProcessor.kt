@@ -35,6 +35,25 @@ object ImageProcessor {
 
     private const val MAX_DECODE_PIXELS = 24_000_000L
 
+    /** A photo longer than this on its long side is an HD capture: a 12 MP page is about 4000 px, a 48 or 50 MP one about 8000. */
+    private const val HD_SOURCE_LONG_SIDE = 4500
+
+    /**
+     * The longest side, in pixels, a rendered page keeps. A standard photo keeps 3400 (2200 for black and white, which
+     * is already crisp at that size); an HD photo keeps more, so the extra detail the sensor captured is not thrown away
+     * on the way to the saved page. Taken from the photo itself, so HD photos imported from the gallery benefit too.
+     */
+    internal fun renderLimit(sourceLongSide: Int, filter: PageFilter): Int {
+        val hd = sourceLongSide > HD_SOURCE_LONG_SIDE
+        return if (filter == PageFilter.BW) (if (hd) 3200 else 2200) else (if (hd) 4600 else 3400)
+    }
+
+    private fun longSide(path: String): Int {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        return max(bounds.outWidth, bounds.outHeight)
+    }
+
     fun renderPage(
         source: File,
         destination: File,
@@ -44,7 +63,7 @@ object ImageProcessor {
         adjustments: PageAdjustments = PageAdjustments.DEFAULT,
         annotations: List<PageAnnotation> = emptyList()
     ) {
-        val maxDimension = if (filter == PageFilter.BW) 2200 else 3400
+        val maxDimension = renderLimit(longSide(source.absolutePath), filter)
         try {
             renderPageAt(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension)
         } catch (memory: OutOfMemoryError) {

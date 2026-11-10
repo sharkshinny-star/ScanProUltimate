@@ -156,6 +156,18 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         }
     }
 
+    private val keyFreeSpaceDismissed = longPreferencesKey("free_space_dismissed_bytes")
+
+    /**
+     * What the "Free up space" card said it could free when the user closed it, or -1 if it was never closed. The card
+     * stays away until a clearly larger amount can be freed (for example after restoring a backup of old scans).
+     */
+    val freeSpaceDismissedBytes: Flow<Long> = preferences.map { it[keyFreeSpaceDismissed] ?: -1L }.distinctUntilChanged()
+
+    suspend fun setFreeSpaceDismissedBytes(value: Long) {
+        context.scanProSettings.edit { it[keyFreeSpaceDismissed] = value }
+    }
+
     private val keyHomeTips = booleanPreferencesKey("home_tips")
 
     /** The "Did you know?" card on Home. On until closed there or switched off in Settings. */

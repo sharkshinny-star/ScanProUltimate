@@ -106,6 +106,7 @@
              AndroidX Startup initialiser to be removed. -->
         <receiver
             android:name="androidx.tracing.perfetto.StartupTracingConfigStoreIsEnabledGate"
+            tools:ignore="MissingClass"
             tools:node="remove" />
 
         <provider

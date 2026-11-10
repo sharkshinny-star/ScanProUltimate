@@ -41,7 +41,15 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report, on pushes to `main`, pull requests and manual runs (20-minute timeout; artifacts only on manual runs). Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
 
-## Latest results (2026-11-10, working tree on branch claude/awesome-clarke-ussjo3)
+## Latest results (2026-11-10, later, uncommitted tree with F109 to F112)
+
+| Check | Result |
+|---|---|
+| `:app:testDebugUnitTest` | 444 tests, 0 failures, 0 errors, 63 skipped (opt-in screenshot and real-photo tests) |
+| `:app:lintDebug` | Passed (no errors). It first failed on 2 errors: a `context.getString` in a Compose callback in `PdfToolsScreen.kt` (mine, fixed) and the Perfetto receiver `tools:node="remove"` in the manifest (from F104 to F106, now `tools:ignore="MissingClass"`) |
+| `:app:installDebug` | Not run on the final tree: the phone was no longer connected ("No connected devices"). The previous tree was installed and checked on the OnePlus. Not seen on a device since: the camera counter that shortens on narrow screens, the Settings dismiss button, the Watermark chips and the Latin-only message |
+
+## Earlier results (2026-11-10, working tree on branch claude/awesome-clarke-ussjo3)
 
 | Check | Result |
 |---|---|

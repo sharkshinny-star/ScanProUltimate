@@ -144,12 +144,13 @@ fun ScanSavedSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 640.dp)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .navigationBarsPadding()
                 // The name field must stay above the keyboard.
                 .imePadding()
         ) {
+          // The options scroll; Scan another and Done are pinned below them so the way out is always on screen.
+          Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PageThumbnail(
                     path = document.pages.minByOrNull { it.position }?.imagePath,
@@ -247,7 +248,8 @@ fun ScanSavedSheet(
                     SheetAction(Icons.Default.Print, TileTone.Slate, stringResource(R.string.doc_print), null, !busy, then(onPrint))
                 }
             }
-            Spacer(Modifier.height(12.dp))
+          }
+            Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End)) {
                 if (onScanAnother != null) {
                     OutlinedButton(onClick = then { onScanAnother() }, enabled = !busy) { Text(stringResource(R.string.scan_code_scan_another)) }

@@ -217,6 +217,11 @@
     <string name="settings_share_subtitle">Send the Play Store link to a friend</string>
     <string name="settings_library_title">Your library</string>
     <string name="settings_library_subtitle">Stored on this device only</string>
+    <string name="settings_free_space_title">Free up space</string>
+    <string name="settings_free_space_subtitle">Older scans are saved in larger PDFs than needed. Rebuilding them frees up to %1$s and keeps every page and the searchable text.</string>
+    <string name="settings_free_space_action">Free up</string>
+    <string name="settings_free_space_running">Freeing up space…</string>
+    <string name="settings_free_space_done">Freed %1$s</string>
     <plurals name="settings_stat_documents">
         <item quantity="one">document</item>
         <item quantity="other">documents</item>

@@ -73,7 +73,7 @@ import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TextFields
-import androidx.compose.material.icons.filled.Transform
+import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
@@ -229,7 +229,7 @@ private val TOOL_SECTIONS = listOf(
         "image", R.string.tools_section_image, listOf(
             PdfToolCard("crop_img", R.string.tools_card_crop_img, Icons.Default.Crop, TileTone.Coral, label = R.string.tools_tile_crop_img),
             PdfToolCard("compress_img", R.string.tools_card_compress_img, Icons.Default.Compress, TileTone.Amber, label = R.string.tools_tile_compress_img),
-            PdfToolCard("convert_img", R.string.tools_card_convert_img, Icons.Default.Transform, TileTone.Teal, label = R.string.tools_tile_convert_img),
+            PdfToolCard("convert_img", R.string.tools_card_convert_img, Icons.Default.SyncAlt, TileTone.Teal, label = R.string.tools_tile_convert_img),
             PdfToolCard("resize_img", R.string.tools_card_resize_img, Icons.Default.AspectRatio, TileTone.Sky, label = R.string.tools_tile_resize_img)
         )
     )
@@ -306,18 +306,32 @@ fun PdfToolsScreen(
     var activeCropSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
     var activeCropUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var onCropFinishedCallback by remember { mutableStateOf<((Uri) -> Unit)?>(null) }
+    // Saved across a rotation, unlike the callback itself: tells that this crop belongs to Images to PDF.
+    var cropNeedsCallback by rememberSaveable { mutableStateOf(false) }
     val cropScope = rememberCoroutineScope()
 
+    // Read here, where it follows a language change, not with context.getString inside the launcher.
+    val cropFailedMessage = stringResource(R.string.tools_err_crop_img)
     fun launchCropForUri(targetUri: Uri, onCropped: ((Uri) -> Unit)? = null) {
         cropScope.launch {
-            val stagedFile = withContext(Dispatchers.IO) {
-                val temp = File(context.cacheDir, "crop_staged_${UUID.randomUUID()}.jpg")
-                PdfToolsEngine.copyUriToTemp(context, targetUri, temp.name)
+            // An unreadable, cloud-only or revoked picture must say so, not crash the app or do nothing.
+            val stagedFile = try {
+                withContext(Dispatchers.IO) {
+                    PdfToolsEngine.copyUriToTemp(context, targetUri, "crop_staged_${UUID.randomUUID()}.jpg")
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
             }
-            if (stagedFile.exists() && stagedFile.length() > 0) {
+            if (stagedFile != null && stagedFile.length() > 0) {
                 activeCropUri = targetUri
+                cropNeedsCallback = onCropped != null
                 onCropFinishedCallback = onCropped
                 activeCropSourcePath = stagedFile.absolutePath
+            } else {
+                stagedFile?.delete()
+                snackbarHostState.showSnackbar(cropFailedMessage)
             }
         }
     }
@@ -497,7 +511,19 @@ fun PdfToolsScreen(
                 )
             }
 
-            activeCropSourcePath?.let { stagedPath ->
+            // A rotation loses the callback that hands an Images to PDF crop back to its page. Saving the crop would then
+            // produce a stray cropped copy and leave the page unchanged, so the editor is closed instead; crop again.
+            val lostCallback = cropNeedsCallback && onCropFinishedCallback == null
+            LaunchedEffect(lostCallback, activeCropSourcePath) {
+                val staged = activeCropSourcePath
+                if (lostCallback && staged != null) {
+                    File(staged).delete()
+                    activeCropSourcePath = null
+                    activeCropUri = null
+                    cropNeedsCallback = false
+                }
+            }
+            activeCropSourcePath?.takeUnless { lostCallback }?.let { stagedPath ->
                 CropEditorDialog(
                     sourcePath = stagedPath,
                     initial = CropQuad.DEFAULT,
@@ -2227,7 +2253,7 @@ private fun ResultDialog(
         }
     )
 
-    val isCompression = result.originalSizeBytes > 0 && result.outputSizeBytes > 0
+    val isCompression = result.comparesSize && result.originalSizeBytes > 0 && result.outputSizeBytes > 0
     val savedBytes = if (isCompression) (result.originalSizeBytes - result.outputSizeBytes).coerceAtLeast(0L) else 0L
     val savingsPct = if (isCompression) {
         ((savedBytes.toDouble() / result.originalSizeBytes.toDouble()) * 100).toInt().coerceIn(0, 99)
@@ -4059,6 +4085,9 @@ private fun WatermarkPdfDialog(
     var opacityPercent by rememberSaveable { mutableIntStateOf(25) }
     var fontSize by rememberSaveable { mutableIntStateOf(54) }
     var selectedColourIndex by rememberSaveable { mutableIntStateOf(1) } // 0=Red, 1=Grey, 2=Blue, 3=Black
+    // The watermark is drawn in the PDF's built-in Helvetica, which has Latin letters only; Hindi, Tamil and other scripts
+    // would fail. Say so while typing instead of after the tool has run.
+    val drawable = text.all { it.code in 0x20..0xFF }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -4076,8 +4105,25 @@ private fun WatermarkPdfDialog(
                     label = { Text(stringResource(R.string.tools_watermark_text_label)) },
                     placeholder = { Text(stringResource(R.string.tools_watermark_text_hint)) },
                     singleLine = true,
+                    isError = !drawable,
+                    supportingText = if (drawable) null else { { Text(stringResource(R.string.tools_watermark_latin_only)) } },
                     modifier = Modifier.fillMaxWidth()
                 )
+                // One tap for the usual stamps.
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    listOf(
+                        R.string.tools_watermark_quick_confidential,
+                        R.string.tools_watermark_quick_draft,
+                        R.string.tools_watermark_quick_copy,
+                        R.string.tools_watermark_quick_approved
+                    ).forEach { quick ->
+                        val word = stringResource(quick)
+                        FilterChip(selected = text == word, onClick = { text = word }, label = { Text(word) })
+                    }
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -4168,7 +4214,7 @@ private fun WatermarkPdfDialog(
                     )
                     onConfirm(config)
                 },
-                enabled = text.isNotBlank()
+                enabled = text.isNotBlank() && drawable
             ) {
                 Text(stringResource(R.string.tools_watermark_action))
             }

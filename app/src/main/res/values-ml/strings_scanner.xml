@@ -145,6 +145,9 @@
     <string name="scan_quit_discard">ഉപേക്ഷിക്കുക</string>
     <string name="scan_detection_mode">ഓട്ടോ ക്യാപ്ചർ</string>
     <string name="scan_detect_edges">പേജിന്റെ അരികുകൾ കണ്ടെത്തുക</string>
+    <string name="scan_hd_capture">HD ക്യാപ്ചർ</string>
+    <string name="scan_hd_on">HD ക്യാപ്ചർ ഓൺ: കൂടുതൽ വ്യക്തമായ പേജുകൾ, അൽപ്പം മന്ദഗതി</string>
+    <string name="scan_hd_off">HD ക്യാപ്ചർ ഓഫ്</string>
     <string name="scan_show_grid">ഗ്രിഡ്</string>
     <string name="scan_show_level">ലെവൽ</string>
     <string name="scan_more_options">കൂടുതൽ ഓപ്ഷനുകൾ</string>

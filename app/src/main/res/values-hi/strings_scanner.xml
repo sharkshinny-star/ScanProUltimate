@@ -145,6 +145,9 @@
     <string name="scan_quit_discard">हटाएं</string>
     <string name="scan_detection_mode">ऑटो कैप्चर</string>
     <string name="scan_detect_edges">पेज के किनारे पहचानें</string>
+    <string name="scan_hd_capture">HD कैप्चर</string>
+    <string name="scan_hd_on">HD कैप्चर चालू: ज़्यादा साफ़ पन्ने, थोड़ा धीमा</string>
+    <string name="scan_hd_off">HD कैप्चर बंद</string>
     <string name="scan_show_grid">ग्रिड</string>
     <string name="scan_show_level">लेवल</string>
     <string name="scan_more_options">और विकल्प</string>

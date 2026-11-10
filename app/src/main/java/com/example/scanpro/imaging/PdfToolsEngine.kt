@@ -41,6 +41,8 @@ data class PdfToolResult(
     val originalSizeBytes: Long,
     val outputSizeBytes: Long,
     val message: String,
+    /** True only for the compress tools: the result card then shows the saving ('80% smaller'). Other tools show just [message]. */
+    val comparesSize: Boolean = false,
 )
 
 enum class SplitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes: Int) {
@@ -690,14 +692,15 @@ object PdfToolsEngine {
                             val angleRad = Math.toRadians(45.0)
                             val cos = Math.cos(angleRad).toFloat()
                             val sin = Math.sin(angleRad).toFloat()
-                            val cx = width / 2f
-                            val cy = height / 2f
+                            // The page box need not start at 0,0 (cropped or scanned PDFs), so centre within it.
+                            val cx = box.lowerLeftX + width / 2f
+                            val cy = box.lowerLeftY + height / 2f
                             val tx = cx - (textWidth / 2f * cos) + (textHeight / 4f * sin)
                             val ty = cy - (textWidth / 2f * sin) - (textHeight / 4f * cos)
                             cs.setTextMatrix(Matrix(cos, sin, -sin, cos, tx, ty))
                         } else {
-                            val x = (width - textWidth) / 2f
-                            val y = (height - textHeight) / 2f
+                            val x = box.lowerLeftX + (width - textWidth) / 2f
+                            val y = box.lowerLeftY + (height - textHeight) / 2f
                             cs.newLineAtOffset(x, y)
                         }
 
@@ -772,12 +775,13 @@ object PdfToolsEngine {
 
                 val textWidth = (font.getStringWidth(text) / 1000f) * fontSize
 
-                val x = when (config.position) {
+                // The page box need not start at 0,0 (cropped or scanned PDFs), so place the number within it.
+                val x = box.lowerLeftX + when (config.position) {
                     PageNumberPosition.BOTTOM_LEFT -> margin
                     PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (width - textWidth) / 2f
                     PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> width - margin - textWidth
                 }
-                val y = when (config.position) {
+                val y = box.lowerLeftY + when (config.position) {
                     PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> margin
                     PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> height - margin - fontSize
                 }

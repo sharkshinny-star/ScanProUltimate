@@ -199,6 +199,11 @@
     <string name="settings_share_subtitle">Play Store ലിങ്ക് ഒരു സുഹൃത്തിന് അയയ്ക്കുക</string>
     <string name="settings_library_title">നിങ്ങളുടെ ലൈബ്രറി</string>
     <string name="settings_library_subtitle">ഈ ഡിവൈസിൽ മാത്രം സൂക്ഷിച്ചിരിക്കുന്നു</string>
+    <string name="settings_free_space_title">സ്ഥലം ഒഴിവാക്കുക</string>
+    <string name="settings_free_space_subtitle">പഴയ സ്കാനുകൾ ആവശ്യത്തിലധികം വലിയ PDF-കളിലാണ് സേവ് ചെയ്തിരിക്കുന്നത്. അവ വീണ്ടും നിർമ്മിച്ചാൽ %1$s വരെ സ്ഥലം ഒഴിവാകും; ഓരോ പേജും തിരയാവുന്ന ടെക്സ്റ്റും അതുപോലെ തുടരും.</string>
+    <string name="settings_free_space_action">ഒഴിവാക്കുക</string>
+    <string name="settings_free_space_running">സ്ഥലം ഒഴിവാക്കുന്നു…</string>
+    <string name="settings_free_space_done">%1$s ഒഴിവായി</string>
     <plurals name="settings_stat_documents">
         <item quantity="one">ഡോക്യുമെന്റ്</item>
         <item quantity="other">ഡോക്യുമെന്റുകൾ</item>

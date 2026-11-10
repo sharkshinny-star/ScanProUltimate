@@ -148,6 +148,7 @@ object ImageToolsEngine {
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputSize,
                 message = msg,
+                comparesSize = true,
             )
         } finally {
             tempFile.delete()

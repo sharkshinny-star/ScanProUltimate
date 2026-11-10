@@ -38,6 +38,7 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.spring
@@ -258,6 +259,9 @@ fun CameraScannerScreen(
     // Grid and spirit level are off unless switched on in the menu: the live outline is guidance enough.
     var showGrid by remember { mutableStateOf(prefs.getBoolean("grid", false)) }
     var showLevel by remember { mutableStateOf(prefs.getBoolean("level", false)) }
+    // HD capture: the sensor's high-resolution mode and the slower, higher-quality capture. Off by default (fast and
+    // light on storage); most modern phones carry a 48 or 50 MP sensor, so it is one tap away in the top bar.
+    var hdCapture by remember { mutableStateOf(prefs.getBoolean("hd", false)) }
     var overflowOpen by rememberSaveable { mutableStateOf(false) }
     val onLabel = stringResource(R.string.common_on)
     val offLabel = stringResource(R.string.common_off)
@@ -792,7 +796,7 @@ fun CameraScannerScreen(
 
     // Re-keyed on `reviewing`: the camera is released while the review step is up, so the preview and
     // OpenCV analysis stop costing battery behind a screen that doesn't show them, and bound again after.
-    LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, retryTrigger) {
+    LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, retryTrigger, hdCapture) {
         if (!permissionGranted) return@LaunchedEffect
         if (reviewing) {
             cameraProvider?.unbindAll()
@@ -817,18 +821,26 @@ fun CameraScannerScreen(
                     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
                     .build()
                 val preview = Preview.Builder().setResolutionSelector(selector).build().also { it.surfaceProvider = previewView.surfaceProvider }
-                // About 12 MP is more than the pipeline keeps (it works at 3400 px); a 50 MP sensor would only
-                // add shutter lag, disk and decode time. Quality 92 is visually lossless for paper.
+                // Standard: about 12 MP, enough for the 3400 px the pipeline keeps, with no extra shutter lag, disk or
+                // decode time. HD: up to about 48 MP where the sensor offers it (a closest-lower rule, so a 12 MP phone
+                // stays at 12 MP), preferring resolution over capture rate, with the quality capture mode and quality 98.
+                // The extra pixels are kept: the page is cut out of a larger photo, so small print stays sharp.
                 val captureSelector = ResolutionSelector.Builder()
                     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
-                    .setResolutionStrategy(ResolutionStrategy(android.util.Size(4000, 3000), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
+                    .setResolutionStrategy(
+                        ResolutionStrategy(
+                            if (hdCapture) android.util.Size(8000, 6000) else android.util.Size(4000, 3000),
+                            ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
+                        )
+                    )
+                    .apply { if (hdCapture) setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE) }
                     .build()
                 val capture = ImageCapture.Builder()
                     .setResolutionSelector(captureSelector)
-                    // Low latency keeps the shutter responsive (the page is captured the moment it is steady);
-                    // quality 95 keeps paper text crisp after the filters.
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .setJpegQuality(95)
+                    // Standard: low latency keeps the shutter responsive (the page is captured the moment it is steady)
+                    // and quality 95 keeps paper text crisp after the filters. HD trades a little speed for quality.
+                    .setCaptureMode(if (hdCapture) ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY else ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    .setJpegQuality(if (hdCapture) 98 else 95)
                     .build()
                 val analysis = ImageAnalysis.Builder()
                     .setResolutionSelector(selector)
@@ -1088,7 +1100,7 @@ fun CameraScannerScreen(
             }
         )
 
-        if (showGrid) ThirdsGrid()
+        if (showGrid && !reviewing) ThirdsGrid()
         if (!reviewing && maxZoomRatio > 1.05f) {
             Column(
                 Modifier.align(Alignment.CenterEnd).padding(end = 12.dp + panelClearance),
@@ -1239,16 +1251,42 @@ fun CameraScannerScreen(
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White) }
             }
             if (pages.isNotEmpty()) {
-                Text(
-                    pluralStringResource(R.plurals.scan_pages_in_batch, pages.size, pages.size),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
+                // Takes only the room the buttons leave and shortens with an ellipsis: with the HD and flash buttons the
+                // bar is full on a 320 dp phone, where the counter would otherwise wrap or run under a button.
+                Box(Modifier.weight(1f).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        pluralStringResource(R.plurals.scan_pages_in_batch, pages.size, pages.size),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             } else {
-                Spacer(Modifier.width(1.dp))
+                Spacer(Modifier.weight(1f))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                // HD capture switch: lit mint while on. A scanner has no use for it on a barcode.
+                if (!barcodeMode) {
+                    val hdLabel = stringResource(R.string.scan_hd_capture)
+                    val hdOnMessage = stringResource(R.string.scan_hd_on)
+                    val hdOffMessage = stringResource(R.string.scan_hd_off)
+                    Surface(
+                        shape = CircleShape,
+                        color = if (hdCapture) scanLine else CameraGlass,
+                        contentColor = if (hdCapture) Color(0xFF062B1F) else Color.White,
+                        modifier = Modifier.semantics { contentDescription = hdLabel; stateDescription = if (hdCapture) onLabel else offLabel }
+                    ) {
+                        IconButton(onClick = {
+                            hdCapture = !hdCapture
+                            prefs.edit { putBoolean("hd", hdCapture) }
+                            status = if (hdCapture) hdOnMessage else hdOffMessage
+                        }) {
+                            Text("HD", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+                }
                 // One flash button cycling Off → Auto → On → Torch (R31); amber while any light is chosen.
                 val flashState = stringResource(R.string.scan_flash_state, stringResource(flashMode.labelRes))
                 val flashActive = flashMode != FlashMode.OFF
@@ -1304,6 +1342,9 @@ fun CameraScannerScreen(
                                 detectMode = if (autoCapture) DetectMode.MANUAL else DetectMode.AUTO
                                 prefs.edit { putString("detect", detectMode.name) }
                             }
+                        }
+                        if (!barcodeMode) {
+                            SwitchItem(R.string.scan_hd_capture, hdCapture) { hdCapture = !hdCapture; prefs.edit { putBoolean("hd", hdCapture) } }
                         }
                         SwitchItem(R.string.scan_show_grid, showGrid) { showGrid = !showGrid; prefs.edit { putBoolean("grid", showGrid) } }
                         SwitchItem(R.string.scan_show_level, showLevel) { showLevel = !showLevel; prefs.edit { putBoolean("level", showLevel) } }
@@ -2008,14 +2049,30 @@ internal fun CapturedStrip(
     }
 }
 
-/** Faint rule-of-thirds lines that help keep the document square to the camera. */
+/**
+ * Rule-of-thirds lines that help keep the document square to the camera. They are laid on the camera image itself (a 4:3
+ * picture fitted and centred on the screen), not on the whole screen, so the thirds line up with what is saved. Each
+ * line is a light stroke over a dark one: a single faint white line vanished on a white page.
+ */
 @Composable
 private fun ThirdsGrid() {
     Canvas(Modifier.fillMaxSize()) {
-        val line = Color.White.copy(alpha = 0.28f)
+        val aspect = if (size.height >= size.width) 3f / 4f else 4f / 3f
+        val width = minOf(size.width, size.height * aspect)
+        val height = width / aspect
+        val left = (size.width - width) / 2f
+        val top = (size.height - height) / 2f
+        val shadow = Color.Black.copy(alpha = 0.45f)
+        val light = Color.White.copy(alpha = 0.9f)
+        val thin = 1.dp.toPx()
+        val wide = 3.dp.toPx()
         for (i in 1..2) {
-            drawLine(line, Offset(size.width * i / 3f, 0f), Offset(size.width * i / 3f, size.height), strokeWidth = 1f)
-            drawLine(line, Offset(0f, size.height * i / 3f), Offset(size.width, size.height * i / 3f), strokeWidth = 1f)
+            val x = left + width * i / 3f
+            val y = top + height * i / 3f
+            drawLine(shadow, Offset(x, top), Offset(x, top + height), strokeWidth = wide)
+            drawLine(light, Offset(x, top), Offset(x, top + height), strokeWidth = thin)
+            drawLine(shadow, Offset(left, y), Offset(left + width, y), strokeWidth = wide)
+            drawLine(light, Offset(left, y), Offset(left + width, y), strokeWidth = thin)
         }
     }
 }

@@ -199,6 +199,11 @@
     <string name="settings_share_subtitle">दोस्त को Play Store लिंक भेजें</string>
     <string name="settings_library_title">आपकी लाइब्रेरी</string>
     <string name="settings_library_subtitle">सिर्फ़ इसी डिवाइस पर सेव</string>
+    <string name="settings_free_space_title">जगह खाली करें</string>
+    <string name="settings_free_space_subtitle">पुराने स्कैन ज़रूरत से बड़ी PDF में सेव हैं। इन्हें दोबारा बनाने से %1$s तक जगह खाली होगी, और हर पन्ना व खोजने लायक टेक्स्ट बना रहेगा।</string>
+    <string name="settings_free_space_action">खाली करें</string>
+    <string name="settings_free_space_running">जगह खाली की जा रही है…</string>
+    <string name="settings_free_space_done">%1$s खाली हुई</string>
     <plurals name="settings_stat_documents" tools:ignore="ImpliedQuantity">
         <item quantity="one">डॉक्यूमेंट</item>
         <item quantity="other">डॉक्यूमेंट</item>

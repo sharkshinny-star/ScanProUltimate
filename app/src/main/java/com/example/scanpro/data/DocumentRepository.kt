@@ -66,6 +66,8 @@ class DocumentRepository @Inject constructor(
     suspend fun setScanMode(id: String, mode: ScanMode) = catalog.setScanMode(id, mode)
     suspend fun ensurePdf(id: String): ScanDocument = catalog.ensurePdf(id)
     suspend fun documentsNeedingPdf(): List<String> = catalog.documentsNeedingPdf()
+    suspend fun oversizedPdfs(): OversizedPdfs = catalog.oversizedPdfs()
+    suspend fun compactPdfs(): Long = catalog.compactPdfs()
 
     // ---- DocumentTrash
     suspend fun trashExpiringWithin(withinMs: Long): Int = trash.trashExpiringWithin(withinMs)

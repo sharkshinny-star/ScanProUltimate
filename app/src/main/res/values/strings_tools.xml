@@ -389,6 +389,7 @@
     <string name="tools_watermark_quick_draft">DRAFT</string>
     <string name="tools_watermark_quick_copy">COPY</string>
     <string name="tools_watermark_quick_approved">APPROVED</string>
+    <string name="tools_watermark_latin_only">Use English letters, digits and common symbols: the PDF font cannot draw other scripts.</string>
     <string name="tools_watermark_angle_label">Orientation</string>
     <string name="tools_watermark_angle_diagonal">Diagonal (45°)</string>
     <string name="tools_watermark_angle_horizontal">Horizontal (0°)</string>

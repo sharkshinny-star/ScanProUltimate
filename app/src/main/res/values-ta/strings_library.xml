@@ -199,6 +199,11 @@
     <string name="settings_share_subtitle">Play Store லிங்கை நண்பருக்கு அனுப்புங்கள்</string>
     <string name="settings_library_title">உங்கள் லைப்ரரி</string>
     <string name="settings_library_subtitle">இந்தச் சாதனத்தில் மட்டுமே சேமிக்கப்படுகிறது</string>
+    <string name="settings_free_space_title">இடத்தை விடுவிக்கவும்</string>
+    <string name="settings_free_space_subtitle">பழைய ஸ்கேன்கள் தேவைக்கு அதிகமான பெரிய PDF-களில் சேமிக்கப்பட்டுள்ளன. அவற்றை மீண்டும் உருவாக்கினால் %1$s வரை இடம் விடுவிக்கப்படும்; ஒவ்வொரு பக்கமும் தேடக்கூடிய உரையும் அப்படியே இருக்கும்.</string>
+    <string name="settings_free_space_action">விடுவி</string>
+    <string name="settings_free_space_running">இடம் விடுவிக்கப்படுகிறது…</string>
+    <string name="settings_free_space_done">%1$s விடுவிக்கப்பட்டது</string>
     <plurals name="settings_stat_documents">
         <item quantity="one">ஆவணம்</item>
         <item quantity="other">ஆவணங்கள்</item>

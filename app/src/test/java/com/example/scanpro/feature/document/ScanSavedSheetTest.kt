@@ -9,7 +9,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onFirst
 import androidx.test.core.app.ApplicationProvider
@@ -116,7 +115,9 @@ class ScanSavedSheetTest {
         show(document(""), null)
         // No text read: nothing to search or copy, so no Searchable badge.
         compose.onAllNodesWithText(app.getString(R.string.doc_searchable_pdf)).assertCountEquals(0)
-        compose.onNodeWithText(app.getString(R.string.scan_code_scan_another)).performScrollTo().performClick()
+        // Scan another and Done are pinned below the scrolling options, so they need no scrolling to reach.
+        compose.onNodeWithText(app.getString(R.string.common_done)).assertExists()
+        compose.onNodeWithText(app.getString(R.string.scan_code_scan_another)).performClick()
         assertEquals(1, scannedAnother)
         assertEquals(1, dismissed)
     }

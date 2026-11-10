@@ -56,7 +56,9 @@ import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material.icons.rounded.TipsAndUpdates
 import androidx.compose.material.icons.rounded.Title
@@ -154,6 +156,8 @@ fun SettingsRoute(
     val reviewMode by viewModel.reviewMode.collectAsStateWithLifecycle()
     val namePattern by viewModel.namePattern.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val reclaimable by viewModel.freeSpaceOffer.collectAsStateWithLifecycle()
+    val freeingUp by viewModel.freeingUp.collectAsStateWithLifecycle()
     val notifyFinished by viewModel.notifyFinished.collectAsStateWithLifecycle()
     val notifyFailures by viewModel.notifyFailures.collectAsStateWithLifecycle()
     val notifyTrash by viewModel.notifyTrash.collectAsStateWithLifecycle()
@@ -211,6 +215,10 @@ fun SettingsRoute(
         homeTips = homeTips,
         onHomeTipsChange = viewModel::setHomeTips,
         onRestoreBackup = viewModel::restoreBackup,
+        reclaimable = reclaimable,
+        freeingUp = freeingUp,
+        onFreeUpSpace = viewModel::freeUpSpace,
+        onDismissFreeSpace = viewModel::dismissFreeSpace,
         bottomBar = bottomBar
     )
 }
@@ -252,6 +260,11 @@ fun SettingsScreen(
     onNamePatternChange: (String) -> Unit = {},
     onTrashRetentionChange: (Int) -> Unit = {},
     onDefaultOcrScriptChange: (OcrScript) -> Unit = {},
+    /** PDFs from older versions that are far larger than needed; null when there are none. */
+    reclaimable: com.example.scanpro.data.OversizedPdfs? = null,
+    freeingUp: Boolean = false,
+    onFreeUpSpace: () -> Unit = {},
+    onDismissFreeSpace: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -351,7 +364,7 @@ fun SettingsScreen(
                     .padding(top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
-                StorageCard(documentCount, trashCount, storageBytes)
+                StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace)
 
                 SettingsSection(stringResource(R.string.settings_section_backup)) {
                     SettingsRow(
@@ -708,7 +721,16 @@ fun SettingsScreen(
 
 /** Library at a glance: three figures on one card. */
 @Composable
-private fun StorageCard(documentCount: Int, trashCount: Int, storageBytes: Long) {
+private fun StorageCard(
+    documentCount: Int,
+    trashCount: Int,
+    storageBytes: Long,
+    reclaimable: com.example.scanpro.data.OversizedPdfs? = null,
+    busy: Boolean = false,
+    freeingUp: Boolean = false,
+    onFreeUpSpace: () -> Unit = {},
+    onDismissFreeSpace: () -> Unit = {}
+) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -729,6 +751,43 @@ private fun StorageCard(documentCount: Int, trashCount: Int, storageBytes: Long)
                 // No bin icon: in a third of a 360dp row it left room for "in" and nothing else.
                 Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin))
                 Stat(Modifier.weight(1f), formatBytes(LocalContext.current, storageBytes), stringResource(R.string.settings_stat_used))
+            }
+            // Scans from older versions were saved as lossless PDFs, many times larger than they need to be.
+            if (reclaimable != null) {
+                Spacer(Modifier.height(12.dp))
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 14.dp)) {
+                        // A close button (48 dp touch target): not everyone wants this, and it should not nag.
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                stringResource(R.string.settings_free_space_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = onDismissFreeSpace, enabled = !freeingUp) {
+                                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_close))
+                            }
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            stringResource(R.string.settings_free_space_subtitle, formatBytes(LocalContext.current, reclaimable.estimatedBytes)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 10.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        androidx.compose.material3.FilledTonalButton(onClick = onFreeUpSpace, enabled = !busy, modifier = Modifier.align(Alignment.End).padding(end = 10.dp)) {
+                            if (freeingUp) {
+                                androidx.compose.material3.CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.settings_free_space_running))
+                            } else {
+                                Text(stringResource(R.string.settings_free_space_action))
+                            }
+                        }
+                    }
+                }
             }
         }
     }
