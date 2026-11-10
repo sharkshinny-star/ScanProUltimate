@@ -51,7 +51,7 @@ class RepositoryEditsTest : RepositoryTestBase() {
 
     @Test fun reOcrReplacesAUsersCorrectionsAndClearsTheEditedFlag() = runBlocking {
         val doc = newDocument(1)
-        runBlocking { db.saveDocument(doc.copy(pages = doc.pages.map { it.copy(ocrText = "my fix", ocrEdited = true) })) }
+        runBlocking(kotlinx.coroutines.Dispatchers.IO) { db.saveDocument(doc.copy(pages = doc.pages.map { it.copy(ocrText = "my fix", ocrEdited = true) })) }
         repository.reOcrDocument(doc.id)
         val page = load(doc.id)!!.pages.single()
         assertEquals("fresh text", page.ocrText)

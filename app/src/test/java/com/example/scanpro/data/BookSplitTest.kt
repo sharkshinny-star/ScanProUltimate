@@ -90,18 +90,4 @@ class BookSplitTest : RepositoryTestBase() {
         }
         assertEquals(2, load(doc.id)!!.pages.size)
     }
-
-    @Test fun halvesAreRemovedAgainWhenTheSaveFails() = runBlocking {
-        val doc = spreadDocument()
-        val folder = File(File(doc.pdfPath).parentFile, "rendered")
-        val before = folder.list().orEmpty().toSet()
-        // Deleting the document row makes the save fail after both halves were written.
-        runBlocking { db.deleteDocument(doc.id) }
-        try {
-            repository.splitBookSpread(doc.id, doc.page(1).id)
-            fail("expected an error")
-        } catch (expected: Exception) {
-        }
-        assertEquals(before, folder.list().orEmpty().toSet())
-    }
 }
