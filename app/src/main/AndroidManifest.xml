@@ -12,7 +12,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Keeps OCR, compression and exports running while the app is in the background (see OperationForegroundService). -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:ignore="ForegroundServicesPolicy" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -102,13 +104,16 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- Custom Hilt WorkerFactory configuration requires WorkManager's default
-             AndroidX Startup initialiser to be removed. -->
+        <!-- StartupTracingConfigStoreIsEnabledGate in tracing-perfetto is an abstract BroadcastReceiver
+             that throws InstantiationException in Robolectric tests on API 24-27. -->
+        <!--suppress AndroidDomInspection -->
         <receiver
             android:name="androidx.tracing.perfetto.StartupTracingConfigStoreIsEnabledGate"
             tools:ignore="MissingClass"
             tools:node="remove" />
 
+        <!-- Custom Hilt WorkerFactory configuration requires WorkManager's default
+             AndroidX Startup initialiser to be removed. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
