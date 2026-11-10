@@ -107,6 +107,14 @@
     </plurals>
     <string name="settings_restore_backup">பேக்கப்பிலிருந்து மீட்டெடு</string>
     <string name="settings_restore_backup_subtitle">.scanpro பேக்கப் ஃபைலிலிருந்து ஒரு ஆவணத்தை மீண்டும் சேர்க்கவும்</string>
+    <string name="settings_recover_library">காணாமல் போன ஆவணங்களை மீட்டெடு</string>
+    <string name="settings_recover_library_subtitle">இந்தச் சாதனத்தில் உள்ளதும் உங்கள் நூலகத்தில் தெரியாததுமான ஸ்கேன்களைத் தேடு</string>
+    <string name="settings_recover_running">காணாமல் போன ஆவணங்களைத் தேடுகிறது…</string>
+    <string name="settings_recover_none">காணாமல் போன ஆவணங்கள் எதுவும் இல்லை</string>
+    <plurals name="settings_recover_done">
+        <item quantity="one">%1$d ஆவணம் மீட்கப்பட்டது</item>
+        <item quantity="other">%1$d ஆவணங்கள் மீட்கப்பட்டன</item>
+    </plurals>
     <string name="settings_restore_password_message">பேக்கப் எடுக்கும்போது பயன்படுத்திய பாஸ்வேர்டை உள்ளிடுங்கள்.</string>
     <string name="settings_restore_start">மீட்டெடு</string>
     <string name="settings_restore_running">பேக்கப் மீட்டெடுக்கப்படுகிறது…</string>

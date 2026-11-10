@@ -161,6 +161,28 @@ class EncryptedDocumentPackageTest {
     }
 
     @Test
+    fun `a wrong password says so, while a cut-off file does not`() {
+        val backup = exported()
+        val wrong = try {
+            restore(backup, "not the password", File(tmp.root, "wrong-pass"))
+            null
+        } catch (expected: UserFacingException) {
+            expected
+        }
+        assertEquals(R.string.err_backup_wrong_password, wrong!!.messageRes)
+
+        val data = backup.readBytes()
+        val cut = File(tmp.root, "cut.scanpro").also { it.writeBytes(data.copyOf(data.size - 40)) }
+        val damaged = try {
+            restore(cut, password, File(tmp.root, "cut-out"))
+            null
+        } catch (expected: UserFacingException) {
+            expected
+        }
+        assertEquals(R.string.err_could_not_decrypt_backup, damaged!!.messageRes)
+    }
+
+    @Test
     fun `one changed byte anywhere in the encrypted body is detected`() {
         val backup = exported()
         val data = backup.readBytes()

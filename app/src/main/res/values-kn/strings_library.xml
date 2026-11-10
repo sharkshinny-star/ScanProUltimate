@@ -107,6 +107,14 @@
     </plurals>
     <string name="settings_restore_backup">ಬ್ಯಾಕಪ್‌ನಿಂದ ರಿಸ್ಟೋರ್ ಮಾಡಿ</string>
     <string name="settings_restore_backup_subtitle">.scanpro ಬ್ಯಾಕಪ್ ಫೈಲ್‌ನಿಂದ ಡಾಕ್ಯುಮೆಂಟ್ ಮರಳಿ ಸೇರಿಸಿ</string>
+    <string name="settings_recover_library">ಕಾಣೆಯಾದ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳನ್ನು ಮರುಪಡೆಯಿರಿ</string>
+    <string name="settings_recover_library_subtitle">ಈ ಸಾಧನದಲ್ಲಿದ್ದರೂ ನಿಮ್ಮ ಲೈಬ್ರರಿಯಲ್ಲಿ ಕಾಣದ ಸ್ಕ್ಯಾನ್‌ಗಳನ್ನು ಹುಡುಕಿ</string>
+    <string name="settings_recover_running">ಕಾಣೆಯಾದ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="settings_recover_none">ಕಾಣೆಯಾದ ಡಾಕ್ಯುಮೆಂಟ್ ಸಿಗಲಿಲ್ಲ</string>
+    <plurals name="settings_recover_done">
+        <item quantity="one">%1$d ಡಾಕ್ಯುಮೆಂಟ್ ಮರುಪಡೆಯಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳನ್ನು ಮರುಪಡೆಯಲಾಗಿದೆ</item>
+    </plurals>
     <string name="settings_restore_password_message">ಬ್ಯಾಕಪ್ ಮಾಡುವಾಗ ಬಳಸಿದ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.</string>
     <string name="settings_restore_start">ರಿಸ್ಟೋರ್ ಮಾಡಿ</string>
     <string name="settings_restore_running">ಬ್ಯಾಕಪ್ ರಿಸ್ಟೋರ್ ಆಗುತ್ತಿದೆ…</string>

@@ -7,6 +7,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
@@ -20,6 +21,9 @@ import javax.crypto.spec.GCMParameterSpec
  * Record layout: [flag: 1 byte][ciphertext length: int][ciphertext + 16-byte tag].
  */
 internal object ChunkedAead {
+    /** The first chunk would not open with this key: a wrong password (or a damaged start of the file). */
+    class WrongKeyException(cause: Throwable) : IOException("Wrong key or damaged backup", cause)
+
     const val PREFIX_BYTES = 7
     const val CHUNK_BYTES = 64 * 1024
     private const val TAG_BITS = 128
@@ -96,7 +100,13 @@ internal object ChunkedAead {
             val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
                 init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, nonce(prefix, counter, last)))
             }
-            chunk = cipher.doFinal(sealed)
+            chunk = try {
+                cipher.doFinal(sealed)
+            } catch (error: AEADBadTagException) {
+                // The first chunk is sealed with the key from the password, so failing there almost always means
+                // a wrong password; failing later means the file was damaged or altered.
+                if (counter == 0) throw WrongKeyException(error) else throw IOException("Backup is damaged", error)
+            }
             position = 0
             counter++
             if (last) {

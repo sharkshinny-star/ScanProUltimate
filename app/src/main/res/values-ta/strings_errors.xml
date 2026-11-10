@@ -33,6 +33,7 @@
     <string name="err_backup_password_too_short">குறைந்தது %1$d எழுத்துகள் கொண்ட பேக்கப் பாஸ்வேர்டைப் பயன்படுத்துங்கள்</string>
     <string name="err_could_not_open_backup">பேக்கப்பைத் திறக்க முடியவில்லை</string>
     <string name="err_could_not_decrypt_backup">பேக்கப்பை டிகிரிப்ட் செய்ய முடியவில்லை. பாஸ்வேர்டையும் ஃபைலையும் சரிபாருங்கள்.</string>
+    <string name="err_backup_wrong_password">இந்த பாஸ்வேர்டால் பேக்கப்பைத் திறக்க முடியவில்லை. மீண்டும் முயலுங்கள், அல்லது ஃபைல் சேதமடைந்திருக்கலாம்.</string>
     <string name="err_backup_too_large">இந்த பேக்கப் மீட்டெடுக்க மிகப் பெரியது</string>
     <string name="err_could_not_decode_image">%1$s படத்தைப் படிக்க முடியவில்லை</string>
     <string name="err_could_not_decode_source">பக்கத்தின் அசல் படத்தைப் படிக்க முடியவில்லை</string>

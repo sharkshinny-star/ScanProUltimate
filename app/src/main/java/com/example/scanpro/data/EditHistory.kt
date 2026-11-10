@@ -15,7 +15,11 @@ data class UndoState(val undoSteps: Int = 0, val redoSteps: Int = 0) {
  * (edit settings, mark-up and text, not pixels): a page can always be drawn again from its original photo, so
  * going back only re-renders the pages that differ.
  */
-class EditHistory(private val limit: Int = 20) {
+class EditHistory(
+    private val limit: Int = 20,
+    /** Rough memory a document's steps may hold; the oldest steps go first, so a long scan can't pile up megabytes. */
+    private val maxBytes: Long = 6L * 1024 * 1024
+) {
     private val undo = HashMap<String, ArrayDeque<List<ScanPage>>>()
     private val redo = HashMap<String, ArrayDeque<List<ScanPage>>>()
     private val _state = MutableStateFlow<Map<String, UndoState>>(emptyMap())
@@ -26,8 +30,13 @@ class EditHistory(private val limit: Int = 20) {
     fun record(documentId: String, before: List<ScanPage>) {
         val stack = undo.getOrPut(documentId) { ArrayDeque() }
         if (stack.lastOrNull() == before) return
-        stack.addLast(before)
+        // A step is a fresh copy of the document's pages. Pages that did not change are shared with the newest
+        // step, so ten edits to one page of a 100-page scan keep one copy of the other 99, not ten.
+        val previous = stack.lastOrNull()?.associateBy { it.id }.orEmpty()
+        stack.addLast(before.map { page -> previous[page.id]?.takeIf { it == page } ?: page })
         while (stack.size > limit) stack.removeFirst()
+        // Always keep the newest step, however large, so the last edit can still be undone.
+        while (stack.size > 1 && retainedBytes(documentId) > maxBytes) stack.removeFirst()
         redo.remove(documentId)
         publish(documentId)
     }
@@ -74,6 +83,20 @@ class EditHistory(private val limit: Int = 20) {
     @Synchronized
     fun retained(documentId: String): List<ScanPage> =
         (undo[documentId].orEmpty() + redo[documentId].orEmpty()).flatten()
+
+    /** Estimated size of every distinct page kept for [documentId]; a page shared by several steps counts once. */
+    private fun retainedBytes(documentId: String): Long {
+        val seen = java.util.IdentityHashMap<ScanPage, Boolean>()
+        var total = 0L
+        for (step in undo[documentId].orEmpty() + redo[documentId].orEmpty()) {
+            for (page in step) if (seen.put(page, true) == null) total += estimateBytes(page)
+        }
+        return total
+    }
+
+    private fun estimateBytes(page: ScanPage): Long =
+        400L + page.ocrText.length * 2L + page.ocrWords.sumOf { 80L + it.text.length * 2L } +
+            page.annotations.sumOf { 200L + it.text.length * 2L + it.strokes.sumOf { stroke -> stroke.size * 16L } }
 
     private fun publish(documentId: String) {
         val value = UndoState(undo[documentId]?.size ?: 0, redo[documentId]?.size ?: 0)

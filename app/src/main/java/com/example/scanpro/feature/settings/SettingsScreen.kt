@@ -38,6 +38,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoDelete
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.SettingsBackupRestore
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ColorLens
@@ -211,6 +212,7 @@ fun SettingsRoute(
         homeTips = homeTips,
         onHomeTipsChange = viewModel::setHomeTips,
         onRestoreBackup = viewModel::restoreBackup,
+        onRecoverLibrary = viewModel::recoverLibrary,
         bottomBar = bottomBar
     )
 }
@@ -240,6 +242,7 @@ fun SettingsScreen(
     homeTips: Boolean = true,
     onHomeTipsChange: (Boolean) -> Unit = {},
     onRestoreBackup: (Uri, String) -> Unit = { _, _ -> },
+    onRecoverLibrary: () -> Unit = {},
     trashRetentionDays: Int = DEFAULT_TRASH_RETENTION_DAYS,
     defaultOcrScript: OcrScript = OcrScript.LATIN,
     defaultScanMode: String = com.example.scanpro.data.ScanMode.DOCUMENT.name,
@@ -372,6 +375,16 @@ fun SettingsScreen(
                         trailing = { Chevron() },
                         enabled = !busy,
                         onClick = { backupPicker.launch(arrayOf("*/*")) }
+                    )
+                    InsetDivider()
+                    SettingsRow(
+                        icon = Icons.Rounded.SettingsBackupRestore,
+                        tone = TileTone.Violet,
+                        title = stringResource(R.string.settings_recover_library),
+                        subtitle = stringResource(R.string.settings_recover_library_subtitle),
+                        trailing = { Chevron() },
+                        enabled = !busy,
+                        onClick = onRecoverLibrary
                     )
                 }
 

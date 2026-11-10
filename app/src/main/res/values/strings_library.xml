@@ -119,6 +119,14 @@
     </plurals>
     <string name="settings_restore_backup">Restore from backup</string>
     <string name="settings_restore_backup_subtitle">Add a document back from a .scanpro backup file</string>
+    <string name="settings_recover_library">Recover missing documents</string>
+    <string name="settings_recover_library_subtitle">Look for scans stored on this device that no longer appear in your library</string>
+    <string name="settings_recover_running">Looking for missing documents…</string>
+    <string name="settings_recover_none">No missing documents found</string>
+    <plurals name="settings_recover_done">
+        <item quantity="one">Recovered %1$d document</item>
+        <item quantity="other">Recovered %1$d documents</item>
+    </plurals>
     <string name="settings_restore_password_message">Enter the password the backup was made with.</string>
     <string name="settings_restore_start">Restore</string>
     <string name="settings_restore_running">Restoring backup…</string>
