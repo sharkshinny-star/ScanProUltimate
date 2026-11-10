@@ -158,6 +158,8 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 ## 4. Next steps
 
+- **Item 7 (undo history across sessions):** design note written, not built: `UNDO_PERSISTENCE_DESIGN.md`. Needs the owner's answers to its three questions first.
+
 All open work in one list, with a device checklist: `REMAINING_WORK.md` (generated from `AUDIT_FINDINGS.md`).
 
 - PDF Tools backlog (password prompts in every tool, file names, page numbers/watermark, sign, PDF to Word, insert pages): `TOOLS_IMPROVEMENTS.md`.
