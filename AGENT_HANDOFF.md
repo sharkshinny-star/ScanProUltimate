@@ -160,7 +160,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
    privacy policy at a public HTTPS URL and keep it consistent with the form.
 8. **Security changes not device-tested:** password keyboards (F57), launcher/shortcut/notification/share launches with
    `taskAffinity=""` (F58; owner decided 2026-11-05 to keep Android 7–10, so no `minSdk 30`), backup speed with 600k rounds on a low-end phone (F53). R21 and R22 are low priority.
-9. **R43 / F101:** CI run 113 is green; still to do: try "Recover missing documents" on a device. The Gradle 10 deprecation list is now printed in the `test` job log (`--warning-mode=all`) and has not been reviewed yet.
+9. **R43 / F101:** CI run 113 is green; still to do: try "Recover missing documents" on a device. The Gradle 10 check is done: run 113 printed no Gradle deprecation notice (`--warning-mode=all`), so `--warning-mode=all` can stay as an early warning. The 15 Compose UI tests now import `androidx.compose.ui.test.junit4.v2.createComposeRule` / `createAndroidComposeRule` (StandardTestDispatcher instead of UnconfinedTestDispatcher); this is not yet seen green in CI, so if a UI test now fails on timing, add `waitForIdle()` / `runOnIdle` rather than reverting.
 
 ## 4. Next steps
 
