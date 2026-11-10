@@ -302,10 +302,13 @@ class DocumentRepository @Inject constructor(
     suspend fun applyAdjustmentsToAll(documentId: String, pageId: String, adjustments: PageAdjustments) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val clean = adjustments.normalized()
+        fun adjustmentsFor(page: ScanPage) = if (page.id == pageId) clean
+        else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
+        // Nothing to draw or save: don't add an undo step that changes nothing.
+        if (doc.pages.all { adjustmentsFor(it) == it.adjustments }) return@withContext doc
         allOrNothing { touched ->
             val pages = doc.pages.map { page ->
-                val updated = if (page.id == pageId) clean
-                else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
+                val updated = adjustmentsFor(page)
                 if (updated == page.adjustments) page else {
                     touched += page
                     renderAndOcr(page.copy(adjustments = updated))
