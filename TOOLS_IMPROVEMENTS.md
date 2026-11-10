@@ -1,6 +1,6 @@
 # PDF Tools: improvements left to do
 
-Last updated: 2026-11-05. Collected after F48 to F50 (Images to PDF on white, Merge password prompt, first-launch
+Last updated: 2026-11-10 (items 5 to 7 built as F103 and F104, not yet compiled: see R44). Collected after F48 to F50 (Images to PDF on white, Merge password prompt, first-launch
 permissions). Nothing here is started. When an item is done, move it to `AUDIT_FINDINGS.md` (Fixed, with its F id and
 commit) and delete it here.
 

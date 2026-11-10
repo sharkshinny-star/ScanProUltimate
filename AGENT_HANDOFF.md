@@ -12,7 +12,7 @@ Read this first when you pick up the project in a new session or with a differen
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
 
-Last updated: 2026-11-10 (unit tests for `reOcrDocument`, `appendImages`, `splitBookSpread`, `importEncryptedBackup` and `setAsideNewerDatabase`, CI run 117 green on the single-job workflow, one shared `now()`; F101: cleanup, trash and database fixes, Recover missing documents, undo memory cap, wrong-password message, two-job CI; F100: Post-scan review and crop/filter experience overhaul inspired by Adobe Scan; F99: Adaptive layout polish for small screens; F98: Jetpack Compose rendering and list performance optimizations; F97: Convert tools overhaul; F96: print crash with an in-app language on Android 12 and older; F95: Camera exit blank screen and launch intro animation race fixes).
+Last updated: 2026-11-10 (QR scanner multi-code, scan history and generator (F102), Sign PDF (F103), PDF to text or Word and Insert pages (F104): written and reviewed, NOT compiled (R44); item 5 moved-aside library restore (CI run 119 green); unit tests for `reOcrDocument`, `appendImages`, `splitBookSpread`, `importEncryptedBackup` and `setAsideNewerDatabase`, CI run 117 green on the single-job workflow, one shared `now()`; F101: cleanup, trash and database fixes, Recover missing documents, undo memory cap, wrong-password message, two-job CI; F100: Post-scan review and crop/filter experience overhaul inspired by Adobe Scan; F99: Adaptive layout polish for small screens; F98: Jetpack Compose rendering and list performance optimizations; F97: Convert tools overhaul; F96: print crash with an in-app language on Android 12 and older; F95: Camera exit blank screen and launch intro animation race fixes).
 
 ## 1. Current state
 
@@ -26,6 +26,8 @@ Last updated: 2026-11-10 (unit tests for `reOcrDocument`, `appendImages`, `split
 
 | Commit | What |
 |---|---|
+| see `git log` | F102 to F104 (QR multi-code outlines, scan history, QR generator with ZXing core 3.5.3; Sign PDF; PDF to text or Word; Insert pages in Organise). Built by three helper agents in separate worktrees, merged, then read by three reviewers who fixed one compile error. Never compiled: the next CI run is the first (R44). New strings in five languages are unreviewed machine-written translations. |
+| `5c791de` | Item 5 verified: CI run 119 green (`MovedAsideLibraryTest`). |
 | next | Item 5: a library that an older build moved aside is offered back when a build that can read it returns. `DocumentDatabase.movedAsideLibraries/restoreMovedAsideLibrary/declineMovedAsideLibrary`, a dialog in `LibraryRoute`, strings in English and the five translations (my own wording, not reviewed by a speaker), `MovedAsideLibraryTest` (7). Merge only: existing documents are never overwritten and the old file is renamed, never deleted. Not compiled or run: CI is the first check. |
 | `ea8a67e` | One shared `now()` in the data layer instead of seven private copies. No behaviour change; CI run 118 green. |
 | `698d7bc`, `00004f0` | Unit tests for `reOcrDocument`, `appendImages`, `splitBookSpread`, `importEncryptedBackup` (new `pdfWriter` seam, like `pageRenderer`) and `setAsideNewerDatabase`. CI run 117 green (~19 min, one job); run 116 had 2 failing tests (Room main-thread check), fixed. Open: no test for `splitBookSpread` clean-up when the save fails. |
@@ -158,6 +160,7 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 ## 4. Next steps
 
+- **First CI run for F102 to F104 (R44).** Read the errors, fix locally, push once; then device checks listed in R44.
 - **Item 7 (undo history across sessions):** design note written, not built: `UNDO_PERSISTENCE_DESIGN.md`. Needs the owner's answers to its three questions first.
 
 All open work in one list, with a device checklist: `REMAINING_WORK.md` (generated from `AUDIT_FINDINGS.md`).
