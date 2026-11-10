@@ -10,7 +10,6 @@ import android.graphics.RectF
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import androidx.core.graphics.withRotation
-import androidx.core.graphics.withRotation
 import androidx.exifinterface.media.ExifInterface
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad

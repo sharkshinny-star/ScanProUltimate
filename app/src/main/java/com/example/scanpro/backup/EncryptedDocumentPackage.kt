@@ -77,9 +77,15 @@ class EncryptedDocumentPackage(private val context: Context) {
     fun import(source: Uri, password: CharArray): RestoredDocument {
         require(password.size >= 6) { "Backup password must be at least 6 characters" }
         val encrypted = File(context.cacheDir, "import_${UUID.randomUUID()}.scanpro")
-        context.contentResolver.openInputStream(source).use { input ->
-            requireNotNull(input) { "Could not open backup" }
-            FileOutputStream(encrypted).use { input.copyTo(it) }
+        try {
+            context.contentResolver.openInputStream(source).use { input ->
+                requireNotNull(input) { "Could not open backup" }
+                FileOutputStream(encrypted).use { input.copyTo(it) }
+            }
+        } catch (error: Throwable) {
+            // A copy that failed half way must not leave the backup behind in the cache.
+            encrypted.delete()
+            throw error
         }
         val outDir = File(context.cacheDir, "restore_${UUID.randomUUID()}")
         return read(encrypted, outDir, password)

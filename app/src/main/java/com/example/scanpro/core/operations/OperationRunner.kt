@@ -116,11 +116,14 @@ class OperationRunner @Inject constructor(
                         _busyLabel.value = label
                         OperationForegroundService.show(context, label)
                     }
-                    runCatching { action() }
-                        .onSuccess { if (successMessage != null) _message.value = UiMessage(successMessage) }
-                        .onFailure { error ->
-                            _message.value = UiMessage(error.message ?: context.getString(R.string.common_something_went_wrong))
-                        }
+                    try {
+                        action()
+                        if (successMessage != null) _message.value = UiMessage(successMessage)
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        throw cancelled
+                    } catch (error: Throwable) {
+                        _message.value = UiMessage(error.message ?: context.getString(R.string.common_something_went_wrong))
+                    }
                     runCatching { library.refresh() }
                 }
             } finally {

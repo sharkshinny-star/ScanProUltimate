@@ -577,7 +577,10 @@ class DocumentRepository @Inject constructor(
         require(index >= 0) { "Page not found" }
         val page = pages[index]
         val bitmap = ImageProcessor.decodeScaled(page.imagePath, 3800) ?: error("Could not decode page")
-        require(bitmap.width >= 500) { "Page is too narrow to split" }
+        if (bitmap.width < 500) {
+            bitmap.recycle()
+            throw IllegalArgumentException("Page is too narrow to split")
+        }
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }
@@ -783,8 +786,14 @@ class DocumentRepository @Inject constructor(
                 val name = "${safeName(doc.title)}_$stamp.scanpro"
                 val target = DocumentsContract.createDocument(context.contentResolver, parent, "application/octet-stream", name)
                     ?: error("Could not create a file in the chosen folder")
-                context.contentResolver.openOutputStream(target, "wt")?.use { out -> temp.inputStream().use { it.copyTo(out) } }
-                    ?: error("Could not write to the chosen folder")
+                try {
+                    context.contentResolver.openOutputStream(target, "wt")?.use { out -> temp.inputStream().use { it.copyTo(out) } }
+                        ?: error("Could not write to the chosen folder")
+                } catch (error: Throwable) {
+                    // Don't leave an empty or partial package in the user's folder.
+                    runCatching { DocumentsContract.deleteDocument(context.contentResolver, target) }
+                    throw error
+                }
                 written++
             } finally {
                 temp.delete()
@@ -879,9 +888,14 @@ class DocumentRepository @Inject constructor(
         ocr.prepare(selected)
         val pages = doc.pages.map { page ->
             // Re-running recognition is an explicit request to read the pages again, so it replaces corrections.
-            runCatching { ocr.recognizeDetailed(File(page.imagePath), selected) }
-                .map { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
-                .getOrDefault(page)
+            try {
+                ocr.recognizeDetailed(File(page.imagePath), selected)
+                    .let { page.copy(ocrText = it.text, ocrWords = it.words, ocrEdited = false) }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                page
+            }
         }
         saveWithStalePdf(doc.copy(pages = pages, ocrScript = selected, updatedAt = now())).also { history.record(doc.id, doc.pages) }
     }
