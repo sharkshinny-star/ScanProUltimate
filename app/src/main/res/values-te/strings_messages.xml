@@ -124,6 +124,7 @@
     <string name="msg_tools_compression_failed">కంప్రెషన్ విఫలమైంది</string>
     <string name="msg_tools_compressed_by">%1$d%% తగ్గించాం (%2$s → %3$s)</string>
     <string name="msg_tools_compressed_not_searchable">. పేజీలు చిత్రాలుగా మార్చబడ్డాయి, కాబట్టి టెక్స్ట్‌ను ఇక ఎంచుకోలేరు లేదా వెతకలేరు.</string>
+    <string name="msg_tools_compress_missed_target">. %1$s చేరుకోలేకపోయింది, దీని కంటే చిన్నది కాదు. పెద్ద లక్ష్యాన్ని ప్రయత్నించండి.</string>
     <string name="msg_tools_exporting_pages">పేజీలను ఎక్స్‌పోర్ట్ చేస్తోంది…</string>
     <string name="msg_tools_export_failed">ఎక్స్‌పోర్ట్ విఫలమైంది</string>
     <plurals name="msg_tools_exported_page_images">

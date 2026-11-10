@@ -124,6 +124,7 @@
     <string name="msg_tools_compression_failed">ಕಂಪ್ರೆಷನ್ ವಿಫಲವಾಗಿದೆ</string>
     <string name="msg_tools_compressed_by">%1$d%% ಕಂಪ್ರೆಸ್ ಆಗಿದೆ (%2$s → %3$s)</string>
     <string name="msg_tools_compressed_not_searchable">. ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಬದಲಿಸಲಾಗಿದೆ, ಹಾಗಾಗಿ ಪಠ್ಯವನ್ನು ಇನ್ನು ಆಯ್ಕೆ ಮಾಡಲು ಅಥವಾ ಹುಡುಕಲು ಆಗುವುದಿಲ್ಲ.</string>
+    <string name="msg_tools_compress_missed_target">. %1$s ತಲುಪಲು ಆಗಲಿಲ್ಲ, ಇದಕ್ಕಿಂತ ಚಿಕ್ಕದಾಗುವುದಿಲ್ಲ. ದೊಡ್ಡ ಗುರಿಯನ್ನು ಪ್ರಯತ್ನಿಸಿ.</string>
     <string name="msg_tools_exporting_pages">ಪುಟಗಳನ್ನು ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
     <string name="msg_tools_export_failed">ಎಕ್ಸ್‌ಪೋರ್ಟ್ ವಿಫಲವಾಗಿದೆ</string>
     <plurals name="msg_tools_exported_page_images">

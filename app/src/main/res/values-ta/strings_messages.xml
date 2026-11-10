@@ -124,6 +124,7 @@
     <string name="msg_tools_compression_failed">சுருக்க முடியவில்லை</string>
     <string name="msg_tools_compressed_by">%1$d%% சுருக்கப்பட்டது (%2$s → %3$s)</string>
     <string name="msg_tools_compressed_not_searchable">. பக்கங்கள் படங்களாக மாற்றப்பட்டதால், உரையை இனி தேர்ந்தெடுக்கவோ தேடவோ முடியாது.</string>
+    <string name="msg_tools_compress_missed_target">. %1$s ஐ அடைய முடியவில்லை, இதைவிடச் சிறியதாகாது. பெரிய இலக்கை முயலுங்கள்.</string>
     <string name="msg_tools_exporting_pages">பக்கங்கள் ஏற்றுமதி செய்யப்படுகின்றன…</string>
     <string name="msg_tools_export_failed">ஏற்றுமதி தோல்வியடைந்தது</string>
     <plurals name="msg_tools_exported_page_images">

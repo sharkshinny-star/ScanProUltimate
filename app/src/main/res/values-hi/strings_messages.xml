@@ -124,6 +124,7 @@
     <string name="msg_tools_compression_failed">कंप्रेस नहीं हो सका</string>
     <string name="msg_tools_compressed_by">%1$d%% छोटी हुई (%2$s → %3$s)</string>
     <string name="msg_tools_compressed_not_searchable">। पेज इमेज में बदल दिए गए, इसलिए टेक्स्ट अब चुना या खोजा नहीं जा सकता।</string>
+    <string name="msg_tools_compress_missed_target">। %1$s तक नहीं पहुँच सका, इससे छोटा नहीं हो सकता। बड़ा लक्ष्य आज़माएँ।</string>
     <string name="msg_tools_exporting_pages">पेज एक्सपोर्ट हो रहे हैं…</string>
     <string name="msg_tools_export_failed">एक्सपोर्ट नहीं हो सका</string>
     <plurals name="msg_tools_exported_page_images">

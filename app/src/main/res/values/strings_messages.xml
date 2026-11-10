@@ -137,6 +137,7 @@
     <string name="msg_tools_compression_failed">Compression failed</string>
     <string name="msg_tools_compressed_by">Compressed by %1$d%% (%2$s → %3$s)</string>
     <string name="msg_tools_compressed_not_searchable">. Pages were converted to images, so the text is no longer selectable or searchable.</string>
+    <string name="msg_tools_compress_missed_target">. Could not reach %1$s, so this is as small as it gets. Try a larger target.</string>
     <string name="msg_tools_exporting_pages">Exporting pages…</string>
     <string name="msg_tools_export_failed">Export failed</string>
     <!-- Used by PdfToolsViewModel through bundled(); lint misses the reference. -->

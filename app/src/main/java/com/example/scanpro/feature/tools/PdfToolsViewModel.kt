@@ -244,7 +244,8 @@ class PdfToolsViewModel @Inject constructor(
             originalSizeBytes = res.originalSizeBytes,
             outputSizeBytes = res.compressedSizeBytes,
             message = context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(context, res.originalSizeBytes), formatBytes(context, res.compressedSizeBytes)) +
-                if (res.isSearchablePreserved) "" else context.getString(R.string.msg_tools_compressed_not_searchable),
+                (if (res.isSearchablePreserved) "" else context.getString(R.string.msg_tools_compressed_not_searchable)) +
+                if (res.missedTarget && customTargetBytes != null) context.getString(R.string.msg_tools_compress_missed_target, formatBytes(context, customTargetBytes)) else "",
             comparesSize = true
         )
     }

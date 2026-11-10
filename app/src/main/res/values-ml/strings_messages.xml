@@ -124,6 +124,7 @@
     <string name="msg_tools_compression_failed">കംപ്രഷൻ പരാജയപ്പെട്ടു</string>
     <string name="msg_tools_compressed_by">%1$d%% കംപ്രസ് ചെയ്തു (%2$s → %3$s)</string>
     <string name="msg_tools_compressed_not_searchable">. പേജുകൾ ചിത്രങ്ങളാക്കി മാറ്റിയതിനാൽ ടെക്സ്റ്റ് ഇനി തിരഞ്ഞെടുക്കാനോ തിരയാനോ കഴിയില്ല.</string>
+    <string name="msg_tools_compress_missed_target">. %1$s എത്താൻ കഴിഞ്ഞില്ല, ഇതിലും ചെറുതാകില്ല. വലിയ ലക്ഷ്യം പരീക്ഷിക്കുക.</string>
     <string name="msg_tools_exporting_pages">പേജുകൾ എക്സ്പോർട്ട് ചെയ്യുന്നു…</string>
     <string name="msg_tools_export_failed">എക്സ്പോർട്ട് പരാജയപ്പെട്ടു</string>
     <plurals name="msg_tools_exported_page_images">

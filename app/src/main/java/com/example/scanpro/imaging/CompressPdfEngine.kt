@@ -41,7 +41,9 @@ data class CompressionResult(
     val pageCount: Int = 1,
     val originalSizeBytes: Long,
     val compressedSizeBytes: Long,
-    val isSearchablePreserved: Boolean
+    val isSearchablePreserved: Boolean,
+    /** A custom target was asked for and even the strongest squeeze stayed above it. */
+    val missedTarget: Boolean = false
 ) {
     val savingsPercentage: Int
         get() {
@@ -52,7 +54,9 @@ data class CompressionResult(
 }
 
 object CompressPdfEngine {
-    private const val MAX_TARGET_PASSES = 3
+    private const val MAX_TARGET_PASSES = 6
+    /** A result at least this fraction of the target is close enough; the search stops. */
+    private const val CLOSE_ENOUGH = 0.85
     private const val MIN_TARGET_SCALE = 0.25f
     private const val MIN_TARGET_QUALITY = 30
 
@@ -128,22 +132,51 @@ object CompressPdfEngine {
                 )
             }
 
-            var scale = effectiveScale
-            var quality = effectiveQuality
-            var result = attempt(scale, quality)
-            // The scale and quality above are an estimate from the size ratio, not a promise. Check the file and,
-            // while it is still over the target, squeeze harder (a few passes at most) instead of handing back a
-            // file the user asked to be smaller than it is.
+            val result: CompressionResult
             if (customTargetBytes != null && customTargetBytes > 0L) {
-                var passes = 0
-                while (result.compressedSizeBytes > customTargetBytes && passes < MAX_TARGET_PASSES &&
-                    (scale > MIN_TARGET_SCALE || quality > MIN_TARGET_QUALITY)
-                ) {
-                    passes++
-                    scale = (scale * 0.8f).coerceAtLeast(MIN_TARGET_SCALE)
-                    quality = (quality - 12).coerceAtLeast(MIN_TARGET_QUALITY)
-                    result = attempt(scale, quality)
+                // The scale and quality estimated above are a guess from the size ratio, not a promise. Search for the
+                // strongest setting that still fits: u runs from 0 (smallest) to 1 (best quality). A pass over the target
+                // moves u down, a pass well under it moves u up, and the largest file that fits the target is kept.
+                val maxScale = 0.95f
+                val maxQuality = 92
+                fun scaleAt(u: Float) = MIN_TARGET_SCALE + (maxScale - MIN_TARGET_SCALE) * u
+                fun qualityAt(u: Float) = MIN_TARGET_QUALITY + ((maxQuality - MIN_TARGET_QUALITY) * u).toInt()
+                var u = ((effectiveScale - MIN_TARGET_SCALE) / (maxScale - MIN_TARGET_SCALE)).coerceIn(0f, 1f)
+                var lo = 0f
+                var hi = 1f
+                var best: CompressionResult? = null
+                var last: CompressionResult? = null
+                val bestFile = File(outputDir, "best_${UUID.randomUUID()}.pdf")
+                try {
+                    for (pass in 0 until MAX_TARGET_PASSES) {
+                        outputFile.delete()
+                        val tried = attempt(scaleAt(u), qualityAt(u))
+                        last = tried
+                        if (tried.compressedSizeBytes <= customTargetBytes) {
+                            if (best == null || tried.compressedSizeBytes > best.compressedSizeBytes) {
+                                tried.outputFile.copyTo(bestFile, overwrite = true)
+                                best = tried
+                            }
+                            if (tried.compressedSizeBytes >= customTargetBytes * CLOSE_ENOUGH) break
+                            lo = u
+                            u = (u + hi) / 2f
+                        } else {
+                            hi = u
+                            if (u <= 0.02f) break
+                            u = (lo + u) / 2f
+                        }
+                    }
+                    result = if (best != null) {
+                        bestFile.copyTo(outputFile, overwrite = true)
+                        best
+                    } else {
+                        last!!.copy(missedTarget = true)
+                    }
+                } finally {
+                    bestFile.delete()
                 }
+            } else {
+                result = attempt(effectiveScale, effectiveQuality)
             }
             return@withContext result
         } catch (error: Throwable) {
