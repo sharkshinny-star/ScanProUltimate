@@ -35,7 +35,7 @@ The app follows the layered, package-by-feature structure recommended in Android
   (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
   survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).
 - **Data layer (`data/`)**: `DocumentLibrary` exposes the active, trash and storage flows every screen
-  observes and is refreshed after each operation; `DocumentRepository` is a facade that delegates (R9): `DocumentStore` holds the shared database access, per-document PDF locks, undo history, saving and PDF rebuilding; `DocumentCatalog`, `DocumentTrash`, `DocumentImporter`, `PageEditor`, `PageOrganiser` and `DocumentExporter` (all in `data/`) do the work on top of it.
+  observes and is refreshed after each operation; `DocumentRepository` is a facade that delegates (R9): `DocumentStore` holds the shared database access, per-document PDF locks, undo history, saving and PDF rebuilding; `DocumentCatalog`, `DocumentTrash`, `DocumentImporter`, `PageEditor`, `PageOrganiser` and `DocumentExporter` (all in `data/`) do the work on top of it. `LibraryRecovery` rebuilds documents from folders that have no database record (Settings → Backup). `DocumentStore.pageRenderer` (a `PageRenderer`) is the one place pages are drawn, so tests can replace the native image pipeline; `EditHistory` shares unchanged pages between undo steps and caps a document's history at about 6 MB. CI runs two parallel jobs: `test` (Room schema check, unit tests, lint) and `package` (bundle, sideload APKs, size report).
 
 Hilt supplies repository/database/settings/work dependencies. WorkManager is used for periodic library maintenance.
 

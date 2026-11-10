@@ -24,8 +24,8 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ManageSearch
-import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -175,7 +175,7 @@ fun ScanSavedSheet(
                         Spacer(Modifier.height(6.dp))
                         Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.secondaryContainer) {
                             Row(Modifier.padding(horizontal = 10.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ManageSearch, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(14.dp))
+                                Icon(Icons.AutoMirrored.Filled.ManageSearch, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(5.dp))
                                 Text(stringResource(R.string.doc_searchable_pdf), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
                             }
@@ -206,7 +206,7 @@ fun ScanSavedSheet(
                     onAction = onAddContact
                 )
                 is ScanHighlight.Bill -> HighlightCard(
-                    icon = Icons.Default.ReceiptLong,
+                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
                     tone = TileTone.Amber,
                     title = stringResource(highlight.kind.labelRes),
                     detail = listOfNotNull(stringResource(R.string.doc_saved_total, highlight.total), highlight.date).joinToString(" · "),

@@ -71,7 +71,7 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertFalse(repository.undo(newDocument(1).id))
     }
 
-    @Test fun deletePageRemovesItsFilesAndClearsHistory() = runBlocking {
+    @Test fun deletePageKeepsItsFilesUntilTheUndoWindowClosesAndClearsHistory() = runBlocking {
         val doc = newDocument(3)
         repository.movePage(doc.id, doc.order()[0], delta = 1)
         val target = load(doc.id)!!.pages.first { it.position == 1 }
@@ -82,9 +82,25 @@ class DocumentRepositoryTest : RepositoryTestBase() {
         assertEquals(2, saved.pages.size)
         assertFalse(saved.pages.any { it.id == target.id })
         assertEquals(listOf(0, 1), saved.pages.sortedBy { it.position }.map { it.position })
+        assertNull("history refers to a deleted page", repository.undoState.value[doc.id])
+        // The files stay while the page can still be brought back, and go when the window closes.
+        assertTrue(File(target.imagePath).exists())
+        assertTrue(File(target.sourcePath).exists())
+        repository.purgeRemovedPage(doc.id)
         assertFalse(File(target.imagePath).exists())
         assertFalse(File(target.sourcePath).exists())
-        assertNull("history refers to a deleted page", repository.undoState.value[doc.id])
+    }
+
+    @Test fun aDeletedPageCanBeBroughtBackInPlace() = runBlocking {
+        val doc = newDocument(3)
+        val before = doc.order()
+
+        repository.deletePage(doc.id, before[1])
+        assertEquals(listOf(before[0], before[2]), load(doc.id)!!.order())
+
+        assertTrue(repository.restoreRemovedPage(doc.id))
+        assertEquals(before, load(doc.id)!!.order())
+        assertFalse("nothing is left to restore", repository.restoreRemovedPage(doc.id))
     }
 
     @Test fun deletingTheOnlyPageMovesTheDocumentToTheTrash() = runBlocking {
