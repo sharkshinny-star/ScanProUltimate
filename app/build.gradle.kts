@@ -99,6 +99,8 @@ android {
     }
 
     testOptions {
+        // Robolectric (the repository tests) reads the merged manifest and resources.
+        unitTests.isIncludeAndroidResources = true
         unitTests.all {
             // -Pscanpro.updateGoldens=true rewrites the golden images of the imaging tests (see MatFiltersGoldenTest).
             it.systemProperty("scanpro.updateGoldens", (project.findProperty("scanpro.updateGoldens") ?: "false").toString())
@@ -241,6 +243,8 @@ dependencies {
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
     testImplementation("junit:junit:4.13.2")
+    // Runs the repository and Room database on the JVM, with a real SQLite and file system.
+    testImplementation("org.robolectric:robolectric:4.14.1")
     // The real org.json: the Android jar's version only has stubs, and the backup format is JSON.
     testImplementation("org.json:json:20240303")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
