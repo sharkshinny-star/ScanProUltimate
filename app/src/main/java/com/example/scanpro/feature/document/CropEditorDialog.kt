@@ -318,7 +318,8 @@ fun CropEditorDialog(
                             quadraticTo(rightControl.x, rightControl.y, corners[2].x, corners[2].y)
                             quadraticTo(bottomControl.x, bottomControl.y, corners[3].x, corners[3].y)
                             quadraticTo(leftControl.x, leftControl.y, corners[0].x, corners[0].y)
-                            close()
+                            // Explicit receiver: a bare close() would call the dialog's own close lambda, which dismisses the editor on the first draw.
+                            this.close()
                         }
                         drawPath(path, boundaryColor, style = Stroke(width = 6f))
 

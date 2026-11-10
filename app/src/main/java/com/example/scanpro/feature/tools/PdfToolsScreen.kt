@@ -2085,7 +2085,10 @@ private fun RecentPdfRow(pdf: RecentPdf, onOpen: () -> Unit, onUseWith: (String)
         Text(pdf.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         Box {
             IconButton(onClick = { menuOpen = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more))
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = "${stringResource(R.string.common_more)}: ${pdf.name}"
+                )
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_open)) }, onClick = { menuOpen = false; onOpen() })
