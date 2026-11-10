@@ -59,7 +59,7 @@ data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Ma
 }
 
 /** What the Tools screen shows while and after a tool runs. */
-data class ToolProgress(val label: String, val current: Int = 0, val total: Int = 0)
+data class ToolProgress(val title: String, val subtitle: String? = null, val current: Int = 0, val total: Int = 0)
 
 /**
  * A PDF in a merge that needs its password: file [index] of [uris], shown as [fileName]. [wrongPassword] is true when
@@ -167,8 +167,8 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    private fun report(current: Int, total: Int, label: String) {
-        _progress.update { ToolProgress(label, current, total) }
+    private fun report(current: Int, total: Int, subtitle: String) {
+        _progress.update { it?.copy(subtitle = subtitle, current = current, total = total) }
     }
 
     /** One job at a time; a second request while one runs is refused with a message rather than queued silently. */
@@ -181,7 +181,7 @@ class PdfToolsViewModel @Inject constructor(
             return
         }
         _result.value = null
-        _progress.value = ToolProgress(label)
+        _progress.value = ToolProgress(title = label)
         endedWithQuestion = false
         job = viewModelScope.launch {
             try {

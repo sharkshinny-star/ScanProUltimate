@@ -54,7 +54,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Check
@@ -401,18 +404,59 @@ fun ScanReviewScreen(
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
-        // Top bar: Back · title · Undo · Retake · Delete · overflow.
+        // Top bar: Back · title / name · Undo · Retake · Delete · Save PDF · overflow (Adobe Scan style).
         var menu by remember { mutableStateOf(false) }
-        Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.scan_review_back_to_camera))
             }
-            Text(
-                if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single),
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
-            )
+            if (onNameChange != null && name.isNotBlank()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(enabled = !blocked) { naming = true }
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.scan_review_name_dialog_title),
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    if (pages.size > 1) {
+                        Spacer(Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = "${current + 1}/${pages.size}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                )
+            }
             IconButton(enabled = !blocked && canUndo, onClick = ::undo) {
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.scan_review_undo))
             }
@@ -421,9 +465,22 @@ fun ScanReviewScreen(
                     Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.scan_review_retake_page))
                 }
             }
-            // Deleting removes the photo file for good, so it asks first.
             IconButton(enabled = !blocked, onClick = { confirmDelete = true }) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page))
+            }
+            Button(
+                enabled = !blocked,
+                onClick = onDone,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.padding(end = 4.dp)
+            ) {
+                if (processing) {
+                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.common_save), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                }
             }
             Box {
                 IconButton(enabled = !blocked, onClick = { menu = true }) {
@@ -607,6 +664,14 @@ fun ScanReviewScreen(
                 leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, Modifier.size(18.dp)) },
                 label = { Text(stringResource(R.string.scan_review_adjust) + if (adjustments[key] != null) " •" else "") }
             )
+            if (pages.size > 1) {
+                FilterChip(
+                    selected = panel == PANEL_REORDER,
+                    onClick = { panel = PANEL_REORDER },
+                    leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null, Modifier.size(18.dp)) },
+                    label = { Text(stringResource(R.string.tools_organizer_organize_title).substringBefore(" ")) }
+                )
+            }
         }
         if (panel == PANEL_CROP) {
             // Dedicated Crop controls directly under the canvas (Adobe Scan style: Auto-detect, No crop, Curve/Straighten).
@@ -711,32 +776,74 @@ fun ScanReviewScreen(
                 }
             }
         } else if (panel == PANEL_ADJUST) {
-
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-            AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
-            AdjustmentRow(stringResource(R.string.doc_contrast), sliders.second, !blocked) { setSliders(sliders.first, it, sliders.third) }
-            AdjustmentRow(stringResource(R.string.doc_saturation), sliders.third, !blocked) { setSliders(sliders.first, sliders.second, it) }
-        }
-        // Shown only when they would do something: Reset once a slider has moved, "Apply to all pages" while other
-        // pages differ (Adobe Scan and Lens offer the same for their sliders).
-        val slidersMoved = adjustments[key] != null
-        val othersDiffer = pages.size > 1 && pages.any { adjustments[it.toString()] != adjustments[key] }
-        if (slidersMoved || othersDiffer) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
-                if (slidersMoved) {
-                    TextButton(enabled = !blocked, onClick = { adjustments.remove(key) }) { Text(stringResource(R.string.common_reset)) }
-                }
-                if (othersDiffer) {
-                    TextButton(
-                        enabled = !blocked,
-                        onClick = {
-                            val chosen = adjustments[key]
-                            pages.forEach { page -> if (chosen == null) adjustments.remove(page.toString()) else adjustments[page.toString()] = chosen }
-                        }
-                    ) { Text(stringResource(R.string.scan_review_adjust_use_on_all)) }
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
+                AdjustmentRow(stringResource(R.string.doc_contrast), sliders.second, !blocked) { setSliders(sliders.first, it, sliders.third) }
+                AdjustmentRow(stringResource(R.string.doc_saturation), sliders.third, !blocked) { setSliders(sliders.first, sliders.second, it) }
+            }
+            val slidersMoved = adjustments[key] != null
+            val othersDiffer = pages.size > 1 && pages.any { adjustments[it.toString()] != adjustments[key] }
+            if (slidersMoved || othersDiffer) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
+                    if (slidersMoved) {
+                        TextButton(enabled = !blocked, onClick = { adjustments.remove(key) }) { Text(stringResource(R.string.common_reset)) }
+                    }
+                    if (othersDiffer) {
+                        TextButton(
+                            enabled = !blocked,
+                            onClick = {
+                                val chosen = adjustments[key]
+                                pages.forEach { page -> if (chosen == null) adjustments.remove(page.toString()) else adjustments[page.toString()] = chosen }
+                            }
+                        ) { Text(stringResource(R.string.scan_review_adjust_use_on_all)) }
+                    }
                 }
             }
-        }
+        } else if (panel == PANEL_REORDER) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+                    val isCurrent = index == current
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clickable(enabled = !blocked) { onIndexChange(index) }
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            IconButton(
+                                enabled = !blocked && index > 0,
+                                onClick = { movePage(index, index - 1) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = stringResource(R.string.scan_review_move_earlier), modifier = Modifier.size(18.dp))
+                            }
+                            IconButton(
+                                enabled = !blocked && index < pages.lastIndex,
+                                onClick = { movePage(index, index + 1) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_move_later), modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         message?.let {
@@ -1089,6 +1196,7 @@ private fun SaveOptionCell(
 private const val PANEL_FILTERS = 0
 private const val PANEL_ADJUST = 1
 private const val PANEL_CROP = 2
+private const val PANEL_REORDER = 3
 
 /** One slider row: label · slider · value, with the value as a whole number from −50 to 50. */
 @Composable

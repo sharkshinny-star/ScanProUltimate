@@ -451,7 +451,8 @@ fun PdfToolsScreen(
                 ProcessingOverlay(
                     current = running.current,
                     total = running.total,
-                    label = running.label,
+                    title = running.title,
+                    subtitle = running.subtitle,
                     onCancel = viewModel::cancel
                 )
             }
@@ -1985,7 +1986,8 @@ private fun RecentPdfRow(pdf: RecentPdf, onOpen: () -> Unit, onUseWith: (String)
 private fun ProcessingOverlay(
     current: Int,
     total: Int,
-    label: String,
+    title: String,
+    subtitle: String?,
     onCancel: () -> Unit
 ) {
     Surface(
@@ -2018,10 +2020,6 @@ private fun ProcessingOverlay(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    val defaultTitle = stringResource(R.string.tools_processing_pdf)
-                    val showSubtitle = label.isNotBlank() && label != defaultTitle
-                    val title = if (total > 0 && showSubtitle) defaultTitle else label.ifBlank { defaultTitle }
-
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
@@ -2029,10 +2027,11 @@ private fun ProcessingOverlay(
                         textAlign = TextAlign.Center
                     )
 
+                    val showSubtitle = !subtitle.isNullOrBlank() && subtitle != title
                     if (total > 0 && showSubtitle) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = label,
+                            text = subtitle,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,

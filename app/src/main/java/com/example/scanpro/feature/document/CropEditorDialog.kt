@@ -121,7 +121,12 @@ fun CropEditorDialog(
     val close = { if (crop != initial) confirmDiscard = true else onDismiss() }
     Dialog(
         onDismissRequest = close,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+            dismissOnClickOutside = false,
+            dismissOnBackPress = true
+        )
     ) {
         var loadFailed by rememberSaveable(sourcePath, fallbackPath) { mutableStateOf(false) }
         val bitmap by produceState<Bitmap?>(initialValue = null, sourcePath, fallbackPath) {
@@ -176,6 +181,11 @@ fun CropEditorDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .background(DarkChrome.backdrop)
+                .clickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}
+                )
         ) {
             // Top bar: back on glass, with the title and a hint in the middle.
             Row(
@@ -208,16 +218,19 @@ fun CropEditorDialog(
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let { image ->
+                    val ratio = image.width.toFloat() / image.height.toFloat()
                     Canvas(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(image.width.toFloat() / image.height.toFloat())
+                            .aspectRatio(ratio)
                             .semantics { contentDescription = pagePreview }
                             .pointerInput(Unit) {
+                                var currentCrop = latestCrop
                                 detectDragGestures(
                                     onDragStart = { start ->
                                         draggingCorner = true
-                                        val handles = handlesForCrop(latestCrop, size.width.toFloat(), size.height.toFloat())
+                                        currentCrop = latestCrop
+                                        val handles = handlesForCrop(currentCrop, size.width.toFloat(), size.height.toFloat())
                                         activeCorner = handles.indices.minByOrNull { index ->
                                             hypot((handles[index].x - start.x).toDouble(), (handles[index].y - start.y).toDouble())
                                         } ?: 0
@@ -227,10 +240,10 @@ fun CropEditorDialog(
                                     onDrag = { change, dragAmount ->
                                         change.consume()
                                         val points = listOf(
-                                            latestCrop.topLeft,
-                                            latestCrop.topRight,
-                                            latestCrop.bottomRight,
-                                            latestCrop.bottomLeft
+                                            currentCrop.topLeft,
+                                            currentCrop.topRight,
+                                            currentCrop.bottomRight,
+                                            currentCrop.bottomLeft
                                         ).toMutableList()
 
                                         if (latestCurveMode && activeCorner >= 4) {
@@ -240,12 +253,13 @@ fun CropEditorDialog(
                                                 ((bow?.x ?: 0f) + dx).coerceIn(-0.3f, 0.3f),
                                                 ((bow?.y ?: 0f) + dy).coerceIn(-0.3f, 0.3f)
                                             )
-                                            crop = when (activeCorner) {
-                                                4 -> latestCrop.copy(topBow = moved(latestCrop.topBow))
-                                                5 -> latestCrop.copy(rightBow = moved(latestCrop.rightBow))
-                                                6 -> latestCrop.copy(bottomBow = moved(latestCrop.bottomBow))
-                                                else -> latestCrop.copy(leftBow = moved(latestCrop.leftBow))
+                                            currentCrop = when (activeCorner) {
+                                                4 -> currentCrop.copy(topBow = moved(currentCrop.topBow))
+                                                5 -> currentCrop.copy(rightBow = moved(currentCrop.rightBow))
+                                                6 -> currentCrop.copy(bottomBow = moved(currentCrop.bottomBow))
+                                                else -> currentCrop.copy(leftBow = moved(currentCrop.leftBow))
                                             }
+                                            crop = currentCrop
                                             return@detectDragGestures
                                         }
                                         if (activeCorner < 4) {
@@ -261,25 +275,26 @@ fun CropEditorDialog(
                                             val dy = dragAmount.y / size.height
                                             when (activeCorner) {
                                                 4 -> { // Top edge
-                                                    points[0] = NormalizedPoint(points[0].x, (points[0].y + dy).coerceIn(0f, 1f))
-                                                    points[1] = NormalizedPoint(points[1].x, (points[1].y + dy).coerceIn(0f, 1f))
+                                                    points[0] = NormalizedPoint((points[0].x + dx).coerceIn(0f, 1f), (points[0].y + dy).coerceIn(0f, 1f))
+                                                    points[1] = NormalizedPoint((points[1].x + dx).coerceIn(0f, 1f), (points[1].y + dy).coerceIn(0f, 1f))
                                                 }
                                                 5 -> { // Right edge
-                                                    points[1] = NormalizedPoint((points[1].x + dx).coerceIn(0f, 1f), points[1].y)
-                                                    points[2] = NormalizedPoint((points[2].x + dx).coerceIn(0f, 1f), points[2].y)
+                                                    points[1] = NormalizedPoint((points[1].x + dx).coerceIn(0f, 1f), (points[1].y + dy).coerceIn(0f, 1f))
+                                                    points[2] = NormalizedPoint((points[2].x + dx).coerceIn(0f, 1f), (points[2].y + dy).coerceIn(0f, 1f))
                                                 }
                                                 6 -> { // Bottom edge
-                                                    points[2] = NormalizedPoint(points[2].x, (points[2].y + dy).coerceIn(0f, 1f))
-                                                    points[3] = NormalizedPoint(points[3].x, (points[3].y + dy).coerceIn(0f, 1f))
+                                                    points[2] = NormalizedPoint((points[2].x + dx).coerceIn(0f, 1f), (points[2].y + dy).coerceIn(0f, 1f))
+                                                    points[3] = NormalizedPoint((points[3].x + dx).coerceIn(0f, 1f), (points[3].y + dy).coerceIn(0f, 1f))
                                                 }
                                                 7 -> { // Left edge
-                                                    points[0] = NormalizedPoint((points[0].x + dx).coerceIn(0f, 1f), points[0].y)
-                                                    points[3] = NormalizedPoint((points[3].x + dx).coerceIn(0f, 1f), points[3].y)
+                                                    points[0] = NormalizedPoint((points[0].x + dx).coerceIn(0f, 1f), (points[0].y + dy).coerceIn(0f, 1f))
+                                                    points[3] = NormalizedPoint((points[3].x + dx).coerceIn(0f, 1f), (points[3].y + dy).coerceIn(0f, 1f))
                                                 }
                                             }
                                         }
                                         // copy() keeps any bend: it is stored relative to the corners, so it follows them.
-                                        crop = latestCrop.copy(topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3])
+                                        currentCrop = currentCrop.copy(topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3])
+                                        crop = currentCrop
                                     }
                                 )
                             }
