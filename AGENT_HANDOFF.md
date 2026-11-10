@@ -8,6 +8,7 @@ Read this first when you pick up the project in a new session or with a differen
 | `BUILD_AND_TEST.md` | How to build and test, the last results, known build problems |
 | `AUDIT_FINDINGS.md` | Every bug, security issue and fix, with status and evidence |
 | `ARCHITECTURE.md` | Modules, packages, dependencies and the reasons behind key decisions |
+| `FULL_AUDIT_REPORT.md` | Comprehensive production audit: R8 metrics, CameraX pipeline, and Play Policy compliance |
 
 **Keep these four files current.** After any significant change (a fix, a feature, a dependency bump, a build or test run),
 update the affected files in the same commit as the change. `CLAUDE.md` repeats this rule so every agent session sees it.
