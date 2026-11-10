@@ -194,7 +194,8 @@ private val TOOL_SECTIONS = listOf(
             PdfToolCard("office", R.string.tools_card_office, Icons.AutoMirrored.Filled.Article, TileTone.Sky, label = R.string.tools_tile_office),
             PdfToolCard("ocr", R.string.tools_card_ocr, Icons.Default.FindInPage, TileTone.Teal),
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
-            PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral)
+            PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral),
+            PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.AutoMirrored.Filled.Article, TileTone.Teal, label = R.string.tools_tile_pdf2text)
         )
     ),
     ToolSection(
@@ -269,6 +270,10 @@ fun PdfToolsScreen(
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
+    var showPdfToTextDialog by rememberSaveable { mutableStateOf(false) }
+    // The pages kept in Organise when "Insert pages" was chosen, as index and rotation pairs (survives rotation of the phone).
+    var insertBase by rememberSaveable { mutableStateOf<List<Int>?>(null) }
+    val sourcePassword by viewModel.sourcePassword.collectAsStateWithLifecycle()
 
     // Show first, clear after: clearing first changes this effect's key, which cancelled the snackbar the moment
     // it appeared, so no tool message (errors, "wrong password", "cancelled") was ever visible.
@@ -300,6 +305,10 @@ fun PdfToolsScreen(
     val saveJpegLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
     // Declared with its own type: a PNG saved through the JPEG launcher is renamed "page.png.jpg" by some providers.
     val savePngLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { saveTo(it) }
+    val saveTextLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { saveTo(it) }
+    val saveWordLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    ) { saveTo(it) }
 
     fun startTool(tool: String, uri: Uri) {
         selectedTool = tool
@@ -315,6 +324,7 @@ fun PdfToolsScreen(
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
             "sign" -> signViewModel.open(uri)
+            "pdf2text" -> showPdfToTextDialog = true
         }
     }
     // Office to PDF: Word, Excel, text, CSV and web pages saved from a browser.
@@ -481,6 +491,8 @@ fun PdfToolsScreen(
                             "application/zip" -> saveZipLauncher.launch(name)
                             "application/pdf" -> saveFileLauncher.launch(name)
                             "image/png" -> savePngLauncher.launch(name)
+                            "text/plain" -> saveTextLauncher.launch(name)
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> saveWordLauncher.launch(name)
                             else -> saveJpegLauncher.launch(name)
                         }
                     }
@@ -573,6 +585,27 @@ fun PdfToolsScreen(
                 }
             }
 
+            // PDF to text or Insert pages reached a protected file. Keyed by the question, so a retry starts with an empty field.
+            sourcePassword?.let { request ->
+                key(request.attempt) {
+                    SourcePasswordDialog(
+                        request = request,
+                        onDismiss = viewModel::cancelSourcePassword,
+                        onConfirm = viewModel::submitSourcePassword
+                    )
+                }
+            }
+
+            if (showPdfToTextDialog && uri != null) {
+                PdfToTextDialog(
+                    onDismiss = { showPdfToTextDialog = false },
+                    onConfirm = { format, script ->
+                        showPdfToTextDialog = false
+                        viewModel.pdfToText(uri, format, script)
+                    }
+                )
+            }
+
             if (showOcrDialog && uri != null) {
                 OcrScriptDialog(
                     onDismiss = { showOcrDialog = false },
@@ -612,6 +645,20 @@ fun PdfToolsScreen(
                     onApply = { pageSpecs, extractedIndices, rotationsMap ->
                         showOrganizerSheet = false
                         viewModel.organize(tool, uri, pageSpecs, extractedIndices, rotationsMap)
+                    },
+                    onInsertPages = { kept -> insertBase = kept.flatMap { listOf(it.originalIndex, it.rotationDegrees) } }
+                )
+            }
+
+            insertBase?.let { flat ->
+                InsertPagesDialog(
+                    keptPages = flat.size / 2,
+                    nameOf = viewModel::displayName,
+                    onDismiss = { insertBase = null },
+                    onConfirm = { insertion ->
+                        insertBase = null
+                        showOrganizerSheet = false
+                        if (uri != null) viewModel.insertPages(uri, flat.chunked(2).map { (index, turn) -> PageSpec(index, turn) }, insertion)
                     }
                 )
             }
@@ -1991,6 +2038,7 @@ private fun ResultDialog(
         when (mimeFor(result.outputFile)) {
             "application/zip" -> R.string.tools_result_save_zip_cd
             "application/pdf" -> R.string.tools_result_save_pdf_cd
+            "text/plain", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> R.string.tools_result_save_file_cd
             else -> R.string.tools_result_save_image_cd
         }
     )
@@ -2554,7 +2602,9 @@ private fun PdfPageOrganizerSheet(
     uri: Uri,
     mode: String,
     onClose: () -> Unit,
-    onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit
+    onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit,
+    /** Organise only: puts pages from another PDF into the pages as arranged now. */
+    onInsertPages: ((kept: List<PageSpec>) -> Unit)? = null
 ) {
     val context = LocalContext.current
     // Extract starts with nothing chosen; Organise starts with every page kept (untick to delete one).
@@ -2774,6 +2824,16 @@ private fun PdfPageOrganizerSheet(
                                 DropdownMenuItem(
                                     text = { Text(stringResource(if (pages.all { it.selected }) R.string.tools_organizer_untick_all else R.string.tools_organizer_tick_all)) },
                                     onClick = { organizerMenu = false; val all = pages.all { it.selected }; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(selected = !all) } } }
+                                )
+                            }
+                            if (mode == "organize" && onInsertPages != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.tools_organizer_insert_pages)) },
+                                    enabled = keptCount > 0,
+                                    onClick = {
+                                        organizerMenu = false
+                                        onInsertPages(pages.filter { it.selected }.map { PageSpec(it.index, it.rotation) })
+                                    }
                                 )
                             }
                             DropdownMenuItem(
@@ -3045,6 +3105,8 @@ private fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "png" -> "image/png"
     "jpg", "jpeg" -> "image/jpeg"
     "zip" -> "application/zip"
+    "txt" -> "text/plain"
+    "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     else -> "application/pdf"
 }
 

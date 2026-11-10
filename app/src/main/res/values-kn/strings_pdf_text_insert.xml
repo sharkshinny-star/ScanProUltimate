@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="tools_card_pdf2text">PDF ನಿಂದ Word ಅಥವಾ ಪಠ್ಯ</string>
+    <string name="tools_tile_pdf2text">PDF ನಿಂದ ಪಠ್ಯ</string>
+    <string name="tools_pdf2text_title">PDF ನಿಂದ Word ಅಥವಾ ಪಠ್ಯ</string>
+    <string name="tools_pdf2text_body">ಈ PDF ಅನ್ನು ಸಂಪಾದಿಸಬಹುದಾದ Word ದಾಖಲೆ ಅಥವಾ ಸರಳ ಪಠ್ಯ ಕಡತವಾಗಿ ಪರಿವರ್ತಿಸುತ್ತದೆ. ಪಠ್ಯವಿರುವ ಪುಟಗಳು ಹಾಗೆಯೇ ನಕಲಾಗುತ್ತವೆ; ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟಗಳನ್ನು ಈ ಫೋನ್‌ನಲ್ಲೇ ಓದಲಾಗುತ್ತದೆ.</string>
+    <string name="tools_pdf2text_format">ಹೀಗೆ ಉಳಿಸಿ</string>
+    <string name="tools_pdf2text_word">Word ದಾಖಲೆ (.docx)</string>
+    <string name="tools_pdf2text_plain">ಸರಳ ಪಠ್ಯ (.txt)</string>
+    <string name="tools_pdf2text_unprotected_note">PDF ಗೆ ಪಾಸ್‌ವರ್ಡ್ ಇದ್ದರೂ ಫಲಿತಾಂಶಕ್ಕೆ ಪಾಸ್‌ವರ್ಡ್ ಇರುವುದಿಲ್ಲ.</string>
+    <string name="tools_progress_reading_text">ಪುಟ %1$d / %2$d ಓದಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_progress_saving_text">ಪಠ್ಯ ಉಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_text_page_heading">ಪುಟ %1$d</string>
+    <string name="tools_text_page_empty">(ಈ ಪುಟದಲ್ಲಿ ಪಠ್ಯ ಸಿಗಲಿಲ್ಲ)</string>
+    <string name="tools_err_pdf_text_none">ಈ PDF ನಲ್ಲಿ ಪಠ್ಯ ಸಿಗಲಿಲ್ಲ.</string>
+    <string name="msg_pdf_text_reading">ಪಠ್ಯ ಓದಲಾಗುತ್ತಿದೆ…</string>
+    <string name="msg_pdf_text_failed">ಈ PDF ನಿಂದ ಪಠ್ಯ ಓದಲಾಗಲಿಲ್ಲ</string>
+    <string name="msg_pdf_text_done">ಪಠ್ಯವಿರುವ ಪುಟಗಳು: %2$d ರಲ್ಲಿ %1$d.</string>
+    <string name="msg_pdf_text_ocr_pages">ಪಠ್ಯ ಗುರುತಿಸುವಿಕೆ (OCR) ಮೂಲಕ ಓದಿದ ಪುಟಗಳು: %1$s.</string>
+    <string name="msg_pdf_text_empty_pages">ಈ ಪುಟಗಳಲ್ಲಿ ಪಠ್ಯ ಸಿಗಲಿಲ್ಲ: %1$s.</string>
+    <string name="msg_pdf_text_unprotected">ಫಲಿತಾಂಶ ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲದೆ ತೆರೆಯುತ್ತದೆ.</string>
+    <string name="tools_result_save_file_cd">ಕಡತವನ್ನು ಸಾಧನಕ್ಕೆ ಉಳಿಸಿ</string>
+
+    <string name="tools_source_password_prompt_text">“%1$s” ರಕ್ಷಿತವಾಗಿದೆ. ಅದರ ಪಠ್ಯ ಓದಲು ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.</string>
+    <string name="tools_source_password_prompt_insert">“%1$s” ರಕ್ಷಿತವಾಗಿದೆ. ಅದರ ಪುಟಗಳನ್ನು ಸೇರಿಸಲು ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.</string>
+    <string name="tools_source_password_note_text">ಪಠ್ಯ ಕಡತ ಅಥವಾ Word ದಾಖಲೆಗೆ ಪಾಸ್‌ವರ್ಡ್ ಇರುವುದಿಲ್ಲ.</string>
+    <string name="tools_source_password_note_insert">ಹೊಸ PDF ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲದೆ ತೆರೆಯುತ್ತದೆ. ಅದನ್ನು ರಕ್ಷಿಸಲು ನಂತರ PDF ರಕ್ಷಿಸಿ ಬಳಸಿ.</string>
+
+    <string name="tools_organizer_insert_pages">ಇನ್ನೊಂದು PDF ನಿಂದ ಪುಟಗಳನ್ನು ಸೇರಿಸಿ…</string>
+    <string name="tools_insert_title">ಪುಟಗಳನ್ನು ಸೇರಿಸಿ</string>
+    <string name="tools_insert_body">ಇನ್ನೊಂದು PDF ಆಯ್ಕೆಮಾಡಿ, ನಂತರ ಅದರ ಯಾವ ಪುಟಗಳನ್ನು ಮತ್ತು ಎಲ್ಲಿ ಸೇರಿಸಬೇಕೆಂದು ಹೇಳಿ. ನಿಮ್ಮ PDF ಬದಲಾಗುವುದಿಲ್ಲ; ಫಲಿತಾಂಶ ಹೊಸ PDF ಆಗಿ ಉಳಿಯುತ್ತದೆ.</string>
+    <string name="tools_insert_choose_pdf">PDF ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="tools_insert_which_pages">ಸೇರಿಸಬೇಕಾದ ಪುಟಗಳು</string>
+    <string name="tools_insert_all_pages">ಎಲ್ಲಾ ಪುಟಗಳು</string>
+    <string name="tools_insert_page_range">ಕೆಲವು ಪುಟಗಳು</string>
+    <string name="tools_insert_range_label">ಪುಟಗಳು, ಉದಾ. 1-3, 5</string>
+    <string name="tools_insert_where">ಎಲ್ಲಿ ಇಡಬೇಕು</string>
+    <string name="tools_insert_at_start">ಆರಂಭದಲ್ಲಿ</string>
+    <string name="tools_insert_after_page">ಒಂದು ಪುಟದ ನಂತರ</string>
+    <string name="tools_insert_after_label">ಪುಟದ ನಂತರ (1 ರಿಂದ %1$d)</string>
+    <string name="tools_insert_at_end">ಕೊನೆಯಲ್ಲಿ</string>
+    <string name="tools_insert_action">ಸೇರಿಸಿ</string>
+    <string name="tools_err_insert_duplicate">ಒಂದು ಪುಟವನ್ನು ಎರಡು ಬಾರಿ ಹೇಳಲಾಗಿದೆ. ಪ್ರತಿ ಪುಟವನ್ನು ಒಮ್ಮೆ ಮಾತ್ರ ಹೇಳಿ.</string>
+    <string name="tools_err_insert_position">ಆ ಸ್ಥಾನ PDF ನಲ್ಲಿ ಇಲ್ಲ.</string>
+    <string name="tools_err_insert_unreadable">ಎರಡನೇ PDF ಓದಲಾಗಲಿಲ್ಲ. ಅದು ಹಾಳಾಗಿರಬಹುದು.</string>
+    <string name="tools_result_insert_unprotected">ಹೊಸ PDF ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲದೆ ತೆರೆಯುತ್ತದೆ.</string>
+    <string name="msg_tools_inserting_pages">ಪುಟಗಳನ್ನು ಸೇರಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="msg_tools_insert_failed">ಪುಟಗಳನ್ನು ಸೇರಿಸಲಾಗಲಿಲ್ಲ</string>
+    <plurals name="tools_result_inserted">
+        <item quantity="one">%1$d ಪುಟ ಸೇರಿಸಲಾಗಿದೆ. ಈಗ PDF ನಲ್ಲಿ %2$d ಪುಟಗಳಿವೆ.</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ಸೇರಿಸಲಾಗಿದೆ. ಈಗ PDF ನಲ್ಲಿ %2$d ಪುಟಗಳಿವೆ.</item>
+    </plurals>
+</resources>

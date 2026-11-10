@@ -21,6 +21,11 @@ import com.example.scanpro.imaging.FormField
 import com.example.scanpro.imaging.FormFieldRules
 import com.example.scanpro.imaging.ImageExportFormat
 import com.example.scanpro.imaging.MergePasswordNeededException
+import com.example.scanpro.imaging.InsertPagesEngine
+import com.example.scanpro.imaging.PageInsertion
+import com.example.scanpro.imaging.PdfPasswordNeededException
+import com.example.scanpro.imaging.PdfToTextEngine
+import com.example.scanpro.imaging.TextExportFormat
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.PdfFormEngine
 import com.example.scanpro.imaging.PdfOcrEngine
@@ -439,6 +444,86 @@ class PdfToolsViewModel @Inject constructor(
                 outputSizeBytes = output.length(),
                 message = if (extras.isEmpty()) made else context.getString(R.string.msg_tools_with_extras, made, extras.joinToString(", "))
             )
+        }
+    }
+
+    /** A protected PDF that PDF to text or Insert pages reached; the screen asks for its password and carries on. */
+    private val _sourcePassword = MutableStateFlow<SourcePasswordRequest?>(null)
+    val sourcePassword: StateFlow<SourcePasswordRequest?> = _sourcePassword.asStateFlow()
+    private var sourcePasswordRetry: ((String) -> Unit)? = null
+    private var sourcePasswordQuestions = 0
+
+    private suspend fun askSourcePassword(locked: PdfPasswordNeededException, forInsert: Boolean, retry: (String) -> Unit) {
+        val name = withContext(Dispatchers.IO) { displayName(locked.uri) }
+        sourcePasswordRetry = retry
+        _sourcePassword.value = SourcePasswordRequest(name, locked.wrongPassword, ++sourcePasswordQuestions, forInsert)
+        endedWithQuestion = true
+        // Instead of "Done", for a user who switched to another app while the file was read.
+        notifications.taskFailed(
+            context.getString(if (forInsert) R.string.tools_source_password_prompt_insert else R.string.tools_source_password_prompt_text, name)
+        )
+    }
+
+    /** The password for the file [sourcePassword] asked about: the tool runs again with it. It is kept in memory only. */
+    fun submitSourcePassword(password: String) {
+        val retry = sourcePasswordRetry
+        _sourcePassword.value = null
+        sourcePasswordRetry = null
+        if (retry == null) return
+        // The run that asked ends right after asking; let it finish before the next one starts.
+        val previous = job
+        viewModelScope.launch {
+            previous?.join()
+            retry(password)
+        }
+    }
+
+    fun cancelSourcePassword() {
+        _sourcePassword.value = null
+        sourcePasswordRetry = null
+    }
+
+    fun pdfToText(uri: Uri, format: TextExportFormat, script: OcrScript, password: String? = null) {
+        launchTool(R.string.msg_pdf_text_reading, R.string.msg_pdf_text_failed) {
+            try {
+                val base = PdfToolsEngine.sourceBaseName(context, uri)
+                val outcome = PdfToTextEngine.convert(
+                    context, uri, format, script, ocr, base,
+                    PdfToolsEngine.outputLocation(context, "$base.${format.extension}"), password, ::report
+                )
+                val parts = listOfNotNull(
+                    context.getString(R.string.msg_pdf_text_done, outcome.pageCount - outcome.emptyPages.size, outcome.pageCount),
+                    outcome.ocrPages.takeIf { it.isNotEmpty() }
+                        ?.let { context.getString(R.string.msg_pdf_text_ocr_pages, PdfToTextEngine.pageList(it)) },
+                    outcome.emptyPages.takeIf { it.isNotEmpty() }
+                        ?.let { context.getString(R.string.msg_pdf_text_empty_pages, PdfToTextEngine.pageList(it)) },
+                    // A protected PDF gives up its protection here: say so, the way Merge does.
+                    context.getString(R.string.msg_pdf_text_unprotected).takeIf { password != null }
+                )
+                PdfToolResult(
+                    outputFile = outcome.outputFile,
+                    pageCount = outcome.pageCount,
+                    // Zero: the result is not a smaller copy of the PDF, so no "saved" badge.
+                    originalSizeBytes = 0,
+                    outputSizeBytes = outcome.outputFile.length(),
+                    message = parts.joinToString(" ")
+                )
+            } catch (locked: PdfPasswordNeededException) {
+                askSourcePassword(locked, forInsert = false) { typed -> pdfToText(uri, format, script, typed) }
+                null
+            }
+        }
+    }
+
+    /** Organise's "insert pages from another PDF": [specs] are the pages as arranged in the sheet. */
+    fun insertPages(baseUri: Uri, specs: List<PageSpec>, insertion: PageInsertion, password: String? = null) {
+        launchTool(R.string.msg_tools_inserting_pages, R.string.msg_tools_insert_failed) {
+            try {
+                InsertPagesEngine.insertPages(context, baseUri, specs, insertion, named(baseUri, "inserted"), password, ::report)
+            } catch (locked: PdfPasswordNeededException) {
+                askSourcePassword(locked, forInsert = true) { typed -> insertPages(baseUri, specs, insertion, typed) }
+                null
+            }
         }
     }
 

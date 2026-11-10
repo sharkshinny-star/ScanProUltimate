@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="tools_card_pdf2text">PDF నుండి Word లేదా టెక్స్ట్</string>
+    <string name="tools_tile_pdf2text">PDF నుండి టెక్స్ట్</string>
+    <string name="tools_pdf2text_title">PDF నుండి Word లేదా టెక్స్ట్</string>
+    <string name="tools_pdf2text_body">ఈ PDF ని సవరించగల Word పత్రంగా లేదా సాధారణ టెక్స్ట్ ఫైల్‌గా మారుస్తుంది. టెక్స్ట్ ఉన్న పేజీలు అలాగే కాపీ అవుతాయి; స్కాన్ చేసిన పేజీలు ఈ ఫోన్‌లోనే చదవబడతాయి.</string>
+    <string name="tools_pdf2text_format">ఇలా సేవ్ చేయండి</string>
+    <string name="tools_pdf2text_word">Word పత్రం (.docx)</string>
+    <string name="tools_pdf2text_plain">సాధారణ టెక్స్ట్ (.txt)</string>
+    <string name="tools_pdf2text_unprotected_note">PDF కి పాస్‌వర్డ్ ఉన్నా ఫలితానికి పాస్‌వర్డ్ ఉండదు.</string>
+    <string name="tools_progress_reading_text">పేజీ %1$d / %2$d చదువుతోంది…</string>
+    <string name="tools_progress_saving_text">టెక్స్ట్ సేవ్ అవుతోంది…</string>
+    <string name="tools_text_page_heading">పేజీ %1$d</string>
+    <string name="tools_text_page_empty">(ఈ పేజీలో టెక్స్ట్ కనబడలేదు)</string>
+    <string name="tools_err_pdf_text_none">ఈ PDF లో టెక్స్ట్ కనబడలేదు.</string>
+    <string name="msg_pdf_text_reading">టెక్స్ట్ చదువుతోంది…</string>
+    <string name="msg_pdf_text_failed">ఈ PDF నుండి టెక్స్ట్ చదవలేకపోయాము</string>
+    <string name="msg_pdf_text_done">టెక్స్ట్ ఉన్న పేజీలు: %2$d లో %1$d.</string>
+    <string name="msg_pdf_text_ocr_pages">టెక్స్ట్ గుర్తింపు (OCR) ద్వారా చదివిన పేజీలు: %1$s.</string>
+    <string name="msg_pdf_text_empty_pages">ఈ పేజీలలో టెక్స్ట్ కనబడలేదు: %1$s.</string>
+    <string name="msg_pdf_text_unprotected">ఫలితం పాస్‌వర్డ్ లేకుండా తెరుచుకుంటుంది.</string>
+    <string name="tools_result_save_file_cd">ఫైల్‌ను పరికరంలో సేవ్ చేయండి</string>
+
+    <string name="tools_source_password_prompt_text">“%1$s” రక్షించబడింది. దాని టెక్స్ట్ చదవడానికి పాస్‌వర్డ్ ఇవ్వండి.</string>
+    <string name="tools_source_password_prompt_insert">“%1$s” రక్షించబడింది. దాని పేజీలను చేర్చడానికి పాస్‌వర్డ్ ఇవ్వండి.</string>
+    <string name="tools_source_password_note_text">టెక్స్ట్ ఫైల్ లేదా Word పత్రానికి పాస్‌వర్డ్ ఉండదు.</string>
+    <string name="tools_source_password_note_insert">కొత్త PDF పాస్‌వర్డ్ లేకుండా తెరుచుకుంటుంది. దాన్ని రక్షించడానికి తర్వాత PDF రక్షించండి ఉపయోగించండి.</string>
+
+    <string name="tools_organizer_insert_pages">మరో PDF నుండి పేజీలను చేర్చండి…</string>
+    <string name="tools_insert_title">పేజీలను చేర్చండి</string>
+    <string name="tools_insert_body">మరో PDF ని ఎంచుకుని, దానిలోని ఏ పేజీలను ఎక్కడ చేర్చాలో చెప్పండి. మీ PDF మారదు; ఫలితం కొత్త PDF గా సేవ్ అవుతుంది.</string>
+    <string name="tools_insert_choose_pdf">PDF ని ఎంచుకోండి</string>
+    <string name="tools_insert_which_pages">చేర్చాల్సిన పేజీలు</string>
+    <string name="tools_insert_all_pages">అన్ని పేజీలు</string>
+    <string name="tools_insert_page_range">కొన్ని పేజీలు</string>
+    <string name="tools_insert_range_label">పేజీలు, ఉదా. 1-3, 5</string>
+    <string name="tools_insert_where">ఎక్కడ ఉంచాలి</string>
+    <string name="tools_insert_at_start">మొదట్లో</string>
+    <string name="tools_insert_after_page">ఒక పేజీ తర్వాత</string>
+    <string name="tools_insert_after_label">పేజీ తర్వాత (1 నుండి %1$d వరకు)</string>
+    <string name="tools_insert_at_end">చివర్లో</string>
+    <string name="tools_insert_action">చేర్చండి</string>
+    <string name="tools_err_insert_duplicate">ఒక పేజీని రెండుసార్లు ఇచ్చారు. ప్రతి పేజీని ఒక్కసారి మాత్రమే ఇవ్వండి.</string>
+    <string name="tools_err_insert_position">ఆ స్థానం PDF లో లేదు.</string>
+    <string name="tools_err_insert_unreadable">రెండో PDF ని చదవలేకపోయాము. అది పాడై ఉండవచ్చు.</string>
+    <string name="tools_result_insert_unprotected">కొత్త PDF పాస్‌వర్డ్ లేకుండా తెరుచుకుంటుంది.</string>
+    <string name="msg_tools_inserting_pages">పేజీలను చేరుస్తోంది…</string>
+    <string name="msg_tools_insert_failed">పేజీలను చేర్చలేకపోయాము</string>
+    <plurals name="tools_result_inserted">
+        <item quantity="one">%1$d పేజీని చేర్చాము. ఇప్పుడు PDF లో %2$d పేజీలు ఉన్నాయి.</item>
+        <item quantity="other">%1$d పేజీలను చేర్చాము. ఇప్పుడు PDF లో %2$d పేజీలు ఉన్నాయి.</item>
+    </plurals>
+</resources>
