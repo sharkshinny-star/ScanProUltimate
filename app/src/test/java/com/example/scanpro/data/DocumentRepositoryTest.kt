@@ -1,73 +1,24 @@
 package com.example.scanpro.data
 
-import android.app.Application
-import android.content.Context
-import com.example.scanpro.imaging.OcrEngine
 import java.io.File
-import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
-import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 
 /**
- * [DocumentRepository] on the JVM with a real Room database and real files. Only edits that do not redraw pages are
- * covered here (order, delete, duplicate, undo, trash), because redrawing needs the native image pipeline.
+ * [DocumentRepository] on the JVM with a real Room database and real files: metadata, order, delete, duplicate,
+ * undo and trash. Edits that redraw pages are in [DocumentRepositoryRedrawTest].
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = Application::class)
-class DocumentRepositoryTest {
-    private lateinit var context: Context
-    private lateinit var db: DocumentDatabase
-    private lateinit var repository: DocumentRepository
-
-    @Before fun setUp() {
-        context = RuntimeEnvironment.getApplication()
-        db = DocumentDatabase(context)
-        repository = DocumentRepository(context, db, OcrEngine(context))
-    }
-
-    @After fun tearDown() {
-        File(context.filesDir, "documents").deleteRecursively()
-    }
-
-    /** Saves a document of [pageCount] pages whose image files really exist. */
-    private fun newDocument(pageCount: Int, title: String = "Doc", trashedAt: Long = 0L): ScanDocument {
-        val id = UUID.randomUUID().toString()
-        val folder = File(context.filesDir, "documents/$id").apply { mkdirs() }
-        File(folder, "source").mkdirs()
-        File(folder, "rendered").mkdirs()
-        val pages = (0 until pageCount).map { index ->
-            val pageId = UUID.randomUUID().toString()
-            val source = File(folder, "source/s_$pageId.jpg").apply { writeText("source $index") }
-            val image = File(folder, "rendered/p_$pageId.jpg").apply { writeText("page $index") }
-            ScanPage(pageId, id, index, source.absolutePath, image.absolutePath, ocrText = "text $index")
-        }
-        val pdf = File(folder, "document.pdf").apply { writeText("%PDF") }
-        val doc = ScanDocument(
-            id = id, title = title, createdAt = 1L, updatedAt = 1L, pdfPath = pdf.absolutePath,
-            pages = pages, sizeBytes = pdf.length(), isTrashed = trashedAt > 0, trashedAt = trashedAt
-        )
-        runBlocking(Dispatchers.IO) { db.saveDocument(doc) }
-        return doc
-    }
-
-    private fun load(id: String): ScanDocument? = runBlocking { repository.loadDocument(id) }
-    private fun ScanDocument.order() = pages.sortedBy { it.position }.map { it.id }
+class DocumentRepositoryTest : RepositoryTestBase() {
 
     @Test fun metadataEditsAreSavedWithoutTouchingPages() = runBlocking {
         val doc = newDocument(2)

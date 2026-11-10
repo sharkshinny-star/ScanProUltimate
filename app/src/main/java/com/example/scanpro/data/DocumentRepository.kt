@@ -39,6 +39,19 @@ import androidx.core.graphics.createBitmap
 class PdfPasswordRequiredException(val wrongPassword: Boolean) :
     Exception(if (wrongPassword) "That password didn't work" else "This PDF is password-protected")
 
+/** Draws [source] with a page's settings into [destination]; see [DocumentRepository.pageRenderer]. */
+internal fun interface PageRenderer {
+    fun render(
+        source: File,
+        destination: File,
+        filter: PageFilter,
+        manualRotationDegrees: Int,
+        crop: CropQuad,
+        adjustments: PageAdjustments,
+        annotations: List<PageAnnotation>
+    )
+}
+
 @Singleton
 class DocumentRepository @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -58,6 +71,10 @@ class DocumentRepository @Inject constructor(
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = history.state
     /** Serialises restoring a document from the recycle bin with purging expired ones (purge also runs from the library refresh and a worker). */
     private val trashLock = Any()
+    /** Draws a page from its photo; a property so tests can stand in for the native image pipeline. */
+    internal var pageRenderer: PageRenderer = PageRenderer { source, destination, filter, manualRotationDegrees, crop, adjustments, annotations ->
+        ImageProcessor.renderPage(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations)
+    }
     private fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
     suspend fun loadTrashSummaries(): List<DocumentSummary> = withContext(Dispatchers.IO) {
@@ -322,7 +339,7 @@ class DocumentRepository @Inject constructor(
     suspend fun markupBase(documentId: String, pageId: String): File = withContext(Dispatchers.IO) {
         val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: error("Page not found")
         val out = File(context.cacheDir, "markup_${page.id}.jpg")
-        ImageProcessor.renderPage(File(page.sourcePath), out, page.filter, page.rotationDegrees, page.crop, page.adjustments, emptyList())
+        pageRenderer.render(File(page.sourcePath), out, page.filter, page.rotationDegrees, page.crop, page.adjustments, emptyList())
         out
     }
 
@@ -1052,7 +1069,7 @@ class DocumentRepository @Inject constructor(
                     val now = current.getValue(page.id)
                     if (!sameRendering(now, page)) {
                         touched += now
-                        ImageProcessor.renderPage(
+                        pageRenderer.render(
                             File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
                             page.crop, page.adjustments, page.annotations
                         )
@@ -1080,7 +1097,7 @@ class DocumentRepository @Inject constructor(
         } catch (error: Throwable) {
             touched.forEach { page ->
                 runCatching {
-                    ImageProcessor.renderPage(
+                    pageRenderer.render(
                         File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
                         page.crop, page.adjustments, page.annotations
                     )
@@ -1129,7 +1146,7 @@ class DocumentRepository @Inject constructor(
      * may include words that are now covered.
      */
     private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false): ScanPage {
-        ImageProcessor.renderPage(
+        pageRenderer.render(
             source = File(page.sourcePath),
             destination = File(page.imagePath),
             filter = page.filter,
