@@ -46,12 +46,21 @@ object ScanHistory {
 
     fun remove(list: List<ScanHistoryEntry>, raw: String): List<ScanHistoryEntry> = list.filterNot { it.raw == raw }
 
-    /** The entries whose text contains [query], ignoring case and surrounding spaces; all of them for a blank query. */
+    /**
+     * The entries whose text contains [query], ignoring case and surrounding spaces; all of them for a blank query.
+     * A Wi-Fi code is matched on its network name only, so searching never finds a password.
+     */
     fun filter(list: List<ScanHistoryEntry>, query: String): List<ScanHistoryEntry> {
         val needle = query.trim()
         if (needle.isEmpty()) return list
-        return list.filter { it.raw.contains(needle, ignoreCase = true) }
+        return list.filter { searchableText(it.raw).contains(needle, ignoreCase = true) }
     }
+
+    private val WIFI_NAME = Regex("(?i)(?:^WIFI:|;)S:((?:\\\\.|[^;\\\\])*)")
+
+    /** What a search may match: the whole text, except for Wi-Fi codes, where it is the network name. */
+    internal fun searchableText(raw: String): String =
+        if (raw.startsWith("WIFI:", ignoreCase = true)) WIFI_NAME.find(raw)?.groupValues?.get(1).orEmpty() else raw
 
     fun toJson(list: List<ScanHistoryEntry>): String {
         val array = JSONArray()

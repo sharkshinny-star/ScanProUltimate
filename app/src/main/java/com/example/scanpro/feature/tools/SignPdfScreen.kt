@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -315,6 +316,9 @@ private fun SignStamp(
     }
     val bitmap = picture ?: return
     val density = LocalDensity.current
+    // The gesture blocks below outlive a recomposition; they must call the latest callbacks, not the first ones.
+    val currentOnSelect by rememberUpdatedState(onSelect)
+    val currentOnMove by rememberUpdatedState(onMove)
     val widthPx = placement.widthFraction * pageWidthPx
     val heightPx = widthPx * bitmap.height.toFloat() / bitmap.width.toFloat()
     val left = placement.centerX * pageWidthPx - widthPx / 2f
@@ -325,11 +329,11 @@ private fun SignStamp(
             .offset { IntOffset(left.roundToInt(), top.roundToInt()) }
             .size(with(density) { widthPx.toDp() }, with(density) { heightPx.toDp() })
             .semantics { contentDescription = description }
-            .pointerInput(Unit) { detectTapGestures { onSelect() } }
+            .pointerInput(Unit) { detectTapGestures { currentOnSelect() } }
             .pointerInput(pageWidthPx, pageHeightPx) {
-                detectDragGestures(onDragStart = { onSelect() }) { change, drag ->
+                detectDragGestures(onDragStart = { currentOnSelect() }) { change, drag ->
                     change.consume()
-                    onMove(drag.x, drag.y)
+                    currentOnMove(drag.x, drag.y)
                 }
             }
     ) {

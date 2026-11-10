@@ -187,7 +187,7 @@ object PdfToTextEngine {
                 PdfRenderer(opened).also { renderer = it }
             }
             PdfOcrEngine.renderPage(active, index, pageImage)
-            return ocr.recognize(pageImage, script)
+            return ocr.recognizeDetailed(pageImage, script).text
         }
 
         override fun close() {

@@ -206,7 +206,7 @@ fun CameraScannerScreen(
     /** QR mode's "Create a QR code" button; null hides it. */
     onOpenQrGenerator: (() -> Unit)? = null,
     onFallbackScanner: () -> Unit,
-    qrScans: com.example.scanpro.feature.qr.QrScanViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    qrScans: com.example.scanpro.feature.qr.QrScanViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current

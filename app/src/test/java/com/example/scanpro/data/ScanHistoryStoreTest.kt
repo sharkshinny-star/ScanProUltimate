@@ -52,6 +52,14 @@ class ScanHistoryStoreTest {
         assertEquals(0, ScanHistory.filter(list, "nothing like this").size)
     }
 
+    @Test fun searchOnAWifiCodeMatchesTheNetworkNameButNeverThePassword() {
+        val wifi = entry("WIFI:T:WPA;S:Cafe Net;P:hunter2secret;;")
+        val list = listOf(wifi)
+        assertEquals(1, ScanHistory.filter(list, "cafe").size)
+        assertEquals(0, ScanHistory.filter(list, "hunter2").size)
+        assertEquals(0, ScanHistory.filter(list, "WPA").size)
+    }
+
     @Test
     fun `json round trip keeps every field and skips damaged entries`() {
         val list = listOf(entry("a\nb \"quoted\"", 5, favourite = true), entry("c", 6))
