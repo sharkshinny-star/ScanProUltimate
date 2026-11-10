@@ -22,7 +22,7 @@ import java.io.Closeable
 class BarcodeFrameAnalyzer(
     private val context: Context,
     private val onFound: (Barcode) -> Unit,
-    private val onUnavailable: () -> Unit = {}
+    private val onUnavailable: () -> Unit = {},
 ) : ImageAnalysis.Analyzer, Closeable {
     // Created on first use: document mode never needs it, and creating it costs time before the preview.
     private val scanner by lazy { BarcodeScanning.getClient() }

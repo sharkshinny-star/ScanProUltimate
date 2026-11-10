@@ -16,7 +16,7 @@ class OpenCvDocumentAnalyzer(
     private val onDetection: (DocumentDetection, Boolean, Float) -> Unit,
     private val onAutoCapture: () -> Unit,
     /** Called once if the native detector cannot be loaded on this device; frames are then dropped. */
-    private val onUnavailable: () -> Unit = {}
+    private val onUnavailable: () -> Unit = {},
 ) : ImageAnalysis.Analyzer {
     private var reportedUnavailable = false
     private val main = Handler(Looper.getMainLooper())
@@ -93,7 +93,7 @@ class OpenCvDocumentAnalyzer(
                     val captured = capturedQuad
                     val current = result.quad
                     val differentPage = captured != null && current != null && result.isReady &&
-                        averageCornerMovement(captured, current) > 0.12f
+                        (averageCornerMovement(captured, current) > 0.12f)
                     if (lostFrames >= 8 || differentPage) armed = true
                 }
                 val candidate = autoCaptureEnabled && armed && stable && result.isReady && now - lastAutoCaptureAt > 2200L
@@ -175,10 +175,9 @@ class OpenCvDocumentAnalyzer(
             a.topLeft to b.topLeft,
             a.topRight to b.topRight,
             a.bottomRight to b.bottomRight,
-            a.bottomLeft to b.bottomLeft
+            a.bottomLeft to b.bottomLeft,
         )
-        return pairs.sumOf { (p1, p2) -> hypot((p1.x - p2.x).toDouble(), (p1.y - p2.y).toDouble()) }
-            .div(pairs.size)
+        return (pairs.sumOf { (p1, p2) -> hypot((p1.x - p2.x).toDouble(), (p1.y - p2.y).toDouble()) } / pairs.size)
             .toFloat()
     }
 }
@@ -216,7 +215,7 @@ private fun OpenCvDocumentAnalyzer.grayMatOf(image: ImageProxy): Mat = with(imag
         val row = rowBuffer(rowStride)
         var offset = 0
         buffer.rewind()
-        for (y in 0 until height) {
+        repeat(height) {
             val length = minOf(rowStride, buffer.remaining())
             buffer.get(row, 0, length)
             var xOffset = 0

@@ -27,3 +27,10 @@ google-services.json
 *.pfx
 keystore.properties
 signing.properties
+
+# Scratch and analysis artifacts
+tmp/
+.scratch/
+__pycache__/
+*.pyc
+

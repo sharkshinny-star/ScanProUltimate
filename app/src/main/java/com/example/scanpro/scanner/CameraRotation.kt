@@ -18,7 +18,7 @@ import androidx.camera.core.UseCase
  * the page is saved sideways. Call the returned function to stop following.
  */
 internal fun followDisplayRotation(context: Context, view: View, useCases: List<UseCase>): () -> Unit {
-    val displays = context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager ?: return {}
+    val displays = (context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager) ?: return {}
     fun apply() {
         val rotation = view.display?.rotation ?: return
         useCases.forEach { useCase ->
