@@ -107,7 +107,10 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         userRequire(index >= 0, R.string.err_page_not_found)
         val page = pages[index]
         val bitmap = ImageProcessor.decodeScaled(page.imagePath, 3800) ?: userError(R.string.err_could_not_decode_page)
-        userRequire(bitmap.width >= 500, R.string.err_page_too_narrow_to_split)
+        if (bitmap.width < 500) {
+            bitmap.recycle()
+            userError(R.string.err_page_too_narrow_to_split)
+        }
         val folder = File(doc.pdfPath).parentFile ?: error("Invalid document folder")
         val sourceDir = File(folder, "source").apply { mkdirs() }
         val renderedDir = File(folder, "rendered").apply { mkdirs() }

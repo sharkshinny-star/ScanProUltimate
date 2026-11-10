@@ -258,9 +258,38 @@ internal interface ScanDao {
     }
 }
 
+private const val DATABASE_NAME = "scanpro-room.db"
+private const val DATABASE_VERSION = 3
+
+/**
+ * When an older build opens a database written by a newer one (a downgrade or a rolled-back update), Room cannot
+ * read it. Dropping its tables would erase the library's records and leave every file orphaned, so the database
+ * is moved aside as "<name>.newer-v<version>" (with its -wal and -shm files) and the app starts with an empty one.
+ * The moved file can be put back by hand, or by reinstalling the newer build and renaming it.
+ */
+internal fun setAsideNewerDatabase(context: Context, name: String, currentVersion: Int) {
+    val file = context.getDatabasePath(name)
+    if (!file.isFile) return
+    val found = databaseVersion(file) ?: return
+    if (found <= currentVersion) return
+    for (suffix in listOf("", "-wal", "-shm")) {
+        val part = java.io.File(file.path + suffix)
+        if (part.exists()) part.renameTo(java.io.File("${file.path}.newer-v$found$suffix"))
+    }
+}
+
+/** SQLite's user_version, which Room sets to the schema version: 4 bytes, big-endian, at offset 60 of the file. */
+internal fun databaseVersion(file: java.io.File): Int? = runCatching {
+    java.io.RandomAccessFile(file, "r").use { raf ->
+        if (raf.length() < 64) return@use null
+        raf.seek(60)
+        raf.readInt()
+    }
+}.getOrNull()
+
 @Database(
     entities = [DocumentEntity::class, PageEntity::class, PageFtsEntity::class],
-    version = 3,
+    version = DATABASE_VERSION,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)]
 )
@@ -277,14 +306,12 @@ internal abstract class ScanRoomDatabase : RoomDatabase() {
 class DocumentDatabase @Inject constructor(
     @ApplicationContext context: Context
 ) {
-    private val room = Room.databaseBuilder(
-        context,
-        ScanRoomDatabase::class.java,
-        "scanpro-room.db"
-    )
-        .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-        .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
-        .build()
+    private val room = run {
+        setAsideNewerDatabase(context, DATABASE_NAME, DATABASE_VERSION)
+        Room.databaseBuilder(context, ScanRoomDatabase::class.java, DATABASE_NAME)
+            .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+            .build()
+    }
 
     private val dao = room.scanDao()
 

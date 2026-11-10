@@ -33,6 +33,11 @@ class DocumentRepository @Inject constructor(
     private val organiser = PageOrganiser(store, trash)
     private val exporter = DocumentExporter(context, db) { store.ensurePdfNow(it) }
 
+    /** Draws a page from its photo; tests replace it to stand in for the native image pipeline. */
+    internal var pageRenderer: PageRenderer
+        get() = store.pageRenderer
+        set(value) { store.pageRenderer = value }
+
     /** Undo and redo steps available per document, for this session. */
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = store.history.state
 

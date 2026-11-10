@@ -28,8 +28,15 @@ internal class DocumentTrash(private val store: DocumentStore) {
         doc.copy(isTrashed = true, trashedAt = now(), updatedAt = now())
     }
 
-    suspend fun restore(id: String) = mutateDocument(id) { doc ->
-        doc.copy(isTrashed = false, trashedAt = 0L, updatedAt = now())
+    /** Serialises restoring with purging (purge also runs from the library refresh and a worker). */
+    private val trashLock = Any()
+
+    suspend fun restore(id: String) = withContext(Dispatchers.IO) {
+        // Under the trash lock, so a purge that is running can't delete the document just after it was restored.
+        synchronized(trashLock) {
+            val doc = store.requireDocument(id)
+            db.saveDocumentMetadata(doc.copy(isTrashed = false, trashedAt = 0L, updatedAt = now()))
+        }
     }
 
     suspend fun deleteForever(id: String) = withContext(Dispatchers.IO) {
@@ -45,8 +52,11 @@ internal class DocumentTrash(private val store: DocumentStore) {
     suspend fun purgeExpiredTrash(): Int = withContext(Dispatchers.IO) {
         val maxAgeDays = settings.trashRetentionDays.first()
         val cutoff = now() - maxAgeDays.coerceAtLeast(1) * 24L * 60L * 60L * 1000L
-        val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
-        expired.forEach { deleteDocumentFilesAndRecord(it) }
-        expired.size
+        // The trash is read inside the lock, so a document restored a moment ago is no longer in it.
+        synchronized(trashLock) {
+            val expired = db.loadTrash().filter { it.trashedAt in 1 until cutoff }
+            expired.forEach { deleteDocumentFilesAndRecord(it) }
+            expired.size
+        }
     }
 }

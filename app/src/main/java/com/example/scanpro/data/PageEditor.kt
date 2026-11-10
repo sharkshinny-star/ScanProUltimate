@@ -64,10 +64,13 @@ internal class PageEditor(private val store: DocumentStore) {
     suspend fun applyAdjustmentsToAll(documentId: String, pageId: String, adjustments: PageAdjustments) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)
         val clean = adjustments.normalized()
+        fun adjustmentsFor(page: ScanPage) = if (page.id == pageId) clean
+        else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
+        // Nothing to draw or save: don't add an undo step that changes nothing.
+        if (doc.pages.all { adjustmentsFor(it) == it.adjustments }) return@withContext doc
         allOrNothing { touched ->
             val pages = doc.pages.map { page ->
-                val updated = if (page.id == pageId) clean
-                else page.adjustments.copy(removeShadows = clean.removeShadows, removeFingers = clean.removeFingers)
+                val updated = adjustmentsFor(page)
                 if (updated == page.adjustments) page else {
                     touched += page
                     renderAndOcr(page.copy(adjustments = updated))
@@ -101,7 +104,7 @@ internal class PageEditor(private val store: DocumentStore) {
     suspend fun markupBase(documentId: String, pageId: String): File = withContext(Dispatchers.IO) {
         val page = requireDocument(documentId).pages.firstOrNull { it.id == pageId } ?: userError(R.string.err_page_not_found)
         val out = File(context.cacheDir, "markup_${page.id}.jpg")
-        ImageProcessor.renderPage(File(page.sourcePath), out, page.filter, page.rotationDegrees, page.crop, page.adjustments, emptyList())
+        store.pageRenderer.render(File(page.sourcePath), out, page.filter, page.rotationDegrees, page.crop, page.adjustments, emptyList())
         out
     }
 
@@ -351,7 +354,7 @@ internal class PageEditor(private val store: DocumentStore) {
                     val now = current.getValue(page.id)
                     if (!sameRendering(now, page)) {
                         touched += now
-                        ImageProcessor.renderPage(
+                        store.pageRenderer.render(
                             File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
                             page.crop, page.adjustments, page.annotations
                         )

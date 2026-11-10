@@ -200,6 +200,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    // Debug builds only: reports leaked activities and bitmaps in a notification. Not shipped in release.
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
 
     // CameraX primary scanner.
     implementation(libs.androidx.camera.core)

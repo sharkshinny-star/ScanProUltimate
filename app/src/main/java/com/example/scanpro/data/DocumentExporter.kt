@@ -158,8 +158,14 @@ internal class DocumentExporter(
                 val name = "${safeName(doc.title)}_$stamp.scanpro"
                 val target = DocumentsContract.createDocument(context.contentResolver, parent, "application/octet-stream", name)
                     ?: userError(R.string.err_could_not_create_file_in_folder)
-                context.contentResolver.openOutputStream(target, "wt")?.use { out -> temp.inputStream().use { it.copyTo(out) } }
-                    ?: userError(R.string.err_could_not_write_to_folder)
+                try {
+                    context.contentResolver.openOutputStream(target, "wt")?.use { out -> temp.inputStream().use { it.copyTo(out) } }
+                        ?: userError(R.string.err_could_not_write_to_folder)
+                } catch (error: Throwable) {
+                    // Don't leave an empty or partial package in the user's folder.
+                    runCatching { DocumentsContract.deleteDocument(context.contentResolver, target) }
+                    throw error
+                }
                 written++
             } finally {
                 temp.delete()
