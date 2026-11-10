@@ -1,6 +1,6 @@
-# Android CI: unit tests and lint, the Play bundle (translation as an on-demand module), the sideload
-# APKs (one per CPU type plus universal, translation built in) and an APK size report with a budget,
-# so a dependency that silently adds megabytes fails the build.
+# Android CI, two jobs that run side by side: "test" (Room schema check, unit tests and lint) and "package" (the Play
+# bundle with translation as an on-demand module, the sideload APKs, one per CPU type plus universal with translation
+# built in, and an APK size report with a budget, so a dependency that silently adds megabytes fails the build).
 # Runs on pushes to main and the working branch and on pull requests; docs-only changes are skipped.
 # Artifacts are uploaded only on a manual run; test reports only when a run fails; both are kept 3 days.
 
@@ -28,21 +28,25 @@ env:
   CI_GRADLE: >-
     --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g
     -Pkotlin.compiler.execution.strategy=in-process -Pscanpro.testHeap=2560m
+    --warning-mode=all
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - name: Room schema files match the database version
+        run: bash scripts/ci/check-room-schema.sh
+
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
       # main and the working branch save the Gradle cache; PRs just read it.
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
         with:
           # Write the cache from the working branch too, so the Gradle distribution and dependencies are not
           # downloaded on every run (the branch is the only one that builds; main never does).
@@ -50,18 +54,17 @@ jobs:
 
       - run: chmod +x ./gradlew
 
-      - name: Unit tests, lint and Play bundle
-        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:bundleRelease $CI_GRADLE
+      - name: Unit tests and lint
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug $CI_GRADLE
 
-      - name: Sideload APKs
-        run: ./gradlew -Pscanpro.sideload=true :app:assembleRelease $CI_GRADLE
-
-      - name: Size report
-        run: scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release >> "$GITHUB_STEP_SUMMARY"
+      # The build re-exports the Room schema; a difference from the committed files means a table changed without
+      # a version bump, or the new version's file was not committed.
+      - name: Exported Room schemas are committed
+        run: bash scripts/ci/check-room-schema.sh --after-build
 
       - name: Test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-and-lint-reports
           path: |
@@ -70,9 +73,36 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
 
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          # Only the test job writes the shared cache, so two jobs do not race to save the same entries.
+          cache-read-only: true
+
+      - run: chmod +x ./gradlew
+
+      - name: Play bundle
+        run: ./gradlew :app:bundleRelease $CI_GRADLE
+
+      - name: Sideload APKs
+        run: ./gradlew -Pscanpro.sideload=true :app:assembleRelease $CI_GRADLE
+
+      - name: Size report
+        run: scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release >> "$GITHUB_STEP_SUMMARY"
+
       - name: Build outputs
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: release-outputs
           path: |
