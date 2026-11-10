@@ -162,6 +162,10 @@
     <string name="scan_book_one_page">ఒక పేజీ</string>
     <string name="scan_book_two_pages">రెండు పేజీలు</string>
     <string name="scan_book_two_pages_rtl">రెండు పేజీలు, కుడి ముందు</string>
+    <string name="scan_book_intro_title">పుస్తకాన్ని స్కాన్ చేయడం</string>
+    <string name="scan_book_intro_body">తెరిచిన పుస్తకం ఎడమ, కుడి పేజీలను కలిపి స్కాన్ చేయండి. ScanPro వాటిని రెండు పేజీలుగా విడదీస్తుంది: మొదట A, తర్వాత B. కుడి నుండి ఎడమకు చదివే పుస్తకాలకు “రెండు పేజీలు, కుడి ముందు” ఎంచుకోండి.</string>
+    <string name="scan_book_intro_start">ఇప్పుడు ప్రారంభించండి</string>
+    <string name="scan_book_intro_dont_remind">మళ్లీ గుర్తు చేయవద్దు</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">స్ప్రెడ్ %1$d, %2$d పేజీలుగా విభజించబడింది</string>
     <string name="scan_take_photo">ఫోటో తీయండి</string>
     <string name="scan_import_photos">ఫోటోలు ఇంపోర్ట్ చేయండి</string>

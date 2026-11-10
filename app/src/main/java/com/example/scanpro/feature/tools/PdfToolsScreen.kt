@@ -156,6 +156,7 @@ import com.example.scanpro.core.designsystem.DarkChrome
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.designsystem.TileTone
+import com.example.scanpro.core.ui.displayedKiloByte
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.data.CropQuad
@@ -900,11 +901,10 @@ private fun CompressPdfDialog(
     val customBytes: Long? = remember(targetInput, targetUnit) {
         val number = targetInput.trim().toDoubleOrNull()
         if (number != null && number > 0.0) {
-            if (targetUnit == "MB") {
-                (number * 1024.0 * 1024.0).toLong()
-            } else {
-                (number * 1024.0).toLong()
-            }
+            // Same unit as the sizes the dialog shows (decimal kB/MB on Android 8+), or "170 KB" would be
+            // rejected against a file shown as 171 kB.
+            val unit = displayedKiloByte()
+            if (targetUnit == "MB") (number * unit * unit).toLong() else (number * unit).toLong()
         } else null
     }
 
@@ -3333,7 +3333,7 @@ private fun CompressImageDialog(
 
     val origBytes = metadata?.sizeBytes ?: 0L
     val targetKb = if (selectedPresetKb > 0) selectedPresetKb else customKbInput.toIntOrNull() ?: 0
-    val targetBytes = if (mode == 0 && targetKb > 0) targetKb * 1024L else null
+    val targetBytes = if (mode == 0 && targetKb > 0) (targetKb * displayedKiloByte()).toLong() else null
 
     val isTargetLarger = mode == 0 && origBytes > 0 && (targetBytes ?: 0L) >= origBytes
     val isTargetZero = mode == 0 && targetKb <= 0

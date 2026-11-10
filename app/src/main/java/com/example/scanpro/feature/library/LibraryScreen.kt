@@ -1005,7 +1005,9 @@ private fun HomeDashboard(
             listState.scrollToItem(0, 0)
         }
     }
-    val selectedSet = remember(selected) { selected.toSet() }
+    // Not remember(selected): the list is one SnapshotStateList instance, so that key never changes and the
+    // set stayed empty, leaving selected cards unhighlighted. Reading it here re-runs this on every change.
+    val selectedSet = selected.toSet()
     val columns = if (wide) 4 else 2
     val chunkedRecent = remember(recent, columns) { recent.chunked(columns) }
 

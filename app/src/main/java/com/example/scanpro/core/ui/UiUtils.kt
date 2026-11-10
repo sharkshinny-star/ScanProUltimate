@@ -143,6 +143,12 @@ fun pagesLabel(context: Context, count: Int): String = context.resources.getQuan
 fun formatBytes(context: Context, bytes: Long): String =
     android.text.format.Formatter.formatShortFileSize(context, bytes.coerceAtLeast(0L))
 
+/**
+ * Bytes in the "kB" that [formatBytes] shows: the system formatter is decimal from Android 8 (API 26) and binary
+ * before. A typed target must use the same unit, or "170 KB" is rejected for a file the dialog calls 171 kB.
+ */
+fun displayedKiloByte(): Double = if (android.os.Build.VERSION.SDK_INT >= 26) 1000.0 else 1024.0
+
 /** How long a trashed document has left before it is deleted for good, in the largest whole unit. */
 sealed class TrashCountdown(val isUrgent: Boolean) {
     object Soon : TrashCountdown(isUrgent = true)

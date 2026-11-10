@@ -183,6 +183,10 @@
     <string name="scan_book_one_page">One page</string>
     <string name="scan_book_two_pages">Two pages</string>
     <string name="scan_book_two_pages_rtl">Two pages, right first</string>
+    <string name="scan_book_intro_title">Scanning a book</string>
+    <string name="scan_book_intro_body">Scan the left and right pages of an open book as one. ScanPro splits them into two pages: A is saved first, then B. Choose “Two pages, right first” for right-to-left books.</string>
+    <string name="scan_book_intro_start">Start now</string>
+    <string name="scan_book_intro_dont_remind">Don\'t remind me again</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">Spread split into pages %1$d and %2$d</string>
     <string name="scan_take_photo">Take photo</string>
     <string name="scan_import_photos">Import photos</string>

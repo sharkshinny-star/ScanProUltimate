@@ -162,6 +162,10 @@
     <string name="scan_book_one_page">ഒരു പേജ്</string>
     <string name="scan_book_two_pages">രണ്ട് പേജുകൾ</string>
     <string name="scan_book_two_pages_rtl">രണ്ട് പേജുകൾ, വലത് ആദ്യം</string>
+    <string name="scan_book_intro_title">പുസ്തകം സ്കാൻ ചെയ്യൽ</string>
+    <string name="scan_book_intro_body">തുറന്ന പുസ്തകത്തിന്റെ ഇടത്, വലത് പേജുകൾ ഒരുമിച്ച് സ്കാൻ ചെയ്യുക. ScanPro അവയെ രണ്ട് പേജുകളായി വിഭജിക്കും: ആദ്യം A, പിന്നെ B. വലത്തുനിന്ന് ഇടത്തേക്ക് വായിക്കുന്ന പുസ്തകങ്ങൾക്ക് “രണ്ട് പേജുകൾ, വലത് ആദ്യം” തിരഞ്ഞെടുക്കുക.</string>
+    <string name="scan_book_intro_start">ഇപ്പോൾ ആരംഭിക്കുക</string>
+    <string name="scan_book_intro_dont_remind">ഇനി ഓർമ്മിപ്പിക്കരുത്</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">സ്പ്രെഡ് %1$d, %2$d പേജുകളായി വിഭജിച്ചു</string>
     <string name="scan_take_photo">ഫോട്ടോ എടുക്കുക</string>
     <string name="scan_import_photos">ഫോട്ടോകൾ ഇംപോർട്ട് ചെയ്യുക</string>

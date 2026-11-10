@@ -128,6 +128,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.drawText
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.boundsInRoot
@@ -291,6 +294,21 @@ fun CameraScannerScreen(
     // which fast save trusts like the ID composite (they are cut out already).
     var bookLayout by rememberSaveable { mutableStateOf(1) }
     var bookHalves by rememberSaveable { mutableStateOf(listOf<String>()) }
+    // First-time explainer for Book mode: shown once per camera session until "Don't remind me again" is ticked.
+    var bookIntroShown by rememberSaveable { mutableStateOf(false) }
+    var showBookIntro by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(scanMode) {
+        if (scanMode == ScanMode.BOOK && !bookIntroShown && !prefs.getBoolean("book_intro_off", false)) {
+            bookIntroShown = true
+            showBookIntro = true
+        }
+    }
+    if (showBookIntro) {
+        BookIntroDialog(onStart = { dontRemind ->
+            if (dontRemind) prefs.edit { putBoolean("book_intro_off", true) }
+            showBookIntro = false
+        })
+    }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
     // than saving at once, whatever "Check pages before saving" says.
     var returnToReview by rememberSaveable { mutableStateOf(false) }
@@ -1129,7 +1147,7 @@ fun CameraScannerScreen(
         }
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             DocumentBoundaryOverlay(detection = detection, quad = shownQuad, stable = stable, accent = scanLine)
-            if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = shownQuad, accent = scanLine)
+            if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = shownQuad, accent = scanLine, rightFirst = bookLayout == 2)
         }
         if (scanMode == ScanMode.ID_CARD) {
             IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
@@ -2077,9 +2095,36 @@ private fun ThirdsGrid() {
     }
 }
 
+/** What Book mode does, for someone using it for the first time; "Start now" closes it. */
+@Composable
+private fun BookIntroDialog(onStart: (dontRemind: Boolean) -> Unit) {
+    var dontRemind by rememberSaveable { mutableStateOf(false) }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = { onStart(dontRemind) },
+        icon = { Icon(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        title = { Text(stringResource(R.string.scan_book_intro_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.scan_book_intro_body), style = MaterialTheme.typography.bodyMedium)
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 12.dp).toggleable(value = dontRemind, role = androidx.compose.ui.semantics.Role.Checkbox) { dontRemind = it },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.Checkbox(checked = dontRemind, onCheckedChange = null)
+                    Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        },
+        confirmButton = { androidx.compose.material3.Button(onClick = { onStart(dontRemind) }) { Text(stringResource(R.string.scan_book_intro_start)) } }
+    )
+}
+
 /** Book mode, two pages (R29): a dashed line down the middle of the live outline, where the spread will be split. */
 @Composable
-private fun SpineGuide(detection: DocumentDetection?, quad: CropQuad?, accent: Color) {
+private fun SpineGuide(detection: DocumentDetection?, quad: CropQuad?, accent: Color, rightFirst: Boolean = false) {
+    // Big faint A and B on the two halves say which is saved first: A on the left, or on the right for "right first".
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val letterStyle = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.4f))
     Canvas(Modifier.fillMaxSize()) {
         val result = detection ?: return@Canvas
         val outline = quad ?: return@Canvas
@@ -2095,6 +2140,16 @@ private fun SpineGuide(detection: DocumentDetection?, quad: CropQuad?, accent: C
             accent.copy(alpha = 0.9f), topMid, bottomMid, strokeWidth = 3f, cap = StrokeCap.Round,
             pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 10f))
         )
+        fun half(a: com.example.scanpro.data.NormalizedPoint, b: Offset, c: com.example.scanpro.data.NormalizedPoint, d: Offset): Offset {
+            val pa = point(a.x, a.y); val pc = point(c.x, c.y)
+            return Offset((pa.x + b.x + pc.x + d.x) / 4f, (pa.y + b.y + pc.y + d.y) / 4f)
+        }
+        val leftCentre = half(outline.topLeft, topMid, outline.bottomLeft, bottomMid)
+        val rightCentre = half(outline.topRight, topMid, outline.bottomRight, bottomMid)
+        listOf(leftCentre to (if (rightFirst) "B" else "A"), rightCentre to (if (rightFirst) "A" else "B")).forEach { (centre, letter) ->
+            val laid = measurer.measure(letter, letterStyle)
+            drawText(laid, topLeft = Offset(centre.x - laid.size.width / 2f, centre.y - laid.size.height / 2f))
+        }
     }
 }
 

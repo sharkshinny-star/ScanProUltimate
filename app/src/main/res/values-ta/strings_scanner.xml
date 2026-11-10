@@ -162,6 +162,10 @@
     <string name="scan_book_one_page">ஒரு பக்கம்</string>
     <string name="scan_book_two_pages">இரு பக்கங்கள்</string>
     <string name="scan_book_two_pages_rtl">இரு பக்கங்கள், வலது முதலில்</string>
+    <string name="scan_book_intro_title">புத்தகத்தை ஸ்கேன் செய்தல்</string>
+    <string name="scan_book_intro_body">திறந்த புத்தகத்தின் இடது, வலது பக்கங்களை ஒன்றாக ஸ்கேன் செய்யுங்கள். ScanPro அவற்றை இரண்டு பக்கங்களாகப் பிரிக்கும்: முதலில் A, பின்னர் B. வலமிருந்து இடமாக வாசிக்கும் புத்தகங்களுக்கு “இரு பக்கங்கள், வலது முதலில்” என்பதைத் தேர்ந்தெடுங்கள்.</string>
+    <string name="scan_book_intro_start">இப்போது தொடங்கு</string>
+    <string name="scan_book_intro_dont_remind">மீண்டும் நினைவூட்ட வேண்டாம்</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">விரிப்பு %1$d மற்றும் %2$d பக்கங்களாகப் பிரிக்கப்பட்டது</string>
     <string name="scan_take_photo">ஃபோட்டோ எடு</string>
     <string name="scan_import_photos">ஃபோட்டோக்களை இறக்குமதி செய்</string>

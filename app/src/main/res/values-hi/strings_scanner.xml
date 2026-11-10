@@ -162,6 +162,10 @@
     <string name="scan_book_one_page">एक पेज</string>
     <string name="scan_book_two_pages">दो पेज</string>
     <string name="scan_book_two_pages_rtl">दो पेज, दायाँ पहले</string>
+    <string name="scan_book_intro_title">किताब स्कैन करना</string>
+    <string name="scan_book_intro_body">खुली किताब के बाएँ और दाएँ पेज को एक साथ स्कैन करें। ScanPro उन्हें दो पेज में बाँटता है: पहले A, फिर B। दाएँ से बाएँ पढ़ी जाने वाली किताबों के लिए “दो पेज, दायाँ पहले” चुनें।</string>
+    <string name="scan_book_intro_start">अभी शुरू करें</string>
+    <string name="scan_book_intro_dont_remind">मुझे दोबारा याद न दिलाएँ</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">फैले पन्ने को पेज %1$d और %2$d में बाँटा</string>
     <string name="scan_take_photo">फ़ोटो लें</string>
     <string name="scan_import_photos">फ़ोटो इंपोर्ट करें</string>
