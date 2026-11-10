@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="tools_card_sign">PDF पर हस्ताक्षर</string>
+    <string name="sign_unprotected_note">यह PDF सुरक्षित है। हस्ताक्षर की गई प्रति बिना सुरक्षा के सहेजी जाती है।</string>
+    <string name="sign_hint">हस्ताक्षर या टेक्स्ट जोड़ें, फिर उसे सही जगह खींचकर रखें।</string>
+    <string name="sign_page_of" tools:ignore="PluralsCandidate">पृष्ठ %1$d / %2$d</string>
+    <string name="sign_previous_page">पिछला पृष्ठ</string>
+    <string name="sign_next_page">अगला पृष्ठ</string>
+    <string name="sign_add_signature">हस्ताक्षर</string>
+    <string name="sign_add_text">टेक्स्ट या तारीख</string>
+    <string name="sign_size">आकार</string>
+    <string name="sign_rotate">घुमाएँ</string>
+    <string name="sign_remove">हटाएँ</string>
+    <string name="sign_text_title">टेक्स्ट जोड़ें</string>
+    <string name="sign_text_label">टेक्स्ट, जैसे तारीख</string>
+    <string name="sign_text_add">जोड़ें</string>
+    <string name="sign_password_title">पासवर्ड चाहिए</string>
+    <string name="sign_password_body">इस PDF को खोलने के लिए पासवर्ड डालें। हस्ताक्षर की गई प्रति बिना पासवर्ड के सहेजी जाती है।</string>
+    <string name="sign_password_label">पासवर्ड</string>
+    <string name="sign_password_wrong">पासवर्ड गलत है। फिर कोशिश करें।</string>
+    <string name="sign_password_open">खोलें</string>
+    <string name="sign_discard_title">बदलाव छोड़ दें?</string>
+    <string name="sign_discard_body">आपके लगाए हस्ताक्षर सहेजे नहीं जाएँगे।</string>
+    <string name="sign_discard">छोड़ें</string>
+    <string name="sign_keep_editing">संपादन जारी रखें</string>
+    <string name="sign_stamp_description" tools:ignore="PluralsCandidate">पृष्ठ %1$d पर हस्ताक्षर या टेक्स्ट</string>
+    <string name="sign_open_failed">इस PDF पर हस्ताक्षर के लिए इसे खोला नहीं जा सका।</string>
+    <string name="sign_err_nothing_placed">पहले हस्ताक्षर या टेक्स्ट जोड़ें</string>
+    <string name="sign_err_page_missing">आपने जिस पृष्ठ पर हस्ताक्षर किए, वह PDF में नहीं है</string>
+    <string name="sign_err_image">हस्ताक्षर की तस्वीर पढ़ी नहीं जा सकी</string>
+    <string name="msg_sign_saving">PDF पर हस्ताक्षर हो रहे हैं…</string>
+    <string name="msg_sign_progress" tools:ignore="PluralsCandidate">पृष्ठ %1$d / %2$d पर हस्ताक्षर हो रहे हैं</string>
+    <string name="msg_sign_failed">PDF पर हस्ताक्षर नहीं हो सके</string>
+    <string name="msg_sign_done" tools:ignore="PluralsCandidate">हस्ताक्षर की गई प्रति सहेजी गई। जोड़े गए आइटम: %1$d</string>
+</resources>

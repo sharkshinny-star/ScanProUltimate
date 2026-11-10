@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="tools_card_sign">PDF ಸಹಿ</string>
+    <string name="sign_unprotected_note">ಈ PDF ರಕ್ಷಿತವಾಗಿದೆ. ಸಹಿ ಮಾಡಿದ ಪ್ರತಿಯನ್ನು ರಕ್ಷಣೆ ಇಲ್ಲದೆ ಉಳಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="sign_hint">ಸಹಿ ಅಥವಾ ಪಠ್ಯ ಸೇರಿಸಿ, ನಂತರ ಅದನ್ನು ಸರಿಯಾದ ಜಾಗಕ್ಕೆ ಎಳೆಯಿರಿ.</string>
+    <string name="sign_page_of" tools:ignore="PluralsCandidate">ಪುಟ %1$d / %2$d</string>
+    <string name="sign_previous_page">ಹಿಂದಿನ ಪುಟ</string>
+    <string name="sign_next_page">ಮುಂದಿನ ಪುಟ</string>
+    <string name="sign_add_signature">ಸಹಿ</string>
+    <string name="sign_add_text">ಪಠ್ಯ ಅಥವಾ ದಿನಾಂಕ</string>
+    <string name="sign_size">ಗಾತ್ರ</string>
+    <string name="sign_rotate">ತಿರುಗಿಸಿ</string>
+    <string name="sign_remove">ತೆಗೆದುಹಾಕಿ</string>
+    <string name="sign_text_title">ಪಠ್ಯ ಸೇರಿಸಿ</string>
+    <string name="sign_text_label">ಪಠ್ಯ, ಉದಾ. ದಿನಾಂಕ</string>
+    <string name="sign_text_add">ಸೇರಿಸಿ</string>
+    <string name="sign_password_title">ಪಾಸ್‌ವರ್ಡ್ ಬೇಕು</string>
+    <string name="sign_password_body">ಈ PDF ತೆರೆಯಲು ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ. ಸಹಿ ಮಾಡಿದ ಪ್ರತಿಯನ್ನು ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲದೆ ಉಳಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="sign_password_label">ಪಾಸ್‌ವರ್ಡ್</string>
+    <string name="sign_password_wrong">ಪಾಸ್‌ವರ್ಡ್ ತಪ್ಪಾಗಿದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="sign_password_open">ತೆರೆಯಿರಿ</string>
+    <string name="sign_discard_title">ಬದಲಾವಣೆಗಳನ್ನು ಬಿಡುವುದೇ?</string>
+    <string name="sign_discard_body">ನೀವು ಇರಿಸಿದ ಸಹಿಗಳನ್ನು ಉಳಿಸಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="sign_discard">ಬಿಡಿ</string>
+    <string name="sign_keep_editing">ಸಂಪಾದನೆ ಮುಂದುವರಿಸಿ</string>
+    <string name="sign_stamp_description" tools:ignore="PluralsCandidate">ಪುಟ %1$d ರಲ್ಲಿ ಸಹಿ ಅಥವಾ ಪಠ್ಯ</string>
+    <string name="sign_open_failed">ಸಹಿಗಾಗಿ ಈ PDF ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.</string>
+    <string name="sign_err_nothing_placed">ಮೊದಲು ಸಹಿ ಅಥವಾ ಪಠ್ಯ ಸೇರಿಸಿ</string>
+    <string name="sign_err_page_missing">ನೀವು ಸಹಿ ಮಾಡಿದ ಪುಟ PDF ನಲ್ಲಿ ಇಲ್ಲ</string>
+    <string name="sign_err_image">ಸಹಿಯ ಚಿತ್ರವನ್ನು ಓದಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
+    <string name="msg_sign_saving">PDF ಗೆ ಸಹಿ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="msg_sign_progress" tools:ignore="PluralsCandidate">ಪುಟ %1$d / %2$d ಕ್ಕೆ ಸಹಿ ಮಾಡಲಾಗುತ್ತಿದೆ</string>
+    <string name="msg_sign_failed">PDF ಗೆ ಸಹಿ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
+    <string name="msg_sign_done" tools:ignore="PluralsCandidate">ಸಹಿ ಮಾಡಿದ ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗಿದೆ. ಸೇರಿಸಿದ ಅಂಶಗಳು: %1$d</string>
+</resources>

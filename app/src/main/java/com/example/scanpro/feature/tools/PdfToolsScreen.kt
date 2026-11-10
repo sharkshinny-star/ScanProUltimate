@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.Fullscreen
@@ -183,7 +184,8 @@ private val TOOL_SECTIONS = listOf(
             PdfToolCard("organize", R.string.tools_card_organize, Icons.Default.Description, TileTone.Sky, label = R.string.tools_tile_organize),
             PdfToolCard("rotate", R.string.tools_card_rotate, Icons.AutoMirrored.Filled.RotateRight, TileTone.Sky, label = R.string.tools_tile_rotate),
             PdfToolCard("extract", R.string.tools_card_extract, Icons.AutoMirrored.Filled.DriveFileMove, TileTone.Indigo, label = R.string.tools_tile_extract),
-            PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber)
+            PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber),
+            PdfToolCard("sign", R.string.tools_card_sign, Icons.Default.Draw, TileTone.Violet)
         )
     ),
     ToolSection(
@@ -256,6 +258,7 @@ fun PdfToolsScreen(
     val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
     val recentScope = rememberCoroutineScope()
     val formSession by viewModel.form.collectAsStateWithLifecycle()
+    val signViewModel: SignPdfViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
     var showOcrDialog by rememberSaveable { mutableStateOf(false) }
 
     // Saveable, so an open dialog and the chosen file survive rotation, window resizing and folding.
@@ -311,6 +314,7 @@ fun PdfToolsScreen(
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
+            "sign" -> signViewModel.open(uri)
         }
     }
     // Office to PDF: Word, Excel, text, CSV and web pages saved from a browser.
@@ -442,6 +446,13 @@ fun PdfToolsScreen(
                     }
                 }
             }
+
+            // Sign PDF fills the screen; the progress and result dialogs below are drawn over it.
+            SignPdfScreen(
+                viewModel = signViewModel,
+                busy = progress != null,
+                onSign = { source, placements, name -> viewModel.signPdf(source, placements, name) }
+            )
 
             progress?.let { running ->
                 ProcessingOverlay(

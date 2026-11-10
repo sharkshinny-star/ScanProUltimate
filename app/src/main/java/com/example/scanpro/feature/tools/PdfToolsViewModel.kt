@@ -29,6 +29,8 @@ import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfToolResult
 import com.example.scanpro.imaging.PdfToolsEngine
+import com.example.scanpro.imaging.SignPdfEngine
+import com.example.scanpro.imaging.SignPlacement
 import com.example.scanpro.imaging.SplitMode
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
@@ -281,6 +283,16 @@ class PdfToolsViewModel @Inject constructor(
         }
         null
     }
+
+    /** Sign PDF: stamps the placed signatures onto a copy of [source] (the screen's working copy of the picked PDF). */
+    fun signPdf(source: File, placements: List<SignPlacement>, name: String) =
+        launchTool(R.string.msg_sign_saving, R.string.msg_sign_failed) {
+            val out = PdfToolsEngine.outputLocation(context, "$name signed.pdf")
+            val result = SignPdfEngine.stamp(source, placements, out) { current, total, _ ->
+                report(current, total, context.getString(R.string.msg_sign_progress, current, total))
+            }
+            result.copy(message = context.getString(R.string.msg_sign_done, placements.size))
+        }
 
     fun organize(tool: String, uri: Uri, specs: List<PageSpec>, extracted: List<Int>, rotations: Map<Int, Int>) =
         launchTool(R.string.msg_tools_saving_pages, R.string.msg_tools_page_operation_failed) {

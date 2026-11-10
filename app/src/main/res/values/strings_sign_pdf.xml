@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="tools_card_sign">Sign PDF</string>
+    <string name="sign_unprotected_note">This PDF is protected. The signed copy is saved without protection.</string>
+    <string name="sign_hint">Add a signature or text, then drag it into place.</string>
+    <string name="sign_page_of" tools:ignore="PluralsCandidate">Page %1$d of %2$d</string>
+    <string name="sign_previous_page">Previous page</string>
+    <string name="sign_next_page">Next page</string>
+    <string name="sign_add_signature">Signature</string>
+    <string name="sign_add_text">Text or date</string>
+    <string name="sign_size">Size</string>
+    <string name="sign_rotate">Rotate</string>
+    <string name="sign_remove">Remove</string>
+    <string name="sign_text_title">Add text</string>
+    <string name="sign_text_label">Text, such as a date</string>
+    <string name="sign_text_add">Add</string>
+    <string name="sign_password_title">Password needed</string>
+    <string name="sign_password_body">Enter the password to open this PDF. The signed copy is saved without a password.</string>
+    <string name="sign_password_label">Password</string>
+    <string name="sign_password_wrong">That password is wrong. Try again.</string>
+    <string name="sign_password_open">Open</string>
+    <string name="sign_discard_title">Discard your changes?</string>
+    <string name="sign_discard_body">The signatures you have placed will not be saved.</string>
+    <string name="sign_discard">Discard</string>
+    <string name="sign_keep_editing">Keep editing</string>
+    <string name="sign_stamp_description" tools:ignore="PluralsCandidate">Signature or text on page %1$d</string>
+    <string name="sign_open_failed">This PDF could not be opened for signing.</string>
+    <string name="sign_err_nothing_placed">Add a signature or text first</string>
+    <string name="sign_err_page_missing">A page you signed is missing from the PDF</string>
+    <string name="sign_err_image">A signature picture could not be read</string>
+    <string name="msg_sign_saving">Signing the PDF…</string>
+    <string name="msg_sign_progress" tools:ignore="PluralsCandidate">Signing page %1$d of %2$d</string>
+    <string name="msg_sign_failed">Could not sign the PDF</string>
+    <string name="msg_sign_done" tools:ignore="PluralsCandidate">Signed copy saved. Items added: %1$d</string>
+</resources>

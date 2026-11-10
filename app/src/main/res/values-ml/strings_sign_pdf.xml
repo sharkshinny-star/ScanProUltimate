@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="tools_card_sign">PDF ഒപ്പിടുക</string>
+    <string name="sign_unprotected_note">ഈ PDF സംരക്ഷിതമാണ്. ഒപ്പിട്ട പകർപ്പ് സംരക്ഷണമില്ലാതെ സേവ് ചെയ്യും.</string>
+    <string name="sign_hint">ഒപ്പോ വാചകമോ ചേർക്കൂ, എന്നിട്ട് അത് ശരിയായ സ്ഥലത്തേക്ക് വലിച്ചിടൂ.</string>
+    <string name="sign_page_of" tools:ignore="PluralsCandidate">പേജ് %1$d / %2$d</string>
+    <string name="sign_previous_page">മുമ്പത്തെ പേജ്</string>
+    <string name="sign_next_page">അടുത്ത പേജ്</string>
+    <string name="sign_add_signature">ഒപ്പ്</string>
+    <string name="sign_add_text">വാചകം അല്ലെങ്കിൽ തീയതി</string>
+    <string name="sign_size">വലുപ്പം</string>
+    <string name="sign_rotate">തിരിക്കുക</string>
+    <string name="sign_remove">നീക്കം ചെയ്യുക</string>
+    <string name="sign_text_title">വാചകം ചേർക്കുക</string>
+    <string name="sign_text_label">വാചകം, ഉദാ. തീയതി</string>
+    <string name="sign_text_add">ചേർക്കുക</string>
+    <string name="sign_password_title">പാസ്‌വേഡ് ആവശ്യമാണ്</string>
+    <string name="sign_password_body">ഈ PDF തുറക്കാൻ പാസ്‌വേഡ് നൽകുക. ഒപ്പിട്ട പകർപ്പ് പാസ്‌വേഡ് ഇല്ലാതെ സേവ് ചെയ്യും.</string>
+    <string name="sign_password_label">പാസ്‌വേഡ്</string>
+    <string name="sign_password_wrong">പാസ്‌വേഡ് തെറ്റാണ്. വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="sign_password_open">തുറക്കുക</string>
+    <string name="sign_discard_title">മാറ്റങ്ങൾ ഉപേക്ഷിക്കണോ?</string>
+    <string name="sign_discard_body">നിങ്ങൾ വച്ച ഒപ്പുകൾ സേവ് ചെയ്യില്ല.</string>
+    <string name="sign_discard">ഉപേക്ഷിക്കുക</string>
+    <string name="sign_keep_editing">എഡിറ്റിംഗ് തുടരുക</string>
+    <string name="sign_stamp_description" tools:ignore="PluralsCandidate">പേജ് %1$d ലെ ഒപ്പോ വാചകമോ</string>
+    <string name="sign_open_failed">ഒപ്പിടാനായി ഈ PDF തുറക്കാൻ കഴിഞ്ഞില്ല.</string>
+    <string name="sign_err_nothing_placed">ആദ്യം ഒപ്പോ വാചകമോ ചേർക്കുക</string>
+    <string name="sign_err_page_missing">നിങ്ങൾ ഒപ്പിട്ട പേജ് PDF-ൽ ഇല്ല</string>
+    <string name="sign_err_image">ഒപ്പിന്റെ ചിത്രം വായിക്കാൻ കഴിഞ്ഞില്ല</string>
+    <string name="msg_sign_saving">PDF ഒപ്പിടുന്നു…</string>
+    <string name="msg_sign_progress" tools:ignore="PluralsCandidate">പേജ് %1$d / %2$d ഒപ്പിടുന്നു</string>
+    <string name="msg_sign_failed">PDF ഒപ്പിടാൻ കഴിഞ്ഞില്ല</string>
+    <string name="msg_sign_done" tools:ignore="PluralsCandidate">ഒപ്പിട്ട പകർപ്പ് സേവ് ചെയ്തു. ചേർത്തവ: %1$d</string>
+</resources>
