@@ -44,6 +44,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.RotateRight
@@ -58,6 +59,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FindInPage
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -70,6 +72,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Transform
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -104,11 +107,16 @@ import com.example.scanpro.imaging.ImageCompressConfig
 import com.example.scanpro.imaging.ImageMetadata
 import com.example.scanpro.imaging.ImageResizeConfig
 import com.example.scanpro.imaging.ImageToolsEngine
+import com.example.scanpro.imaging.PageNumberFormat
+import com.example.scanpro.imaging.PageNumberPosition
+import com.example.scanpro.imaging.PageNumbersConfig
+import com.example.scanpro.imaging.WatermarkConfig
 import kotlin.math.roundToInt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -165,6 +173,7 @@ import com.example.scanpro.imaging.PdfPreviewSession
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfSecurity
 import com.example.scanpro.imaging.PdfToolResult
+import com.example.scanpro.imaging.PdfToolsEngine
 import com.example.scanpro.imaging.SplitMode
 import java.io.File
 import java.util.UUID
@@ -195,7 +204,9 @@ private val TOOL_SECTIONS = listOf(
             PdfToolCard("organize", R.string.tools_card_organize, Icons.Default.Description, TileTone.Sky, label = R.string.tools_tile_organize),
             PdfToolCard("rotate", R.string.tools_card_rotate, Icons.AutoMirrored.Filled.RotateRight, TileTone.Sky, label = R.string.tools_tile_rotate),
             PdfToolCard("extract", R.string.tools_card_extract, Icons.AutoMirrored.Filled.DriveFileMove, TileTone.Indigo, label = R.string.tools_tile_extract),
-            PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber)
+            PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber),
+            PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
+            PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark)
         )
     ),
     ToolSection(
@@ -204,7 +215,8 @@ private val TOOL_SECTIONS = listOf(
             PdfToolCard("office", R.string.tools_card_office, Icons.AutoMirrored.Filled.Article, TileTone.Sky, label = R.string.tools_tile_office),
             PdfToolCard("ocr", R.string.tools_card_ocr, Icons.Default.FindInPage, TileTone.Teal),
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
-            PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral)
+            PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral),
+            PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.Default.TextFields, TileTone.Teal, label = R.string.tools_tile_pdf2text)
         )
     ),
     ToolSection(
@@ -215,6 +227,7 @@ private val TOOL_SECTIONS = listOf(
     ),
     ToolSection(
         "image", R.string.tools_section_image, listOf(
+            PdfToolCard("crop_img", R.string.tools_card_crop_img, Icons.Default.Crop, TileTone.Coral, label = R.string.tools_tile_crop_img),
             PdfToolCard("compress_img", R.string.tools_card_compress_img, Icons.Default.Compress, TileTone.Amber, label = R.string.tools_tile_compress_img),
             PdfToolCard("convert_img", R.string.tools_card_convert_img, Icons.Default.Transform, TileTone.Teal, label = R.string.tools_tile_convert_img),
             PdfToolCard("resize_img", R.string.tools_card_resize_img, Icons.Default.AspectRatio, TileTone.Sky, label = R.string.tools_tile_resize_img)
@@ -287,6 +300,27 @@ fun PdfToolsScreen(
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
+    var showWatermarkDialog by rememberSaveable { mutableStateOf(false) }
+    var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
+
+    var activeCropSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
+    var activeCropUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var onCropFinishedCallback by remember { mutableStateOf<((Uri) -> Unit)?>(null) }
+    val cropScope = rememberCoroutineScope()
+
+    fun launchCropForUri(targetUri: Uri, onCropped: ((Uri) -> Unit)? = null) {
+        cropScope.launch {
+            val stagedFile = withContext(Dispatchers.IO) {
+                val temp = File(context.cacheDir, "crop_staged_${UUID.randomUUID()}.jpg")
+                PdfToolsEngine.copyUriToTemp(context, targetUri, temp.name)
+            }
+            if (stagedFile.exists() && stagedFile.length() > 0) {
+                activeCropUri = targetUri
+                onCropFinishedCallback = onCropped
+                activeCropSourcePath = stagedFile.absolutePath
+            }
+        }
+    }
 
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
@@ -313,12 +347,14 @@ fun PdfToolsScreen(
     val saveJpegLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { saveTo(it) }
     val savePngLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { saveTo(it) }
     val saveWebpLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/webp")) { saveTo(it) }
+    val saveTextLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { saveTo(it) }
 
     val singleImagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         val tool = selectedTool
         if (uri == null || tool == null) return@rememberLauncherForActivityResult
         pendingUri = uri
         when (tool) {
+            "crop_img" -> launchCropForUri(uri)
             "compress_img" -> showCompressImageDialog = true
             "resize_img" -> showResizeImageDialog = true
         }
@@ -343,6 +379,10 @@ fun PdfToolsScreen(
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
+            "page_numbers" -> showPageNumbersDialog = true
+            "watermark" -> showWatermarkDialog = true
+            "pdf2text" -> viewModel.extractText(uri)
+            "crop_img" -> launchCropForUri(uri)
             "compress_img" -> showCompressImageDialog = true
             "convert_img" -> {
                 pendingImageUris = listOf(uri)
@@ -427,7 +467,7 @@ fun PdfToolsScreen(
             "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
             "img2pdf" -> imagesPicker.launch("image/*")
             "office" -> officePicker.launch(OFFICE_MIME_TYPES)
-            "compress_img", "resize_img" -> singleImagePicker.launch("image/*")
+            "crop_img", "compress_img", "resize_img" -> singleImagePicker.launch("image/*")
             "convert_img" -> multiImagePicker.launch("image/*")
             else -> singlePdfPicker.launch(arrayOf("application/pdf"))
         }
@@ -457,6 +497,46 @@ fun PdfToolsScreen(
                 )
             }
 
+            activeCropSourcePath?.let { stagedPath ->
+                CropEditorDialog(
+                    sourcePath = stagedPath,
+                    initial = CropQuad.DEFAULT,
+                    onDismiss = {
+                        File(stagedPath).delete()
+                        activeCropSourcePath = null
+                        activeCropUri = null
+                        onCropFinishedCallback = null
+                    },
+                    onConfirm = { quad ->
+                        val originalUri = activeCropUri
+                        val callback = onCropFinishedCallback
+                        activeCropSourcePath = null
+                        activeCropUri = null
+                        onCropFinishedCallback = null
+                        if (originalUri != null) {
+                            if (callback != null) {
+                                cropScope.launch {
+                                    val croppedFile = withContext(Dispatchers.IO) {
+                                        val dest = File(context.cacheDir, "precrop_${UUID.randomUUID()}.jpg")
+                                        ImageProcessor.cropSourceToNewFile(File(stagedPath), dest, quad)
+                                        File(stagedPath).delete()
+                                        dest
+                                    }
+                                    if (croppedFile.exists() && croppedFile.length() > 0) {
+                                        callback(Uri.fromFile(croppedFile))
+                                    }
+                                }
+                            } else {
+                                File(stagedPath).delete()
+                                viewModel.cropImage(originalUri, quad)
+                            }
+                        } else {
+                            File(stagedPath).delete()
+                        }
+                    }
+                )
+            }
+
             lastResult?.let { result ->
                 ResultDialog(
                     result = result,
@@ -475,6 +555,7 @@ fun PdfToolsScreen(
                             "application/pdf" -> saveFileLauncher.launch(name)
                             "image/png" -> savePngLauncher.launch(name)
                             "image/webp" -> saveWebpLauncher.launch(name)
+                            "text/plain" -> saveTextLauncher.launch(name)
                             else -> saveJpegLauncher.launch(name)
                         }
                     }
@@ -494,11 +575,40 @@ fun PdfToolsScreen(
                 )
             }
 
+            if (showWatermarkDialog && uri != null) {
+                WatermarkPdfDialog(
+                    uri = uri,
+                    onDismiss = { showWatermarkDialog = false },
+                    onConfirm = { config ->
+                        showWatermarkDialog = false
+                        viewModel.watermarkPdf(uri, config)
+                    }
+                )
+            }
+
+            if (showPageNumbersDialog && uri != null) {
+                PageNumbersPdfDialog(
+                    uri = uri,
+                    onDismiss = { showPageNumbersDialog = false },
+                    onConfirm = { config ->
+                        showPageNumbersDialog = false
+                        viewModel.addPageNumbers(uri, config)
+                    }
+                )
+            }
+
             if (showCompressImageDialog && uri != null) {
                 CompressImageDialog(
                     context = context,
                     uri = uri,
                     onDismiss = { showCompressImageDialog = false },
+                    onCrop = {
+                        showCompressImageDialog = false
+                        launchCropForUri(uri) { croppedUri ->
+                            pendingUri = croppedUri
+                            showCompressImageDialog = true
+                        }
+                    },
                     onConfirm = { config ->
                         showCompressImageDialog = false
                         viewModel.compressImage(uri, config)
@@ -514,10 +624,27 @@ fun PdfToolsScreen(
                             showConvertImageDialog = false
                             pendingImageUris = null
                         },
+                        onCropImage = { index ->
+                            val targetUri = uris[index]
+                            showConvertImageDialog = false
+                            launchCropForUri(targetUri) { croppedUri ->
+                                val updated = uris.toMutableList()
+                                updated[index] = croppedUri
+                                pendingImageUris = updated
+                                showConvertImageDialog = true
+                            }
+                        },
                         onConfirm = { format, quality ->
                             showConvertImageDialog = false
+                            val currentUris = pendingImageUris ?: uris
                             pendingImageUris = null
-                            viewModel.convertImage(uris, format, quality)
+                            viewModel.convertImage(currentUris, format, quality)
+                        },
+                        onConvertToPdf = {
+                            showConvertImageDialog = false
+                            val currentUris = pendingImageUris ?: uris
+                            pendingImageUris = null
+                            viewModel.imagesToPdf(currentUris, PdfPageSize.AUTO, PdfQuality.HIGH)
                         }
                     )
                 }
@@ -528,6 +655,13 @@ fun PdfToolsScreen(
                     context = context,
                     uri = uri,
                     onDismiss = { showResizeImageDialog = false },
+                    onCrop = {
+                        showResizeImageDialog = false
+                        launchCropForUri(uri) { croppedUri ->
+                            pendingUri = croppedUri
+                            showResizeImageDialog = true
+                        }
+                    },
                     onConfirm = { config ->
                         showResizeImageDialog = false
                         viewModel.resizeImage(uri, config)
@@ -3141,6 +3275,7 @@ private fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "jpg", "jpeg" -> "image/jpeg"
     "webp" -> "image/webp"
     "zip" -> "application/zip"
+    "txt" -> "text/plain"
     else -> "application/pdf"
 }
 
@@ -3150,6 +3285,7 @@ private fun CompressImageDialog(
     context: Context,
     uri: Uri,
     onDismiss: () -> Unit,
+    onCrop: () -> Unit,
     onConfirm: (ImageCompressConfig) -> Unit
 ) {
     var metadata by remember { mutableStateOf<ImageMetadata?>(null) }
@@ -3215,8 +3351,19 @@ private fun CompressImageDialog(
                             }
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                 }
+
+                OutlinedButton(
+                    onClick = onCrop,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Crop, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.tools_crop_img_button))
+                }
+
+                Spacer(Modifier.height(12.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -3249,14 +3396,15 @@ private fun CompressImageDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        listOf(50, 100, 200, 500).forEach { kb ->
+                        listOf(50, 100, 200, 500, 1024, 2048).forEach { kb ->
+                            val label = if (kb >= 1024) "${kb / 1024} MB" else "$kb KB"
                             FilterChip(
                                 selected = selectedPresetKb == kb,
                                 onClick = {
                                     selectedPresetKb = kb
                                     customKbInput = kb.toString()
                                 },
-                                label = { Text("$kb KB") }
+                                label = { Text(label) }
                             )
                         }
                         FilterChip(
@@ -3397,9 +3545,12 @@ private fun CompressImageDialog(
 private fun ConvertImageDialog(
     uris: List<Uri>,
     onDismiss: () -> Unit,
-    onConfirm: (targetFormat: ImageExportFormat, quality: Int) -> Unit
+    onCropImage: (Int) -> Unit,
+    onConfirm: (targetFormat: ImageExportFormat, quality: Int) -> Unit,
+    onConvertToPdf: () -> Unit
 ) {
     var format by rememberSaveable { mutableStateOf(ImageExportFormat.PNG) }
+    var exportPdf by rememberSaveable { mutableStateOf(false) }
     var jpegQuality by rememberSaveable { mutableStateOf(92) }
 
     AlertDialog(
@@ -3417,20 +3568,52 @@ private fun ConvertImageDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (uris.size == 1) {
+                    OutlinedButton(
+                        onClick = { onCropImage(0) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Crop, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.tools_crop_img_button))
+                    }
+                } else {
+                    Text(
+                        stringResource(R.string.tools_crop_img_action),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        itemsIndexed(uris) { idx, _ ->
+                            OutlinedButton(
+                                onClick = { onCropImage(idx) },
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.Crop, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.tools_page_number, idx + 1), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (format == ImageExportFormat.PNG) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    color = if (!exportPdf && format == ImageExportFormat.PNG) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = if (format == ImageExportFormat.PNG) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                    border = if (!exportPdf && format == ImageExportFormat.PNG) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { format = ImageExportFormat.PNG }
+                        .clickable { exportPdf = false; format = ImageExportFormat.PNG }
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = format == ImageExportFormat.PNG,
-                                onClick = { format = ImageExportFormat.PNG }
+                                selected = !exportPdf && format == ImageExportFormat.PNG,
+                                onClick = { exportPdf = false; format = ImageExportFormat.PNG }
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
@@ -3462,18 +3645,18 @@ private fun ConvertImageDialog(
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (format == ImageExportFormat.JPEG) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    color = if (!exportPdf && format == ImageExportFormat.JPEG) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = if (format == ImageExportFormat.JPEG) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                    border = if (!exportPdf && format == ImageExportFormat.JPEG) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { format = ImageExportFormat.JPEG }
+                        .clickable { exportPdf = false; format = ImageExportFormat.JPEG }
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = format == ImageExportFormat.JPEG,
-                                onClick = { format = ImageExportFormat.JPEG }
+                                selected = !exportPdf && format == ImageExportFormat.JPEG,
+                                onClick = { exportPdf = false; format = ImageExportFormat.JPEG }
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
@@ -3488,7 +3671,7 @@ private fun ConvertImageDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(start = 40.dp, top = 2.dp)
                         )
-                        if (format == ImageExportFormat.JPEG) {
+                        if (!exportPdf && format == ImageExportFormat.JPEG) {
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 stringResource(R.string.tools_compress_img_quality_label, jpegQuality),
@@ -3508,18 +3691,18 @@ private fun ConvertImageDialog(
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (format == ImageExportFormat.WEBP) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    color = if (!exportPdf && format == ImageExportFormat.WEBP) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = if (format == ImageExportFormat.WEBP) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                    border = if (!exportPdf && format == ImageExportFormat.WEBP) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { format = ImageExportFormat.WEBP }
+                        .clickable { exportPdf = false; format = ImageExportFormat.WEBP }
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = format == ImageExportFormat.WEBP,
-                                onClick = { format = ImageExportFormat.WEBP }
+                                selected = !exportPdf && format == ImageExportFormat.WEBP,
+                                onClick = { exportPdf = false; format = ImageExportFormat.WEBP }
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
@@ -3536,10 +3719,44 @@ private fun ConvertImageDialog(
                         )
                     }
                 }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (exportPdf) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = if (exportPdf) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { exportPdf = true }
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = exportPdf,
+                                onClick = { exportPdf = true }
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                stringResource(R.string.tools_convert_img_format_pdf),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            stringResource(R.string.tools_convert_img_format_pdf_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 40.dp, top = 2.dp)
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(format, if (format == ImageExportFormat.PNG) 100 else jpegQuality) }) {
+            Button(onClick = {
+                if (exportPdf) onConvertToPdf()
+                else onConfirm(format, if (format == ImageExportFormat.PNG) 100 else jpegQuality)
+            }) {
                 Text(stringResource(R.string.tools_convert_img_action))
             }
         },
@@ -3555,9 +3772,12 @@ private fun ResizeImageDialog(
     context: Context,
     uri: Uri,
     onDismiss: () -> Unit,
+    onCrop: () -> Unit,
     onConfirm: (ImageResizeConfig) -> Unit
 ) {
     var metadata by remember { mutableStateOf<ImageMetadata?>(null) }
+    var resizeMode by rememberSaveable { mutableIntStateOf(0) } // 0 = Dimensions, 1 = Percentage
+    var percentage by rememberSaveable { mutableIntStateOf(50) }
     var widthInput by rememberSaveable { mutableStateOf("") }
     var heightInput by rememberSaveable { mutableStateOf("") }
     var lockAspect by rememberSaveable { mutableStateOf(true) }
@@ -3578,8 +3798,14 @@ private fun ResizeImageDialog(
     val origH = metadata?.height ?: 1
     val aspectRatio = origW.toFloat() / origH.toFloat()
 
-    val w = widthInput.toIntOrNull() ?: 0
-    val h = heightInput.toIntOrNull() ?: 0
+    val w = if (resizeMode == 1) {
+        (origW * percentage / 100f).roundToInt().coerceIn(10, 8000)
+    } else widthInput.toIntOrNull() ?: 0
+
+    val h = if (resizeMode == 1) {
+        (origH * percentage / 100f).roundToInt().coerceIn(10, 8000)
+    } else heightInput.toIntOrNull() ?: 0
+
     val isValid = w in 10..8000 && h in 10..8000
 
     AlertDialog(
@@ -3600,52 +3826,13 @@ private fun ResizeImageDialog(
                     Spacer(Modifier.height(10.dp))
                 }
 
-                Text(
-                    stringResource(R.string.tools_compress_img_quick_sizes),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(6.dp))
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                OutlinedButton(
+                    onClick = onCrop,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    FilterChip(
-                        selected = w == 600 && h == 600,
-                        onClick = {
-                            lockAspect = false
-                            widthInput = "600"
-                            heightInput = "600"
-                        },
-                        label = { Text(stringResource(R.string.tools_resize_img_preset_passport)) }
-                    )
-                    FilterChip(
-                        selected = w == 400 && h == 400,
-                        onClick = {
-                            lockAspect = false
-                            widthInput = "400"
-                            heightInput = "400"
-                        },
-                        label = { Text(stringResource(R.string.tools_resize_img_preset_avatar)) }
-                    )
-                    FilterChip(
-                        selected = w == 1920 && h == 1080,
-                        onClick = {
-                            lockAspect = false
-                            widthInput = "1920"
-                            heightInput = "1080"
-                        },
-                        label = { Text(stringResource(R.string.tools_resize_img_preset_fhd)) }
-                    )
-                    FilterChip(
-                        selected = w == 1280 && h == 720,
-                        onClick = {
-                            lockAspect = false
-                            widthInput = "1280"
-                            heightInput = "720"
-                        },
-                        label = { Text(stringResource(R.string.tools_resize_img_preset_hd)) }
-                    )
+                    Icon(Icons.Default.Crop, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.tools_crop_img_button))
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -3654,61 +3841,149 @@ private fun ResizeImageDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = widthInput,
-                        onValueChange = { str ->
-                            if (str.isEmpty() || str.all { it.isDigit() }) {
-                                widthInput = str
-                                if (lockAspect && str.isNotEmpty()) {
-                                    val newW = str.toIntOrNull()
-                                    if (newW != null && newW > 0) {
-                                        heightInput = (newW / aspectRatio).roundToInt().coerceIn(10, 8000).toString()
-                                    }
-                                }
-                            }
-                        },
-                        label = { Text(stringResource(R.string.tools_resize_img_width)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    FilterChip(
+                        selected = resizeMode == 0,
+                        onClick = { resizeMode = 0 },
+                        label = { Text(stringResource(R.string.tools_resize_img_mode_dimensions)) },
                         modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
-                        value = heightInput,
-                        onValueChange = { str ->
-                            if (str.isEmpty() || str.all { it.isDigit() }) {
-                                heightInput = str
-                                if (lockAspect && str.isNotEmpty()) {
-                                    val newH = str.toIntOrNull()
-                                    if (newH != null && newH > 0) {
-                                        widthInput = (newH * aspectRatio).roundToInt().coerceIn(10, 8000).toString()
-                                    }
-                                }
-                            }
+                    FilterChip(
+                        selected = resizeMode == 1,
+                        onClick = {
+                            resizeMode = 1
+                            widthInput = ((origW * percentage / 100f).roundToInt()).toString()
+                            heightInput = ((origH * percentage / 100f).roundToInt()).toString()
                         },
-                        label = { Text(stringResource(R.string.tools_resize_img_height)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        label = { Text(stringResource(R.string.tools_resize_img_mode_percent)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { lockAspect = !lockAspect },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = lockAspect,
-                        onCheckedChange = { lockAspect = it }
-                    )
-                    Spacer(Modifier.width(6.dp))
+                if (resizeMode == 1) {
                     Text(
-                        stringResource(R.string.tools_resize_img_lock_aspect),
-                        style = MaterialTheme.typography.bodyMedium
+                        "${percentage}% (${w} × ${h} px)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
+                    Spacer(Modifier.height(6.dp))
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(25, 50, 75, 150, 200).forEach { pct ->
+                            FilterChip(
+                                selected = percentage == pct,
+                                onClick = { percentage = pct },
+                                label = { Text("$pct%") }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Slider(
+                        value = percentage.toFloat(),
+                        onValueChange = { percentage = it.roundToInt() },
+                        valueRange = 10f..300f,
+                        steps = 28,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    Text(
+                        stringResource(R.string.tools_compress_img_quick_sizes),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val presets = listOf(
+                            600 to 600 to stringResource(R.string.tools_resize_img_preset_passport),
+                            400 to 400 to stringResource(R.string.tools_resize_img_preset_avatar),
+                            1080 to 1080 to stringResource(R.string.tools_resize_img_preset_instagram),
+                            1080 to 1920 to stringResource(R.string.tools_resize_img_preset_story),
+                            1920 to 1080 to stringResource(R.string.tools_resize_img_preset_fhd),
+                            1280 to 720 to stringResource(R.string.tools_resize_img_preset_hd),
+                            2480 to 3508 to stringResource(R.string.tools_resize_img_preset_a4)
+                        )
+                        presets.forEach { (dims, label) ->
+                            val (pw, ph) = dims
+                            FilterChip(
+                                selected = w == pw && h == ph,
+                                onClick = {
+                                    lockAspect = false
+                                    widthInput = pw.toString()
+                                    heightInput = ph.toString()
+                                },
+                                label = { Text(label) }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = widthInput,
+                            onValueChange = { str ->
+                                if (str.isEmpty() || str.all { it.isDigit() }) {
+                                    widthInput = str
+                                    if (lockAspect && str.isNotEmpty()) {
+                                        val newW = str.toIntOrNull()
+                                        if (newW != null && newW > 0) {
+                                            heightInput = (newW / aspectRatio).roundToInt().coerceIn(10, 8000).toString()
+                                        }
+                                    }
+                                }
+                            },
+                            label = { Text(stringResource(R.string.tools_resize_img_width)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = heightInput,
+                            onValueChange = { str ->
+                                if (str.isEmpty() || str.all { it.isDigit() }) {
+                                    heightInput = str
+                                    if (lockAspect && str.isNotEmpty()) {
+                                        val newH = str.toIntOrNull()
+                                        if (newH != null && newH > 0) {
+                                            widthInput = (newH * aspectRatio).roundToInt().coerceIn(10, 8000).toString()
+                                        }
+                                    }
+                                }
+                            },
+                            label = { Text(stringResource(R.string.tools_resize_img_height)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { lockAspect = !lockAspect },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = lockAspect,
+                            onCheckedChange = { lockAspect = it }
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            stringResource(R.string.tools_resize_img_lock_aspect),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -3761,6 +4036,247 @@ private fun ResizeImageDialog(
                 enabled = isValid
             ) {
                 Text(stringResource(R.string.tools_resize_img_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun WatermarkPdfDialog(
+    uri: Uri,
+    onDismiss: () -> Unit,
+    onConfirm: (WatermarkConfig) -> Unit
+) {
+    var text by rememberSaveable { mutableStateOf("CONFIDENTIAL") }
+    var diagonal by rememberSaveable { mutableStateOf(true) }
+    var opacityPercent by rememberSaveable { mutableIntStateOf(25) }
+    var fontSize by rememberSaveable { mutableIntStateOf(54) }
+    var selectedColourIndex by rememberSaveable { mutableIntStateOf(1) } // 0=Red, 1=Grey, 2=Blue, 3=Black
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tools_watermark_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(R.string.tools_watermark_text_label)) },
+                    placeholder = { Text(stringResource(R.string.tools_watermark_text_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = diagonal,
+                        onClick = { diagonal = true },
+                        label = { Text(stringResource(R.string.tools_watermark_angle_diagonal)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = !diagonal,
+                        onClick = { diagonal = false },
+                        label = { Text(stringResource(R.string.tools_watermark_angle_horizontal)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Text(
+                    stringResource(R.string.tools_watermark_color_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val colours = listOf(
+                        stringResource(R.string.tools_watermark_color_red) to Color(0xFFD32F2F),
+                        stringResource(R.string.tools_watermark_color_grey) to Color(0xFF757575),
+                        stringResource(R.string.tools_watermark_color_blue) to Color(0xFF1976D2),
+                        stringResource(R.string.tools_watermark_color_black) to Color(0xFF000000)
+                    )
+                    colours.forEachIndexed { idx, (label, col) ->
+                        FilterChip(
+                            selected = selectedColourIndex == idx,
+                            onClick = { selectedColourIndex = idx },
+                            leadingIcon = {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = col,
+                                    modifier = Modifier.size(12.dp)
+                                ) {}
+                            },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Text(
+                    stringResource(R.string.tools_watermark_opacity_label, opacityPercent),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Slider(
+                    value = opacityPercent.toFloat(),
+                    onValueChange = { opacityPercent = it.roundToInt() },
+                    valueRange = 10f..80f,
+                    steps = 13,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text(
+                    "${stringResource(R.string.tools_watermark_size_label)}: $fontSize pt",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Slider(
+                    value = fontSize.toFloat(),
+                    onValueChange = { fontSize = it.roundToInt() },
+                    valueRange = 24f..80f,
+                    steps = 13,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val colorRgb = when (selectedColourIndex) {
+                        0 -> 0xD32F2F // Red
+                        2 -> 0x1976D2 // Blue
+                        3 -> 0x000000 // Black
+                        else -> 0x757575 // Grey
+                    }
+                    val config = WatermarkConfig(
+                        text = text.trim(),
+                        isDiagonal = diagonal,
+                        colorRgb = colorRgb,
+                        opacityPercent = opacityPercent,
+                        fontSizePt = fontSize.toFloat()
+                    )
+                    onConfirm(config)
+                },
+                enabled = text.isNotBlank()
+            ) {
+                Text(stringResource(R.string.tools_watermark_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        }
+    )
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun PageNumbersPdfDialog(
+    uri: Uri,
+    onDismiss: () -> Unit,
+    onConfirm: (PageNumbersConfig) -> Unit
+) {
+    var selectedPosition by rememberSaveable { mutableStateOf(PageNumberPosition.BOTTOM_CENTER) }
+    var selectedFormat by rememberSaveable { mutableStateOf(PageNumberFormat.PAGE_N_OF_M) }
+    var skipCover by rememberSaveable { mutableStateOf(true) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tools_page_numbers_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    stringResource(R.string.tools_page_numbers_position_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val posList = listOf(
+                        PageNumberPosition.BOTTOM_CENTER to stringResource(R.string.tools_page_numbers_pos_bottom_center),
+                        PageNumberPosition.BOTTOM_RIGHT to stringResource(R.string.tools_page_numbers_pos_bottom_right),
+                        PageNumberPosition.BOTTOM_LEFT to stringResource(R.string.tools_page_numbers_pos_bottom_left),
+                        PageNumberPosition.TOP_CENTER to stringResource(R.string.tools_page_numbers_pos_top_center),
+                        PageNumberPosition.TOP_RIGHT to stringResource(R.string.tools_page_numbers_pos_top_right)
+                    )
+                    posList.forEach { (pos, label) ->
+                        FilterChip(
+                            selected = selectedPosition == pos,
+                            onClick = { selectedPosition = pos },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Text(
+                    stringResource(R.string.tools_page_numbers_format_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val formats = listOf(
+                        PageNumberFormat.PAGE_N_OF_M to stringResource(R.string.tools_page_numbers_fmt_page_n_of_m),
+                        PageNumberFormat.N_SLASH_M to stringResource(R.string.tools_page_numbers_fmt_n_slash_m),
+                        PageNumberFormat.DASH to stringResource(R.string.tools_page_numbers_fmt_dash),
+                        PageNumberFormat.SIMPLE to stringResource(R.string.tools_page_numbers_fmt_simple)
+                    )
+                    formats.forEach { (fmt, label) ->
+                        FilterChip(
+                            selected = selectedFormat == fmt,
+                            onClick = { selectedFormat = fmt },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { skipCover = !skipCover },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = skipCover,
+                        onCheckedChange = { skipCover = it }
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.tools_page_numbers_skip_cover),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(
+                        PageNumbersConfig(
+                            position = selectedPosition,
+                            format = selectedFormat,
+                            skipFirstPage = skipCover
+                        )
+                    )
+                }
+            ) {
+                Text(stringResource(R.string.tools_page_numbers_action))
             }
         },
         dismissButton = {

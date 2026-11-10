@@ -404,59 +404,18 @@ fun ScanReviewScreen(
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
-        // Top bar: Back · title / name · Undo · Retake · Delete · Save PDF · overflow (Adobe Scan style).
+        // Top bar: Back · title · Undo · Retake · Delete · Save PDF · overflow (Adobe Scan style).
         var menu by remember { mutableStateOf(false) }
-        Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.scan_review_back_to_camera))
             }
-            if (onNameChange != null && name.isNotBlank()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(enabled = !blocked) { naming = true }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.scan_review_name_dialog_title),
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    if (pages.size > 1) {
-                        Spacer(Modifier.width(6.dp))
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Text(
-                                text = "${current + 1}/${pages.size}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-            } else {
-                Text(
-                    if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single),
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
-                )
-            }
+            Text(
+                if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+            )
             IconButton(enabled = !blocked && canUndo, onClick = ::undo) {
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.scan_review_undo))
             }

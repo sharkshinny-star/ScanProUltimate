@@ -45,6 +45,7 @@ CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the 
 
 | Check | Result |
 |---|---|
+| `:app:testDebugUnitTest` (F107 Advanced PDF & Image tools, Crop integration, Watermark, Page numbers, and PDF to Text) | `ImageToolsEngineTest` (including `cropImage_cropsAccurately`) and `PdfToolsFeaturesTest` passed 100% cleanly; `:app:compileDebugKotlin` passed with 0 errors and 0 warnings; `:app:assembleDebug` built cleanly. |
 | `:app:testDebugUnitTest` (F106 Codebase cleanup & compiler warnings resolution) | Non-incremental `:app:compileDebugKotlin` passed with 0 errors and 0 warnings; `ImageToolsEngineTest` and `PdfToolsFeaturesTest` passed cleanly; resolved KSP cache corruption; migrated all deprecated icons to `Icons.AutoMirrored.Filled.*`. |
 | `:app:testDebugUnitTest` (F105 Adobe Scan review & Crop suite) | BUILD SUCCESSFUL in 4m 27s; 100% of unit tests passed (0 failures); `CropEditorDialogTest` passed; `ScanReviewCropControlsTest` passed; `:app:assembleDebug` built and installed on OnePlus CPH2569 (`dc6b0551`). |
 | `:app:testDebugUnitTest` (F104 Image Tools suite) | 8/8 `ImageToolsEngineTest` passed; 13/13 `PdfToolsFeaturesTest` passed; 85/85 passed in imaging suite; `:app:assembleDebug` passed cleanly. |

@@ -355,4 +355,87 @@
     <string name="tools_err_convert_img">Could not convert image</string>
     <string name="tools_err_resize_img">Could not resize image</string>
     <string name="tools_err_invalid_dimensions">Dimensions must be between 10 and 8000 pixels</string>
+
+    <!-- Crop Image Tool & Pre-crop -->
+    <string name="tools_card_crop_img">Crop Image</string>
+    <string name="tools_tile_crop_img">Crop</string>
+    <string name="tools_crop_img_title">Crop Image</string>
+    <string name="tools_crop_img_action">Crop</string>
+    <string name="tools_crop_img_button">Crop / Adjust</string>
+    <string name="tools_crop_img_hint">Crop or adjust perspective before making changes</string>
+    <string name="tools_crop_img_success">Image cropped successfully (%1$s)</string>
+    <string name="tools_progress_cropping_img">Cropping image…</string>
+    <string name="tools_err_crop_img">Could not crop image</string>
+
+    <!-- Advanced Image & Convert enhancements -->
+    <string name="tools_convert_img_format_pdf">PDF Document</string>
+    <string name="tools_convert_img_format_pdf_desc">Create a clean, multi-page PDF document from selected images.</string>
+    <string name="tools_convert_img_quality_label">JPEG / WEBP Quality: %1$d%%</string>
+    <string name="tools_convert_img_reorder_crop_hint">Tap any image to crop or adjust before converting</string>
+    <string name="tools_resize_img_mode_dimensions">Dimensions</string>
+    <string name="tools_resize_img_mode_percent">Percentage</string>
+    <string name="tools_resize_img_percent_label">Scale: %1$d%%</string>
+    <string name="tools_resize_img_preset_instagram">Instagram (1080 × 1080)</string>
+    <string name="tools_resize_img_preset_story">Story (1080 × 1920)</string>
+    <string name="tools_resize_img_preset_a4">A4 Doc (2480 × 3508)</string>
+
+    <!-- Watermark PDF Tool -->
+    <string name="tools_card_watermark">Watermark PDF</string>
+    <string name="tools_tile_watermark">Watermark</string>
+    <string name="tools_watermark_title">Watermark PDF</string>
+    <string name="tools_watermark_text_label">Watermark text</string>
+    <string name="tools_watermark_text_hint">e.g. CONFIDENTIAL, DRAFT, COPY</string>
+    <string name="tools_watermark_quick_confidential">CONFIDENTIAL</string>
+    <string name="tools_watermark_quick_draft">DRAFT</string>
+    <string name="tools_watermark_quick_copy">COPY</string>
+    <string name="tools_watermark_quick_approved">APPROVED</string>
+    <string name="tools_watermark_angle_label">Orientation</string>
+    <string name="tools_watermark_angle_diagonal">Diagonal (45°)</string>
+    <string name="tools_watermark_angle_horizontal">Horizontal (0°)</string>
+    <string name="tools_watermark_color_label">Colour</string>
+    <string name="tools_watermark_color_grey">Grey</string>
+    <string name="tools_watermark_color_red">Red</string>
+    <string name="tools_watermark_color_blue">Blue</string>
+    <string name="tools_watermark_color_black">Black</string>
+    <string name="tools_watermark_opacity_label">Opacity: %1$d%%</string>
+    <string name="tools_watermark_size_label">Text size</string>
+    <string name="tools_watermark_size_small">Small</string>
+    <string name="tools_watermark_size_medium">Medium</string>
+    <string name="tools_watermark_size_large">Large</string>
+    <string name="tools_watermark_action">Add Watermark</string>
+    <string name="tools_progress_watermarking">Applying watermark to PDF…</string>
+    <string name="tools_watermark_success">Watermark added to %1$d pages</string>
+    <string name="tools_err_watermark">Could not apply watermark to PDF</string>
+
+    <!-- Page Numbers Tool -->
+    <string name="tools_card_page_numbers">Page Numbers</string>
+    <string name="tools_tile_page_numbers">Numbers</string>
+    <string name="tools_page_numbers_title">Add Page Numbers</string>
+    <string name="tools_page_numbers_position_label">Position</string>
+    <string name="tools_page_numbers_pos_bottom_center">Bottom Centre</string>
+    <string name="tools_page_numbers_pos_bottom_right">Bottom Right</string>
+    <string name="tools_page_numbers_pos_bottom_left">Bottom Left</string>
+    <string name="tools_page_numbers_pos_top_center">Top Centre</string>
+    <string name="tools_page_numbers_pos_top_right">Top Right</string>
+    <string name="tools_page_numbers_format_label">Numbering format</string>
+    <string name="tools_page_numbers_fmt_page_n_of_m">Page 1 of N</string>
+    <string name="tools_page_numbers_fmt_n_slash_m">1 / N</string>
+    <string name="tools_page_numbers_fmt_dash">- 1 -</string>
+    <string name="tools_page_numbers_fmt_simple">1</string>
+    <string name="tools_page_numbers_skip_cover">Skip first page (cover)</string>
+    <string name="tools_page_numbers_action">Add Page Numbers</string>
+    <string name="tools_progress_page_numbers">Adding page numbers to PDF…</string>
+    <string name="tools_page_numbers_success">Page numbers added to %1$d pages</string>
+    <string name="tools_err_page_numbers">Could not add page numbers to PDF</string>
+
+    <!-- PDF to Text Tool -->
+    <string name="tools_card_pdf2text">PDF to Text</string>
+    <string name="tools_tile_pdf2text">Extract Text</string>
+    <string name="tools_pdf2text_title">Extract Text from PDF</string>
+    <string name="tools_pdf2text_desc">Extracts all text from this PDF document into a clean, searchable text file (.txt).</string>
+    <string name="tools_pdf2text_action">Extract Text</string>
+    <string name="tools_progress_extracting_text">Extracting text from PDF…</string>
+    <string name="tools_pdf2text_success">Extracted %1$d words across %2$d pages (%3$s)</string>
+    <string name="tools_pdf2text_empty_warning">No selectable text found in this PDF. Try \'Make searchable\' (OCR) first.</string>
+    <string name="tools_err_pdf2text">Could not extract text from PDF</string>
 </resources>

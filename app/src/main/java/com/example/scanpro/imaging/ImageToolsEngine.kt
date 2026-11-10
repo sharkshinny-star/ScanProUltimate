@@ -12,6 +12,7 @@ import com.example.scanpro.core.text.AppStrings
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.userRequire
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.data.CropQuad
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -362,6 +363,59 @@ object ImageToolsEngine {
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputSize,
                 message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Crops an image according to the specified normalized corner quadrilateral.
+     */
+    suspend fun cropImage(
+        context: Context,
+        inputUri: Uri,
+        quad: CropQuad,
+        outputFile: File,
+        format: ImageExportFormat = ImageExportFormat.JPEG,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+    ): PdfToolResult = withContext(Dispatchers.IO) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = PdfToolsEngine.copyUriToTemp(context, inputUri, "crop_in_${UUID.randomUUID()}.tmp")
+        try {
+            val originalSize = tempFile.length()
+            userRequire(originalSize > 0, R.string.tools_err_image_unreadable, 1)
+            onProgress(1, 2, AppStrings.get(R.string.tools_progress_cropping_img))
+
+            val stagingOut = File(outputFile.parentFile, "staged_${UUID.randomUUID()}.jpg")
+            ImageProcessor.cropSourceToNewFile(tempFile, stagingOut, quad)
+            userRequire(stagingOut.exists() && stagingOut.length() > 0, R.string.tools_err_crop_img)
+
+            if (format != ImageExportFormat.JPEG) {
+                val bmp = ImageProcessor.decodeOrientedScaled(stagingOut.absolutePath, 4200)
+                    ?: userError(R.string.tools_err_image_undecodable, 1)
+                val prepared = prepareForFormat(bmp, format)
+                if (prepared !== bmp && !bmp.isRecycled) bmp.recycle()
+                FileOutputStream(outputFile).use { out ->
+                    encodeToStream(prepared, format, 100, out)
+                }
+                prepared.recycle()
+                stagingOut.delete()
+            } else {
+                stagingOut.copyTo(outputFile, overwrite = true)
+                stagingOut.delete()
+            }
+
+            onProgress(2, 2, AppStrings.get(R.string.tools_progress_cropping_img))
+            val outputSize = outputFile.length()
+            val msg = AppStrings.get(R.string.tools_crop_img_success, formatBytes(context, outputSize))
+
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = 1,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg,
             )
         } finally {
             tempFile.delete()

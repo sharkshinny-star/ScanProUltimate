@@ -5,6 +5,7 @@ import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.UserFacingPluralException
 import com.example.scanpro.core.text.UserFacingException
 import com.example.scanpro.core.text.AppStrings
+import com.example.scanpro.core.ui.formatBytes
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -18,6 +19,11 @@ import com.example.scanpro.data.ScanPage
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.tom_roush.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
+import com.tom_roush.pdfbox.text.PDFTextStripper
+import com.tom_roush.pdfbox.util.Matrix
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +62,34 @@ enum class ImageExportFormat(val extension: String) {
 
 /** How a PDF is protected, as far as opening and editing it goes. */
 enum class PdfProtection { NONE, PASSWORD_REQUIRED, RESTRICTED_ONLY }
+
+data class WatermarkConfig(
+    val text: String,
+    val isDiagonal: Boolean = true,
+    val colorRgb: Int = 0x666666,
+    val opacityPercent: Int = 25,
+    val fontSizePt: Float = 48f,
+    val pageRange: String = ""
+)
+
+enum class PageNumberPosition {
+    BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT
+}
+
+enum class PageNumberFormat {
+    PAGE_N_OF_M,
+    N_SLASH_M,
+    DASH,
+    SIMPLE
+}
+
+data class PageNumbersConfig(
+    val position: PageNumberPosition = PageNumberPosition.BOTTOM_CENTER,
+    val format: PageNumberFormat = PageNumberFormat.PAGE_N_OF_M,
+    val skipFirstPage: Boolean = false,
+    val marginPt: Float = 36f,
+    val fontSizePt: Float = 11f
+)
 
 /**
  * Merge reached file [index] (0-based), [uri], which needs a password to open: none was given for it, or
@@ -595,6 +629,232 @@ object PdfToolsEngine {
         openPdf(file)
     } catch (error: InvalidPasswordException) {
         throw UserFacingException(R.string.tools_err_password_protected, cause = error)
+    }
+
+    /**
+     * Applies a text watermark across selected pages of a PDF document with custom angle, colour, opacity and size.
+     */
+    suspend fun watermarkPdf(
+        context: Context,
+        inputUri: Uri,
+        config: WatermarkConfig,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(Dispatchers.IO) {
+        userRequire(config.text.isNotBlank(), R.string.tools_err_watermark)
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "wm_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            val doc = openPdf(tempFile, password)
+            val totalPages = doc.numberOfPages
+            userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+            val targetRanges = if (config.pageRange.isBlank()) listOf(1..totalPages)
+            else parsePageRanges(config.pageRange, totalPages)
+            val targetPages = targetRanges.flatMap { it.toList() }.map { it - 1 }.toSet()
+
+            val font = PDType1Font.HELVETICA_BOLD
+            val fontSize = config.fontSizePt.coerceIn(12f, 120f)
+            val alpha = (config.opacityPercent.coerceIn(5, 100) / 100f)
+            val r = android.graphics.Color.red(config.colorRgb) / 255f
+            val g = android.graphics.Color.green(config.colorRgb) / 255f
+            val b = android.graphics.Color.blue(config.colorRgb) / 255f
+
+            val gState = PDExtendedGraphicsState().apply {
+                nonStrokingAlphaConstant = alpha
+            }
+
+            var watermarkedCount = 0
+            val label = AppStrings.get(R.string.tools_progress_watermarking)
+            for (i in 0 until totalPages) {
+                if (!coroutineContext.isActive) throw InterruptedException("Watermark cancelled")
+                onProgress(i + 1, totalPages, label)
+
+                if (i in targetPages) {
+                    val page = doc.getPage(i)
+                    val box = page.mediaBox
+                    val width = box.width
+                    val height = box.height
+                    val textWidth = (font.getStringWidth(config.text) / 1000f) * fontSize
+                    val textHeight = fontSize
+
+                    PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                        cs.setGraphicsStateParameters(gState)
+                        cs.setNonStrokingColor(r, g, b)
+                        cs.beginText()
+                        cs.setFont(font, fontSize)
+
+                        if (config.isDiagonal) {
+                            val angleRad = Math.toRadians(45.0)
+                            val cos = Math.cos(angleRad).toFloat()
+                            val sin = Math.sin(angleRad).toFloat()
+                            val cx = width / 2f
+                            val cy = height / 2f
+                            val tx = cx - (textWidth / 2f * cos) + (textHeight / 4f * sin)
+                            val ty = cy - (textWidth / 2f * sin) - (textHeight / 4f * cos)
+                            cs.setTextMatrix(Matrix(cos, sin, -sin, cos, tx, ty))
+                        } else {
+                            val x = (width - textWidth) / 2f
+                            val y = (height - textHeight) / 2f
+                            cs.newLineAtOffset(x, y)
+                        }
+
+                        cs.showText(config.text)
+                        cs.endText()
+                    }
+                    watermarkedCount++
+                }
+            }
+
+            doc.save(outputFile)
+            doc.close()
+
+            val outputSize = outputFile.length()
+            val msg = AppStrings.get(R.string.tools_watermark_success, watermarkedCount)
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Adds page numbers to pages of a PDF document with position and formatting controls.
+     */
+    suspend fun addPageNumbers(
+        context: Context,
+        inputUri: Uri,
+        config: PageNumbersConfig,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(Dispatchers.IO) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "num_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            val doc = openPdf(tempFile, password)
+            val totalPages = doc.numberOfPages
+            userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+            val font = PDType1Font.HELVETICA
+            val fontSize = config.fontSizePt.coerceIn(8f, 24f)
+            val margin = config.marginPt.coerceIn(12f, 100f)
+
+            var numberedCount = 0
+            val label = AppStrings.get(R.string.tools_progress_page_numbers)
+
+            for (i in 0 until totalPages) {
+                if (!coroutineContext.isActive) throw InterruptedException("Page numbers cancelled")
+                onProgress(i + 1, totalPages, label)
+
+                if (config.skipFirstPage && i == 0) continue
+
+                val page = doc.getPage(i)
+                val box = page.mediaBox
+                val width = box.width
+                val height = box.height
+
+                val pageNum = i + 1
+                val text = when (config.format) {
+                    PageNumberFormat.PAGE_N_OF_M -> "Page $pageNum of $totalPages"
+                    PageNumberFormat.N_SLASH_M -> "$pageNum / $totalPages"
+                    PageNumberFormat.DASH -> "- $pageNum -"
+                    PageNumberFormat.SIMPLE -> "$pageNum"
+                }
+
+                val textWidth = (font.getStringWidth(text) / 1000f) * fontSize
+
+                val x = when (config.position) {
+                    PageNumberPosition.BOTTOM_LEFT -> margin
+                    PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (width - textWidth) / 2f
+                    PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> width - margin - textWidth
+                }
+                val y = when (config.position) {
+                    PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> margin
+                    PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> height - margin - fontSize
+                }
+
+                PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                    cs.setNonStrokingColor(0.2f, 0.2f, 0.2f)
+                    cs.beginText()
+                    cs.setFont(font, fontSize)
+                    cs.newLineAtOffset(x, y)
+                    cs.showText(text)
+                    cs.endText()
+                }
+                numberedCount++
+            }
+
+            doc.save(outputFile)
+            doc.close()
+
+            val outputSize = outputFile.length()
+            val msg = AppStrings.get(R.string.tools_page_numbers_success, numberedCount)
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
+    }
+
+    /**
+     * Extracts all selectable text from a PDF document into a UTF-8 text file.
+     */
+    suspend fun extractText(
+        context: Context,
+        inputUri: Uri,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        password: String = ""
+    ): PdfToolResult = withContext(Dispatchers.IO) {
+        outputFile.parentFile?.mkdirs()
+        val tempFile = copyUriToTemp(context, inputUri, "txt_in_${UUID.randomUUID()}.pdf")
+        try {
+            val originalSize = tempFile.length()
+            onProgress(1, 2, AppStrings.get(R.string.tools_progress_extracting_text))
+
+            val doc = openPdf(tempFile, password)
+            val totalPages = doc.numberOfPages
+            userRequire(totalPages > 0, R.string.tools_err_no_pages)
+
+            val stripper = PDFTextStripper()
+            val text = stripper.getText(doc).trim()
+            doc.close()
+
+            val wordCount = if (text.isBlank()) 0 else text.split("\\s+".toRegex()).count { it.isNotBlank() }
+            outputFile.writeText(text, Charsets.UTF_8)
+            val outputSize = outputFile.length()
+
+            onProgress(2, 2, AppStrings.get(R.string.tools_progress_extracting_text))
+            val msg = if (wordCount > 0) {
+                AppStrings.get(R.string.tools_pdf2text_success, wordCount, totalPages, formatBytes(context, outputSize))
+            } else {
+                AppStrings.get(R.string.tools_pdf2text_empty_warning)
+            }
+
+            return@withContext PdfToolResult(
+                outputFile = outputFile,
+                pageCount = totalPages,
+                originalSizeBytes = originalSize,
+                outputSizeBytes = outputSize,
+                message = msg
+            )
+        } finally {
+            tempFile.delete()
+        }
     }
 
     /** Opens a PDF with [password] ("" when there is none); a missing or wrong one throws [InvalidPasswordException]. */

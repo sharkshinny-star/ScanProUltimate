@@ -22,6 +22,8 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipFile
+import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.NormalizedPoint
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -237,5 +239,26 @@ class ImageToolsEngineTest {
         } catch (e: IllegalArgumentException) {
             // Expected
         }
+    }
+
+    @Test
+    fun cropImage_cropsAccurately() = runBlocking {
+        val sourceFile = File(testDir, "uncropped.jpg")
+        val bmp = createSampleBitmap(1000, 1000)
+        saveBitmap(bmp, Bitmap.CompressFormat.JPEG, sourceFile)
+
+        val outFile = File(testDir, "cropped.jpg")
+        val quad = CropQuad(
+            topLeft = NormalizedPoint(0.1f, 0.1f),
+            topRight = NormalizedPoint(0.9f, 0.1f),
+            bottomRight = NormalizedPoint(0.9f, 0.9f),
+            bottomLeft = NormalizedPoint(0.1f, 0.9f)
+        )
+
+        val result = ImageToolsEngine.cropImage(app, Uri.fromFile(sourceFile), quad, outFile)
+        assertTrue(outFile.exists())
+        assertEquals(1, result.pageCount)
+        val decoded = BitmapFactory.decodeFile(outFile.absolutePath)
+        assertNotNull("Cropped file must be readable", decoded)
     }
 }

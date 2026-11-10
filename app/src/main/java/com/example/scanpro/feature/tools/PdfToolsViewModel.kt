@@ -28,6 +28,9 @@ import com.example.scanpro.imaging.MergePasswordNeededException
 import com.example.scanpro.imaging.OcrEngine
 import com.example.scanpro.imaging.PdfFormEngine
 import com.example.scanpro.imaging.PdfOcrEngine
+import com.example.scanpro.data.CropQuad
+import com.example.scanpro.imaging.PageNumbersConfig
+import com.example.scanpro.imaging.WatermarkConfig
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfProtection
@@ -535,6 +538,30 @@ class PdfToolsViewModel @Inject constructor(
         launchTool(R.string.tools_progress_resizing_img, R.string.tools_err_resize_img) {
             val out = named(uri, "resized_${config.targetWidth}x${config.targetHeight}", config.outputFormat.extension)
             ImageToolsEngine.resizeImage(context, uri, config, out, ::report)
+        }
+
+    fun cropImage(uri: Uri, quad: CropQuad, format: ImageExportFormat = ImageExportFormat.JPEG) =
+        launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
+            val out = named(uri, "cropped", format.extension)
+            ImageToolsEngine.cropImage(context, uri, quad, out, format, ::report)
+        }
+
+    fun watermarkPdf(uri: Uri, config: WatermarkConfig) =
+        launchTool(R.string.tools_progress_watermarking, R.string.tools_err_watermark) {
+            val out = named(uri, "watermarked", "pdf")
+            PdfToolsEngine.watermarkPdf(context, uri, config, out, ::report)
+        }
+
+    fun addPageNumbers(uri: Uri, config: PageNumbersConfig) =
+        launchTool(R.string.tools_progress_page_numbers, R.string.tools_err_page_numbers) {
+            val out = named(uri, "numbered", "pdf")
+            PdfToolsEngine.addPageNumbers(context, uri, config, out, ::report)
+        }
+
+    fun extractText(uri: Uri) =
+        launchTool(R.string.tools_progress_extracting_text, R.string.tools_err_pdf2text) {
+            val out = named(uri, "extracted_text", "txt")
+            PdfToolsEngine.extractText(context, uri, out, ::report)
         }
 
     suspend fun inspectImage(uri: Uri): ImageMetadata? = withContext(Dispatchers.IO) {

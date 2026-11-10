@@ -1,6 +1,6 @@
 # PDF & Image Tools: improvements left to do
 
-Last updated: 2026-11-09. F104 added Image Tools suite (compression to target KB/MB, 100% lossless JPG to PNG conversion, dimension resizing with aspect-ratio lock, passport/avatar presets). F103 resolved Unlock background notification and Split/Export naming. When an item is done, move it to `AUDIT_FINDINGS.md` (Fixed, with its F id and commit) and delete it here.
+Last updated: 2026-11-10. F107 added standalone Crop Image tool, pre-crop capability in Image Tools dialogs, advanced image tools optimisation (dimensions vs percent, presets, direct PDF export), and new PDF Tools suite (Watermark, Page numbers, PDF to Text). F104 added Image Tools suite (compression to target KB/MB, 100% lossless JPG to PNG conversion, dimension resizing with aspect-ratio lock, passport/avatar presets). F103 resolved Unlock background notification and Split/Export naming. When an item is done, move it to `AUDIT_FINDINGS.md` (Fixed, with its F id and commit) and delete it here.
 
 ## Fixes to existing tools
 
@@ -15,17 +15,17 @@ Last updated: 2026-11-09. F104 added Image Tools suite (compression to target KB
 
 ## New tools (reuse existing code)
 
-### 4. Page numbers and watermark for any PDF (P2)
-`PdfExporter` already numbers pages for scan exports. Add a tool that stamps "n / total" (position, size) and/or a
-text watermark (text, opacity, angle) onto an existing PDF with PDFBox content streams.
+### 4. Page numbers and watermark for any PDF (Fixed in F107)
+Implemented in F107 (`page_numbers` and `watermark` in `PdfToolsEngine`, `PdfToolsViewModel`, and `PdfToolsScreen`):
+stamps custom text watermark diagonally at 45° or horizontally at 0° with colour chips, opacity, and font size sliders;
+and stamps page numbers in 5 positions ("Page 1 of N", "1 / N", "- 1 -", "1") with option to skip cover page.
 
 ### 5. Sign PDF (P2)
 Reuse the signature pad and placement step from the document editor (F25) on pages rendered from any PDF; stamp the
 signature image with PDFBox at the chosen spot.
 
-### 6. PDF to Word or text (P3)
-Text recognition (`OcrEngine`, `PdfOcrEngine`) and the Word export (`DocxExporter`) already exist for scans; chain them
-for any PDF, using the PDF's own text layer when it has one.
+### 6. PDF to Word or text (P3 - Text extraction fixed in F107)
+Text recognition (`OcrEngine`, `PdfOcrEngine`) and the Word export (`DocxExporter`) exist for scans. In F107, added `pdf2text` tool extracting text layer to `.txt` files with word and page counts. PDF to Word (`.docx`) remains for full multi-format export.
 
 ### 7. Insert pages in Organise (P3)
 Add a blank page or pages from another PDF at a chosen position in the Organise sheet (`organizePages` takes
