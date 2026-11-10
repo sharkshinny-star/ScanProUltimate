@@ -338,7 +338,11 @@ class EncryptedDocumentPackage(private val context: Context) {
                 throw error
             } catch (error: Throwable) {
                 outDir.deleteRecursively()
-                throw UserFacingException(R.string.err_could_not_decrypt_backup, cause = error)
+                val wrongPassword = generateSequence(error) { it.cause }.any { it is ChunkedAead.WrongKeyException }
+                throw UserFacingException(
+                    if (wrongPassword) R.string.err_backup_wrong_password else R.string.err_could_not_decrypt_backup,
+                    cause = error
+                )
             } finally {
                 runCatching { rawInput?.close() }
                 encrypted.delete()

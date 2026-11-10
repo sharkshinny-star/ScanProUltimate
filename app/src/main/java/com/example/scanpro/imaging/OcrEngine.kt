@@ -31,7 +31,7 @@ import kotlin.time.Duration.Companion.seconds
 data class OcrResult(val text: String, val words: List<OcrWord>)
 
 @Singleton
-class OcrEngine @Inject constructor(@ApplicationContext private val context: Context) {
+open class OcrEngine @Inject constructor(@ApplicationContext private val context: Context) {
     // Each recogniser loads its own model, so create one only when its script is first used
     // instead of loading all five on the first OCR call.
     private val recognizers = ConcurrentHashMap<OcrScript, TextRecognizer>()
@@ -88,14 +88,14 @@ class OcrEngine @Inject constructor(@ApplicationContext private val context: Con
     }
 
     /** Makes sure [script]'s model is on the device, downloading it if needed; throws a readable error otherwise. */
-    suspend fun prepare(script: OcrScript) = ensureModel(script, recognizerFor(script), waitForDownload = true)
+    open suspend fun prepare(script: OcrScript) = ensureModel(script, recognizerFor(script), waitForDownload = true)
 
     /** Recognised text plus the position of every word, so a PDF text layer can sit under the printed words. */
     /**
      * Callers keep going without text when recognition fails (a page is still saved), so the reason is logged
      * here; otherwise a broken model or library would only show up as pages with no text.
      */
-    suspend fun recognizeDetailed(file: File, script: OcrScript = OcrScript.LATIN): OcrResult = try {
+    open suspend fun recognizeDetailed(file: File, script: OcrScript = OcrScript.LATIN): OcrResult = try {
         recognizeOrThrow(file, script)
     } catch (cancelled: kotlinx.coroutines.CancellationException) {
         throw cancelled

@@ -107,6 +107,14 @@
     </plurals>
     <string name="settings_restore_backup">ബാക്കപ്പിൽ നിന്ന് റീസ്റ്റോർ ചെയ്യുക</string>
     <string name="settings_restore_backup_subtitle">.scanpro ബാക്കപ്പ് ഫയലിൽ നിന്ന് ഒരു ഡോക്യുമെന്റ് തിരികെ ചേർക്കുക</string>
+    <string name="settings_recover_library">കാണാതായ ഡോക്യുമെന്റുകൾ വീണ്ടെടുക്കുക</string>
+    <string name="settings_recover_library_subtitle">ഈ ഉപകരണത്തിൽ ഉണ്ടായിട്ടും ലൈബ്രറിയിൽ കാണാത്ത സ്കാനുകൾ കണ്ടെത്തുക</string>
+    <string name="settings_recover_running">കാണാതായ ഡോക്യുമെന്റുകൾ തിരയുന്നു…</string>
+    <string name="settings_recover_none">കാണാതായ ഡോക്യുമെന്റുകൾ ഒന്നും കണ്ടെത്തിയില്ല</string>
+    <plurals name="settings_recover_done">
+        <item quantity="one">%1$d ഡോക്യുമെന്റ് വീണ്ടെടുത്തു</item>
+        <item quantity="other">%1$d ഡോക്യുമെന്റുകൾ വീണ്ടെടുത്തു</item>
+    </plurals>
     <string name="settings_restore_password_message">ബാക്കപ്പ് ഉണ്ടാക്കിയപ്പോൾ ഉപയോഗിച്ച പാസ്‌വേഡ് നൽകുക.</string>
     <string name="settings_restore_start">റീസ്റ്റോർ ചെയ്യുക</string>
     <string name="settings_restore_running">ബാക്കപ്പ് റീസ്റ്റോർ ചെയ്യുന്നു…</string>

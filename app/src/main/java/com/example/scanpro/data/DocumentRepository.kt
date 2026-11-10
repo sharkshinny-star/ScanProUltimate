@@ -29,9 +29,15 @@ class DocumentRepository @Inject constructor(
     private val catalog = DocumentCatalog(store)
     private val trash = DocumentTrash(store)
     private val importer = DocumentImporter(store)
+    private val recovery = LibraryRecovery(store)
     private val editor = PageEditor(store)
     private val organiser = PageOrganiser(store, trash)
     private val exporter = DocumentExporter(context, db) { store.ensurePdfNow(it) }
+
+    /** Draws a page from its photo; tests replace it to stand in for the native image pipeline. */
+    internal var pageRenderer: PageRenderer
+        get() = store.pageRenderer
+        set(value) { store.pageRenderer = value }
 
     /** Undo and redo steps available per document, for this session. */
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = store.history.state
@@ -107,6 +113,9 @@ class DocumentRepository @Inject constructor(
     ): ScanDocument =
         importer.importPdf(pdfUri, quality, autoTitle, password)
     suspend fun importEncryptedBackup(source: Uri, password: String): ScanDocument = importer.importEncryptedBackup(source, password)
+
+    /** Rebuilds documents whose files are on the device but whose records are gone; returns how many came back. */
+    suspend fun recoverOrphanedDocuments(): Int = recovery.recoverOrphanedDocuments()
 
     // ---- PageEditor
     suspend fun applyFilter(documentId: String, pageId: String, filter: PageFilter) = editor.applyFilter(documentId, pageId, filter)

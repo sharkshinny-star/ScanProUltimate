@@ -107,6 +107,14 @@
     </plurals>
     <string name="settings_restore_backup">बैकअप से रीस्टोर करें</string>
     <string name="settings_restore_backup_subtitle">.scanpro बैकअप फ़ाइल से डॉक्यूमेंट वापस जोड़ें</string>
+    <string name="settings_recover_library">गायब डॉक्यूमेंट रिकवर करें</string>
+    <string name="settings_recover_library_subtitle">इस डिवाइस पर सेव ऐसे स्कैन खोजें जो आपकी लाइब्रेरी में नहीं दिख रहे</string>
+    <string name="settings_recover_running">गायब डॉक्यूमेंट खोजे जा रहे हैं…</string>
+    <string name="settings_recover_none">कोई गायब डॉक्यूमेंट नहीं मिला</string>
+    <plurals name="settings_recover_done">
+        <item quantity="one">%1$d डॉक्यूमेंट रिकवर हुआ</item>
+        <item quantity="other">%1$d डॉक्यूमेंट रिकवर हुए</item>
+    </plurals>
     <string name="settings_restore_password_message">वह पासवर्ड डालें जिससे बैकअप बनाया गया था।</string>
     <string name="settings_restore_start">रीस्टोर करें</string>
     <string name="settings_restore_running">बैकअप रीस्टोर हो रहा है…</string>

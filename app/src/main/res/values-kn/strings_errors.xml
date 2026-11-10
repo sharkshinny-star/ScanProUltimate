@@ -33,6 +33,7 @@
     <string name="err_backup_password_too_short">ಕನಿಷ್ಠ %1$d ಅಕ್ಷರಗಳ ಬ್ಯಾಕಪ್ ಪಾಸ್‌ವರ್ಡ್ ಬಳಸಿ</string>
     <string name="err_could_not_open_backup">ಬ್ಯಾಕಪ್ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ</string>
     <string name="err_could_not_decrypt_backup">ಬ್ಯಾಕಪ್ ಡೀಕ್ರಿಪ್ಟ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ. ಪಾಸ್‌ವರ್ಡ್ ಮತ್ತು ಫೈಲ್ ಪರಿಶೀಲಿಸಿ.</string>
+    <string name="err_backup_wrong_password">ಈ ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಬ್ಯಾಕಪ್ ತೆರೆಯಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ ಫೈಲ್ ಹಾಳಾಗಿರಬಹುದು.</string>
     <string name="err_backup_too_large">ಈ ಬ್ಯಾಕಪ್ ರಿಸ್ಟೋರ್ ಮಾಡಲು ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ</string>
     <string name="err_could_not_decode_image">%1$s ಚಿತ್ರ ಓದಲು ಆಗಲಿಲ್ಲ</string>
     <string name="err_could_not_decode_source">ಪುಟದ ಮೂಲ ಚಿತ್ರ ಓದಲು ಆಗಲಿಲ್ಲ</string>

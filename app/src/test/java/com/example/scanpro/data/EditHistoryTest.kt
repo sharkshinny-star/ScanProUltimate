@@ -61,4 +61,41 @@ class EditHistoryTest {
         assertNull(history.state.value["d"])
         assertTrue(history.retained("d").isEmpty())
     }
+
+    private fun wordy(filter: PageFilter, id: String = "p1", words: Int = 0) = ScanPage(
+        id, "d", 0, "s", "i", filter = filter,
+        ocrWords = List(words) { OcrWord("word$it", 0f, 0f, 1f, 1f) }
+    )
+
+    @Test
+    fun unchangedPagesAreSharedBetweenSteps() {
+        val history = EditHistory()
+        val big = wordy(PageFilter.ORIGINAL, id = "big", words = 50)
+        val first = listOf(big, wordy(PageFilter.ORIGINAL, id = "edited"))
+        val second = listOf(big.copy(), wordy(PageFilter.GRAY, id = "edited"))
+        history.record("d", first)
+        history.record("d", second)
+
+        val kept = history.retained("d")
+        // The second step reuses the first step's copy of the unchanged page instead of holding its own.
+        assertTrue(kept[0] === kept[2])
+    }
+
+    @Test
+    fun theOldestStepsGoFirstWhenTheyHoldTooMuch() {
+        val history = EditHistory(limit = 20, maxBytes = 20_000)
+        repeat(10) { n ->
+            // Each step is a different page, so nothing is shared and every step carries its own words.
+            history.record("d", listOf(wordy(PageFilter.entries[n % PageFilter.entries.size], id = "p$n", words = 100)))
+        }
+        val steps = history.state.value.getValue("d").undoSteps
+        assertTrue("kept $steps steps", steps in 1..9)
+    }
+
+    @Test
+    fun theNewestStepIsKeptEvenWhenItAloneIsOverTheBudget() {
+        val history = EditHistory(limit = 20, maxBytes = 100)
+        history.record("d", listOf(wordy(PageFilter.ORIGINAL, words = 500)))
+        assertEquals(1, history.state.value.getValue("d").undoSteps)
+    }
 }

@@ -97,6 +97,17 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** Looks for scans stored on the device that have no record, and adds them back to the library. */
+    fun recoverLibrary() {
+        operations.enqueue(context.getString(R.string.settings_recover_running), null) {
+            val count = repository.recoverOrphanedDocuments()
+            operations.showMessage(
+                if (count == 0) context.getString(R.string.settings_recover_none)
+                else context.resources.getQuantityString(R.plurals.settings_recover_done, count, count)
+            )
+        }
+    }
+
     /** Restores one encrypted package as a new document, with a snackbar action that opens it. */
     fun restoreBackup(file: Uri, password: String) {
         operations.enqueue(context.getString(R.string.settings_restore_running), null) {

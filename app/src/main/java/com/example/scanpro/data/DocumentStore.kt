@@ -19,6 +19,19 @@ internal const val MAX_TITLE_LENGTH = 120
 internal const val MAX_PAGES = 300
 internal const val MAX_IMPORT_BYTES = 300L * 1024 * 1024
 
+/** Draws [source] with a page's settings into [destination]; see [DocumentStore.pageRenderer]. */
+internal fun interface PageRenderer {
+    fun render(
+        source: File,
+        destination: File,
+        filter: PageFilter,
+        manualRotationDegrees: Int,
+        crop: CropQuad,
+        adjustments: PageAdjustments,
+        annotations: List<PageAnnotation>
+    )
+}
+
 /**
  * What every document operation shares: the database, the per-document PDF locks, the undo history, saving
  * pages without rebuilding the PDF, rebuilding it, and drawing and reading a page again (R9). The other
@@ -41,6 +54,11 @@ internal class DocumentStore(
     internal val pdfLocks = java.util.concurrent.ConcurrentHashMap<String, Any>()
 
     internal val history = EditHistory()
+
+    /** Draws a page from its photo; a property so tests can stand in for the native image pipeline. */
+    internal var pageRenderer: PageRenderer = PageRenderer { source, destination, filter, manualRotationDegrees, crop, adjustments, annotations ->
+        ImageProcessor.renderPage(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations)
+    }
 
     internal fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
 
@@ -99,7 +117,7 @@ internal class DocumentStore(
         } catch (error: Throwable) {
             touched.forEach { page ->
                 runCatching {
-                    ImageProcessor.renderPage(
+                    pageRenderer.render(
                         File(page.sourcePath), File(page.imagePath), page.filter, page.rotationDegrees,
                         page.crop, page.adjustments, page.annotations
                     )
@@ -115,7 +133,7 @@ internal class DocumentStore(
      * may include words that are now covered.
      */
     internal suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false, script: OcrScript? = null): ScanPage {
-        ImageProcessor.renderPage(
+        pageRenderer.render(
             source = File(page.sourcePath),
             destination = File(page.imagePath),
             filter = page.filter,

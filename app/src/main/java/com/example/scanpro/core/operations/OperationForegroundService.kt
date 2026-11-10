@@ -38,7 +38,8 @@ class OperationForegroundService : Service() {
         )
         if (intent?.action == ACTION_STOP) {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // With the start id, a newer "show" request that is already queued keeps the service alive.
+            stopSelf(startId)
         }
         return START_NOT_STICKY
     }
