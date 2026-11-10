@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_pick_one_hint">திறக்க ஒரு கோடைத் தொடவும்</string>
+    <string name="qr_outline_description">கோடைத் திற: %1$s</string>
+    <string name="qr_chooser_title">பல கோடுகள் கிடைத்தன</string>
+
+    <string name="qr_history_title">ஸ்கேன் வரலாறு</string>
+    <string name="qr_history_save_switch">ஸ்கேன் வரலாற்றைச் சேமி</string>
+    <string name="qr_history_search">வரலாற்றில் தேடு</string>
+    <string name="qr_history_privacy">வரலாறு இந்தச் சாதனத்திலேயே இருக்கும், ஒருபோதும் பதிவேற்றப்படாது. இதில் Wi-Fi கடவுச்சொற்களும் பிற தனிப்பட்ட தகவல்களும் இருக்கலாம், எனவே வேலை முடிந்ததும் அழித்துவிடுங்கள்.</string>
+    <string name="qr_history_clear_all">அனைத்தையும் அழி</string>
+    <string name="qr_history_clear_title">முழு ஸ்கேன் வரலாற்றையும் அழிக்கவா?</string>
+    <string name="qr_history_clear_message">பிடித்தவை உட்பட சேமித்த அனைத்து ஸ்கேன்களும் இந்தச் சாதனத்திலிருந்து நீக்கப்படும். இதைத் திரும்பப் பெற முடியாது.</string>
+    <string name="qr_history_empty">இதுவரை ஸ்கேன் எதுவும் சேமிக்கப்படவில்லை</string>
+    <string name="qr_history_no_matches">உங்கள் தேடலுக்குப் பொருந்தும் ஸ்கேன் இல்லை</string>
+    <string name="qr_history_favourite_add">பிடித்தவற்றில் சேர்</string>
+    <string name="qr_history_favourite_remove">பிடித்தவற்றிலிருந்து நீக்கு</string>
+    <string name="qr_history_delete">இந்த ஸ்கேனை நீக்கு</string>
+
+    <string name="qr_create_code">QR கோடை உருவாக்கு</string>
+    <string name="qr_generator_title">QR கோடை உருவாக்கு</string>
+    <string name="qr_type_text">உரை</string>
+    <string name="qr_type_link">லிங்க்</string>
+    <string name="qr_type_wifi">Wi-Fi</string>
+    <string name="qr_type_phone">ஃபோன்</string>
+    <string name="qr_type_email">ஈமெயில்</string>
+    <string name="qr_type_contact">கான்டாக்ட்</string>
+    <string name="qr_type_upi">UPI கட்டணம்</string>
+    <string name="qr_field_text">உரை</string>
+    <string name="qr_field_link">இணைய முகவரி</string>
+    <string name="qr_field_network">நெட்வொர்க் பெயர்</string>
+    <string name="qr_field_security">பாதுகாப்பு</string>
+    <string name="qr_security_wpa">WPA/WPA2/WPA3</string>
+    <string name="qr_security_wep">WEP</string>
+    <string name="qr_security_none">எதுவுமில்லை</string>
+    <string name="qr_field_password">கடவுச்சொல்</string>
+    <string name="qr_field_hidden">மறைக்கப்பட்ட நெட்வொர்க்</string>
+    <string name="qr_field_phone">ஃபோன் எண்</string>
+    <string name="qr_field_email">ஈமெயில் முகவரி</string>
+    <string name="qr_field_subject">பொருள் (விருப்பம்)</string>
+    <string name="qr_field_body">செய்தி (விருப்பம்)</string>
+    <string name="qr_field_name">பெயர்</string>
+    <string name="qr_field_upi_id">UPI ID (பெறுபவரின் முகவரி)</string>
+    <string name="qr_field_payee_name">பெறுபவரின் பெயர்</string>
+    <string name="qr_field_amount">ரூபாயில் தொகை (விருப்பம்)</string>
+    <string name="qr_field_note">குறிப்பு (விருப்பம்)</string>
+    <string name="qr_wifi_warning">கடவுச்சொல் கோடில் சாதாரண உரையாகச் சேமிக்கப்படுகிறது. அதை ஸ்கேன் செய்யும் எவரும் படிக்கலாம்.</string>
+    <string name="qr_preview_description">QR கோடு முன்னோட்டம்</string>
+    <string name="qr_preview_empty">கோடைப் பார்க்க விவரங்களை நிரப்பவும்</string>
+    <string name="qr_too_long">ஒரு QR கோடுக்கு இது மிக அதிகம்</string>
+    <string name="qr_share_png">படமாகப் பகிர்</string>
+    <string name="qr_share_title">QR கோடு</string>
+    <string name="qr_save_document">ஆவணமாகச் சேமி</string>
+    <string name="qr_save_failed">கோடைச் சேமிக்க முடியவில்லை</string>
+</resources>

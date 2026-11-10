@@ -82,6 +82,15 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.scanProSettings.edit { it[keyAutoTitle] = value }
     }
 
+    private val keyScanHistory = booleanPreferencesKey("scan_history")
+
+    /** Whether codes scanned in QR mode are kept in the on-device scan history; on unless the person switches it off. */
+    val scanHistoryEnabled: Flow<Boolean> = preferences.map { it[keyScanHistory] ?: true }.distinctUntilChanged()
+
+    suspend fun setScanHistoryEnabled(value: Boolean) {
+        context.scanProSettings.edit { it[keyScanHistory] = value }
+    }
+
     private val keyNamePattern = stringPreferencesKey("name_pattern")
 
     /** Name pattern for new scans (R34, `imaging/ScanTitle`); blank for the automatic name. */

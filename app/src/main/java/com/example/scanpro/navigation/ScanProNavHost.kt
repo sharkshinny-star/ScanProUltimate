@@ -40,6 +40,8 @@ import com.example.scanpro.feature.library.LibraryRoute
 import com.example.scanpro.feature.settings.SettingsRoute
 import com.example.scanpro.feature.tools.PdfToolsScreen
 import com.example.scanpro.feature.kept.KeptScansRoute
+import com.example.scanpro.feature.qr.QrGeneratorRoute
+import com.example.scanpro.feature.qr.QrHistoryRoute
 import com.example.scanpro.feature.trash.TrashRoute
 import com.example.scanpro.feature.viewer.PdfViewerScreen
 import com.example.scanpro.scanner.CameraScannerScreen
@@ -163,6 +165,8 @@ fun ScanProNavHost(
                 folders = saveFolders,
                 initialFolder = entry.arguments?.getString(ScanProDestinations.CAMERA_FOLDER_ARG).orEmpty(),
                 appending = appendTo != null,
+                onOpenQrHistory = { if (resumed()) navController.navigate(ScanProDestinations.QR_HISTORY) { launchSingleTop = true } },
+                onOpenQrGenerator = { if (resumed()) navController.navigate(ScanProDestinations.QR_GENERATOR) { launchSingleTop = true } },
                 onClose = dropUnlessResumed { navController.popBackStack() },
                 onComplete = { uris, mode, crops, filters, adjustments, name, folder ->
                     if (resumed()) {
@@ -179,6 +183,12 @@ fun ScanProNavHost(
                     }
                 }
             )
+        }
+        composable(ScanProDestinations.QR_HISTORY) {
+            QrHistoryRoute(onBack = dropUnlessResumed { navController.popBackStack() })
+        }
+        composable(ScanProDestinations.QR_GENERATOR) {
+            QrGeneratorRoute(onBack = dropUnlessResumed { navController.popBackStack() })
         }
         composable(ScanProDestinations.KEPT_SCANS) {
             KeptScansRoute(

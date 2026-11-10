@@ -266,6 +266,8 @@ dependencies {
 
     // Apache-2.0 PDF engine for merge/split/import and password protection.
     implementation(libs.pdfbox.android)
+    // Apache-2.0 QR encoder (pure Java, no network) for the QR generator; reading codes stays with ML Kit.
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit4)
     // Runs the real Android framework of each version on the JVM: the launch smoke test starts the app on API 24 to 36.
