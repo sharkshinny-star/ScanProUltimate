@@ -39,6 +39,11 @@ class DocumentRepository @Inject constructor(
         get() = store.pageRenderer
         set(value) { store.pageRenderer = value }
 
+    /** Writes a document's PDF; tests replace it because Robolectric cannot run android.graphics.pdf. */
+    internal var pdfWriter: (pages: List<ScanPage>, destination: File, document: ScanDocument) -> Unit
+        get() = store.pdfWriter
+        set(value) { store.pdfWriter = value }
+
     /** Undo and redo steps available per document, for this session. */
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = store.history.state
 

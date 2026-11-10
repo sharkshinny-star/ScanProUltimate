@@ -33,9 +33,21 @@ class FakeOcr(context: Context) : OcrEngine(context) {
     var failing = false
     var calls = 0
 
+    /** Fails only for the files this accepts, so one bad page can be told from the rest. */
+    var failFor: (File) -> Boolean = { false }
+
+    /** Every script the engine was asked to prepare, and an error to throw from it (a model that can't be fetched). */
+    val prepared = mutableListOf<OcrScript>()
+    var prepareFailure: Throwable? = null
+
+    override suspend fun prepare(script: OcrScript) {
+        prepared += script
+        prepareFailure?.let { throw it }
+    }
+
     override suspend fun recognizeDetailed(file: File, script: OcrScript): OcrResult {
         calls++
-        if (failing) throw IllegalStateException("recognition failed")
+        if (failing || failFor(file)) throw IllegalStateException("recognition failed")
         return OcrResult(text, emptyList())
     }
 }
@@ -70,6 +82,7 @@ abstract class RepositoryTestBase {
                 destination.parentFile?.mkdirs()
                 destination.writeText("drawn $filter $rotation ${annotations.size}")
             }
+            repo.pdfWriter = { _, destination, _ -> destination.writeText("%PDF fake") }
         }
     }
 
