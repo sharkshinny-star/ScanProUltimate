@@ -16,7 +16,6 @@ internal class DocumentCatalog(private val store: DocumentStore) {
     private fun saveWithStalePdf(document: ScanDocument) = store.saveWithStalePdf(document)
     private fun regenerateAndSave(document: ScanDocument, touch: Boolean = true) = store.regenerateAndSave(document, touch)
     private fun ensurePdfNow(id: String) = store.ensurePdfNow(id)
-    private fun now() = System.currentTimeMillis()
 
     /** Documents in the library (not in the recycle bin). */
     suspend fun activeDocumentCount(): Int = withContext(Dispatchers.IO) { db.loadOverview(recentLimit = 0).documentCount }

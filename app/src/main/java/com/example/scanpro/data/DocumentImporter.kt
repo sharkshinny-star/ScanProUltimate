@@ -34,7 +34,6 @@ internal class DocumentImporter(private val store: DocumentStore) {
     private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false, script: OcrScript? = null) =
         store.renderAndOcr(page, runOcr, redactionChanged, script)
     private fun copyUri(source: Uri, destination: File) = store.copyUri(source, destination)
-    private fun now() = System.currentTimeMillis()
 
     private val encryptedPackages = EncryptedDocumentPackage(context)
 

@@ -188,5 +188,4 @@ internal class DocumentExporter(
 
     private fun requireDocument(id: String) = db.loadDocument(id) ?: userError(R.string.err_document_not_found)
     private fun safeName(value: String): String = fileSafeName(value)
-    private fun now() = System.currentTimeMillis()
 }

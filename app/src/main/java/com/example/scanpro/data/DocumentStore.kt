@@ -17,6 +17,9 @@ import kotlinx.coroutines.withContext
 
 internal const val MAX_TITLE_LENGTH = 120
 internal const val MAX_PAGES = 300
+
+/** The current time in milliseconds; one definition for the data layer instead of a private copy per class. */
+internal fun now() = System.currentTimeMillis()
 internal const val MAX_IMPORT_BYTES = 300L * 1024 * 1024
 
 /** Draws [source] with a page's settings into [destination]; see [DocumentStore.pageRenderer]. */
@@ -44,7 +47,6 @@ internal class DocumentStore(
     val settings: SettingsStore,
 ) {
     val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
-    private fun now() = System.currentTimeMillis()
 
 
     /**
