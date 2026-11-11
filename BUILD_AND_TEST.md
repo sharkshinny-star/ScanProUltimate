@@ -41,6 +41,17 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-12, F146 first-time introductions, worktree `ScanProTips` rebased on `a60b413`)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin` | 0 errors, 0 warnings |
+| `:app:testDebugUnitTest` (full) | 709 tests, 0 failed, 64 skipped; new `FirstRunHintsTest` (5) and `IntroductionsScreenshotTest` (6, images in `app/build/screenshots/intro_*`) pass |
+| `:app:lintDebug` | 0 errors, 73 warnings (none in F146 files) |
+| `python3 -I scripts/ci/scanpro-quality-audit.py` | PASS (1799 strings, 25 tool tiles) |
+| Note | `IntroductionsScreenshotTest` failed once with a Robolectric native-runtime load error (`FileSystemAlreadyExistsException` in `maybeCopyFonts`) when run filtered together with an SDK 34 test class; it passed alone and in the full suite. |
+| Not run | Device check, instrumented tests, release build |
+
 ## Latest results (2026-11-12, F140, uncommitted tree on 4e2b4bd)
 
 - `:app:compileDebugKotlin`: 0 errors. `:app:testDebugUnitTest`: 676 tests, 0 failed, 64 skipped (`ColourThemeScreenshotTest.settingsAppearance` now opens the Appearance page first). `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS.

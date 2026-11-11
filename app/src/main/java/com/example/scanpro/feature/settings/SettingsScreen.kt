@@ -69,6 +69,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.TipsAndUpdates
 import androidx.compose.material.icons.rounded.Title
 import androidx.compose.material.icons.rounded.Translate
@@ -755,6 +756,20 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_whats_new_subtitle),
                         trailing = { Chevron() },
                         onClick = { whatsNewOpen = true }
+                    )
+                    InsetDivider()
+                    // F146: the Home tour, the tool introductions and the camera's mode explainers all show once more.
+                    val introsReset = stringResource(R.string.settings_show_intros_done)
+                    SettingsRow(
+                        icon = Icons.Rounded.Replay,
+                        tone = TileTone.Teal,
+                        title = stringResource(R.string.settings_show_intros_title),
+                        subtitle = stringResource(R.string.settings_show_intros_subtitle),
+                        onClick = {
+                            com.example.scanpro.data.FirstRunHints.reset(context)
+                            com.example.scanpro.scanner.resetScanIntros(context)
+                            scope.launch { snackbarHostState.showSnackbar(introsReset) }
+                        }
                     )
                     InsetDivider()
                     SettingsRow(

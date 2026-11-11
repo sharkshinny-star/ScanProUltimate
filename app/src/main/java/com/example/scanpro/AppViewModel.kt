@@ -95,8 +95,12 @@ class AppViewModel @Inject constructor(
     val launchStateReady: Boolean
         get() = themeMode.value != null && accentPalette.value != null && appLockEnabled.value != null
 
-    /** Closing the welcome also counts as having seen the current "What's new": it covers the same ground. */
+    /**
+     * Closing the welcome also counts as having seen the current "What's new": it covers the same ground. It also arms
+     * the first-time introductions (F146), before the welcome is marked seen, so the Home tour finds them armed.
+     */
     fun markWelcomeSeen() {
+        com.example.scanpro.data.FirstRunHints.arm(context)
         viewModelScope.launch {
             settings.setWhatsNewSeen(WHATS_NEW_VERSION)
             settings.setWelcomeSeen()

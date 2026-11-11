@@ -177,6 +177,7 @@ import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.core.ui.openFile
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.data.CropQuad
+import com.example.scanpro.data.FirstRunHints
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.RecentPdf
@@ -561,7 +562,7 @@ fun PdfToolsScreen(
         )
     }
 
-    val launchTool: (PdfToolCard) -> Unit = { tool ->
+    val openTool: (PdfToolCard) -> Unit = { tool ->
         selectedTool = tool.id
         when (tool.id) {
             "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
@@ -570,6 +571,34 @@ fun PdfToolsScreen(
             "crop_img", "compress_img", "resize_img" -> singleImagePicker.launch("image/*")
             "convert_img" -> multiImagePicker.launch("image/*")
             else -> singlePdfPicker.launch(arrayOf("application/pdf"))
+        }
+    }
+    // The first time a tile is tapped (F146), its introduction comes before the picker. Marked as seen on every way
+    // out, so it never shows twice. Saveable, so turning the phone keeps it up.
+    var introToolId by rememberSaveable { mutableStateOf<String?>(null) }
+    val launchTool: (PdfToolCard) -> Unit = { tool ->
+        if (toolIntro(tool.id) != null && FirstRunHints.isDue(context, FirstRunHints.toolKey(tool.id))) introToolId = tool.id
+        else openTool(tool)
+    }
+    introToolId?.let { id ->
+        val tool = ALL_TOOLS.firstOrNull { it.id == id }
+        val intro = toolIntro(id)
+        if (tool == null || intro == null) {
+            introToolId = null
+        } else {
+            ToolIntroDialog(
+                tool = tool,
+                intro = intro,
+                onContinue = {
+                    FirstRunHints.markSeen(context, FirstRunHints.toolKey(id))
+                    introToolId = null
+                    openTool(tool)
+                },
+                onCancel = {
+                    FirstRunHints.markSeen(context, FirstRunHints.toolKey(id))
+                    introToolId = null
+                }
+            )
         }
     }
 
@@ -1021,14 +1050,17 @@ fun PdfToolsScreen(
                     }
                     val shown = if (showAllResults) toolResults else toolResults.take(RESULTS_SHOWN)
                     items(shown, key = { "result:" + it.file.path }, contentType = { "tool_result" }) { item ->
-                        ToolResultRow(
-                            item = item,
-                            onOpen = { onOpenResult(item) },
-                            onShare = { onShareResult(item) },
-                            onSave = { onSaveResult(item) },
-                            onUseWith = { tool -> onUseResultWithTool(item, tool) },
-                            onDelete = { onDeleteResult(item) }
-                        )
+                        // A new result fades in at the top and a deleted one fades out while the rest glide up (F146).
+                        Box(Modifier.animateItem()) {
+                            ToolResultRow(
+                                item = item,
+                                onOpen = { onOpenResult(item) },
+                                onShare = { onShareResult(item) },
+                                onSave = { onSaveResult(item) },
+                                onUseWith = { tool -> onUseResultWithTool(item, tool) },
+                                onDelete = { onDeleteResult(item) }
+                            )
+                        }
                     }
                 }
                 if (recentPdfs.isNotEmpty()) {
@@ -1036,12 +1068,14 @@ fun PdfToolsScreen(
                         RecentPdfsHeader(onClear = onClearRecentPdfs)
                     }
                     items(recentPdfs, key = { it.uri.toString() }, contentType = { "recent_pdf" }) { pdf ->
-                        RecentPdfRow(
-                            pdf = pdf,
-                            onOpen = { onOpenPdfViewer(pdf.uri, pdf.name) },
-                            onUseWith = { tool -> onUseRecentPdfWithTool(pdf, tool) },
-                            onRemove = { onRemoveRecentPdf(pdf) }
-                        )
+                        Box(Modifier.animateItem()) {
+                            RecentPdfRow(
+                                pdf = pdf,
+                                onOpen = { onOpenPdfViewer(pdf.uri, pdf.name) },
+                                onUseWith = { tool -> onUseRecentPdfWithTool(pdf, tool) },
+                                onRemove = { onRemoveRecentPdf(pdf) }
+                            )
+                        }
                     }
                 }
             }

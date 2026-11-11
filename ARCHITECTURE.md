@@ -248,6 +248,16 @@ Runtime permissions (camera, notifications on 13+) are asked once after the welc
   straight to its feature; closing it hides tips for good, Settings > Appearance brings them back (`home_tips`).
 - **What's new.** `ui/WhatsNewSheet.kt`, shown once to people updating past `WHATS_NEW_VERSION` (`SettingsStore`), never with
   the welcome or the rating sheet; finishing the welcome marks it seen.
+- **First-time introductions (F146).** `data/FirstRunHints.kt` records which one-time introductions were seen
+  (SharedPreferences `first_run_hints`, read synchronously so a dialog is decided in the same frame as its screen). It is
+  armed by `AppViewModel.markWelcomeSeen`, so people updating from an older version are not toured again, and re-armed by
+  Settings > Support > Show introductions again, which also clears the camera explainers' "Don't remind me" keys
+  (`resetScanIntros`). Every introduction uses `core/designsystem/IllustratedDialog.kt` (`IllustratedDialogFrame`,
+  `IllustrationPanel`, `IllustratedDialog`, `HintSteps`) and the animated Compose pictures in `HintIllustrations.kt`
+  (document scan, ID card turning over, book split at the spine, tool flow, files arriving, tools grid). Animated values
+  are read in the draw phase, and the pictures hold still when animations are off. They are used by the camera's
+  `ScanIntroDialog`, by `feature/tools/ToolIntroDialog.kt` before a tool's picker (`toolIntro(id)` gives each tile's
+  description and input; `FirstRunHintsTest` fails if a tile has none), and by `ui/HomeTour.kt` on Home after the welcome.
 - **Launch animation.** Designed and assessed in Figma (https://www.figma.com/design/wlMBDKuD8B4ojE2RjQZWYi: frame
   `2:2` holds the keyframes, `6:2` the spec) and drawn by `ui/LaunchIntro.kt` from the same keyframe table: the icon is
   pressed, the scan line writes the page, the brackets lock on, an indigo-azure-teal flood fills the screen, "ScanPro"

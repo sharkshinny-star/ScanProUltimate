@@ -46,6 +46,7 @@ import com.example.scanpro.core.ui.contactSupport
 import kotlinx.coroutines.launch
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
+import com.example.scanpro.data.FirstRunHints
 import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.navigation.ScanProNavHost
 import com.example.scanpro.navigation.ScanProNavigationRail
@@ -274,6 +275,30 @@ fun ScanProApp(
                         },
                         onDismiss = viewModel::markWhatsNewSeen
                     )
+                }
+
+                // The short tour of scanning, Files and Tools (F146): once, on Home, for someone who has just been
+                // through the welcome, and never together with another sheet. Looked up again whenever the screen
+                // changes, so Settings > Show introductions again brings it back on the next visit to Home.
+                var tourDue by remember(welcomeSeen, currentRoute) {
+                    mutableStateOf(welcomeSeen == true && FirstRunHints.isDue(context, FirstRunHints.HOME_TOUR))
+                }
+                val tourAllowed = tourDue && !welcomeShowing && !whatsNewDue && !ratingDue && launchSettled &&
+                    currentRoute == ScanProDestinations.HOME
+                // A beat after the welcome has faded away, so the two never overlap.
+                var tourReady by remember { mutableStateOf(false) }
+                LaunchedEffect(tourAllowed) {
+                    tourReady = false
+                    if (tourAllowed) {
+                        kotlinx.coroutines.delay(450)
+                        tourReady = true
+                    }
+                }
+                if (tourAllowed && tourReady) {
+                    HomeTourDialog(onDone = {
+                        FirstRunHints.markSeen(context, FirstRunHints.HOME_TOUR)
+                        tourDue = false
+                    })
                 }
 
                 // First launch only, drawn over the app so the library is already there underneath when it

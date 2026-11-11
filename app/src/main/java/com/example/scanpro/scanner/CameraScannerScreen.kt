@@ -2125,6 +2125,8 @@ internal fun CapturedStrip(
             }
             Box(
                 Modifier
+                    // A new page fades in at the end and a removed one fades out while its neighbours close the gap (F146).
+                    .animateItem()
                     // 48 dp wide, the smallest touch target Android recommends (it was 44 dp).
                     .size(48.dp, 62.dp)
                     .clip(RoundedCornerShape(6.dp))
@@ -2209,32 +2211,58 @@ private fun ScanMode.introPrefKey(): String? = when (this) {
     else -> null
 }
 
-/** What a scan mode does, for someone using it for the first time; "Start now" closes it. */
+/** Settings > Show introductions again (F146): the mode explainers show again even where "Don't remind me again" was ticked. */
+internal fun resetScanIntros(context: android.content.Context) {
+    val keys = ScanMode.entries.mapNotNull { it.introPrefKey() }
+    context.getSharedPreferences("scanner_prefs", android.content.Context.MODE_PRIVATE).edit { keys.forEach { remove(it) } }
+}
+
+/**
+ * What a scan mode does, for someone using it for the first time; "Start now" closes it. Drawn as an illustrated
+ * introduction (F146): the page being found and straightened, the ID card turning over, or the book parting at the
+ * spine, with the mode's icon in the corner.
+ */
 @Composable
-private fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Unit) {
+internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Unit) {
     var dontRemind by rememberSaveable { mutableStateOf(false) }
     val (icon, title, body) = when (mode) {
         ScanMode.BOOK -> Triple(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.MenuBook, R.string.scan_book_intro_title, R.string.scan_book_intro_body)
         ScanMode.ID_CARD -> Triple(Icons.Rounded.Badge, R.string.scan_idcard_intro_title, R.string.scan_idcard_intro_body)
         else -> Triple(Icons.Filled.DocumentScanner, R.string.scan_doc_intro_title, R.string.scan_doc_intro_body)
     }
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = { onStart(dontRemind) },
-        icon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        title = { Text(stringResource(title)) },
-        text = {
-            Column {
-                Text(stringResource(body), style = MaterialTheme.typography.bodyMedium)
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 12.dp).toggleable(value = dontRemind, role = androidx.compose.ui.semantics.Role.Checkbox) { dontRemind = it },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    androidx.compose.material3.Checkbox(checked = dontRemind, onCheckedChange = null)
-                    Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
-                }
+    com.example.scanpro.core.designsystem.IllustratedDialog(
+        title = stringResource(title),
+        body = stringResource(body),
+        illustration = {
+            when (mode) {
+                ScanMode.BOOK -> com.example.scanpro.core.designsystem.BookScanIllustration()
+                ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.IdCardIllustration()
+                else -> com.example.scanpro.core.designsystem.DocumentScanIllustration()
             }
         },
-        confirmButton = { androidx.compose.material3.Button(onClick = { onStart(dontRemind) }) { Text(stringResource(R.string.scan_book_intro_start)) } }
+        badgeIcon = icon,
+        badgeTone = when (mode) {
+            ScanMode.BOOK -> com.example.scanpro.core.designsystem.TileTone.Violet
+            ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.TileTone.Teal
+            else -> com.example.scanpro.core.designsystem.TileTone.Indigo
+        },
+        extra = {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .toggleable(value = dontRemind, role = androidx.compose.ui.semantics.Role.Checkbox) { dontRemind = it }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Checkbox(checked = dontRemind, onCheckedChange = null)
+                Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        confirmText = stringResource(R.string.scan_book_intro_start),
+        onConfirm = { onStart(dontRemind) },
+        onDismiss = { onStart(dontRemind) }
     )
 }
 

@@ -182,13 +182,16 @@ internal fun QrHistoryScreen(
                 }
             }
             items(shown, key = { it.raw }) { entry ->
-                HistoryRow(
-                    entry = entry,
-                    onOpen = { opened = parseScannedCode(entry.raw, entry.format, entry.valueType) },
-                    onFavourite = { onFavourite(entry.raw, !entry.favourite) },
-                    onRemove = { onRemove(entry.raw) }
-                )
-                HorizontalDivider()
+                // Removed, filtered and re-sorted codes fade and glide into place (F146).
+                Column(Modifier.animateItem()) {
+                    HistoryRow(
+                        entry = entry,
+                        onOpen = { opened = parseScannedCode(entry.raw, entry.format, entry.valueType) },
+                        onFavourite = { onFavourite(entry.raw, !entry.favourite) },
+                        onRemove = { onRemove(entry.raw) }
+                    )
+                    HorizontalDivider()
+                }
             }
         }
     }

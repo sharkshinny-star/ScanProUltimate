@@ -733,13 +733,16 @@ internal fun LibraryScreen(
                         ) {
                             items(count = list.itemCount, key = list.itemKey { it.id }, contentType = { "document_grid_card" }) { index ->
                                 val doc = list[index] ?: return@items
-                                DocumentGridCard(
-                                    document = doc,
-                                    selected = doc.id in selected,
-                                    onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) },
-                                    menu = if (selecting) null else cardMenu(doc)
-                                )
+                                // New, deleted and re-sorted documents fade and glide into place (F146).
+                                Box(Modifier.animateItem()) {
+                                    DocumentGridCard(
+                                        document = doc,
+                                        selected = doc.id in selected,
+                                        onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
+                                        onLongClick = { toggleSelection(doc.id) },
+                                        menu = if (selecting) null else cardMenu(doc)
+                                    )
+                                }
                             }
                         }
                         else -> LazyColumn(
@@ -749,13 +752,15 @@ internal fun LibraryScreen(
                         ) {
                             items(count = list.itemCount, key = list.itemKey { it.id }, contentType = { "document_list_card" }) { index ->
                                 val doc = list[index] ?: return@items
-                                DocumentListCard(
-                                    document = doc,
-                                    selected = doc.id in selected,
-                                    onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
-                                    onLongClick = { toggleSelection(doc.id) },
-                                    menu = if (selecting) null else cardMenu(doc)
-                                )
+                                Box(Modifier.animateItem()) {
+                                    DocumentListCard(
+                                        document = doc,
+                                        selected = doc.id in selected,
+                                        onClick = { if (selecting) toggleSelection(doc.id) else onOpenDocument(doc.id) },
+                                        onLongClick = { toggleSelection(doc.id) },
+                                        menu = if (selecting) null else cardMenu(doc)
+                                    )
+                                }
                             }
                         }
                     }

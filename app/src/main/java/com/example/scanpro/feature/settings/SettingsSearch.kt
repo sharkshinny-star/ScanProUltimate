@@ -113,6 +113,7 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_notify_trash_title, R.string.settings_notify_trash_body, R.string.settings_section_notifications),
     SettingEntry(R.string.settings_notify_backup_title, R.string.settings_notify_backup_body, R.string.settings_section_notifications),
     SettingEntry(R.string.settings_whats_new_title, R.string.settings_whats_new_subtitle, R.string.settings_section_support),
+    SettingEntry(R.string.settings_show_intros_title, R.string.settings_show_intros_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_rate_title, R.string.settings_rate_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_feedback, R.string.settings_feedback_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_report_issue_title, R.string.settings_report_issue_subtitle, R.string.settings_section_support),

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First-time introductions (F146). The dialog each PDF tool shows the first time it is opened. -->
+    <string name="hint_how_it_works">How it works</string>
+    <string name="hint_tool_step_pick_pdf">Choose a PDF</string>
+    <string name="hint_tool_step_pick_pdfs">Choose two or more PDFs</string>
+    <string name="hint_tool_step_pick_image">Choose an image</string>
+    <string name="hint_tool_step_pick_images">Choose one or more images</string>
+    <string name="hint_tool_step_pick_office">Choose a Word, Excel, PowerPoint, text or web file</string>
+    <string name="hint_tool_step_options">Check the preview and options</string>
+    <!-- %1$s: the "Your results" heading on the Tools screen. -->
+    <string name="hint_tool_step_result">Save or share the result. It is also kept in %1$s.</string>
+    <string name="hint_tool_merge">Combine two or more PDFs into one file, in the order you choose.</string>
+    <string name="hint_tool_split">Break a PDF into smaller files: every page on its own, by page ranges or every few pages.</string>
+    <string name="hint_tool_organize">Put the pages in a new order and remove the ones you don\'t need.</string>
+    <string name="hint_tool_rotate">Turn pages that were scanned sideways or upside down.</string>
+    <string name="hint_tool_extract">Pick the pages you need and save them as a new PDF.</string>
+    <string name="hint_tool_compress">Make a PDF smaller for email and messaging. Choose how much to shrink it.</string>
+    <string name="hint_tool_repair">Try to fix a PDF that won\'t open or shows errors, and save a clean copy.</string>
+    <string name="hint_tool_page_numbers">Add page numbers to every page of a PDF.</string>
+    <string name="hint_tool_watermark">Stamp text, such as “Confidential”, or an image across the pages.</string>
+    <string name="hint_tool_sign">Draw your signature and place it on any page.</string>
+    <string name="hint_tool_img2pdf">Turn photos and images into one PDF, in the order you choose.</string>
+    <string name="hint_tool_office">Turn Word, Excel, PowerPoint, text and web files into PDFs on your phone.</string>
+    <string name="hint_tool_ocr">Read the text in scanned pages on your phone, so you can search, select and copy it.</string>
+    <string name="hint_tool_fill">Type into the fields of a PDF form and save the filled-in copy.</string>
+    <string name="hint_tool_pdf2img">Save each page of a PDF as an image.</string>
+    <string name="hint_tool_pdf2text">Copy the text out of a PDF into a Word or plain text file.</string>
+    <string name="hint_tool_pdf2excel">Turn the tables in a PDF into a spreadsheet you can edit.</string>
+    <string name="hint_tool_pdf2ppt">Make a PowerPoint presentation from a PDF, one slide per page.</string>
+    <string name="hint_tool_protect">Lock a PDF with a password, so only people who know it can open it.</string>
+    <string name="hint_tool_unlock">Remove the password or editing restrictions from a PDF you are allowed to open.</string>
+    <string name="hint_tool_crop_img">Trim an image down to just the part you need.</string>
+    <string name="hint_tool_compress_img">Make an image file smaller while keeping it clear.</string>
+    <string name="hint_tool_convert_img">Change images to PNG, JPG, WebP or PDF.</string>
+    <string name="hint_tool_resize_img">Change an image\'s width and height, or pick a preset such as passport size.</string>
+
+    <!-- The short tour after the welcome. %1$s: the name of the button or tab the page is about (Scan, Files, Tools). -->
+    <string name="hint_tour_scan_title">Scan in seconds</string>
+    <string name="hint_tour_scan_body">Tap %1$s at the bottom of the screen. ScanPro finds the edges, straightens each page and cleans it up.</string>
+    <string name="hint_tour_files_title">Everything in one place</string>
+    <string name="hint_tour_files_body">Your scans are saved on this phone, in %1$s. Sort them into folders and find any of them with Search.</string>
+    <string name="hint_tour_tools_title">PDF tools at hand</string>
+    <string name="hint_tour_tools_body">Merge, split, compress, sign and convert in %1$s. Everything runs on your phone, even offline.</string>
+    <!-- Read out by screen readers for the tour's page dots. -->
+    <string name="hint_tour_position">Page %1$d of %2$d</string>
+    <string name="hint_skip">Skip</string>
+    <string name="hint_next">Next</string>
+    <string name="hint_got_it">Got it</string>
+
+    <!-- Settings > Support: show the introductions again. -->
+    <string name="settings_show_intros_title">Show introductions again</string>
+    <string name="settings_show_intros_subtitle">See the tour and the camera and tool introductions once more</string>
+    <string name="settings_show_intros_done">Introductions will show again</string>
+</resources>
