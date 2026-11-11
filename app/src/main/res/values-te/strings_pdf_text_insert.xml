@@ -50,4 +50,7 @@
         <item quantity="one">%1$d పేజీని చేర్చాము. ఇప్పుడు PDF లో %2$d పేజీలు ఉన్నాయి.</item>
         <item quantity="other">%1$d పేజీలను చేర్చాము. ఇప్పుడు PDF లో %2$d పేజీలు ఉన్నాయి.</item>
     </plurals>
+    <string name="tools_pdf2text_action_word">Word గా మార్చండి</string>
+    <string name="tools_pdf2text_action_excel">Excel గా మార్చండి</string>
+    <string name="tools_pdf2text_action_text">టెక్స్ట్‌గా మార్చండి</string>
 </resources>

@@ -124,10 +124,9 @@ internal fun WatermarkEditor(
     var allPages by rememberSaveable { mutableStateOf(true) }
     var range by rememberSaveable { mutableStateOf("") }
 
-    // The watermark is drawn in the PDF's built-in Helvetica, which has Latin letters only; say so while typing.
-    val drawable = text.all { it.code in 0x20..0xFF }
+    // Any script works: text Helvetica cannot write (Hindi, Tamil, emoji) is stamped as a picture (PdfTextImage, F139).
     val rangeOk = allPages || RANGE_PATTERN.matches(range)
-    val valid = text.isNotBlank() && drawable && rangeOk
+    val valid = text.isNotBlank() && rangeOk
 
     val page by produceState<PagePreview?>(null, uri) {
         value = withContext(Dispatchers.IO) {
@@ -147,8 +146,13 @@ internal fun WatermarkEditor(
     }
 
     // Helvetica Bold, as the writer uses it, so the preview text is the width the saved text will be.
+    // The width the PDF writer will use: Helvetica's for Latin text, the picture's for any other script.
     val helveticaWidth = remember(text, sizePt) {
-        runCatching { PDType1Font.HELVETICA_BOLD.getStringWidth(text) / 1000f * sizePt }.getOrDefault(text.length * sizePt * 0.6f)
+        if (com.example.scanpro.imaging.PdfTextImage.canEncode(PDType1Font.HELVETICA_BOLD, text)) {
+            PDType1Font.HELVETICA_BOLD.getStringWidth(text) / 1000f * sizePt
+        } else {
+            com.example.scanpro.imaging.PdfTextImage.widthPt(text, sizePt)
+        }
     }
 
     Dialog(
@@ -237,8 +241,6 @@ internal fun WatermarkEditor(
                                 label = { Text(stringResource(R.string.tools_watermark_text_label)) },
                                 placeholder = { Text(stringResource(R.string.tools_watermark_text_hint)) },
                                 singleLine = true,
-                                isError = !drawable,
-                                supportingText = if (drawable) null else { { Text(stringResource(R.string.tools_watermark_latin_only)) } },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

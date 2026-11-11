@@ -50,4 +50,7 @@
         <item quantity="one">%1$d പേജ് ചേർത്തു. ഇപ്പോൾ PDF ൽ %2$d പേജുകളുണ്ട്.</item>
         <item quantity="other">%1$d പേജുകൾ ചേർത്തു. ഇപ്പോൾ PDF ൽ %2$d പേജുകളുണ്ട്.</item>
     </plurals>
+    <string name="tools_pdf2text_action_word">Word ആക്കി മാറ്റുക</string>
+    <string name="tools_pdf2text_action_excel">Excel ആക്കി മാറ്റുക</string>
+    <string name="tools_pdf2text_action_text">ടെക്സ്റ്റ് ആക്കി മാറ്റുക</string>
 </resources>

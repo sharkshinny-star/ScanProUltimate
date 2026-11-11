@@ -357,7 +357,6 @@
     <string name="tools_watermark_quick_draft">DRAFT</string>
     <string name="tools_watermark_quick_copy">COPY</string>
     <string name="tools_watermark_quick_approved">APPROVED</string>
-    <string name="tools_watermark_latin_only">अंग्रेज़ी अक्षर, अंक और आम चिह्न इस्तेमाल करें: PDF का फ़ॉन्ट दूसरी लिपियाँ नहीं बना सकता।</string>
     <string name="tools_watermark_angle_label">दिशा</string>
     <string name="tools_watermark_angle_diagonal">तिरछा (45°)</string>
     <string name="tools_watermark_angle_horizontal">सीधा (0°)</string>

@@ -50,4 +50,7 @@
         <item quantity="one">%1$d பக்கம் சேர்க்கப்பட்டது. இப்போது PDF இல் %2$d பக்கங்கள் உள்ளன.</item>
         <item quantity="other">%1$d பக்கங்கள் சேர்க்கப்பட்டன. இப்போது PDF இல் %2$d பக்கங்கள் உள்ளன.</item>
     </plurals>
+    <string name="tools_pdf2text_action_word">Word ஆக மாற்று</string>
+    <string name="tools_pdf2text_action_excel">Excel ஆக மாற்று</string>
+    <string name="tools_pdf2text_action_text">உரையாக மாற்று</string>
 </resources>

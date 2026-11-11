@@ -357,7 +357,6 @@
     <string name="tools_watermark_quick_draft">DRAFT</string>
     <string name="tools_watermark_quick_copy">COPY</string>
     <string name="tools_watermark_quick_approved">APPROVED</string>
-    <string name="tools_watermark_latin_only">ഇംഗ്ലീഷ് അക്ഷരങ്ങളും അക്കങ്ങളും സാധാരണ ചിഹ്നങ്ങളും ഉപയോഗിക്കുക: PDF ഫോണ്ടിന് മറ്റ് ലിപികൾ വരയ്ക്കാനാവില്ല.</string>
     <string name="tools_watermark_angle_label">ഓറിയന്റേഷൻ</string>
     <string name="tools_watermark_angle_diagonal">ഡയഗണൽ (45°)</string>
     <string name="tools_watermark_angle_horizontal">തിരശ്ചീനം (0°)</string>

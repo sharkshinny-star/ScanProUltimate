@@ -274,35 +274,22 @@ private fun FieldInput(field: FormField, value: String, onChange: (String) -> Un
 /** Asks which writing system the PDF is in before "Make searchable" reads it. */
 @Composable
 internal fun OcrScriptDialog(uri: android.net.Uri, onDismiss: () -> Unit, onConfirm: (OcrScript) -> Unit) {
-    var script by rememberSaveable { mutableStateOf(OcrScript.LATIN) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_ocr_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                PickedFileRow(uri)
-                Spacer(Modifier.padding(top = 12.dp))
-                Text(
-                    stringResource(R.string.tools_ocr_body),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.padding(top = 12.dp))
-                Text(stringResource(R.string.tools_ocr_language), style = MaterialTheme.typography.titleSmall)
-                OcrScript.entries.forEach { option ->
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .selectable(selected = script == option, role = Role.RadioButton) { script = option },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = script == option, onClick = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (option == OcrScript.LATIN) stringResource(R.string.tools_ocr_latin_label) else stringResource(option.labelRes))
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = { onConfirm(script) }) { Text(stringResource(R.string.tools_ocr_start)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
-    )
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // The last script used, or the app language's (Hindi starts on Devanagari) rather than always Latin.
+    var script by rememberSaveable { mutableStateOf(initialOcrScript(context)) }
+    ToolPage(
+        title = stringResource(R.string.tools_ocr_title),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_card_ocr),
+        onAction = {
+            rememberOcrScriptChoice(context, script)
+            onConfirm(script)
+        }
+    ) {
+        PickedFileRow(uri)
+        ToolHint(stringResource(R.string.tools_ocr_body))
+        ToolSection(stringResource(R.string.tools_ocr_language)) {
+            OcrScriptChoices(selected = script, onSelect = { script = it })
+        }
+    }
 }

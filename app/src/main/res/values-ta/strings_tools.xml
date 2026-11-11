@@ -357,7 +357,6 @@
     <string name="tools_watermark_quick_draft">DRAFT</string>
     <string name="tools_watermark_quick_copy">COPY</string>
     <string name="tools_watermark_quick_approved">APPROVED</string>
-    <string name="tools_watermark_latin_only">ஆங்கில எழுத்துகள், எண்கள், பொதுவான குறியீடுகளைப் பயன்படுத்துங்கள்: PDF எழுத்துரு வேறு எழுத்துகளை வரைய முடியாது.</string>
     <string name="tools_watermark_angle_label">நோக்குநிலை</string>
     <string name="tools_watermark_angle_diagonal">மூலைவிட்டம் (45°)</string>
     <string name="tools_watermark_angle_horizontal">கிடைமட்டம் (0°)</string>

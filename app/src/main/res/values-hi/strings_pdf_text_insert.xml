@@ -50,4 +50,7 @@
         <item quantity="one">%1$d पेज जोड़ा गया। अब PDF में %2$d पेज हैं।</item>
         <item quantity="other">%1$d पेज जोड़े गए। अब PDF में %2$d पेज हैं।</item>
     </plurals>
+    <string name="tools_pdf2text_action_word">Word में बदलें</string>
+    <string name="tools_pdf2text_action_excel">Excel में बदलें</string>
+    <string name="tools_pdf2text_action_text">टेक्स्ट में बदलें</string>
 </resources>

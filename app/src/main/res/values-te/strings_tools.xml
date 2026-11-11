@@ -357,7 +357,6 @@
     <string name="tools_watermark_quick_draft">DRAFT</string>
     <string name="tools_watermark_quick_copy">COPY</string>
     <string name="tools_watermark_quick_approved">APPROVED</string>
-    <string name="tools_watermark_latin_only">ఇంగ్లీష్ అక్షరాలు, అంకెలు, సాధారణ చిహ్నాలను ఉపయోగించండి: PDF ఫాంట్ ఇతర లిపులను గీయలేదు.</string>
     <string name="tools_watermark_angle_label">దిశ</string>
     <string name="tools_watermark_angle_diagonal">వికర్ణంగా (45°)</string>
     <string name="tools_watermark_angle_horizontal">సమాంతరంగా (0°)</string>

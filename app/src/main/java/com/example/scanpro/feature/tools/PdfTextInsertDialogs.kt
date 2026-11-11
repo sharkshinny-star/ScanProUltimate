@@ -69,52 +69,44 @@ internal fun PdfToTextDialog(
     onConfirm: (TextExportFormat, OcrScript) -> Unit,
     initialFormat: TextExportFormat = TextExportFormat.WORD
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var format by rememberSaveable { mutableStateOf(initialFormat) }
-    var script by rememberSaveable { mutableStateOf(OcrScript.LATIN) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_pdf2text_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                PickedFileRow(uri)
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(R.string.tools_pdf2text_body), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(R.string.tools_pdf2text_format), style = MaterialTheme.typography.titleSmall)
-                ChoiceRow(selected = format == TextExportFormat.WORD, label = stringResource(R.string.tools_pdf2text_word)) { format = TextExportFormat.WORD }
-                ChoiceRow(selected = format == TextExportFormat.EXCEL, label = stringResource(R.string.tools_pdf2text_excel)) { format = TextExportFormat.EXCEL }
-                ChoiceRow(selected = format == TextExportFormat.TEXT, label = stringResource(R.string.tools_pdf2text_plain)) { format = TextExportFormat.TEXT }
-                if (format == TextExportFormat.EXCEL) {
-                    Text(
-                        stringResource(R.string.tools_pdf2text_excel_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 48.dp)
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(R.string.tools_ocr_language), style = MaterialTheme.typography.titleSmall)
-                OcrScript.entries.forEach { option ->
-                    ChoiceRow(
-                        selected = script == option,
-                        label = if (option == OcrScript.LATIN) stringResource(R.string.tools_ocr_latin_label) else stringResource(option.labelRes)
-                    ) { script = option }
-                }
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    stringResource(R.string.tools_pdf2text_unprotected_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+    var script by rememberSaveable { mutableStateOf(initialOcrScript(context)) }
+    ToolPage(
+        // Named after the tile it was opened from, not one title for three tools.
+        title = stringResource(if (initialFormat == TextExportFormat.EXCEL) R.string.tools_card_pdf2excel else R.string.tools_card_pdf2text),
+        onClose = onDismiss,
+        actionLabel = stringResource(
+            when (format) {
+                TextExportFormat.WORD -> R.string.tools_pdf2text_action_word
+                TextExportFormat.EXCEL -> R.string.tools_pdf2text_action_excel
+                TextExportFormat.TEXT -> R.string.tools_pdf2text_action_text
+            }
+        ),
+        onAction = {
+            rememberOcrScriptChoice(context, script)
+            onConfirm(format, script)
+        },
+        actionSupport = stringResource(R.string.tools_pdf2text_unprotected_note)
+    ) {
+        PickedFileRow(uri)
+        ToolHint(stringResource(R.string.tools_pdf2text_body))
+        ToolSection(stringResource(R.string.tools_pdf2text_format)) {
+            ChoiceGroup {
+                ChoiceCard(format == TextExportFormat.WORD, stringResource(R.string.tools_pdf2text_word), { format = TextExportFormat.WORD })
+                ChoiceCard(
+                    format == TextExportFormat.EXCEL,
+                    stringResource(R.string.tools_pdf2text_excel),
+                    { format = TextExportFormat.EXCEL },
+                    subtitle = stringResource(R.string.tools_pdf2text_excel_note)
                 )
+                ChoiceCard(format == TextExportFormat.TEXT, stringResource(R.string.tools_pdf2text_plain), { format = TextExportFormat.TEXT })
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(format, script) }) {
-                Text(stringResource(R.string.tools_ocr_start))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
-    )
+        }
+        ToolSection(stringResource(R.string.tools_ocr_language)) {
+            OcrScriptChoices(selected = script, onSelect = { script = it })
+        }
+    }
 }
 
 @Composable

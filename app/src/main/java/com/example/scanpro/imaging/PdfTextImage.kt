@@ -29,13 +29,24 @@ internal object PdfTextImage {
     /** A picture of some text, [width] x [height] in PDF points, to be centred on the point it stamps. */
     class Stamp(val image: PDImageXObject, val width: Float, val height: Float)
 
+    private fun paint(fontSizePt: Float, colourArgb: Int, bold: Boolean) = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+        color = colourArgb
+        typeface = Typeface.create(Typeface.DEFAULT, if (bold) Typeface.BOLD else Typeface.NORMAL)
+        textSize = fontSizePt * PX_PER_PT
+    }
+
+    /**
+     * How wide the picture of [text] will be, in PDF points. The Watermark editor's preview sizes its text with this, so
+     * what is shown for Hindi or Tamil matches what is stamped.
+     */
+    fun widthPt(text: String, fontSizePt: Float, bold: Boolean = true): Float {
+        val paint = paint(fontSizePt, 0xFF000000.toInt(), bold)
+        return ceil(paint.measureText(text) + 2 * paint.textSize * 0.1f) / PX_PER_PT
+    }
+
     /** Draws [text] at [fontSizePt] in [colourArgb] (bold), once per document; reuse the result on every page. */
     fun create(doc: PDDocument, text: String, fontSizePt: Float, colourArgb: Int, bold: Boolean = true): Stamp {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
-            color = colourArgb
-            typeface = Typeface.create(Typeface.DEFAULT, if (bold) Typeface.BOLD else Typeface.NORMAL)
-            textSize = fontSizePt * PX_PER_PT
-        }
+        val paint = paint(fontSizePt, colourArgb, bold)
         val metrics = paint.fontMetrics
         val pad = paint.textSize * 0.1f
         val widthPx = ceil(paint.measureText(text) + 2 * pad).toInt().coerceIn(1, 8192)

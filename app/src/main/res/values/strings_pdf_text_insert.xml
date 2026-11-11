@@ -52,4 +52,7 @@
         <item quantity="one">Inserted %1$d page. The PDF now has %2$d pages.</item>
         <item quantity="other">Inserted %1$d pages. The PDF now has %2$d pages.</item>
     </plurals>
+    <string name="tools_pdf2text_action_word">Convert to Word</string>
+    <string name="tools_pdf2text_action_excel">Convert to Excel</string>
+    <string name="tools_pdf2text_action_text">Convert to text</string>
 </resources>

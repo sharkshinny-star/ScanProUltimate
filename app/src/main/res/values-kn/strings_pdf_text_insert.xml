@@ -50,4 +50,7 @@
         <item quantity="one">%1$d ಪುಟ ಸೇರಿಸಲಾಗಿದೆ. ಈಗ PDF ನಲ್ಲಿ %2$d ಪುಟಗಳಿವೆ.</item>
         <item quantity="other">%1$d ಪುಟಗಳನ್ನು ಸೇರಿಸಲಾಗಿದೆ. ಈಗ PDF ನಲ್ಲಿ %2$d ಪುಟಗಳಿವೆ.</item>
     </plurals>
+    <string name="tools_pdf2text_action_word">Word ಗೆ ಬದಲಾಯಿಸಿ</string>
+    <string name="tools_pdf2text_action_excel">Excel ಗೆ ಬದಲಾಯಿಸಿ</string>
+    <string name="tools_pdf2text_action_text">ಪಠ್ಯಕ್ಕೆ ಬದಲಾಯಿಸಿ</string>
 </resources>
