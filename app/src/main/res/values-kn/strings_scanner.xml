@@ -164,6 +164,10 @@
     <string name="scan_book_two_pages_rtl">ಎರಡು ಪುಟಗಳು, ಬಲ ಮೊದಲು</string>
     <string name="scan_book_intro_title">ಪುಸ್ತಕ ಸ್ಕ್ಯಾನ್</string>
     <string name="scan_book_intro_body">ತೆರೆದ ಪುಸ್ತಕದ ಎಡ ಮತ್ತು ಬಲ ಪುಟಗಳನ್ನು ಒಟ್ಟಿಗೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ScanPro ಅವನ್ನು ಎರಡು ಪುಟಗಳಾಗಿ ವಿಭಜಿಸುತ್ತದೆ: ಮೊದಲು A, ನಂತರ B. ಬಲದಿಂದ ಎಡಕ್ಕೆ ಓದುವ ಪುಸ್ತಕಗಳಿಗೆ “ಎರಡು ಪುಟಗಳು, ಬಲ ಮೊದಲು” ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="scan_idcard_intro_title">ID ಕಾರ್ಡ್ ಸ್ಕ್ಯಾನ್</string>
+    <string name="scan_idcard_intro_body">ಕಾರ್ಡ್ ಅನ್ನು ಸರಳ, ವ್ಯತಿರಿಕ್ತ ಬಣ್ಣದ ಮೇಲ್ಮೈಯಲ್ಲಿ ಸಮತಟ್ಟಾಗಿ ಇಟ್ಟು ಫ್ರೇಮ್ ತುಂಬಿಸಿ. ಮೊದಲು ಮುಂಭಾಗ, ನಂತರ ಹಿಂಭಾಗ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ScanPro ಎರಡೂ ಬದಿಗಳನ್ನು ಒಂದೇ ಪುಟದಲ್ಲಿ, ಮುಂಭಾಗ ಮೇಲೆ ಇಡುತ್ತದೆ. ಹೊಳಪನ್ನು ತಪ್ಪಿಸಿ, ಅಂಚುಗಳ ಮೇಲೆ ಬೆರಳು ಇಡಬೇಡಿ.</string>
+    <string name="scan_doc_intro_title">ದಾಖಲೆ ಸ್ಕ್ಯಾನ್</string>
+    <string name="scan_doc_intro_body">ಪುಟವನ್ನು ಉತ್ತಮ ಬೆಳಕಿನಲ್ಲಿ ಸಮತಟ್ಟಾಗಿ ಇಟ್ಟು ಫೋನ್ ಸ್ಥಿರವಾಗಿ ಹಿಡಿಯಿರಿ. ScanPro ಅಂಚುಗಳನ್ನು ಗುರುತಿಸಿ ಪುಟವನ್ನು ನೇರಗೊಳಿಸಿ ಸ್ವಚ್ಛಗೊಳಿಸುತ್ತದೆ. ಶಟರ್ ಒತ್ತಿ, ಅಥವಾ ಆಟೋ ಕ್ಯಾಪ್ಚರ್ ಆನ್ ಮಾಡಿ ಅಲುಗಾಡದೆ ಇರಿ. ಇನ್ನಷ್ಟು ಪುಟ ಸೇರಿಸಿ, ನಂತರ ಮುಗಿದಿದೆ ಒತ್ತಿ.</string>
     <string name="scan_book_intro_start">ಈಗ ಪ್ರಾರಂಭಿಸಿ</string>
     <string name="scan_book_intro_dont_remind">ಮತ್ತೆ ನೆನಪಿಸಬೇಡಿ</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">ಹರಡಿದ ಪುಟವನ್ನು %1$d ಮತ್ತು %2$d ಪುಟಗಳಾಗಿ ವಿಭಜಿಸಲಾಗಿದೆ</string>

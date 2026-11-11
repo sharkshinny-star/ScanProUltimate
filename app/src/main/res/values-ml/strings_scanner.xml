@@ -164,6 +164,10 @@
     <string name="scan_book_two_pages_rtl">രണ്ട് പേജുകൾ, വലത് ആദ്യം</string>
     <string name="scan_book_intro_title">പുസ്തകം സ്കാൻ ചെയ്യൽ</string>
     <string name="scan_book_intro_body">തുറന്ന പുസ്തകത്തിന്റെ ഇടത്, വലത് പേജുകൾ ഒരുമിച്ച് സ്കാൻ ചെയ്യുക. ScanPro അവയെ രണ്ട് പേജുകളായി വിഭജിക്കും: ആദ്യം A, പിന്നെ B. വലത്തുനിന്ന് ഇടത്തേക്ക് വായിക്കുന്ന പുസ്തകങ്ങൾക്ക് “രണ്ട് പേജുകൾ, വലത് ആദ്യം” തിരഞ്ഞെടുക്കുക.</string>
+    <string name="scan_idcard_intro_title">ഐഡി കാർഡ് സ്കാൻ ചെയ്യൽ</string>
+    <string name="scan_idcard_intro_body">കാർഡ് ലളിതമായ, വ്യത്യസ്ത നിറമുള്ള പ്രതലത്തിൽ പരത്തിവച്ച് ഫ്രെയിം നിറയ്ക്കുക. ആദ്യം മുൻവശം, പിന്നെ പിൻവശം സ്കാൻ ചെയ്യുക. ScanPro രണ്ട് വശങ്ങളും ഒരു പേജിൽ, മുൻവശം മുകളിൽ വയ്ക്കും. തിളക്കം ഒഴിവാക്കുക, അരികുകളിൽ വിരൽ വയ്ക്കരുത്.</string>
+    <string name="scan_doc_intro_title">രേഖ സ്കാൻ ചെയ്യൽ</string>
+    <string name="scan_doc_intro_body">പേജ് നല്ല വെളിച്ചത്തിൽ പരത്തിവച്ച് ഫോൺ ഉറപ്പിച്ചു പിടിക്കുക. ScanPro അരികുകൾ കണ്ടെത്തി പേജ് നേരെയാക്കി വൃത്തിയാക്കും. ഷട്ടർ അമർത്തുക, അല്ലെങ്കിൽ ഓട്ടോ ക്യാപ്ചർ ഓണാക്കി അനങ്ങാതെ നിൽക്കുക. കൂടുതൽ പേജുകൾ ചേർത്ത് പൂർത്തിയായി അമർത്തുക.</string>
     <string name="scan_book_intro_start">ഇപ്പോൾ ആരംഭിക്കുക</string>
     <string name="scan_book_intro_dont_remind">ഇനി ഓർമ്മിപ്പിക്കരുത്</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">സ്പ്രെഡ് %1$d, %2$d പേജുകളായി വിഭജിച്ചു</string>

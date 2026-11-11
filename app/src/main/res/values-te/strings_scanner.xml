@@ -164,6 +164,10 @@
     <string name="scan_book_two_pages_rtl">రెండు పేజీలు, కుడి ముందు</string>
     <string name="scan_book_intro_title">పుస్తకాన్ని స్కాన్ చేయడం</string>
     <string name="scan_book_intro_body">తెరిచిన పుస్తకం ఎడమ, కుడి పేజీలను కలిపి స్కాన్ చేయండి. ScanPro వాటిని రెండు పేజీలుగా విడదీస్తుంది: మొదట A, తర్వాత B. కుడి నుండి ఎడమకు చదివే పుస్తకాలకు “రెండు పేజీలు, కుడి ముందు” ఎంచుకోండి.</string>
+    <string name="scan_idcard_intro_title">ID కార్డ్ స్కాన్ చేయడం</string>
+    <string name="scan_idcard_intro_body">కార్డ్‌ను సాదా, విరుద్ధ రంగు ఉపరితలంపై చదునుగా ఉంచి ఫ్రేమ్ నింపండి. ముందు వైపు, తర్వాత వెనుక వైపు స్కాన్ చేయండి. ScanPro రెండు వైపులనూ ఒకే పేజీలో, ముందు వైపు పైన ఉంచుతుంది. మెరుపును నివారించండి, అంచులపై వేళ్లు ఉంచకండి.</string>
+    <string name="scan_doc_intro_title">పత్రం స్కాన్ చేయడం</string>
+    <string name="scan_doc_intro_body">పేజీని మంచి వెలుతురులో చదునుగా ఉంచి, ఫోన్‌ను స్థిరంగా పట్టుకోండి. ScanPro అంచులను గుర్తించి పేజీని సరిచేసి శుభ్రం చేస్తుంది. షట్టర్ నొక్కండి, లేదా ఆటో క్యాప్చర్ ఆన్‌లో ఉంచి కదలకుండా ఉండండి. మరిన్ని పేజీలు జోడించి, పూర్తయింది నొక్కండి.</string>
     <string name="scan_book_intro_start">ఇప్పుడు ప్రారంభించండి</string>
     <string name="scan_book_intro_dont_remind">మళ్లీ గుర్తు చేయవద్దు</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">స్ప్రెడ్ %1$d, %2$d పేజీలుగా విభజించబడింది</string>

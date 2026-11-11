@@ -13,6 +13,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.rounded.Badge
 import android.widget.Toast
 import android.Manifest
 import android.content.Intent
@@ -294,19 +295,22 @@ fun CameraScannerScreen(
     // which fast save trusts like the ID composite (they are cut out already).
     var bookLayout by rememberSaveable { mutableStateOf(1) }
     var bookHalves by rememberSaveable { mutableStateOf(listOf<String>()) }
-    // First-time explainer for Book mode: shown once per camera session until "Don't remind me again" is ticked.
-    var bookIntroShown by rememberSaveable { mutableStateOf(false) }
-    var showBookIntro by rememberSaveable { mutableStateOf(false) }
+    // First-use explainer for Document, ID Card and Book modes: shown once per mode per camera session until
+    // "Don't remind me again" is ticked for that mode.
+    var introShownFor by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var introMode by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(scanMode) {
-        if (scanMode == ScanMode.BOOK && !bookIntroShown && !prefs.getBoolean("book_intro_off", false)) {
-            bookIntroShown = true
-            showBookIntro = true
+        val key = scanMode.introPrefKey()
+        if (key != null && scanMode.name !in introShownFor && !prefs.getBoolean(key, false)) {
+            introShownFor = introShownFor + scanMode.name
+            introMode = scanMode.name
         }
     }
-    if (showBookIntro) {
-        BookIntroDialog(onStart = { dontRemind ->
-            if (dontRemind) prefs.edit { putBoolean("book_intro_off", true) }
-            showBookIntro = false
+    introMode?.let { name ->
+        val mode = ScanMode.entries.firstOrNull { it.name == name }
+        if (mode == null) introMode = null else ScanIntroDialog(mode, onStart = { dontRemind ->
+            if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+            introMode = null
         })
     }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
@@ -2095,17 +2099,30 @@ private fun ThirdsGrid() {
     }
 }
 
-/** What Book mode does, for someone using it for the first time; "Start now" closes it. */
+/** Preference key that silences a mode's first-use explainer; null for modes without one. Book keeps its original key. */
+private fun ScanMode.introPrefKey(): String? = when (this) {
+    ScanMode.BOOK -> "book_intro_off"
+    ScanMode.ID_CARD -> "idcard_intro_off"
+    ScanMode.DOCUMENT -> "document_intro_off"
+    else -> null
+}
+
+/** What a scan mode does, for someone using it for the first time; "Start now" closes it. */
 @Composable
-private fun BookIntroDialog(onStart: (dontRemind: Boolean) -> Unit) {
+private fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Unit) {
     var dontRemind by rememberSaveable { mutableStateOf(false) }
+    val (icon, title, body) = when (mode) {
+        ScanMode.BOOK -> Triple(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.MenuBook, R.string.scan_book_intro_title, R.string.scan_book_intro_body)
+        ScanMode.ID_CARD -> Triple(Icons.Rounded.Badge, R.string.scan_idcard_intro_title, R.string.scan_idcard_intro_body)
+        else -> Triple(Icons.Filled.DocumentScanner, R.string.scan_doc_intro_title, R.string.scan_doc_intro_body)
+    }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = { onStart(dontRemind) },
-        icon = { Icon(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        title = { Text(stringResource(R.string.scan_book_intro_title)) },
+        icon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        title = { Text(stringResource(title)) },
         text = {
             Column {
-                Text(stringResource(R.string.scan_book_intro_body), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(body), style = MaterialTheme.typography.bodyMedium)
                 Row(
                     Modifier.fillMaxWidth().padding(top = 12.dp).toggleable(value = dontRemind, role = androidx.compose.ui.semantics.Role.Checkbox) { dontRemind = it },
                     verticalAlignment = Alignment.CenterVertically

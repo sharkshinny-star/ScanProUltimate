@@ -164,6 +164,10 @@
     <string name="scan_book_two_pages_rtl">दो पेज, दायाँ पहले</string>
     <string name="scan_book_intro_title">किताब स्कैन करना</string>
     <string name="scan_book_intro_body">खुली किताब के बाएँ और दाएँ पेज को एक साथ स्कैन करें। ScanPro उन्हें दो पेज में बाँटता है: पहले A, फिर B। दाएँ से बाएँ पढ़ी जाने वाली किताबों के लिए “दो पेज, दायाँ पहले” चुनें।</string>
+    <string name="scan_idcard_intro_title">आईडी कार्ड स्कैन करना</string>
+    <string name="scan_idcard_intro_body">कार्ड को सादी, अलग रंग की सतह पर सीधा रखें और फ्रेम भरें। पहले आगे का हिस्सा, फिर पीछे का स्कैन करें। ScanPro दोनों तरफ़ एक पेज पर रखता है, आगे का हिस्सा ऊपर। चमक से बचें और किनारों पर उँगली न रखें।</string>
+    <string name="scan_doc_intro_title">दस्तावेज़ स्कैन करना</string>
+    <string name="scan_doc_intro_body">पेज को अच्छी रोशनी में सीधा रखें और फ़ोन स्थिर रखें। ScanPro किनारे पहचानकर पेज सीधा करता और साफ़ करता है। शटर दबाएँ, या ऑटो कैप्चर चालू रखकर स्थिर रहें। और पेज जोड़ें, फिर पूर्ण पर टैप करें।</string>
     <string name="scan_book_intro_start">अभी शुरू करें</string>
     <string name="scan_book_intro_dont_remind">मुझे दोबारा याद न दिलाएँ</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">फैले पन्ने को पेज %1$d और %2$d में बाँटा</string>
