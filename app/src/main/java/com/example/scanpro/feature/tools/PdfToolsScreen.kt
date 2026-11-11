@@ -177,6 +177,8 @@ import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.RecentPdf
+import androidx.compose.runtime.produceState
+import com.example.scanpro.data.ToolResultFile
 import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.feature.document.CropEditorDialog
 import com.example.scanpro.imaging.CompressionPreset
@@ -311,6 +313,7 @@ fun PdfToolsScreen(
     val wrongPassword by viewModel.wrongPassword.collectAsStateWithLifecycle()
     val mergePassword by viewModel.mergePassword.collectAsStateWithLifecycle()
     val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
+    val toolResults by viewModel.toolResults.collectAsStateWithLifecycle()
     val recentScope = rememberCoroutineScope()
     val formSession by viewModel.form.collectAsStateWithLifecycle()
     val signViewModel: SignPdfViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
@@ -417,6 +420,29 @@ fun PdfToolsScreen(
     val saveWordLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     ) { saveTo(it) }
+
+    /** "Save" on a result: the system's save dialog for the file's own type, then a copy is written there. */
+    fun saveCopy(file: File) {
+        saveSourceFile = file
+        val name = file.name
+        when (mimeFor(file)) {
+            "application/zip" -> saveZipLauncher.launch(name)
+            "application/pdf" -> saveFileLauncher.launch(name)
+            "image/png" -> savePngLauncher.launch(name)
+            "image/webp" -> saveWebpLauncher.launch(name)
+            "text/plain" -> saveTextLauncher.launch(name)
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> saveWordLauncher.launch(name)
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> saveExcelLauncher.launch(name)
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> savePowerPointLauncher.launch(name)
+            else -> saveJpegLauncher.launch(name)
+        }
+    }
+
+    /** Opens a kept result: PDFs in ScanPro's viewer, anything else in an app the user picks. */
+    fun openResultFile(file: File) {
+        if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
+        else openFile(context, file.absolutePath, mimeFor(file), file.name)
+    }
 
     fun startTool(tool: String, uri: Uri) {
         selectedTool = tool
@@ -540,6 +566,12 @@ fun PdfToolsScreen(
         onUseRecentPdfWithTool = { pdf, tool ->
             recentScope.launch { if (viewModel.checkRecent(pdf.uri)) startTool(tool, pdf.uri) }
         },
+        toolResults = toolResults,
+        onOpenResult = { openResultFile(it.file) },
+        onShareResult = { shareFile(context, it.file.absolutePath, mimeFor(it.file), it.name) },
+        onSaveResult = { saveCopy(it.file) },
+        onUseResultWithTool = { item, tool -> startTool(tool.id, Uri.fromFile(item.file)) },
+        onDeleteResult = { viewModel.deleteResult(it.file) },
         bottomBar = bottomBar,
         snackbarHostState = snackbarHostState,
         overlayContent = {
@@ -645,21 +677,7 @@ fun PdfToolsScreen(
                         viewModel.clearResult()
                         startTool(next.id, Uri.fromFile(file))
                     },
-                    onSaveAs = {
-                        saveSourceFile = result.outputFile
-                        val name = result.outputFile.name
-                        when (mimeFor(result.outputFile)) {
-                            "application/zip" -> saveZipLauncher.launch(name)
-                            "application/pdf" -> saveFileLauncher.launch(name)
-                            "image/png" -> savePngLauncher.launch(name)
-                            "image/webp" -> saveWebpLauncher.launch(name)
-                            "text/plain" -> saveTextLauncher.launch(name)
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> saveWordLauncher.launch(name)
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> saveExcelLauncher.launch(name)
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> savePowerPointLauncher.launch(name)
-                            else -> saveJpegLauncher.launch(name)
-                        }
-                    }
+                    onSaveAs = { saveCopy(result.outputFile) }
                 )
             }
 
@@ -936,6 +954,12 @@ fun PdfToolsScreen(
     onClearRecentPdfs: () -> Unit = {},
     onRemoveRecentPdf: (RecentPdf) -> Unit = {},
     onUseRecentPdfWithTool: (RecentPdf, String) -> Unit = { _, _ -> },
+    toolResults: List<ToolResultFile> = emptyList(),
+    onOpenResult: (ToolResultFile) -> Unit = {},
+    onShareResult: (ToolResultFile) -> Unit = {},
+    onSaveResult: (ToolResultFile) -> Unit = {},
+    onUseResultWithTool: (ToolResultFile, PdfToolCard) -> Unit = { _, _ -> },
+    onDeleteResult: (ToolResultFile) -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     overlayContent: @Composable () -> Unit = {}
@@ -943,6 +967,7 @@ fun PdfToolsScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf(ALL_CATEGORIES) }
     val toolsMemory = rememberToolsMemory()
+    var showAllResults by rememberSaveable { mutableStateOf(false) }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -970,6 +995,32 @@ fun PdfToolsScreen(
                     item(key = "categories") { Box(Modifier.padding(top = 12.dp)) { ToolCategoryChips(category, onSelect = { category = it }) } }
                 }
                 toolsLanding(query, category, toolsMemory, onLaunch = onLaunchTool)
+                // Everything the tools made, kept until deleted (iLovePDF's "Processed files"); hidden while searching tools.
+                if (toolResults.isNotEmpty() && query.isBlank()) {
+                    item(key = "results-header") {
+                        val more = toolResults.size > RESULTS_SHOWN
+                        FileSectionHeader(
+                            title = stringResource(R.string.tools_results_title),
+                            action = when {
+                                !more -> null
+                                showAllResults -> stringResource(R.string.tools_results_show_less)
+                                else -> stringResource(R.string.tools_results_show_all, toolResults.size)
+                            },
+                            onAction = { showAllResults = !showAllResults }
+                        )
+                    }
+                    val shown = if (showAllResults) toolResults else toolResults.take(RESULTS_SHOWN)
+                    items(shown, key = { "result:" + it.file.path }, contentType = { "tool_result" }) { item ->
+                        ToolResultRow(
+                            item = item,
+                            onOpen = { onOpenResult(item) },
+                            onShare = { onShareResult(item) },
+                            onSave = { onSaveResult(item) },
+                            onUseWith = { tool -> onUseResultWithTool(item, tool) },
+                            onDelete = { onDeleteResult(item) }
+                        )
+                    }
+                }
                 if (recentPdfs.isNotEmpty()) {
                     item(key = "recent-header") {
                         RecentPdfsHeader(onClear = onClearRecentPdfs)
@@ -988,6 +1039,9 @@ fun PdfToolsScreen(
         }
     }
 }
+
+/** How many results the Tools screen lists before "Show all". */
+private const val RESULTS_SHOWN = 5
 
 /** Below this a PDF is too small for the compression presets to promise anything. */
 private const val SMALL_PDF_BYTES = 150_000L
@@ -1543,36 +1597,30 @@ private fun RecentPdfsHeader(onClear: () -> Unit) {
     }
 }
 
-/** One PDF opened before: tap to read; the overflow menu opens it, sends it straight into a tool, or removes it. */
+/**
+ * One PDF opened before, with its first page, size and when it was opened. Tap to read; the overflow menu opens it,
+ * sends it straight into a tool, or removes it from the list (the file itself is not touched).
+ */
 @Composable
 private fun RecentPdfRow(pdf: RecentPdf, onOpen: () -> Unit, onUseWith: (String) -> Unit, onRemove: () -> Unit) {
-    var menuOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     var toolsOpen by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf(false) }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.tools_recent_open), onClick = onOpen)
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconTile(Icons.Default.PictureAsPdf, TileTone.Coral, size = 36.dp, corner = 10.dp, iconSize = 18.dp)
-        Spacer(Modifier.width(12.dp))
-        Text(pdf.name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Box {
-            IconButton(onClick = { menuOpen = true }) {
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = "${stringResource(R.string.common_more)}: ${pdf.name}"
-                )
-            }
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_open)) }, onClick = { menuOpen = false; onOpen() })
-                DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_use_with_tool)) }, onClick = { menuOpen = false; toolsOpen = true })
-                androidx.compose.material3.HorizontalDivider()
-                DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_remove_from_recent)) }, onClick = { menuOpen = false; removing = true })
-            }
-            // The same file straight into a tool, without picking it again.
+    val size by produceState(0L, pdf.uri) { value = withContext(Dispatchers.IO) { sizeOf(context, pdf.uri) } }
+    Box {
+        FileRow(
+            name = pdf.name,
+            details = fileDetails(context, "pdf", size, pdf.openedAt),
+            thumbnail = { FileThumbnail(pdf.uri, "pdf", "${pdf.uri}|${pdf.openedAt}") },
+            onOpen = onOpen
+        ) { close ->
+            DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_open)) }, onClick = { close(); onOpen() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_use_with_tool)) }, onClick = { close(); toolsOpen = true })
+            androidx.compose.material3.HorizontalDivider()
+            DropdownMenuItem(text = { Text(stringResource(R.string.tools_recent_remove_from_recent)) }, onClick = { close(); removing = true })
+        }
+        // The same file straight into a tool, without picking it again.
+        Box(Modifier.align(Alignment.TopEnd)) {
             DropdownMenu(expanded = toolsOpen, onDismissRequest = { toolsOpen = false }) {
                 PDF_TOOLS.filter { it.id !in setOf("merge", "img2pdf") }.forEach { tool ->
                     DropdownMenuItem(

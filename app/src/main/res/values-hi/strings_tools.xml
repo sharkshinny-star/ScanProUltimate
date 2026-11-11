@@ -487,4 +487,12 @@
     <string name="tools_stop_body">अब तक किया गया काम खो जाएगा।</string>
     <string name="tools_stop_keep_going">जारी रखें</string>
     <string name="tools_result_continue">इस फ़ाइल के साथ आगे बढ़ें</string>
+    <string name="tools_results_title">आपके परिणाम</string>
+    <string name="tools_results_show_all">सभी दिखाएँ (%1$d)</string>
+    <string name="tools_results_show_less">कम दिखाएँ</string>
+    <string name="tools_results_save">डिवाइस में सहेजें</string>
+    <string name="tools_results_delete">हटाएँ</string>
+    <string name="tools_results_delete_title">यह फ़ाइल हटाएँ?</string>
+    <string name="tools_results_delete_body">%1$s को ScanPro से हटा दिया जाएगा। आपने जो प्रतियाँ सहेजी या साझा की हैं, उन पर कोई असर नहीं होगा।</string>
+    <string name="tools_result_kept_note">टूल्स › आपके परिणाम में तब तक रखा जाएगा जब तक आप इसे न हटाएँ</string>
 </resources>

@@ -487,4 +487,12 @@
     <string name="tools_stop_body">ಇಲ್ಲಿಯವರೆಗೆ ಮಾಡಿದ ಕೆಲಸ ಕಳೆದುಹೋಗುತ್ತದೆ.</string>
     <string name="tools_stop_keep_going">ಮುಂದುವರಿಸಿ</string>
     <string name="tools_result_continue">ಈ ಫೈಲ್‌ನೊಂದಿಗೆ ಮುಂದುವರಿಯಿರಿ</string>
+    <string name="tools_results_title">ನಿಮ್ಮ ಫಲಿತಾಂಶಗಳು</string>
+    <string name="tools_results_show_all">ಎಲ್ಲವನ್ನೂ ತೋರಿಸಿ (%1$d)</string>
+    <string name="tools_results_show_less">ಕಡಿಮೆ ತೋರಿಸಿ</string>
+    <string name="tools_results_save">ಸಾಧನದಲ್ಲಿ ಉಳಿಸಿ</string>
+    <string name="tools_results_delete">ಅಳಿಸಿ</string>
+    <string name="tools_results_delete_title">ಈ ಫೈಲ್ ಅಳಿಸಬೇಕೇ?</string>
+    <string name="tools_results_delete_body">%1$s ಅನ್ನು ScanPro ನಿಂದ ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ. ನೀವು ಉಳಿಸಿದ ಅಥವಾ ಹಂಚಿಕೊಂಡ ಪ್ರತಿಗಳಿಗೆ ಏನೂ ಆಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_result_kept_note">ನೀವು ಅಳಿಸುವವರೆಗೆ ಪರಿಕರಗಳು › ನಿಮ್ಮ ಫಲಿತಾಂಶಗಳಲ್ಲಿ ಇರುತ್ತದೆ</string>
 </resources>

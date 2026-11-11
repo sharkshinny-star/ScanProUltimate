@@ -259,4 +259,6 @@
         <item quantity="one">%1$d ஆவணம் மீட்டெடுக்கப்பட்டது</item>
         <item quantity="other">%1$d ஆவணங்கள் மீட்டெடுக்கப்பட்டன</item>
     </plurals>
+    <string name="home_recent_files">சமீபத்திய கோப்புகள்</string>
+    <string name="home_recent_opened">திறந்தவை</string>
 </resources>

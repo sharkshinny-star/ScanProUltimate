@@ -487,4 +487,12 @@
     <string name="tools_stop_body">இதுவரை செய்த வேலை இழக்கப்படும்.</string>
     <string name="tools_stop_keep_going">தொடரவும்</string>
     <string name="tools_result_continue">இந்தக் கோப்புடன் தொடரவும்</string>
+    <string name="tools_results_title">உங்கள் முடிவுகள்</string>
+    <string name="tools_results_show_all">அனைத்தையும் காட்டு (%1$d)</string>
+    <string name="tools_results_show_less">குறைவாகக் காட்டு</string>
+    <string name="tools_results_save">சாதனத்தில் சேமி</string>
+    <string name="tools_results_delete">நீக்கு</string>
+    <string name="tools_results_delete_title">இந்தக் கோப்பை நீக்கவா?</string>
+    <string name="tools_results_delete_body">%1$s ScanPro-இலிருந்து அகற்றப்படும். நீங்கள் சேமித்த அல்லது பகிர்ந்த நகல்களுக்கு எதுவும் ஆகாது.</string>
+    <string name="tools_result_kept_note">நீங்கள் நீக்கும் வரை கருவிகள் › உங்கள் முடிவுகள் பகுதியில் வைக்கப்படும்</string>
 </resources>

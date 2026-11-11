@@ -6,6 +6,12 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -148,8 +154,12 @@ fun PdfViewerScreen(
 
     val currentPage by remember {
         derivedStateOf {
-            if (pageCount == 0) 1
-            else (listState.firstVisibleItemIndex + 1).coerceIn(1, pageCount)
+            when {
+                pageCount == 0 -> 1
+                // Scrolled to the end, the last page cannot reach the top, so it would never count as current.
+                !listState.canScrollForward && listState.firstVisibleItemIndex > 0 -> pageCount
+                else -> (listState.firstVisibleItemIndex + 1).coerceIn(1, pageCount)
+            }
         }
     }
 
@@ -623,7 +633,7 @@ fun PdfViewerScreen(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
                             // Pages sit as sheets on the tonal backdrop, with room for the page counter at the end.
-                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 56.dp),
+                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = if (pageCount > 1) 150.dp else 56.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(count = pageCount, key = { it }, contentType = { "pdf_page" }) { index ->
@@ -641,21 +651,39 @@ fun PdfViewerScreen(
                     }
 
                     if (pageCount > 1) {
-                        Surface(
+                        // Page thumbnails under the counter (as iLovePDF's viewer has): see where you are, tap to jump.
+                        Column(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 16.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.92f),
-                            shadowElevation = 6.dp
+                                .padding(bottom = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = stringResource(R.string.viewer_page_counter, currentPage, pageCount),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.inverseOnSurface
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.92f),
+                                shadowElevation = 6.dp
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.viewer_page_counter, currentPage, pageCount),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.inverseOnSurface
+                                )
+                            }
+                            if (scale <= 1.01f) {
+                                val renderer = pdfRenderer
+                                if (renderer != null) {
+                                    Spacer(Modifier.height(8.dp))
+                                    PageThumbStrip(
+                                        renderer = renderer,
+                                        renderLock = renderLock,
+                                        pageCount = pageCount,
+                                        currentPage = currentPage,
+                                        onJump = { index -> scope.launch { listState.animateScrollToItem(index) } }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -701,6 +729,73 @@ fun PdfViewerScreen(
                     }
                 }
             )
+        }
+    }
+}
+
+/** Small first renders of every page in a floating strip; the current page is outlined and kept in view. */
+@Composable
+private fun PageThumbStrip(
+    renderer: PdfRenderer,
+    renderLock: Mutex,
+    pageCount: Int,
+    currentPage: Int,
+    onJump: (Int) -> Unit
+) {
+    val thumbs = remember(renderer) {
+        object : android.util.LruCache<Int, Bitmap>(6 * 1024 * 1024) {
+            override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
+        }
+    }
+    val stripState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(currentPage) {
+        val visible = stripState.layoutInfo.visibleItemsInfo.map { it.index }
+        if ((currentPage - 1) !in visible) stripState.animateScrollToItem((currentPage - 2).coerceAtLeast(0))
+    }
+    Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        shadowElevation = 6.dp,
+        modifier = Modifier.widthIn(max = 360.dp)
+    ) {
+        androidx.compose.foundation.lazy.LazyRow(
+            state = stripState,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            items(count = pageCount, key = { it }) { index ->
+                val selected = index == currentPage - 1
+                var thumb by remember(renderer, index) { mutableStateOf(thumbs[index]) }
+                LaunchedEffect(renderer, index) {
+                    if (thumb != null) return@LaunchedEffect
+                    thumb = withContext(Dispatchers.IO) {
+                        runCatching { renderPage(renderer, renderLock, index, 96) {} }.getOrNull()?.also { thumbs.put(index, it) }
+                    }
+                }
+                val label = stringResource(R.string.viewer_page_of, index + 1, pageCount)
+                Box(
+                    modifier = Modifier
+                        .size(width = 34.dp, height = 46.dp)
+                        .background(Color.White, androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                        .border(
+                            width = if (selected) 2.dp else 0.5.dp,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                        )
+                        .clickable(onClickLabel = label) { onJump(index) }
+                        .semantics { contentDescription = label; if (selected) this.selected = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    thumb?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize().padding(1.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }

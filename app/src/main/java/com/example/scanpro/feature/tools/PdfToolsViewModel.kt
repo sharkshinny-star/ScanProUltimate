@@ -91,12 +91,20 @@ data class MergePasswordRequest(
 class PdfToolsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val recents: RecentPdfStore,
+    private val results: com.example.scanpro.data.ToolResultsStore,
     private val ocr: OcrEngine,
     private val operations: OperationRunner,
     private val notifications: AppNotifications,
 ) : ViewModel() {
     /** PDFs picked from the device or a cloud app, newest first, to reopen with one tap. */
     val recentPdfs: StateFlow<List<RecentPdf>> = recents.items
+
+    /** Everything the tools have made, newest first, kept until the user deletes it. */
+    val toolResults: StateFlow<List<com.example.scanpro.data.ToolResultFile>> = results.items
+
+    fun deleteResult(file: File) {
+        viewModelScope.launch(Dispatchers.IO) { results.delete(file) }
+    }
 
     init {
         // A recent file may have been deleted, or its access revoked, since it was opened.
@@ -203,7 +211,9 @@ class PdfToolsViewModel @Inject constructor(
             try {
                 // Held alive by the foreground service: a long merge or compression must survive the user switching apps.
                 // Off the main thread: tools resolve file names and touch disk before their engines switch dispatchers.
-                val result = operations.keepAlive(label) { withContext(Dispatchers.IO) { work() } }
+                val made = operations.keepAlive(label) { withContext(Dispatchers.IO) { work() } }
+                // Out of the one-day cache into Your results, so closing the result without saving loses nothing.
+                val result = made?.let { withContext(Dispatchers.IO) { it.copy(outputFile = results.keep(it.outputFile)) } }
                 _result.value = result
                 if (!endedWithQuestion) notifications.taskFinished(result?.message)
             } catch (cancelled: CancellationException) {

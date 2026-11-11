@@ -259,4 +259,6 @@
         <item quantity="one">%1$d ದಾಖಲೆ ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
         <item quantity="other">%1$d ದಾಖಲೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
     </plurals>
+    <string name="home_recent_files">ಇತ್ತೀಚಿನ ಫೈಲ್‌ಗಳು</string>
+    <string name="home_recent_opened">ತೆರೆದವು</string>
 </resources>

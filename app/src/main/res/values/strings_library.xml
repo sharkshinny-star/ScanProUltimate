@@ -308,4 +308,6 @@
         <item quantity="one">Restored %1$d document</item>
         <item quantity="other">Restored %1$d documents</item>
     </plurals>
+    <string name="home_recent_files">Recent files</string>
+    <string name="home_recent_opened">Opened</string>
 </resources>

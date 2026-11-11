@@ -155,8 +155,11 @@ fun LibraryRoute(
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {},
     onKeptScans: () -> Unit = {},
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> },
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
+    val homeRecentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
+    val homeToolResults by viewModel.toolResults.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val overview by viewModel.overview.collectAsStateWithLifecycle()
     val folder by viewModel.folder.collectAsStateWithLifecycle()
@@ -194,6 +197,9 @@ fun LibraryRoute(
     LibraryScreen(
         mode = mode,
         overview = overview,
+        recentPdfs = homeRecentPdfs,
+        toolResults = homeToolResults,
+        onOpenPdfViewer = onOpenPdfViewer,
         items = items,
         folder = folder,
         favoritesOnly = favoritesOnly,
@@ -314,7 +320,10 @@ internal fun LibraryScreen(
     onKeptScans: () -> Unit = {},
     showTips: Boolean = false,
     onHideTips: () -> Unit = {},
-    onTipAction: (TipAction) -> Unit = {}
+    onTipAction: (TipAction) -> Unit = {},
+    recentPdfs: List<com.example.scanpro.data.RecentPdf> = emptyList(),
+    toolResults: List<com.example.scanpro.data.ToolResultFile> = emptyList(),
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> }
 ) {
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
@@ -615,7 +624,10 @@ internal fun LibraryScreen(
                     onToggleSelection = ::toggleSelection,
                     showTips = showTips,
                     onHideTips = onHideTips,
-                    onTipAction = onTipAction
+                    onTipAction = onTipAction,
+                    recentPdfs = recentPdfs,
+                    toolResults = toolResults,
+                    onOpenPdfViewer = onOpenPdfViewer
                 )
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
@@ -999,7 +1011,10 @@ private fun HomeDashboard(
     onKeptScans: () -> Unit = {},
     showTips: Boolean = false,
     onHideTips: () -> Unit = {},
-    onTipAction: (TipAction) -> Unit = {}
+    onTipAction: (TipAction) -> Unit = {},
+    recentPdfs: List<com.example.scanpro.data.RecentPdf> = emptyList(),
+    toolResults: List<com.example.scanpro.data.ToolResultFile> = emptyList(),
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> }
 ) {
     val recent = overview.recent
     val documentCount = overview.documentCount
@@ -1058,6 +1073,24 @@ private fun HomeDashboard(
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
+        }
+        // PDFs opened in ScanPro and files the tools made, as iLovePDF's home shows them; scans stay in the grid below.
+        if (recentPdfs.isNotEmpty() || toolResults.isNotEmpty()) {
+            item(key = "recent_files", contentType = "recent_files") {
+                val context = LocalContext.current
+                com.example.scanpro.feature.tools.RecentFilesStrip(
+                    recentPdfs = recentPdfs,
+                    toolResults = toolResults,
+                    onOpenPdf = onOpenPdfViewer,
+                    onOpenResult = { result ->
+                        val file = result.file
+                        if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(android.net.Uri.fromFile(file), file.name)
+                        else com.example.scanpro.core.ui.openFile(
+                            context, file.absolutePath, com.example.scanpro.feature.tools.mimeFor(file), file.name
+                        )
+                    }
+                )
+            }
         }
         if (recent.isNotEmpty()) {
             item(key = "recent_header", contentType = "recent_header") {

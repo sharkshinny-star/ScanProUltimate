@@ -259,4 +259,6 @@
         <item quantity="one">%1$d పత్రం పునరుద్ధరించబడింది</item>
         <item quantity="other">%1$d పత్రాలు పునరుద్ధరించబడ్డాయి</item>
     </plurals>
+    <string name="home_recent_files">ఇటీవలి ఫైల్‌లు</string>
+    <string name="home_recent_opened">తెరిచినవి</string>
 </resources>

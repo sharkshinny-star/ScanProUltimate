@@ -232,6 +232,15 @@ internal fun ResultDialog(
                     )
                 }
 
+                // Says where the file lives on, so closing this without Save does not feel like losing it.
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.tools_result_kept_note),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+
                 if (isCompression) {
                     Spacer(Modifier.height(12.dp))
                     Surface(

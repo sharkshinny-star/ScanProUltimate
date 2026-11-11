@@ -487,4 +487,12 @@
     <string name="tools_stop_body">ఇప్పటివరకు చేసిన పని పోతుంది.</string>
     <string name="tools_stop_keep_going">కొనసాగించండి</string>
     <string name="tools_result_continue">ఈ ఫైల్‌తో కొనసాగండి</string>
+    <string name="tools_results_title">మీ ఫలితాలు</string>
+    <string name="tools_results_show_all">అన్నీ చూపించు (%1$d)</string>
+    <string name="tools_results_show_less">తక్కువ చూపించు</string>
+    <string name="tools_results_save">పరికరంలో సేవ్ చేయండి</string>
+    <string name="tools_results_delete">తొలగించు</string>
+    <string name="tools_results_delete_title">ఈ ఫైల్‌ను తొలగించాలా?</string>
+    <string name="tools_results_delete_body">%1$s ScanPro నుండి తీసివేయబడుతుంది. మీరు సేవ్ చేసిన లేదా షేర్ చేసిన కాపీలకు ఏమీ కాదు.</string>
+    <string name="tools_result_kept_note">మీరు తొలగించే వరకు టూల్స్ › మీ ఫలితాలు లో ఉంచబడుతుంది</string>
 </resources>

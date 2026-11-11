@@ -522,4 +522,12 @@
     <string name="tools_stop_body">The work done so far will be lost.</string>
     <string name="tools_stop_keep_going">Keep going</string>
     <string name="tools_result_continue">Continue with this file</string>
+    <string name="tools_results_title">Your results</string>
+    <string name="tools_results_show_all">Show all (%1$d)</string>
+    <string name="tools_results_show_less">Show fewer</string>
+    <string name="tools_results_save">Save to device</string>
+    <string name="tools_results_delete">Delete</string>
+    <string name="tools_results_delete_title">Delete this file?</string>
+    <string name="tools_results_delete_body">%1$s will be removed from ScanPro. Copies you saved or shared are not affected.</string>
+    <string name="tools_result_kept_note">Kept in Tools › Your results until you delete it</string>
 </resources>

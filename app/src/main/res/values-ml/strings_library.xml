@@ -259,4 +259,6 @@
         <item quantity="one">%1$d രേഖ പുനഃസ്ഥാപിച്ചു</item>
         <item quantity="other">%1$d രേഖകൾ പുനഃസ്ഥാപിച്ചു</item>
     </plurals>
+    <string name="home_recent_files">അടുത്തിടെയുള്ള ഫയലുകൾ</string>
+    <string name="home_recent_opened">തുറന്നവ</string>
 </resources>

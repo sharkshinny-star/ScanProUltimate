@@ -51,8 +51,14 @@ class LibraryViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val savedState: SavedStateHandle,
     private val folderLock: com.example.scanpro.core.security.FolderLock,
+    recentPdfStore: com.example.scanpro.data.RecentPdfStore,
+    toolResultsStore: com.example.scanpro.data.ToolResultsStore,
     keptScans: KeptScanStore
 ) : ViewModel() {
+    /** PDFs opened in ScanPro and files the tools made, for Home's "Recent files" strip. */
+    val recentPdfs: StateFlow<List<com.example.scanpro.data.RecentPdf>> = recentPdfStore.items
+    val toolResults: StateFlow<List<com.example.scanpro.data.ToolResultFile>> = toolResultsStore.items
+
     private val _movedAside = MutableStateFlow<MovedAsideLibrary?>(null)
 
     /** A library that an older build set aside and this one can read again; the screen offers to restore it. */

@@ -259,4 +259,6 @@
         <item quantity="one">%1$d दस्तावेज़ वापस आया</item>
         <item quantity="other">%1$d दस्तावेज़ वापस आए</item>
     </plurals>
+    <string name="home_recent_files">हाल की फ़ाइलें</string>
+    <string name="home_recent_opened">खोली गईं</string>
 </resources>

@@ -99,6 +99,7 @@ fun ScanProNavHost(
                     onStartScan = { folder -> navController.navigate(ScanProDestinations.cameraInFolder(folder)) },
                     onQuickScan = { mode -> navController.navigate(ScanProDestinations.camera(mode)) },
                     onOpenTools = { onTab(ScanProDestinations.TOOLS) },
+                    onOpenPdfViewer = onOpenPdfViewer,
                     onImportImages = onImportImages,
                     onImportPdf = onImportPdf,
                     onTrash = { navController.navigate(ScanProDestinations.TRASH) },
