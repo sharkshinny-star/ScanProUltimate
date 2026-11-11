@@ -128,7 +128,10 @@ internal fun ResultDialog(
     result: PdfToolResult,
     onDismiss: () -> Unit,
     onView: () -> Unit,
-    onSaveAs: () -> Unit
+    onSaveAs: () -> Unit,
+    /** Tools the finished file can go straight into; empty when there is nothing sensible to offer. */
+    nextTools: List<PdfToolCard> = emptyList(),
+    onContinue: (PdfToolCard) -> Unit = {}
 ) {
     val context = LocalContext.current
     val file = result.outputFile
@@ -151,7 +154,12 @@ internal fun ResultDialog(
 
     // The tick springs in once, so completion feels like an event rather than a screen change.
     var shown by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { shown = true }
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    LaunchedEffect(Unit) {
+        shown = true
+        // One short tick with the tick mark: a long job is often finished while the phone is looked away from.
+        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
+    }
     val tickScale by animateFloatAsState(
         targetValue = if (shown) 1f else 0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
@@ -284,6 +292,10 @@ internal fun ResultDialog(
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.common_save), maxLines = 1)
                     }
+                }
+                if (nextTools.isNotEmpty()) {
+                    Spacer(Modifier.height(14.dp))
+                    NextToolsRow(nextTools, onContinue)
                 }
             }
         },

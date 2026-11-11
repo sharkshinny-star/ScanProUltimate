@@ -480,4 +480,11 @@
         <item quantity="other">%1$d ஸ்லைடுகள் உருவாயின், ஒவ்வொரு பக்கத்திற்கும் ஒரு படம்.</item>
     </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
+    <string name="tools_failure_title">இது நடக்கவில்லை</string>
+    <string name="tools_failure_try_again">மீண்டும் முயலவும்</string>
+    <string name="tools_failure_choose_another">வேறு கோப்பைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="tools_stop_title">இந்தப் பணியை நிறுத்தவா?</string>
+    <string name="tools_stop_body">இதுவரை செய்த வேலை இழக்கப்படும்.</string>
+    <string name="tools_stop_keep_going">தொடரவும்</string>
+    <string name="tools_result_continue">இந்தக் கோப்புடன் தொடரவும்</string>
 </resources>

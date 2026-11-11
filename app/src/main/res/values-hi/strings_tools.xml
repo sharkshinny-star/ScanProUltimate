@@ -480,4 +480,11 @@
         <item quantity="other">%1$d स्लाइड बनीं, हर पेज की एक तस्वीर।</item>
     </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
+    <string name="tools_failure_title">यह नहीं हो सका</string>
+    <string name="tools_failure_try_again">फिर से कोशिश करें</string>
+    <string name="tools_failure_choose_another">दूसरी फ़ाइल चुनें</string>
+    <string name="tools_stop_title">यह काम रोकें?</string>
+    <string name="tools_stop_body">अब तक किया गया काम खो जाएगा।</string>
+    <string name="tools_stop_keep_going">जारी रखें</string>
+    <string name="tools_result_continue">इस फ़ाइल के साथ आगे बढ़ें</string>
 </resources>

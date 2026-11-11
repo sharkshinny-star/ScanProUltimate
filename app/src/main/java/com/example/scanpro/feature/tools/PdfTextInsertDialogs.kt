@@ -64,6 +64,7 @@ data class SourcePasswordRequest(
  */
 @Composable
 internal fun PdfToTextDialog(
+    uri: Uri,
     onDismiss: () -> Unit,
     onConfirm: (TextExportFormat, OcrScript) -> Unit,
     initialFormat: TextExportFormat = TextExportFormat.WORD
@@ -75,6 +76,8 @@ internal fun PdfToTextDialog(
         title = { Text(stringResource(R.string.tools_pdf2text_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                PickedFileRow(uri)
+                Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.tools_pdf2text_body), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.tools_pdf2text_format), style = MaterialTheme.typography.titleSmall)

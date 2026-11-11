@@ -480,4 +480,11 @@
         <item quantity="other">%1$d స్లైడ్‌లు తయారయ్యాయి, ప్రతి పేజీకి ఒక చిత్రం.</item>
     </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
+    <string name="tools_failure_title">ఇది జరగలేదు</string>
+    <string name="tools_failure_try_again">మళ్లీ ప్రయత్నించండి</string>
+    <string name="tools_failure_choose_another">వేరే ఫైల్‌ను ఎంచుకోండి</string>
+    <string name="tools_stop_title">ఈ పనిని ఆపాలా?</string>
+    <string name="tools_stop_body">ఇప్పటివరకు చేసిన పని పోతుంది.</string>
+    <string name="tools_stop_keep_going">కొనసాగించండి</string>
+    <string name="tools_result_continue">ఈ ఫైల్‌తో కొనసాగండి</string>
 </resources>

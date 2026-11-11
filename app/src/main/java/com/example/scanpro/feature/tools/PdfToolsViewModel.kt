@@ -137,6 +137,11 @@ class PdfToolsViewModel @Inject constructor(
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    /** Why the last tool run could not finish. Held until the user answers it (try again, another file, close). */
+    private val _failure = MutableStateFlow<String?>(null)
+    val failure: StateFlow<String?> = _failure.asStateFlow()
+    fun clearFailure() { _failure.value = null }
+
     /** Set when Unlock PDF is given a file with no open password: there is nothing to unlock. */
     private val _unlockNotice = MutableStateFlow<Pair<Uri, PdfProtection>?>(null)
     val unlockNotice: StateFlow<Pair<Uri, PdfProtection>?> = _unlockNotice.asStateFlow()
@@ -191,6 +196,7 @@ class PdfToolsViewModel @Inject constructor(
             return
         }
         _result.value = null
+        _failure.value = null
         _progress.value = ToolProgress(title = label)
         endedWithQuestion = false
         job = viewModelScope.launch {
@@ -207,12 +213,16 @@ class PdfToolsViewModel @Inject constructor(
                 // The engines stop with an InterruptedException when cancelled mid-way; report that as a cancel.
                 val cancelledMidWay = error is InterruptedException
                 val text = if (cancelledMidWay) context.getString(R.string.msg_tools_operation_cancelled) else error.localizedMessage ?: failure
-                _message.value = text
-                if (!cancelledMidWay) notifications.taskFailed(text)
+                if (cancelledMidWay) _message.value = text
+                else {
+                    _failure.value = text
+                    notifications.taskFailed(text)
+                }
             } catch (_: OutOfMemoryError) {
                 // A huge page image is a failed tool run, not a reason to lose the app.
-                _message.value = context.getString(R.string.msg_tools_out_of_memory)
-                notifications.taskFailed(_message.value)
+                val text = context.getString(R.string.msg_tools_out_of_memory)
+                _failure.value = text
+                notifications.taskFailed(text)
             } finally {
                 _progress.value = null
             }

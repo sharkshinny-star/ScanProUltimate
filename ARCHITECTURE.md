@@ -353,6 +353,7 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - `feature/tools/PageGrid.kt`: `ReorderablePageGrid` (press-and-hold drag with auto-scroll) and `PageActionsSheet`; shared by Organise, Images to PDF and Merge.
 - `feature/tools/ImagesToPdfEditor.kt`, `WatermarkEditor.kt`, `MergeEditor.kt`: full-screen editors opened from `PdfToolsScreen.kt`. They work on cached copies and only hand a final list or config to the view model.
 - `feature/tools/ToolResultDialog.kt`: the one result dialog (thumbnail, size, compression comparison, Open/Share/Save).
+- `feature/tools/ToolFlowParts.kt`: the parts every tool shares between the tile and the result: `PickedFileRow` (file name, size, pages at the top of an options dialog), `ToolFailureDialog` (Try again / Choose another file), `StopTaskDialog`, and `nextToolsFor` + `NextToolsRow` ("Continue with this file" on the result). Failures travel in `PdfToolsViewModel.failure`, not in `message`.
 - `imaging/PdfToolsEngine.kt`: `WatermarkGeometry` maps the page as seen (rotation, CropBox) back to stored PDF coordinates; the preview and the saved file share it.
 - `feature/settings/SettingsSearch.kt`: settings search and jump-to-row (`SettingsLocator`), backup status and explainer.
 - `scanner/CameraScannerScreen.kt`: `ScanIntroDialog`, first-use explainers for Document, ID Card and Book, with one "don't remind me" preference per mode.

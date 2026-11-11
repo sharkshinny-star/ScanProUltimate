@@ -273,13 +273,15 @@ private fun FieldInput(field: FormField, value: String, onChange: (String) -> Un
 
 /** Asks which writing system the PDF is in before "Make searchable" reads it. */
 @Composable
-internal fun OcrScriptDialog(onDismiss: () -> Unit, onConfirm: (OcrScript) -> Unit) {
+internal fun OcrScriptDialog(uri: android.net.Uri, onDismiss: () -> Unit, onConfirm: (OcrScript) -> Unit) {
     var script by rememberSaveable { mutableStateOf(OcrScript.LATIN) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.tools_ocr_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                PickedFileRow(uri)
+                Spacer(Modifier.padding(top = 12.dp))
                 Text(
                     stringResource(R.string.tools_ocr_body),
                     style = MaterialTheme.typography.bodyMedium

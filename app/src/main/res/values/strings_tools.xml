@@ -515,4 +515,11 @@
         <item quantity="other">Made %1$d slides, one picture per page.</item>
     </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
+    <string name="tools_failure_title">That didn\'t work</string>
+    <string name="tools_failure_try_again">Try again</string>
+    <string name="tools_failure_choose_another">Choose another file</string>
+    <string name="tools_stop_title">Stop this task?</string>
+    <string name="tools_stop_body">The work done so far will be lost.</string>
+    <string name="tools_stop_keep_going">Keep going</string>
+    <string name="tools_result_continue">Continue with this file</string>
 </resources>

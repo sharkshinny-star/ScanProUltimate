@@ -275,6 +275,9 @@ internal val VIEWER_TOOL = PdfToolCard("viewer", R.string.tools_card_viewer, Ico
 /** Every tool, for the "Use with a tool" menu on a recent PDF. */
 private val PDF_TOOLS = TOOL_SECTIONS.filter { it.id != "image" }.flatMap { it.tools } + VIEWER_TOOL
 
+/** Every tile, the image tools included: what a failed run or a finished file can be sent back into. */
+internal val ALL_TOOLS = TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL
+
 private data class ThumbnailPageModel(
     val index: Int,
     val rotation: Int = 0,
@@ -302,6 +305,7 @@ fun PdfToolsScreen(
     val progress by viewModel.progress.collectAsStateWithLifecycle()
     val lastResult by viewModel.result.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
+    val failure by viewModel.failure.collectAsStateWithLifecycle()
     val unlockNotice by viewModel.unlockNotice.collectAsStateWithLifecycle()
     val passwordNeeded by viewModel.passwordNeeded.collectAsStateWithLifecycle()
     val wrongPassword by viewModel.wrongPassword.collectAsStateWithLifecycle()
@@ -608,6 +612,22 @@ fun PdfToolsScreen(
                 )
             }
 
+            failure?.let { reason ->
+                val failedTool = selectedTool
+                val failedUri = pendingUri
+                val card = ALL_TOOLS.firstOrNull { it.id == failedTool }
+                ToolFailureDialog(
+                    message = reason,
+                    onRetry = if (failedTool in RETRYABLE_TOOLS && failedUri != null) {
+                        { viewModel.clearFailure(); startTool(failedTool!!, failedUri) }
+                    } else null,
+                    onChooseAnother = if (card != null && (failedTool in RETRYABLE_TOOLS || failedTool in MULTI_FILE_TOOLS)) {
+                        { viewModel.clearFailure(); launchTool(card) }
+                    } else null,
+                    onDismiss = viewModel::clearFailure
+                )
+            }
+
             lastResult?.let { result ->
                 ResultDialog(
                     result = result,
@@ -617,6 +637,13 @@ fun PdfToolsScreen(
                         viewModel.clearResult()
                         if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
                         else openFile(context, file.absolutePath, mimeFor(file), file.name)
+                    },
+                    // A protected result would only ask for its password again, so nothing is offered after Protect.
+                    nextTools = if (selectedTool == "protect") emptyList() else nextToolsFor(result.outputFile.extension, selectedTool),
+                    onContinue = { next ->
+                        val file = result.outputFile
+                        viewModel.clearResult()
+                        startTool(next.id, Uri.fromFile(file))
                     },
                     onSaveAs = {
                         saveSourceFile = result.outputFile
@@ -793,6 +820,7 @@ fun PdfToolsScreen(
                 val isProtect = selectedTool == "protect"
                 PasswordDialog(
                     isProtect = isProtect,
+                    fileUri = uri,
                     initialError = if (!isProtect && wrongPassword) stringResource(R.string.tools_wrong_password_try_again) else null,
                     onDismiss = { showPasswordDialog = false; viewModel.clearWrongPassword() },
                     onConfirm = { pwd ->
@@ -828,6 +856,7 @@ fun PdfToolsScreen(
 
             if (showPdfToTextDialog && uri != null) {
                 PdfToTextDialog(
+                    uri = uri,
                     initialFormat = pdfTextFormat,
                     onDismiss = { showPdfToTextDialog = false },
                     onConfirm = { format, script ->
@@ -839,6 +868,7 @@ fun PdfToolsScreen(
 
             if (showOcrDialog && uri != null) {
                 OcrScriptDialog(
+                    uri = uri,
                     onDismiss = { showOcrDialog = false },
                     onConfirm = { script ->
                         showOcrDialog = false
@@ -963,6 +993,15 @@ fun PdfToolsScreen(
 private const val SMALL_PDF_BYTES = 150_000L
 
 /** Where Compress PDF keeps the level chosen last time, in the Tools preferences. */
+/** Tools that work on one picked file, so a failed run can be tried again with the same file. */
+private val RETRYABLE_TOOLS = setOf(
+    "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
+    "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel", "pdf2ppt"
+)
+
+/** Tools that start from several files or from a document that is not a PDF: after a failure they can only be picked again. */
+private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img")
+
 private const val LAST_COMPRESS_PRESET = "last_compress_preset"
 
 @Composable
@@ -1010,6 +1049,8 @@ private fun CompressPdfDialog(
         title = { Text(stringResource(R.string.tools_compress_pdf)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                PickedFileRow(uri)
+                Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -1350,6 +1391,8 @@ private fun PdfToImagesDialog(
         title = { Text(stringResource(R.string.tools_pdf2img_dialog_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                PickedFileRow(uri)
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(stringResource(R.string.tools_pdf2img_format), style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(6.dp))
                 androidx.compose.foundation.layout.FlowRow(
@@ -1564,7 +1607,12 @@ private fun ProcessingOverlay(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)
     ) {
-        BackHandler(onBack = onCancel)
+        // Back and Cancel ask first: a stray Back press used to throw away a long compression or text recognition.
+        var confirmStop by rememberSaveable { mutableStateOf(false) }
+        BackHandler { confirmStop = true }
+        if (confirmStop) {
+            StopTaskDialog(onKeepGoing = { confirmStop = false }, onStop = { confirmStop = false; onCancel() })
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -1648,7 +1696,7 @@ private fun ProcessingOverlay(
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
-                    OutlinedButton(onClick = onCancel) {
+                    OutlinedButton(onClick = { confirmStop = true }) {
                         Text(stringResource(R.string.common_cancel))
                     }
                 }
@@ -1663,6 +1711,8 @@ private fun PasswordDialog(
     initialError: String? = null,
     /** Set when Merge asks for the password of this file: the dialog names it and the button carries on merging. */
     mergeFileName: String? = null,
+    /** The file being protected or unlocked, shown above the question; not set when Merge asks. */
+    fileUri: Uri? = null,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
@@ -1692,6 +1742,10 @@ private fun PasswordDialog(
         },
         text = {
             Column {
+                if (fileUri != null) {
+                    PickedFileRow(fileUri)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
                 Text(
                     when {
                         mergeFileName != null -> stringResource(R.string.tools_merge_password_prompt, mergeFileName)
@@ -1906,6 +1960,8 @@ private fun SplitDialog(
         title = { Text(stringResource(R.string.tools_split_title)) },
         text = {
             Column {
+                PickedFileRow(uri)
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     pageCount?.let { pluralStringResource(R.plurals.tools_split_has_pages, it, it) } ?: stringResource(R.string.tools_split_choose),
                     style = MaterialTheme.typography.bodyMedium
@@ -3372,6 +3428,7 @@ private fun PageNumbersPdfDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                PickedFileRow(uri)
                 Text(
                     stringResource(R.string.tools_page_numbers_position_label),
                     style = MaterialTheme.typography.labelMedium,
