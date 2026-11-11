@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- QR mode: several codes in one view, scan history and the QR generator. -->
+    <string name="qr_pick_one_hint">Tap a code to open it</string>
+    <string name="qr_outline_description">Open code: %1$s</string>
+    <string name="qr_chooser_title">Several codes found</string>
+
+    <string name="qr_history_title">Scan history</string>
+    <string name="qr_history_save_switch">Save scan history</string>
+    <string name="qr_history_search">Search history</string>
+    <string name="qr_history_privacy">History stays on this device and is never uploaded. It can include Wi-Fi passwords and other private details, so clear it when you are done.</string>
+    <string name="qr_history_clear_all">Clear all</string>
+    <string name="qr_history_clear_title">Clear all scan history?</string>
+    <string name="qr_history_clear_message">Every saved scan, including favourites, will be deleted from this device. This cannot be undone.</string>
+    <string name="qr_history_empty">No scans saved yet</string>
+    <string name="qr_history_no_matches">No scans match your search</string>
+    <string name="qr_history_favourite_add">Add to favourites</string>
+    <string name="qr_history_favourite_remove">Remove from favourites</string>
+    <string name="qr_history_delete">Delete this scan</string>
+
+    <string name="qr_create_code">Create a QR code</string>
+    <string name="qr_generator_title">Create QR code</string>
+    <string name="qr_type_text">Text</string>
+    <string name="qr_type_link">Link</string>
+    <string name="qr_type_wifi">Wi-Fi</string>
+    <string name="qr_type_phone">Phone</string>
+    <string name="qr_type_email">Email</string>
+    <string name="qr_type_contact">Contact</string>
+    <string name="qr_type_upi">UPI payment</string>
+    <string name="qr_field_text">Text</string>
+    <string name="qr_field_link">Web address</string>
+    <string name="qr_field_network">Network name</string>
+    <string name="qr_field_security">Security</string>
+    <string name="qr_security_wpa">WPA/WPA2/WPA3</string>
+    <string name="qr_security_wep">WEP</string>
+    <string name="qr_security_none">None</string>
+    <string name="qr_field_password">Password</string>
+    <string name="qr_field_hidden">Hidden network</string>
+    <string name="qr_field_phone">Phone number</string>
+    <string name="qr_field_email">Email address</string>
+    <string name="qr_field_subject">Subject (optional)</string>
+    <string name="qr_field_body">Message (optional)</string>
+    <string name="qr_field_name">Name</string>
+    <string name="qr_field_upi_id">UPI ID (payee address)</string>
+    <string name="qr_field_payee_name">Payee name</string>
+    <string name="qr_field_amount">Amount in rupees (optional)</string>
+    <string name="qr_field_note">Note (optional)</string>
+    <string name="qr_wifi_warning">The password is stored in the code as plain text. Anyone who scans it can read it.</string>
+    <string name="qr_preview_description">QR code preview</string>
+    <string name="qr_preview_empty">Fill in the details to see the code</string>
+    <string name="qr_too_long">That is too much for one QR code</string>
+    <string name="qr_share_png">Share as image</string>
+    <string name="qr_share_title">QR code</string>
+    <string name="qr_save_document">Save as document</string>
+    <string name="qr_save_failed">Could not save the code</string>
+</resources>

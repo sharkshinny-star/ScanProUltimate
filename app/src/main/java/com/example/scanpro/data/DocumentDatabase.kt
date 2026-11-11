@@ -278,6 +278,33 @@ internal fun setAsideNewerDatabase(context: Context, name: String, currentVersio
     }
 }
 
+/** A library database that an older build moved aside (see [setAsideNewerDatabase]); [version] is the schema it was written with. */
+data class MovedAsideLibrary(val fileName: String, val version: Int)
+
+private const val MOVED_ASIDE_MARK = ".newer-v"
+
+/** The moved-aside databases this build can read (written by a schema no newer than [currentVersion]), newest first. */
+internal fun findMovedAsideLibraries(context: Context, name: String, currentVersion: Int): List<MovedAsideLibrary> {
+    val folder = context.getDatabasePath(name).parentFile ?: return emptyList()
+    val prefix = name + MOVED_ASIDE_MARK
+    return folder.listFiles().orEmpty()
+        .filter { it.isFile && it.name.startsWith(prefix) }
+        // "-wal" and "-shm" files do not parse as a version, so only the main file of each database is listed.
+        .mapNotNull { file -> file.name.removePrefix(prefix).toIntOrNull()?.let { MovedAsideLibrary(file.name, it) } }
+        .filter { it.version in 1..currentVersion }
+        .sortedByDescending { it.version }
+}
+
+/** Renames a database file with its -wal and -shm files, so it is no longer offered. Nothing is deleted. */
+internal fun renameDatabaseFiles(context: Context, fileName: String, newFileName: String) {
+    val from = context.getDatabasePath(fileName).path
+    val to = context.getDatabasePath(newFileName).path
+    for (suffix in listOf("", "-wal", "-shm")) {
+        val part = java.io.File(from + suffix)
+        if (part.exists()) part.renameTo(java.io.File(to + suffix))
+    }
+}
+
 /** SQLite's user_version, which Room sets to the schema version: 4 bytes, big-endian, at offset 60 of the file. */
 internal fun databaseVersion(file: java.io.File): Int? = runCatching {
     java.io.RandomAccessFile(file, "r").use { raf ->
@@ -303,14 +330,19 @@ internal abstract class ScanRoomDatabase : RoomDatabase() {
  * All calls are expected from Dispatchers.IO.
  */
 @Singleton
-class DocumentDatabase @Inject constructor(
-    @ApplicationContext context: Context
+class DocumentDatabase internal constructor(
+    context: Context,
+    private val databaseName: String
 ) {
+    @Inject constructor(@ApplicationContext context: Context) : this(context, DATABASE_NAME)
+
+    private val appContext = context
+
     // Lazy: Hilt builds this singleton on the main thread, and the file checks below read from disk (about 460 ms
     // seen under StrictMode on a device). Every caller is on Dispatchers.IO, so the first use pays for it there.
     private val room by lazy {
-        setAsideNewerDatabase(context, DATABASE_NAME, DATABASE_VERSION)
-        Room.databaseBuilder(context, ScanRoomDatabase::class.java, DATABASE_NAME)
+        setAsideNewerDatabase(context, databaseName, DATABASE_VERSION)
+        Room.databaseBuilder(context, ScanRoomDatabase::class.java, databaseName)
             .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
             .build()
     }
@@ -329,6 +361,43 @@ class DocumentDatabase @Inject constructor(
         }
         dao.replaceDocument(entity, pageEntities, ftsRows)
     }
+
+    /** Closes the database; for tests that move a library file aside. */
+    internal fun close() = room.close()
+
+    /** The libraries an older build moved aside that this build can read again, newest version first. */
+    fun movedAsideLibraries(): List<MovedAsideLibrary> = findMovedAsideLibraries(appContext, databaseName, DATABASE_VERSION)
+
+    /**
+     * Copies the documents of a moved-aside library that this library does not have yet and returns how many were
+     * added. Nothing already here is changed, and a document is skipped when its folder of files is gone. The
+     * moved-aside file is then renamed, never deleted, so it can still be recovered by hand.
+     */
+    fun restoreMovedAsideLibrary(library: MovedAsideLibrary): Int {
+        val source = Room.databaseBuilder(appContext, ScanRoomDatabase::class.java, library.fileName)
+            .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+            .build()
+        var added = 0
+        try {
+            val from = source.scanDao()
+            for (entity in from.loadActiveDocuments() + from.loadTrashDocuments()) {
+                if (dao.loadDocument(entity.id) != null) continue
+                if (java.io.File(entity.pdfPath).parentFile?.isDirectory != true) continue
+                val pages = from.loadPages(entity.id)
+                val ftsRows = pages.map { PageFtsEntity(documentId = it.documentId, pageId = it.id, content = it.ocrText) }
+                dao.replaceDocument(entity, pages, ftsRows)
+                added++
+            }
+        } finally {
+            source.close()
+        }
+        renameDatabaseFiles(appContext, library.fileName, "$databaseName.restored-v${library.version}-${System.currentTimeMillis()}")
+        return added
+    }
+
+    /** Stops offering a moved-aside library without restoring it; the files are renamed, never deleted. */
+    fun declineMovedAsideLibrary(library: MovedAsideLibrary) =
+        renameDatabaseFiles(appContext, library.fileName, "$databaseName.declined-v${library.version}-${System.currentTimeMillis()}")
 
     fun loadAll(includeTrashed: Boolean = false): List<ScanDocument> = room.runInTransaction<List<ScanDocument>> {
         val docs = if (includeTrashed) {

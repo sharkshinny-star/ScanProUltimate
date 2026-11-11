@@ -297,4 +297,15 @@
     <string name="settings_backup_intro_body">Every document is saved as its own encrypted file in a folder you choose; a cloud-drive folder works too.\n\nYou set a password in the next step. It cannot be recovered, so keep it safe.</string>
     <string name="settings_backup_choose_folder">Choose folder</string>
     <string name="settings_backup_nothing">There are no documents to back up yet.</string>
+    <string name="lib_restore_aside_title">Restore your earlier library?</string>
+    <string name="lib_restore_aside_body">Your library was set aside when an older version of the app was installed. This version can read it again. Restore its documents? Anything you have scanned since stays as it is.</string>
+    <string name="lib_restore_aside_confirm">Restore</string>
+    <string name="lib_restore_aside_later">Not now</string>
+    <string name="lib_restore_aside_never">Do not ask again</string>
+    <string name="lib_restore_aside_running">Restoring your library…</string>
+    <string name="lib_restore_aside_none">Nothing to restore: every document is already in your library.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">Restored %1$d document</item>
+        <item quantity="other">Restored %1$d documents</item>
+    </plurals>
 </resources>

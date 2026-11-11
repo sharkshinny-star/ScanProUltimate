@@ -176,6 +176,21 @@ fun LibraryRoute(
     val lockedFolders by viewModel.lockedFolders.collectAsStateWithLifecycle()
     val hiddenFolders by viewModel.hiddenFolders.collectAsStateWithLifecycle()
     val homeTips by viewModel.homeTips.collectAsStateWithLifecycle()
+    val movedAside by viewModel.movedAsideLibrary.collectAsStateWithLifecycle()
+    if (movedAside != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = viewModel::deferMovedAsideRestore,
+            title = { Text(stringResource(R.string.lib_restore_aside_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.lib_restore_aside_body))
+                    TextButton(onClick = viewModel::declineMovedAside) { Text(stringResource(R.string.lib_restore_aside_never)) }
+                }
+            },
+            confirmButton = { TextButton(onClick = viewModel::restoreMovedAside) { Text(stringResource(R.string.lib_restore_aside_confirm)) } },
+            dismissButton = { TextButton(onClick = viewModel::deferMovedAsideRestore) { Text(stringResource(R.string.lib_restore_aside_later)) } }
+        )
+    }
     LibraryScreen(
         mode = mode,
         overview = overview,

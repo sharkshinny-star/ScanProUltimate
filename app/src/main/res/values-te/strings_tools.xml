@@ -396,9 +396,6 @@
     <string name="tools_page_numbers_success">%1$d పేజీలకు సంఖ్యలు జోడించబడ్డాయి</string>
     <string name="tools_err_page_numbers">పేజీ సంఖ్యలను జోడించలేకపోయాం</string>
 
-    <string name="tools_card_pdf2text">PDF నుండి వచనం</string>
-    <string name="tools_tile_pdf2text">వచనాన్ని తీయండి</string>
-    <string name="tools_pdf2text_title">PDF నుండి వచనాన్ని సంగ్రహించండి</string>
     <string name="tools_pdf2text_desc">అన్ని పేజీల నుండి వచనాన్ని సంగ్రహించి .txt ఫైల్‌గా సేవ్ చేయండి.</string>
     <string name="tools_pdf2text_action">వచనాన్ని తీయండి</string>
     <string name="tools_progress_extracting_text">PDF నుండి వచనాన్ని సంగ్రహిస్తోంది…</string>

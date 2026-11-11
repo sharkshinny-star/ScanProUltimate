@@ -25,7 +25,6 @@ internal class PageEditor(private val store: DocumentStore) {
     private suspend fun <T> allOrNothing(block: suspend (touched: MutableList<ScanPage>) -> T): T = store.allOrNothing(block)
     private suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false, script: OcrScript? = null) =
         store.renderAndOcr(page, runOcr, redactionChanged, script)
-    private fun now() = System.currentTimeMillis()
 
     suspend fun applyFilter(documentId: String, pageId: String, filter: PageFilter) =
         editSinglePage(documentId, pageId) { page ->

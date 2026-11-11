@@ -1,11 +1,19 @@
+# Kept quiet on purpose: every pull request runs a CI build of about 24 minutes, and all private repositories
+# share one monthly allowance of Actions minutes (see AGENTS.md). Monthly checks, few open pull requests, and the
+# workflow actions bundled into one pull request.
 version: 2
 updates:
   - package-ecosystem: gradle
     directory: /
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 3
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns:
+          - "*"

@@ -17,6 +17,9 @@ import kotlinx.coroutines.withContext
 
 internal const val MAX_TITLE_LENGTH = 120
 internal const val MAX_PAGES = 300
+
+/** The current time in milliseconds; one definition for the data layer instead of a private copy per class. */
+internal fun now() = System.currentTimeMillis()
 internal const val MAX_IMPORT_BYTES = 300L * 1024 * 1024
 
 /** Draws [source] with a page's settings into [destination]; see [DocumentStore.pageRenderer]. */
@@ -44,7 +47,6 @@ internal class DocumentStore(
     val settings: SettingsStore,
 ) {
     val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
-    private fun now() = System.currentTimeMillis()
 
 
     /**
@@ -58,6 +60,18 @@ internal class DocumentStore(
     /** Draws a page from its photo; a property so tests can stand in for the native image pipeline. */
     internal var pageRenderer: PageRenderer = PageRenderer { source, destination, filter, manualRotationDegrees, crop, adjustments, annotations ->
         ImageProcessor.renderPage(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations)
+    }
+
+    /** Writes a document's PDF; a property so tests can stand in for android.graphics.pdf, which Robolectric cannot run. */
+    internal var pdfWriter: (pages: List<ScanPage>, destination: File, document: ScanDocument) -> Unit = { pages, destination, document ->
+        PdfExporter.export(
+            pages = pages,
+            destination = destination,
+            quality = document.pdfQuality,
+            pageSize = document.pdfPageSize,
+            searchable = document.searchablePdf,
+            pageNumbers = document.pageNumbers
+        )
     }
 
     internal fun pdfLock(documentId: String): Any = pdfLocks.computeIfAbsent(documentId) { Any() }
@@ -205,14 +219,7 @@ internal class DocumentStore(
         // PDF that would later be mistaken for an up-to-date one.
         val partial = File(pdf.parentFile, "${pdf.name}.partial")
         try {
-            PdfExporter.export(
-                pages = sorted,
-                destination = partial,
-                quality = document.pdfQuality,
-                pageSize = document.pdfPageSize,
-                searchable = document.searchablePdf,
-                pageNumbers = document.pageNumbers
-            )
+            pdfWriter(sorted, partial, document)
             // rename() replaces the old file atomically, so there is never a moment with no PDF.
             userRequire(partial.renameTo(pdf), R.string.err_could_not_save_pdf)
             document.stalePdfMarker.delete()

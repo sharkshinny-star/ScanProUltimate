@@ -396,9 +396,6 @@
     <string name="tools_page_numbers_success">%1$d பக்கங்களில் எண்கள் சேர்க்கப்பட்டன</string>
     <string name="tools_err_page_numbers">பக்க எண்களைச் சேர்க்க முடியவில்லை</string>
 
-    <string name="tools_card_pdf2text">PDF இலிருந்து உரை</string>
-    <string name="tools_tile_pdf2text">உரையை எடு</string>
-    <string name="tools_pdf2text_title">PDF இலிருந்து உரையைப் பிரித்தெடுக்கவும்</string>
     <string name="tools_pdf2text_desc">அனைத்துப் பக்கங்களிலிருந்தும் உரையைப் பிரித்தெடுத்து .txt கோப்பாக சேமிக்கவும்.</string>
     <string name="tools_pdf2text_action">உரையைப் பிரித்தெடு</string>
     <string name="tools_progress_extracting_text">PDF இலிருந்து உரை பிரித்தெடுக்கப்படுகிறது…</string>

@@ -77,6 +77,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FlashAuto
 import androidx.compose.material.icons.filled.FlashOff
@@ -204,7 +206,12 @@ fun CameraScannerScreen(
     initialFolder: String = "",
     /** Adding pages to a saved document: no Name or Folder, the pages join that document. */
     appending: Boolean = false,
-    onFallbackScanner: () -> Unit
+    /** QR mode's history button; null hides it. */
+    onOpenQrHistory: (() -> Unit)? = null,
+    /** QR mode's "Create a QR code" button; null hides it. */
+    onOpenQrGenerator: (() -> Unit)? = null,
+    onFallbackScanner: () -> Unit,
+    qrScans: com.example.scanpro.feature.qr.QrScanViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -492,14 +499,28 @@ fun CameraScannerScreen(
     }
     // Taking a page by hand while the tips show means they have done their job.
 
-    var foundCode by remember { mutableStateOf<com.google.mlkit.vision.barcode.common.Barcode?>(null) }
+    var foundCode by remember { mutableStateOf<ScannedCode?>(null) }
+    // Frames with two or more codes show a tappable outline over each instead of opening one at random.
+    var outlinedFrame by remember { mutableStateOf<FrameCodes?>(null) }
+    // Several codes found in a picture from the gallery: the person picks one from a list.
+    var pictureCodes by remember { mutableStateOf<List<ScannedCode>>(emptyList()) }
     var barcodeUnavailable by remember { mutableStateOf(false) }
     val barcodeAnalyzer = remember {
         BarcodeFrameAnalyzer(
             context = context.applicationContext,
-            onFound = { code ->
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                foundCode = code
+            onCodes = { frame ->
+                if (frame.codes.size >= 2 || outlinedFrame != null) {
+                    // Keep looking: the outlines follow the codes until one is tapped.
+                    outlinedFrame = frame
+                    false
+                } else {
+                    // A single code opens straight away, as it always has; returning true pauses the reader meanwhile.
+                    val only = frame.codes.first().code
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    foundCode = only
+                    qrScans.record(only)
+                    true
+                }
             },
             onUnavailable = { barcodeUnavailable = true }
         )
@@ -507,12 +528,23 @@ fun CameraScannerScreen(
     val frameAnalyzer = remember { SwitchingAnalyzer(analyzer, barcodeAnalyzer) }
     // QR mode's gallery button: read a code from a screenshot or photo, like Lens.
     val codePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) barcodeAnalyzer.scanImage(uri) { code ->
-            if (code != null) foundCode = code
-            else {
+        if (uri != null) barcodeAnalyzer.scanImage(uri) { codes ->
+            if (codes.size == 1) {
+                foundCode = codes.first()
+                qrScans.record(codes.first())
+            } else if (codes.size > 1) {
+                pictureCodes = codes
+            } else {
                 barcodeAnalyzer.resume()
                 status = resources.getString(R.string.scan_qr_none_in_image)
             }
+        }
+    }
+    // Outlines go away once no code has been seen for about half a second.
+    LaunchedEffect(outlinedFrame) {
+        if (outlinedFrame != null) {
+            delay(500)
+            outlinedFrame = null
         }
     }
     SideEffect {
@@ -1167,16 +1199,48 @@ fun CameraScannerScreen(
 
         if (barcodeMode && foundCode == null) {
             QrViewfinder(
-                hint = stringResource(if (barcodeUnavailable) R.string.scan_qr_downloading else R.string.scan_qr_point),
+                hint = stringResource(
+                    when {
+                        barcodeUnavailable -> R.string.scan_qr_downloading
+                        outlinedFrame != null -> R.string.qr_pick_one_hint
+                        else -> R.string.scan_qr_point
+                    }
+                ),
                 motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
             )
+        }
+        outlinedFrame?.let { frame ->
+            if (barcodeMode && foundCode == null) {
+                QrCodeOutlines(frame) { picked ->
+                    barcodeAnalyzer.pause()
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    outlinedFrame = null
+                    foundCode = picked
+                    qrScans.record(picked)
+                }
+            }
         }
         foundCode?.let { code ->
             val scanAgain = {
                 foundCode = null
+                outlinedFrame = null
                 barcodeAnalyzer.resume()
             }
             BarcodeResultSheet(code, onScanAgain = scanAgain, onDismiss = scanAgain)
+        }
+        if (pictureCodes.isNotEmpty()) {
+            QrCodeChooserSheet(
+                codes = pictureCodes,
+                onPick = { picked ->
+                    pictureCodes = emptyList()
+                    foundCode = picked
+                    qrScans.record(picked)
+                },
+                onDismiss = {
+                    pictureCodes = emptyList()
+                    barcodeAnalyzer.resume()
+                }
+            )
         }
 
         if (!barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
@@ -1306,6 +1370,22 @@ fun CameraScannerScreen(
                             status = if (hdCapture) hdOnMessage else hdOffMessage
                         }) {
                             Text("HD", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+                }
+                if (barcodeMode) {
+                    onOpenQrGenerator?.let { open ->
+                        Surface(shape = CircleShape, color = CameraGlass) {
+                            IconButton(onClick = open) {
+                                Icon(Icons.Default.QrCode, contentDescription = stringResource(R.string.qr_create_code), tint = Color.White)
+                            }
+                        }
+                    }
+                    onOpenQrHistory?.let { open ->
+                        Surface(shape = CircleShape, color = CameraGlass) {
+                            IconButton(onClick = open) {
+                                Icon(Icons.Default.History, contentDescription = stringResource(R.string.qr_history_title), tint = Color.White)
+                            }
                         }
                     }
                 }

@@ -248,4 +248,15 @@
     <string name="settings_backup_intro_body">ഓരോ ഡോക്യുമെന്റും നിങ്ങൾ തിരഞ്ഞെടുത്ത ഫോൾഡറിൽ പ്രത്യേക എൻക്രിപ്റ്റ് ചെയ്ത ഫയലായി സേവ് ചെയ്യും; ക്ലൗഡ് ഡ്രൈവ് ഫോൾഡറും ഉപയോഗിക്കാം.\n\nഅടുത്ത ഘട്ടത്തിൽ പാസ്‌വേഡ് സജ്ജമാക്കും. അത് തിരിച്ചെടുക്കാനാവില്ല, അതിനാൽ സുരക്ഷിതമായി സൂക്ഷിക്കുക.</string>
     <string name="settings_backup_choose_folder">ഫോൾഡർ തിരഞ്ഞെടുക്കുക</string>
     <string name="settings_backup_nothing">ബാക്കപ്പ് ചെയ്യാൻ ഇതുവരെ ഡോക്യുമെന്റുകൾ ഇല്ല.</string>
+    <string name="lib_restore_aside_title">മുമ്പത്തെ ലൈബ്രറി പുനഃസ്ഥാപിക്കണോ?</string>
+    <string name="lib_restore_aside_body">ആപ്പിന്റെ പഴയ പതിപ്പ് ഇൻസ്റ്റാൾ ചെയ്തപ്പോൾ നിങ്ങളുടെ ലൈബ്രറി മാറ്റിവച്ചിരുന്നു. ഈ പതിപ്പിന് അത് വീണ്ടും വായിക്കാനാകും. അതിലെ രേഖകൾ പുനഃസ്ഥാപിക്കണോ? അതിനുശേഷം നിങ്ങൾ സ്കാൻ ചെയ്തവ അതുപോലെ തുടരും.</string>
+    <string name="lib_restore_aside_confirm">പുനഃസ്ഥാപിക്കുക</string>
+    <string name="lib_restore_aside_later">ഇപ്പോൾ വേണ്ട</string>
+    <string name="lib_restore_aside_never">വീണ്ടും ചോദിക്കരുത്</string>
+    <string name="lib_restore_aside_running">ലൈബ്രറി പുനഃസ്ഥാപിക്കുന്നു…</string>
+    <string name="lib_restore_aside_none">പുനഃസ്ഥാപിക്കാൻ ഒന്നുമില്ല: എല്ലാ രേഖകളും ഇതിനകം ലൈബ്രറിയിലുണ്ട്.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d രേഖ പുനഃസ്ഥാപിച്ചു</item>
+        <item quantity="other">%1$d രേഖകൾ പുനഃസ്ഥാപിച്ചു</item>
+    </plurals>
 </resources>

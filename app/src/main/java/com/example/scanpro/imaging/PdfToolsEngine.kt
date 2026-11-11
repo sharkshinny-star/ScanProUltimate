@@ -667,7 +667,7 @@ object PdfToolsEngine {
      * inherited from the source's page tree, which does not travel with the page, so they are copied
      * onto the page itself first. Without this such pages come out blank or the wrong size.
      */
-    private fun PDDocument.addImportedPage(page: PDPage) {
+    internal fun PDDocument.addImportedPage(page: PDPage) {
         page.resources = page.resources
         page.mediaBox = page.mediaBox
         page.cropBox = page.cropBox
@@ -920,7 +920,7 @@ object PdfToolsEngine {
     }
 
     /** Opens a PDF with [password] ("" when there is none); a missing or wrong one throws [InvalidPasswordException]. */
-    private fun openPdf(file: File, password: String = ""): PDDocument =
+    internal fun openPdf(file: File, password: String = ""): PDDocument =
         // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
         PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
 

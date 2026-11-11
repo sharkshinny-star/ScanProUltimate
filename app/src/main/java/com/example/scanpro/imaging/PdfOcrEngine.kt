@@ -98,7 +98,7 @@ object PdfOcrEngine {
     }
 
     /** Draws one page as it is shown (rotation applied) onto a white background and saves it for OCR. */
-    private fun renderPage(renderer: PdfRenderer, index: Int, target: File) {
+    internal fun renderPage(renderer: PdfRenderer, index: Int, target: File) {
         renderer.openPage(index).use { page ->
             val scale = minOf(RENDER_DPI / 72f, MAX_RENDER_SIDE / maxOf(page.width, page.height))
             val bitmap = createBitmap((page.width * scale).toInt().coerceAtLeast(1), (page.height * scale).toInt().coerceAtLeast(1))

@@ -81,7 +81,7 @@ private sealed interface ResultPreview {
 
 private fun placeholderFor(file: File): ImageVector = when (file.extension.lowercase()) {
     "zip" -> Icons.Default.FolderZip
-    "txt" -> Icons.Default.Description
+    "txt", "docx" -> Icons.Default.Description
     "png", "jpg", "jpeg", "webp" -> Icons.Default.Image
     else -> Icons.Default.PictureAsPdf
 }
@@ -137,6 +137,7 @@ internal fun ResultDialog(
             "application/zip" -> R.string.tools_result_save_zip_cd
             "application/pdf" -> R.string.tools_result_save_pdf_cd
             "text/plain" -> R.string.tools_result_save_text_cd
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> R.string.tools_result_save_file_cd
             else -> R.string.tools_result_save_image_cd
         }
     )

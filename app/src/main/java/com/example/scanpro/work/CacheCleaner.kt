@@ -16,7 +16,8 @@ object CacheCleaner {
         "view_", "search_temp_", "pdf_import_", "pdf_unlocked_", "import_", "restore_", "merge_in_",
         "split_in", "extract_in", "rotate_in", "organize_in", "protect_in", "unlock_in", "count_",
         "thumb_", "markup_", "inspect_", "pdf2img_in", "img2pdf_", "raster_", "temp_in_",
-        "ocr_in_", "ocr_page_", "form_read_", "form_fill_", "backup_"
+        "ocr_in_", "ocr_page_", "form_read_", "form_fill_", "backup_", "sign_",
+        "pdftext_", "insert_base_", "insert_extra_"
     )
     private const val SESSION_MAX_AGE_MS = 24L * 60 * 60 * 1000
     // A scan whose import never finished is kept this long, so it can still be saved from "Unsaved scans".

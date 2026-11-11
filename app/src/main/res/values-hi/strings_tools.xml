@@ -396,9 +396,6 @@
     <string name="tools_page_numbers_success">%1$d पेजों पर नंबर जोड़े गए</string>
     <string name="tools_err_page_numbers">PDF में पेज नंबर नहीं जोड़े जा सके</string>
 
-    <string name="tools_card_pdf2text">PDF से टेक्स्ट</string>
-    <string name="tools_tile_pdf2text">टेक्स्ट निकालें</string>
-    <string name="tools_pdf2text_title">PDF से टेक्स्ट निकालें</string>
     <string name="tools_pdf2text_desc">इस PDF के सभी पेजों से टेक्स्ट निकालकर .txt फ़ाइल में सेव करें।</string>
     <string name="tools_pdf2text_action">टेक्स्ट निकालें</string>
     <string name="tools_progress_extracting_text">PDF से टेक्स्ट निकाला जा रहा है…</string>

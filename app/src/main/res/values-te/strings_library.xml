@@ -248,4 +248,15 @@
     <string name="settings_backup_intro_body">ప్రతి డాక్యుమెంట్ మీరు ఎంచుకున్న ఫోల్డర్‌లో ప్రత్యేక ఎన్‌క్రిప్టెడ్ ఫైల్‌గా సేవ్ అవుతుంది; క్లౌడ్ డ్రైవ్ ఫోల్డర్ కూడా పనిచేస్తుంది.\n\nతదుపరి దశలో పాస్‌వర్డ్ సెట్ చేస్తారు. దాన్ని తిరిగి పొందలేము, కాబట్టి భద్రంగా ఉంచండి.</string>
     <string name="settings_backup_choose_folder">ఫోల్డర్ ఎంచుకోండి</string>
     <string name="settings_backup_nothing">ఇంకా బ్యాకప్ చేయడానికి డాక్యుమెంట్లు లేవు.</string>
+    <string name="lib_restore_aside_title">మునుపటి లైబ్రరీని పునరుద్ధరించాలా?</string>
+    <string name="lib_restore_aside_body">యాప్ పాత వెర్షన్ ఇన్‌స్టాల్ అయినప్పుడు మీ లైబ్రరీని పక్కన పెట్టారు. ఈ వెర్షన్ దాన్ని మళ్లీ చదవగలదు. అందులోని పత్రాలను పునరుద్ధరించాలా? ఆ తర్వాత మీరు స్కాన్ చేసినవి అలాగే ఉంటాయి.</string>
+    <string name="lib_restore_aside_confirm">పునరుద్ధరించు</string>
+    <string name="lib_restore_aside_later">ఇప్పుడు కాదు</string>
+    <string name="lib_restore_aside_never">మళ్లీ అడగవద్దు</string>
+    <string name="lib_restore_aside_running">లైబ్రరీని పునరుద్ధరిస్తున్నాం…</string>
+    <string name="lib_restore_aside_none">పునరుద్ధరించడానికి ఏమీ లేదు: అన్ని పత్రాలు ఇప్పటికే లైబ్రరీలో ఉన్నాయి.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d పత్రం పునరుద్ధరించబడింది</item>
+        <item quantity="other">%1$d పత్రాలు పునరుద్ధరించబడ్డాయి</item>
+    </plurals>
 </resources>

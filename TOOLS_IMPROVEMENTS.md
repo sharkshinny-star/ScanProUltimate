@@ -1,6 +1,11 @@
 # PDF & Image Tools: improvements left to do
 
 Last updated: 2026-11-10. F107 added standalone Crop Image tool, pre-crop capability in Image Tools dialogs, advanced image tools optimisation (dimensions vs percent, presets, direct PDF export), and new PDF Tools suite (Watermark, Page numbers, PDF to Text). F104 added Image Tools suite (compression to target KB/MB, 100% lossless JPG to PNG conversion, dimension resizing with aspect-ratio lock, passport/avatar presets). F103 resolved Unlock background notification and Split/Export naming. When an item is done, move it to `AUDIT_FINDINGS.md` (Fixed, with its F id and commit) and delete it here.
+Last updated: 2026-11-10 (items 5 to 7 built as F103 and F104, CI green, not on a device: see R44). Collected after F48 to F50 (Images to PDF on white, Merge password prompt, first-launch
+permissions). Nothing here is started. When an item is done, move it to `AUDIT_FINDINGS.md` (Fixed, with its F id and
+commit) and delete it here.
+
+Suggested order: items 1 to 3 together (one change, mostly reuse of the F49 Merge work), then item 4 as the first new tool.
 
 ## Fixes to existing tools
 

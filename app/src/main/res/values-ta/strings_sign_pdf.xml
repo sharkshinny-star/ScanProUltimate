@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="tools_card_sign">PDF கையொப்பம்</string>
+    <string name="sign_unprotected_note">இந்த PDF பாதுகாக்கப்பட்டது. கையொப்பமிட்ட நகல் பாதுகாப்பு இல்லாமல் சேமிக்கப்படும்.</string>
+    <string name="sign_hint">கையொப்பம் அல்லது உரையைச் சேர்த்து, பின் சரியான இடத்திற்கு இழுக்கவும்.</string>
+    <string name="sign_page_of" tools:ignore="PluralsCandidate">பக்கம் %1$d / %2$d</string>
+    <string name="sign_previous_page">முந்தைய பக்கம்</string>
+    <string name="sign_next_page">அடுத்த பக்கம்</string>
+    <string name="sign_add_signature">கையொப்பம்</string>
+    <string name="sign_add_text">உரை அல்லது தேதி</string>
+    <string name="sign_size">அளவு</string>
+    <string name="sign_rotate">சுழற்று</string>
+    <string name="sign_remove">நீக்கு</string>
+    <string name="sign_text_title">உரையைச் சேர்</string>
+    <string name="sign_text_label">உரை, எ.கா. தேதி</string>
+    <string name="sign_text_add">சேர்</string>
+    <string name="sign_password_title">கடவுச்சொல் தேவை</string>
+    <string name="sign_password_body">இந்த PDF ஐத் திறக்க கடவுச்சொல்லை உள்ளிடவும். கையொப்பமிட்ட நகல் கடவுச்சொல் இல்லாமல் சேமிக்கப்படும்.</string>
+    <string name="sign_password_label">கடவுச்சொல்</string>
+    <string name="sign_password_wrong">கடவுச்சொல் தவறு. மீண்டும் முயலவும்.</string>
+    <string name="sign_password_open">திற</string>
+    <string name="sign_discard_title">மாற்றங்களை நீக்கவா?</string>
+    <string name="sign_discard_body">நீங்கள் வைத்த கையொப்பங்கள் சேமிக்கப்படாது.</string>
+    <string name="sign_discard">நீக்கு</string>
+    <string name="sign_keep_editing">தொடர்ந்து திருத்து</string>
+    <string name="sign_stamp_description" tools:ignore="PluralsCandidate">பக்கம் %1$d இல் கையொப்பம் அல்லது உரை</string>
+    <string name="sign_open_failed">கையொப்பமிட இந்த PDF ஐத் திறக்க முடியவில்லை.</string>
+    <string name="sign_err_nothing_placed">முதலில் கையொப்பம் அல்லது உரையைச் சேர்க்கவும்</string>
+    <string name="sign_err_page_missing">நீங்கள் கையொப்பமிட்ட பக்கம் PDF இல் இல்லை</string>
+    <string name="sign_err_image">கையொப்பப் படத்தைப் படிக்க முடியவில்லை</string>
+    <string name="msg_sign_saving">PDF இல் கையொப்பமிடப்படுகிறது…</string>
+    <string name="msg_sign_progress" tools:ignore="PluralsCandidate">பக்கம் %1$d / %2$d இல் கையொப்பமிடப்படுகிறது</string>
+    <string name="msg_sign_failed">PDF இல் கையொப்பமிட முடியவில்லை</string>
+    <string name="msg_sign_done" tools:ignore="PluralsCandidate">கையொப்பமிட்ட நகல் சேமிக்கப்பட்டது. சேர்க்கப்பட்டவை: %1$d</string>
+</resources>

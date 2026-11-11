@@ -37,7 +37,6 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         pageNumbers: Boolean, mode: ScanMode, like: ScanDocument? = null
     ) = store.createFromPages(sourcePages, title, quality, pageSize, searchable, pageNumbers, mode, like)
     private fun copyUri(source: Uri, destination: File) = store.copyUri(source, destination)
-    private fun now() = System.currentTimeMillis()
 
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = withContext(Dispatchers.IO) {
         val doc = requireDocument(documentId)

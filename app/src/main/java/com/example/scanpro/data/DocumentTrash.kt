@@ -10,7 +10,6 @@ internal class DocumentTrash(private val store: DocumentStore) {
     private val settings get() = store.settings
     private suspend fun mutateDocument(id: String, block: suspend (ScanDocument) -> ScanDocument) = store.mutateDocument(id, block)
     private fun deleteDocumentFilesAndRecord(doc: ScanDocument) = store.deleteDocumentFilesAndRecord(doc)
-    private fun now() = System.currentTimeMillis()
 
     /** How many recycle-bin documents are deleted for good within the next [withinMs], under the retention setting. */
     suspend fun trashExpiringWithin(withinMs: Long): Int = withContext(Dispatchers.IO) {

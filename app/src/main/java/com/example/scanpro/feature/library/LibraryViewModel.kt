@@ -14,6 +14,7 @@ import com.example.scanpro.data.DocumentLibrary
 import com.example.scanpro.data.DocumentRepository
 import com.example.scanpro.data.DocumentSummary
 import com.example.scanpro.data.LibraryOverview
+import com.example.scanpro.data.MovedAsideLibrary
 import com.example.scanpro.data.LibrarySort
 import com.example.scanpro.data.ScanDocument
 import com.example.scanpro.data.SettingsStore
@@ -52,6 +53,40 @@ class LibraryViewModel @Inject constructor(
     private val folderLock: com.example.scanpro.core.security.FolderLock,
     keptScans: KeptScanStore
 ) : ViewModel() {
+    private val _movedAside = MutableStateFlow<MovedAsideLibrary?>(null)
+
+    /** A library that an older build set aside and this one can read again; the screen offers to restore it. */
+    val movedAsideLibrary: StateFlow<MovedAsideLibrary?> = _movedAside.asStateFlow()
+
+    init {
+        viewModelScope.launch { _movedAside.value = runCatching { repository.movedAsideLibrary() }.getOrNull() }
+    }
+
+    /** "Not now": the offer is hidden until the app is opened again. */
+    fun deferMovedAsideRestore() {
+        repository.deferMovedAsideLibrary()
+        _movedAside.value = null
+    }
+
+    fun restoreMovedAside() {
+        val found = _movedAside.value ?: return
+        _movedAside.value = null
+        operations.enqueue(context.getString(R.string.lib_restore_aside_running), null) {
+            val count = repository.restoreMovedAsideLibrary(found)
+            operations.showMessage(
+                if (count == 0) context.getString(R.string.lib_restore_aside_none)
+                else context.resources.getQuantityString(R.plurals.lib_restore_aside_done, count, count)
+            )
+        }
+    }
+
+    /** "Do not ask again": the old library's files are kept under another name and no longer offered. */
+    fun declineMovedAside() {
+        val found = _movedAside.value ?: return
+        _movedAside.value = null
+        operations.enqueue(null, null) { repository.declineMovedAsideLibrary(found) }
+    }
+
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 

@@ -58,6 +58,7 @@ import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.FormatListNumbered
@@ -215,7 +216,8 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("extract", R.string.tools_card_extract, Icons.AutoMirrored.Filled.DriveFileMove, TileTone.Indigo, label = R.string.tools_tile_extract),
             PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
-            PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark)
+            PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark),
+            PdfToolCard("sign", R.string.tools_card_sign, Icons.Default.Draw, TileTone.Violet)
         )
     ),
     ToolSection(
@@ -225,7 +227,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("ocr", R.string.tools_card_ocr, Icons.Default.FindInPage, TileTone.Teal),
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
             PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral),
-            PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.Default.TextFields, TileTone.Teal, label = R.string.tools_tile_pdf2text)
+            PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.AutoMirrored.Filled.Article, TileTone.Teal, label = R.string.tools_tile_pdf2text)
         )
     ),
     ToolSection(
@@ -296,6 +298,7 @@ fun PdfToolsScreen(
     val recentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
     val recentScope = rememberCoroutineScope()
     val formSession by viewModel.form.collectAsStateWithLifecycle()
+    val signViewModel: SignPdfViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
     var showOcrDialog by rememberSaveable { mutableStateOf(false) }
 
     var selectedTool by rememberSaveable { mutableStateOf<String?>(null) }
@@ -344,6 +347,10 @@ fun PdfToolsScreen(
             }
         }
     }
+    var showPdfToTextDialog by rememberSaveable { mutableStateOf(false) }
+    // The pages kept in Organise when "Insert pages" was chosen, as index and rotation pairs (survives rotation of the phone).
+    var insertBase by rememberSaveable { mutableStateOf<List<Int>?>(null) }
+    val sourcePassword by viewModel.sourcePassword.collectAsStateWithLifecycle()
 
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
@@ -388,6 +395,9 @@ fun PdfToolsScreen(
             showConvertImageDialog = true
         }
     }
+    val saveWordLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    ) { saveTo(it) }
 
     fun startTool(tool: String, uri: Uri) {
         selectedTool = tool
@@ -404,7 +414,6 @@ fun PdfToolsScreen(
             "ocr" -> showOcrDialog = true
             "page_numbers" -> showPageNumbersDialog = true
             "watermark" -> showWatermarkDialog = true
-            "pdf2text" -> viewModel.extractText(uri)
             "crop_img" -> launchCropForUri(uri)
             "compress_img" -> showCompressImageDialog = true
             "convert_img" -> {
@@ -412,6 +421,8 @@ fun PdfToolsScreen(
                 showConvertImageDialog = true
             }
             "resize_img" -> showResizeImageDialog = true
+            "sign" -> signViewModel.open(uri)
+            "pdf2text" -> showPdfToTextDialog = true
         }
     }
     val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -510,6 +521,13 @@ fun PdfToolsScreen(
         bottomBar = bottomBar,
         snackbarHostState = snackbarHostState,
         overlayContent = {
+            // Sign PDF fills the screen; the progress and result dialogs below are drawn over it.
+            SignPdfScreen(
+                viewModel = signViewModel,
+                busy = progress != null,
+                onSign = { source, placements, name -> viewModel.signPdf(source, placements, name) }
+            )
+
             progress?.let { running ->
                 ProcessingOverlay(
                     current = running.current,
@@ -591,6 +609,7 @@ fun PdfToolsScreen(
                             "image/png" -> savePngLauncher.launch(name)
                             "image/webp" -> saveWebpLauncher.launch(name)
                             "text/plain" -> saveTextLauncher.launch(name)
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> saveWordLauncher.launch(name)
                             else -> saveJpegLauncher.launch(name)
                         }
                     }
@@ -776,6 +795,27 @@ fun PdfToolsScreen(
                 }
             }
 
+            // PDF to text or Insert pages reached a protected file. Keyed by the question, so a retry starts with an empty field.
+            sourcePassword?.let { request ->
+                key(request.attempt) {
+                    SourcePasswordDialog(
+                        request = request,
+                        onDismiss = viewModel::cancelSourcePassword,
+                        onConfirm = viewModel::submitSourcePassword
+                    )
+                }
+            }
+
+            if (showPdfToTextDialog && uri != null) {
+                PdfToTextDialog(
+                    onDismiss = { showPdfToTextDialog = false },
+                    onConfirm = { format, script ->
+                        showPdfToTextDialog = false
+                        viewModel.pdfToText(uri, format, script)
+                    }
+                )
+            }
+
             if (showOcrDialog && uri != null) {
                 OcrScriptDialog(
                     onDismiss = { showOcrDialog = false },
@@ -815,6 +855,20 @@ fun PdfToolsScreen(
                     onApply = { pageSpecs, extractedIndices, rotationsMap ->
                         showOrganizerSheet = false
                         viewModel.organize(tool, uri, pageSpecs, extractedIndices, rotationsMap)
+                    },
+                    onInsertPages = { kept -> insertBase = kept.flatMap { listOf(it.originalIndex, it.rotationDegrees) } }
+                )
+            }
+
+            insertBase?.let { flat ->
+                InsertPagesDialog(
+                    keptPages = flat.size / 2,
+                    nameOf = viewModel::displayName,
+                    onDismiss = { insertBase = null },
+                    onConfirm = { insertion ->
+                        insertBase = null
+                        showOrganizerSheet = false
+                        if (uri != null) viewModel.insertPages(uri, flat.chunked(2).map { (index, turn) -> PageSpec(index, turn) }, insertion)
                     }
                 )
             }
@@ -1888,7 +1942,9 @@ private fun PdfPageOrganizerSheet(
     uri: Uri,
     mode: String,
     onClose: () -> Unit,
-    onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit
+    onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit,
+    /** Organise only: puts pages from another PDF into the pages as arranged now. */
+    onInsertPages: ((kept: List<PageSpec>) -> Unit)? = null
 ) {
     val context = LocalContext.current
     // Extract starts with nothing chosen; Organise starts with every page kept (untick to delete one).
@@ -2111,6 +2167,16 @@ private fun PdfPageOrganizerSheet(
                                 DropdownMenuItem(
                                     text = { Text(stringResource(if (pages.all { it.selected }) R.string.tools_organizer_untick_all else R.string.tools_organizer_tick_all)) },
                                     onClick = { organizerMenu = false; val all = pages.all { it.selected }; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(selected = !all) } } }
+                                )
+                            }
+                            if (mode == "organize" && onInsertPages != null) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.tools_organizer_insert_pages)) },
+                                    enabled = keptCount > 0,
+                                    onClick = {
+                                        organizerMenu = false
+                                        onInsertPages(pages.filter { it.selected }.map { PageSpec(it.index, it.rotation) })
+                                    }
                                 )
                             }
                             DropdownMenuItem(
@@ -2447,6 +2513,7 @@ internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "webp" -> "image/webp"
     "zip" -> "application/zip"
     "txt" -> "text/plain"
+    "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     else -> "application/pdf"
 }
 

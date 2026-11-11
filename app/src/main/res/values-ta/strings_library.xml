@@ -248,4 +248,15 @@
     <string name="settings_backup_intro_body">ஒவ்வொரு ஆவணமும் நீங்கள் தேர்ந்த கோப்புறையில் தனி மறைகுறியாக்கப்பட்ட கோப்பாகச் சேமிக்கப்படும்; கிளவுட் டிரைவ் கோப்புறையும் பயன்படுத்தலாம்.\n\nஅடுத்த படியில் கடவுச்சொல் அமைப்பீர்கள். அதை மீட்க முடியாது, எனவே பாதுகாப்பாக வைத்திருங்கள்.</string>
     <string name="settings_backup_choose_folder">கோப்புறையைத் தேர்ந்தெடு</string>
     <string name="settings_backup_nothing">காப்புப்பிரதி எடுக்க இன்னும் ஆவணங்கள் இல்லை.</string>
+    <string name="lib_restore_aside_title">முந்தைய நூலகத்தை மீட்டெடுக்கவா?</string>
+    <string name="lib_restore_aside_body">ஆப்பின் பழைய பதிப்பு நிறுவப்பட்டபோது உங்கள் நூலகம் ஒதுக்கி வைக்கப்பட்டது. இந்தப் பதிப்பு அதை மீண்டும் படிக்க முடியும். அதிலுள்ள ஆவணங்களை மீட்டெடுக்கவா? அதன் பிறகு நீங்கள் ஸ்கேன் செய்தவை அப்படியே இருக்கும்.</string>
+    <string name="lib_restore_aside_confirm">மீட்டெடுக்கவும்</string>
+    <string name="lib_restore_aside_later">இப்போது வேண்டாம்</string>
+    <string name="lib_restore_aside_never">மீண்டும் கேட்காதே</string>
+    <string name="lib_restore_aside_running">நூலகம் மீட்டெடுக்கப்படுகிறது…</string>
+    <string name="lib_restore_aside_none">மீட்டெடுக்க எதுவுமில்லை: அனைத்து ஆவணங்களும் ஏற்கனவே நூலகத்தில் உள்ளன.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d ஆவணம் மீட்டெடுக்கப்பட்டது</item>
+        <item quantity="other">%1$d ஆவணங்கள் மீட்டெடுக்கப்பட்டன</item>
+    </plurals>
 </resources>

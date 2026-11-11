@@ -248,4 +248,15 @@
     <string name="settings_backup_intro_body">ಪ್ರತಿ ದಾಖಲೆಯನ್ನು ನೀವು ಆಯ್ಕೆಮಾಡಿದ ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಪ್ರತ್ಯೇಕ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿದ ಫೈಲ್ ಆಗಿ ಉಳಿಸಲಾಗುತ್ತದೆ; ಕ್ಲೌಡ್ ಡ್ರೈವ್ ಫೋಲ್ಡರ್ ಕೂಡ ಸರಿ.\n\nಮುಂದಿನ ಹಂತದಲ್ಲಿ ಪಾಸ್‌ವರ್ಡ್ ಹೊಂದಿಸುತ್ತೀರಿ. ಅದನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗದು, ಆದ್ದರಿಂದ ಸುರಕ್ಷಿತವಾಗಿಡಿ.</string>
     <string name="settings_backup_choose_folder">ಫೋಲ್ಡರ್ ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="settings_backup_nothing">ಬ್ಯಾಕಪ್ ಮಾಡಲು ಇನ್ನೂ ದಾಖಲೆಗಳಿಲ್ಲ.</string>
+    <string name="lib_restore_aside_title">ಹಿಂದಿನ ಲೈಬ್ರರಿಯನ್ನು ಮರುಸ್ಥಾಪಿಸಬೇಕೆ?</string>
+    <string name="lib_restore_aside_body">ಆಪ್‌ನ ಹಳೆಯ ಆವೃತ್ತಿ ಇನ್‌ಸ್ಟಾಲ್ ಆದಾಗ ನಿಮ್ಮ ಲೈಬ್ರರಿಯನ್ನು ಪಕ್ಕಕ್ಕೆ ಇಡಲಾಗಿತ್ತು. ಈ ಆವೃತ್ತಿ ಅದನ್ನು ಮತ್ತೆ ಓದಬಲ್ಲದು. ಅದರ ದಾಖಲೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಬೇಕೆ? ಅದರ ನಂತರ ನೀವು ಸ್ಕ್ಯಾನ್ ಮಾಡಿದವು ಹಾಗೆಯೇ ಇರುತ್ತವೆ.</string>
+    <string name="lib_restore_aside_confirm">ಮರುಸ್ಥಾಪಿಸಿ</string>
+    <string name="lib_restore_aside_later">ಈಗ ಬೇಡ</string>
+    <string name="lib_restore_aside_never">ಮತ್ತೆ ಕೇಳಬೇಡಿ</string>
+    <string name="lib_restore_aside_running">ಲೈಬ್ರರಿಯನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="lib_restore_aside_none">ಮರುಸ್ಥಾಪಿಸಲು ಏನೂ ಇಲ್ಲ: ಎಲ್ಲಾ ದಾಖಲೆಗಳು ಈಗಾಗಲೇ ಲೈಬ್ರರಿಯಲ್ಲಿವೆ.</string>
+    <plurals name="lib_restore_aside_done">
+        <item quantity="one">%1$d ದಾಖಲೆ ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ದಾಖಲೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
+    </plurals>
 </resources>

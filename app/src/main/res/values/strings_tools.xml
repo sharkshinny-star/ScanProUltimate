@@ -431,9 +431,6 @@
     <string name="tools_err_page_numbers">Could not add page numbers to PDF</string>
 
     <!-- PDF to Text Tool -->
-    <string name="tools_card_pdf2text">PDF to Text</string>
-    <string name="tools_tile_pdf2text">Extract Text</string>
-    <string name="tools_pdf2text_title">Extract Text from PDF</string>
     <string name="tools_pdf2text_desc">Extracts all text from this PDF document into a clean, searchable text file (.txt).</string>
     <string name="tools_pdf2text_action">Extract Text</string>
     <string name="tools_progress_extracting_text">Extracting text from PDF…</string>

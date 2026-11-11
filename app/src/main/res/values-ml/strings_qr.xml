@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_pick_one_hint">തുറക്കാൻ ഒരു കോഡിൽ ടാപ്പ് ചെയ്യുക</string>
+    <string name="qr_outline_description">കോഡ് തുറക്കുക: %1$s</string>
+    <string name="qr_chooser_title">ഒന്നിലധികം കോഡുകൾ കണ്ടെത്തി</string>
+
+    <string name="qr_history_title">സ്കാൻ ചരിത്രം</string>
+    <string name="qr_history_save_switch">സ്കാൻ ചരിത്രം സേവ് ചെയ്യുക</string>
+    <string name="qr_history_search">ചരിത്രത്തിൽ തിരയുക</string>
+    <string name="qr_history_privacy">ചരിത്രം ഈ ഉപകരണത്തിൽ തന്നെ നിൽക്കും, ഒരിക്കലും അപ്‌ലോഡ് ചെയ്യില്ല. അതിൽ Wi-Fi പാസ്‌വേഡുകളും മറ്റ് സ്വകാര്യ വിവരങ്ങളും ഉണ്ടാകാം, അതിനാൽ ജോലി കഴിഞ്ഞാൽ അത് മായ്ക്കുക.</string>
+    <string name="qr_history_clear_all">എല്ലാം മായ്ക്കുക</string>
+    <string name="qr_history_clear_title">എല്ലാ സ്കാൻ ചരിത്രവും മായ്ക്കട്ടേ?</string>
+    <string name="qr_history_clear_message">ഇഷ്ടപ്പെട്ടവ ഉൾപ്പെടെ സേവ് ചെയ്ത എല്ലാ സ്കാനുകളും ഈ ഉപകരണത്തിൽ നിന്ന് ഇല്ലാതാക്കും. ഇത് തിരികെ കൊണ്ടുവരാൻ കഴിയില്ല.</string>
+    <string name="qr_history_empty">ഇതുവരെ സ്കാനുകളൊന്നും സേവ് ചെയ്തിട്ടില്ല</string>
+    <string name="qr_history_no_matches">നിങ്ങളുടെ തിരയലിന് യോജിക്കുന്ന സ്കാനുകളില്ല</string>
+    <string name="qr_history_favourite_add">ഇഷ്ടപ്പെട്ടവയിൽ ചേർക്കുക</string>
+    <string name="qr_history_favourite_remove">ഇഷ്ടപ്പെട്ടവയിൽ നിന്ന് നീക്കുക</string>
+    <string name="qr_history_delete">ഈ സ്കാൻ ഇല്ലാതാക്കുക</string>
+
+    <string name="qr_create_code">QR കോഡ് ഉണ്ടാക്കുക</string>
+    <string name="qr_generator_title">QR കോഡ് ഉണ്ടാക്കുക</string>
+    <string name="qr_type_text">ടെക്സ്റ്റ്</string>
+    <string name="qr_type_link">ലിങ്ക്</string>
+    <string name="qr_type_wifi">Wi-Fi</string>
+    <string name="qr_type_phone">ഫോൺ</string>
+    <string name="qr_type_email">ഇമെയിൽ</string>
+    <string name="qr_type_contact">കോൺടാക്റ്റ്</string>
+    <string name="qr_type_upi">UPI പേയ്‌മെന്റ്</string>
+    <string name="qr_field_text">ടെക്സ്റ്റ്</string>
+    <string name="qr_field_link">വെബ് വിലാസം</string>
+    <string name="qr_field_network">നെറ്റ്‌വർക്ക് പേര്</string>
+    <string name="qr_field_security">സുരക്ഷ</string>
+    <string name="qr_security_wpa">WPA/WPA2/WPA3</string>
+    <string name="qr_security_wep">WEP</string>
+    <string name="qr_security_none">ഒന്നുമില്ല</string>
+    <string name="qr_field_password">പാസ്‌വേഡ്</string>
+    <string name="qr_field_hidden">മറച്ച നെറ്റ്‌വർക്ക്</string>
+    <string name="qr_field_phone">ഫോൺ നമ്പർ</string>
+    <string name="qr_field_email">ഇമെയിൽ വിലാസം</string>
+    <string name="qr_field_subject">വിഷയം (ഓപ്ഷണൽ)</string>
+    <string name="qr_field_body">സന്ദേശം (ഓപ്ഷണൽ)</string>
+    <string name="qr_field_name">പേര്</string>
+    <string name="qr_field_upi_id">UPI ID (സ്വീകർത്താവിന്റെ വിലാസം)</string>
+    <string name="qr_field_payee_name">സ്വീകർത്താവിന്റെ പേര്</string>
+    <string name="qr_field_amount">രൂപയിൽ തുക (ഓപ്ഷണൽ)</string>
+    <string name="qr_field_note">കുറിപ്പ് (ഓപ്ഷണൽ)</string>
+    <string name="qr_wifi_warning">പാസ്‌വേഡ് കോഡിൽ സാധാരണ ടെക്സ്റ്റായി സൂക്ഷിക്കുന്നു. സ്കാൻ ചെയ്യുന്ന ആർക്കും അത് വായിക്കാം.</string>
+    <string name="qr_preview_description">QR കോഡ് പ്രിവ്യൂ</string>
+    <string name="qr_preview_empty">കോഡ് കാണാൻ വിവരങ്ങൾ പൂരിപ്പിക്കുക</string>
+    <string name="qr_too_long">ഒരു QR കോഡിന് ഇത് വളരെ കൂടുതലാണ്</string>
+    <string name="qr_share_png">ചിത്രമായി പങ്കിടുക</string>
+    <string name="qr_share_title">QR കോഡ്</string>
+    <string name="qr_save_document">ഡോക്യുമെന്റായി സേവ് ചെയ്യുക</string>
+    <string name="qr_save_failed">കോഡ് സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല</string>
+</resources>

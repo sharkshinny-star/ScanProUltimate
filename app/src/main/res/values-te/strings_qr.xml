@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_pick_one_hint">తెరవడానికి ఒక కోడ్‌పై ట్యాప్ చేయండి</string>
+    <string name="qr_outline_description">కోడ్ తెరవండి: %1$s</string>
+    <string name="qr_chooser_title">అనేక కోడ్‌లు దొరికాయి</string>
+
+    <string name="qr_history_title">స్కాన్ చరిత్ర</string>
+    <string name="qr_history_save_switch">స్కాన్ చరిత్రను సేవ్ చేయండి</string>
+    <string name="qr_history_search">చరిత్రలో వెతకండి</string>
+    <string name="qr_history_privacy">చరిత్ర ఈ పరికరంలోనే ఉంటుంది, ఎప్పుడూ అప్‌లోడ్ కాదు. దీనిలో Wi-Fi పాస్‌వర్డ్‌లు, ఇతర వ్యక్తిగత వివరాలు ఉండవచ్చు, కాబట్టి పని అయ్యాక దీన్ని తొలగించండి.</string>
+    <string name="qr_history_clear_all">అన్నీ తొలగించండి</string>
+    <string name="qr_history_clear_title">స్కాన్ చరిత్ర మొత్తం తొలగించాలా?</string>
+    <string name="qr_history_clear_message">ఇష్టమైనవి సహా సేవ్ చేసిన అన్ని స్కాన్‌లు ఈ పరికరం నుండి తొలగించబడతాయి. దీన్ని తిరిగి తీసుకురాలేరు.</string>
+    <string name="qr_history_empty">ఇంకా స్కాన్‌లు ఏవీ సేవ్ చేయలేదు</string>
+    <string name="qr_history_no_matches">మీ శోధనకు సరిపోయే స్కాన్‌లు లేవు</string>
+    <string name="qr_history_favourite_add">ఇష్టమైన వాటిలో చేర్చండి</string>
+    <string name="qr_history_favourite_remove">ఇష్టమైన వాటి నుండి తీసివేయండి</string>
+    <string name="qr_history_delete">ఈ స్కాన్‌ను తొలగించండి</string>
+
+    <string name="qr_create_code">QR కోడ్ సృష్టించండి</string>
+    <string name="qr_generator_title">QR కోడ్ సృష్టించండి</string>
+    <string name="qr_type_text">టెక్స్ట్</string>
+    <string name="qr_type_link">లింక్</string>
+    <string name="qr_type_wifi">Wi-Fi</string>
+    <string name="qr_type_phone">ఫోన్</string>
+    <string name="qr_type_email">ఈమెయిల్</string>
+    <string name="qr_type_contact">కాంటాక్ట్</string>
+    <string name="qr_type_upi">UPI చెల్లింపు</string>
+    <string name="qr_field_text">టెక్స్ట్</string>
+    <string name="qr_field_link">వెబ్ చిరునామా</string>
+    <string name="qr_field_network">నెట్‌వర్క్ పేరు</string>
+    <string name="qr_field_security">భద్రత</string>
+    <string name="qr_security_wpa">WPA/WPA2/WPA3</string>
+    <string name="qr_security_wep">WEP</string>
+    <string name="qr_security_none">ఏదీ లేదు</string>
+    <string name="qr_field_password">పాస్‌వర్డ్</string>
+    <string name="qr_field_hidden">దాచిన నెట్‌వర్క్</string>
+    <string name="qr_field_phone">ఫోన్ నంబర్</string>
+    <string name="qr_field_email">ఈమెయిల్ చిరునామా</string>
+    <string name="qr_field_subject">విషయం (ఐచ్ఛికం)</string>
+    <string name="qr_field_body">సందేశం (ఐచ్ఛికం)</string>
+    <string name="qr_field_name">పేరు</string>
+    <string name="qr_field_upi_id">UPI ID (అందుకునేవారి చిరునామా)</string>
+    <string name="qr_field_payee_name">అందుకునేవారి పేరు</string>
+    <string name="qr_field_amount">రూపాయల్లో మొత్తం (ఐచ్ఛికం)</string>
+    <string name="qr_field_note">గమనిక (ఐచ్ఛికం)</string>
+    <string name="qr_wifi_warning">పాస్‌వర్డ్ కోడ్‌లో సాధారణ టెక్స్ట్‌గా ఉంటుంది. దాన్ని స్కాన్ చేసే ఎవరైనా చదవవచ్చు.</string>
+    <string name="qr_preview_description">QR కోడ్ ప్రివ్యూ</string>
+    <string name="qr_preview_empty">కోడ్ చూడటానికి వివరాలు నింపండి</string>
+    <string name="qr_too_long">ఒక QR కోడ్‌కు ఇది చాలా ఎక్కువ</string>
+    <string name="qr_share_png">చిత్రంగా షేర్ చేయండి</string>
+    <string name="qr_share_title">QR కోడ్</string>
+    <string name="qr_save_document">డాక్యుమెంట్‌గా సేవ్ చేయండి</string>
+    <string name="qr_save_failed">కోడ్‌ను సేవ్ చేయలేకపోయాము</string>
+</resources>

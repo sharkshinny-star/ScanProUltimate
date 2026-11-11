@@ -396,9 +396,6 @@
     <string name="tools_page_numbers_success">%1$d പേജുകളിൽ നമ്പറുകൾ ചേർത്തു</string>
     <string name="tools_err_page_numbers">പേജ് നമ്പറുകൾ ചേർക്കാനായില്ല</string>
 
-    <string name="tools_card_pdf2text">PDF-ൽ നിന്ന് ടെക്സ്റ്റ്</string>
-    <string name="tools_tile_pdf2text">ടെക്സ്റ്റ് എടുക്കുക</string>
-    <string name="tools_pdf2text_title">PDF-ൽ നിന്ന് ടെക്സ്റ്റ് വേർതിരിച്ചെടുക്കുക</string>
     <string name="tools_pdf2text_desc">എല്ലാ പേജുകളിൽ നിന്നും ടെക്സ്റ്റ് .txt ഫയലിലേക്ക് വേർതിരിച്ചെടുക്കുക.</string>
     <string name="tools_pdf2text_action">ടെക്സ്റ്റ് എടുക്കുക</string>
     <string name="tools_progress_extracting_text">PDF-ൽ നിന്ന് ടെക്സ്റ്റ് വേർതിരിച്ചെടുക്കുന്നു…</string>

@@ -62,10 +62,10 @@ import com.google.mlkit.vision.barcode.common.Barcode
 /** What a scanned code holds, with the actions that make sense for it. Nothing is opened without a tap. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> Unit) {
+fun BarcodeResultSheet(code: ScannedCode, onScanAgain: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
-    val raw = code.rawValue.orEmpty()
+    val raw = code.raw
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier
@@ -97,7 +97,7 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
             }
             when (code.valueType) {
                 Barcode.TYPE_URL -> {
-                    val url = code.url?.url ?: raw
+                    val url = code.url ?: raw
                     val uri = url.toUri()
                     // Only web links are opened; other schemes in a code could launch unexpected apps.
                     if (uri.scheme.equals("http", true) || uri.scheme.equals("https", true)) {
@@ -105,37 +105,37 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                     }
                 }
                 Barcode.TYPE_WIFI -> code.wifi?.let { wifi ->
-                    wifi.password?.takeIf { it.isNotEmpty() }?.let { password ->
+                    wifi.password.takeIf { it.isNotEmpty() }?.let { password ->
                         Action(Icons.Default.ContentCopy, stringResource(R.string.scan_code_copy_wifi_password), wifi.ssid) { copy(context, resources.getString(R.string.scan_code_clip_wifi_password), password, sensitive = true) }
                     }
                     // Android 11+: the system asks to save the network, no password typing and no Wi-Fi permission needed.
-                    wifiAddIntent(wifi, raw)?.let { intent ->
+                    wifiAddIntent(wifi)?.let { intent ->
                         Action(Icons.Default.Wifi, stringResource(R.string.scan_code_connect_wifi), wifi.ssid) { start(context, intent) }
                     }
                     Action(Icons.Default.Settings, stringResource(R.string.scan_code_open_wifi_settings), null) { start(context, Intent(Settings.ACTION_WIFI_SETTINGS)) }
                 }
-                Barcode.TYPE_CONTACT_INFO -> code.contactInfo?.let { info ->
-                    Action(Icons.Default.PersonAdd, stringResource(R.string.scan_code_add_to_contacts), info.name?.formattedName) {
+                Barcode.TYPE_CONTACT_INFO -> code.contact?.let { info ->
+                    Action(Icons.Default.PersonAdd, stringResource(R.string.scan_code_add_to_contacts), info.name) {
                         openNewContactForm(
                             context,
                             ContactDraft(
-                                name = info.name?.formattedName,
+                                name = info.name,
                                 company = info.organization,
                                 jobTitle = info.title,
-                                phones = info.phones.mapNotNull { it.number },
-                                emails = info.emails.mapNotNull { it.address },
-                                website = info.urls.firstOrNull(),
-                                address = info.addresses.firstOrNull()?.addressLines?.joinToString(", ")
+                                phones = info.phones,
+                                emails = info.emails,
+                                website = info.website,
+                                address = info.address
                             )
                         )
                     }
                 }
-                Barcode.TYPE_PHONE -> code.phone?.number?.let { number ->
+                Barcode.TYPE_PHONE -> code.phone?.let { number ->
                     Action(Icons.Default.Call, stringResource(R.string.scan_code_call), number) { start(context, Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null))) }
                 }
                 Barcode.TYPE_SMS -> code.sms?.let { sms ->
-                    Action(Icons.Default.Sms, stringResource(R.string.scan_code_send_message), sms.phoneNumber) {
-                        start(context, Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", sms.phoneNumber.orEmpty(), null)).putExtra("sms_body", sms.message))
+                    Action(Icons.Default.Sms, stringResource(R.string.scan_code_send_message), sms.number) {
+                        start(context, Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", sms.number, null)).putExtra("sms_body", sms.message))
                     }
                 }
                 Barcode.TYPE_EMAIL -> code.email?.let { email ->
@@ -143,17 +143,17 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                         start(
                             context,
                             Intent(Intent.ACTION_SENDTO, "mailto:".toUri()).apply {
-                                putExtra(Intent.EXTRA_EMAIL, arrayOf(email.address.orEmpty()))
+                                putExtra(Intent.EXTRA_EMAIL, arrayOf(email.address))
                                 putExtra(Intent.EXTRA_SUBJECT, email.subject)
                                 putExtra(Intent.EXTRA_TEXT, email.body)
                             }
                         )
                     }
                 }
-                Barcode.TYPE_GEO -> code.geoPoint?.let { geo ->
+                Barcode.TYPE_GEO -> code.geo?.let { geo ->
                     Action(Icons.Default.Map, stringResource(R.string.scan_code_show_on_map), "${geo.lat}, ${geo.lng}") { view(context, "geo:${geo.lat},${geo.lng}?q=${geo.lat},${geo.lng}".toUri()) }
                 }
-                Barcode.TYPE_CALENDAR_EVENT -> code.calendarEvent?.let { event ->
+                Barcode.TYPE_CALENDAR_EVENT -> code.event?.let { event ->
                     Action(Icons.Default.Event, stringResource(R.string.scan_code_add_to_calendar), event.summary) {
                         start(
                             context,
@@ -161,9 +161,9 @@ fun BarcodeResultSheet(code: Barcode, onScanAgain: () -> Unit, onDismiss: () -> 
                                 putExtra(CalendarContract.Events.TITLE, event.summary)
                                 putExtra(CalendarContract.Events.EVENT_LOCATION, event.location)
                                 putExtra(CalendarContract.Events.DESCRIPTION, event.description)
-                                calendarMillis(event.start)?.let { putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, it) }
-                                calendarMillis(event.end)?.let { putExtra(CalendarContract.EXTRA_EVENT_END_TIME, it) }
-                                if (event.start?.rawValue?.length?.let { it <= 8 } == true) putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+                                event.startMillis?.let { putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, it) }
+                                event.endMillis?.let { putExtra(CalendarContract.EXTRA_EVENT_END_TIME, it) }
+                                if (event.allDay) putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                             }
                         )
                     }
@@ -201,7 +201,7 @@ private fun Action(icon: ImageVector, title: String, detail: String?, onClick: (
 }
 
 @Composable
-private fun titleFor(code: Barcode): String = stringResource(
+internal fun titleFor(code: ScannedCode): String = stringResource(
     when (code.valueType) {
         Barcode.TYPE_URL -> R.string.scan_code_type_link
         Barcode.TYPE_WIFI -> R.string.scan_code_type_wifi
@@ -217,20 +217,20 @@ private fun titleFor(code: Barcode): String = stringResource(
 )
 
 @Composable
-private fun displayText(code: Barcode): String = when (code.valueType) {
+private fun displayText(code: ScannedCode): String = when (code.valueType) {
     // Never show the Wi-Fi password on screen; it can be copied instead.
     Barcode.TYPE_WIFI -> code.wifi?.let { wifi ->
         val security = stringResource(
-            when (wifi.encryptionType) {
+            when (wifi.encryption) {
                 Barcode.WiFi.TYPE_WPA -> R.string.scan_code_wifi_security_wpa
                 Barcode.WiFi.TYPE_WEP -> R.string.scan_code_wifi_security_wep
                 else -> R.string.scan_code_wifi_security_open
             }
         )
-        stringResource(R.string.scan_code_wifi_details, wifi.ssid.orEmpty(), security)
-    } ?: code.rawValue.orEmpty()
-    Barcode.TYPE_URL -> code.url?.url ?: code.rawValue.orEmpty()
-    else -> code.displayValue ?: code.rawValue.orEmpty()
+        stringResource(R.string.scan_code_wifi_details, wifi.ssid, security)
+    } ?: code.raw
+    Barcode.TYPE_URL -> code.url ?: code.raw
+    else -> code.displayValue ?: code.raw
 }
 
 private fun view(context: Context, uri: Uri) = start(context, Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE))
@@ -268,17 +268,16 @@ internal fun calendarMillis(time: Barcode.CalendarDateTime?): Long? {
 }
 
 /** Android 11+: the system "Save this network?" request for a scanned Wi-Fi code; null on older versions or odd codes. */
-private fun wifiAddIntent(wifi: Barcode.WiFi, raw: String): Intent? {
+private fun wifiAddIntent(wifi: WifiCode): Intent? {
     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
-    val ssid = wifi.ssid?.takeIf { it.isNotEmpty() } ?: return null
-    val password = wifi.password.orEmpty()
+    val ssid = wifi.ssid.takeIf { it.isNotEmpty() } ?: return null
+    val password = wifi.password
     val builder = android.net.wifi.WifiNetworkSuggestion.Builder().setSsid(ssid)
-    // ML Kit reports WPA3 (T:SAE) as WPA and drops the hidden flag (H:true), so read both from the raw text.
-    val fields = wifiFields(raw)
-    val sae = fields.any { it.equals("T:SAE", ignoreCase = true) || it.equals("T:WPA3", ignoreCase = true) }
-    if (fields.any { it.equals("H:true", ignoreCase = true) }) builder.setIsHiddenSsid(true)
+    // The code's own text says WPA3 (T:SAE) and hidden (H:true); ML Kit reports the first as WPA and drops the second.
+    val sae = wifi.sae
+    if (wifi.hidden) builder.setIsHiddenSsid(true)
     runCatching {
-        when (wifi.encryptionType) {
+        when (wifi.encryption) {
             Barcode.WiFi.TYPE_OPEN -> Unit
             Barcode.WiFi.TYPE_WPA -> if (sae) builder.setWpa3Passphrase(password) else builder.setWpa2Passphrase(password)
             else -> return null // WEP can't be saved this way; the settings button still works.

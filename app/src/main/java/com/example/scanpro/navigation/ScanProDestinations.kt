@@ -30,6 +30,10 @@ object ScanProDestinations {
         return RetakeTarget(parts[0], parts[1], parts[2].toIntOrNull() ?: 0)
     }
     const val TRASH = "trash"
+    /** Codes scanned in QR mode, kept on the device. */
+    const val QR_HISTORY = "qr_history"
+    /** Makes a QR code from typed details. */
+    const val QR_GENERATOR = "qr_generator"
     /** Camera scans whose import failed, kept so they can be saved again or discarded. */
     const val KEPT_SCANS = "kept_scans"
 
