@@ -282,3 +282,7 @@ documents/PDF (`PageRangesTest`, `PdfTextLayerMathTest`, `WordPlacementTest`, `F
 
 Update the "Latest results" table (date, commit, each check), move anything newly verified out of the "Not run" rows, and note
 new failures in "Known errors". Mirror important outcomes in `AGENT_HANDOFF.md`.
+
+## Driving the app from an agent
+
+`.claude/skills/run-scanproultimate/` (SKILL.md and driver.sh): build and install in the background, launch, tap by label, pick test files, screenshots, logcat crashes, cold start, unit tests and the on-device edge benchmark, on a phone over adb. Every command in its SKILL.md was run on the OnePlus on 2026-11-12.
