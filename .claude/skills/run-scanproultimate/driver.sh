@@ -5,7 +5,13 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 export PATH="$PATH:$HOME/Library/Android/sdk/platform-tools"
-export JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}"
+# Android Studio's bundled JDK; the stable app may be absent (only Preview installed), so take whichever exists.
+if [ -z "${JAVA_HOME:-}" ]; then
+  for app in "/Applications/Android Studio.app" "/Applications/Android Studio Preview.app"; do
+    if [ -x "$app/Contents/jbr/Contents/Home/bin/java" ]; then JAVA_HOME="$app/Contents/jbr/Contents/Home"; break; fi
+  done
+fi
+export JAVA_HOME
 PKG=com.scanpro.app.debug
 ACTIVITY=com.example.scanpro.MainActivity
 TEST_PKG=$PKG.test

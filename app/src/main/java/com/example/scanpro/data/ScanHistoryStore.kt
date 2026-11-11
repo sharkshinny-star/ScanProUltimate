@@ -3,6 +3,7 @@ package com.example.scanpro.data
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.inject.Inject
@@ -92,25 +93,46 @@ object ScanHistory {
 }
 
 /**
- * The codes scanned in QR mode, kept on the device in one small JSON file (no database, no network). Every change is
- * applied and written on a background thread, in order, through a temporary file that then replaces the old one;
- * a failed write is ignored and the list stays correct in memory. Whether anything is recorded at all is the
- * "Save scan history" setting, which the caller checks before [add].
+ * The codes scanned in QR mode, kept on the device in one small file (no database, no network). QR codes can hold
+ * Wi-Fi passwords, tokens and addresses, so the file is encrypted with an Android Keystore AES-GCM key that never
+ * leaves this phone ([ScanHistoryProtection]); the constructor without a protector exists for JVM tests.
+ *
+ * Every change is applied and written on a background thread, in order, through a temporary file that then replaces
+ * the old one. A plaintext history from an older version is encrypted in place once it has been read successfully.
+ * A file that cannot be read or decrypted (wrong key, damage) is never overwritten: new entries pause and the screen
+ * says so, and only an explicit "Clear all" may replace it. Whether anything is recorded at all is the "Save scan
+ * history" setting, which the caller checks before [add].
  */
 @Singleton
-class ScanHistoryStore internal constructor(private val file: File) {
-    @Inject constructor(@ApplicationContext context: Context) : this(File(context.filesDir, FILE_NAME))
+class ScanHistoryStore internal constructor(
+    private val file: File,
+    private val protectorFactory: (() -> ScanHistoryProtection)? = null
+) {
+    @Inject constructor(@ApplicationContext context: Context) : this(
+        File(context.filesDir, FILE_NAME),
+        { ScanHistoryProtection.fromAndroidKeystore() }
+    )
 
     private val worker: ExecutorService = Executors.newSingleThreadExecutor { task ->
         Thread(task, "scan-history").apply { isDaemon = true }
     }
     private val state = MutableStateFlow<List<ScanHistoryEntry>>(emptyList())
 
+    /** Created on the worker thread the first time it is needed (Keystore work must stay off the main thread). */
+    private val protector by lazy(LazyThreadSafetyMode.NONE) { protectorFactory?.invoke() }
+
+    /** Set when the saved file could not be read or a protected write failed: changes stop so nothing is overwritten. */
+    private var blocked = false
+    private val available = MutableStateFlow(true)
+
+    /** False while the saved history cannot be opened or saved securely; the history screen explains it. */
+    val storageAvailable: StateFlow<Boolean> = available.asStateFlow()
+
     /** Newest first. Empty until the file has been read, a moment after start-up. */
     val entries: StateFlow<List<ScanHistoryEntry>> = state.asStateFlow()
 
     init {
-        worker.execute { state.value = read() }
+        worker.execute { load() }
     }
 
     fun add(raw: String, format: Int, valueType: Int, now: Long = System.currentTimeMillis()) {
@@ -122,7 +144,15 @@ class ScanHistoryStore internal constructor(private val file: File) {
 
     fun remove(raw: String) = change { ScanHistory.remove(it, raw) }
 
-    fun clear() = change { emptyList() }
+    /** Empties the history. The one change allowed while the saved file cannot be opened: the user confirmed it. */
+    fun clear() {
+        worker.execute {
+            state.value = emptyList()
+            runCatching { write(emptyList()) }
+                .onSuccess { unblock() }
+                .onFailure { block() }
+        }
+    }
 
     /** The entries matching [query]; see [ScanHistory.filter]. */
     fun search(query: String): List<ScanHistoryEntry> = ScanHistory.filter(state.value, query)
@@ -132,23 +162,55 @@ class ScanHistoryStore internal constructor(private val file: File) {
         worker.submit(Runnable { }).get()
     }
 
-    private fun change(transform: (List<ScanHistoryEntry>) -> List<ScanHistoryEntry>) {
-        worker.execute {
-            val next = transform(state.value)
-            state.value = next
-            runCatching { write(next) }
+    private fun load() {
+        if (!file.exists()) return
+        val bytes = runCatching { file.readBytes() }.getOrElse { return block() }
+        val encrypted = ScanHistoryProtection.isProtected(bytes)
+        val text = runCatching {
+            if (encrypted) requireNotNull(protector) { "No key for an encrypted history" }.open(bytes)
+            else bytes.toString(Charsets.UTF_8)
+        }.getOrElse { return block() } // wrong or missing key, truncated file, failed authentication
+        // A damaged file must not be read (and later saved) as an empty list.
+        if (runCatching { JSONArray(text) }.isFailure) return block()
+        state.value = ScanHistory.fromJson(text)
+        if (!encrypted && protectorFactory != null) {
+            // Encrypt the old plaintext history in place, keeping every entry and favourite. If the Keystore cannot,
+            // stop rather than go on writing plaintext.
+            runCatching { write(state.value) }.onFailure { block() }
         }
     }
 
-    private fun read(): List<ScanHistoryEntry> =
-        runCatching { if (file.exists()) ScanHistory.fromJson(file.readText()) else emptyList() }.getOrDefault(emptyList())
+    private fun change(transform: (List<ScanHistoryEntry>) -> List<ScanHistoryEntry>) {
+        worker.execute {
+            if (blocked) return@execute
+            val next = transform(state.value)
+            state.value = next
+            runCatching { write(next) }.onFailure { if (protectorFactory != null) block() }
+        }
+    }
+
+    private fun block() {
+        blocked = true
+        available.value = false
+    }
+
+    private fun unblock() {
+        blocked = false
+        available.value = true
+    }
 
     private fun write(list: List<ScanHistoryEntry>) {
+        val json = ScanHistory.toJson(list)
+        val bytes = protector?.seal(json) ?: json.toByteArray(Charsets.UTF_8)
         val temporary = File(file.parentFile, file.name + ".tmp")
-        temporary.writeText(ScanHistory.toJson(list))
+        temporary.outputStream().use { stream ->
+            stream.write(bytes)
+            stream.fd.sync()
+        }
+        // Same-folder rename replaces the file in one step; the previous good file is never deleted first.
         if (!temporary.renameTo(file)) {
-            file.delete()
-            temporary.renameTo(file)
+            temporary.delete()
+            throw IOException("Could not replace the scan history file")
         }
     }
 

@@ -8,7 +8,9 @@
     <string name="qr_history_title">Scan history</string>
     <string name="qr_history_save_switch">Save scan history</string>
     <string name="qr_history_search">Search history</string>
-    <string name="qr_history_privacy">History stays on this device and is never uploaded. It can include Wi-Fi passwords and other private details, so clear it when you are done.</string>
+    <string name="qr_history_privacy">History is encrypted on this device and is never uploaded. It can include private details, and cannot be transferred to a different phone.</string>
+    <string name="qr_history_storage_error">Scan history could not be unlocked or saved securely. New entries are paused to protect your saved data. Clearing permanently resets history.</string>
+    <string name="qr_history_clear_locked_warning">This history cannot be opened. Clearing will permanently replace its saved entries, which may be unrecoverable. Clear anyway?</string>
     <string name="qr_history_clear_all">Clear all</string>
     <string name="qr_history_clear_title">Clear all scan history?</string>
     <string name="qr_history_clear_message">Every saved scan, including favourites, will be deleted from this device. This cannot be undone.</string>

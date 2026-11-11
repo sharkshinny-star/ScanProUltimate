@@ -8,7 +8,7 @@ This project's rules and context live in files every agent should read before wo
 4. `AGENT_DEBUGGING_LESSONS.md`: how hard bugs were actually found and fixed (read it when a bug shows no error, or before spending more than one attempt on a guess).
 
 Gradle needs `JAVA_HOME` set to Android Studio's bundled JDK:
-`/Applications/Android Studio.app/Contents/jbr/Contents/Home`.
+`/Applications/Android Studio.app/Contents/jbr/Contents/Home`, or `/Applications/Android Studio Preview.app/...` when only the Preview is installed (the case since 2026-11-12).
 
 # GitHub Actions budget rules
 

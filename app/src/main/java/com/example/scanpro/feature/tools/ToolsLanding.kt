@@ -130,14 +130,15 @@ internal fun rememberToolsMemory(): ToolsMemory {
  * English only; the tool names in the user's own language are searched as well.
  */
 private val TOOL_KEYWORDS = mapOf(
-    "merge" to "join combine put together",
+    "merge" to "join combine put together concatenate",
     "split" to "separate divide cut apart",
     "organize" to "reorder rearrange delete remove pages sort",
-    "rotate" to "turn flip sideways upside down",
+    "rotate" to "turn flip sideways upside down orientation",
     "extract" to "pull out select pages",
-    "compress" to "shrink reduce smaller size email",
-    "page_numbers" to "number footer header count",
-    "watermark" to "stamp draft confidential text overlay",
+    "compress" to "shrink reduce smaller size email optimise optimize",
+    "page_numbers" to "number footer header count paginate numbering",
+    "sign" to "signature e-sign autograph initials",
+    "watermark" to "stamp draft confidential text overlay copyright brand",
     "img2pdf" to "photos pictures jpg png create make pdf",
     "office" to "word excel powerpoint docx xlsx pptx slides csv document spreadsheet",
     "ocr" to "scan recognise read text searchable",

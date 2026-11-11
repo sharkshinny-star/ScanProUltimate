@@ -7,7 +7,7 @@
     <string name="qr_history_title">സ്കാൻ ചരിത്രം</string>
     <string name="qr_history_save_switch">സ്കാൻ ചരിത്രം സേവ് ചെയ്യുക</string>
     <string name="qr_history_search">ചരിത്രത്തിൽ തിരയുക</string>
-    <string name="qr_history_privacy">ചരിത്രം ഈ ഉപകരണത്തിൽ തന്നെ നിൽക്കും, ഒരിക്കലും അപ്‌ലോഡ് ചെയ്യില്ല. അതിൽ Wi-Fi പാസ്‌വേഡുകളും മറ്റ് സ്വകാര്യ വിവരങ്ങളും ഉണ്ടാകാം, അതിനാൽ ജോലി കഴിഞ്ഞാൽ അത് മായ്ക്കുക.</string>
+    <string name="qr_history_privacy">ചരിത്രം ഈ ഉപകരണത്തിൽ എൻക്രിപ്റ്റ് ചെയ്ത് സൂക്ഷിക്കുന്നു, ഒരിക്കലും അപ്‌ലോഡ് ചെയ്യില്ല. ഇതിൽ സ്വകാര്യ വിവരങ്ങൾ ഉണ്ടാകാം, മറ്റൊരു ഫോണിലേക്ക് മാറ്റാനും കഴിയില്ല.</string>
     <string name="qr_history_clear_all">എല്ലാം മായ്ക്കുക</string>
     <string name="qr_history_clear_title">എല്ലാ സ്കാൻ ചരിത്രവും മായ്ക്കട്ടേ?</string>
     <string name="qr_history_clear_message">ഇഷ്ടപ്പെട്ടവ ഉൾപ്പെടെ സേവ് ചെയ്ത എല്ലാ സ്കാനുകളും ഈ ഉപകരണത്തിൽ നിന്ന് ഇല്ലാതാക്കും. ഇത് തിരികെ കൊണ്ടുവരാൻ കഴിയില്ല.</string>
@@ -52,4 +52,6 @@
     <string name="qr_share_title">QR കോഡ്</string>
     <string name="qr_save_document">ഡോക്യുമെന്റായി സേവ് ചെയ്യുക</string>
     <string name="qr_save_failed">കോഡ് സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല</string>
+    <string name="qr_history_storage_error">സ്കാൻ ചരിത്രം സുരക്ഷിതമായി തുറക്കാനോ സേവ് ചെയ്യാനോ കഴിഞ്ഞില്ല. നിങ്ങൾ സേവ് ചെയ്ത ഡാറ്റ സംരക്ഷിക്കാൻ പുതിയ എൻട്രികൾ താൽക്കാലികമായി നിർത്തി. മായ്ച്ചാൽ ചരിത്രം സ്ഥിരമായി പുനഃസജ്ജമാകും.</string>
+    <string name="qr_history_clear_locked_warning">ഈ ചരിത്രം തുറക്കാൻ കഴിയില്ല. മായ്ച്ചാൽ സേവ് ചെയ്ത എൻട്രികൾ സ്ഥിരമായി മാറ്റിസ്ഥാപിക്കപ്പെടും, അവ വീണ്ടെടുക്കാൻ കഴിഞ്ഞേക്കില്ല. എന്നിട്ടും മായ്ക്കണോ?</string>
 </resources>

@@ -11,6 +11,8 @@
         <exclude domain="sharedpref" path="." />
     </cloud-backup>
     <device-transfer>
+        <!-- QR history uses a device-bound Keystore key; the key cannot transfer to a new phone. -->
+        <exclude domain="file" path="scan_history.json" />
         <!-- Unfinished scanner sessions belong to this phone; the cache is never transferred anyway. -->
         <exclude domain="file" path="pro_scanner_session/" />
         <!-- Edits waiting to run refer to this phone's queue; replaying them on another phone would surprise. -->

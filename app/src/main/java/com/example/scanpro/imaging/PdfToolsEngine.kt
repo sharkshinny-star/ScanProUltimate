@@ -725,6 +725,10 @@ object PdfToolsEngine {
 
             val font = PDType1Font.HELVETICA_BOLD
             val fontSize = config.fontSizePt.coerceIn(12f, 120f)
+            // Helvetica writes Latin text only; anything else (an Indian script, emoji) is drawn as a picture.
+            val pictureStamp = if (PdfTextImage.canEncode(font, config.text)) null else PdfTextImage.create(
+                doc, config.text, fontSize, (config.colorRgb and 0xFFFFFF) or (0xFF shl 24)
+            )
             val alpha = (config.opacityPercent.coerceIn(5, 100) / 100f)
             val r = android.graphics.Color.red(config.colorRgb) / 255f
             val g = android.graphics.Color.green(config.colorRgb) / 255f
@@ -742,7 +746,7 @@ object PdfToolsEngine {
 
                 if (i in targetPages) {
                     val page = doc.getPage(i)
-                    val textWidth = (font.getStringWidth(config.text) / 1000f) * fontSize
+                    val textWidth = pictureStamp?.width ?: ((font.getStringWidth(config.text) / 1000f) * fontSize)
 
                     val rotation = page.rotation
                     // The visible box (crop box) is what the reader sees; it need not start at 0,0 on scanned PDFs.
@@ -752,6 +756,14 @@ object PdfToolsEngine {
                         cs.setGraphicsStateParameters(gState)
                         cs.setNonStrokingColor(r, g, b)
                         stamps.forEach { stamp ->
+                            if (pictureStamp != null) {
+                                // Opacity comes from the graphics state, which applies to pictures as it does to text.
+                                cs.drawImage(
+                                    pictureStamp.image,
+                                    PdfTextImage.placement(pictureStamp, visible.lowerLeftX + stamp.x, visible.lowerLeftY + stamp.y, stamp.angleRad)
+                                )
+                                return@forEach
+                            }
                             val cos = Math.cos(stamp.angleRad).toFloat()
                             val sin = Math.sin(stamp.angleRad).toFloat()
                             // Half the cap height of Helvetica, so the text is centred on the point rather than sitting on it.
@@ -819,7 +831,9 @@ object PdfToolsEngine {
                 if (config.skipFirstPage && i == 0) continue
 
                 val page = doc.getPage(i)
-                val box = page.mediaBox
+                // The visible area: on a cropped or scanned PDF the full sheet (media box) can be larger, and a number
+                // placed by it could land outside what the reader shows.
+                val box = page.cropBox
                 val width = box.width
                 val height = box.height
 

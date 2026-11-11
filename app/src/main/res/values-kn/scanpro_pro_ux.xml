@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="scan_guidance_align_page">ಪುಟವನ್ನು ಚೌಕಟ್ಟಿನಲ್ಲಿ ನೇರವಾಗಿರಿಸಿ</string>
+    <string name="scan_check_sharp">ಸ್ಪಷ್ಟ</string>
+    <string name="scan_check_blur">ಮಸುಕಾಗಿದೆ</string>
+    <string name="scan_check_clear">ಪ್ರಕಾಶದ ಪ್ರತಿಫಲನ ಇಲ್ಲ</string>
+    <string name="scan_check_glare">ಪ್ರಕಾಶದ ಪ್ರತಿಫಲನ</string>
+    <string name="scan_check_level">ನೇರವಾಗಿದೆ</string>
+    <string name="scan_check_tilt">ಓರೆಯಾಗಿದೆ</string>
+    <string name="scan_check_summary">ಚಿತ್ರ ಗುಣಮಟ್ಟ: %1$s, %2$s, %3$s</string>
+</resources>

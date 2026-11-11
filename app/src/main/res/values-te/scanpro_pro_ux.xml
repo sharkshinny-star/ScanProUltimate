@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="scan_guidance_align_page">పేజీని ఫ్రేమ్‌లో నిటారుగా ఉంచండి</string>
+    <string name="scan_check_sharp">స్పష్టంగా ఉంది</string>
+    <string name="scan_check_blur">మసకగా ఉంది</string>
+    <string name="scan_check_clear">మెరుపు లేదు</string>
+    <string name="scan_check_glare">మెరుపు</string>
+    <string name="scan_check_level">నిటారుగా ఉంది</string>
+    <string name="scan_check_tilt">వాలింది</string>
+    <string name="scan_check_summary">చిత్ర నాణ్యత: %1$s, %2$s, %3$s</string>
+</resources>

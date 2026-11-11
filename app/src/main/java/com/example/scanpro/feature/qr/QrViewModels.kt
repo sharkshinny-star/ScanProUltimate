@@ -43,6 +43,7 @@ class QrHistoryViewModel @Inject constructor(
     private val settings: SettingsStore
 ) : ViewModel() {
     val entries: StateFlow<List<ScanHistoryEntry>> = store.entries
+    val storageAvailable: StateFlow<Boolean> = store.storageAvailable
     val saveHistory: StateFlow<Boolean> = settings.scanHistoryEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     fun setSaveHistory(value: Boolean) {

@@ -35,6 +35,7 @@ data class DocumentDetection(
 ) {
     val isBlurry: Boolean get() = blurScore < PageQuality.BLUR_LIMIT
     val isDark: Boolean get() = brightness < PageQuality.DARK_LIMIT
+    val isSkewed: Boolean get() = quad?.let { ScanAlignment.isSkewed(it, frameWidth, frameHeight) } ?: false
     /** Share of the frame the outline covers, 0..1. */
     val areaRatio: Float get() = quad?.let { QuadGeometry.area(it) } ?: 0f
     /** The outline is (nearly) the whole frame: the background, not a page. */
@@ -58,6 +59,8 @@ enum class Guidance(@StringRes val labelRes: Int) {
     MOVE_CLOSER(R.string.scan_guidance_move_closer),
     /** A hint only: glare does not hold back the capture (glossy paper under a ceiling light would never be taken). */
     GLARE(R.string.scan_guidance_glare),
+    /** A gentle geometric alignment hint; not a claim about text orientation. */
+    ALIGN_PAGE(R.string.scan_guidance_align_page),
     /** Auto-capture only: this is the page just taken (R32), so the shutter waits for the next one. */
     SAME_PAGE(R.string.scan_guidance_same_page),
     READY(R.string.scan_guidance_ready)
@@ -228,10 +231,27 @@ object DocumentEdgeDetector {
             val candidate = best
             val confidence = candidate?.score ?: 0f
             val quad = candidate?.let { toNormalizedQuad(it.points, working.cols(), working.rows()) }
+            // One native contour and bounding box per frame, shared by sharpness, exposure and glare.
+            // The prior implementation allocated the contour twice on every detector pass.
+            val pageBox = candidate?.let { selected ->
+                runCatching {
+                    val outline = MatOfPoint(*selected.points.toTypedArray())
+                    try { Imgproc.boundingRect(outline) } finally { outline.release() }
+                }.getOrNull()
+            }
+            // A dark desk surrounding a correctly exposed page should not show "More light" or block capture.
+            val pageBrightness = pageBox?.let { box ->
+                val x = box.x.coerceIn(0, working.cols() - 1)
+                val y = box.y.coerceIn(0, working.rows() - 1)
+                val region = working.submat(org.opencv.core.Rect(
+                    x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y)
+                ))
+                try { Core.mean(region).`val`[0] } finally { region.release() }
+            } ?: brightness
             // Sharpness is judged on the page itself: a blurry background around a sharp page, or the other
             // way round, must not decide whether the capture is taken.
-            val blur = if (candidate == null) blurWhole else runCatching {
-                val box = Imgproc.boundingRect(MatOfPoint(*candidate.points.toTypedArray()))
+            val blur = if (pageBox == null) blurWhole else runCatching {
+                val box = pageBox
                 val inside = org.opencv.core.Rect(
                     box.x.coerceIn(0, working.cols() - 1), box.y.coerceIn(0, working.rows() - 1),
                     box.width.coerceIn(1, working.cols() - box.x.coerceIn(0, working.cols() - 1)),
@@ -249,23 +269,25 @@ object DocumentEdgeDetector {
                     region.release(); regionLaplacian.release(); regionMean.release(); regionStd.release()
                 }
             }.getOrDefault(blurWhole)
-            // Glare is judged on the unsmoothed page: a reflection is a solid patch of clipped white.
-            val glare = if (candidate == null) 0.0 else runCatching {
-                val box = Imgproc.boundingRect(MatOfPoint(*candidate.points.toTypedArray()))
+            // Mask the page polygon, not its bounding box: a white table outside a skewed page is not glare.
+            val glare = if (candidate == null || pageBox == null) 0.0 else runCatching {
+                val box = pageBox
                 val x = box.x.coerceIn(0, working.cols() - 1)
                 val y = box.y.coerceIn(0, working.rows() - 1)
                 PageQuality.glareShare(
                     working,
-                    org.opencv.core.Rect(x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y))
+                    org.opencv.core.Rect(x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y)),
+                    candidate.points.toList()
                 )
             }.getOrDefault(0.0)
             val guidance = when {
                 // Darkness first: a dark frame hides the outline, so "point at a document" would mislead.
-                brightness < 45.0 -> Guidance.MORE_LIGHT
+                pageBrightness < PageQuality.DARK_LIMIT -> Guidance.MORE_LIGHT
                 quad == null -> Guidance.POINT_AT_DOCUMENT
-                blur < 80.0 -> Guidance.HOLD_STEADY
+                blur < PageQuality.BLUR_LIMIT -> Guidance.HOLD_STEADY
                 confidence < 0.48f -> Guidance.MOVE_CLOSER
                 PageQuality.isGlare(glare) -> Guidance.GLARE
+                ScanAlignment.isSkewed(quad, working.cols(), working.rows()) -> Guidance.ALIGN_PAGE
                 else -> Guidance.READY
             }
 
@@ -273,7 +295,7 @@ object DocumentEdgeDetector {
                 quad = quad,
                 confidence = confidence,
                 blurScore = blur,
-                brightness = brightness,
+                brightness = pageBrightness,
                 frameWidth = working.cols(),
                 frameHeight = working.rows(),
                 guidance = guidance,

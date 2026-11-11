@@ -40,6 +40,22 @@ class PageQualityTest {
     }
 
     @Test
+    fun brightDeskOutsideTheDetectedPageDoesNotCountAsGlare() {
+        // A skewed, medium-grey page on a pure white table; the bounding rectangle includes table pixels.
+        val m = Mat(800, 800, CvType.CV_8UC1, Scalar(255.0))
+        val polygon = listOf(Point(180.0, 80.0), Point(700.0, 180.0), Point(620.0, 710.0), Point(100.0, 610.0))
+        val outline = org.opencv.core.MatOfPoint(*polygon.toTypedArray())
+        try {
+            Imgproc.fillConvexPoly(m, outline, Scalar(205.0))
+            val share = PageQuality.glareShare(m, Rect(100, 80, 601, 631), polygon)
+            assertEquals("Bright table is not glare on the page", 0.0, share, 1e-9)
+        } finally {
+            outline.release()
+            m.release()
+        }
+    }
+
+    @Test
     fun scatteredWhiteSpecksAreNotGlare() {
         val m = page()
         // Many tiny white dots (a white logo's anti-aliasing, sparkle in the paper): opened away, never one patch.

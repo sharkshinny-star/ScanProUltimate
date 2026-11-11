@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="scan_guidance_align_page">പേജ് ഫ്രെയിമിൽ നേരെയാക്കുക</string>
+    <string name="scan_check_sharp">വ്യക്തം</string>
+    <string name="scan_check_blur">മങ്ങിയത്</string>
+    <string name="scan_check_clear">തിളക്കം ഇല്ല</string>
+    <string name="scan_check_glare">തിളക്കം</string>
+    <string name="scan_check_level">നേരെയാണ്</string>
+    <string name="scan_check_tilt">ചരിഞ്ഞു</string>
+    <string name="scan_check_summary">ചിത്ര ഗുണനിലവാരം: %1$s, %2$s, %3$s</string>
+</resources>

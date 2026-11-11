@@ -61,6 +61,7 @@ import com.example.scanpro.scanner.titleFor
 fun QrHistoryRoute(onBack: () -> Unit, viewModel: QrHistoryViewModel = hiltViewModel()) {
     val entries by viewModel.entries.collectAsStateWithLifecycle()
     val saveHistory by viewModel.saveHistory.collectAsStateWithLifecycle()
+    val storageAvailable by viewModel.storageAvailable.collectAsStateWithLifecycle()
     QrHistoryScreen(
         entries = entries,
         saveHistory = saveHistory,
@@ -68,7 +69,8 @@ fun QrHistoryRoute(onBack: () -> Unit, viewModel: QrHistoryViewModel = hiltViewM
         onFavourite = viewModel::setFavourite,
         onRemove = viewModel::remove,
         onClear = viewModel::clear,
-        onBack = onBack
+        onBack = onBack,
+        storageAvailable = storageAvailable
     )
 }
 
@@ -82,7 +84,9 @@ internal fun QrHistoryScreen(
     onFavourite: (String, Boolean) -> Unit,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    /** False while the saved history cannot be opened or saved securely: new codes are not recorded until it is cleared. */
+    storageAvailable: Boolean = true
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
@@ -108,6 +112,20 @@ internal fun QrHistoryScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
             item {
+                if (!storageAvailable) {
+                    androidx.compose.material3.Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.qr_history_storage_error),
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -130,7 +148,8 @@ internal fun QrHistoryScreen(
                 Spacer(Modifier.height(12.dp))
                 Button(
                     onClick = { confirmClear = true },
-                    enabled = entries.isNotEmpty(),
+                    // Also when the history cannot be opened: clearing is the only way to start recording again.
+                    enabled = entries.isNotEmpty() || !storageAvailable,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError
@@ -177,7 +196,7 @@ internal fun QrHistoryScreen(
     if (confirmClear) {
         ConfirmDialog(
             title = stringResource(R.string.qr_history_clear_title),
-            message = stringResource(R.string.qr_history_clear_message),
+            message = stringResource(if (storageAvailable) R.string.qr_history_clear_message else R.string.qr_history_clear_locked_warning),
             confirmLabel = stringResource(R.string.qr_history_clear_all),
             onDismiss = { confirmClear = false },
             onConfirm = {

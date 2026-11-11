@@ -83,6 +83,7 @@ import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FlashAuto
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Rotate90DegreesCw
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -482,6 +483,7 @@ fun CameraScannerScreen(
                 val previousResult = detection
                 if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
                     previousResult.isBlurry != result.isBlurry || previousResult.isReady != result.isReady ||
+                    previousResult.isSkewed != result.isSkewed ||
                     PageQuality.isGlare(previousResult.glareShare) != PageQuality.isGlare(result.glareShare) ||
                     previousResult.frameWidth != result.frameWidth || previousResult.frameHeight != result.frameHeight
                 ) detection = result
@@ -1251,6 +1253,7 @@ fun CameraScannerScreen(
         if (!barcodeMode && status == null && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
             // In low light the hint is the button: one tap turns the torch on.
             val dark = detection?.isDark == true && !torchEnabled
+            // A tilted page remains capturable: the geometric hint is advice, not an auto-capture veto.
             val found = stable && detection?.isReady == true
             Surface(
                 onClick = { setFlash(FlashMode.TORCH) },
@@ -1261,14 +1264,15 @@ fun CameraScannerScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)) {
                     val state = detection
-                    // "Capturing" only when the shutter really is about to fire on its own; in Manual mode the page is just outlined.
-                    val guidance = if (stable && state?.isReady == true && autoCaptureActive) stringResource(R.string.scan_guidance_hold_capturing) else liveGuidance
-                    val ready = stable && state?.isReady == true
+                    // In manual mode, do not announce auto-capture; a tilted page gets an advisory rather than "ready".
+                    val guidance = if (found && autoCaptureActive) stringResource(R.string.scan_guidance_hold_capturing) else liveGuidance
+                    val ready = found
                     val hintIcon = when {
                         ready -> Icons.Default.TaskAlt
                         state?.isDark == true -> Icons.Default.Bolt
                         state?.quad != null && state.isBlurry -> Icons.Default.PanTool
                         state?.quad != null && PageQuality.isGlare(state.glareShare) -> Icons.Default.WbSunny
+                        state?.isSkewed == true -> Icons.Default.Rotate90DegreesCw
                         state?.quad != null -> Icons.Default.CenterFocusWeak
                         else -> Icons.Default.DocumentScanner
                     }
@@ -1293,6 +1297,10 @@ fun CameraScannerScreen(
                                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                             )
                         }
+                    }
+                    state?.takeIf { it.quad != null }?.let { page ->
+                        Spacer(Modifier.height(6.dp))
+                        ScannerQualityIndicators(page)
                     }
                 }
             }

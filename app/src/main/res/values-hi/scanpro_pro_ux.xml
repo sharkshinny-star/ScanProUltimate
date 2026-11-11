@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="scan_guidance_align_page">पन्ने को फ़्रेम में सीधा रखें</string>
+    <string name="scan_check_sharp">साफ़</string>
+    <string name="scan_check_blur">धुंधला</string>
+    <string name="scan_check_clear">चमक नहीं</string>
+    <string name="scan_check_glare">चमक</string>
+    <string name="scan_check_level">सीधा</string>
+    <string name="scan_check_tilt">तिरछा</string>
+    <string name="scan_check_summary">चित्र की गुणवत्ता: %1$s, %2$s, %3$s</string>
+</resources>
