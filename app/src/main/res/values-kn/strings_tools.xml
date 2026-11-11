@@ -252,7 +252,7 @@
     <string name="tools_tile_office">Office</string>
     <string name="msg_tools_converting_office">PDF ಗೆ ಬದಲಾಯಿಸಲಾಗುತ್ತಿದೆ…</string>
     <string name="msg_tools_office_failed">ಈ ಫೈಲ್ ಬದಲಾಯಿಸಲಾಗಲಿಲ್ಲ</string>
-    <string name="tools_err_office_unsupported">ಈ ರೀತಿಯ ಫೈಲ್ ಬದಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ. Word (.docx), Excel (.xlsx), ಪಠ್ಯ ಅಥವಾ CSV ಫೈಲ್, ಅಥವಾ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಉಳಿಸಿದ ವೆಬ್ ಪುಟ (.html ಅಥವಾ .mhtml) ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="tools_err_office_unsupported">ಈ ರೀತಿಯ ಫೈಲ್ ಬದಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ. Word (.docx), Excel (.xlsx), PowerPoint (.pptx), ಪಠ್ಯ ಅಥವಾ CSV ಫೈಲ್, ಅಥವಾ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಉಳಿಸಿದ ವೆಬ್ ಪುಟ (.html ಅಥವಾ .mhtml) ಆಯ್ಕೆಮಾಡಿ.</string>
     <string name="tools_err_office_unreadable">ಈ ಫೈಲ್ ಓದಲಾಗಲಿಲ್ಲ. ಇದು ಹಾಳಾಗಿರಬಹುದು ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ರಕ್ಷಿತವಾಗಿರಬಹುದು.</string>
     <plurals name="msg_tools_office_done">
         <item quantity="one">%1$d ಪುಟಗಳ PDF ಆಗಿ ಬದಲಾಯಿಸಲಾಗಿದೆ</item>
@@ -470,5 +470,13 @@
     <plurals name="tools_result_repaired_pictures">
         <item quantity="one">ಫೈಲ್ ರಚನೆಯನ್ನು ದುರಸ್ತಿ ಮಾಡಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ %1$d ಪುಟವನ್ನು ಚಿತ್ರವಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ. ಅದರ ಪಠ್ಯವನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗದು.</item>
         <item quantity="other">ಫೈಲ್ ರಚನೆಯನ್ನು ದುರಸ್ತಿ ಮಾಡಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ %1$d ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ. ಅವುಗಳ ಪಠ್ಯವನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗದು.</item>
+    </plurals>
+    <string name="tools_card_pdf2excel">PDF ನಿಂದ Excel</string>
+    <string name="tools_pdf2text_excel">Excel ವರ್ಕ್‌ಬುಕ್ (.xlsx)</string>
+    <string name="tools_pdf2text_excel_note">ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಶೀಟ್. ಪದಗಳು ಪುಟದಲ್ಲಿರುವ ಸ್ಥಳದಿಂದ ಕಾಲಮ್‌ಗಳನ್ನು ಮರುನಿರ್ಮಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಕೋಷ್ಟಕಗಳು ಸೆಲ್‌ಗಳಾಗಿ ಬರುತ್ತವೆ.</string>
+    <string name="tools_card_pdf2ppt">PDF ನಿಂದ PowerPoint</string>
+    <plurals name="tools_result_pdf2ppt">
+        <item quantity="one">%1$d ಸ್ಲೈಡ್ ಮಾಡಲಾಗಿದೆ, ಪುಟದ ಚಿತ್ರ.</item>
+        <item quantity="other">%1$d ಸ್ಲೈಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ, ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಚಿತ್ರ.</item>
     </plurals>
 </resources>

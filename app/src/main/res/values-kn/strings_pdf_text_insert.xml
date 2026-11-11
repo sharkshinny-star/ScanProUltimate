@@ -2,8 +2,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="tools_card_pdf2text">PDF ನಿಂದ Word ಅಥವಾ ಪಠ್ಯ</string>
     <string name="tools_tile_pdf2text">PDF ನಿಂದ ಪಠ್ಯ</string>
-    <string name="tools_pdf2text_title">PDF ನಿಂದ Word ಅಥವಾ ಪಠ್ಯ</string>
-    <string name="tools_pdf2text_body">ಈ PDF ಅನ್ನು ಸಂಪಾದಿಸಬಹುದಾದ Word ದಾಖಲೆ ಅಥವಾ ಸರಳ ಪಠ್ಯ ಕಡತವಾಗಿ ಪರಿವರ್ತಿಸುತ್ತದೆ. ಪಠ್ಯವಿರುವ ಪುಟಗಳು ಹಾಗೆಯೇ ನಕಲಾಗುತ್ತವೆ; ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟಗಳನ್ನು ಈ ಫೋನ್‌ನಲ್ಲೇ ಓದಲಾಗುತ್ತದೆ.</string>
+    <string name="tools_pdf2text_title">PDF ನಿಂದ Word, Excel ಅಥವಾ ಪಠ್ಯ</string>
+    <string name="tools_pdf2text_body">ಈ PDF ಅನ್ನು ಸಂಪಾದಿಸಬಹುದಾದ Word ದಾಖಲೆ, Excel ವರ್ಕ್‌ಬುಕ್ ಅಥವಾ ಸರಳ ಪಠ್ಯ ಫೈಲ್ ಆಗಿ ಬದಲಾಯಿಸುತ್ತದೆ. ಪಠ್ಯ ಇರುವ ಪುಟಗಳನ್ನು ಹಾಗೆಯೇ ನಕಲಿಸಲಾಗುತ್ತದೆ; ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟಗಳನ್ನು ಈ ಫೋನ್‌ನಲ್ಲೇ ಓದಲಾಗುತ್ತದೆ.</string>
     <string name="tools_pdf2text_format">ಹೀಗೆ ಉಳಿಸಿ</string>
     <string name="tools_pdf2text_word">Word ದಾಖಲೆ (.docx)</string>
     <string name="tools_pdf2text_plain">ಸರಳ ಪಠ್ಯ (.txt)</string>

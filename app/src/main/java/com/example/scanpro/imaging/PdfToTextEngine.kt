@@ -11,6 +11,9 @@ import com.example.scanpro.data.OcrScript
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import com.tom_roush.pdfbox.text.PDFTextStripper
+import com.tom_roush.pdfbox.text.TextPosition
+import com.example.scanpro.intelligence.OcrLayout
+import com.example.scanpro.data.OcrWord
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -22,13 +25,16 @@ import java.util.UUID
 /** What "PDF to text" writes. */
 enum class TextExportFormat(val extension: String) {
     TEXT("txt"),
-    WORD("docx")
+    WORD("docx"),
+    /** One sheet per page; tables are rebuilt from where each word sits on the page (as iLovePDF's PDF to Excel). */
+    EXCEL("xlsx")
 }
 
 /** Where a page's text came from. */
 enum class PageTextSource { TEXT_LAYER, OCR, NONE }
 
-data class PdfTextPage(val text: String, val source: PageTextSource)
+/** A page's text; [words] are its words with their boxes (fractions of the page), read only for the Excel output. */
+data class PdfTextPage(val text: String, val source: PageTextSource, val words: List<OcrWord> = emptyList())
 
 /** What "PDF to text" did. Page numbers in the lists start at 1. */
 data class PdfTextOutcome(
@@ -54,6 +60,17 @@ object PdfToTextEngine {
         document: PDDocument,
         ocrPage: suspend (index: Int) -> String,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): List<PdfTextPage> = readPagesDetailed(document, { index -> OcrResult(ocrPage(index), emptyList()) }, withWords = false, onProgress = onProgress)
+
+    /**
+     * As [readPages], and with [withWords] each page also carries its words and where they sit: from the text layer
+     * when there is one, otherwise from the OCR result. Tables are rebuilt from those positions.
+     */
+    internal suspend fun readPagesDetailed(
+        document: PDDocument,
+        ocrPage: suspend (index: Int) -> OcrResult,
+        withWords: Boolean,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ): List<PdfTextPage> {
         val total = document.numberOfPages
         val stripper = PDFTextStripper()
@@ -65,10 +82,12 @@ object PdfToTextEngine {
             stripper.endPage = index + 1
             val layer = runCatching { stripper.getText(document) }.getOrDefault("").trim()
             if (layer.isNotEmpty()) {
-                pages += PdfTextPage(layer, PageTextSource.TEXT_LAYER)
+                val words = if (withWords) runCatching { WordPositionStripper.words(document, index) }.getOrDefault(emptyList()) else emptyList()
+                pages += PdfTextPage(layer, PageTextSource.TEXT_LAYER, words)
             } else {
-                val read = ocrPage(index).trim()
-                pages += PdfTextPage(read, if (read.isEmpty()) PageTextSource.NONE else PageTextSource.OCR)
+                val read = ocrPage(index)
+                val text = read.text.trim()
+                pages += PdfTextPage(text, if (text.isEmpty()) PageTextSource.NONE else PageTextSource.OCR, if (withWords) read.words else emptyList())
             }
         }
         return pages
@@ -90,8 +109,21 @@ object PdfToTextEngine {
             TextExportFormat.TEXT -> outputFile.writeText(plainText(pages), Charsets.UTF_8)
             // The Word writer puts one paragraph per line and a page break between pages.
             TextExportFormat.WORD -> DocxExporter.export(title, pages.mapIndexed { index, page -> pageBlock(index + 1, page) }, outputFile)
+            TextExportFormat.EXCEL -> XlsxExporter.export(
+                pages.mapIndexed { index, page -> XlsxExporter.Sheet(AppStrings.get(R.string.tools_text_page_heading, index + 1), sheetRows(page)) },
+                outputFile
+            )
         }
     }
+
+    /** A page as spreadsheet rows: a table rebuilt from word positions when known, else one row per line of text. */
+    internal fun sheetRows(page: PdfTextPage): List<List<String>> = when {
+        page.source == PageTextSource.NONE -> listOf(listOf(AppStrings.get(R.string.tools_text_page_empty)))
+        page.words.isNotEmpty() -> OcrLayout.table(page.words).ifEmpty { textRows(page.text) }
+        else -> textRows(page.text)
+    }
+
+    private fun textRows(text: String): List<List<String>> = text.lines().filter { it.isNotBlank() }.map { listOf(it.trim()) }
 
     /** "3, 4, 9", cut short with an ellipsis when long. */
     fun pageList(pages: List<Int>, limit: Int = 20): String =
@@ -138,7 +170,8 @@ object PdfToTextEngine {
                     ocr = ocr,
                     pageImage = pageImage
                 )
-                val pages = pageOcr.use { reader -> readPages(document, { index -> reader.read(index) }, onProgress) }
+                val withWords = format == TextExportFormat.EXCEL
+                val pages = pageOcr.use { reader -> readPagesDetailed(document, { index -> reader.read(index) }, withWords, onProgress) }
 
                 userRequire(pages.any { it.source != PageTextSource.NONE }, R.string.tools_err_pdf_text_none)
                 onProgress(total, total, AppStrings.get(R.string.tools_progress_saving_text))
@@ -175,7 +208,7 @@ object PdfToTextEngine {
         private var renderer: PdfRenderer? = null
         private var prepared = false
 
-        suspend fun read(index: Int): String {
+        suspend fun read(index: Int): OcrResult {
             // Fetch the text model first (once), so a missing download is one clear error, not one per page.
             if (!prepared) {
                 ocr.prepare(script)
@@ -187,13 +220,56 @@ object PdfToTextEngine {
                 PdfRenderer(opened).also { renderer = it }
             }
             PdfOcrEngine.renderPage(active, index, pageImage)
-            return ocr.recognizeDetailed(pageImage, script).text
+            return ocr.recognizeDetailed(pageImage, script)
         }
 
         override fun close() {
             runCatching { renderer?.close() }
             runCatching { descriptor?.close() }
             pageImage.delete()
+        }
+    }
+
+    /**
+     * Words of one page with their boxes as fractions of the page, from the text layer. PDFBox hands over one word at a
+     * time with the position of every character, so each word's box is the span of its characters.
+     */
+    private class WordPositionStripper private constructor() : PDFTextStripper() {
+        private val found = mutableListOf<OcrWord>()
+
+        init { sortByPosition = true }
+
+        override fun writeString(text: String, textPositions: MutableList<TextPosition>) {
+            var current = mutableListOf<TextPosition>()
+            fun flush() {
+                val word = current.joinToString("") { it.unicode.orEmpty() }.trim()
+                if (word.isNotEmpty()) {
+                    val first = current.first()
+                    val width = first.pageWidth.coerceAtLeast(1f)
+                    val height = first.pageHeight.coerceAtLeast(1f)
+                    found += OcrWord(
+                        word,
+                        current.minOf { it.xDirAdj } / width,
+                        current.minOf { it.yDirAdj - it.heightDir } / height,
+                        current.maxOf { it.xDirAdj + it.widthDirAdj } / width,
+                        current.maxOf { it.yDirAdj } / height
+                    )
+                }
+                current = mutableListOf()
+            }
+            textPositions.forEach { position -> if (position.unicode.isNullOrBlank()) flush() else current += position }
+            flush()
+            super.writeString(text, textPositions)
+        }
+
+        companion object {
+            fun words(document: PDDocument, index: Int): List<OcrWord> {
+                val stripper = WordPositionStripper()
+                stripper.startPage = index + 1
+                stripper.endPage = index + 1
+                stripper.getText(document)
+                return stripper.found
+            }
         }
     }
 }

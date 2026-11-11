@@ -77,6 +77,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Merge
+import androidx.compose.material.icons.filled.Slideshow
+import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.RestartAlt
@@ -162,12 +164,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanpro.R
+import com.example.scanpro.imaging.TextExportFormat
 import com.example.scanpro.core.designsystem.DarkChrome
 import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.displayedKiloByte
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.openFile
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.PdfPageSize
@@ -229,7 +233,9 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("ocr", R.string.tools_card_ocr, Icons.Default.FindInPage, TileTone.Teal),
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
             PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral),
-            PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.AutoMirrored.Filled.Article, TileTone.Teal, label = R.string.tools_tile_pdf2text)
+            PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.AutoMirrored.Filled.Article, TileTone.Teal, label = R.string.tools_tile_pdf2text),
+            PdfToolCard("pdf2excel", R.string.tools_card_pdf2excel, Icons.Default.TableChart, TileTone.Teal),
+            PdfToolCard("pdf2ppt", R.string.tools_card_pdf2ppt, Icons.Default.Slideshow, TileTone.Coral)
         )
     ),
     ToolSection(
@@ -256,6 +262,9 @@ private val OFFICE_MIME_TYPES = arrayOf(
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel.sheet.macroenabled.12",
     "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+    "application/vnd.ms-powerpoint.presentation.macroenabled.12",
     "text/plain", "text/csv", "text/comma-separated-values", "application/csv",
     "text/markdown", "text/html", "application/xhtml+xml",
     "multipart/related", "message/rfc822", "application/x-mimearchive"
@@ -350,6 +359,8 @@ fun PdfToolsScreen(
         }
     }
     var showPdfToTextDialog by rememberSaveable { mutableStateOf(false) }
+    // The PDF to Excel tile opens the same dialog with Excel already chosen.
+    var pdfTextFormat by rememberSaveable { mutableStateOf(TextExportFormat.WORD) }
     // The pages kept in Organise when "Insert pages" was chosen, as index and rotation pairs (survives rotation of the phone).
     var insertBase by rememberSaveable { mutableStateOf<List<Int>?>(null) }
     val sourcePassword by viewModel.sourcePassword.collectAsStateWithLifecycle()
@@ -397,6 +408,8 @@ fun PdfToolsScreen(
             showConvertImageDialog = true
         }
     }
+    val savePowerPointLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.presentationml.presentation")) { saveTo(it) }
+    val saveExcelLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { saveTo(it) }
     val saveWordLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     ) { saveTo(it) }
@@ -425,7 +438,9 @@ fun PdfToolsScreen(
             }
             "resize_img" -> showResizeImageDialog = true
             "sign" -> signViewModel.open(uri)
-            "pdf2text" -> showPdfToTextDialog = true
+            "pdf2text" -> { pdfTextFormat = TextExportFormat.WORD; showPdfToTextDialog = true }
+            "pdf2excel" -> { pdfTextFormat = TextExportFormat.EXCEL; showPdfToTextDialog = true }
+            "pdf2ppt" -> viewModel.pdfToPowerPoint(uri)
         }
     }
     val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -601,7 +616,7 @@ fun PdfToolsScreen(
                         val file = result.outputFile
                         viewModel.clearResult()
                         if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(Uri.fromFile(file), file.name)
-                        else shareFile(context, file.absolutePath, mimeFor(file), file.name)
+                        else openFile(context, file.absolutePath, mimeFor(file), file.name)
                     },
                     onSaveAs = {
                         saveSourceFile = result.outputFile
@@ -613,6 +628,8 @@ fun PdfToolsScreen(
                             "image/webp" -> saveWebpLauncher.launch(name)
                             "text/plain" -> saveTextLauncher.launch(name)
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> saveWordLauncher.launch(name)
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> saveExcelLauncher.launch(name)
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> savePowerPointLauncher.launch(name)
                             else -> saveJpegLauncher.launch(name)
                         }
                     }
@@ -811,6 +828,7 @@ fun PdfToolsScreen(
 
             if (showPdfToTextDialog && uri != null) {
                 PdfToTextDialog(
+                    initialFormat = pdfTextFormat,
                     onDismiss = { showPdfToTextDialog = false },
                     onConfirm = { format, script ->
                         showPdfToTextDialog = false
@@ -2517,6 +2535,8 @@ internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "zip" -> "application/zip"
     "txt" -> "text/plain"
     "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     else -> "application/pdf"
 }
 

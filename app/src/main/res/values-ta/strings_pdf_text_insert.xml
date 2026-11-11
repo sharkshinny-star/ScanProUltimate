@@ -2,8 +2,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="tools_card_pdf2text">PDF இலிருந்து Word அல்லது உரை</string>
     <string name="tools_tile_pdf2text">PDF இலிருந்து உரை</string>
-    <string name="tools_pdf2text_title">PDF இலிருந்து Word அல்லது உரை</string>
-    <string name="tools_pdf2text_body">இந்த PDF ஐ திருத்தக்கூடிய Word ஆவணமாக அல்லது எளிய உரைக் கோப்பாக மாற்றுகிறது. உரை உள்ள பக்கங்கள் அப்படியே நகலெடுக்கப்படும்; ஸ்கேன் செய்த பக்கங்கள் இந்த ஃபோனிலேயே படிக்கப்படும்.</string>
+    <string name="tools_pdf2text_title">PDF-இலிருந்து Word, Excel அல்லது உரை</string>
+    <string name="tools_pdf2text_body">இந்த PDF-ஐ திருத்தக்கூடிய Word ஆவணம், Excel பணிப்புத்தகம் அல்லது வெற்று உரைக் கோப்பாக மாற்றுகிறது. உரை உள்ள பக்கங்கள் அப்படியே நகலெடுக்கப்படும்; ஸ்கேன் செய்த பக்கங்கள் இந்த போனிலேயே படிக்கப்படும்.</string>
     <string name="tools_pdf2text_format">இவ்வாறு சேமி</string>
     <string name="tools_pdf2text_word">Word ஆவணம் (.docx)</string>
     <string name="tools_pdf2text_plain">எளிய உரை (.txt)</string>

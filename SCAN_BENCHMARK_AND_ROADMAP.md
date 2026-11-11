@@ -129,3 +129,16 @@ deleted too. Nothing personal was opened. Everything below is **Verified** on th
 - PDF to PowerPoint and PDF to Excel: layout conversion that would look worse than the PDF; no honest way to test it here.
 - Share as link, Ask AI, Digitize: need Adobe's cloud; ScanPro is offline by design.
 - Edge-midpoint crop handles and a "Straighten" control: not checked against ScanPro's crop editor yet; candidates for the next round.
+
+## 7. iLovePDF tool parity (2026-11-11)
+| iLovePDF tool | ScanPro now |
+|---|---|
+| Merge, Split, Compress, Organize, Rotate, Page Numbers, Watermark, Sign, Protect, Unlock, OCR, Image to PDF, PDF to JPG, Extract TXT, Compress / Convert / Resize image | already present |
+| Repair PDF | added (F127) |
+| PDF to Word | already present (PDF to Word or text) |
+| PDF to Excel | added (F129): tables rebuilt from word positions, one sheet per page |
+| Word to PDF, Excel to PDF | already present (Office to PDF) |
+| PowerPoint to PDF | added (F130): one page per slide, text and pictures |
+| PDF to PowerPoint | added (F131): one slide per page, as a picture |
+| Edit PDF (add text, shapes, images to any PDF) | **missing**; ScanPro edits only its own scans |
+| Create PDF | not separately; Images to PDF and Office to PDF cover it |

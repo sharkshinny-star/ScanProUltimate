@@ -2,8 +2,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="tools_card_pdf2text">PDF ൽ നിന്ന് Word അല്ലെങ്കിൽ ടെക്സ്റ്റ്</string>
     <string name="tools_tile_pdf2text">PDF ൽ നിന്ന് ടെക്സ്റ്റ്</string>
-    <string name="tools_pdf2text_title">PDF ൽ നിന്ന് Word അല്ലെങ്കിൽ ടെക്സ്റ്റ്</string>
-    <string name="tools_pdf2text_body">ഈ PDF നെ എഡിറ്റ് ചെയ്യാവുന്ന Word ഡോക്യുമെന്റോ സാധാരണ ടെക്സ്റ്റ് ഫയലോ ആക്കി മാറ്റുന്നു. ടെക്സ്റ്റുള്ള പേജുകൾ അതേപടി പകർത്തുന്നു; സ്കാൻ ചെയ്ത പേജുകൾ ഈ ഫോണിൽ തന്നെ വായിക്കുന്നു.</string>
+    <string name="tools_pdf2text_title">PDF-ൽ നിന്ന് Word, Excel അല്ലെങ്കിൽ ടെക്സ്റ്റ്</string>
+    <string name="tools_pdf2text_body">ഈ PDF-നെ എഡിറ്റ് ചെയ്യാവുന്ന Word പ്രമാണം, Excel വർക്ക്ബുക്ക് അല്ലെങ്കിൽ സാധാരണ ടെക്സ്റ്റ് ഫയലാക്കുന്നു. ടെക്സ്റ്റ് ഉള്ള പേജുകൾ അതേപടി പകർത്തും; സ്കാൻ ചെയ്ത പേജുകൾ ഈ ഫോണിൽ തന്നെ വായിക്കും.</string>
     <string name="tools_pdf2text_format">ഇങ്ങനെ സേവ് ചെയ്യുക</string>
     <string name="tools_pdf2text_word">Word ഡോക്യുമെന്റ് (.docx)</string>
     <string name="tools_pdf2text_plain">സാധാരണ ടെക്സ്റ്റ് (.txt)</string>

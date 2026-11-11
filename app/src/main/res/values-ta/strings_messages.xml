@@ -198,4 +198,6 @@
     <string name="msg_tools_form_nothing_changed">இன்னும் எதுவும் மாற்றப்படவில்லை</string>
     <string name="msg_tools_repairing">PDF சரிசெய்யப்படுகிறது…</string>
     <string name="msg_tools_repair_failed">PDF-ஐ சரிசெய்ய முடியவில்லை</string>
+    <string name="msg_tools_pdf2ppt_working">ஸ்லைடுகள் உருவாக்கப்படுகின்றன…</string>
+    <string name="msg_tools_pdf2ppt_failed">ஸ்லைடுகளை உருவாக்க முடியவில்லை</string>
 </resources>

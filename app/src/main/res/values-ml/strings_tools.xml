@@ -252,7 +252,7 @@
     <string name="tools_tile_office">Office</string>
     <string name="msg_tools_converting_office">PDF ആക്കി മാറ്റുന്നു…</string>
     <string name="msg_tools_office_failed">ഈ ഫയൽ മാറ്റാനായില്ല</string>
-    <string name="tools_err_office_unsupported">ഈ തരം ഫയൽ മാറ്റാനാവില്ല. Word (.docx), Excel (.xlsx), ടെക്സ്റ്റ് അല്ലെങ്കിൽ CSV ഫയൽ, അല്ലെങ്കിൽ ബ്രൗസറിൽ സേവ് ചെയ്ത വെബ് പേജ് (.html അല്ലെങ്കിൽ .mhtml) തിരഞ്ഞെടുക്കുക.</string>
+    <string name="tools_err_office_unsupported">ഈ തരം ഫയൽ മാറ്റാനാവില്ല. Word (.docx), Excel (.xlsx), PowerPoint (.pptx), ടെക്സ്റ്റ് അല്ലെങ്കിൽ CSV ഫയൽ, അല്ലെങ്കിൽ ബ്രൗസറിൽ സേവ് ചെയ്ത വെബ് പേജ് (.html അല്ലെങ്കിൽ .mhtml) തിരഞ്ഞെടുക്കുക.</string>
     <string name="tools_err_office_unreadable">ഈ ഫയൽ വായിക്കാനായില്ല. ഇത് കേടായതോ പാസ്‌വേഡ് സംരക്ഷിതമോ ആകാം.</string>
     <plurals name="msg_tools_office_done">
         <item quantity="one">%1$d പേജ് PDF ആക്കി മാറ്റി</item>
@@ -470,5 +470,13 @@
     <plurals name="tools_result_repaired_pictures">
         <item quantity="one">ഫയൽ ഘടന നന്നാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ %1$d പേജ് ചിത്രമായി പുനർനിർമ്മിച്ചു. അതിലെ ടെക്സ്റ്റ് തിരഞ്ഞെടുക്കാൻ കഴിയില്ല.</item>
         <item quantity="other">ഫയൽ ഘടന നന്നാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ %1$d പേജുകൾ ചിത്രങ്ങളായി പുനർനിർമ്മിച്ചു. അവയിലെ ടെക്സ്റ്റ് തിരഞ്ഞെടുക്കാൻ കഴിയില്ല.</item>
+    </plurals>
+    <string name="tools_card_pdf2excel">PDF-ൽ നിന്ന് Excel</string>
+    <string name="tools_pdf2text_excel">Excel വർക്ക്ബുക്ക് (.xlsx)</string>
+    <string name="tools_pdf2text_excel_note">ഓരോ പേജിനും ഒരു ഷീറ്റ്. വാക്കുകൾ പേജിൽ ഉള്ള സ്ഥാനത്തുനിന്ന് നിരകൾ പുനർനിർമ്മിക്കുന്നതിനാൽ പട്ടികകൾ സെല്ലുകളായി വരും.</string>
+    <string name="tools_card_pdf2ppt">PDF-ൽ നിന്ന് PowerPoint</string>
+    <plurals name="tools_result_pdf2ppt">
+        <item quantity="one">%1$d സ്ലൈഡ് ഉണ്ടാക്കി, പേജിന്റെ ചിത്രം.</item>
+        <item quantity="other">%1$d സ്ലൈഡുകൾ ഉണ്ടാക്കി, ഓരോ പേജിനും ഒരു ചിത്രം.</item>
     </plurals>
 </resources>

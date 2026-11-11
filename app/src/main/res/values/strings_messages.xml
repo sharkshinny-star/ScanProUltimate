@@ -216,4 +216,6 @@
     <string name="msg_tools_form_nothing_changed">Nothing has been changed yet</string>
     <string name="msg_tools_repairing">Repairing PDF…</string>
     <string name="msg_tools_repair_failed">Could not repair the PDF</string>
+    <string name="msg_tools_pdf2ppt_working">Making slides…</string>
+    <string name="msg_tools_pdf2ppt_failed">Could not make the slides</string>
 </resources>

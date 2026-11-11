@@ -2,8 +2,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="tools_card_pdf2text">PDF से Word या टेक्स्ट</string>
     <string name="tools_tile_pdf2text">PDF से टेक्स्ट</string>
-    <string name="tools_pdf2text_title">PDF से Word या टेक्स्ट</string>
-    <string name="tools_pdf2text_body">इस PDF को बदलने योग्य Word दस्तावेज़ या सादी टेक्स्ट फ़ाइल में बदलता है। जिन पेजों में टेक्स्ट है वे जस के तस कॉपी होते हैं; स्कैन किए पेज इसी फ़ोन पर पढ़े जाते हैं।</string>
+    <string name="tools_pdf2text_title">PDF से Word, Excel या टेक्स्ट</string>
+    <string name="tools_pdf2text_body">इस PDF को संपादन योग्य Word दस्तावेज़, Excel वर्कबुक या सादे टेक्स्ट फ़ाइल में बदलता है। जिन पेजों में टेक्स्ट है वे वैसे ही कॉपी होते हैं; स्कैन किए पेज इसी फ़ोन पर पढ़े जाते हैं।</string>
     <string name="tools_pdf2text_format">इस रूप में सेव करें</string>
     <string name="tools_pdf2text_word">Word दस्तावेज़ (.docx)</string>
     <string name="tools_pdf2text_plain">सादा टेक्स्ट (.txt)</string>

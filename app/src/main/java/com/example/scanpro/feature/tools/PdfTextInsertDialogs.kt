@@ -58,10 +58,17 @@ data class SourcePasswordRequest(
     val forInsert: Boolean
 )
 
-/** Asks for the output (plain text or Word) and the writing system, which pages without text are read in. */
+/**
+ * Asks for the output (Word, Excel or plain text) and the writing system, which pages without text are read in.
+ * [initialFormat] is the one chosen when the dialog opens: the PDF to Excel tile opens it on Excel.
+ */
 @Composable
-internal fun PdfToTextDialog(onDismiss: () -> Unit, onConfirm: (TextExportFormat, OcrScript) -> Unit) {
-    var word by rememberSaveable { mutableStateOf(true) }
+internal fun PdfToTextDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (TextExportFormat, OcrScript) -> Unit,
+    initialFormat: TextExportFormat = TextExportFormat.WORD
+) {
+    var format by rememberSaveable { mutableStateOf(initialFormat) }
     var script by rememberSaveable { mutableStateOf(OcrScript.LATIN) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -71,8 +78,17 @@ internal fun PdfToTextDialog(onDismiss: () -> Unit, onConfirm: (TextExportFormat
                 Text(stringResource(R.string.tools_pdf2text_body), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.tools_pdf2text_format), style = MaterialTheme.typography.titleSmall)
-                ChoiceRow(selected = word, label = stringResource(R.string.tools_pdf2text_word)) { word = true }
-                ChoiceRow(selected = !word, label = stringResource(R.string.tools_pdf2text_plain)) { word = false }
+                ChoiceRow(selected = format == TextExportFormat.WORD, label = stringResource(R.string.tools_pdf2text_word)) { format = TextExportFormat.WORD }
+                ChoiceRow(selected = format == TextExportFormat.EXCEL, label = stringResource(R.string.tools_pdf2text_excel)) { format = TextExportFormat.EXCEL }
+                ChoiceRow(selected = format == TextExportFormat.TEXT, label = stringResource(R.string.tools_pdf2text_plain)) { format = TextExportFormat.TEXT }
+                if (format == TextExportFormat.EXCEL) {
+                    Text(
+                        stringResource(R.string.tools_pdf2text_excel_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 48.dp)
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.tools_ocr_language), style = MaterialTheme.typography.titleSmall)
                 OcrScript.entries.forEach { option ->
@@ -90,7 +106,7 @@ internal fun PdfToTextDialog(onDismiss: () -> Unit, onConfirm: (TextExportFormat
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(if (word) TextExportFormat.WORD else TextExportFormat.TEXT, script) }) {
+            TextButton(onClick = { onConfirm(format, script) }) {
                 Text(stringResource(R.string.tools_ocr_start))
             }
         },

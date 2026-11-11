@@ -252,7 +252,7 @@
     <string name="tools_tile_office">Office</string>
     <string name="msg_tools_converting_office">PDF में बदल रहे हैं…</string>
     <string name="msg_tools_office_failed">यह फ़ाइल नहीं बदल सकी</string>
-    <string name="tools_err_office_unsupported">इस प्रकार की फ़ाइल नहीं बदली जा सकती। Word (.docx), Excel (.xlsx), टेक्स्ट या CSV फ़ाइल, या ब्राउज़र से सेव किया गया वेब पेज (.html या .mhtml) चुनें।</string>
+    <string name="tools_err_office_unsupported">इस प्रकार की फ़ाइल नहीं बदली जा सकती। Word (.docx), Excel (.xlsx), PowerPoint (.pptx), टेक्स्ट या CSV फ़ाइल, या ब्राउज़र से सेव किया गया वेब पेज (.html या .mhtml) चुनें।</string>
     <string name="tools_err_office_unreadable">यह फ़ाइल पढ़ी नहीं जा सकी। हो सकता है यह ख़राब हो या पासवर्ड से सुरक्षित हो।</string>
     <plurals name="msg_tools_office_done">
         <item quantity="one">PDF %1$d पेज का बना</item>
@@ -470,5 +470,13 @@
     <plurals name="tools_result_repaired_pictures">
         <item quantity="one">फ़ाइल की संरचना ठीक नहीं हो सकी, इसलिए %1$d पेज को चित्र के रूप में बनाया गया। उसका टेक्स्ट अब चुना नहीं जा सकता।</item>
         <item quantity="other">फ़ाइल की संरचना ठीक नहीं हो सकी, इसलिए %1$d पेज चित्र के रूप में बनाए गए। उनका टेक्स्ट अब चुना नहीं जा सकता।</item>
+    </plurals>
+    <string name="tools_card_pdf2excel">PDF से Excel</string>
+    <string name="tools_pdf2text_excel">Excel वर्कबुक (.xlsx)</string>
+    <string name="tools_pdf2text_excel_note">हर पेज के लिए एक शीट। शब्द पेज पर जहाँ हैं उसी से कॉलम बनते हैं, इसलिए तालिकाएँ सेल में आती हैं।</string>
+    <string name="tools_card_pdf2ppt">PDF से PowerPoint</string>
+    <plurals name="tools_result_pdf2ppt">
+        <item quantity="one">%1$d स्लाइड बनी, पेज की एक तस्वीर।</item>
+        <item quantity="other">%1$d स्लाइड बनीं, हर पेज की एक तस्वीर।</item>
     </plurals>
 </resources>

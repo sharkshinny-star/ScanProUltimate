@@ -286,7 +286,7 @@
         <item quantity="one">Converted to a %1$d-page PDF</item>
         <item quantity="other">Converted to a %1$d-page PDF</item>
     </plurals>
-    <string name="tools_err_office_unsupported">This file type can\'t be converted. Choose a Word (.docx), Excel (.xlsx), text or CSV file, or a web page saved from your browser (.html or .mhtml).</string>
+    <string name="tools_err_office_unsupported">This file type can\'t be converted. Choose a Word (.docx), Excel (.xlsx), PowerPoint (.pptx), text or CSV file, or a web page saved from your browser (.html or .mhtml).</string>
     <string name="tools_err_office_unreadable">This file couldn\'t be read. It may be damaged or password-protected.</string>
     <string name="tools_office_note_image">[Image not shown]</string>
     <string name="tools_office_note_workbook_empty">The workbook has no data.</string>
@@ -505,5 +505,13 @@
     <plurals name="tools_result_repaired_pictures">
         <item quantity="one">The file structure could not be repaired, so %1$d page was rebuilt as a picture. Its text is no longer selectable.</item>
         <item quantity="other">The file structure could not be repaired, so %1$d pages were rebuilt as pictures. Their text is no longer selectable.</item>
+    </plurals>
+    <string name="tools_card_pdf2excel">PDF to Excel</string>
+    <string name="tools_pdf2text_excel">Excel workbook (.xlsx)</string>
+    <string name="tools_pdf2text_excel_note">One sheet per page. Columns are rebuilt from where the words sit on the page, so tables come out as cells.</string>
+    <string name="tools_card_pdf2ppt">PDF to PowerPoint</string>
+    <plurals name="tools_result_pdf2ppt">
+        <item quantity="one">Made %1$d slide, a picture of the page.</item>
+        <item quantity="other">Made %1$d slides, one picture per page.</item>
     </plurals>
 </resources>

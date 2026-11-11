@@ -198,4 +198,6 @@
     <string name="msg_tools_form_nothing_changed">ఇంకా ఏమీ మార్చలేదు</string>
     <string name="msg_tools_repairing">PDF మరమ్మతు చేస్తోంది…</string>
     <string name="msg_tools_repair_failed">PDF ను మరమ్మతు చేయలేకపోయాం</string>
+    <string name="msg_tools_pdf2ppt_working">స్లైడ్‌లు తయారవుతున్నాయి…</string>
+    <string name="msg_tools_pdf2ppt_failed">స్లైడ్‌లు తయారు చేయలేకపోయాం</string>
 </resources>

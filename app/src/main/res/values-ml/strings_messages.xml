@@ -198,4 +198,6 @@
     <string name="msg_tools_form_nothing_changed">ഇതുവരെ ഒന്നും മാറ്റിയിട്ടില്ല</string>
     <string name="msg_tools_repairing">PDF നന്നാക്കുന്നു…</string>
     <string name="msg_tools_repair_failed">PDF നന്നാക്കാൻ കഴിഞ്ഞില്ല</string>
+    <string name="msg_tools_pdf2ppt_working">സ്ലൈഡുകൾ ഉണ്ടാക്കുന്നു…</string>
+    <string name="msg_tools_pdf2ppt_failed">സ്ലൈഡുകൾ ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല</string>
 </resources>

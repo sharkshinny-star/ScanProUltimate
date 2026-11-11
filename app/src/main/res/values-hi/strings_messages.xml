@@ -198,4 +198,6 @@
     <string name="msg_tools_form_nothing_changed">अभी तक कुछ नहीं बदला गया</string>
     <string name="msg_tools_repairing">PDF ठीक की जा रही है…</string>
     <string name="msg_tools_repair_failed">PDF ठीक नहीं की जा सकी</string>
+    <string name="msg_tools_pdf2ppt_working">स्लाइड बन रही हैं…</string>
+    <string name="msg_tools_pdf2ppt_failed">स्लाइड नहीं बन सकीं</string>
 </resources>

@@ -198,6 +198,29 @@ fun formatTrashCountdown(
     return Pair(text, countdown.isUrgent)
 }
 
+/**
+ * Opens [path] in another app ("Open with"), as a result's Open button should: a share sheet would offer people to
+ * send it to instead. Falls back to sharing if the chooser itself cannot start.
+ */
+fun openFile(context: Context, path: String, mimeType: String, chooserTitle: String) {
+    val file = File(path)
+    if (!file.isFile) {
+        Toast.makeText(context, context.getString(R.string.core_export_file_missing), Toast.LENGTH_SHORT).show()
+        return
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val view = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, mimeType)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    // The chooser lists the apps that can open it (asking the package manager first would need <queries> on Android 11+).
+    try {
+        context.startActivity(Intent.createChooser(view, chooserTitle).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+    } catch (_: android.content.ActivityNotFoundException) {
+        shareFile(context, path, mimeType, chooserTitle)
+    }
+}
+
 fun shareFile(context: Context, path: String, mimeType: String, chooserTitle: String, extraPaths: List<String> = emptyList()) {
     val files = (listOf(path) + extraPaths).map(::File).filter { it.isFile }
     if (files.isEmpty()) {

@@ -252,7 +252,7 @@
     <string name="tools_tile_office">Office</string>
     <string name="msg_tools_converting_office">PDFగా మారుస్తోంది…</string>
     <string name="msg_tools_office_failed">ఈ ఫైల్‌ను మార్చలేకపోయాం</string>
-    <string name="tools_err_office_unsupported">ఈ రకం ఫైల్‌ను మార్చలేము. Word (.docx), Excel (.xlsx), టెక్స్ట్ లేదా CSV ఫైల్, లేదా బ్రౌజర్‌లో సేవ్ చేసిన వెబ్ పేజీ (.html లేదా .mhtml) ఎంచుకోండి.</string>
+    <string name="tools_err_office_unsupported">ఈ రకం ఫైల్‌ను మార్చలేము. Word (.docx), Excel (.xlsx), PowerPoint (.pptx), టెక్స్ట్ లేదా CSV ఫైల్, లేదా బ్రౌజర్‌లో సేవ్ చేసిన వెబ్ పేజీ (.html లేదా .mhtml) ఎంచుకోండి.</string>
     <string name="tools_err_office_unreadable">ఈ ఫైల్‌ను చదవలేకపోయాం. ఇది పాడై ఉండవచ్చు లేదా పాస్‌వర్డ్‌తో రక్షించబడి ఉండవచ్చు.</string>
     <plurals name="msg_tools_office_done">
         <item quantity="one">%1$d పేజీల PDFగా మార్చబడింది</item>
@@ -470,5 +470,13 @@
     <plurals name="tools_result_repaired_pictures">
         <item quantity="one">ఫైల్ నిర్మాణాన్ని మరమ్మతు చేయలేకపోయాం, కాబట్టి %1$d పేజీని చిత్రంగా నిర్మించాం. దాని టెక్స్ట్‌ను ఎంచుకోలేరు.</item>
         <item quantity="other">ఫైల్ నిర్మాణాన్ని మరమ్మతు చేయలేకపోయాం, కాబట్టి %1$d పేజీలను చిత్రాలుగా నిర్మించాం. వాటి టెక్స్ట్‌ను ఎంచుకోలేరు.</item>
+    </plurals>
+    <string name="tools_card_pdf2excel">PDF నుండి Excel</string>
+    <string name="tools_pdf2text_excel">Excel వర్క్‌బుక్ (.xlsx)</string>
+    <string name="tools_pdf2text_excel_note">ప్రతి పేజీకి ఒక షీట్. పదాలు పేజీలో ఉన్న చోటు నుండి నిలువు వరుసలు నిర్మించబడతాయి, కాబట్టి పట్టికలు సెల్‌లుగా వస్తాయి.</string>
+    <string name="tools_card_pdf2ppt">PDF నుండి PowerPoint</string>
+    <plurals name="tools_result_pdf2ppt">
+        <item quantity="one">%1$d స్లైడ్ తయారైంది, పేజీ చిత్రం.</item>
+        <item quantity="other">%1$d స్లైడ్‌లు తయారయ్యాయి, ప్రతి పేజీకి ఒక చిత్రం.</item>
     </plurals>
 </resources>

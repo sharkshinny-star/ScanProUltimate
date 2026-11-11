@@ -283,6 +283,11 @@ class PdfToolsViewModel @Inject constructor(
         PdfToolsEngine.protectPdf(context, uri, password, named(uri, "protected"))
     }
 
+    fun pdfToPowerPoint(uri: Uri) = launchTool(R.string.msg_tools_pdf2ppt_working, R.string.msg_tools_pdf2ppt_failed) {
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        com.example.scanpro.imaging.PdfToPptEngine.convert(context, uri, PdfToolsEngine.outputLocation(context, "$base.pptx"), ::report)
+    }
+
     fun repair(uri: Uri) = launchTool(R.string.msg_tools_repairing, R.string.msg_tools_repair_failed) {
         com.example.scanpro.imaging.PdfRepairEngine.repairPdf(context, uri, named(uri, "repaired"), ::report)
     }
