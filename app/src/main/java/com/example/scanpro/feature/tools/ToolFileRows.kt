@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import androidx.core.graphics.createBitmap
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -106,7 +107,7 @@ private fun loadThumb(context: Context, source: Any, extension: String, heightPx
                     if (renderer.pageCount == 0) return@use Thumb.Symbol(Icons.Default.PictureAsPdf)
                     renderer.openPage(0).use { page ->
                         val scale = heightPx.toFloat() / page.height
-                        val bitmap = Bitmap.createBitmap((page.width * scale).toInt().coerceAtLeast(1), heightPx, Bitmap.Config.ARGB_8888)
+                        val bitmap = createBitmap((page.width * scale).toInt().coerceAtLeast(1), heightPx)
                         bitmap.eraseColor(AndroidColor.WHITE)
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                         Thumb.Picture(bitmap)
@@ -133,9 +134,16 @@ private fun loadThumb(context: Context, source: Any, extension: String, heightPx
  * anything else. [cacheKey] must change when the file does (include its modified time).
  */
 @Composable
-internal fun FileThumbnail(source: Any, extension: String, cacheKey: String, modifier: Modifier = Modifier) {
+internal fun FileThumbnail(
+    source: Any,
+    extension: String,
+    cacheKey: String,
+    modifier: Modifier = Modifier,
+    /** How tall to render the page: Home's cards (F140) are 175 dp, the list rows 60 dp. */
+    renderHeight: androidx.compose.ui.unit.Dp = 64.dp
+) {
     val context = LocalContext.current
-    val heightPx = with(LocalDensity.current) { 64.dp.roundToPx() }
+    val heightPx = with(LocalDensity.current) { renderHeight.roundToPx() }
     val thumb by produceState<Thumb?>(ThumbCache.get(cacheKey)?.let { Thumb.Picture(it) }, cacheKey) {
         if (value != null) return@produceState
         value = withContext(Dispatchers.IO) {

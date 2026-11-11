@@ -7,6 +7,7 @@
     <string name="greeting_morning">शुभ प्रभात</string>
     <string name="greeting_afternoon">शुभ दोपहर</string>
     <string name="greeting_evening">शुभ संध्या</string>
+    <string name="greeting_night">शुभ रात्रि</string>
     <string name="lib_title_files">मेरी फ़ाइलें</string>
     <string name="lib_cd_clear_selection">चुनाव हटाएं</string>
     <string name="lib_cd_share_selected">चुने गए शेयर करें</string>
@@ -261,4 +262,5 @@
     </plurals>
     <string name="home_recent_files">हाल की फ़ाइलें</string>
     <string name="home_recent_opened">खोली गईं</string>
+    <string name="home_recent_scans">स्कैन</string>
 </resources>

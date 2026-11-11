@@ -495,4 +495,30 @@
     <string name="tools_results_delete_title">ఈ ఫైల్‌ను తొలగించాలా?</string>
     <string name="tools_results_delete_body">%1$s ScanPro నుండి తీసివేయబడుతుంది. మీరు సేవ్ చేసిన లేదా షేర్ చేసిన కాపీలకు ఏమీ కాదు.</string>
     <string name="tools_result_kept_note">మీరు తొలగించే వరకు టూల్స్ › మీ ఫలితాలు లో ఉంచబడుతుంది</string>
+    <!-- F140: one line under each tool on the Tools page -->
+    <string name="tools_desc_merge">PDFలను ఒకటిగా కలపండి</string>
+    <string name="tools_desc_split">పేజీలను వేర్వేరు ఫైళ్లుగా విభజించండి</string>
+    <string name="tools_desc_organize">పేజీల క్రమం మార్చండి, జోడించండి, తొలగించండి</string>
+    <string name="tools_desc_rotate">పేజీలను సరిగ్గా తిప్పండి</string>
+    <string name="tools_desc_extract">ఎంచుకున్న పేజీలను PDFగా సేవ్ చేయండి</string>
+    <string name="tools_desc_compress">PDF పరిమాణాన్ని తగ్గించండి</string>
+    <string name="tools_desc_repair">పాడైన PDFని సరిచేయండి</string>
+    <string name="tools_desc_page_numbers">ప్రతి పేజీకి సంఖ్య వేయండి</string>
+    <string name="tools_desc_watermark">టెక్స్ట్ లేదా చిత్రం ముద్ర వేయండి</string>
+    <string name="tools_desc_sign">మీ సంతకం జోడించండి</string>
+    <string name="tools_desc_img2pdf">ఫోటోలను PDFగా మార్చండి</string>
+    <string name="tools_desc_office">Word, Excel, PowerPoint నుండి PDF</string>
+    <string name="tools_desc_ocr">స్కాన్ టెక్స్ట్‌ను శోధించదగినదిగా చేయండి</string>
+    <string name="tools_desc_fill">PDF ఫారమ్‌లను నింపండి</string>
+    <string name="tools_desc_pdf2img">పేజీలను చిత్రాలుగా సేవ్ చేయండి</string>
+    <string name="tools_desc_pdf2text">Word లేదా సాధారణ టెక్స్ట్ పొందండి</string>
+    <string name="tools_desc_pdf2excel">పట్టికలను షీట్‌లోకి తీయండి</string>
+    <string name="tools_desc_pdf2ppt">ప్రతి పేజీ ఒక స్లైడ్</string>
+    <string name="tools_desc_protect">పాస్‌వర్డ్‌తో లాక్ చేయండి</string>
+    <string name="tools_desc_unlock">పాస్‌వర్డ్ తొలగించండి</string>
+    <string name="tools_desc_crop_img">ఫోటో అంచులను కత్తిరించండి</string>
+    <string name="tools_desc_compress_img">ఫోటో ఫైల్ పరిమాణం తగ్గించండి</string>
+    <string name="tools_desc_convert_img">JPG, PNG లేదా WebP</string>
+    <string name="tools_desc_resize_img">ఫోటో కొలతలు మార్చండి</string>
+    <string name="tools_desc_viewer">చదవండి, వెతకండి, పేజీకి వెళ్లండి</string>
 </resources>

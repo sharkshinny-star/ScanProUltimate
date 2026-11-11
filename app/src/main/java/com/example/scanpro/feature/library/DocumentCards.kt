@@ -82,7 +82,7 @@ private fun rememberUpdatedText(updatedAt: Long): String =
 
 /** The first page as a sheet of paper: white card, hairline, soft shadow, on a tonal backdrop. */
 @Composable
-private fun PaperThumbnail(document: DocumentSummary, modifier: Modifier = Modifier, maxDimension: Int, corner: Dp = 8.dp) {
+internal fun PaperThumbnail(document: DocumentSummary, modifier: Modifier = Modifier, maxDimension: Int, corner: Dp = 8.dp) {
     val shape = RoundedCornerShape(corner)
     Box(
         modifier

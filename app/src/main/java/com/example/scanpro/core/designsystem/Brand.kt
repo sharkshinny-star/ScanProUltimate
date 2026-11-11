@@ -160,9 +160,11 @@ fun BrandWordmark(modifier: Modifier = Modifier, color: Color = MaterialTheme.co
 @androidx.annotation.StringRes
 fun greetingRes(hour: Int): Int =
     when (hour) {
-        in 4..11 -> R.string.greeting_morning
+        // F140: everything outside 4-16 used to be evening, so Home said "Good evening" at 2 am.
+        in 5..11 -> R.string.greeting_morning
         in 12..16 -> R.string.greeting_afternoon
-        else -> R.string.greeting_evening
+        in 17..23 -> R.string.greeting_evening
+        else -> R.string.greeting_night
     }
 
 @androidx.annotation.StringRes

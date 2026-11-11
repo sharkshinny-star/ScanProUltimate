@@ -7,6 +7,7 @@
     <string name="greeting_morning">శుభోదయం</string>
     <string name="greeting_afternoon">శుభ మధ్యాహ్నం</string>
     <string name="greeting_evening">శుభ సాయంత్రం</string>
+    <string name="greeting_night">శుభ రాత్రి</string>
     <string name="lib_title_files">నా ఫైల్స్</string>
     <string name="lib_cd_clear_selection">ఎంపిక తీసేయండి</string>
     <string name="lib_cd_share_selected">ఎంచుకున్నవి షేర్ చేయండి</string>
@@ -261,4 +262,5 @@
     </plurals>
     <string name="home_recent_files">ఇటీవలి ఫైల్‌లు</string>
     <string name="home_recent_opened">తెరిచినవి</string>
+    <string name="home_recent_scans">స్కాన్‌లు</string>
 </resources>

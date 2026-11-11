@@ -495,4 +495,30 @@
     <string name="tools_results_delete_title">இந்தக் கோப்பை நீக்கவா?</string>
     <string name="tools_results_delete_body">%1$s ScanPro-இலிருந்து அகற்றப்படும். நீங்கள் சேமித்த அல்லது பகிர்ந்த நகல்களுக்கு எதுவும் ஆகாது.</string>
     <string name="tools_result_kept_note">நீங்கள் நீக்கும் வரை கருவிகள் › உங்கள் முடிவுகள் பகுதியில் வைக்கப்படும்</string>
+    <!-- F140: one line under each tool on the Tools page -->
+    <string name="tools_desc_merge">PDF-களை ஒன்றாக இணைக்கவும்</string>
+    <string name="tools_desc_split">பக்கங்களைத் தனிக் கோப்புகளாகப் பிரிக்கவும்</string>
+    <string name="tools_desc_organize">பக்கங்களை வரிசைப்படுத்து, சேர், நீக்கு</string>
+    <string name="tools_desc_rotate">பக்கங்களைச் சரியாகச் சுழற்றவும்</string>
+    <string name="tools_desc_extract">தேர்ந்த பக்கங்களை PDF ஆகச் சேமிக்கவும்</string>
+    <string name="tools_desc_compress">PDF அளவைக் குறைக்கவும்</string>
+    <string name="tools_desc_repair">சேதமான PDF-ஐ மீட்கவும்</string>
+    <string name="tools_desc_page_numbers">ஒவ்வொரு பக்கத்துக்கும் எண் இடவும்</string>
+    <string name="tools_desc_watermark">உரை அல்லது படத்தை முத்திரையிடவும்</string>
+    <string name="tools_desc_sign">உங்கள் கையொப்பத்தைச் சேர்க்கவும்</string>
+    <string name="tools_desc_img2pdf">புகைப்படங்களை PDF ஆக்கவும்</string>
+    <string name="tools_desc_office">Word, Excel, PowerPoint-இலிருந்து PDF</string>
+    <string name="tools_desc_ocr">ஸ்கேன் உரையைத் தேடக்கூடியதாக்கவும்</string>
+    <string name="tools_desc_fill">PDF படிவங்களை நிரப்பவும்</string>
+    <string name="tools_desc_pdf2img">பக்கங்களைப் படங்களாகச் சேமிக்கவும்</string>
+    <string name="tools_desc_pdf2text">Word அல்லது வெற்று உரை பெறவும்</string>
+    <string name="tools_desc_pdf2excel">அட்டவணைகளைத் தாளுக்கு எடுக்கவும்</string>
+    <string name="tools_desc_pdf2ppt">ஒவ்வொரு பக்கமும் ஒரு ஸ்லைடு</string>
+    <string name="tools_desc_protect">கடவுச்சொல்லால் பூட்டவும்</string>
+    <string name="tools_desc_unlock">கடவுச்சொல்லை நீக்கவும்</string>
+    <string name="tools_desc_crop_img">புகைப்பட ஓரங்களை வெட்டவும்</string>
+    <string name="tools_desc_compress_img">புகைப்பட அளவைக் குறைக்கவும்</string>
+    <string name="tools_desc_convert_img">JPG, PNG அல்லது WebP</string>
+    <string name="tools_desc_resize_img">புகைப்பட அளவுகளை மாற்றவும்</string>
+    <string name="tools_desc_viewer">படி, தேடு, பக்கத்துக்குச் செல்</string>
 </resources>

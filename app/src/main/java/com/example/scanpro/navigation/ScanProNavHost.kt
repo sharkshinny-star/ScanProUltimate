@@ -9,7 +9,6 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -222,42 +221,51 @@ fun ScanProNavHost(
     }
 }
 
-private const val PushDuration = 260
-private const val FadeThroughDuration = 210
+private const val PushDuration = 280
+private const val TabFadeDuration = 150
 private const val SheetEnterDuration = 220
 private const val SheetExitDuration = 200
 
 private fun NavBackStackEntry.isTopLevel() = destination.route in ScanProDestinations.topLevel
 private fun NavBackStackEntry.isSheetLike() = destination.route?.startsWith("camera") == true
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs() = initialState.isTopLevel() && targetState.isTopLevel()
+
+/*
+ * Tabs (F140). Switching to Home pops back to the start destination, so it used to take the "back" branch: Home slid in
+ * from the side like a closing screen while the other way round faded and scaled. Each tab draws its own bottom bar, so
+ * the bar shrank to 96 % and both bars were half transparent at the same moment, letting the background flash through.
+ * Now a tab switch is one layer fading over a screen that stays opaque underneath, whichever way the back stack moved:
+ * the incoming tab fades in on top (navigate), or the outgoing tab fades off the incoming one (pop to Home). The bar's
+ * pixels are the same in both, so only the selected tab's highlight changes.
+ *
+ * Pushed screens slide without fading (Android's parallax): fading both layers at once dimmed the screen mid-way, and
+ * every alpha layer costs an offscreen buffer per frame.
+ */
 
 /** The transition for the screen coming in. */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Boolean): EnterTransition = when {
-    // Returning to a tab or moving between tabs: fade through.
-    !pop && targetState.isTopLevel() && initialState.isTopLevel() ->
-        fadeIn(tween(FadeThroughDuration, delayMillis = 60)) + scaleIn(tween(FadeThroughDuration, delayMillis = 60), initialScale = 0.96f)
+    betweenTabs() -> if (pop) EnterTransition.None else fadeIn(tween(TabFadeDuration, easing = LinearOutSlowInEasing))
     // Sheet rising from bottom: opaque slide up over the stationary caller screen with maximum initial velocity on frame 1.
     !pop && targetState.isSheetLike() ->
         slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(SheetEnterDuration, easing = LinearOutSlowInEasing))
     // Sheet popping back to caller: caller is already rendered and stationary underneath.
     pop && initialState.isSheetLike() -> EnterTransition.None
-    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it / 4 }) +
-        fadeIn(tween(PushDuration / 2))
+    // The screen underneath comes back from a quarter of the way across, opaque.
+    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it / 4 })
     // The pushed screen draws its own background, so it slides in opaque.
     else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it })
 }
 
 /** The transition for the screen going out, mirroring [enterFor]. */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(pop: Boolean): ExitTransition = when {
-    !pop && targetState.isTopLevel() && initialState.isTopLevel() -> fadeOut(tween(90))
+    betweenTabs() -> if (pop) fadeOut(tween(TabFadeDuration, easing = FastOutLinearInEasing)) else ExitTransition.KeepUntilTransitionsFinished
     // Sheet rising on top: the caller screen stays stationary and fully visible underneath.
     !pop && targetState.isSheetLike() -> ExitTransition.None
     // Sheet popping: drops immediately off-screen accelerating downward with zero hesitation.
     pop && initialState.isSheetLike() ->
         slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(SheetExitDuration, easing = FastOutLinearInEasing))
-    pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it }) +
-        fadeOut(tween(PushDuration / 2))
-    else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it / 4 }) +
-        fadeOut(tween(PushDuration / 2))
+    pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it })
+    else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it / 4 })
 }
 
 /** Switches bottom-bar tabs the standard way: one copy of each tab, with its state saved and restored. */

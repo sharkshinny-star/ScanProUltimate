@@ -968,6 +968,19 @@ fun PdfToolsScreen(
     var category by rememberSaveable { mutableStateOf(ALL_CATEGORIES) }
     val toolsMemory = rememberToolsMemory()
     var showAllResults by rememberSaveable { mutableStateOf(false) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // F140: Home's "See all" for opened PDFs or tool results opens this tab at that list. The request waits until the list
+    // it points at has loaded, then is taken once.
+    val focus by ToolsFocusRequest.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(focus, toolResults.isNotEmpty(), recentPdfs.isNotEmpty()) {
+        val target = focus ?: return@LaunchedEffect
+        val ready = if (target == ToolsFocus.RESULTS) toolResults.isNotEmpty() else recentPdfs.isNotEmpty()
+        if (!ready) return@LaunchedEffect
+        ToolsFocusRequest.pending.value = null
+        query = ""
+        if (target == ToolsFocus.RESULTS) showAllResults = true
+        listState.scrollToKey(target.key)
+    }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -985,7 +998,9 @@ fun PdfToolsScreen(
                 .padding(padding),
             contentAlignment = Alignment.TopCenter
         ) {
+            val toolColumns = if (com.example.scanpro.navigation.isWideWindow()) 4 else 2
             LazyColumn(
+                state = listState,
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
                 modifier = Modifier.fillMaxSize().widthIn(max = 1100.dp)
             ) {
@@ -994,7 +1009,7 @@ fun PdfToolsScreen(
                 if (query.isBlank()) {
                     item(key = "categories") { Box(Modifier.padding(top = 12.dp)) { ToolCategoryChips(category, onSelect = { category = it }) } }
                 }
-                toolsLanding(query, category, toolsMemory, onLaunch = onLaunchTool)
+                toolsLanding(query, category, toolsMemory, perRow = toolColumns, onLaunch = onLaunchTool)
                 // Everything the tools made, kept until deleted (iLovePDF's "Processed files"); hidden while searching tools.
                 if (toolResults.isNotEmpty() && query.isBlank()) {
                     item(key = "results-header") {

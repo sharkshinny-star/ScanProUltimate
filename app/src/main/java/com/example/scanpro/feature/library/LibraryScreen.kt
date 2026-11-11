@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -1038,8 +1040,14 @@ private fun HomeDashboard(
     // Not remember(selected): the list is one SnapshotStateList instance, so that key never changes and the
     // set stayed empty, leaving selected cards unhighlighted. Reading it here re-runs this on every change.
     val selectedSet = selected.toSet()
-    val columns = if (wide) 4 else 2
-    val chunkedRecent = remember(recent, columns) { recent.chunked(columns) }
+    val recentKinds = buildList {
+        if (recent.isNotEmpty()) add(com.example.scanpro.feature.tools.HomeRecentKind.SCANS)
+        if (recentPdfs.isNotEmpty()) add(com.example.scanpro.feature.tools.HomeRecentKind.OPENED)
+        if (toolResults.isNotEmpty()) add(com.example.scanpro.feature.tools.HomeRecentKind.RESULTS)
+    }
+    // Scans first; a chip the user picked is kept while that kind still has something.
+    var pickedRecentKind by rememberSaveable { mutableStateOf<com.example.scanpro.feature.tools.HomeRecentKind?>(null) }
+    val recentKind = pickedRecentKind?.takeIf { it in recentKinds } ?: recentKinds.firstOrNull()
 
     LazyColumn(
         state = listState,
@@ -1074,50 +1082,85 @@ private fun HomeDashboard(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
-        // PDFs opened in ScanPro and files the tools made, as iLovePDF's home shows them; scans stay in the grid below.
-        if (recentPdfs.isNotEmpty() || toolResults.isNotEmpty()) {
-            item(key = "recent_files", contentType = "recent_files") {
-                val context = LocalContext.current
-                com.example.scanpro.feature.tools.RecentFilesStrip(
-                    recentPdfs = recentPdfs,
-                    toolResults = toolResults,
-                    onOpenPdf = onOpenPdfViewer,
-                    onOpenResult = { result ->
-                        val file = result.file
-                        if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(android.net.Uri.fromFile(file), file.name)
-                        else com.example.scanpro.core.ui.openFile(
-                            context, file.absolutePath, com.example.scanpro.feature.tools.mimeFor(file), file.name
-                        )
-                    }
-                )
-            }
-        }
-        if (recent.isNotEmpty()) {
+        // F140: one "Recent" section. Opened PDFs and tool results used to have their own "Recent files" strip above the
+        // scans grid, so Home showed two recent sections; now chips under the one heading pick what it shows, and every
+        // kind is the same sideways row of page-shaped cards.
+        if (recentKind != null) {
             item(key = "recent_header", contentType = "recent_header") {
                 SectionHeader(
                     stringResource(R.string.lib_sort_recent),
                     modifier = Modifier.padding(horizontal = 20.dp),
-                    actionLabel = if (documentCount > recent.size) stringResource(R.string.lib_see_all) else null,
-                    onAction = onSeeAll
+                    actionLabel = stringResource(R.string.lib_see_all),
+                    onAction = when (recentKind) {
+                        com.example.scanpro.feature.tools.HomeRecentKind.SCANS -> onSeeAll
+                        com.example.scanpro.feature.tools.HomeRecentKind.OPENED -> {
+                            {
+                                com.example.scanpro.feature.tools.ToolsFocusRequest.pending.value = com.example.scanpro.feature.tools.ToolsFocus.RECENT_PDFS
+                                onOpenTools()
+                            }
+                        }
+                        com.example.scanpro.feature.tools.HomeRecentKind.RESULTS -> {
+                            {
+                                com.example.scanpro.feature.tools.ToolsFocusRequest.pending.value = com.example.scanpro.feature.tools.ToolsFocus.RESULTS
+                                onOpenTools()
+                            }
+                        }
+                    }
                 )
             }
-            // A grid of large thumbnails, like the leading scanner apps' home screens: two columns on phones.
-            items(chunkedRecent, key = { row -> row.first().id }, contentType = { "recent_row" }) { row ->
-                Row(
-                    Modifier.padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    row.forEach { doc ->
-                        DocumentRecentCard(
-                            document = doc,
+            if (recentKinds.size > 1) {
+                item(key = "recent_kinds", contentType = "recent_kinds") {
+                    com.example.scanpro.feature.tools.HomeRecentKindChips(
+                        kinds = recentKinds,
+                        selected = recentKind,
+                        onSelect = { pickedRecentKind = it },
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+            }
+            item(key = "recent_row", contentType = "recent_row") {
+                val context = LocalContext.current
+                // One clock per visit to Home, so the captions don't change under the reader's eye.
+                val now = remember { System.currentTimeMillis() }
+                val items = if (recentKind == com.example.scanpro.feature.tools.HomeRecentKind.SCANS) {
+                    recent.map { doc ->
+                        com.example.scanpro.feature.tools.HomeRecentItem(
+                            key = "s:" + doc.id,
+                            title = doc.title,
+                            caption = com.example.scanpro.core.ui.pagesLabel(context, doc.pageCount) + " · " +
+                                com.example.scanpro.feature.tools.recentTime(doc.updatedAt, now),
                             selected = doc.id in selectedSet,
                             onClick = { if (selected.isNotEmpty()) onToggleSelection(doc.id) else onOpenDocument(doc.id) },
                             onLongClick = { onToggleSelection(doc.id) },
-                            modifier = Modifier.weight(1f)
+                            thumbnail = { m ->
+                                Box(m, contentAlignment = Alignment.Center) {
+                                    PaperThumbnail(
+                                        doc,
+                                        Modifier.fillMaxHeight(0.86f).aspectRatio(0.74f),
+                                        com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM,
+                                        corner = 6.dp
+                                    )
+                                }
+                            }
                         )
                     }
-                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                } else {
+                    com.example.scanpro.feature.tools.fileRecentItems(
+                        kind = recentKind,
+                        recentPdfs = recentPdfs,
+                        toolResults = toolResults,
+                        onOpenPdf = onOpenPdfViewer,
+                        onOpenResult = { result ->
+                            val file = result.file
+                            if (file.extension.equals("pdf", ignoreCase = true)) onOpenPdfViewer(android.net.Uri.fromFile(file), file.name)
+                            else com.example.scanpro.core.ui.openFile(
+                                context, file.absolutePath, com.example.scanpro.feature.tools.mimeFor(file), file.name
+                            )
+                        },
+                        now = now
+                    )
                 }
+                com.example.scanpro.feature.tools.HomeRecentRow(items)
             }
         }
         if (showTips) {

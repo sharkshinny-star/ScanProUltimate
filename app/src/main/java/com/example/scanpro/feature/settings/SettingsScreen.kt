@@ -1,6 +1,10 @@
 package com.example.scanpro.feature.settings
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.animation.togetherWith
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.animation.animateColorAsState
@@ -287,8 +291,6 @@ fun SettingsScreen(
     var backupIntroOpen by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     var pendingJump by remember { mutableStateOf<String?>(null) }
-    val scrollState = rememberScrollState()
-    val locator = remember { SettingsLocator(scrollState) }
     var backupToRestore by rememberSaveable { mutableStateOf<Uri?>(null) }
     val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let {
@@ -306,12 +308,6 @@ fun SettingsScreen(
         )
     }
     val nothingToBackUp = stringResource(R.string.settings_backup_nothing)
-    androidx.compose.runtime.LaunchedEffect(pendingJump, query) {
-        val target = pendingJump ?: return@LaunchedEffect
-        if (query.isNotBlank()) return@LaunchedEffect
-        locator.jumpTo(target)
-        pendingJump = null
-    }
     backupFolder?.let { folder ->
         PasswordInputDialog(
             title = stringResource(R.string.settings_backup_all),
@@ -364,15 +360,28 @@ fun SettingsScreen(
         )
     }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    androidx.compose.runtime.CompositionLocalProvider(LocalSettingsLocator provides locator) {
     val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    // F140: one long scroll of about 35 rows, each with a coloured tile and a two-line hint, was cluttered and slow to open
+    // (70 frames, up to 500 ms, on every switch to this tab). The main page is now the search, the library card and one
+    // row per section; each section opens on its own page. A search result opens its page and lights the row up there.
+    var page by rememberSaveable { mutableStateOf<SettingsPage?>(null) }
+    androidx.activity.compose.BackHandler(enabled = page != null) { page = null }
+    val pageBySection = SettingsPage.entries.associateBy { stringResource(it.title) }
+    val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.common_settings)) },
+                title = { Text(page?.let { stringResource(it.title) } ?: stringResource(R.string.common_settings)) },
+                navigationIcon = {
+                    if (page != null) {
+                        IconButton(onClick = { page = null }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                        }
+                    }
+                },
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -383,7 +392,34 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = bottomBar
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        androidx.compose.animation.AnimatedContent(
+            targetState = page,
+            transitionSpec = {
+                if (!motion) {
+                    androidx.compose.animation.EnterTransition.None togetherWith androidx.compose.animation.ExitTransition.None
+                } else {
+                    // Into a page from the end edge, back out towards it: a short shared-axis slide.
+                    val forward = targetState != null
+                    val spec = androidx.compose.animation.core.tween<androidx.compose.ui.unit.IntOffset>(260, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                    (androidx.compose.animation.slideInHorizontally(spec) { w -> if (forward) w / 6 else -w / 6 } +
+                        androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(180, delayMillis = 40))) togetherWith
+                        (androidx.compose.animation.slideOutHorizontally(spec) { w -> if (forward) -w / 6 else w / 6 } +
+                            androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(100)))
+                }
+            },
+            modifier = Modifier.fillMaxSize().padding(padding),
+            label = "settingsPage"
+        ) { target ->
+            val scrollState = rememberScrollState()
+            val locator = remember(scrollState) { SettingsLocator(scrollState) }
+            androidx.compose.runtime.LaunchedEffect(pendingJump, query, target) {
+                val title = pendingJump ?: return@LaunchedEffect
+                if (query.isNotBlank() || target == null) return@LaunchedEffect
+                locator.jumpTo(title)
+                pendingJump = null
+            }
+            androidx.compose.runtime.CompositionLocalProvider(LocalSettingsLocator provides locator, LocalSettingsPage provides target) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -392,18 +428,25 @@ fun SettingsScreen(
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp)
                     .padding(top = 4.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(22.dp)
+                verticalArrangement = Arrangement.spacedBy(if (target == null) 18.dp else 22.dp)
             ) {
-                SettingsSearchField(query, onQueryChange = { query = it })
-                if (query.isNotBlank()) {
-                    SettingsSearchResults(query, rememberSettingHits(query)) { hit ->
-                        pendingJump = hit.title
-                        query = ""
+                if (target == null) {
+                    SettingsSearchField(query, onQueryChange = { query = it })
+                    if (query.isNotBlank()) {
+                        SettingsSearchResults(query, rememberSettingHits(query)) { hit ->
+                            query = ""
+                            pageBySection[hit.section]?.let { found ->
+                                pendingJump = hit.title
+                                page = found
+                            }
+                        }
+                    } else {
+                        StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace)
+                        SettingsPagesCard(onOpen = { page = it })
+                        AboutFooter()
                     }
                 } else {
-                StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace)
-
-                SettingsSection(stringResource(R.string.settings_section_backup)) {
+                SettingsSection(SettingsPage.BACKUP) {
                     BackupStatus(lastBackupAt, hasDocuments = documentCount > 0)
                     SettingsRow(
                         icon = Icons.Rounded.Backup,
@@ -438,7 +481,7 @@ fun SettingsScreen(
                     )
                 }
 
-                SettingsSection(stringResource(R.string.settings_section_appearance)) {
+                SettingsSection(SettingsPage.APPEARANCE) {
                     SettingsRow(
                         icon = Icons.Rounded.Palette,
                         tone = TileTone.Violet,
@@ -505,7 +548,7 @@ fun SettingsScreen(
                     )
                 }
 
-                SettingsSection(stringResource(R.string.settings_section_scanning)) {
+                SettingsSection(SettingsPage.SCANNING) {
                     // Camera start mode: every mode in the camera's strip, QR code last.
                     val modeChoices = com.example.scanpro.data.ScanMode.entries.map { it.name to stringResource(it.labelRes) } +
                         ("QR" to stringResource(R.string.scan_qr_code))
@@ -638,7 +681,7 @@ fun SettingsScreen(
                     )
                 }
 
-                SettingsSection(stringResource(R.string.settings_section_recycle_bin)) {
+                SettingsSection(SettingsPage.RECYCLE_BIN) {
                     var retentionMenuOpen by remember { mutableStateOf(false) }
                     SettingsRow(
                         icon = Icons.Rounded.Delete,
@@ -662,7 +705,7 @@ fun SettingsScreen(
                     )
                 }
 
-                SettingsSection(stringResource(R.string.settings_section_privacy)) {
+                SettingsSection(SettingsPage.PRIVACY) {
                     SettingsRow(
                         icon = Icons.Rounded.Fingerprint,
                         tone = TileTone.Indigo,
@@ -704,7 +747,7 @@ fun SettingsScreen(
 
                 NotificationsSection(notifications)
 
-                SettingsSection(stringResource(R.string.settings_section_support)) {
+                SettingsSection(SettingsPage.SUPPORT) {
                     SettingsRow(
                         icon = Icons.Rounded.AutoAwesome,
                         tone = TileTone.Amber,
@@ -759,11 +802,11 @@ fun SettingsScreen(
                     )
                 }
 
-                AboutFooter()
                 }
             }
+            }
+            }
         }
-    }
     }
 }
 
@@ -868,18 +911,65 @@ private fun Stat(modifier: Modifier, value: String, label: String) {
     }
 }
 
-/** A titled group of rows on one tonal card. */
+/**
+ * Settings pages (F140). The main page lists them, each with a one-line summary made of the names of the settings it holds
+ * (so the summary is translated already); each page holds what used to be one section of the long list.
+ */
+internal enum class SettingsPage(@StringRes val title: Int, val icon: ImageVector, val tone: TileTone, val summary: List<Int>) {
+    SCANNING(R.string.settings_section_scanning, Icons.Rounded.CameraAlt, TileTone.Indigo,
+        listOf(R.string.settings_default_mode_title, R.string.settings_pdf_quality_title, R.string.settings_ocr_language_title)),
+    APPEARANCE(R.string.settings_section_appearance, Icons.Rounded.Palette, TileTone.Violet,
+        listOf(R.string.settings_theme_title, R.string.settings_palette_title, R.string.settings_app_language)),
+    BACKUP(R.string.settings_section_backup, Icons.Rounded.Backup, TileTone.Teal,
+        listOf(R.string.settings_backup_all, R.string.settings_restore_backup)),
+    PRIVACY(R.string.settings_section_privacy, Icons.Rounded.Fingerprint, TileTone.Rose,
+        listOf(R.string.settings_app_lock_title, R.string.settings_privacy_title)),
+    NOTIFICATIONS(R.string.settings_section_notifications, Icons.Rounded.Notifications, TileTone.Amber,
+        listOf(R.string.settings_notify_finished_title, R.string.settings_notify_backup_title)),
+    RECYCLE_BIN(R.string.settings_section_recycle_bin, Icons.Rounded.Delete, TileTone.Slate,
+        listOf(R.string.settings_trash_retention_title)),
+    SUPPORT(R.string.settings_section_support, Icons.Rounded.Feedback, TileTone.Sky,
+        listOf(R.string.settings_whats_new_title, R.string.settings_report_issue_title, R.string.settings_rate_title))
+}
+
+/** The page being drawn; null on the main page. */
+internal val LocalSettingsPage = staticCompositionLocalOf<SettingsPage?> { null }
+
+/** The main page's list of pages: one row each, title and a one-line summary. */
 @Composable
-private fun SettingsSection(title: String, content: @Composable () -> Unit) {
-    Column {
-        Eyebrow(title, Modifier.padding(start = 6.dp, bottom = 10.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column { content() }
+private fun SettingsPagesCard(onOpen: (SettingsPage) -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column {
+            SettingsPage.entries.forEachIndexed { index, page ->
+                if (index > 0) InsetDivider()
+                SettingsRow(
+                    icon = page.icon,
+                    tone = page.tone,
+                    title = stringResource(page.title),
+                    subtitle = page.summary.map { stringResource(it) }.joinToString(" · "),
+                    subtitleMaxLines = 1,
+                    trailing = { Chevron() },
+                    onClick = { onOpen(page) }
+                )
+            }
         }
+    }
+}
+
+/** One page's rows on one tonal card; drawn only on its own page (the page title is in the top bar). */
+@Composable
+private fun SettingsSection(page: SettingsPage, content: @Composable () -> Unit) {
+    if (LocalSettingsPage.current != page) return
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column { content() }
     }
 }
 
@@ -891,6 +981,7 @@ private fun SettingsRow(
     subtitle: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    subtitleMaxLines: Int = Int.MAX_VALUE,
     onClick: (() -> Unit)? = null
 ) {
     val locator = LocalSettingsLocator.current
@@ -914,7 +1005,7 @@ private fun SettingsRow(
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             if (subtitle != null) {
                 Spacer(Modifier.height(2.dp))
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = subtitleMaxLines, overflow = TextOverflow.Ellipsis)
             }
         }
         if (trailing != null) {
@@ -985,7 +1076,7 @@ private fun NotificationsSection(state: NotificationSettings) {
         change(on)
         if (on && !state.canPost) requestPermission()
     }
-    SettingsSection(stringResource(R.string.settings_section_notifications)) {
+    SettingsSection(SettingsPage.NOTIFICATIONS) {
         if (!state.canPost) {
             SettingsRow(
                 icon = Icons.Rounded.NotificationsOff,

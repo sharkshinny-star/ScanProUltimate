@@ -2,6 +2,16 @@ package com.example.scanpro.feature.tools
 
 import android.content.Context
 import androidx.compose.animation.animateContentSize
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.ripple
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -226,20 +236,91 @@ internal fun ToolCategoryChips(selected: String, onSelect: (String) -> Unit) {
 
 internal const val ALL_CATEGORIES = "all"
 
-@Composable
-private fun LandingHeader(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(top = 14.dp, bottom = 6.dp, start = 4.dp)
-    )
+/** A list on the Tools tab that Home's "See all" can open it at (F140). */
+enum class ToolsFocus(internal val key: String) { RESULTS("results-header"), RECENT_PDFS("recent-header") }
+
+/** One-shot: set by Home just before switching to the Tools tab, taken by the Tools list once it can show it. */
+object ToolsFocusRequest {
+    val pending = kotlinx.coroutines.flow.MutableStateFlow<ToolsFocus?>(null)
 }
 
-/** An icon and a name on one line: compact, scannable, and the same height whether the name wraps or not. */
+/**
+ * Scrolls so the row with [key] is at the top. The list lays its rows out lazily, so the key's position is only known once
+ * its row has been laid out: start at the end (where Your results and Recent PDFs are) and step back until it shows.
+ */
+internal suspend fun androidx.compose.foundation.lazy.LazyListState.scrollToKey(key: Any) {
+    androidx.compose.runtime.withFrameNanos { }
+    scrollToItem((layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
+    repeat(40) {
+        androidx.compose.runtime.withFrameNanos { }
+        layoutInfo.visibleItemsInfo.firstOrNull { it.key == key }?.let { found ->
+            scrollToItem(found.index)
+            return
+        }
+        val first = firstVisibleItemIndex
+        if (first == 0) return
+        scrollToItem((first - 4).coerceAtLeast(0))
+    }
+}
+
+/** A heading on the Tools page, with how many tools it holds (F140). */
+@Composable
+private fun SectionTitle(text: String, count: Int? = null, modifier: Modifier = Modifier) {
+    Row(modifier.padding(top = 18.dp, bottom = 10.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        if (count != null) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                count.toString(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
+                    .padding(horizontal = 8.dp, vertical = 1.dp)
+            )
+        }
+    }
+}
+
+/**
+ * One line under each tool's name (F140): what it does, in a few words. The tiles used to be an icon and a name only, so
+ * 25 tools read as a wall of names and the less obvious ones (OCR, Repair, Fill form) said nothing about themselves.
+ */
+internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
+    "merge" to R.string.tools_desc_merge,
+    "split" to R.string.tools_desc_split,
+    "organize" to R.string.tools_desc_organize,
+    "rotate" to R.string.tools_desc_rotate,
+    "extract" to R.string.tools_desc_extract,
+    "compress" to R.string.tools_desc_compress,
+    "repair" to R.string.tools_desc_repair,
+    "page_numbers" to R.string.tools_desc_page_numbers,
+    "watermark" to R.string.tools_desc_watermark,
+    "sign" to R.string.tools_desc_sign,
+    "img2pdf" to R.string.tools_desc_img2pdf,
+    "office" to R.string.tools_desc_office,
+    "ocr" to R.string.tools_desc_ocr,
+    "fill" to R.string.tools_desc_fill,
+    "pdf2img" to R.string.tools_desc_pdf2img,
+    "pdf2text" to R.string.tools_desc_pdf2text,
+    "pdf2excel" to R.string.tools_desc_pdf2excel,
+    "pdf2ppt" to R.string.tools_desc_pdf2ppt,
+    "protect" to R.string.tools_desc_protect,
+    "unlock" to R.string.tools_desc_unlock,
+    "crop_img" to R.string.tools_desc_crop_img,
+    "compress_img" to R.string.tools_desc_compress_img,
+    "convert_img" to R.string.tools_desc_convert_img,
+    "resize_img" to R.string.tools_desc_resize_img,
+    "viewer" to R.string.tools_desc_viewer
+)
+
+/**
+ * A tool as a card (F140): its icon, its name and one line on what it does. Pressing it shrinks it a touch, so a tap
+ * feels answered at once; a long press pins or unpins it.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ToolRowTile(
+private fun ToolCard(
     tool: PdfToolCard,
     pinned: Boolean,
     onClick: () -> Unit,
@@ -247,14 +328,20 @@ private fun ToolRowTile(
     modifier: Modifier = Modifier
 ) {
     val name = stringResource(tool.title)
+    val description = TOOL_DESCRIPTIONS[tool.id]?.let { stringResource(it) }
     val pinLabel = stringResource(if (pinned) R.string.tools_unpin_action else R.string.tools_pin_action)
     val haptic = LocalHapticFeedback.current
-    Row(
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, spring(stiffness = Spring.StiffnessMediumLow), label = "toolPress")
+    Column(
         modifier
-            .heightIn(min = 52.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .combinedClickable(
+                interactionSource = interaction,
+                indication = ripple(),
                 role = Role.Button,
                 onClickLabel = name,
                 onClick = onClick,
@@ -262,51 +349,66 @@ private fun ToolRowTile(
                 onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onTogglePin() }
             )
             .semantics {
-                contentDescription = name
+                // Read once, name then what it does (the texts below are covered by this).
+                contentDescription = if (description != null) "$name. $description" else name
                 customActions = listOf(CustomAccessibilityAction(pinLabel) { onTogglePin(); true })
             }
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(start = 14.dp, end = 12.dp, top = 14.dp, bottom = 14.dp)
     ) {
-        IconTile(tool.icon, tool.tone, size = 32.dp, corner = 10.dp, iconSize = 18.dp)
-        Spacer(Modifier.width(10.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            IconTile(tool.icon, tool.tone, size = 42.dp, corner = 13.dp, iconSize = 22.dp)
+            Spacer(Modifier.weight(1f))
+            if (pinned) {
+                Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+            }
+        }
+        Spacer(Modifier.height(10.dp))
         Text(
             name,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
             maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
+            overflow = TextOverflow.Ellipsis
         )
-        if (pinned) {
-            Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+        if (description != null) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
 
+/** One row of cards, all as tall as the tallest, so a name that wraps doesn't leave its neighbour short. */
 @Composable
-private fun ToolGrid(
+private fun ToolCardRow(
     tools: List<PdfToolCard>,
+    perRow: Int,
     memory: ToolsMemory,
     onLaunch: (PdfToolCard) -> Unit
 ) {
-    val perRow = if (com.example.scanpro.navigation.isWideWindow()) 4 else 2
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        tools.chunked(perRow).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { tool ->
-                    ToolRowTile(
-                        tool = tool,
-                        pinned = memory.isPinned(tool.id),
-                        onClick = { memory.used(tool.id); onLaunch(tool) },
-                        onTogglePin = { memory.togglePin(tool.id) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                // A short last row keeps its cells the same width as the rows above.
-                repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
-            }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .padding(bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        tools.forEach { tool ->
+            ToolCard(
+                tool = tool,
+                pinned = memory.isPinned(tool.id),
+                onClick = { memory.used(tool.id); onLaunch(tool) },
+                onTogglePin = { memory.togglePin(tool.id) },
+                modifier = Modifier.weight(1f).fillMaxHeight()
+            )
         }
+        // A short last row keeps its cards the same width as the rows above.
+        repeat(perRow - tools.size) { Spacer(Modifier.weight(1f)) }
     }
 }
 
@@ -359,7 +461,13 @@ private fun SearchResultRow(hit: SearchHit, onClick: () -> Unit) {
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(hit.sectionTitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                TOOL_DESCRIPTIONS[hit.tool.id]?.let { stringResource(it) } ?: stringResource(hit.sectionTitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -372,6 +480,7 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
     query: String,
     category: String,
     memory: ToolsMemory,
+    perRow: Int = 2,
     onLaunch: (PdfToolCard) -> Unit
 ) {
     if (query.isNotBlank()) {
@@ -404,7 +513,7 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
     if (category == ALL_CATEGORIES && (pinnedTools.isNotEmpty() || recentTools.isNotEmpty())) {
         item(key = "quick-access") {
             Column(Modifier.animateContentSize()) {
-                LandingHeader(
+                SectionTitle(
                     stringResource(
                         when {
                             recentTools.isEmpty() -> R.string.tools_pinned
@@ -427,26 +536,32 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
         }
     }
 
+    // F140: a heading and then one list item per row of cards, so only the rows on screen are composed when the tab opens
+    // (the whole section used to be one item).
     TOOL_SECTIONS.filter { category == ALL_CATEGORIES || it.id == category }.forEach { section ->
-        item(key = "section-${section.id}") {
-            Column(Modifier.animateContentSize()) {
-                LandingHeader(stringResource(section.title))
-                ToolGrid(section.tools, memory, onLaunch)
+        item(key = "section-${section.id}", contentType = "tools-header") {
+            SectionTitle(stringResource(section.title), count = section.tools.size)
+        }
+        section.tools.chunked(perRow).forEachIndexed { index, row ->
+            item(key = "section-${section.id}-$index", contentType = "tools-row") {
+                ToolCardRow(row, perRow, memory, onLaunch)
             }
         }
     }
 
     if (category == ALL_CATEGORIES) {
-        item(key = "viewer") {
+        item(key = "viewer-header", contentType = "tools-header") {
+            SectionTitle(stringResource(R.string.tools_section_read))
+        }
+        item(key = "viewer", contentType = "tools-row") {
             Column {
-                LandingHeader(stringResource(R.string.tools_section_read))
-                ToolGrid(listOf(VIEWER_TOOL), memory, onLaunch)
+                ToolCardRow(listOf(VIEWER_TOOL), perRow, memory, onLaunch)
                 if (memory.pinned.isEmpty()) {
                     Text(
                         stringResource(R.string.tools_pin_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp, top = 12.dp)
+                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                     )
                 }
             }

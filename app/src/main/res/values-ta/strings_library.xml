@@ -7,6 +7,7 @@
     <string name="greeting_morning">காலை வணக்கம்</string>
     <string name="greeting_afternoon">மதிய வணக்கம்</string>
     <string name="greeting_evening">மாலை வணக்கம்</string>
+    <string name="greeting_night">இனிய இரவு</string>
     <string name="lib_title_files">என் ஃபைல்கள்</string>
     <string name="lib_cd_clear_selection">தேர்வை அழி</string>
     <string name="lib_cd_share_selected">தேர்ந்தெடுத்தவற்றைப் பகிர்</string>
@@ -261,4 +262,5 @@
     </plurals>
     <string name="home_recent_files">சமீபத்திய கோப்புகள்</string>
     <string name="home_recent_opened">திறந்தவை</string>
+    <string name="home_recent_scans">ஸ்கேன்கள்</string>
 </resources>

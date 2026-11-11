@@ -530,4 +530,30 @@
     <string name="tools_results_delete_title">Delete this file?</string>
     <string name="tools_results_delete_body">%1$s will be removed from ScanPro. Copies you saved or shared are not affected.</string>
     <string name="tools_result_kept_note">Kept in Tools › Your results until you delete it</string>
+    <!-- F140: one line under each tool on the Tools page -->
+    <string name="tools_desc_merge">Combine PDFs into one</string>
+    <string name="tools_desc_split">Separate pages into files</string>
+    <string name="tools_desc_organize">Reorder, add or delete pages</string>
+    <string name="tools_desc_rotate">Turn pages the right way up</string>
+    <string name="tools_desc_extract">Save chosen pages as a PDF</string>
+    <string name="tools_desc_compress">Make a PDF smaller</string>
+    <string name="tools_desc_repair">Recover a damaged PDF</string>
+    <string name="tools_desc_page_numbers">Number every page</string>
+    <string name="tools_desc_watermark">Stamp text or an image</string>
+    <string name="tools_desc_sign">Add your signature</string>
+    <string name="tools_desc_img2pdf">Turn photos into a PDF</string>
+    <string name="tools_desc_office">Word, Excel, PowerPoint to PDF</string>
+    <string name="tools_desc_ocr">Make scanned text searchable</string>
+    <string name="tools_desc_fill">Fill in PDF forms</string>
+    <string name="tools_desc_pdf2img">Save pages as images</string>
+    <string name="tools_desc_pdf2text">Get Word or plain text</string>
+    <string name="tools_desc_pdf2excel">Pull tables into a sheet</string>
+    <string name="tools_desc_pdf2ppt">One slide per page</string>
+    <string name="tools_desc_protect">Lock with a password</string>
+    <string name="tools_desc_unlock">Remove a password</string>
+    <string name="tools_desc_crop_img">Trim the edges of photos</string>
+    <string name="tools_desc_compress_img">Shrink photo file sizes</string>
+    <string name="tools_desc_convert_img">JPG, PNG or WebP</string>
+    <string name="tools_desc_resize_img">Change photo dimensions</string>
+    <string name="tools_desc_viewer">Read, search and jump to pages</string>
 </resources>

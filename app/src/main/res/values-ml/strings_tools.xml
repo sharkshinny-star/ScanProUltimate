@@ -495,4 +495,30 @@
     <string name="tools_results_delete_title">ഈ ഫയൽ ഇല്ലാതാക്കണോ?</string>
     <string name="tools_results_delete_body">%1$s ScanPro-യിൽ നിന്ന് നീക്കം ചെയ്യും. നിങ്ങൾ സേവ് ചെയ്തതോ പങ്കിട്ടതോ ആയ പകർപ്പുകളെ ഇത് ബാധിക്കില്ല.</string>
     <string name="tools_result_kept_note">നിങ്ങൾ ഇല്ലാതാക്കുന്നത് വരെ ടൂളുകൾ › നിങ്ങളുടെ ഫലങ്ങൾ എന്നതിൽ സൂക്ഷിക്കും</string>
+    <!-- F140: one line under each tool on the Tools page -->
+    <string name="tools_desc_merge">PDF-കൾ ഒന്നാക്കി ചേർക്കുക</string>
+    <string name="tools_desc_split">പേജുകൾ വേറെ ഫയലുകളാക്കുക</string>
+    <string name="tools_desc_organize">പേജുകൾ ക്രമീകരിക്കുക, ചേർക്കുക, നീക്കുക</string>
+    <string name="tools_desc_rotate">പേജുകൾ ശരിയായി തിരിക്കുക</string>
+    <string name="tools_desc_extract">തിരഞ്ഞെടുത്ത പേജുകൾ PDF ആയി സേവ് ചെയ്യുക</string>
+    <string name="tools_desc_compress">PDF വലുപ്പം കുറയ്ക്കുക</string>
+    <string name="tools_desc_repair">കേടായ PDF വീണ്ടെടുക്കുക</string>
+    <string name="tools_desc_page_numbers">ഓരോ പേജിനും നമ്പർ ഇടുക</string>
+    <string name="tools_desc_watermark">ടെക്സ്റ്റ് അല്ലെങ്കിൽ ചിത്രം മുദ്രണം ചെയ്യുക</string>
+    <string name="tools_desc_sign">നിങ്ങളുടെ ഒപ്പ് ചേർക്കുക</string>
+    <string name="tools_desc_img2pdf">ഫോട്ടോകൾ PDF ആക്കുക</string>
+    <string name="tools_desc_office">Word, Excel, PowerPoint-ൽ നിന്ന് PDF</string>
+    <string name="tools_desc_ocr">സ്കാൻ ടെക്സ്റ്റ് തിരയാവുന്നതാക്കുക</string>
+    <string name="tools_desc_fill">PDF ഫോമുകൾ പൂരിപ്പിക്കുക</string>
+    <string name="tools_desc_pdf2img">പേജുകൾ ചിത്രങ്ങളായി സേവ് ചെയ്യുക</string>
+    <string name="tools_desc_pdf2text">Word അല്ലെങ്കിൽ സാധാരണ ടെക്സ്റ്റ് നേടുക</string>
+    <string name="tools_desc_pdf2excel">പട്ടികകൾ ഷീറ്റിലേക്ക് എടുക്കുക</string>
+    <string name="tools_desc_pdf2ppt">ഓരോ പേജും ഒരു സ്ലൈഡ്</string>
+    <string name="tools_desc_protect">പാസ്‌വേഡ് ഉപയോഗിച്ച് ലോക്ക് ചെയ്യുക</string>
+    <string name="tools_desc_unlock">പാസ്‌വേഡ് നീക്കം ചെയ്യുക</string>
+    <string name="tools_desc_crop_img">ഫോട്ടോയുടെ അരികുകൾ മുറിക്കുക</string>
+    <string name="tools_desc_compress_img">ഫോട്ടോ ഫയൽ വലുപ്പം കുറയ്ക്കുക</string>
+    <string name="tools_desc_convert_img">JPG, PNG അല്ലെങ്കിൽ WebP</string>
+    <string name="tools_desc_resize_img">ഫോട്ടോ അളവുകൾ മാറ്റുക</string>
+    <string name="tools_desc_viewer">വായിക്കുക, തിരയുക, പേജിലേക്ക് പോകുക</string>
 </resources>

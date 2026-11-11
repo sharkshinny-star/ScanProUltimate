@@ -495,4 +495,30 @@
     <string name="tools_results_delete_title">यह फ़ाइल हटाएँ?</string>
     <string name="tools_results_delete_body">%1$s को ScanPro से हटा दिया जाएगा। आपने जो प्रतियाँ सहेजी या साझा की हैं, उन पर कोई असर नहीं होगा।</string>
     <string name="tools_result_kept_note">टूल्स › आपके परिणाम में तब तक रखा जाएगा जब तक आप इसे न हटाएँ</string>
+    <!-- F140: one line under each tool on the Tools page -->
+    <string name="tools_desc_merge">PDF को एक में जोड़ें</string>
+    <string name="tools_desc_split">पेजों को अलग फ़ाइलों में बाँटें</string>
+    <string name="tools_desc_organize">पेज का क्रम बदलें, जोड़ें या हटाएँ</string>
+    <string name="tools_desc_rotate">पेज सही दिशा में घुमाएँ</string>
+    <string name="tools_desc_extract">चुने हुए पेज PDF में सहेजें</string>
+    <string name="tools_desc_compress">PDF का आकार छोटा करें</string>
+    <string name="tools_desc_repair">खराब PDF ठीक करें</string>
+    <string name="tools_desc_page_numbers">हर पेज पर नंबर डालें</string>
+    <string name="tools_desc_watermark">टेक्स्ट या इमेज की मुहर लगाएँ</string>
+    <string name="tools_desc_sign">अपना हस्ताक्षर जोड़ें</string>
+    <string name="tools_desc_img2pdf">फ़ोटो से PDF बनाएँ</string>
+    <string name="tools_desc_office">Word, Excel, PowerPoint से PDF</string>
+    <string name="tools_desc_ocr">स्कैन किया टेक्स्ट खोजने योग्य बनाएँ</string>
+    <string name="tools_desc_fill">PDF फ़ॉर्म भरें</string>
+    <string name="tools_desc_pdf2img">पेज इमेज के रूप में सहेजें</string>
+    <string name="tools_desc_pdf2text">Word या सादा टेक्स्ट पाएँ</string>
+    <string name="tools_desc_pdf2excel">टेबल को शीट में निकालें</string>
+    <string name="tools_desc_pdf2ppt">हर पेज एक स्लाइड</string>
+    <string name="tools_desc_protect">पासवर्ड से लॉक करें</string>
+    <string name="tools_desc_unlock">पासवर्ड हटाएँ</string>
+    <string name="tools_desc_crop_img">फ़ोटो के किनारे काटें</string>
+    <string name="tools_desc_compress_img">फ़ोटो का आकार घटाएँ</string>
+    <string name="tools_desc_convert_img">JPG, PNG या WebP</string>
+    <string name="tools_desc_resize_img">फ़ोटो का माप बदलें</string>
+    <string name="tools_desc_viewer">पढ़ें, खोजें, पेज पर जाएँ</string>
 </resources>

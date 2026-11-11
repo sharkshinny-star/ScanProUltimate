@@ -495,4 +495,30 @@
     <string name="tools_results_delete_title">ಈ ಫೈಲ್ ಅಳಿಸಬೇಕೇ?</string>
     <string name="tools_results_delete_body">%1$s ಅನ್ನು ScanPro ನಿಂದ ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ. ನೀವು ಉಳಿಸಿದ ಅಥವಾ ಹಂಚಿಕೊಂಡ ಪ್ರತಿಗಳಿಗೆ ಏನೂ ಆಗುವುದಿಲ್ಲ.</string>
     <string name="tools_result_kept_note">ನೀವು ಅಳಿಸುವವರೆಗೆ ಪರಿಕರಗಳು › ನಿಮ್ಮ ಫಲಿತಾಂಶಗಳಲ್ಲಿ ಇರುತ್ತದೆ</string>
+    <!-- F140: one line under each tool on the Tools page -->
+    <string name="tools_desc_merge">PDFಗಳನ್ನು ಒಂದಾಗಿ ಸೇರಿಸಿ</string>
+    <string name="tools_desc_split">ಪುಟಗಳನ್ನು ಬೇರೆ ಫೈಲ್‌ಗಳಾಗಿ ವಿಭಜಿಸಿ</string>
+    <string name="tools_desc_organize">ಪುಟಗಳ ಕ್ರಮ ಬದಲಿಸಿ, ಸೇರಿಸಿ, ಅಳಿಸಿ</string>
+    <string name="tools_desc_rotate">ಪುಟಗಳನ್ನು ಸರಿಯಾಗಿ ತಿರುಗಿಸಿ</string>
+    <string name="tools_desc_extract">ಆಯ್ದ ಪುಟಗಳನ್ನು PDF ಆಗಿ ಉಳಿಸಿ</string>
+    <string name="tools_desc_compress">PDF ಗಾತ್ರ ಕಡಿಮೆ ಮಾಡಿ</string>
+    <string name="tools_desc_repair">ಹಾಳಾದ PDF ಸರಿಪಡಿಸಿ</string>
+    <string name="tools_desc_page_numbers">ಪ್ರತಿ ಪುಟಕ್ಕೆ ಸಂಖ್ಯೆ ಹಾಕಿ</string>
+    <string name="tools_desc_watermark">ಪಠ್ಯ ಅಥವಾ ಚಿತ್ರದ ಮುದ್ರೆ ಹಾಕಿ</string>
+    <string name="tools_desc_sign">ನಿಮ್ಮ ಸಹಿ ಸೇರಿಸಿ</string>
+    <string name="tools_desc_img2pdf">ಫೋಟೋಗಳನ್ನು PDF ಆಗಿ ಮಾಡಿ</string>
+    <string name="tools_desc_office">Word, Excel, PowerPoint ನಿಂದ PDF</string>
+    <string name="tools_desc_ocr">ಸ್ಕ್ಯಾನ್ ಪಠ್ಯವನ್ನು ಹುಡುಕುವಂತೆ ಮಾಡಿ</string>
+    <string name="tools_desc_fill">PDF ಫಾರ್ಮ್‌ಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ</string>
+    <string name="tools_desc_pdf2img">ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಉಳಿಸಿ</string>
+    <string name="tools_desc_pdf2text">Word ಅಥವಾ ಸರಳ ಪಠ್ಯ ಪಡೆಯಿರಿ</string>
+    <string name="tools_desc_pdf2excel">ಕೋಷ್ಟಕಗಳನ್ನು ಶೀಟ್‌ಗೆ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_desc_pdf2ppt">ಪ್ರತಿ ಪುಟ ಒಂದು ಸ್ಲೈಡ್</string>
+    <string name="tools_desc_protect">ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಲಾಕ್ ಮಾಡಿ</string>
+    <string name="tools_desc_unlock">ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆದುಹಾಕಿ</string>
+    <string name="tools_desc_crop_img">ಫೋಟೋ ಅಂಚುಗಳನ್ನು ಕತ್ತರಿಸಿ</string>
+    <string name="tools_desc_compress_img">ಫೋಟೋ ಫೈಲ್ ಗಾತ್ರ ಕುಗ್ಗಿಸಿ</string>
+    <string name="tools_desc_convert_img">JPG, PNG ಅಥವಾ WebP</string>
+    <string name="tools_desc_resize_img">ಫೋಟೋ ಅಳತೆ ಬದಲಿಸಿ</string>
+    <string name="tools_desc_viewer">ಓದಿ, ಹುಡುಕಿ, ಪುಟಕ್ಕೆ ಹೋಗಿ</string>
 </resources>

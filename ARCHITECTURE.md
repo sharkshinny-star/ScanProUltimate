@@ -389,3 +389,10 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - `feature/tools`: the processing card is a large ring with the real percentage; `ToolResultDialog` plays a short success burst (skipped when animations are off); Compress PDF remembers its last level in the `tools_ui` preferences.
 - Decision: competitor studies (Adobe Scan, iLovePDF) informed patterns only; no proprietary assets or code. ScanPro stays offline: no cloud conversion, accounts or usage limits.
 
+## Home recents, tabs, Settings pages, launch (F140)
+
+- Home has one "Recent" section: `HomeRecentKind` chips (Scans, Opened, Your results) over `HomeRecentRow`, a `LazyRow` of `HomeRecentItem` cards (`feature/tools/RecentFilesStrip.kt`). Scans use `PaperThumbnail`, files `FileThumbnail(renderHeight = 175.dp)`.
+- "See all" for opened PDFs or results sets the one-shot `ToolsFocusRequest` and switches to Tools; the Tools list takes it once that list has loaded and scrolls with `LazyListState.scrollToKey` (`ToolsLanding.kt`).
+- Tab transitions (`ScanProNavHost.enterFor/exitFor`): between top-level tabs one layer fades over an opaque screen (pop: outgoing fades; navigate: incoming fades over `KeepUntilTransitionsFinished`); pushed screens slide without fades.
+- Settings: `SettingsPage` enum; the main page lists pages, `SettingsSection(page)` draws only on its page (`LocalSettingsPage`); each page has its own scroll and `SettingsLocator` inside an `AnimatedContent`.
+- Launch: `MainActivity.activityCreatedInProcess` makes the first activity of a process a launch even with saved state; the splash exit listener waits (max 1.5 s) for theme, palette and lock settings before handing over.

@@ -28,7 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
+import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -119,7 +119,13 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         // A recreation (rotation, language or theme change) has no launch screen to finish: its state is already
         // loaded, so it must not be held back for the launch animation either.
-        val freshLaunch = savedInstanceState == null
+        // F140: a saved state does not always mean a recreation. When Android ends the process in the background (OnePlus
+        // does this often) and the app is opened again from its icon, the activity comes back with its saved state in a new
+        // process: a real cold start, with the system launch screen showing, that used to skip the launch animation and the
+        // launch-screen hold. The first activity of a process is always a launch.
+        val firstInProcess = !activityCreatedInProcess
+        activityCreatedInProcess = true
+        val freshLaunch = savedInstanceState == null || firstInProcess
         // The launch animation plays for a plain start from the launcher. Shortcuts, shares, notification taps and
         // reopening from Recents go straight to the app, and a recreation never replays it. App lock also skips it
         // (decided once the setting has loaded): the lock screen asks for a fingerprint straight away.
@@ -163,9 +169,10 @@ class MainActivity : FragmentActivity() {
             val savedPalette by viewModel.accentPalette.collectAsStateWithLifecycle()
             val sessionUnlocked by viewModel.sessionUnlocked.collectAsStateWithLifecycle()
             val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
-            // True until this start's launch animation has played (or been ruled out); saved, so a rotation
-            // during it does not replay it.
-            var launchPending by rememberSaveable { mutableStateOf(introWanted) }
+            // True until this start's launch animation has played (or been ruled out). Not saveable: a restored false from
+            // the process before would rule out this cold start's animation. A recreation within the process never replays
+            // it, because introWanted is false then (freshLaunch above).
+            var launchPending by remember { mutableStateOf(introWanted) }
             // The app settles from a slight zoom while the launch animation opens onto it.
             val settle = remember { Animatable(1f) }
             val launchScope = rememberCoroutineScope()
@@ -294,19 +301,34 @@ class MainActivity : FragmentActivity() {
             keep
         }
         splash.setOnExitAnimationListener { provider ->
-            if (introWanted && viewModel.appLockEnabled.value == false) {
-                // When the launch animation plays, it starts from the exact same picture.
-                // Step aside immediately so LaunchIntro smoothly takes over without being obscured by the system overlay.
-                provider.remove()
-            } else {
-                provider.view.animate()
-                    .alpha(0f)
-                    .setDuration(220L)
-                    .setInterpolator(interpolator)
-                    .withEndAction { provider.remove() }
-                    .start()
-                // Safety timeout: ensure the splash view is always removed even if the animator is dropped or stalled.
-                provider.view.postDelayed({ runCatching { provider.remove() } }, 350L)
+            lifecycleScope.launch {
+                // F140: the hold above has a time cap, and a cold start of a debug build (or a busy phone) reaches it before
+                // the settings are read: 2 of 3 measured starts on the OnePlus. The launch screen then faded to an empty
+                // window, the app drew nothing until the settings came, and the launch animation appeared late or seemed
+                // not to play. Keep the launch screen's picture until the app can draw its first frame, within a second cap.
+                if (!viewModel.launchStateReady) {
+                    kotlinx.coroutines.withTimeoutOrNull(LAUNCH_HANDOFF_MAX_WAIT_MS) {
+                        kotlinx.coroutines.flow.combine(viewModel.themeMode, viewModel.accentPalette, viewModel.appLockEnabled) { theme, palette, lock ->
+                            theme != null && palette != null && lock != null
+                        }.first { it }
+                    }
+                    // Two frames, so Compose has drawn the launch animation (or the app) underneath before the picture goes.
+                    repeat(2) { kotlinx.coroutines.android.awaitFrame() }
+                }
+                if (introWanted && viewModel.appLockEnabled.value == false) {
+                    // When the launch animation plays, it starts from the exact same picture.
+                    // Step aside immediately so LaunchIntro smoothly takes over without being obscured by the system overlay.
+                    provider.remove()
+                } else {
+                    provider.view.animate()
+                        .alpha(0f)
+                        .setDuration(220L)
+                        .setInterpolator(interpolator)
+                        .withEndAction { provider.remove() }
+                        .start()
+                    // Safety timeout: ensure the splash view is always removed even if the animator is dropped or stalled.
+                    provider.view.postDelayed({ runCatching { provider.remove() } }, 350L)
+                }
             }
         }
     }
@@ -555,6 +577,10 @@ class MainActivity : FragmentActivity() {
     companion object {
         private const val LOCK_TIMEOUT_MS = 30_000L
         private const val LAUNCH_SCREEN_MAX_HOLD_MS = 600L
+        /** After the hold above: how much longer the launch screen's picture may wait for the settings (F140). */
+        private const val LAUNCH_HANDOFF_MAX_WAIT_MS = 1_500L
+        /** Set by the first activity created in this process; a later one is a recreation, not a launch (F140). */
+        @Volatile private var activityCreatedInProcess = false
         const val ACTION_SCAN_NOW = "com.example.scanpro.action.SCAN_NOW"
         /** Widget and tile (R33): the camera mode to open in (a ScanMode name), and the image picker straight away. */
         const val EXTRA_SCAN_MODE = "scanMode"
