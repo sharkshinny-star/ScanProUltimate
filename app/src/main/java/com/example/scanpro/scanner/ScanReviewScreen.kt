@@ -116,6 +116,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.semantics.liveRegion
@@ -410,12 +411,10 @@ fun ScanReviewScreen(
             IconButton(enabled = !blocked, onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.scan_review_back_to_camera))
             }
-            Text(
-                if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single),
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
-            )
+            // Seven controls share this bar, so a visible title only ever showed as "Adj". The strip below already marks
+            // the page; the title stays for screen readers as a heading.
+            val screenTitle = if (pages.size > 1) stringResource(R.string.scan_review_adjust_page, current + 1) else stringResource(R.string.scan_review_adjust_page_single)
+            Box(Modifier.weight(1f).semantics { heading(); contentDescription = screenTitle })
             IconButton(enabled = !blocked && canUndo, onClick = ::undo) {
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.scan_review_undo))
             }
@@ -814,7 +813,7 @@ fun ScanReviewScreen(
         // with the Save button: under the controls in portrait, pinned beside it in landscape.
         val nameRow: @Composable () -> Unit = {
             if (onNameChange != null || onFolderChange != null) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (onNameChange != null) {
                         SaveOptionCell(
                             label = stringResource(R.string.scan_review_name_label),

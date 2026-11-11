@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.scanpro.data.PageFilter
 
 /**
@@ -76,7 +77,8 @@ fun FilterStrip(
 
     LazyRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        // Tight enough that the fifth filter shows part-way on a phone: six filters, so the row must look scrollable.
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(PageFilter.entries, key = { it.name }, contentType = { "filter_item" }) { filter ->
             val isSelected = filter == selected
@@ -104,7 +106,7 @@ fun FilterStrip(
 
             Column(
                 Modifier
-                    .width(76.dp)
+                    .width(70.dp)
                     .graphicsLayer {
                         alpha = if (enabled) 1f else 0.45f
                         scaleX = cardScale
@@ -179,7 +181,9 @@ fun FilterStrip(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    // A longer name such as "Magic Colour" shrinks a little to fit instead of being cut off.
+                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = MaterialTheme.typography.labelSmall.fontSize)
                 )
             }
         }

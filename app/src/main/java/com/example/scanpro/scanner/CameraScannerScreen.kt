@@ -115,6 +115,8 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import kotlinx.coroutines.flow.update
@@ -306,7 +308,9 @@ fun CameraScannerScreen(
     // "Don't remind me again" is ticked for that mode.
     var introShownFor by rememberSaveable { mutableStateOf(listOf<String>()) }
     var introMode by rememberSaveable { mutableStateOf<String?>(null) }
-    LaunchedEffect(scanMode) {
+    LaunchedEffect(scanMode, permissionGranted) {
+        // Not over the camera-permission card: two prompts at once. It shows once the camera is usable.
+        if (!permissionGranted) return@LaunchedEffect
         val key = scanMode.introPrefKey()
         if (key != null && scanMode.name !in introShownFor && !prefs.getBoolean(key, false)) {
             introShownFor = introShownFor + scanMode.name
@@ -469,6 +473,8 @@ fun CameraScannerScreen(
     // bracket by hand, with no outline or guidance, so firing the shutter there would come as a surprise.
     val autoCaptureActive = autoCapture && !barcodeMode && !capturing && !reviewing &&
         (retaking || pages.size < pageLimit) && scanMode != ScanMode.ID_CARD
+    // The guidance string last shown, so the analyser builds a new one only when the guidance itself changes.
+    val guidanceShown = remember { IntArray(1) }
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
             onDetection = { result, isStable, progress ->
@@ -491,7 +497,10 @@ fun CameraScannerScreen(
                     else -> previous.towards(target, 0.45f)
                 }
                 // "Hold… capturing" is chosen where it is shown, which knows whether auto-capture is on.
-                liveGuidance = resources.getString(result.guidance.labelRes)
+                if (guidanceShown[0] != result.guidance.labelRes) {
+                    guidanceShown[0] = result.guidance.labelRes
+                    liveGuidance = resources.getString(result.guidance.labelRes)
+                }
             },
             onAutoCapture = { autoCaptureSignal++ },
             onUnavailable = { cameraError = resources.getString(R.string.scan_error_detector_unavailable) }
@@ -1156,25 +1165,21 @@ fun CameraScannerScreen(
 
         if (showGrid && !reviewing) ThirdsGrid()
         if (!reviewing && maxZoomRatio > 1.05f) {
-            Column(
-                Modifier.align(Alignment.CenterEnd).padding(end = 12.dp + panelClearance),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            // One small pill instead of a column of three buttons: the column sat over the middle of the page being
+            // framed. It shows the current zoom and a tap moves to the next stop (1x, 2x, 5x); pinching still works.
+            val stops = listOf(1f, 2f, 5f).filter { it <= maxZoomRatio + 0.01f || it == 1f }
+            val label = stops.firstOrNull { kotlin.math.abs(zoomRatio - it) < 0.01f }?.let { "${it.toInt()}x" }
+                ?: String.format(java.util.Locale.ROOT, "%.1fx", zoomRatio)
+            val description = stringResource(R.string.scan_zoom_level, label)
+            Surface(
+                onClick = { zoomRatio = stops.firstOrNull { it > zoomRatio + 0.01f } ?: stops.first() },
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.45f),
+                contentColor = Color.White,
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp + panelClearance).size(44.dp).semantics { contentDescription = description }
             ) {
-                listOf(1f, 2f, 5f).filter { it <= maxZoomRatio + 0.01f || it == 1f }.forEach { ratio ->
-                    val on = kotlin.math.abs(zoomRatio - ratio) < 0.01f
-                    val label = "${ratio.toInt()}x"
-                    val description = stringResource(R.string.scan_zoom_level, label)
-                    Surface(
-                        onClick = { zoomRatio = ratio },
-                        shape = CircleShape,
-                        color = if (on) Color.White else Color.Black.copy(alpha = 0.45f),
-                        contentColor = if (on) Color(0xFF111111) else Color.White,
-                        modifier = Modifier.size(48.dp).semantics { contentDescription = description; selected = on }
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                        }
-                    }
+                Box(contentAlignment = Alignment.Center) {
+                    Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
                 }
             }
         }
@@ -1182,8 +1187,8 @@ fun CameraScannerScreen(
             LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp + panelClearance))
         }
         if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
-            DocumentBoundaryOverlay(detection = detection, quad = shownQuad, stable = stable, accent = scanLine)
-            if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = shownQuad, accent = scanLine, rightFirst = bookLayout == 2)
+            DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable, accent = scanLine)
+            if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = { shownQuad }, accent = scanLine, rightFirst = bookLayout == 2)
         }
         if (scanMode == ScanMode.ID_CARD) {
             IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
@@ -1661,11 +1666,14 @@ fun CameraScannerScreen(
 
                 // Outer ring fills clockwise as the page settles and turns solid mint once it is steady; the
                 // inner disc is the button.
-                val ringFill by androidx.compose.animation.core.animateFloatAsState(
-                    targetValue = if (stable) 1f else steadiness,
-                    animationSpec = if (steadiness == 0f) tween(200) else spring(stiffness = 700f),
-                    label = "ring"
-                )
+                // Driven from a coroutine and read only while drawing: `steadiness` changes with every camera frame, and
+                // reading it here during composition recomposed the whole camera screen about 25 times a second.
+                val ringProgress = remember { androidx.compose.animation.core.Animatable(0f) }
+                LaunchedEffect(Unit) {
+                    snapshotFlow { (if (stable) 1f else steadiness) to (steadiness == 0f) }.collectLatest { (target, resetting) ->
+                        ringProgress.animateTo(target, if (resetting) tween(200) else spring(stiffness = 700f))
+                    }
+                }
                 // QR codes are read live, so there is no shutter in QR mode: just the viewfinder, like Lens.
                 if (barcodeMode) Spacer(Modifier.size(72.dp)) else {
                 val shutterScale by androidx.compose.animation.core.animateFloatAsState(if (capturing) 0.86f else 1f, spring(stiffness = 900f), label = "shutter")
@@ -1677,11 +1685,11 @@ fun CameraScannerScreen(
                             val strokeWidth = 4.dp.toPx()
                             val inset = strokeWidth / 2
                             drawCircle(Color.White.copy(alpha = 0.35f), radius = size.minDimension / 2 - inset, style = Stroke(strokeWidth))
-                            if (ringFill > 0f) {
+                            if (ringProgress.value > 0f) {
                                 drawArc(
                                     color = scanLine,
                                     startAngle = -90f,
-                                    sweepAngle = 360f * ringFill,
+                                    sweepAngle = 360f * ringProgress.value,
                                     useCenter = false,
                                     topLeft = Offset(inset, inset),
                                     size = Size(size.width - strokeWidth, size.height - strokeWidth),
@@ -2218,13 +2226,13 @@ private fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Un
 
 /** Book mode, two pages (R29): a dashed line down the middle of the live outline, where the spread will be split. */
 @Composable
-private fun SpineGuide(detection: DocumentDetection?, quad: CropQuad?, accent: Color, rightFirst: Boolean = false) {
+private fun SpineGuide(detection: DocumentDetection?, quad: () -> CropQuad?, accent: Color, rightFirst: Boolean = false) {
     // Big faint A and B on the two halves say which is saved first: A on the left, or on the right for "right first".
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val letterStyle = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.4f))
     Canvas(Modifier.fillMaxSize()) {
         val result = detection ?: return@Canvas
-        val outline = quad ?: return@Canvas
+        val outline = quad() ?: return@Canvas
         val frameWidth = result.frameWidth.toFloat().coerceAtLeast(1f)
         val frameHeight = result.frameHeight.toFloat().coerceAtLeast(1f)
         val scale = minOf(size.width / frameWidth, size.height / frameHeight)
@@ -2252,17 +2260,18 @@ private fun SpineGuide(detection: DocumentDetection?, quad: CropQuad?, accent: C
 
 /**
  * The page outline over the preview: a faint fill, an edge line and bracket corners. White while the page
- * is being tracked; mint, thicker and filled a touch more once it is steady. [quad] is the smoothed outline;
+ * is being tracked; mint, thicker and filled a touch more once it is steady. [quad] is the smoothed outline, read
+ * while drawing so a new one each camera frame redraws only this outline;
  * [detection] supplies the frame size the outline is expressed in.
  */
 @Composable
-private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: CropQuad?, stable: Boolean, accent: Color) {
+private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: () -> CropQuad?, stable: Boolean, accent: Color) {
     val lineColor by androidx.compose.animation.animateColorAsState(if (stable) accent else Color.White, tween(220), label = "outline")
     val fillAlpha by androidx.compose.animation.core.animateFloatAsState(if (stable) 0.16f else 0.07f, tween(220), label = "fill")
     val weight by androidx.compose.animation.core.animateFloatAsState(if (stable) 5f else 3f, tween(220), label = "weight")
     Canvas(Modifier.fillMaxSize()) {
         val result = detection ?: return@Canvas
-        val outline = quad ?: return@Canvas
+        val outline = quad() ?: return@Canvas
         val frameWidth = result.frameWidth.toFloat().coerceAtLeast(1f)
         val frameHeight = result.frameHeight.toFloat().coerceAtLeast(1f)
         val scale = minOf(size.width / frameWidth, size.height / frameHeight)
