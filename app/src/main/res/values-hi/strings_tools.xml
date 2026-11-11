@@ -479,4 +479,5 @@
         <item quantity="one">%1$d स्लाइड बनी, पेज की एक तस्वीर।</item>
         <item quantity="other">%1$d स्लाइड बनीं, हर पेज की एक तस्वीर।</item>
     </plurals>
+    <string name="tools_progress_percent">%1$d%%</string>
 </resources>

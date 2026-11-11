@@ -479,4 +479,5 @@
         <item quantity="one">%1$d ஸ்லைடு உருவானது, பக்கத்தின் படம்.</item>
         <item quantity="other">%1$d ஸ்லைடுகள் உருவாயின், ஒவ்வொரு பக்கத்திற்கும் ஒரு படம்.</item>
     </plurals>
+    <string name="tools_progress_percent">%1$d%%</string>
 </resources>

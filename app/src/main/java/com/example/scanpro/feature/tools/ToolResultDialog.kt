@@ -45,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -166,6 +167,7 @@ internal fun ResultDialog(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 Box(contentAlignment = Alignment.BottomEnd) {
+                    SuccessBurst(Modifier.matchParentSize())
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -303,5 +305,71 @@ private fun SizeColumn(label: String, size: String, highlight: Boolean) {
             fontWeight = if (highlight) FontWeight.Bold else FontWeight.SemiBold,
             color = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
         )
+    }
+}
+
+/** One speck of the success burst: its direction, how far it flies, size, shape and colour. */
+private class Speck(val angle: Float, val reach: Float, val sizeDp: Float, val shape: Int, val colour: Int, val spin: Float)
+
+/**
+ * A short burst of brand-coloured specks from the result, played once when a tool finishes (a celebration, the way
+ * iLovePDF marks a finished task, drawn in ScanPro's own colours). Under a second, behind nothing important, and not
+ * played at all when the phone's animations are turned off (Developer options or the accessibility setting).
+ */
+@Composable
+private fun SuccessBurst(modifier: Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val animationsOn = remember {
+        android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+    }
+    if (!animationsOn) return
+    val progress = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) {
+        progress.animateTo(1f, androidx.compose.animation.core.tween(950, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
+    }
+    val colours = listOf(
+        MaterialTheme.colorScheme.primary,
+        MaterialTheme.colorScheme.tertiary,
+        androidx.compose.ui.graphics.Color(0xFF2BD4A4),
+        androidx.compose.ui.graphics.Color(0xFFF59E0B),
+        MaterialTheme.colorScheme.secondary
+    )
+    val specks = remember {
+        val random = java.util.Random(20261111L)
+        List(24) { i ->
+            Speck(
+                angle = (i / 24f) * (2f * Math.PI.toFloat()) + random.nextFloat() * 0.35f,
+                reach = 0.55f + random.nextFloat() * 0.5f,
+                sizeDp = 4f + random.nextFloat() * 4f,
+                shape = i % 3,
+                colour = i % 5,
+                spin = random.nextFloat() * 360f
+            )
+        }
+    }
+    androidx.compose.foundation.Canvas(modifier) {
+        val t = progress.value
+        if (t >= 1f) return@Canvas
+        val distance = size.maxDimension * 0.9f
+        val fade = (1f - t) * (1f - t)
+        specks.forEach { speck ->
+            val travel = distance * speck.reach * t
+            val x = center.x + kotlin.math.cos(speck.angle) * travel
+            // A little gravity, so the specks fall away rather than freeze in a ring.
+            val y = center.y + kotlin.math.sin(speck.angle) * travel + distance * 0.25f * t * t
+            val px = speck.sizeDp * density
+            val colour = colours[speck.colour].copy(alpha = fade)
+            val at = androidx.compose.ui.geometry.Offset(x, y)
+            rotate(speck.spin + 300f * t, at) {
+                when (speck.shape) {
+                    0 -> drawCircle(colour, px / 2f, at)
+                    1 -> drawRect(colour, androidx.compose.ui.geometry.Offset(x - px / 2f, y - px / 4f), androidx.compose.ui.geometry.Size(px, px / 2f))
+                    else -> drawRoundRect(
+                        colour, androidx.compose.ui.geometry.Offset(x - px / 2f, y - px / 2f), androidx.compose.ui.geometry.Size(px, px),
+                        androidx.compose.ui.geometry.CornerRadius(px / 4f)
+                    )
+                }
+            }
+        }
     }
 }

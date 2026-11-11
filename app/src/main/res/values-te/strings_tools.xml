@@ -479,4 +479,5 @@
         <item quantity="one">%1$d స్లైడ్ తయారైంది, పేజీ చిత్రం.</item>
         <item quantity="other">%1$d స్లైడ్‌లు తయారయ్యాయి, ప్రతి పేజీకి ఒక చిత్రం.</item>
     </plurals>
+    <string name="tools_progress_percent">%1$d%%</string>
 </resources>

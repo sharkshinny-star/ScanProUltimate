@@ -962,6 +962,9 @@ fun PdfToolsScreen(
 /** Below this a PDF is too small for the compression presets to promise anything. */
 private const val SMALL_PDF_BYTES = 150_000L
 
+/** Where Compress PDF keeps the level chosen last time, in the Tools preferences. */
+private const val LAST_COMPRESS_PRESET = "last_compress_preset"
+
 @Composable
 private fun CompressPdfDialog(
     context: android.content.Context,
@@ -970,7 +973,13 @@ private fun CompressPdfDialog(
     onConfirm: (preset: CompressionPreset, customTargetBytes: Long?) -> Unit
 ) {
     var originalSize by remember { mutableLongStateOf(0L) }
-    var preset by rememberSaveable { mutableStateOf(CompressionPreset.BALANCED) }
+    // Starts on the level chosen last time (iLovePDF remembers it too): most people compress the same way every time.
+    val toolPrefs = remember(context) { context.getSharedPreferences("tools_ui", android.content.Context.MODE_PRIVATE) }
+    var preset by rememberSaveable {
+        mutableStateOf(
+            CompressionPreset.entries.firstOrNull { it.name == toolPrefs.getString(LAST_COMPRESS_PRESET, null) } ?: CompressionPreset.BALANCED
+        )
+    }
     var isCustomTarget by rememberSaveable { mutableStateOf(false) }
     var targetInput by rememberSaveable { mutableStateOf("") }
     var targetUnit by rememberSaveable { mutableStateOf("KB") }
@@ -1299,7 +1308,10 @@ private fun CompressPdfDialog(
                 customBytes != null && customBytes > 0 && (originalSize <= 0 || customBytes < originalSize)
             } else true
             Button(
-                onClick = { onConfirm(preset, if (isCustomTarget) customBytes else null) },
+                onClick = {
+                    if (!isCustomTarget) toolPrefs.edit().putString(LAST_COMPRESS_PRESET, preset.name).apply()
+                    onConfirm(preset, if (isCustomTarget) customBytes else null)
+                },
                 enabled = canConfirm
             ) {
                 Text(stringResource(R.string.tools_compress_pdf))
@@ -1572,11 +1584,38 @@ private fun ProcessingOverlay(
                     modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(44.dp),
-                        strokeWidth = 3.5.dp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // One large ring that fills with the real progress and says how far it is, rather than a small
+                    // spinner beside a thin bar; it spins while the tool cannot tell how long it will take.
+                    val fraction = if (total > 0) (current.toFloat() / total.toFloat()).coerceIn(0f, 1f) else null
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(108.dp)) {
+                        if (fraction != null) {
+                            val shown by androidx.compose.animation.core.animateFloatAsState(
+                                targetValue = fraction,
+                                animationSpec = androidx.compose.animation.core.tween(350),
+                                label = "toolProgress"
+                            )
+                            CircularProgressIndicator(
+                                progress = { shown },
+                                modifier = Modifier.fillMaxSize(),
+                                strokeWidth = 8.dp,
+                                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                            Text(
+                                text = stringResource(R.string.tools_progress_percent, (shown * 100).toInt()),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            CircularProgressIndicator(
+                                modifier = Modifier.fillMaxSize(),
+                                strokeWidth = 8.dp,
+                                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     Text(
                         text = title,
@@ -1597,28 +1636,13 @@ private fun ProcessingOverlay(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
                     if (total > 0) {
-                        LinearProgressIndicator(
-                            progress = { (current.toFloat() / total.toFloat()).coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = stringResource(R.string.tools_progress_count, current, total),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
                         )
                     }
 

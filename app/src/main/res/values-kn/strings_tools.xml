@@ -479,4 +479,5 @@
         <item quantity="one">%1$d ಸ್ಲೈಡ್ ಮಾಡಲಾಗಿದೆ, ಪುಟದ ಚಿತ್ರ.</item>
         <item quantity="other">%1$d ಸ್ಲೈಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ, ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಚಿತ್ರ.</item>
     </plurals>
+    <string name="tools_progress_percent">%1$d%%</string>
 </resources>

@@ -514,4 +514,5 @@
         <item quantity="one">Made %1$d slide, a picture of the page.</item>
         <item quantity="other">Made %1$d slides, one picture per page.</item>
     </plurals>
+    <string name="tools_progress_percent">%1$d%%</string>
 </resources>

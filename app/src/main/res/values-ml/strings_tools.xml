@@ -479,4 +479,5 @@
         <item quantity="one">%1$d സ്ലൈഡ് ഉണ്ടാക്കി, പേജിന്റെ ചിത്രം.</item>
         <item quantity="other">%1$d സ്ലൈഡുകൾ ഉണ്ടാക്കി, ഓരോ പേജിനും ഒരു ചിത്രം.</item>
     </plurals>
+    <string name="tools_progress_percent">%1$d%%</string>
 </resources>
