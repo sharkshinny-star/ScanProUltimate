@@ -26,7 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.LoadingShimmer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -145,10 +145,9 @@ fun FilterStrip(
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = accent
+                        LoadingShimmer(
+                            Modifier.matchParentSize(),
+                            highlight = if (onDark) Color.White.copy(alpha = 0.12f) else Color.Unspecified
                         )
                     }
 

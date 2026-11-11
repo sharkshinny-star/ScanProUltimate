@@ -93,7 +93,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.FileLoadingState
+import com.example.scanpro.core.designsystem.LoadingShimmer
+import com.example.scanpro.core.designsystem.ProcessingAnimation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -1695,39 +1698,21 @@ private fun ProcessingOverlay(
                     modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // One large ring that fills with the real progress and says how far it is, rather than a small
-                    // spinner beside a thin bar; it spins while the tool cannot tell how long it will take.
+                    // The processing animation: a ring that fills with the real progress (circling while the tool
+                    // cannot tell how long it will take) around a page the scan line keeps passing over.
                     val fraction = if (total > 0) (current.toFloat() / total.toFloat()).coerceIn(0f, 1f) else null
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(108.dp)) {
-                        if (fraction != null) {
-                            val shown by androidx.compose.animation.core.animateFloatAsState(
-                                targetValue = fraction,
-                                animationSpec = androidx.compose.animation.core.tween(180),
-                                label = "toolProgress"
-                            )
-                            CircularProgressIndicator(
-                                progress = { shown },
-                                modifier = Modifier.fillMaxSize(),
-                                strokeWidth = 8.dp,
-                                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                            )
-                            Text(
-                                // The real figure, so it always agrees with the "28 / 40" below; only the ring eases.
-                                text = stringResource(R.string.tools_progress_percent, (fraction * 100).toInt()),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        } else {
-                            CircularProgressIndicator(
-                                modifier = Modifier.fillMaxSize(),
-                                strokeWidth = 8.dp,
-                                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                            )
-                        }
+                    ProcessingAnimation(progress = fraction, size = 132.dp)
+                    if (fraction != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            // The real figure, so it always agrees with the "28 / 40" below; only the ring eases.
+                            text = stringResource(R.string.tools_progress_percent, (fraction * 100).toInt()),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(if (fraction != null) 8.dp else 18.dp))
 
                     Text(
                         text = title,
@@ -1926,14 +1911,7 @@ private fun SplitDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.tools_split_title)) },
             text = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp)
-                    Text(stringResource(R.string.tools_organizer_opening), style = MaterialTheme.typography.bodyMedium)
-                }
+                FileLoadingState(stringResource(R.string.tools_organizer_opening), Modifier.fillMaxWidth(), size = 72.dp)
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
@@ -2183,14 +2161,7 @@ private fun PdfPageOrganizerSheet(
                 onDismissRequest = onClose,
                 title = { Text(stringResource(titleRes)) },
                 text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp)
-                        Text(stringResource(R.string.tools_organizer_opening), style = MaterialTheme.typography.bodyMedium)
-                    }
+                    FileLoadingState(stringResource(R.string.tools_organizer_opening), Modifier.fillMaxWidth(), size = 72.dp)
                 },
                 confirmButton = {},
                 dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.common_cancel)) } }
@@ -2388,15 +2359,7 @@ private fun PdfPageOrganizerSheet(
         ) {
             when {
                 loadError != null -> Text(loadError!!, modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error)
-                isLoading -> Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(stringResource(R.string.tools_organizer_opening))
-                }
+                isLoading -> FileLoadingState(stringResource(R.string.tools_organizer_opening), Modifier.fillMaxSize())
                 else -> Column(Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
                     when {
                         extractsEverything -> OrganizerBanner(stringResource(R.string.tools_extract_all_selected), warning = true)
@@ -2543,7 +2506,13 @@ private fun OrganizerPageCard(
                         }
                 )
             } else {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                // A blank page that shimmers until its thumbnail is drawn.
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                ) { LoadingShimmer(Modifier.matchParentSize()) }
             }
             Surface(
                 shape = RoundedCornerShape(10.dp),
@@ -2664,7 +2633,7 @@ private fun PdfPagePreviewDialog(
                             contentScale = ContentScale.Fit
                         )
                     } else {
-                        CircularProgressIndicator(color = Color.White)
+                        FileLoadingAnimation(size = 96.dp, onDark = true)
                     }
                 }
             }

@@ -19,14 +19,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -104,6 +102,8 @@ fun PageThumbnail(
     // back to a tab shows its thumbnails instantly instead of blank placeholders.
     val requestKey = remember(path, version, maxDimension) { path?.let { "$it|${version.hashCode()}|$maxDimension" } }
     val appContext = LocalContext.current.applicationContext
+    // The request whose load has finished, found or not, so a page that cannot be read stops shimmering.
+    var settledKey by remember { mutableStateOf<String?>(null) }
     val bitmap by produceState(initialValue = requestKey?.let { latestCacheKey[it] }?.let { thumbnailCache[it] }, key1 = requestKey) {
         if (path == null || requestKey == null) {
             value = null
@@ -116,6 +116,7 @@ fun PageThumbnail(
                 thumbnailCache.put(cacheKey, it)
             })?.also { latestCacheKey.put(requestKey, cacheKey) }
         }
+        settledKey = requestKey
     }
 
     val placeholder = if (background == androidx.compose.ui.graphics.Color.Unspecified) MaterialTheme.colorScheme.surfaceContainerHigh else background
@@ -127,9 +128,10 @@ fun PageThumbnail(
     ) {
         val image = bitmap
         if (image == null) {
-            // Lists show only the placeholder tint while thumbnails load; a spinner per card flickers on scroll.
-            if (path != null && maxDimension >= THUMBNAIL_LARGE) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            // A band of light sweeps the placeholder while the page loads; every thumbnail shares one clock,
+            // so a scrolling grid sweeps together instead of flickering the way a spinner per card did.
+            if (path != null && settledKey != requestKey) {
+                LoadingShimmer(Modifier.matchParentSize())
             }
         } else {
             val imageBitmap = remember(image) { image.asImageBitmap() }
@@ -303,7 +305,8 @@ fun TopBarWithProgress(busy: Boolean, onStop: (() -> Unit)? = null, topBar: @Com
     androidx.compose.foundation.layout.Column {
         topBar()
         Box(Modifier.fillMaxWidth().height(4.dp)) {
-            if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            // The brand's scan line sweeping across while the task works.
+            if (busy) ScanBeamProgressBar(Modifier.matchParentSize())
         }
         // A long task (re-reading 300 pages, say) can be stopped from the screen that shows it running.
         if (busy && onStop != null) {

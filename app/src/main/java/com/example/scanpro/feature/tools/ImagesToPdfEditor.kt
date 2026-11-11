@@ -41,7 +41,9 @@ import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.LoadingShimmer
+import com.example.scanpro.core.designsystem.ProcessingAnimation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -313,7 +315,7 @@ internal fun ImagesToPdfEditor(
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
                     when {
-                        isLoading -> CircularProgressIndicator(Modifier.padding(top = 80.dp))
+                        isLoading -> FileLoadingAnimation(Modifier.padding(top = 80.dp), size = 96.dp)
                         order.isEmpty() -> Column(
                             Modifier.fillMaxSize().padding(32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -353,7 +355,11 @@ internal fun ImagesToPdfEditor(
                         Box(
                             Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.25f)).pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } },
                             contentAlignment = Alignment.Center
-                        ) { CircularProgressIndicator() }
+                        ) {
+                            Surface(shape = RoundedCornerShape(28.dp), tonalElevation = 6.dp, shadowElevation = 6.dp) {
+                                ProcessingAnimation(progress = null, modifier = Modifier.padding(16.dp), size = 96.dp)
+                            }
+                        }
                     }
                 }
             }
@@ -399,7 +405,9 @@ private fun PageImage(item: OrderedImage, modifier: Modifier, maxDimension: Int 
     if (shown != null) {
         Image(shown.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Fit, modifier = modifier)
     } else {
-        Box(modifier, contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) }
+        Box(modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest), contentAlignment = Alignment.Center) {
+            LoadingShimmer(Modifier.matchParentSize())
+        }
     }
 }
 

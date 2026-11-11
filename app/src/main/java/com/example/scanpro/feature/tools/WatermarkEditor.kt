@@ -198,7 +198,7 @@ internal fun WatermarkEditor(
                     Box(Modifier.weight(1f).fillMaxWidth().heightIn(min = 180.dp).padding(horizontal = 12.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
                         val loaded = page
                         if (loaded == null) {
-                            androidx.compose.material3.CircularProgressIndicator()
+                            com.example.scanpro.core.designsystem.FileLoadingAnimation()
                         } else {
                             WatermarkPreviewPage(
                                 page = loaded,

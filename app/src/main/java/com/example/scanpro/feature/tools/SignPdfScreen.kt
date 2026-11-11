@@ -23,7 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.FileLoadingState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -117,7 +118,7 @@ fun SignPdfScreen(
 
             when {
                 state.loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    FileLoadingState(stringResource(R.string.tools_organizer_opening))
                 }
                 state.failed -> Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.sign_open_failed), style = MaterialTheme.typography.bodyLarge)
@@ -262,7 +263,7 @@ private fun SignPagePreview(viewModel: SignPdfViewModel, state: SignUiState, fil
     }
     val image = rendered
     if (image == null) {
-        CircularProgressIndicator()
+        FileLoadingAnimation()
         return
     }
     val density = LocalDensity.current

@@ -46,7 +46,8 @@ import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.ProcessingDots
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -390,7 +391,7 @@ fun PdfViewerScreen(
                             modifier = Modifier.fillMaxWidth(),
                             trailingIcon = {
                                 if (isSearchingText) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                                    ProcessingDots(MaterialTheme.colorScheme.primary)
                                 } else if (searchQuery.isNotBlank()) {
                                     IconButton(onClick = { searchQuery = "" }) {
                                         Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.viewer_clear))
@@ -540,7 +541,7 @@ fun PdfViewerScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(40.dp), strokeWidth = 3.dp)
+                        FileLoadingAnimation(size = 96.dp)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(stringResource(R.string.viewer_loading_document), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -885,7 +886,8 @@ private fun PdfPageItem(
                     filterQuality = FilterQuality.High
                 )
             } else if (isPageLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.5.dp)
+                // The page being read while it renders; drawn on the white page, so it reads in both themes.
+                FileLoadingAnimation(size = 64.dp)
             }
         }
     }

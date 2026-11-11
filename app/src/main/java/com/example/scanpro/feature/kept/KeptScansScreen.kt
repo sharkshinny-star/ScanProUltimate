@@ -25,7 +25,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -117,7 +117,7 @@ internal fun KeptScansScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             when {
-                scans == null -> CircularProgressIndicator(Modifier.padding(top = 48.dp))
+                scans == null -> FileLoadingAnimation(Modifier.padding(top = 48.dp), size = 88.dp)
                 scans.isEmpty() -> EmptyState()
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().widthIn(max = 720.dp).padding(horizontal = 16.dp),

@@ -74,7 +74,8 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.FileLoadingAnimation
+import com.example.scanpro.core.designsystem.ProcessingDots
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -433,7 +434,7 @@ fun ScanReviewScreen(
                 modifier = Modifier.padding(end = 4.dp)
             ) {
                 if (processing) {
-                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                    ProcessingDots(MaterialTheme.colorScheme.onPrimary, dotSize = 5.dp)
                 } else {
                     Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
@@ -557,7 +558,7 @@ fun ScanReviewScreen(
             val image = bitmap
             val quad = quads[key]
             if (image == null || quad == null) {
-                CircularProgressIndicator(color = primary)
+                FileLoadingAnimation()
             } else if (panel == PANEL_CROP) {
                 CropCanvas(
                     image = image,
@@ -579,7 +580,7 @@ fun ScanReviewScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    CircularProgressIndicator(color = primary)
+                    FileLoadingAnimation()
                 }
             }
         } } }
@@ -879,7 +880,7 @@ fun ScanReviewScreen(
                 onClick = onDone
             ) {
                 if (processing) {
-                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                    ProcessingDots(MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(8.dp))

@@ -31,7 +31,7 @@ The app follows the layered, package-by-feature structure recommended in Android
   share effects).
 - **ViewModels**: `AppViewModel` (activity: theme, lock, imports, app-wide events), `LibraryViewModel`,
   `DocumentViewModel` (document id from `SavedStateHandle`), `TrashViewModel`, `SettingsViewModel`.
-- **`core/`**: `designsystem` (theme, shared components), `ui` (share/format helpers), `operations`
+- **`core/`**: `designsystem` (theme, shared components; `LoadingAnimations.kt` holds the only loading/processing indicators to use: `FileLoadingAnimation`, `ProcessingAnimation`, `LoadingShimmer`, `ScanBeamProgressBar`, `ProcessingDots`, Canvas-drawn, no animation library), `ui` (share/format helpers), `operations`
   (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
   survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).
 - **Data layer (`data/`)**: `DocumentLibrary` exposes the active, trash and storage flows every screen
@@ -396,3 +396,4 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - Tab transitions (`ScanProNavHost.enterFor/exitFor`): between top-level tabs one layer fades over an opaque screen (pop: outgoing fades; navigate: incoming fades over `KeepUntilTransitionsFinished`); pushed screens slide without fades.
 - Settings: `SettingsPage` enum; the main page lists pages, `SettingsSection(page)` draws only on its page (`LocalSettingsPage`); each page has its own scroll and `SettingsLocator` inside an `AnimatedContent`.
 - Launch: `MainActivity.activityCreatedInProcess` makes the first activity of a process a launch even with saved state; the splash exit listener waits (max 1.5 s) for theme, palette and lock settings before handing over.
+

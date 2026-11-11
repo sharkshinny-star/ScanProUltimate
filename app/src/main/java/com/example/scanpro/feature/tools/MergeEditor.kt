@@ -31,7 +31,7 @@ import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.example.scanpro.core.designsystem.LoadingShimmer
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -213,7 +213,7 @@ private fun MergeFileCard(
             ) {
                 val loaded = info
                 when {
-                    loaded == null -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    loaded == null -> LoadingShimmer(Modifier.matchParentSize())
                     loaded.thumbnail != null -> Image(loaded.thumbnail.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     loaded.pages == null -> Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     else -> Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

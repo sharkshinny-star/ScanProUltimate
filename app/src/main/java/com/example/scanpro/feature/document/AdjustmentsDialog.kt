@@ -113,7 +113,7 @@ fun AdjustmentsDialog(
                             modifier = Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Fit
                         )
-                    } ?: androidx.compose.material3.CircularProgressIndicator(Modifier.padding(24.dp))
+                    } ?: com.example.scanpro.core.designsystem.FileLoadingAnimation(Modifier.padding(24.dp))
                 }
 
                 Spacer(Modifier.height(8.dp))

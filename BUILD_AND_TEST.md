@@ -48,6 +48,15 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - JDK: `/Applications/Android Studio.app` is gone; use `JAVA_HOME="/Applications/Android Studio Preview.app/Contents/jbr/Contents/Home"`.
 - Not run: lint, instrumented tests, release build.
 
+## Latest results (2026-11-12, F141 loading and processing animations, shared tree with another session's uncommitted F140)
+
+| Check | Result |
+|---|---|
+| `:app:compileDebugKotlin` | 0 errors, 0 warnings |
+| `:app:testDebugUnitTest` (full) | 676 tests, 0 failed, 64 skipped (my run was up to date from an identical run by the F140 session minutes earlier) |
+| Compose previews | `LoadingAnimationsPreview` and `LoadingAnimationsDarkPreview` rendered |
+| Not run | Device check of the animations, lint, release build |
+
 ## Latest results (2026-11-11, F116 live-device pass, uncommitted tree)
 
 | Check | Result |

@@ -476,7 +476,7 @@ fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
         )
     ) {
         if (loading) {
-            androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Color(0xFF04281E))
+            ProcessingDots(Color(0xFF04281E))
         } else {
             Text(text, fontWeight = FontWeight.Bold, maxLines = 1)
         }

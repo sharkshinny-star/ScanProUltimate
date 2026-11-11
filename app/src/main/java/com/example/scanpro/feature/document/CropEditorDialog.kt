@@ -396,7 +396,7 @@ fun CropEditorDialog(
                         }
                     }
                 } else {
-                    androidx.compose.material3.CircularProgressIndicator(color = ScanProTheme.colors.scanLine)
+                    com.example.scanpro.core.designsystem.FileLoadingAnimation(onDark = true)
                 }
             }
 
