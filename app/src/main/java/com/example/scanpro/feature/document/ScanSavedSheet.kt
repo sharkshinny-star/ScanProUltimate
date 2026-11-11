@@ -229,6 +229,15 @@ fun ScanSavedSheet(
                     QuickAction(Icons.Default.AddAPhoto, stringResource(R.string.doc_saved_add_pages), enabled = !busy, modifier = Modifier.weight(1f), onClick = then { onAddPages() })
                 }
             }
+            // A greyed Copy text says nothing by itself: this says when it unlocks (it stays off for a page with no text).
+            if (onCopy != null && text.isBlank()) {
+                Text(
+                    stringResource(R.string.doc_saved_copy_text_waiting),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, top = 6.dp)
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
             Text(

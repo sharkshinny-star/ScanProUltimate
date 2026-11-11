@@ -31,7 +31,7 @@ internal class DocumentExporter(
     private val db: DocumentDatabase,
     private val ensurePdf: (String) -> ScanDocument,
 ) {
-    private val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
+    private val exportDir: File by lazy { File(context.cacheDir, "exports").apply { mkdirs() } }
     private val encryptedPackages = EncryptedDocumentPackage(context)
 
     /** Every page as a lossless PNG, for apps and forms that reject JPG. */

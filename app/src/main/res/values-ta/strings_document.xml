@@ -267,4 +267,5 @@
     <string name="doc_saved_more">சேமிக்க மேலும் வழிகள்</string>
     <string name="doc_saved_total">மொத்தம் %1$s</string>
     <string name="doc_saved_copy_total">மொத்தத்தை நகலெடு</string>
+    <string name="doc_saved_copy_text_waiting">பக்கத்தில் உரை கண்டறியப்பட்டதும் “உரையை நகலெடு” செயல்படும்.</string>
 </resources>

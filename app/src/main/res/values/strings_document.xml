@@ -309,4 +309,5 @@
     <string name="doc_saved_more">More ways to save</string>
     <string name="doc_saved_total">Total %1$s</string>
     <string name="doc_saved_copy_total">Copy total</string>
+    <string name="doc_saved_copy_text_waiting">Copy text unlocks once ScanPro finds text on the page.</string>
 </resources>

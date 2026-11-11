@@ -267,4 +267,5 @@
     <string name="doc_saved_more">സേവ് ചെയ്യാൻ കൂടുതൽ വഴികൾ</string>
     <string name="doc_saved_total">ആകെ %1$s</string>
     <string name="doc_saved_copy_total">ആകെ പകർത്തുക</string>
+    <string name="doc_saved_copy_text_waiting">പേജിൽ ടെക്സ്റ്റ് കണ്ടെത്തിയാലുടൻ “ടെക്സ്റ്റ് പകർത്തുക” പ്രവർത്തിക്കും.</string>
 </resources>

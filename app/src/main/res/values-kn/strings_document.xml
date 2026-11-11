@@ -267,4 +267,5 @@
     <string name="doc_saved_more">ಉಳಿಸಲು ಇನ್ನಷ್ಟು ಮಾರ್ಗಗಳು</string>
     <string name="doc_saved_total">ಒಟ್ಟು %1$s</string>
     <string name="doc_saved_copy_total">ಒಟ್ಟು ಕಾಪಿ ಮಾಡಿ</string>
+    <string name="doc_saved_copy_text_waiting">ಪುಟದಲ್ಲಿ ಪಠ್ಯ ಸಿಕ್ಕ ಕೂಡಲೇ “ಪಠ್ಯ ನಕಲಿಸಿ” ಸಕ್ರಿಯವಾಗುತ್ತದೆ.</string>
 </resources>

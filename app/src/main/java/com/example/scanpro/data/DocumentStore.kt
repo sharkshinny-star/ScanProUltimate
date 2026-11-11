@@ -46,7 +46,8 @@ internal class DocumentStore(
     val ocr: OcrEngine,
     val settings: SettingsStore,
 ) {
-    val rootDir = File(context.filesDir, "documents").apply { mkdirs() }
+    // Lazy: Hilt builds this on the main thread at start-up, and the first filesDir access reads from disk.
+    val rootDir: File by lazy { File(context.filesDir, "documents").apply { mkdirs() } }
 
 
     /**

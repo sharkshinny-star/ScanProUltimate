@@ -33,7 +33,7 @@ class DocumentEditor @Inject constructor(
     private val operations: OperationRunner,
     @ApplicationScope private val scope: CoroutineScope
 ) {
-    private val journal = EditJournal(File(context.filesDir, JOURNAL_DIR))
+    private val journal by lazy { EditJournal(File(context.filesDir, JOURNAL_DIR)) }
     // One thread for every journal write, in call order, so a record is always on disk before its edit marks it started.
     @OptIn(ExperimentalCoroutinesApi::class)
     private val journalThread = Dispatchers.IO.limitedParallelism(1)

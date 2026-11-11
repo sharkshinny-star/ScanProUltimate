@@ -40,6 +40,7 @@ class ScanProApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        com.example.scanpro.core.text.AppLocale.warmUp(this)
         // Before anything can throw a user-facing error: engines without a Context read their messages through it.
         AppStrings.init(this)
         if (BuildConfig.DEBUG) enableStrictMode()

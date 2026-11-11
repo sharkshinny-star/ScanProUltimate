@@ -267,4 +267,5 @@
     <string name="doc_saved_more">సేవ్ చేయడానికి మరిన్ని మార్గాలు</string>
     <string name="doc_saved_total">మొత్తం %1$s</string>
     <string name="doc_saved_copy_total">మొత్తం కాపీ చేయండి</string>
+    <string name="doc_saved_copy_text_waiting">పేజీలో టెక్స్ట్ కనిపించగానే “టెక్స్ట్ కాపీ” పనిచేస్తుంది.</string>
 </resources>
