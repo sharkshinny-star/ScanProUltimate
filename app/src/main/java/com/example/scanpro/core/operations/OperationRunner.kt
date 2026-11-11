@@ -154,6 +154,8 @@ class OperationRunner @Inject constructor(
                 if (pending == 0) {
                     _busyLabel.value = null
                     _busy.value = false
+                    // A queued job started the service while this one waited; whichever finishes last stops it.
+                    if (keptAlive == 0) OperationForegroundService.stop(context)
                 }
             }
         }

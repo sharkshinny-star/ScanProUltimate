@@ -161,6 +161,7 @@ import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.withResumed
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.ui.findActivity
@@ -581,13 +582,18 @@ fun CameraScannerScreen(
                     quad ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
                 }
             }
-            completed = true
-            processing = false
-            onComplete(
-                inputs.map { it.first }, scanMode, crops, chosen, inputs.map { (uri, _) -> adjustments[uri.toString()] },
-                documentName.trim().ifBlank { null },
-                documentFolder.trim().ifBlank { null }
-            )
+            // The navigation host accepts the scan only while this screen is resumed. If the user left the app
+            // while the outlines were being found, wait for their return instead of marking the scan done and
+            // having it ignored (it then could be neither saved nor imported).
+            lifecycleOwner.lifecycle.withResumed {
+                completed = true
+                processing = false
+                onComplete(
+                    inputs.map { it.first }, scanMode, crops, chosen, inputs.map { (uri, _) -> adjustments[uri.toString()] },
+                    documentName.trim().ifBlank { null },
+                    documentFolder.trim().ifBlank { null }
+                )
+            }
         }
     }
 

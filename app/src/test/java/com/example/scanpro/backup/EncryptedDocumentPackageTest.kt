@@ -5,6 +5,7 @@ import com.example.scanpro.core.text.UserFacingException
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.NormalizedPoint
+import com.example.scanpro.data.OcrWord
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageAdjustments
 import com.example.scanpro.data.PageAnnotation
@@ -59,6 +60,7 @@ class EncryptedDocumentPackageTest {
                 id = "p$i", documentId = "d", position = i,
                 sourcePath = source.absolutePath, imagePath = image.absolutePath,
                 ocrText = "text of page $i", filter = if (i == 1) PageFilter.BW else PageFilter.COLOR,
+                ocrEdited = i == 2, ocrWords = if (i == 2) emptyList() else listOf(OcrWord("page", 0.1f, 0.2f, 0.3f, 0.25f)),
                 rotationDegrees = 90 * i, crop = crop, adjustments = adjustments,
                 annotations = if (i != 0) emptyList() else listOf(
                     PageAnnotation(id = "t1", type = AnnotationType.TEXT, x = 0.1f, y = 0.2f, width = 0.3f, height = 0.1f, text = "Hello"),
@@ -125,6 +127,9 @@ class EncryptedDocumentPackageTest {
             assertEquals(90 * i, page.rotationDegrees)
             assertEquals(crop, page.crop)
             assertEquals(adjustments, page.adjustments)
+            // A hand correction must survive, or the next edit re-runs OCR over it.
+            assertEquals(source.ocrEdited, page.ocrEdited)
+            assertEquals(source.ocrWords, page.ocrWords)
         }
     }
 

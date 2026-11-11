@@ -186,6 +186,21 @@ class ImportScanWorker @AssistedInject constructor(
             .apply { folder?.trim()?.takeIf { it.isNotEmpty() }?.let { putString(KEY_FOLDER, it) } }
             .build()
 
+        /**
+         * Keeps a camera session whose photos could not be added to an existing document (Add page, Retake) under
+         * "Unsaved scans", so they can still be saved as a scan, shared or discarded instead of being lost.
+         * [error] is the reason shown there; null when the user stopped the job.
+         */
+        fun keepUnsaved(input: ImportRequest, error: Throwable?) {
+            val sessionDir = sessionDirOf(input)?.takeIf { it.parentFile?.name == SESSION_ROOT && it.isDirectory } ?: return
+            runCatching {
+                File(sessionDir, SESSION_IMPORT_REQUEST).writeText(input.toJson())
+                if (error != null) File(sessionDir, SESSION_IMPORT_FAILED).writeText(AppStrings.storable(error))
+                // Last, so "Unsaved scans" never lists a session without its request.
+                File(sessionDir, SESSION_PENDING_IMPORT).createNewFile()
+            }
+        }
+
         /** One piece of work per session folder, so a repeated request for the same scan never imports it twice. */
         fun enqueue(context: Context, input: ImportRequest) {
             val sessionDir = sessionDirOf(input)

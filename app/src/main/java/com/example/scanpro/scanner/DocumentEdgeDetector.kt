@@ -416,3 +416,4 @@ object DocumentEdgeDetector {
 
     private data class Candidate(val points: List<Point>, val score: Float)
 }
+

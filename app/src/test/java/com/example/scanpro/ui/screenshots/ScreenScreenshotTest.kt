@@ -135,7 +135,7 @@ class ScreenScreenshotTest(private val dark: Boolean) {
             onLoadMarkupBase = { File(doc.pages.first().imagePath) }, onApplyMarkup = { _, _ -> },
             onAppendImages = {}, onMergeWith = {}, onReOcr = {}, onUpdateOcrText = { _, _ -> }, onOcrScript = {},
             onExportIdCopy = {}, onExportLongImage = {}, onExportOcrTextFile = {}, onSplitDocument = {},
-            onExportProtectedPdf = {}, onExportEncryptedBackup = {}, onWithFreshPdf = { _, _ -> },
+            onExportProtectedPdf = {}, onExportEncryptedBackup = {}, onWithFreshPdf = { _, _ -> }, onSavePdfTo = {},
             onDeleteDocument = {}
         )
     }

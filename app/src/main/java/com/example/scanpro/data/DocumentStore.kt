@@ -11,6 +11,7 @@ import com.example.scanpro.imaging.PdfExporter
 import com.example.scanpro.imaging.ThumbnailStore
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -165,7 +166,15 @@ internal class DocumentStore(
             val script = script ?: db.loadOcrScript(page.documentId) ?: OcrScript.LATIN
             // Recognition runs on the flattened image, where covered text is gone. If it fails, a redacted page
             // must end up with no text rather than keep the old text that includes what was covered.
-            val read = runCatching { ocr.recognizeDetailed(File(page.imagePath), script) }.getOrNull()
+            // Not runCatching: that would swallow a cancellation (Stop, or the system stopping an import worker)
+            // and the edit or import would be saved anyway.
+            val read = try {
+                ocr.recognizeDetailed(File(page.imagePath), script)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                null
+            }
             when {
                 read != null -> page.copy(ocrEdited = false, ocrText = read.text, ocrWords = read.words)
                 hasRedaction -> page.copy(ocrEdited = false, ocrText = "", ocrWords = emptyList())

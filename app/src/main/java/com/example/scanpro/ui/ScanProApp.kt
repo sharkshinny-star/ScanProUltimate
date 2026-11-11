@@ -1,5 +1,6 @@
 package com.example.scanpro.ui
 
+import kotlinx.coroutines.CancellationException
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import com.example.scanpro.core.ui.findActivity
@@ -100,12 +101,19 @@ fun ScanProApp(
 
     LaunchedEffect(message) {
         message?.let { current ->
-            val result = snackbarHostState.showSnackbar(
-                message = current.text,
-                actionLabel = current.actionLabel,
-                // Leave undoable messages up long enough to react to.
-                duration = if (current.actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
-            )
+            val result = try {
+                snackbarHostState.showSnackbar(
+                    message = current.text,
+                    actionLabel = current.actionLabel,
+                    // Leave undoable messages up long enough to react to.
+                    duration = if (current.actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
+                )
+            } catch (cancelled: CancellationException) {
+                // A newer message replaced this one: its undo window is over, so run its dismiss step (e.g. purge a
+                // removed page's files). If it is still current (rotation), it is shown again, so leave it alone.
+                if (viewModel.message.value !== current) current.onDismiss?.invoke()
+                throw cancelled
+            }
             // Clear before running the action, so a message the action posts (e.g. "Document restored")
             // isn't wiped by this clear.
             viewModel.clearMessage(current)

@@ -21,6 +21,7 @@ import com.example.scanpro.data.WHATS_NEW_VERSION
 import com.example.scanpro.navigation.RetakeTarget
 import com.example.scanpro.scanner.SESSION_ROOT
 import com.example.scanpro.work.ImportScanWorker
+import kotlinx.coroutines.CancellationException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -222,18 +224,21 @@ class AppViewModel @Inject constructor(
     /** A protected PDF waiting for its password; the shell shows a prompt for it. */
     data class PdfPasswordRequest(val uri: Uri, val wrongPassword: Boolean)
 
-    private val _pdfPasswordRequest = MutableStateFlow<PdfPasswordRequest?>(null)
-    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = _pdfPasswordRequest.asStateFlow()
-    fun cancelPdfPassword() { _pdfPasswordRequest.value = null }
+    // A queue, not one slot: several protected PDFs shared at once each get their own prompt, one after another.
+    private val _pdfPasswordRequests = MutableStateFlow<List<PdfPasswordRequest>>(emptyList())
+    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = _pdfPasswordRequests
+        .map { it.firstOrNull() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    fun cancelPdfPassword() { _pdfPasswordRequests.update { it.drop(1) } }
 
     fun importPdf(uri: Uri, password: String? = null) {
-        _pdfPasswordRequest.value = null
+        _pdfPasswordRequests.update { queue -> queue.filterNot { it.uri == uri } }
         operations.enqueue(context.getString(R.string.msg_import_pdf_progress), null) {
             try {
                 repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first(), password)
                 operations.showMessage(context.getString(R.string.msg_pdf_imported))
             } catch (needsPassword: PdfPasswordRequiredException) {
-                _pdfPasswordRequest.value = PdfPasswordRequest(uri, needsPassword.wrongPassword)
+                _pdfPasswordRequests.update { queue -> queue.filterNot { it.uri == uri } + PdfPasswordRequest(uri, needsPassword.wrongPassword) }
             }
         }
     }
@@ -266,10 +271,15 @@ class AppViewModel @Inject constructor(
         operations.enqueue(context.getString(R.string.msg_adding_pages), context.getString(R.string.msg_pages_added)) {
             try {
                 repository.appendImages(documentId, imageUris, crops, filters, adjustments)
-            } finally {
-                imageUris.firstOrNull()?.takeIf { it.scheme == "file" }?.path?.let { File(it).parentFile }
-                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
+            } catch (error: Throwable) {
+                // The photos exist nowhere else: keep them under "Unsaved scans" rather than deleting them.
+                ImportScanWorker.keepUnsaved(
+                    ImportScanWorker.inputFor(imageUris, ScanMode.DOCUMENT, crops, filters, adjustments),
+                    error.takeUnless { it is CancellationException }
+                )
+                throw error
             }
+            deleteCameraSession(imageUris.first())
         }
     }
 
@@ -285,11 +295,21 @@ class AppViewModel @Inject constructor(
         operations.enqueue(context.getString(R.string.msg_replacing_page, number), context.getString(R.string.msg_page_retaken, number)) {
             try {
                 repository.replacePage(target.documentId, target.pageId, imageUri, crop, filter, adjustments)
-            } finally {
-                if (imageUri.scheme == "file") imageUri.path?.let { File(it).parentFile }
-                    ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
+            } catch (error: Throwable) {
+                ImportScanWorker.keepUnsaved(
+                    ImportScanWorker.inputFor(listOf(imageUri), ScanMode.DOCUMENT, listOf(crop), listOf(filter), listOf(adjustments)),
+                    error.takeUnless { it is CancellationException }
+                )
+                throw error
             }
+            deleteCameraSession(imageUri)
         }
+    }
+
+    /** Drops a scanner session folder once its photos have been copied into a document. */
+    private fun deleteCameraSession(photo: Uri) {
+        if (photo.scheme == "file") photo.path?.let { File(it).parentFile }
+            ?.takeIf { it.parentFile?.name == SESSION_ROOT }?.deleteRecursively()
     }
 
 }
