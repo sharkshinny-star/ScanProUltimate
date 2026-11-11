@@ -118,6 +118,7 @@ object InsertPagesEngine {
                 }
             }
             userRequire(result.numberOfPages > 0, R.string.tools_err_keep_one_page)
+            with(PdfToolsEngine) { result.dropLinksToMissingPages() }
             result.save(outputFile)
 
             val inserted = chosen.size

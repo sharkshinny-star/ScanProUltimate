@@ -8,9 +8,6 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
-import com.example.scanpro.data.PdfPageSize
-import com.example.scanpro.data.PdfQuality
-import com.example.scanpro.data.ScanPage
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
@@ -230,19 +227,28 @@ object CompressPdfEngine {
                             resources.put(xObjectName, already)
                             continue
                         }
-                        val bitmap = xObject.image ?: continue
-                        val scaledW = (bitmap.width * targetScale).toInt().coerceAtLeast(1)
-                        val scaledH = (bitmap.height * targetScale).toInt().coerceAtLeast(1)
-                        var scaledBitmap: android.graphics.Bitmap? = null
+                        // Decoded at a fraction of its size when it is going to be shrunk anyway: a 48-megapixel photo
+                        // used to be decoded in full (about 190 MB) before being scaled down.
+                        val subsampling = subsamplingFor(targetScale)
+                        val bitmap = runCatching { xObject.getImage(null, subsampling) }.getOrNull() ?: continue
+                        val scaledW = (xObject.width * targetScale).toInt().coerceIn(1, bitmap.width.coerceAtLeast(1) * 2)
+                        val scaledH = (xObject.height * targetScale).toInt().coerceIn(1, bitmap.height.coerceAtLeast(1) * 2)
+                        val scaledBitmap = if (bitmap.width == scaledW && bitmap.height == scaledH) bitmap else bitmap.scale(scaledW, scaledH, true)
                         try {
-                            val scaled = bitmap.scale(scaledW, scaledH, true).also { scaledBitmap = it }
-                            val recompressedImage = JPEGFactory.createFromImage(pdDoc, scaled, jpegQuality / 100f)
-                            replaced[original] = recompressedImage
-                            produced += recompressedImage.cosObject
-                            resources.put(xObjectName, recompressedImage)
+                            val recompressedImage = JPEGFactory.createFromImage(pdDoc, scaledBitmap, jpegQuality / 100f)
+                            // Only a smaller image replaces the original. A black-and-white scan (CCITT or JBIG2) grows
+                            // as a JPEG; replacing it anyway made the whole file bigger, which then sent the document
+                            // down the picture-only path and lost its text.
+                            val before = (original as? com.tom_roush.pdfbox.cos.COSStream)?.length ?: Long.MAX_VALUE
+                            if (recompressedImage.cosObject.length < before) {
+                                replaced[original] = recompressedImage
+                                produced += recompressedImage.cosObject
+                                resources.put(xObjectName, recompressedImage)
+                            } else {
+                                produced += original
+                            }
                         } finally {
-                            // Free the full-size decode too: with many large scans they would pile up until GC.
-                            scaledBitmap?.takeIf { it !== bitmap && !it.isRecycled }?.recycle()
+                            if (scaledBitmap !== bitmap && !scaledBitmap.isRecycled) scaledBitmap.recycle()
                             if (!bitmap.isRecycled) bitmap.recycle()
                         }
                     }
@@ -253,6 +259,12 @@ object CompressPdfEngine {
         }
     }
 
+    /**
+     * Rebuilds the PDF from pictures of its pages. Each page is rendered, saved once as a JPEG at [jpegQuality] and
+     * embedded as it is, on a page of the original's size. It used to go through the scan exporter, which encoded every
+     * page a second time at its own quality (so "Maximum" could not go below 65), changed the pages to A4-like sizes
+     * with margins, and could not be cancelled while it rebuilt the file.
+     */
     private suspend fun rasterCompressPdf(
         context: Context,
         inputPdf: File,
@@ -262,70 +274,53 @@ object CompressPdfEngine {
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
     ) {
         val renderDir = File(context.cacheDir, "raster_${UUID.randomUUID()}").apply { mkdirs() }
-        val pages = mutableListOf<ScanPage>()
-        val pointSizes = mutableListOf<Pair<Int, Int>>()
-
         try {
-            ParcelFileDescriptor.open(inputPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
-                PdfRenderer(descriptor).use { renderer ->
-                    val totalPages = renderer.pageCount
-                    for (index in 0 until totalPages) {
-                        currentCoroutineContext().ensureActive()
-                        val pageLabel = context.getString(R.string.tools_compress_progress_page, index + 1, totalPages)
-                        onProgress(index + 1, totalPages, pageLabel)
-                        renderer.openPage(index).use { page ->
-                            // Capped like PDF to images: a poster-sized page would otherwise ask for a bitmap of a
-                            // gigabyte or more and fail the whole job, and the exporter scales it down anyway.
-                            val scale = minOf(targetScale * 2.0f, MAX_RASTER_DIMENSION / maxOf(page.width, page.height).coerceAtLeast(1).toFloat())
-                            pointSizes.add(page.width.coerceAtLeast(1) to page.height.coerceAtLeast(1))
-                            val width = (page.width * scale).toInt().coerceAtLeast(1)
-                            val height = (page.height * scale).toInt().coerceAtLeast(1)
-                            val bitmap = createBitmap(width, height)
-                            bitmap.eraseColor(android.graphics.Color.WHITE)
-                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-
-                            val pageFile = File(renderDir, "page_${index.toString().padStart(3, '0')}.jpg")
-                            ImageProcessor.saveBitmapJpeg(bitmap, pageFile, jpegQuality)
-                            bitmap.recycle()
-
-                            pages.add(
-                                ScanPage(
-                                    id = "compress-$index",
-                                    documentId = "compress",
-                                    position = index,
-                                    sourcePath = pageFile.absolutePath,
-                                    imagePath = pageFile.absolutePath
-                                )
-                            )
+            PDDocument(com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { rebuilt ->
+                ParcelFileDescriptor.open(inputPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+                    PdfRenderer(descriptor).use { renderer ->
+                        val totalPages = renderer.pageCount
+                        for (index in 0 until totalPages) {
+                            currentCoroutineContext().ensureActive()
+                            onProgress(index + 1, totalPages, context.getString(R.string.tools_compress_progress_page, index + 1, totalPages))
+                            val pageFile = File(renderDir, "page_${index.toString().padStart(4, '0')}.jpg")
+                            // PdfRenderer measures pages in points, as PDF does: the rebuilt page keeps the original size.
+                            val (widthPt, heightPt) = renderer.openPage(index).use { page ->
+                                // Capped (from the F142 bug hunt): a poster-sized page would otherwise ask for a bitmap of a
+                                // gigabyte or more and fail the whole job.
+                                val scale = minOf(targetScale * 2.0f, MAX_RASTER_DIMENSION / maxOf(page.width, page.height).coerceAtLeast(1).toFloat())
+                                val bitmap = createBitmap((page.width * scale).toInt().coerceAtLeast(1), (page.height * scale).toInt().coerceAtLeast(1))
+                                try {
+                                    bitmap.eraseColor(android.graphics.Color.WHITE)
+                                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                    ImageProcessor.saveBitmapJpeg(bitmap, pageFile, jpegQuality)
+                                } finally {
+                                    bitmap.recycle()
+                                }
+                                page.width.toFloat() to page.height.toFloat()
+                            }
+                            val pdPage = com.tom_roush.pdfbox.pdmodel.PDPage(com.tom_roush.pdfbox.pdmodel.common.PDRectangle(widthPt, heightPt))
+                            rebuilt.addPage(pdPage)
+                            val image = pageFile.inputStream().use { JPEGFactory.createFromStream(rebuilt, it) }
+                            com.tom_roush.pdfbox.pdmodel.PDPageContentStream(rebuilt, pdPage).use { content ->
+                                content.drawImage(image, 0f, 0f, widthPt, heightPt)
+                            }
+                            pageFile.delete()
                         }
                     }
                 }
+                currentCoroutineContext().ensureActive()
+                onProgress(rebuilt.numberOfPages, rebuilt.numberOfPages, context.getString(R.string.tools_compress_progress_rebuilding))
+                rebuilt.save(outputPdf)
             }
-
-            val pdfQuality = when {
-                jpegQuality >= 80 -> PdfQuality.HIGH
-                jpegQuality >= 65 -> PdfQuality.BALANCED
-                else -> PdfQuality.SMALL
-            }
-
-            val rebuildingLabel = context.getString(R.string.tools_compress_progress_rebuilding)
-            onProgress(pages.size, pages.size, rebuildingLabel)
-
-            PdfExporter.export(
-                pages = pages,
-                destination = outputPdf,
-                quality = pdfQuality,
-                pageSize = PdfPageSize.AUTO,
-                searchable = false,
-                pageNumbers = false,
-                // Each page keeps its original size, edge to edge, so printing at actual size still matches.
-                pointSizes = pointSizes,
-                beforePage = { number, total ->
-                    onProgress(number, total, rebuildingLabel)
-                }
-            )
         } finally {
             renderDir.deleteRecursively()
         }
+    }
+
+    /** The power-of-two shrink PDFBox can apply while decoding an image that is going to be scaled by [targetScale]. */
+    internal fun subsamplingFor(targetScale: Float): Int {
+        var sub = 1
+        while (targetScale * sub * 2 <= 1f && sub < 8) sub *= 2
+        return sub
     }
 }

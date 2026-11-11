@@ -14,8 +14,16 @@ import java.util.zip.ZipOutputStream
  * stretching. The slide size follows the first page's shape, so A4 pages make portrait slides.
  */
 object PptxExporter {
-    /** One slide: a JPEG and its size in pixels (used only for its shape). */
-    class Slide(val jpeg: ByteArray, val widthPx: Int, val heightPx: Int)
+    /**
+     * One slide: a JPEG and its size in pixels (used only for its shape). The JPEG is read only when it is written,
+     * one slide at a time: holding every page's picture in memory ran a 100-page PDF out of memory.
+     */
+    class Slide private constructor(private val open: () -> java.io.InputStream, val widthPx: Int, val heightPx: Int) {
+        constructor(jpeg: ByteArray, widthPx: Int, heightPx: Int) : this({ jpeg.inputStream() }, widthPx, heightPx)
+        constructor(jpeg: File, widthPx: Int, heightPx: Int) : this({ jpeg.inputStream() }, widthPx, heightPx)
+
+        internal fun openJpeg(): java.io.InputStream = open()
+    }
 
     /** 10 inches, PowerPoint's usual slide width, in EMU (914400 per inch). */
     internal const val SLIDE_WIDTH_EMU = 9_144_000L
@@ -44,9 +52,12 @@ object PptxExporter {
                 val n = index + 1
                 zip.part("ppt/slides/slide$n.xml", slideXml(n, slide, cx, cy))
                 zip.part("ppt/slides/_rels/slide$n.xml.rels", slideRels(n))
+                // The JPEG is compressed already: stored as it is, the XML parts around it are still deflated.
+                zip.setLevel(java.util.zip.Deflater.NO_COMPRESSION)
                 zip.putNextEntry(ZipEntry("ppt/media/image$n.jpeg"))
-                zip.write(slide.jpeg)
+                slide.openJpeg().use { it.copyTo(zip) }
                 zip.closeEntry()
+                zip.setLevel(java.util.zip.Deflater.DEFAULT_COMPRESSION)
             }
         }
     }

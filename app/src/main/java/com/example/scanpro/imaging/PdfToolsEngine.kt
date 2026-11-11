@@ -27,6 +27,8 @@ import com.tom_roush.pdfbox.util.Matrix
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -337,6 +339,7 @@ object PdfToolsEngine {
                             val outFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.pdf")
                             PDDocument().use { singleDoc ->
                                 singleDoc.addImportedPage(doc.getPage(i))
+                                singleDoc.dropLinksToMissingPages()
                                 singleDoc.save(outFile)
                             }
                             outputFiles.add(outFile)
@@ -353,6 +356,7 @@ object PdfToolsEngine {
                             val outFile = File(outputDir, "$base part $chunkIndex pages ${pageIndex + 1} to $end.pdf")
                             PDDocument().use { chunkDoc ->
                                 for (i in pageIndex until end) chunkDoc.addImportedPage(doc.getPage(i))
+                                chunkDoc.dropLinksToMissingPages()
                                 chunkDoc.save(outFile)
                             }
                             outputFiles.add(outFile)
@@ -371,6 +375,7 @@ object PdfToolsEngine {
                                 for (pageNum in range) {
                                     if ((pageNum in 1..totalPages)) rangeDoc.addImportedPage(doc.getPage(pageNum - 1))
                                 }
+                                rangeDoc.dropLinksToMissingPages()
                                 rangeDoc.save(outFile)
                             }
                             outputFiles.add(outFile)
@@ -406,6 +411,7 @@ object PdfToolsEngine {
                         extractedDoc.addImportedPage(doc.getPage(pageIdx))
                     }
                 }
+                extractedDoc.dropLinksToMissingPages()
                 extractedDoc.save(outputFile)
             } }
             return@withContext PdfToolResult(
@@ -484,6 +490,7 @@ object PdfToolsEngine {
                         newDoc.addImportedPage(page)
                     }
                 }
+                newDoc.dropLinksToMissingPages()
                 newDoc.save(outputFile)
             } }
             return@withContext PdfToolResult(
@@ -589,7 +596,10 @@ object PdfToolsEngine {
         val base = sourceBaseName(context, inputUri)
 
         try {
-            if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
+            // Only a password stops here. A file PDFBox cannot parse at all goes on to Android's own renderer, which
+            // often still draws it: Repair's last resort depends on that, and used to fail on exactly those files.
+            val protection = runCatching { PdfSecurity.protection(tempFile) }.getOrNull()
+            if (protection == PdfProtection.PASSWORD_REQUIRED) {
                 userError(R.string.tools_err_password_protected)
             }
             try {
@@ -709,12 +719,43 @@ object PdfToolsEngine {
         addPage(page)
     }
 
+    /**
+     * Pages are added to a new document as they are, links and all. A link (or a form widget's /P) on a kept page that
+     * points at a page left out pulled that page, and through its /Parent the whole source page tree, into the output:
+     * a one-page Split or Extract came out nearly as large as the original. Such references are cut, as PDFBox's own
+     * Splitter does; links between pages that are both kept still work.
+     */
+    internal fun PDDocument.dropLinksToMissingPages() {
+        val kept = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<com.tom_roush.pdfbox.cos.COSBase, Boolean>())
+        pages.forEach { kept.add(it.cosObject) }
+        pages.forEach { page ->
+            val annotations = runCatching { page.annotations }.getOrNull() ?: return@forEach
+            annotations.forEach { annotation ->
+                if (annotation is com.tom_roush.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink) {
+                    val destination = runCatching { annotation.destination }.getOrNull()
+                        ?: (runCatching { annotation.action }.getOrNull() as? com.tom_roush.pdfbox.pdmodel.interactive.action.PDActionGoTo)
+                            ?.let { runCatching { it.destination }.getOrNull() }
+                    if (destination is com.tom_roush.pdfbox.pdmodel.interactive.documentnavigation.destination.PDPageDestination) {
+                        val target = destination.cosObject.getObject(0)
+                        if (target is com.tom_roush.pdfbox.cos.COSDictionary && target !in kept) destination.setPage(null)
+                    }
+                }
+                val owner = annotation.cosObject.getDictionaryObject(com.tom_roush.pdfbox.cos.COSName.P)
+                if (owner != null && owner !in kept) annotation.cosObject.removeItem(com.tom_roush.pdfbox.cos.COSName.P)
+            }
+        }
+    }
+
     /** One file is returned as it is; several are bundled into a single zip so they can be shared together. */
     suspend fun bundleOutputs(context: Context, files: List<File>, name: String): File = withContext(Dispatchers.IO) {
         if (files.size == 1) return@withContext files.first()
         val zip = outputLocation(context, "$name.zip")
         ZipOutputStream(FileOutputStream(zip).buffered()).use { out ->
+            // JPEG, PNG, WebP and PDF are compressed already: deflating them again cost time at the very end of a
+            // long run (the progress sat at 100%) and saved almost nothing.
+            out.setLevel(java.util.zip.Deflater.NO_COMPRESSION)
             files.forEach { file ->
+                currentCoroutineContext().ensureActive()
                 out.putNextEntry(ZipEntry(file.name))
                 file.inputStream().use { it.copyTo(out) }
                 out.closeEntry()

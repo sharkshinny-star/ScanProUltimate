@@ -211,9 +211,11 @@ class PdfToolsViewModel @Inject constructor(
             try {
                 // Held alive by the foreground service: a long merge or compression must survive the user switching apps.
                 // Off the main thread: tools resolve file names and touch disk before their engines switch dispatchers.
-                val made = operations.keepAlive(label) { withContext(Dispatchers.IO) { work() } }
-                // Out of the one-day cache into Your results, so closing the result without saving loses nothing.
-                val result = made?.let { withContext(Dispatchers.IO) { it.copy(outputFile = results.keep(it.outputFile)) } }
+                // The result moves out of the one-day cache into Your results inside keepAlive: a large output is still
+                // being copied after the progress reaches 100%, and that copy must survive the user switching apps too.
+                val result = operations.keepAlive(label) {
+                    withContext(Dispatchers.IO) { work()?.let { it.copy(outputFile = results.keep(it.outputFile)) } }
+                }
                 _result.value = result
                 if (!endedWithQuestion) notifications.taskFinished(result?.message)
             } catch (cancelled: CancellationException) {

@@ -17,7 +17,11 @@ object CacheCleaner {
         "split_in", "extract_in", "rotate_in", "organize_in", "protect_in", "unlock_in", "count_",
         "thumb_", "markup_", "inspect_", "pdf2img_in", "img2pdf_", "raster_", "temp_in_",
         "ocr_in_", "ocr_page_", "form_read_", "form_fill_", "backup_", "sign_",
-        "pdftext_", "insert_base_", "insert_extra_"
+        "pdftext_", "insert_base_", "insert_extra_",
+        // Left by Watermark, Page numbers, PDF to text, the image tools, Repair and PDF to PowerPoint after a cancel
+        // or a crash, and PDFBox's own scratch files; none of them were ever swept.
+        "wm_in_", "num_in_", "txt_in_", "resize_in_", "crop_in_", "crop_staged_", "precrop_", "conv_in_",
+        "compress_img_", "repair_", "pdf2ppt_", "PDFBox"
     )
     private const val SESSION_MAX_AGE_MS = 24L * 60 * 60 * 1000
     // A scan whose import never finished is kept this long, so it can still be saved from "Unsaved scans".

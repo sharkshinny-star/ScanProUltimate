@@ -31,7 +31,7 @@ object PdfToPptEngine {
             val slides = pages.map { file ->
                 val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 BitmapFactory.decodeFile(file.absolutePath, bounds)
-                PptxExporter.Slide(file.readBytes(), bounds.outWidth.coerceAtLeast(1), bounds.outHeight.coerceAtLeast(1))
+                PptxExporter.Slide(file, bounds.outWidth.coerceAtLeast(1), bounds.outHeight.coerceAtLeast(1))
             }
             try {
                 PptxExporter.export(slides, outputFile)
