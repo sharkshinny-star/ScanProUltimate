@@ -39,7 +39,7 @@ Gradle properties:
 | `-Pscanpro.composeMetrics=true` | Compose compiler metrics in `build/compose_metrics` |
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
-CI: `.github/workflows/android.yml` runs unit tests, lint, `bundleRelease`, the sideload build and the size report, on pushes to `main`, pull requests and manual runs (20-minute timeout; artifacts only on manual runs). Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
+CI: `.github/workflows/android.yml` runs unit tests and lint on every push to `main` or the working branch, and `bundleRelease`, the sideload build and the size report only on `main`, pull requests and manual runs (`FULL_BUILD`); 30-minute timeout; artifacts only on manual runs. Pause all CI by setting the repository variable `CI_PAUSED` to `true`. Not yet run with these limits. Not yet run with the new limits; if the build exceeds 20 minutes, raise `timeout-minutes`.
 
 ## Latest results (2026-11-11, F116 live-device pass, uncommitted tree)
 

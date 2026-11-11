@@ -1,6 +1,7 @@
 # Android CI, one job so a push uses as few runner minutes as possible: Room schema check, unit tests and lint, the Play
 # bundle (translation as an on-demand module), the sideload APKs (one per CPU type plus universal, translation built in)
 # and an APK size report with a budget, so a dependency that silently adds megabytes fails the build.
+# Pushes to the working branch run tests and lint only (FULL_BUILD); release builds run on main, PRs and manual runs.
 # Runs on pushes to main and the working branch and on pull requests; docs-only changes are skipped.
 # Artifacts are uploaded only on a manual run; test reports only when a run fails; both are kept 3 days.
 
@@ -32,8 +33,15 @@ env:
 
 jobs:
   build:
+    # Kill switch: set the repository variable CI_PAUSED to true (Settings > Secrets and variables > Actions >
+    # Variables) to stop all runs for the rest of the month without editing files.
+    if: vars.CI_PAUSED != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+    env:
+      # Pushes to the working branch run only tests and lint; the two release builds and the size report run on
+      # main, pull requests and manual runs (they are about half of a run's minutes).
+      FULL_BUILD: ${{ github.event_name != 'push' || github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -54,8 +62,12 @@ jobs:
 
       - run: chmod +x ./gradlew
 
-      - name: Unit tests, lint and Play bundle
-        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:bundleRelease $CI_GRADLE
+      - name: Unit tests and lint
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug $CI_GRADLE
+
+      - name: Play bundle
+        if: env.FULL_BUILD == 'true'
+        run: ./gradlew :app:bundleRelease $CI_GRADLE
 
       # The build re-exports the Room schema; a difference from the committed files means a table changed without
       # a version bump, or the new version's file was not committed.
@@ -63,9 +75,11 @@ jobs:
         run: bash scripts/ci/check-room-schema.sh --after-build
 
       - name: Sideload APKs
+        if: env.FULL_BUILD == 'true'
         run: ./gradlew -Pscanpro.sideload=true :app:assembleRelease $CI_GRADLE
 
       - name: Size report
+        if: env.FULL_BUILD == 'true'
         run: scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test results
