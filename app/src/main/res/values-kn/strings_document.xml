@@ -268,4 +268,7 @@
     <string name="doc_saved_total">ಒಟ್ಟು %1$s</string>
     <string name="doc_saved_copy_total">ಒಟ್ಟು ಕಾಪಿ ಮಾಡಿ</string>
     <string name="doc_saved_copy_text_waiting">ಪುಟದಲ್ಲಿ ಪಠ್ಯ ಸಿಕ್ಕ ಕೂಡಲೇ “ಪಠ್ಯ ನಕಲಿಸಿ” ಸಕ್ರಿಯವಾಗುತ್ತದೆ.</string>
+    <string name="doc_share_as_word">Word ಆಗಿ ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="doc_share_as_word_hint">ScanPro ಕಂಡುಕೊಂಡ ಪದಗಳಿಂದ ಸಂಪಾದಿಸಬಹುದಾದ ಪಠ್ಯ</string>
+    <string name="doc_share_as_word_waiting">ಪುಟದಲ್ಲಿ ಪಠ್ಯ ಸಿಕ್ಕ ಕೂಡಲೇ ಲಭ್ಯ</string>
 </resources>

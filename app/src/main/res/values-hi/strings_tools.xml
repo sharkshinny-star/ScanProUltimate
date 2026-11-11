@@ -459,4 +459,16 @@
     <string name="tools_merge_meta_locked">पासवर्ड से सुरक्षित · %1$s</string>
     <string name="tools_merge_remove">%1$s हटाएँ</string>
     <string name="tools_compress_img_kept">यह चित्र पहले से ही सबसे छोटा है, इसलिए उसे जैसा है वैसा रखा गया (%1$s)।</string>
+    <string name="tools_card_repair">PDF ठीक करें</string>
+    <string name="tools_err_repair_empty">यह फ़ाइल खाली है, इसलिए ठीक करने को कुछ नहीं है।</string>
+    <string name="tools_err_repair_protected">यह PDF सुरक्षित है। पहले इसे अनलॉक करें, फिर ठीक करें।</string>
+    <string name="tools_err_repair_failed">यह PDF बहुत क्षतिग्रस्त है: इसका कोई पेज पढ़ा नहीं जा सका।</string>
+    <plurals name="tools_result_repaired">
+        <item quantity="one">PDF दोबारा बनाई गई। %1$d पेज बचाया गया।</item>
+        <item quantity="other">PDF दोबारा बनाई गई। %1$d पेज बचाए गए।</item>
+    </plurals>
+    <plurals name="tools_result_repaired_pictures">
+        <item quantity="one">फ़ाइल की संरचना ठीक नहीं हो सकी, इसलिए %1$d पेज को चित्र के रूप में बनाया गया। उसका टेक्स्ट अब चुना नहीं जा सकता।</item>
+        <item quantity="other">फ़ाइल की संरचना ठीक नहीं हो सकी, इसलिए %1$d पेज चित्र के रूप में बनाए गए। उनका टेक्स्ट अब चुना नहीं जा सकता।</item>
+    </plurals>
 </resources>

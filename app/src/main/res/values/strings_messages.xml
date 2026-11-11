@@ -214,4 +214,6 @@
     <string name="msg_scan_photos_unavailable">The photos from an unfinished scan are no longer available</string>
     <string name="msg_tools_out_of_memory">Not enough memory for this PDF. Try a smaller file or fewer pages.</string>
     <string name="msg_tools_form_nothing_changed">Nothing has been changed yet</string>
+    <string name="msg_tools_repairing">Repairing PDF…</string>
+    <string name="msg_tools_repair_failed">Could not repair the PDF</string>
 </resources>

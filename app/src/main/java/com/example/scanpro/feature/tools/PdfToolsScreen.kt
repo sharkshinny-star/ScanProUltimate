@@ -75,6 +75,7 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -215,6 +216,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("rotate", R.string.tools_card_rotate, Icons.AutoMirrored.Filled.RotateRight, TileTone.Sky, label = R.string.tools_tile_rotate),
             PdfToolCard("extract", R.string.tools_card_extract, Icons.AutoMirrored.Filled.DriveFileMove, TileTone.Indigo, label = R.string.tools_tile_extract),
             PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber),
+            PdfToolCard("repair", R.string.tools_card_repair, Icons.Default.Build, TileTone.Amber),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
             PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark),
             PdfToolCard("sign", R.string.tools_card_sign, Icons.Default.Draw, TileTone.Violet)
@@ -407,6 +409,7 @@ fun PdfToolsScreen(
             "pdf2img" -> showPdfToImagesDialog = true
             "protect" -> showPasswordDialog = true
             "unlock" -> viewModel.inspectForUnlock(uri)
+            "repair" -> viewModel.repair(uri)
             "split" -> showSplitDialog = true
             "organize", "extract", "rotate" -> showOrganizerSheet = true
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))

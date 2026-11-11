@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -105,6 +106,8 @@ fun ScanSavedSheet(
     onSaveToDevice: (title: String) -> Unit,
     onSaveToDrive: (title: String) -> Unit,
     onPrint: (title: String) -> Unit,
+    /** Writes the recognised text to a Word file and shares it (Adobe Scan and iLovePDF both offer Word in one tap); null hides the row. */
+    onShareWord: ((title: String) -> Unit)? = null,
     onDismiss: () -> Unit,
     /** A business card or a bill found in the text; null for anything else (or before the text is read). */
     highlight: ScanHighlight? = null,
@@ -249,6 +252,15 @@ fun ScanSavedSheet(
             Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     SheetAction(Icons.Default.Image, TileTone.Sky, stringResource(R.string.doc_share_as_jpg), stringResource(R.string.doc_share_as_jpg_hint), !busy, then(onShareJpg))
+                    if (onShareWord != null) {
+                        InsetDivider()
+                        // Editable text is the recognised words, so it waits for them rather than sharing an empty file.
+                        SheetAction(
+                            Icons.Default.Description, TileTone.Indigo, stringResource(R.string.doc_share_as_word),
+                            stringResource(if (text.isBlank()) R.string.doc_share_as_word_waiting else R.string.doc_share_as_word_hint),
+                            !busy && text.isNotBlank(), then(onShareWord)
+                        )
+                    }
                     InsetDivider()
                     SheetAction(Icons.Default.AddToDrive, TileTone.Amber, stringResource(R.string.doc_save_to_google_drive), stringResource(R.string.doc_save_to_google_drive_hint), !busy, then(onSaveToDrive))
                     InsetDivider()

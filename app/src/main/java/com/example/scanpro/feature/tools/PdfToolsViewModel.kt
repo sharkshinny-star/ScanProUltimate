@@ -283,6 +283,10 @@ class PdfToolsViewModel @Inject constructor(
         PdfToolsEngine.protectPdf(context, uri, password, named(uri, "protected"))
     }
 
+    fun repair(uri: Uri) = launchTool(R.string.msg_tools_repairing, R.string.msg_tools_repair_failed) {
+        com.example.scanpro.imaging.PdfRepairEngine.repairPdf(context, uri, named(uri, "repaired"), ::report)
+    }
+
     fun unlock(uri: Uri, password: String) = launchTool(R.string.msg_tools_unlocking, R.string.msg_tools_unlock_failed) {
         try {
             PdfToolsEngine.unlockPdf(context, uri, password, named(uri, "unlocked"))

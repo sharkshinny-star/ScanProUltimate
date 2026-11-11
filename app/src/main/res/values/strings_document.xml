@@ -310,4 +310,7 @@
     <string name="doc_saved_total">Total %1$s</string>
     <string name="doc_saved_copy_total">Copy total</string>
     <string name="doc_saved_copy_text_waiting">Copy text unlocks once ScanPro finds text on the page.</string>
+    <string name="doc_share_as_word">Share as Word</string>
+    <string name="doc_share_as_word_hint">Editable text from the words ScanPro found</string>
+    <string name="doc_share_as_word_waiting">Available once ScanPro finds text on the page</string>
 </resources>

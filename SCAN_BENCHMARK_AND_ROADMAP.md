@@ -87,3 +87,45 @@ lighting cases; they do not replace real photographs.
 - Objectives, to be held with the benchmark: found on 12 of 12 scenes; corner error below 2% on every scene except known failures;
   detection under 60 ms per frame on this phone in a release build; no scene gets worse between commits.
 - Never trade readable text for a stronger filter: the readability benchmark (item 3) must pass before a filter change ships.
+
+## 6. Adobe Scan and iLovePDF, used end to end (2026-11-11)
+Both were used on the phone with no sign-in. For Adobe Scan the owner asked for a full check, so I accepted its first-run consent
+(scans processed and saved in Adobe cloud storage), chose "Only this time" for the camera, declined notifications, and deleted my one
+test scan before it could upload (it showed "Waiting to upload…" because the phone was in airplane mode). The iLovePDF test scan was
+deleted too. Nothing personal was opened. Everything below is **Verified** on the OnePlus unless marked.
+
+### Adobe Scan
+- Camera: modes Whiteboard, Book, Document, ID card, Business card; a star marks Whiteboard, Book and ID card as paid "Plus" modes.
+  A centred coach tip ("Tap the screen when you're ready to scan. We'll find the borders, and take the photo for you") covers the
+  preview until tapped. Controls: import, auto-capture toggle, shutter, flash, last-page thumbnail; a Scan / AI mode switch.
+- Review: a name that is edited in place ("Adobe Scan 11 Nov 2026"), a bottom toolbar (Ask AI, Digitize, Retake, Crop, Rotate, Edit
+  text), then Keep scanning, Share as link, and Save PDF with a chevron. The automatic enhancement blew the whites out on the test scene.
+- Crop: handles at the corners and at the middle of each edge, Auto-detect, Straighten.
+- Save options: Compress PDF is behind a 7-day paid trial (High, Low or No compression).
+- After saving: an upgrade banner, "Waiting to upload…" (cloud by default), Share, Save as Word doc, Digitize, More, and a promotion
+  for another Adobe product. More: Copy to device or Drive, Export PDF, Combine, Set password, Compress, Edit text, Fill & Sign,
+  Save pages as JPEG, Modify scan, Rename, Move, Print, Delete.
+
+### iLovePDF
+- Four tabs: Home (lists files on the device), Files, Tools, Scanner, plus Settings.
+- Tools (3-column grid, category chips): Merge, Split, Compress, PDF to Word, PowerPoint and Excel, Word, PowerPoint and Excel to PDF,
+  Edit, Image to PDF, PDF to JPG, Sign, Watermark, Rotate, Unlock, Protect, Organize, OCR (marked Premium), Create PDF, Repair PDF, Page
+  Numbers, Extract TXT, Compress image, Convert to and from JPG, Resize image.
+- Scanner: two stages, "Scanned Images" then "Converted PDFs". The camera is very plain: one status line below the preview ("Looking
+  for document…"), flash, an Auto-scan toggle, the shutter, nothing drawn over the viewfinder. Crop offers "Full border" and "Detect
+  border" over a thirds grid. Edit offers five live-preview filters (None, Photo, Document, Black and White, Monochrome) and
+  Border detection, Rotate and a perspective "Distortion" toggle. Finishing asks for a name and "Save as PDF". The result menu:
+  Extract TXT, Convert to PDF, Rename, Share, Delete.
+
+### What ScanPro took from them (F127, F128)
+| Seen in | ScanPro before | Done |
+|---|---|---|
+| iLovePDF has Repair PDF | no such tool | **Repair PDF** (F127): re-reads a damaged file with the forgiving parser and rewrites it; if that fails, rebuilds the readable pages as pictures and says the text is no longer selectable; refuses a protected file and says to unlock it first. Unit tests: a PDF with its end cut off comes back with all 3 pages; garbage gives no output; a protected file is refused |
+| Adobe "Save as Word doc" one tap after saving; iLovePDF PDF to Word | Word only inside Tools | **Share as Word** in the after-scan sheet (F128): writes the recognised text to a .docx; disabled with an explanation until text is found |
+| Adobe compress and iLovePDF OCR are paid | free in ScanPro | nothing to do; a strength to keep |
+| Adobe cloud upload by default | offline only | nothing to do; a strength to keep |
+
+### Not taken, and why
+- PDF to PowerPoint and PDF to Excel: layout conversion that would look worse than the PDF; no honest way to test it here.
+- Share as link, Ask AI, Digitize: need Adobe's cloud; ScanPro is offline by design.
+- Edge-midpoint crop handles and a "Straighten" control: not checked against ScanPro's crop editor yet; candidates for the next round.

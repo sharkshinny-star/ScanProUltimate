@@ -494,4 +494,16 @@
     <string name="tools_merge_meta_locked">Password protected · %1$s</string>
     <string name="tools_merge_remove">Remove %1$s</string>
     <string name="tools_compress_img_kept">This image is already as small as it gets, so it was kept as it is (%1$s).</string>
+    <string name="tools_card_repair">Repair PDF</string>
+    <string name="tools_err_repair_empty">That file is empty, so there is nothing to repair.</string>
+    <string name="tools_err_repair_protected">This PDF is protected. Unlock it first, then repair it.</string>
+    <string name="tools_err_repair_failed">This PDF is too damaged to recover: none of its pages could be read.</string>
+    <plurals name="tools_result_repaired">
+        <item quantity="one">Rebuilt the PDF. %1$d page recovered.</item>
+        <item quantity="other">Rebuilt the PDF. %1$d pages recovered.</item>
+    </plurals>
+    <plurals name="tools_result_repaired_pictures">
+        <item quantity="one">The file structure could not be repaired, so %1$d page was rebuilt as a picture. Its text is no longer selectable.</item>
+        <item quantity="other">The file structure could not be repaired, so %1$d pages were rebuilt as pictures. Their text is no longer selectable.</item>
+    </plurals>
 </resources>

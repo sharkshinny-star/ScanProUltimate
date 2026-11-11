@@ -196,4 +196,6 @@
     <string name="msg_scan_photos_unavailable">முடிக்காத ஸ்கேனின் ஃபோட்டோக்கள் இப்போது கிடைக்கவில்லை</string>
     <string name="msg_tools_out_of_memory">இந்த PDF-க்குப் போதுமான மெமரி இல்லை. சிறிய ஃபைல் அல்லது குறைவான பக்கங்களுடன் முயலுங்கள்.</string>
     <string name="msg_tools_form_nothing_changed">இன்னும் எதுவும் மாற்றப்படவில்லை</string>
+    <string name="msg_tools_repairing">PDF சரிசெய்யப்படுகிறது…</string>
+    <string name="msg_tools_repair_failed">PDF-ஐ சரிசெய்ய முடியவில்லை</string>
 </resources>

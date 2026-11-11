@@ -184,6 +184,7 @@ import com.example.scanpro.core.ui.openNewContactForm
 import com.example.scanpro.core.ui.openPdf
 import com.example.scanpro.core.ui.printPdf
 import com.example.scanpro.core.ui.saveToGoogleDrive
+import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.core.ui.shareImages
 import com.example.scanpro.core.ui.shareOcrText
 import com.example.scanpro.core.ui.sharePdf
@@ -551,6 +552,7 @@ internal fun DocumentDetailScreen(
     }
     val sharePdfNow: () -> Unit = { onWithFreshPdf({}) { sharePdf(context, it) } }
 
+    val wordScope = androidx.compose.runtime.rememberCoroutineScope()
     if (scanSaved) {
         ScanSavedSheet(
             document = document,
@@ -558,6 +560,19 @@ internal fun DocumentDetailScreen(
             onRename = onRename,
             onSharePdf = { title -> onWithFreshPdf({}) { sharePdf(context, it.copy(title = title)) } },
             onShareJpg = { shareImages(context, document) },
+            onShareWord = { title ->
+                wordScope.launch {
+                    val file = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        val pagesText = document.pages.sortedBy { it.position }.map {
+                            com.example.scanpro.imaging.PdfTextPage(it.ocrText, if (it.ocrText.isBlank()) com.example.scanpro.imaging.PageTextSource.NONE else com.example.scanpro.imaging.PageTextSource.OCR)
+                        }
+                        java.io.File(java.io.File(context.cacheDir, "exports").apply { mkdirs() }, "${com.example.scanpro.data.fileSafeName(title)}.docx").also {
+                            com.example.scanpro.imaging.PdfToTextEngine.write(title, pagesText, com.example.scanpro.imaging.TextExportFormat.WORD, it)
+                        }
+                    }
+                    shareFile(context, file.absolutePath, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", title)
+                }
+            },
             onSaveToDevice = { title -> savePdfLauncher.launch("${com.example.scanpro.data.fileSafeName(title)}.pdf") },
             onSaveToDrive = saveToDrive,
             onPrint = { title -> onWithFreshPdf({}) { printPdf(context, it.copy(title = title)) } },

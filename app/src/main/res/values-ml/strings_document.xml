@@ -268,4 +268,7 @@
     <string name="doc_saved_total">ആകെ %1$s</string>
     <string name="doc_saved_copy_total">ആകെ പകർത്തുക</string>
     <string name="doc_saved_copy_text_waiting">പേജിൽ ടെക്സ്റ്റ് കണ്ടെത്തിയാലുടൻ “ടെക്സ്റ്റ് പകർത്തുക” പ്രവർത്തിക്കും.</string>
+    <string name="doc_share_as_word">Word ആയി പങ്കിടുക</string>
+    <string name="doc_share_as_word_hint">ScanPro കണ്ടെത്തിയ വാക്കുകളിൽ നിന്നുള്ള എഡിറ്റ് ചെയ്യാവുന്ന ടെക്സ്റ്റ്</string>
+    <string name="doc_share_as_word_waiting">പേജിൽ ടെക്സ്റ്റ് കണ്ടെത്തിയാലുടൻ ലഭ്യമാകും</string>
 </resources>

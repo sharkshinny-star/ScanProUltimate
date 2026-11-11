@@ -196,4 +196,6 @@
     <string name="msg_scan_photos_unavailable">ಮುಗಿಯದ ಸ್ಕ್ಯಾನ್‌ನ ಫೋಟೋಗಳು ಈಗ ಲಭ್ಯವಿಲ್ಲ</string>
     <string name="msg_tools_out_of_memory">ಈ PDF ಗೆ ಸಾಕಷ್ಟು ಮೆಮೊರಿ ಇಲ್ಲ. ಚಿಕ್ಕ ಫೈಲ್ ಅಥವಾ ಕಡಿಮೆ ಪುಟಗಳನ್ನು ಪ್ರಯತ್ನಿಸಿ.</string>
     <string name="msg_tools_form_nothing_changed">ಇನ್ನೂ ಏನೂ ಬದಲಾಗಿಲ್ಲ</string>
+    <string name="msg_tools_repairing">PDF ದುರಸ್ತಿ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="msg_tools_repair_failed">PDF ದುರಸ್ತಿ ಮಾಡಲಾಗಲಿಲ್ಲ</string>
 </resources>

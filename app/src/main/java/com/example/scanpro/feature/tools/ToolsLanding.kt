@@ -146,6 +146,7 @@ private val TOOL_KEYWORDS = mapOf(
     "pdf2text" to "txt copy words plain text",
     "protect" to "password encrypt lock secure",
     "unlock" to "remove password decrypt open",
+    "repair" to "fix broken damaged corrupt will not open recover",
     "crop_img" to "trim cut photo",
     "compress_img" to "shrink reduce photo kb mb size",
     "convert_img" to "jpg jpeg png webp format change",

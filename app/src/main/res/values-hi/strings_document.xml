@@ -268,4 +268,7 @@
     <string name="doc_saved_total">कुल %1$s</string>
     <string name="doc_saved_copy_total">कुल कॉपी करें</string>
     <string name="doc_saved_copy_text_waiting">पेज पर टेक्स्ट मिलते ही “टेक्स्ट कॉपी करें” चालू हो जाएगा।</string>
+    <string name="doc_share_as_word">Word के रूप में साझा करें</string>
+    <string name="doc_share_as_word_hint">ScanPro को मिले शब्दों से संपादन योग्य टेक्स्ट</string>
+    <string name="doc_share_as_word_waiting">पेज पर टेक्स्ट मिलते ही उपलब्ध होगा</string>
 </resources>

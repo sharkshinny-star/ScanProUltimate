@@ -459,4 +459,16 @@
     <string name="tools_merge_meta_locked">പാസ്‌വേഡ് സംരക്ഷിതം · %1$s</string>
     <string name="tools_merge_remove">%1$s നീക്കം ചെയ്യുക</string>
     <string name="tools_compress_img_kept">ഈ ചിത്രം ഇതിനകം ഏറ്റവും ചെറുതാണ്, അതിനാൽ അത് അതേപടി നിലനിർത്തി (%1$s).</string>
+    <string name="tools_card_repair">PDF നന്നാക്കുക</string>
+    <string name="tools_err_repair_empty">ഈ ഫയൽ ശൂന്യമാണ്, നന്നാക്കാൻ ഒന്നുമില്ല.</string>
+    <string name="tools_err_repair_protected">ഈ PDF സംരക്ഷിതമാണ്. ആദ്യം അൺലോക്ക് ചെയ്യുക, പിന്നെ നന്നാക്കുക.</string>
+    <string name="tools_err_repair_failed">ഈ PDF വളരെ കേടായി: ഒരു പേജും വായിക്കാൻ കഴിഞ്ഞില്ല.</string>
+    <plurals name="tools_result_repaired">
+        <item quantity="one">PDF പുനർനിർമ്മിച്ചു. %1$d പേജ് വീണ്ടെടുത്തു.</item>
+        <item quantity="other">PDF പുനർനിർമ്മിച്ചു. %1$d പേജുകൾ വീണ്ടെടുത്തു.</item>
+    </plurals>
+    <plurals name="tools_result_repaired_pictures">
+        <item quantity="one">ഫയൽ ഘടന നന്നാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ %1$d പേജ് ചിത്രമായി പുനർനിർമ്മിച്ചു. അതിലെ ടെക്സ്റ്റ് തിരഞ്ഞെടുക്കാൻ കഴിയില്ല.</item>
+        <item quantity="other">ഫയൽ ഘടന നന്നാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ %1$d പേജുകൾ ചിത്രങ്ങളായി പുനർനിർമ്മിച്ചു. അവയിലെ ടെക്സ്റ്റ് തിരഞ്ഞെടുക്കാൻ കഴിയില്ല.</item>
+    </plurals>
 </resources>

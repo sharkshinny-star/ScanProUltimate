@@ -459,4 +459,16 @@
     <string name="tools_merge_meta_locked">ಪಾಸ್‌ವರ್ಡ್ ರಕ್ಷಿತ · %1$s</string>
     <string name="tools_merge_remove">%1$s ತೆಗೆದುಹಾಕಿ</string>
     <string name="tools_compress_img_kept">ಈ ಚಿತ್ರ ಈಗಾಗಲೇ ಅತಿ ಚಿಕ್ಕದಾಗಿದೆ, ಆದ್ದರಿಂದ ಅದನ್ನು ಹಾಗೆಯೇ ಇಡಲಾಗಿದೆ (%1$s).</string>
+    <string name="tools_card_repair">PDF ದುರಸ್ತಿ</string>
+    <string name="tools_err_repair_empty">ಈ ಫೈಲ್ ಖಾಲಿಯಾಗಿದೆ, ದುರಸ್ತಿ ಮಾಡಲು ಏನೂ ಇಲ್ಲ.</string>
+    <string name="tools_err_repair_protected">ಈ PDF ರಕ್ಷಿತವಾಗಿದೆ. ಮೊದಲು ಅನ್‌ಲಾಕ್ ಮಾಡಿ, ನಂತರ ದುರಸ್ತಿ ಮಾಡಿ.</string>
+    <string name="tools_err_repair_failed">ಈ PDF ತುಂಬಾ ಹಾನಿಗೊಂಡಿದೆ: ಯಾವುದೇ ಪುಟವನ್ನು ಓದಲಾಗಲಿಲ್ಲ.</string>
+    <plurals name="tools_result_repaired">
+        <item quantity="one">PDF ಅನ್ನು ಮರುನಿರ್ಮಿಸಲಾಗಿದೆ. %1$d ಪುಟ ಉಳಿಸಲಾಗಿದೆ.</item>
+        <item quantity="other">PDF ಅನ್ನು ಮರುನಿರ್ಮಿಸಲಾಗಿದೆ. %1$d ಪುಟಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ.</item>
+    </plurals>
+    <plurals name="tools_result_repaired_pictures">
+        <item quantity="one">ಫೈಲ್ ರಚನೆಯನ್ನು ದುರಸ್ತಿ ಮಾಡಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ %1$d ಪುಟವನ್ನು ಚಿತ್ರವಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ. ಅದರ ಪಠ್ಯವನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗದು.</item>
+        <item quantity="other">ಫೈಲ್ ರಚನೆಯನ್ನು ದುರಸ್ತಿ ಮಾಡಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ %1$d ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ. ಅವುಗಳ ಪಠ್ಯವನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗದು.</item>
+    </plurals>
 </resources>

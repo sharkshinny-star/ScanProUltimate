@@ -459,4 +459,16 @@
     <string name="tools_merge_meta_locked">கடவுச்சொல் பாதுகாப்பு · %1$s</string>
     <string name="tools_merge_remove">%1$s ஐ நீக்கு</string>
     <string name="tools_compress_img_kept">இந்தப் படம் ஏற்கனவே மிகச் சிறியது, எனவே அது அப்படியே வைக்கப்பட்டது (%1$s).</string>
+    <string name="tools_card_repair">PDF-ஐ சரிசெய்</string>
+    <string name="tools_err_repair_empty">இந்தக் கோப்பு காலியாக உள்ளது, சரிசெய்ய எதுவுமில்லை.</string>
+    <string name="tools_err_repair_protected">இந்த PDF பாதுகாக்கப்பட்டுள்ளது. முதலில் திறந்து, பின்னர் சரிசெய்யவும்.</string>
+    <string name="tools_err_repair_failed">இந்த PDF மிகவும் சேதமடைந்துள்ளது: எந்தப் பக்கத்தையும் படிக்க முடியவில்லை.</string>
+    <plurals name="tools_result_repaired">
+        <item quantity="one">PDF மீண்டும் உருவாக்கப்பட்டது. %1$d பக்கம் மீட்கப்பட்டது.</item>
+        <item quantity="other">PDF மீண்டும் உருவாக்கப்பட்டது. %1$d பக்கங்கள் மீட்கப்பட்டன.</item>
+    </plurals>
+    <plurals name="tools_result_repaired_pictures">
+        <item quantity="one">கோப்பின் அமைப்பை சரிசெய்ய முடியவில்லை, எனவே %1$d பக்கம் படமாக உருவாக்கப்பட்டது. அதன் உரையைத் தேர்ந்தெடுக்க முடியாது.</item>
+        <item quantity="other">கோப்பின் அமைப்பை சரிசெய்ய முடியவில்லை, எனவே %1$d பக்கங்கள் படங்களாக உருவாக்கப்பட்டன. அவற்றின் உரையைத் தேர்ந்தெடுக்க முடியாது.</item>
+    </plurals>
 </resources>

@@ -459,4 +459,16 @@
     <string name="tools_merge_meta_locked">పాస్‌వర్డ్ రక్షితం · %1$s</string>
     <string name="tools_merge_remove">%1$s తొలగించు</string>
     <string name="tools_compress_img_kept">ఈ చిత్రం ఇప్పటికే అతి చిన్నదిగా ఉంది, కాబట్టి దాన్ని అలాగే ఉంచాం (%1$s).</string>
+    <string name="tools_card_repair">PDF మరమ్మతు</string>
+    <string name="tools_err_repair_empty">ఈ ఫైల్ ఖాళీగా ఉంది, మరమ్మతు చేయడానికి ఏమీ లేదు.</string>
+    <string name="tools_err_repair_protected">ఈ PDF రక్షితమైనది. ముందు అన్‌లాక్ చేసి, తర్వాత మరమ్మతు చేయండి.</string>
+    <string name="tools_err_repair_failed">ఈ PDF చాలా దెబ్బతింది: ఏ పేజీనీ చదవలేకపోయాం.</string>
+    <plurals name="tools_result_repaired">
+        <item quantity="one">PDF ను తిరిగి నిర్మించాం. %1$d పేజీ రక్షించబడింది.</item>
+        <item quantity="other">PDF ను తిరిగి నిర్మించాం. %1$d పేజీలు రక్షించబడ్డాయి.</item>
+    </plurals>
+    <plurals name="tools_result_repaired_pictures">
+        <item quantity="one">ఫైల్ నిర్మాణాన్ని మరమ్మతు చేయలేకపోయాం, కాబట్టి %1$d పేజీని చిత్రంగా నిర్మించాం. దాని టెక్స్ట్‌ను ఎంచుకోలేరు.</item>
+        <item quantity="other">ఫైల్ నిర్మాణాన్ని మరమ్మతు చేయలేకపోయాం, కాబట్టి %1$d పేజీలను చిత్రాలుగా నిర్మించాం. వాటి టెక్స్ట్‌ను ఎంచుకోలేరు.</item>
+    </plurals>
 </resources>

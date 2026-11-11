@@ -196,4 +196,6 @@
     <string name="msg_scan_photos_unavailable">పూర్తికాని స్కాన్ ఫోటోలు ఇప్పుడు అందుబాటులో లేవు</string>
     <string name="msg_tools_out_of_memory">ఈ PDFకి తగినంత మెమరీ లేదు. చిన్న ఫైల్ లేదా తక్కువ పేజీలతో ప్రయత్నించండి.</string>
     <string name="msg_tools_form_nothing_changed">ఇంకా ఏమీ మార్చలేదు</string>
+    <string name="msg_tools_repairing">PDF మరమ్మతు చేస్తోంది…</string>
+    <string name="msg_tools_repair_failed">PDF ను మరమ్మతు చేయలేకపోయాం</string>
 </resources>
