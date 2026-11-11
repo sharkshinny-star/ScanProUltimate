@@ -286,3 +286,5 @@ new failures in "Known errors". Mirror important outcomes in `AGENT_HANDOFF.md`.
 ## Driving the app from an agent
 
 `.claude/skills/run-scanproultimate/` (SKILL.md and driver.sh): build and install in the background, launch, tap by label, pick test files, screenshots, logcat crashes, cold start, unit tests and the on-device edge benchmark, on a phone over adb. Every command in its SKILL.md was run on the OnePlus on 2026-11-12.
+
+2026-11-12: after merging the Dependabot Gradle wrapper 9.9.0 and zxing 3.5.4 bumps, `:app:compileDebugKotlin` passed (first run downloads Gradle 9.9.0, about 6 min). Unit tests, instrumented tests and the release build were not run after the merge.
