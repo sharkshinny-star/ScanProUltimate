@@ -126,26 +126,19 @@ object PdfExporter {
                 // Fail loudly: silently skipping a page would produce a short PDF with wrong page numbers.
                 val bitmap = decode(pageModel.imagePath, quality.maxImageDimension)
                     ?: userError(R.string.err_could_not_read_pdf_page, index + 1)
-                val fixedSize = pointSizes?.getOrNull(index)
-                val (pageWidth, pageHeight) = fixedSize ?: pageDimensions(pageSize, bitmap.width, bitmap.height)
-                val margin = if (fixedSize != null) 0f else MARGIN
+                val layout = layoutPage(pageSize, pointSizes?.getOrNull(index), bitmap.width, bitmap.height, pageNumbers)
+                val pageWidth = layout.pageWidth
+                val pageHeight = layout.pageHeight
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
                 val page = pdf.startPage(info)
                 val canvas = page.canvas
                 // With JPEG pictures placed afterwards the page stays unpainted, so they are not covered; viewers show it white.
                 if (jpegDir == null) canvas.drawColor(Color.WHITE)
 
-                val bottomReserve = if (pageNumbers) 18f else 0f
-                val availableWidth = pageWidth - margin * 2
-                val availableHeight = pageHeight - margin * 2 - bottomReserve
-                val scale = min(
-                    availableWidth / bitmap.width.toFloat(),
-                    availableHeight / bitmap.height.toFloat()
-                )
-                val drawWidth = bitmap.width * scale
-                val drawHeight = bitmap.height * scale
-                val left = (pageWidth - drawWidth) / 2f
-                val top = (pageHeight - bottomReserve - drawHeight) / 2f
+                val drawWidth = layout.width
+                val drawHeight = layout.height
+                val left = layout.left
+                val top = layout.top
 
                 if (jpegDir == null) {
                     canvas.drawBitmap(
@@ -262,6 +255,26 @@ object PdfExporter {
             )
         }
         export(pages, destination, quality, PdfPageSize.A4, searchable = false, pageNumbers = false)
+    }
+
+    /** A page's size in points and where its picture goes on it (top-left origin, as the Canvas draws). */
+    internal class PageLayout(val pageWidth: Int, val pageHeight: Int, val left: Float, val top: Float, val width: Float, val height: Float)
+
+    /**
+     * The page for one picture: [pointSize] keeps that size with the picture edge to edge (Compress PDF rebuilding a
+     * PDF's own pages); otherwise [pageSize] decides and the picture is centred inside the margin.
+     */
+    internal fun layoutPage(pageSize: PdfPageSize, pointSize: Pair<Int, Int>?, imageWidth: Int, imageHeight: Int, pageNumbers: Boolean): PageLayout {
+        val (pageWidth, pageHeight) = pointSize ?: pageDimensions(pageSize, imageWidth, imageHeight)
+        val margin = if (pointSize != null) 0f else MARGIN
+        val bottomReserve = if (pageNumbers) 18f else 0f
+        val scale = min(
+            (pageWidth - margin * 2) / imageWidth.toFloat(),
+            (pageHeight - margin * 2 - bottomReserve) / imageHeight.toFloat()
+        )
+        val drawWidth = imageWidth * scale
+        val drawHeight = imageHeight * scale
+        return PageLayout(pageWidth, pageHeight, (pageWidth - drawWidth) / 2f, (pageHeight - bottomReserve - drawHeight) / 2f, drawWidth, drawHeight)
     }
 
     private fun pageDimensions(pageSize: PdfPageSize, imageWidth: Int, imageHeight: Int): Pair<Int, Int> {

@@ -338,14 +338,30 @@ fun PdfToolsScreen(
 
     var activeCropSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
     var activeCropUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    var onCropFinishedCallback by remember { mutableStateOf<((Uri) -> Unit)?>(null) }
-    // Saved across a rotation, unlike the callback itself: tells that this crop belongs to Images to PDF.
-    var cropNeedsCallback by rememberSaveable { mutableStateOf(false) }
+    // Where a finished crop goes back to (a dialog, or a picture in the Images to PDF list), as saved state rather than a
+    // lambda: a rotation during the crop used to lose the lambda, so the crop could not reach its page (R48).
+    var cropReturn by rememberSaveable { mutableStateOf<String?>(null) }
     val cropScope = rememberCoroutineScope()
+
+    /** Hands a cropped picture back to whatever asked for the crop; see [cropReturn]. */
+    fun deliverCrop(croppedUri: Uri, target: String) {
+        when {
+            target == CROP_RETURN_COMPRESS -> { pendingUri = croppedUri; showCompressImageDialog = true }
+            target == CROP_RETURN_RESIZE -> { pendingUri = croppedUri; showResizeImageDialog = true }
+            target.startsWith(CROP_RETURN_CONVERT) -> {
+                val index = target.removePrefix(CROP_RETURN_CONVERT).toIntOrNull()
+                val current = pendingImageUris
+                if (index != null && current != null && index in current.indices) {
+                    pendingImageUris = current.toMutableList().also { it[index] = croppedUri }
+                }
+                showConvertImageDialog = true
+            }
+        }
+    }
 
     // Read here, where it follows a language change, not with context.getString inside the launcher.
     val cropFailedMessage = stringResource(R.string.tools_err_crop_img)
-    fun launchCropForUri(targetUri: Uri, onCropped: ((Uri) -> Unit)? = null) {
+    fun launchCropForUri(targetUri: Uri, returnTo: String? = null) {
         cropScope.launch {
             // An unreadable, cloud-only or revoked picture must say so, not crash the app or do nothing.
             val stagedFile = try {
@@ -359,8 +375,7 @@ fun PdfToolsScreen(
             }
             if (stagedFile != null && stagedFile.length() > 0) {
                 activeCropUri = targetUri
-                cropNeedsCallback = onCropped != null
-                onCropFinishedCallback = onCropped
+                cropReturn = returnTo
                 activeCropSourcePath = stagedFile.absolutePath
             } else {
                 stagedFile?.delete()
@@ -595,19 +610,7 @@ fun PdfToolsScreen(
                 )
             }
 
-            // A rotation loses the callback that hands an Images to PDF crop back to its page. Saving the crop would then
-            // produce a stray cropped copy and leave the page unchanged, so the editor is closed instead; crop again.
-            val lostCallback = cropNeedsCallback && onCropFinishedCallback == null
-            LaunchedEffect(lostCallback, activeCropSourcePath) {
-                val staged = activeCropSourcePath
-                if (lostCallback && staged != null) {
-                    File(staged).delete()
-                    activeCropSourcePath = null
-                    activeCropUri = null
-                    cropNeedsCallback = false
-                }
-            }
-            activeCropSourcePath?.takeUnless { lostCallback }?.let { stagedPath ->
+            activeCropSourcePath?.let { stagedPath ->
                 CropEditorDialog(
                     sourcePath = stagedPath,
                     initial = CropQuad.DEFAULT,
@@ -615,16 +618,16 @@ fun PdfToolsScreen(
                         File(stagedPath).delete()
                         activeCropSourcePath = null
                         activeCropUri = null
-                        onCropFinishedCallback = null
+                        cropReturn = null
                     },
                     onConfirm = { quad ->
                         val originalUri = activeCropUri
-                        val callback = onCropFinishedCallback
+                        val target = cropReturn
                         activeCropSourcePath = null
                         activeCropUri = null
-                        onCropFinishedCallback = null
+                        cropReturn = null
                         if (originalUri != null) {
-                            if (callback != null) {
+                            if (target != null) {
                                 cropScope.launch {
                                     val croppedFile = withContext(Dispatchers.IO) {
                                         val dest = File(context.cacheDir, "precrop_${UUID.randomUUID()}.jpg")
@@ -633,7 +636,7 @@ fun PdfToolsScreen(
                                         dest
                                     }
                                     if (croppedFile.exists() && croppedFile.length() > 0) {
-                                        callback(Uri.fromFile(croppedFile))
+                                        deliverCrop(Uri.fromFile(croppedFile), target)
                                     }
                                 }
                             } else {
@@ -726,10 +729,7 @@ fun PdfToolsScreen(
                     onDismiss = { showCompressImageDialog = false },
                     onCrop = {
                         showCompressImageDialog = false
-                        launchCropForUri(uri) { croppedUri ->
-                            pendingUri = croppedUri
-                            showCompressImageDialog = true
-                        }
+                        launchCropForUri(uri, CROP_RETURN_COMPRESS)
                     },
                     onConfirm = { config ->
                         showCompressImageDialog = false
@@ -749,12 +749,7 @@ fun PdfToolsScreen(
                         onCropImage = { index ->
                             val targetUri = uris[index]
                             showConvertImageDialog = false
-                            launchCropForUri(targetUri) { croppedUri ->
-                                val updated = uris.toMutableList()
-                                updated[index] = croppedUri
-                                pendingImageUris = updated
-                                showConvertImageDialog = true
-                            }
+                            launchCropForUri(targetUri, CROP_RETURN_CONVERT + index)
                         },
                         onConfirm = { format, quality ->
                             showConvertImageDialog = false
@@ -779,10 +774,7 @@ fun PdfToolsScreen(
                     onDismiss = { showResizeImageDialog = false },
                     onCrop = {
                         showResizeImageDialog = false
-                        launchCropForUri(uri) { croppedUri ->
-                            pendingUri = croppedUri
-                            showResizeImageDialog = true
-                        }
+                        launchCropForUri(uri, CROP_RETURN_RESIZE)
                     },
                     onConfirm = { config ->
                         showResizeImageDialog = false
@@ -3596,3 +3588,8 @@ fun PdfToolsScreenDarkPreview() {
         )
     }
 }
+
+/** Values of the saved crop target in [PdfToolsScreen]: which dialog, or which Images to PDF picture, gets the crop. */
+private const val CROP_RETURN_COMPRESS = "compress"
+private const val CROP_RETURN_RESIZE = "resize"
+private const val CROP_RETURN_CONVERT = "convert:"

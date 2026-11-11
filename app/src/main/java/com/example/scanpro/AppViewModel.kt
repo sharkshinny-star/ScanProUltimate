@@ -20,6 +20,7 @@ import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.data.WHATS_NEW_VERSION
 import com.example.scanpro.navigation.RetakeTarget
 import com.example.scanpro.scanner.SESSION_ROOT
+import com.example.scanpro.core.ui.PromptQueue
 import com.example.scanpro.work.ImportScanWorker
 import kotlinx.coroutines.CancellationException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +35,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -225,20 +225,18 @@ class AppViewModel @Inject constructor(
     data class PdfPasswordRequest(val uri: Uri, val wrongPassword: Boolean)
 
     // A queue, not one slot: several protected PDFs shared at once each get their own prompt, one after another.
-    private val _pdfPasswordRequests = MutableStateFlow<List<PdfPasswordRequest>>(emptyList())
-    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = _pdfPasswordRequests
-        .map { it.firstOrNull() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    fun cancelPdfPassword() { _pdfPasswordRequests.update { it.drop(1) } }
+    private val pdfPasswordRequests = PromptQueue<PdfPasswordRequest> { a, b -> a.uri == b.uri }
+    val pdfPasswordRequest: StateFlow<PdfPasswordRequest?> = pdfPasswordRequests.head
+    fun cancelPdfPassword() = pdfPasswordRequests.dropHead()
 
     fun importPdf(uri: Uri, password: String? = null) {
-        _pdfPasswordRequests.update { queue -> queue.filterNot { it.uri == uri } }
+        pdfPasswordRequests.remove { it.uri == uri }
         operations.enqueue(context.getString(R.string.msg_import_pdf_progress), null) {
             try {
                 repository.importPdf(uri, settings.pdfQuality.first(), settings.autoTitle.first(), password)
                 operations.showMessage(context.getString(R.string.msg_pdf_imported))
             } catch (needsPassword: PdfPasswordRequiredException) {
-                _pdfPasswordRequests.update { queue -> queue.filterNot { it.uri == uri } + PdfPasswordRequest(uri, needsPassword.wrongPassword) }
+                pdfPasswordRequests.offer(PdfPasswordRequest(uri, needsPassword.wrongPassword))
             }
         }
     }

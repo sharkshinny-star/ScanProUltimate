@@ -36,6 +36,9 @@ class FakeOcr(context: Context) : OcrEngine(context) {
     /** Fails only for the files this accepts, so one bad page can be told from the rest. */
     var failFor: (File) -> Boolean = { false }
 
+    /** Thrown as it is from every recognition, e.g. a CancellationException for a job that was stopped. */
+    var readFailure: Throwable? = null
+
     /** Every script the engine was asked to prepare, and an error to throw from it (a model that can't be fetched). */
     val prepared = mutableListOf<OcrScript>()
     var prepareFailure: Throwable? = null
@@ -47,6 +50,7 @@ class FakeOcr(context: Context) : OcrEngine(context) {
 
     override suspend fun recognizeDetailed(file: File, script: OcrScript): OcrResult {
         calls++
+        readFailure?.let { throw it }
         if (failing || failFor(file)) throw IllegalStateException("recognition failed")
         return OcrResult(text, emptyList())
     }
