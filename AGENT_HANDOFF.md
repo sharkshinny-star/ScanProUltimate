@@ -192,6 +192,8 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 10. **F134–F137 not device-tested:** Stop during a long PDF import (no document appears); Add page with a forced failure (photos in Unsaved scans); Save PDF, then rotate while "Preparing PDF"; delete a page, then crop another (files purged); share 3 protected PDFs (three prompts); Fill form on a PDF whose radio group has `/Opt`; Compress a Letter-size scanned PDF (page size unchanged); back up a document with corrected text and restore it; Save on the review screen, then press Home at once.
 
+11. **Leftover work pushed unverified (2026-11-11, after `e29b727`):** R47 (page numbers now follow /Rotate: `PageNumberGeometry`), R49 (watermark and page numbers close the PDF on failure), R48 (Images to PDF crop target kept as saved state, not a lambda), `PromptQueue` and `savePdfCopy` extracted from the F137 code, and new tests (`PromptQueueTest`, `SavePdfCopyTest`, `PageNumberGeometryTest`, `KeepUnsavedTest`, `RepositoryBugFixesTest`, `PdfBugFixesTest`). It compiles. Before the last edit the new tests passed except one assertion in `PdfBugFixesTest` (Compress layout margin), which was then corrected; **the full suite, lint and release builds have not been re-run on this tree**. Run them first, then move R47–R49 to Fixed in `AUDIT_FINDINGS.md` (still listed Open).
+
 ## 4. Next steps
 
 - **Device checks for F124 to F126 (R44)** and a speaker's read of the new strings. CI is green (run 120).

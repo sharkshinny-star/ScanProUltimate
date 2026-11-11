@@ -140,6 +140,40 @@ internal object WatermarkGeometry {
     }
 }
 
+/**
+ * Where a page number goes. Like [WatermarkGeometry], the spot is chosen on the page as it is *seen* (after /Rotate), so
+ * "bottom centre" is the bottom edge the reader sees and the number reads upright, then mapped to stored coordinates.
+ */
+internal object PageNumberGeometry {
+    /**
+     * The start of the number's baseline in page coordinates, relative to the visible box's lower-left corner, and the
+     * text angle (radians, anticlockwise). [width]/[height] are the stored visible box.
+     */
+    fun place(
+        position: PageNumberPosition,
+        textWidth: Float,
+        fontSize: Float,
+        margin: Float,
+        width: Float,
+        height: Float,
+        rotation: Int
+    ): WatermarkGeometry.Stamp {
+        val (seenW, seenH) = WatermarkGeometry.seenSize(width, height, rotation)
+        val seenX = when (position) {
+            PageNumberPosition.BOTTOM_LEFT -> margin
+            PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (seenW - textWidth) / 2f
+            PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> seenW - margin - textWidth
+        }
+        // Seen y points down; this is the baseline.
+        val seenY = when (position) {
+            PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> seenH - margin
+            PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> margin + fontSize
+        }
+        val (px, py) = WatermarkGeometry.toPage(seenX, seenY, width, height, rotation)
+        return WatermarkGeometry.Stamp(px, py, Math.toRadians((((rotation % 360) + 360) % 360).toDouble()))
+    }
+}
+
 enum class PageNumberPosition {
     BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT
 }
@@ -715,62 +749,64 @@ object PdfToolsEngine {
         val tempFile = copyUriToTemp(context, inputUri, "wm_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
-            val doc = openPdf(tempFile, password)
-            val totalPages = doc.numberOfPages
-            userRequire(totalPages > 0, R.string.tools_err_no_pages)
+            // use {}: a failure part-way (cancel, a glyph the font lacks) must still close the document.
+            val (totalPages, watermarkedCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
 
-            val targetRanges = if (config.pageRange.isBlank()) listOf(1..totalPages)
-            else parsePageRanges(config.pageRange, totalPages)
-            val targetPages = targetRanges.flatMap { it.toList() }.map { it - 1 }.toSet()
+                val targetRanges = if (config.pageRange.isBlank()) listOf(1..totalPages)
+                else parsePageRanges(config.pageRange, totalPages)
+                val targetPages = targetRanges.flatMap { it.toList() }.map { it - 1 }.toSet()
 
-            val font = PDType1Font.HELVETICA_BOLD
-            val fontSize = config.fontSizePt.coerceIn(12f, 120f)
-            val alpha = (config.opacityPercent.coerceIn(5, 100) / 100f)
-            val r = android.graphics.Color.red(config.colorRgb) / 255f
-            val g = android.graphics.Color.green(config.colorRgb) / 255f
-            val b = android.graphics.Color.blue(config.colorRgb) / 255f
+                val font = PDType1Font.HELVETICA_BOLD
+                val fontSize = config.fontSizePt.coerceIn(12f, 120f)
+                val alpha = (config.opacityPercent.coerceIn(5, 100) / 100f)
+                val r = android.graphics.Color.red(config.colorRgb) / 255f
+                val g = android.graphics.Color.green(config.colorRgb) / 255f
+                val b = android.graphics.Color.blue(config.colorRgb) / 255f
 
-            val gState = PDExtendedGraphicsState().apply {
-                nonStrokingAlphaConstant = alpha
-            }
-
-            var watermarkedCount = 0
-            val label = AppStrings.get(R.string.tools_progress_watermarking)
-            for (i in 0 until totalPages) {
-                if (!coroutineContext.isActive) throw InterruptedException("Watermark cancelled")
-                onProgress(i + 1, totalPages, label)
-
-                if (i in targetPages) {
-                    val page = doc.getPage(i)
-                    val textWidth = (font.getStringWidth(config.text) / 1000f) * fontSize
-
-                    val rotation = page.rotation
-                    // The visible box (crop box) is what the reader sees; it need not start at 0,0 on scanned PDFs.
-                    val visible = page.cropBox
-                    val stamps = WatermarkGeometry.stamps(config, textWidth, fontSize, visible.width, visible.height, rotation)
-                    PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
-                        cs.setGraphicsStateParameters(gState)
-                        cs.setNonStrokingColor(r, g, b)
-                        stamps.forEach { stamp ->
-                            val cos = Math.cos(stamp.angleRad).toFloat()
-                            val sin = Math.sin(stamp.angleRad).toFloat()
-                            // Half the cap height of Helvetica, so the text is centred on the point rather than sitting on it.
-                            val halfCap = fontSize * 0.36f
-                            val tx = visible.lowerLeftX + stamp.x - (textWidth / 2f * cos) + (halfCap * sin)
-                            val ty = visible.lowerLeftY + stamp.y - (textWidth / 2f * sin) - (halfCap * cos)
-                            cs.beginText()
-                            cs.setFont(font, fontSize)
-                            cs.setTextMatrix(Matrix(cos, sin, -sin, cos, tx, ty))
-                            cs.showText(config.text)
-                            cs.endText()
-                        }
-                    }
-                    watermarkedCount++
+                val gState = PDExtendedGraphicsState().apply {
+                    nonStrokingAlphaConstant = alpha
                 }
-            }
 
-            doc.save(outputFile)
-            doc.close()
+                var watermarkedCount = 0
+                val label = AppStrings.get(R.string.tools_progress_watermarking)
+                for (i in 0 until totalPages) {
+                    if (!coroutineContext.isActive) throw InterruptedException("Watermark cancelled")
+                    onProgress(i + 1, totalPages, label)
+
+                    if (i in targetPages) {
+                        val page = doc.getPage(i)
+                        val textWidth = (font.getStringWidth(config.text) / 1000f) * fontSize
+
+                        val rotation = page.rotation
+                        // The visible box (crop box) is what the reader sees; it need not start at 0,0 on scanned PDFs.
+                        val visible = page.cropBox
+                        val stamps = WatermarkGeometry.stamps(config, textWidth, fontSize, visible.width, visible.height, rotation)
+                        PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                            cs.setGraphicsStateParameters(gState)
+                            cs.setNonStrokingColor(r, g, b)
+                            stamps.forEach { stamp ->
+                                val cos = Math.cos(stamp.angleRad).toFloat()
+                                val sin = Math.sin(stamp.angleRad).toFloat()
+                                // Half the cap height of Helvetica, so the text is centred on the point rather than sitting on it.
+                                val halfCap = fontSize * 0.36f
+                                val tx = visible.lowerLeftX + stamp.x - (textWidth / 2f * cos) + (halfCap * sin)
+                                val ty = visible.lowerLeftY + stamp.y - (textWidth / 2f * sin) - (halfCap * cos)
+                                cs.beginText()
+                                cs.setFont(font, fontSize)
+                                cs.setTextMatrix(Matrix(cos, sin, -sin, cos, tx, ty))
+                                cs.showText(config.text)
+                                cs.endText()
+                            }
+                        }
+                        watermarkedCount++
+                    }
+                }
+
+                doc.save(outputFile)
+                totalPages to watermarkedCount
+            }
 
             val outputSize = outputFile.length()
             val msg = AppStrings.get(R.string.tools_watermark_success, watermarkedCount)
@@ -801,62 +837,56 @@ object PdfToolsEngine {
         val tempFile = copyUriToTemp(context, inputUri, "num_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
-            val doc = openPdf(tempFile, password)
-            val totalPages = doc.numberOfPages
-            userRequire(totalPages > 0, R.string.tools_err_no_pages)
+            val (totalPages, numberedCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
 
-            val font = PDType1Font.HELVETICA
-            val fontSize = config.fontSizePt.coerceIn(8f, 24f)
-            val margin = config.marginPt.coerceIn(12f, 100f)
+                val font = PDType1Font.HELVETICA
+                val fontSize = config.fontSizePt.coerceIn(8f, 24f)
+                val margin = config.marginPt.coerceIn(12f, 100f)
 
-            var numberedCount = 0
-            val label = AppStrings.get(R.string.tools_progress_page_numbers)
+                var numberedCount = 0
+                val label = AppStrings.get(R.string.tools_progress_page_numbers)
 
-            for (i in 0 until totalPages) {
-                if (!coroutineContext.isActive) throw InterruptedException("Page numbers cancelled")
-                onProgress(i + 1, totalPages, label)
+                for (i in 0 until totalPages) {
+                    if (!coroutineContext.isActive) throw InterruptedException("Page numbers cancelled")
+                    onProgress(i + 1, totalPages, label)
 
-                if (config.skipFirstPage && i == 0) continue
+                    if (config.skipFirstPage && i == 0) continue
 
-                val page = doc.getPage(i)
-                val box = page.mediaBox
-                val width = box.width
-                val height = box.height
+                    val page = doc.getPage(i)
+                    // The visible box: it need not start at 0,0 and can be smaller than the media box on cropped PDFs.
+                    val box = page.cropBox
 
-                val pageNum = i + 1
-                val text = when (config.format) {
-                    PageNumberFormat.PAGE_N_OF_M -> "Page $pageNum of $totalPages"
-                    PageNumberFormat.N_SLASH_M -> "$pageNum / $totalPages"
-                    PageNumberFormat.DASH -> "- $pageNum -"
-                    PageNumberFormat.SIMPLE -> "$pageNum"
+                    val pageNum = i + 1
+                    val text = when (config.format) {
+                        PageNumberFormat.PAGE_N_OF_M -> "Page $pageNum of $totalPages"
+                        PageNumberFormat.N_SLASH_M -> "$pageNum / $totalPages"
+                        PageNumberFormat.DASH -> "- $pageNum -"
+                        PageNumberFormat.SIMPLE -> "$pageNum"
+                    }
+
+                    val textWidth = (font.getStringWidth(text) / 1000f) * fontSize
+
+                    // Placed on the page as seen, so a page turned with /Rotate gets an upright number on the edge the reader sees.
+                    val spot = PageNumberGeometry.place(config.position, textWidth, fontSize, margin, box.width, box.height, page.rotation)
+                    val cos = Math.cos(spot.angleRad).toFloat()
+                    val sin = Math.sin(spot.angleRad).toFloat()
+
+                    PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+                        cs.setNonStrokingColor(0.2f, 0.2f, 0.2f)
+                        cs.beginText()
+                        cs.setFont(font, fontSize)
+                        cs.setTextMatrix(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
+                        cs.showText(text)
+                        cs.endText()
+                    }
+                    numberedCount++
                 }
 
-                val textWidth = (font.getStringWidth(text) / 1000f) * fontSize
-
-                // The page box need not start at 0,0 (cropped or scanned PDFs), so place the number within it.
-                val x = box.lowerLeftX + when (config.position) {
-                    PageNumberPosition.BOTTOM_LEFT -> margin
-                    PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (width - textWidth) / 2f
-                    PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> width - margin - textWidth
-                }
-                val y = box.lowerLeftY + when (config.position) {
-                    PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> margin
-                    PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> height - margin - fontSize
-                }
-
-                PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
-                    cs.setNonStrokingColor(0.2f, 0.2f, 0.2f)
-                    cs.beginText()
-                    cs.setFont(font, fontSize)
-                    cs.newLineAtOffset(x, y)
-                    cs.showText(text)
-                    cs.endText()
-                }
-                numberedCount++
+                doc.save(outputFile)
+                totalPages to numberedCount
             }
-
-            doc.save(outputFile)
-            doc.close()
 
             val outputSize = outputFile.length()
             val msg = AppStrings.get(R.string.tools_page_numbers_success, numberedCount)
