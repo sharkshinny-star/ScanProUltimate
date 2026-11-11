@@ -128,6 +128,12 @@ fun CropEditorDialog(
             dismissOnBackPress = true
         )
     ) {
+        // This editor is always dark, but a Dialog has its own window that ignores the app's bar style: in the light
+        // theme the clock and battery came out dark on dark (seen on a device). Light icons, whatever the theme.
+        val dialogWindow = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.SideEffect {
+            dialogWindow?.let { androidx.core.view.WindowCompat.getInsetsController(it, it.decorView).isAppearanceLightStatusBars = false }
+        }
         var loadFailed by rememberSaveable(sourcePath, fallbackPath) { mutableStateOf(false) }
         val bitmap by produceState<Bitmap?>(initialValue = null, sourcePath, fallbackPath) {
             loadFailed = false

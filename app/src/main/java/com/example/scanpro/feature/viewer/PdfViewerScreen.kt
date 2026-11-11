@@ -376,7 +376,8 @@ fun PdfViewerScreen(
                             onValueChange = { searchQuery = it },
                             placeholder = { Text(stringResource(R.string.viewer_search_placeholder)) },
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            // No fixed height: an outlined field needs 56 dp, and 52 dp clipped the bottom of the typed text.
+                            modifier = Modifier.fillMaxWidth(),
                             trailingIcon = {
                                 if (isSearchingText) {
                                     CircularProgressIndicator(modifier = Modifier.size(20.dp))
