@@ -51,6 +51,13 @@ class PdfPreviewSession private constructor(
         }.getOrNull()
     }
 
+    /** A page's size in points (1/72 inch) as it is shown, or null if it cannot be read. */
+    @Synchronized
+    fun pageSizePoints(index: Int): Pair<Int, Int>? = runCatching {
+        check(!closed)
+        renderer.openPage(index).use { it.width to it.height }
+    }.getOrNull()
+
     @Synchronized
     override fun close() {
         if (closed) return

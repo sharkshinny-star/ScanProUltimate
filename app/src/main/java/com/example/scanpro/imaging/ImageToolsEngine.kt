@@ -39,11 +39,22 @@ data class ImageCompressConfig(
     val outputFormat: ImageExportFormat = ImageExportFormat.JPEG,
 )
 
+/** What to do when the picture's shape is not the box's shape. */
+enum class ImageResizeFit {
+    /** Keep the proportions and fit inside the box: the result may be smaller than the box on one side. */
+    FIT,
+    /** Keep the proportions and fill the box exactly, cutting the overflow from the centre. */
+    FILL,
+    /** Force the exact size by stretching: distorts anything that is not the box's shape. */
+    STRETCH
+}
+
 data class ImageResizeConfig(
     val targetWidth: Int,
     val targetHeight: Int,
     val outputFormat: ImageExportFormat = ImageExportFormat.JPEG,
     val qualityPercent: Int = 92,
+    val fit: ImageResizeFit = ImageResizeFit.STRETCH,
 )
 
 object ImageToolsEngine {
@@ -128,6 +139,22 @@ object ImageToolsEngine {
                 compressWithQuality(tempFile, outputFile, config.qualityPercent, config.maxDimension, config.outputFormat)
             }
 
+            // Tiny or already-optimised pictures can come out bigger. When the format is unchanged, keep the original
+            // bytes instead of handing back something larger than what the user picked.
+            val sourceMime = android.graphics.BitmapFactory.Options().also {
+                it.inJustDecodeBounds = true
+                android.graphics.BitmapFactory.decodeFile(tempFile.absolutePath, it)
+            }.outMimeType.orEmpty().lowercase()
+            val outExt = outputFile.extension.lowercase()
+            val sameFormat = when (outExt) {
+                "jpg", "jpeg" -> sourceMime == "image/jpeg"
+                "png" -> sourceMime == "image/png"
+                "webp" -> sourceMime == "image/webp"
+                else -> false
+            }
+            val keptOriginal = outputFile.length() >= originalSize && sameFormat
+            if (keptOriginal) tempFile.copyTo(outputFile, overwrite = true)
+
             val outputSize = outputFile.length()
             val savings = if (originalSize > 0) {
                 maxOf(0, (((originalSize - outputSize).toFloat() / originalSize) * 100).roundToInt())
@@ -135,7 +162,8 @@ object ImageToolsEngine {
 
             onProgress(2, 2, AppStrings.get(R.string.tools_progress_compressing_img))
 
-            val msg = AppStrings.get(
+            val msg = if (keptOriginal) AppStrings.get(R.string.tools_compress_img_kept, formatBytes(context, originalSize))
+            else AppStrings.get(
                 R.string.tools_compress_img_success,
                 savings,
                 formatBytes(context, originalSize),
@@ -338,8 +366,25 @@ object ImageToolsEngine {
             val bitmap = ImageProcessor.decodeOrientedScaled(tempFile.absolutePath, max(targetWidth, targetHeight) * 2)
                 ?: userError(R.string.tools_err_image_undecodable, 1)
 
-            val scaled = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+            val scaled = when (config.fit) {
+                ImageResizeFit.STRETCH -> Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                ImageResizeFit.FIT -> {
+                    val k = minOf(targetWidth.toFloat() / bitmap.width, targetHeight.toFloat() / bitmap.height)
+                    Bitmap.createScaledBitmap(bitmap, (bitmap.width * k).roundToInt().coerceAtLeast(1), (bitmap.height * k).roundToInt().coerceAtLeast(1), true)
+                }
+                ImageResizeFit.FILL -> {
+                    val k = maxOf(targetWidth.toFloat() / bitmap.width, targetHeight.toFloat() / bitmap.height)
+                    val w = kotlin.math.ceil(bitmap.width * k).toInt().coerceAtLeast(targetWidth)
+                    val h = kotlin.math.ceil(bitmap.height * k).toInt().coerceAtLeast(targetHeight)
+                    val grown = Bitmap.createScaledBitmap(bitmap, w, h, true)
+                    val cropped = Bitmap.createBitmap(grown, (w - targetWidth) / 2, (h - targetHeight) / 2, targetWidth, targetHeight)
+                    if (grown !== cropped && grown !== bitmap && !grown.isRecycled) grown.recycle()
+                    cropped
+                }
+            }
             if ((scaled !== bitmap) && !bitmap.isRecycled) bitmap.recycle()
+            val resultWidth = scaled.width
+            val resultHeight = scaled.height
 
             val prepared = prepareForFormat(scaled, config.outputFormat)
             if ((prepared !== scaled) && !scaled.isRecycled) scaled.recycle()
@@ -353,8 +398,8 @@ object ImageToolsEngine {
             val outputSize = outputFile.length()
             val msg = AppStrings.get(
                 R.string.tools_resize_img_success,
-                targetWidth,
-                targetHeight,
+                resultWidth,
+                resultHeight,
                 formatBytes(context, outputSize)
             )
 

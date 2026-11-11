@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -65,6 +66,12 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.VerticalAlignTop
+import androidx.compose.material.icons.filled.VerticalAlignBottom
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Merge
@@ -106,6 +113,7 @@ import androidx.compose.material3.TopAppBar
 import com.example.scanpro.imaging.ImageCompressConfig
 import com.example.scanpro.imaging.ImageMetadata
 import com.example.scanpro.imaging.ImageResizeConfig
+import com.example.scanpro.imaging.ImageResizeFit
 import com.example.scanpro.imaging.ImageToolsEngine
 import com.example.scanpro.imaging.PageNumberFormat
 import com.example.scanpro.imaging.PageNumberPosition
@@ -194,10 +202,10 @@ data class PdfToolCard(
     @StringRes val label: Int = title
 )
 
-private class ToolSection(val id: String, @StringRes val title: Int, val tools: List<PdfToolCard>)
+internal class ToolSection(val id: String, @StringRes val title: Int, val tools: List<PdfToolCard>)
 
 /** Tiles grouped the way the leading scanners do: what you do to a PDF, what you turn it into, how you lock it. */
-private val TOOL_SECTIONS = listOf(
+internal val TOOL_SECTIONS = listOf(
     ToolSection(
         "edit", R.string.tools_section_edit, listOf(
             PdfToolCard("merge", R.string.tools_card_merge, Icons.Default.Merge, TileTone.Indigo),
@@ -249,7 +257,7 @@ private val OFFICE_MIME_TYPES = arrayOf(
     "multipart/related", "message/rfc822", "application/x-mimearchive"
 )
 
-private val VIEWER_TOOL = PdfToolCard("viewer", R.string.tools_card_viewer, Icons.Default.Visibility, TileTone.Slate)
+internal val VIEWER_TOOL = PdfToolCard("viewer", R.string.tools_card_viewer, Icons.Default.Visibility, TileTone.Slate)
 
 /** Every tool, for the "Use with a tool" menu on a recent PDF. */
 private val PDF_TOOLS = TOOL_SECTIONS.filter { it.id != "image" }.flatMap { it.tools } + VIEWER_TOOL
@@ -428,7 +436,7 @@ fun PdfToolsScreen(
     val multiPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty() && selectedTool == "merge") {
             viewModel.rememberPdfs(uris)
-            if (uris.size == 1) viewModel.merge(uris) else ordering = uris
+            ordering = uris
         }
     }
     val imagesPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
@@ -437,19 +445,19 @@ fun PdfToolsScreen(
         }
     }
     ordering?.let { picked ->
-        OrderFilesDialog(
-            title = stringResource(R.string.tools_order_merge_title),
-            items = picked,
-            nameOf = viewModel::displayName,
+        MergeEditor(
+            initialUris = picked,
+            displayName = viewModel::displayName,
             onDismiss = { ordering = null },
             onConfirm = { inOrder ->
                 ordering = null
                 viewModel.merge(inOrder)
-            }
+            },
+            onPicked = viewModel::rememberPdfs
         )
     }
     imagesToOrder?.let { picked ->
-        ImagesToPdfOrderDialog(
+        ImagesToPdfEditor(
             initialUris = picked,
             displayName = viewModel::displayName,
             onDismiss = { imagesToOrder = null },
@@ -603,7 +611,7 @@ fun PdfToolsScreen(
             }
 
             if (showWatermarkDialog && uri != null) {
-                WatermarkPdfDialog(
+                WatermarkEditor(
                     uri = uri,
                     onDismiss = { showWatermarkDialog = false },
                     onConfirm = { config ->
@@ -827,6 +835,9 @@ fun PdfToolsScreen(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     overlayContent: @Composable () -> Unit = {}
 ) {
+    var query by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf(ALL_CATEGORIES) }
+    val toolsMemory = rememberToolsMemory()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -848,16 +859,12 @@ fun PdfToolsScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
                 modifier = Modifier.fillMaxSize().widthIn(max = 1100.dp)
             ) {
-                TOOL_SECTIONS.forEach { section ->
-                    item(key = "section-${section.id}") {
-                        SectionHeader(stringResource(section.title))
-                        ToolTileGrid(section.tools, onClick = onLaunchTool)
-                    }
+                item(key = "search") { ToolSearchField(query, onQueryChange = { query = it }, modifier = Modifier.padding(top = 4.dp)) }
+                // Narrowing by category only makes sense while not searching: a search looks at every tool.
+                if (query.isBlank()) {
+                    item(key = "categories") { Box(Modifier.padding(top = 12.dp)) { ToolCategoryChips(category, onSelect = { category = it }) } }
                 }
-                item(key = "viewer") {
-                    Spacer(Modifier.height(16.dp))
-                    PlainToolRow(VIEWER_TOOL, onClick = { onLaunchTool(VIEWER_TOOL) })
-                }
+                toolsLanding(query, category, toolsMemory, onLaunch = onLaunchTool)
                 if (recentPdfs.isNotEmpty()) {
                     item(key = "recent-header") {
                         RecentPdfsHeader(onClear = onClearRecentPdfs)
@@ -876,6 +883,9 @@ fun PdfToolsScreen(
         }
     }
 }
+
+/** Below this a PDF is too small for the compression presets to promise anything. */
+private const val SMALL_PDF_BYTES = 150_000L
 
 @Composable
 private fun CompressPdfDialog(
@@ -1136,6 +1146,20 @@ private fun CompressPdfDialog(
                                 )
                             }
                         }
+                    } else if (!isCustomTarget && originalSize in 1 until SMALL_PDF_BYTES) {
+                        // Under about 150 kB there is rarely anything to squeeze, and a made-up percentage would mislead.
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                stringResource(R.string.tools_compress_small_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                            )
+                        }
                     } else if (!isCustomTarget || (customBytes != null && customBytes > 0)) {
                         val (summaryBytes, summaryPercent) = if (isCustomTarget) {
                             val bytes = customBytes ?: (originalSize * 0.40f).toLong()
@@ -1314,637 +1338,6 @@ private fun PdfToImagesDialog(
     )
 }
 
-/** Puts picked files in the order the user wants before Merge or Images to PDF runs on them. */
-@Composable
-private fun OrderFilesDialog(
-    title: String,
-    items: List<Uri>,
-    nameOf: (Uri) -> String,
-    onDismiss: () -> Unit,
-    onConfirm: (List<Uri>) -> Unit
-) {
-    val order = remember(items) { androidx.compose.runtime.mutableStateListOf<Uri>().apply { addAll(items) } }
-    val names = remember(items) { items.associateWith(nameOf) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column {
-                Text(stringResource(R.string.tools_order_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(8.dp))
-                androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 240.dp)) {
-                    itemsIndexed(order, key = { _, uri -> uri.toString() }) { index, uri ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.tools_order_position, index + 1), style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(28.dp))
-                            Text(names[uri] ?: stringResource(R.string.tools_file_fallback_name), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            IconButton(enabled = index > 0, onClick = { order.add(index - 1, order.removeAt(index)) }) {
-                                Icon(Icons.Default.KeyboardArrowUp, contentDescription = stringResource(R.string.tools_order_move_up))
-                            }
-                            IconButton(enabled = index < order.lastIndex, onClick = { order.add(index + 1, order.removeAt(index)) }) {
-                                Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.tools_order_move_down))
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { Button(onClick = { onConfirm(order.toList()) }) { Text(stringResource(R.string.common_continue)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
-    )
-}
-
-private data class OrderedImage(
-    val id: String = UUID.randomUUID().toString(),
-    val file: File,
-    val name: String,
-    /** The picked photo, untouched: a second crop starts from this, not from the first crop's result. */
-    val original: File = file,
-    val rotation: Int = 0
-) {
-    val isEdited: Boolean get() = file != original || rotation != 0
-}
-
-private val OrderedImageListSaver = androidx.compose.runtime.saveable.listSaver<androidx.compose.runtime.snapshots.SnapshotStateList<OrderedImage>, String>(
-    save = { list ->
-        list.map { item ->
-            "${item.id}|||${item.file.absolutePath}|||${item.name}|||${item.original.absolutePath}|||${item.rotation}"
-        }
-    },
-    restore = { serializedList ->
-        mutableStateListOf<OrderedImage>().apply {
-            serializedList.forEach { str ->
-                val parts = str.split("|||")
-                if (parts.size >= 5) {
-                    add(
-                        OrderedImage(
-                            id = parts[0],
-                            file = File(parts[1]),
-                            name = parts[2],
-                            original = File(parts[3]),
-                            rotation = parts[4].toIntOrNull() ?: 0
-                        )
-                    )
-                }
-            }
-        }
-    }
-)
-
-/**
- * Puts picked images in order, shows their thumbnails, and allows perspective cropping, per-image rotation,
- * adding more images, or removing pages before PDF generation. State is preserved across device rotation,
- * and staging folders are reliably cleaned up.
- */
-@Composable
-private fun ImagesToPdfOrderDialog(
-    initialUris: List<Uri>,
-    displayName: (Uri) -> String,
-    onDismiss: () -> Unit,
-    onConfirm: (List<Uri>) -> Unit
-) {
-    val context = LocalContext.current
-    val stagingDirPath = rememberSaveable {
-        val dir = File(context.cacheDir, "img2pdf_order_${UUID.randomUUID()}").apply { mkdirs() }
-        dir.absolutePath
-    }
-    val stagingDir = remember(stagingDirPath) { File(stagingDirPath).apply { mkdirs() } }
-
-    val order = rememberSaveable(saver = OrderedImageListSaver) { mutableStateListOf<OrderedImage>() }
-    var isLoading by remember { mutableStateOf(false) }
-    var isProcessing by remember { mutableStateOf(false) }
-    var croppingItem by remember { mutableStateOf<OrderedImage?>(null) }
-    var cropFailed by remember { mutableStateOf(false) }
-
-    val scope = rememberCoroutineScope()
-
-    val addImagesLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { newUris ->
-        if (newUris.isNotEmpty()) {
-            isProcessing = true
-            scope.launch {
-                val currentCount = order.size
-                val loaded = withContext(Dispatchers.IO) {
-                    newUris.mapIndexedNotNull { index, uri ->
-                        runCatching {
-                            val name = displayName(uri)
-                            val ext = if (name.contains('.')) name.substringAfterLast('.', "jpg") else "jpg"
-                            val file = File(stagingDir, "item_${currentCount + index}_${System.currentTimeMillis()}.$ext")
-                            context.contentResolver.openInputStream(uri)?.use { input ->
-                                file.outputStream().use { output -> input.copyTo(output) }
-                            }
-                            if (file.length() > 0 && ImageProcessor.imageAspect(file.absolutePath) != null) {
-                                OrderedImage(file = file, name = name)
-                            } else {
-                                file.delete()
-                                null
-                            }
-                        }.getOrNull()
-                    }
-                }
-                order.addAll(loaded)
-                isProcessing = false
-            }
-        }
-    }
-
-    val dismissAndCleanup = {
-        stagingDir.deleteRecursively()
-        onDismiss()
-    }
-
-    LaunchedEffect(initialUris) {
-        if (order.isEmpty()) {
-            isLoading = true
-            val loaded = withContext(Dispatchers.IO) {
-                initialUris.mapIndexedNotNull { index, uri ->
-                    runCatching {
-                        val name = displayName(uri)
-                        val ext = if (name.contains('.')) name.substringAfterLast('.', "jpg") else "jpg"
-                        val file = File(stagingDir, "item_${index}_${System.currentTimeMillis()}.$ext")
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            file.outputStream().use { output -> input.copyTo(output) }
-                        }
-                        if (file.length() > 0 && ImageProcessor.imageAspect(file.absolutePath) != null) {
-                            OrderedImage(file = file, name = name)
-                        } else {
-                            file.delete()
-                            null
-                        }
-                    }.getOrNull()
-                }
-            }
-            order.clear()
-            order.addAll(loaded)
-            isLoading = false
-        }
-    }
-
-    val rotateItem: (Int) -> Unit = { index ->
-        val item = order.getOrNull(index)
-        if (item != null) {
-            isProcessing = true
-            scope.launch {
-                val rotated = withContext(Dispatchers.IO) {
-                    runCatching {
-                        val source = item.file
-                        val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
-                        ImageProcessor.rotateImageFile(source, dest, 90)
-                        dest
-                    }
-                }
-                isProcessing = false
-                rotated.onSuccess { dest ->
-                    val idx = order.indexOfFirst { it.id == item.id }
-                    if (idx != -1) {
-                        val previous = order[idx].file
-                        order[idx] = order[idx].copy(
-                            file = dest,
-                            rotation = (order[idx].rotation + 90) % 360
-                        )
-                        if (previous != item.original && previous != dest) previous.delete()
-                    } else dest.delete()
-                }
-            }
-        }
-    }
-
-    val rotateAll: () -> Unit = {
-        if (order.isNotEmpty()) {
-            isProcessing = true
-            scope.launch {
-                withContext(Dispatchers.IO) {
-                    order.indices.forEach { index ->
-                        val item = order[index]
-                        runCatching {
-                            val source = item.file
-                            val dest = File(stagingDir, "rotated_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
-                            ImageProcessor.rotateImageFile(source, dest, 90)
-                            withContext(Dispatchers.Main) {
-                                val previous = order[index].file
-                                order[index] = order[index].copy(
-                                    file = dest,
-                                    rotation = (order[index].rotation + 90) % 360
-                                )
-                                if (previous != item.original && previous != dest) previous.delete()
-                            }
-                        }
-                    }
-                }
-                isProcessing = false
-            }
-        }
-    }
-
-    val resetItem: (Int) -> Unit = { index ->
-        val item = order.getOrNull(index)
-        if (item != null && item.isEdited) {
-            val previous = item.file
-            order[index] = item.copy(file = item.original, rotation = 0)
-            if (previous != item.original) previous.delete()
-        }
-    }
-
-    val removeItem: (Int) -> Unit = { index ->
-        if (index in order.indices) {
-            val removed = order.removeAt(index)
-            if (removed.file != removed.original) removed.file.delete()
-            removed.original.delete()
-        }
-    }
-
-    val currentCrop = croppingItem
-    if (currentCrop != null) {
-        CropEditorDialog(
-            sourcePath = currentCrop.file.absolutePath,
-            initial = CropQuad(),
-            onDismiss = { croppingItem = null },
-            onConfirm = { quad ->
-                croppingItem = null
-                isProcessing = true
-                scope.launch {
-                    val cropped = withContext(Dispatchers.IO) {
-                        runCatching {
-                            val source = currentCrop.file
-                            val dest = File(stagingDir, "cropped_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
-                            ImageProcessor.cropSourceToNewFile(source, dest, quad)
-                            dest
-                        }
-                    }
-                    isProcessing = false
-                    cropped.onSuccess { dest ->
-                        val idx = order.indexOfFirst { it.id == currentCrop.id }
-                        if (idx != -1) {
-                            val previous = order[idx].file
-                            order[idx] = order[idx].copy(file = dest)
-                            if (previous != currentCrop.original && previous != dest) previous.delete()
-                        } else dest.delete()
-                    }.onFailure { error ->
-                        if (error is kotlinx.coroutines.CancellationException) throw error
-                        cropFailed = true
-                    }
-                }
-            }
-        )
-    }
-
-    if (cropFailed) {
-        AlertDialog(
-            onDismissRequest = { cropFailed = false },
-            title = { Text(stringResource(R.string.tools_img2pdf_crop_failed_title)) },
-            text = { Text(stringResource(R.string.tools_img2pdf_crop_failed)) },
-            confirmButton = { TextButton(onClick = { cropFailed = false }) { Text(stringResource(R.string.common_close)) } }
-        )
-    }
-
-    val isShortWindow = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 480
-    val maxListHeight = if (isShortWindow) 220.dp else 400.dp
-
-    AlertDialog(
-        onDismissRequest = dismissAndCleanup,
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.tools_order_pages_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    "${order.size}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        },
-        text = {
-            if (isLoading || isProcessing) {
-                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                Column {
-                    Text(
-                        stringResource(R.string.tools_img2pdf_order_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedButton(
-                            onClick = { addImagesLauncher.launch("image/*") },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.heightIn(min = 36.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                stringResource(R.string.tools_img2pdf_add_images),
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                        TextButton(
-                            onClick = rotateAll,
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                            modifier = Modifier.heightIn(min = 36.dp)
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.RotateRight,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                stringResource(R.string.tools_img2pdf_rotate_all),
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    if (order.isEmpty()) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(140.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                stringResource(R.string.tools_err_no_images),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        androidx.compose.foundation.lazy.LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = maxListHeight),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            itemsIndexed(order, key = { _, item -> item.id }, contentType = { _, _ -> "ordered_image" }) { index, item ->
-                                OrderedImageRow(
-                                    index = index,
-                                    item = item,
-                                    canMoveUp = index > 0,
-                                    canMoveDown = index < order.lastIndex,
-                                    canRemove = true,
-                                    onMoveUp = { order.add(index - 1, order.removeAt(index)) },
-                                    onMoveDown = { order.add(index + 1, order.removeAt(index)) },
-                                    onCrop = { croppingItem = item },
-                                    onRotate = { rotateItem(index) },
-                                    onReset = { resetItem(index) },
-                                    onRemove = { removeItem(index) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(order.map { Uri.fromFile(it.file) }) },
-                enabled = !isLoading && !isProcessing && order.isNotEmpty()
-            ) {
-                Text(stringResource(R.string.common_continue))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = dismissAndCleanup) {
-                Text(stringResource(R.string.common_cancel))
-            }
-        }
-    )
-}
-
-@Composable
-private fun OrderedImageRow(
-    index: Int,
-    item: OrderedImage,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    canRemove: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
-    onCrop: () -> Unit,
-    onRotate: () -> Unit,
-    onReset: () -> Unit,
-    onRemove: () -> Unit
-) {
-    val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, item.file) {
-        value = withContext(Dispatchers.IO) {
-            ImageProcessor.decodeOrientedScaled(item.file.absolutePath, 200)
-        }
-    }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp)
-        ) {
-            // Top row: Position badge, thumbnail (60dp), filename, and remove button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text(
-                        "${index + 1}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable(onClick = onCrop),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val bm = thumbnail
-                    if (bm != null) {
-                        Image(
-                            bitmap = bm.asImageBitmap(),
-                            contentDescription = stringResource(R.string.tools_page_number, index + 1),
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                    }
-
-                    if (item.isEdited) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(2.dp)
-                                .size(10.dp)
-                        ) {}
-                    }
-                }
-
-                Spacer(Modifier.width(10.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    if (item.isEdited) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 2.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.tools_img2pdf_edited_badge),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            if (item.rotation != 0) {
-                                Text(
-                                    text = " • +${item.rotation}°",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (canRemove) {
-                    IconButton(
-                        onClick = onRemove,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = stringResource(R.string.tools_img2pdf_remove_cd, index + 1),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // Bottom row: Crop, Rotate, Reset buttons and Move Up/Down
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = onCrop,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                    modifier = Modifier.heightIn(min = 36.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Crop,
-                        contentDescription = stringResource(R.string.tools_img2pdf_crop_cd, index + 1),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        stringResource(R.string.tools_img2pdf_crop_button),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1
-                    )
-                }
-
-                Spacer(Modifier.width(6.dp))
-
-                OutlinedButton(
-                    onClick = onRotate,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                    modifier = Modifier.heightIn(min = 36.dp)
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.RotateRight,
-                        contentDescription = stringResource(R.string.tools_img2pdf_rotate_cd, index + 1),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        stringResource(R.string.tools_img2pdf_rotate_button),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1
-                    )
-                }
-
-                if (item.isEdited) {
-                    Spacer(Modifier.width(4.dp))
-                    TextButton(
-                        onClick = onReset,
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-                        modifier = Modifier.heightIn(min = 36.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.RestartAlt,
-                            contentDescription = stringResource(R.string.tools_img2pdf_reset_cd, index + 1),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(Modifier.width(2.dp))
-                        Text(
-                            stringResource(R.string.common_reset),
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-                }
-
-                Spacer(Modifier.weight(1f))
-
-                IconButton(
-                    enabled = canMoveUp,
-                    onClick = onMoveUp,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.KeyboardArrowUp,
-                        contentDescription = stringResource(R.string.tools_order_move_up)
-                    )
-                }
-                IconButton(
-                    enabled = canMoveDown,
-                    onClick = onMoveDown,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.KeyboardArrowDown,
-                        contentDescription = stringResource(R.string.tools_order_move_down)
-                    )
-                }
-            }
-        }
-    }
-}
-
 /** Page size and quality for Images to PDF, the two settings the engine already takes. */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
@@ -1994,79 +1387,6 @@ private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (Pdf
         confirmButton = { Button(onClick = { onConfirm(size, quality) }) { Text(stringResource(R.string.tools_img2pdf_create)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
-}
-
-/** A small grey heading above each group of tiles. */
-@Composable
-private fun SectionHeader(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-    )
-}
-
-/**
- * Icon tiles with one short label each, four to a row on a phone and eight on a wide window, every row
- * the same width. Same shape as the shortcuts on the library screen.
- */
-@Composable
-private fun ToolTileGrid(tools: List<PdfToolCard>, onClick: (PdfToolCard) -> Unit) {
-    val perRow = if (com.example.scanpro.navigation.isWideWindow()) 8 else 4
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        tools.chunked(perRow).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { tool ->
-                    val name = stringResource(tool.title)
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            .clickable(role = Role.Button, onClickLabel = name) { onClick(tool) }
-                            .semantics { contentDescription = name }
-                            .padding(vertical = 12.dp, horizontal = 4.dp)
-                    ) {
-                        IconTile(tool.icon, tool.tone, size = 44.dp, corner = 14.dp)
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            stringResource(tool.label),
-                            style = MaterialTheme.typography.labelMedium,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            minLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            lineHeight = MaterialTheme.typography.labelMedium.lineHeight
-                        )
-                    }
-                }
-                // A short last row keeps its cells the same width as the rows above.
-                repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-    }
-}
-
-/** A tool that is not a job on a file so much as a way to read one: a single row rather than a tile. */
-@Composable
-private fun PlainToolRow(tool: PdfToolCard, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconTile(tool.icon, tool.tone, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
-        Spacer(Modifier.width(12.dp))
-        Text(stringResource(tool.title), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-        Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
 }
 
 @Composable
@@ -2235,250 +1555,6 @@ private fun ProcessingOverlay(
             }
         }
     }
-}
-
-@Composable
-private fun ResultDialog(
-    result: PdfToolResult,
-    onDismiss: () -> Unit,
-    onView: () -> Unit,
-    onSaveAs: () -> Unit
-) {
-    val context = LocalContext.current
-    val saveLabel = stringResource(
-        when (mimeFor(result.outputFile)) {
-            "application/zip" -> R.string.tools_result_save_zip_cd
-            "application/pdf" -> R.string.tools_result_save_pdf_cd
-            else -> R.string.tools_result_save_image_cd
-        }
-    )
-
-    val isCompression = result.comparesSize && result.originalSizeBytes > 0 && result.outputSizeBytes > 0
-    val savedBytes = if (isCompression) (result.originalSizeBytes - result.outputSizeBytes).coerceAtLeast(0L) else 0L
-    val savingsPct = if (isCompression) {
-        ((savedBytes.toDouble() / result.originalSizeBytes.toDouble()) * 100).toInt().coerceIn(0, 99)
-    } else 0
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = result.outputFile.nameWithoutExtension,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
-                }
-            }
-        },
-        text = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isCompression) {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(14.dp)
-                        ) {
-                            if (savingsPct > 0) {
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(bottom = 10.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Compress,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.tools_result_saved_badge, savingsPct),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        stringResource(R.string.tools_result_original_label),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        formatBytes(context, result.originalSizeBytes),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowRight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        stringResource(R.string.tools_result_compressed_label),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        formatBytes(context, result.outputSizeBytes),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Text(
-                        text = result.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Primary Action Button: Preview PDF
-                FilledTonalButton(
-                    onClick = onView,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Visibility,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        stringResource(
-                            if (result.outputFile.extension.equals("pdf", ignoreCase = true))
-                                R.string.tools_result_preview_pdf
-                            else
-                                R.string.tools_result_open
-                        ),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Quick Actions: Share & Save PDF with icon and label grouped vertically
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable {
-                                shareFile(context, result.outputFile.absolutePath, mimeFor(result.outputFile), result.outputFile.name)
-                            }
-                            .padding(8.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape,
-                            modifier = Modifier.size(56.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Icon(
-                                    Icons.Default.Share,
-                                    contentDescription = stringResource(R.string.common_share),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            stringResource(R.string.common_share),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onSaveAs() }
-                            .padding(8.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = CircleShape,
-                            modifier = Modifier.size(56.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Icon(
-                                    Icons.Default.Download,
-                                    contentDescription = saveLabel,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            stringResource(R.string.tools_share_save_to_device),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(stringResource(R.string.common_done))
-            }
-        }
-    )
 }
 
 @Composable
@@ -2875,6 +1951,9 @@ private fun PdfPageOrganizerSheet(
     val isLoading = session == null && loadError == null
     val keptCount = pages.count { it.selected }
     var previewPage by remember { mutableStateOf<ThumbnailPageModel?>(null) }
+    var actionPage by remember { mutableStateOf<ThumbnailPageModel?>(null) }
+    // Extracting every page gives back the same document, so that is not offered: select fewer.
+    val extractsEverything = mode == "extract" && pages.isNotEmpty() && keptCount == pages.size
 
     if (mode == "organize" || mode == "extract") {
         if (isLoading) {
@@ -2998,7 +2077,7 @@ private fun PdfPageOrganizerSheet(
                     Text(
                         maxLines = 2,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         text = stringResource(
                             when (mode) {
                                 "extract" -> R.string.tools_organizer_extract_title
@@ -3054,7 +2133,7 @@ private fun PdfPageOrganizerSheet(
                             onApply(specs, extracted, rotations)
                         },
                         // Nothing to extract or keep would only end in an error message.
-                        enabled = !isLoading && pages.isNotEmpty() && (mode == "rotate" || keptCount > 0)
+                        enabled = !isLoading && pages.isNotEmpty() && (mode == "rotate" || keptCount > 0) && !extractsEverything
                     ) {
                         Text(
                             when (mode) {
@@ -3064,6 +2143,8 @@ private fun PdfPageOrganizerSheet(
                             }
                         )
                     }
+                    // The bar has no window insets here, so without this the Save button touched the screen edge.
+                    Spacer(Modifier.width(12.dp))
                 }
             )
         }
@@ -3085,32 +2166,58 @@ private fun PdfPageOrganizerSheet(
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(stringResource(R.string.tools_organizer_opening))
                 }
-                else -> LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 140.dp),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .widthIn(max = 1200.dp),
-                    // Content padding, not a padded box: the pages scroll right up to the edges instead of being cut off.
-                    contentPadding = PaddingValues(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    itemsIndexed(pages, key = { _, item -> item.index }, contentType = { _, _ -> "organizer_page" }) { index, item ->
+                else -> Column(Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
+                    when {
+                        extractsEverything -> OrganizerBanner(stringResource(R.string.tools_extract_all_selected), warning = true)
+                        mode == "organize" -> OrganizerBanner(stringResource(R.string.tools_organizer_drag_hint), warning = false)
+                    }
+                    ReorderablePageGrid(
+                        items = pages,
+                        key = { it.index },
+                        dragEnabled = mode == "organize",
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        onMove = { from, to -> pages.add(to, pages.removeAt(from)) },
+                        // One undo step for the whole drag, recorded when the page is picked up.
+                        onDragStarted = { undoStack.add(pages.toList()); if (undoStack.size > 50) undoStack.removeAt(0) }
+                    ) { item, index, dragging ->
                         OrganizerPageCard(
                             item = item,
+                            position = index + 1,
                             session = session,
-                            showCheckbox = mode != "rotate",
-                            canMoveLeft = mode == "organize" && index > 0,
-                            canMoveRight = mode == "organize" && index < pages.lastIndex,
-                            onToggle = { change { pages[index] = item.copy(selected = !item.selected) } },
-                            onRotate = { change { pages[index] = item.copy(rotation = (item.rotation + 90) % 360) } },
-                            onMoveLeft = { change { pages.add(index - 1, pages.removeAt(index)) } },
-                            onMoveRight = { change { pages.add(index + 1, pages.removeAt(index)) } },
-                            onMoveToStart = { change { pages.add(0, pages.removeAt(index)) } },
-                            onMoveToEnd = { change { pages.add(pages.removeAt(index)) } },
-                            onPreview = { previewPage = item }
+                            mode = mode,
+                            isDragging = dragging,
+                            onClick = {
+                                when (mode) {
+                                    "organize" -> actionPage = item
+                                    "rotate" -> change { pages[index] = item.copy(rotation = (item.rotation + 90) % 360) }
+                                    else -> change { pages[index] = item.copy(selected = !item.selected) }
+                                }
+                            },
+                            onPreview = { previewPage = item },
+                            onMore = { actionPage = item }
                         )
                     }
+                }
+            }
+            actionPage?.let { target ->
+                val index = pages.indexOfFirst { it.index == target.index }
+                if (index >= 0) {
+                    val current = pages[index]
+                    PageActionsSheet(
+                        title = stringResource(R.string.tools_page_number, index + 1),
+                        subtitle = stringResource(R.string.tools_page_position, index + 1, pages.size),
+                        onDismiss = { actionPage = null },
+                        actions = listOf(
+                            PageAction(Icons.Default.VerticalAlignTop, stringResource(R.string.tools_page_move_start), index > 0) { change { pages.add(0, pages.removeAt(index)) } },
+                            PageAction(Icons.Default.KeyboardArrowUp, stringResource(R.string.tools_page_move_earlier), index > 0) { change { pages.add(index - 1, pages.removeAt(index)) } },
+                            PageAction(Icons.Default.KeyboardArrowDown, stringResource(R.string.tools_page_move_later), index < pages.lastIndex) { change { pages.add(index + 1, pages.removeAt(index)) } },
+                            PageAction(Icons.Default.VerticalAlignBottom, stringResource(R.string.tools_page_move_end), index < pages.lastIndex) { change { pages.add(pages.removeAt(index)) } },
+                            PageAction(Icons.AutoMirrored.Filled.RotateRight, stringResource(R.string.tools_page_rotate)) { change { pages[index] = current.copy(rotation = (current.rotation + 90) % 360) } },
+                            PageAction(Icons.Default.Fullscreen, stringResource(R.string.tools_page_view)) { previewPage = current },
+                            if (current.selected) PageAction(Icons.Default.Delete, stringResource(R.string.tools_page_remove), destructive = true) { change { pages[index] = current.copy(selected = false) } }
+                            else PageAction(Icons.AutoMirrored.Filled.Undo, stringResource(R.string.tools_page_keep)) { change { pages[index] = current.copy(selected = true) } }
+                        )
+                    )
                 }
             }
             previewPage?.let { page ->
@@ -3124,103 +2231,138 @@ private fun PdfPageOrganizerSheet(
     }
 }
 
-/** One page in the organiser. Its thumbnail is rendered only while the card is on screen. */
+/** A short line above the pages: how to use the screen, or why the action is not available. */
+@Composable
+internal fun OrganizerBanner(text: String, warning: Boolean) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (warning) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            if (warning) Icons.Default.Info else Icons.Default.TouchApp,
+            contentDescription = null,
+            tint = if (warning) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (warning) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/**
+ * One page in the organiser: a portrait thumbnail with its current position, and what a tap does for the tool
+ * (Organise: open the page menu, Rotate: turn it, Extract: tick it). Pressing and holding picks it up to move it.
+ * The thumbnail is rendered only while the card is on screen.
+ */
 @Composable
 private fun OrganizerPageCard(
     item: ThumbnailPageModel,
+    position: Int,
     session: PdfPreviewSession?,
-    showCheckbox: Boolean,
-    canMoveLeft: Boolean,
-    canMoveRight: Boolean,
-    onToggle: () -> Unit,
-    onRotate: () -> Unit,
-    onMoveLeft: () -> Unit,
-    onMoveRight: () -> Unit,
-    onMoveToStart: () -> Unit = {},
-    onMoveToEnd: () -> Unit = {},
-    onPreview: () -> Unit = {}
+    mode: String,
+    isDragging: Boolean,
+    onClick: () -> Unit,
+    onPreview: () -> Unit,
+    onMore: () -> Unit
 ) {
     val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
         val preview = session ?: return@produceState
-        value = withContext(Dispatchers.IO) { preview.render(item.index, 300) }
+        value = withContext(Dispatchers.IO) { preview.render(item.index, 360) }
     }
-    Card(
+    val extract = mode == "extract"
+    val removed = mode == "organize" && !item.selected
+    val chosen = extract && item.selected
+    val pageName = stringResource(R.string.tools_page_number, position)
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = if (chosen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = if (chosen) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        shadowElevation = if (isDragging) 8.dp else 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            // One focus target per card, read as a checkbox with its state, rather than a card plus a separate box.
             .then(
-                if (showCheckbox) Modifier.toggleable(value = item.selected, role = Role.Checkbox, onValueChange = { onToggle() })
-                else Modifier
-            ),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (showCheckbox && item.selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            else MaterialTheme.colorScheme.surfaceContainerHigh
-        )
+                if (extract) Modifier.toggleable(value = item.selected, role = Role.Checkbox, onValueChange = { onClick() })
+                else Modifier.clickable(role = Role.Button, onClick = onClick)
+            )
+            .semantics { contentDescription = pageName }
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Box(Modifier.fillMaxWidth().aspectRatio(0.74f).padding(10.dp), contentAlignment = Alignment.Center) {
+            val bitmap = thumbnail
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            rotationZ = item.rotation.toFloat()
+                            // A page turned on its side is wider than the card: shrink it to fit instead of clipping.
+                            if (item.rotation % 180 != 0) { scaleX = 0.74f; scaleY = 0.74f }
+                            alpha = if (removed) 0.35f else 1f
+                        }
+                )
+            } else {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.82f),
+                modifier = Modifier.align(Alignment.TopStart).offset((-6).dp, (-6).dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (showCheckbox) Checkbox(checked = item.selected, onCheckedChange = null)
-                    Text(stringResource(R.string.tools_page_number, item.index + 1), style = MaterialTheme.typography.labelMedium)
-                }
-                IconButton(onClick = onPreview, modifier = Modifier.size(36.dp)) {
+                Text(
+                    "$position",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                )
+            }
+            when {
+                extract -> Icon(
+                    if (item.selected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                    contentDescription = null,
+                    tint = if (item.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.align(Alignment.TopEnd).size(26.dp)
+                )
+                else -> IconButton(onClick = onPreview, modifier = Modifier.align(Alignment.TopEnd).size(36.dp)) {
                     Icon(
                         Icons.Default.Fullscreen,
-                        contentDescription = stringResource(R.string.tools_organizer_preview_page, item.index + 1),
+                        contentDescription = stringResource(R.string.tools_organizer_preview_page, position),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .combinedClickable(
-                        onClick = onToggle,
-                        onLongClick = onPreview,
-                        onLongClickLabel = stringResource(R.string.tools_organizer_preview_page, item.index + 1)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                val bitmap = thumbnail
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = stringResource(R.string.tools_page_number, item.index + 1),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { rotationZ = item.rotation.toFloat() }
+            if (mode == "organize") {
+                if (removed) {
+                    Text(
+                        stringResource(R.string.tools_page_removed_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center)
                     )
-                } else {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                }
+                IconButton(onClick = onMore, modifier = Modifier.align(Alignment.BottomEnd).size(40.dp)) {
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                IconButton(onClick = onRotate) {
-                    Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = stringResource(R.string.tools_organizer_rotate_page_cd, item.index + 1))
-                }
-                // Tap: one step. Long press: all the way to the start or end.
-                if (canMoveLeft) {
-                    Box(
-                        Modifier.size(48.dp).combinedClickable(onClick = onMoveLeft, onLongClick = onMoveToStart, onLongClickLabel = stringResource(R.string.tools_organizer_move_to_start)),
-                        contentAlignment = Alignment.Center
-                    ) { Icon(Icons.AutoMirrored.Filled.ArrowLeft, contentDescription = stringResource(R.string.tools_organizer_move_earlier_cd, item.index + 1)) }
-                }
-                if (canMoveRight) {
-                    Box(
-                        Modifier.size(48.dp).combinedClickable(onClick = onMoveRight, onLongClick = onMoveToEnd, onLongClickLabel = stringResource(R.string.tools_organizer_move_to_end)),
-                        contentAlignment = Alignment.Center
-                    ) { Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = stringResource(R.string.tools_organizer_move_later_cd, item.index + 1)) }
-                }
+            if (mode == "rotate") {
+                Icon(
+                    Icons.AutoMirrored.Filled.RotateRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.BottomEnd).size(26.dp)
+                )
             }
         }
     }
@@ -3299,7 +2441,7 @@ private fun PdfPagePreviewDialog(
     }
 }
 
-private fun mimeFor(file: File): String = when (file.extension.lowercase()) {
+internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "png" -> "image/png"
     "jpg", "jpeg" -> "image/jpeg"
     "webp" -> "image/webp"
@@ -3811,6 +2953,7 @@ private fun ResizeImageDialog(
     var heightInput by rememberSaveable { mutableStateOf("") }
     var lockAspect by rememberSaveable { mutableStateOf(true) }
     var format by rememberSaveable { mutableStateOf(ImageExportFormat.JPEG) }
+    var fit by rememberSaveable { mutableStateOf(ImageResizeFit.FILL) }
 
     LaunchedEffect(uri) {
         withContext(Dispatchers.IO) {
@@ -4013,6 +3156,25 @@ private fun ResizeImageDialog(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        stringResource(R.string.tools_resize_fit_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            ImageResizeFit.FIT to R.string.tools_resize_fit_fit,
+                            ImageResizeFit.FILL to R.string.tools_resize_fit_fill,
+                            ImageResizeFit.STRETCH to R.string.tools_resize_fit_stretch
+                        ).forEach { (mode, label) ->
+                            FilterChip(selected = fit == mode, onClick = { fit = mode }, label = { Text(stringResource(label), maxLines = 1) })
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -4058,165 +3220,14 @@ private fun ResizeImageDialog(
                         ImageResizeConfig(
                             targetWidth = w,
                             targetHeight = h,
-                            outputFormat = format
+                            outputFormat = format,
+                            fit = if (resizeMode == 0) fit else ImageResizeFit.STRETCH
                         )
                     )
                 },
                 enabled = isValid
             ) {
                 Text(stringResource(R.string.tools_resize_img_action))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
-        }
-    )
-}
-
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-private fun WatermarkPdfDialog(
-    uri: Uri,
-    onDismiss: () -> Unit,
-    onConfirm: (WatermarkConfig) -> Unit
-) {
-    var text by rememberSaveable { mutableStateOf("CONFIDENTIAL") }
-    var diagonal by rememberSaveable { mutableStateOf(true) }
-    var opacityPercent by rememberSaveable { mutableIntStateOf(25) }
-    var fontSize by rememberSaveable { mutableIntStateOf(54) }
-    var selectedColourIndex by rememberSaveable { mutableIntStateOf(1) } // 0=Red, 1=Grey, 2=Blue, 3=Black
-    // The watermark is drawn in the PDF's built-in Helvetica, which has Latin letters only; Hindi, Tamil and other scripts
-    // would fail. Say so while typing instead of after the tool has run.
-    val drawable = text.all { it.code in 0x20..0xFF }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_watermark_title)) },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text(stringResource(R.string.tools_watermark_text_label)) },
-                    placeholder = { Text(stringResource(R.string.tools_watermark_text_hint)) },
-                    singleLine = true,
-                    isError = !drawable,
-                    supportingText = if (drawable) null else { { Text(stringResource(R.string.tools_watermark_latin_only)) } },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                // One tap for the usual stamps.
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    listOf(
-                        R.string.tools_watermark_quick_confidential,
-                        R.string.tools_watermark_quick_draft,
-                        R.string.tools_watermark_quick_copy,
-                        R.string.tools_watermark_quick_approved
-                    ).forEach { quick ->
-                        val word = stringResource(quick)
-                        FilterChip(selected = text == word, onClick = { text = word }, label = { Text(word) })
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = diagonal,
-                        onClick = { diagonal = true },
-                        label = { Text(stringResource(R.string.tools_watermark_angle_diagonal)) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = !diagonal,
-                        onClick = { diagonal = false },
-                        label = { Text(stringResource(R.string.tools_watermark_angle_horizontal)) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Text(
-                    stringResource(R.string.tools_watermark_color_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val colours = listOf(
-                        stringResource(R.string.tools_watermark_color_red) to Color(0xFFD32F2F),
-                        stringResource(R.string.tools_watermark_color_grey) to Color(0xFF757575),
-                        stringResource(R.string.tools_watermark_color_blue) to Color(0xFF1976D2),
-                        stringResource(R.string.tools_watermark_color_black) to Color(0xFF000000)
-                    )
-                    colours.forEachIndexed { idx, (label, col) ->
-                        FilterChip(
-                            selected = selectedColourIndex == idx,
-                            onClick = { selectedColourIndex = idx },
-                            leadingIcon = {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = col,
-                                    modifier = Modifier.size(12.dp)
-                                ) {}
-                            },
-                            label = { Text(label) }
-                        )
-                    }
-                }
-
-                Text(
-                    stringResource(R.string.tools_watermark_opacity_label, opacityPercent),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Slider(
-                    value = opacityPercent.toFloat(),
-                    onValueChange = { opacityPercent = it.roundToInt() },
-                    valueRange = 10f..80f,
-                    steps = 13,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Text(
-                    "${stringResource(R.string.tools_watermark_size_label)}: $fontSize pt",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Slider(
-                    value = fontSize.toFloat(),
-                    onValueChange = { fontSize = it.roundToInt() },
-                    valueRange = 24f..80f,
-                    steps = 13,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val colorRgb = when (selectedColourIndex) {
-                        0 -> 0xD32F2F // Red
-                        2 -> 0x1976D2 // Blue
-                        3 -> 0x000000 // Black
-                        else -> 0x757575 // Grey
-                    }
-                    val config = WatermarkConfig(
-                        text = text.trim(),
-                        isDiagonal = diagonal,
-                        colorRgb = colorRgb,
-                        opacityPercent = opacityPercent,
-                        fontSizePt = fontSize.toFloat()
-                    )
-                    onConfirm(config)
-                },
-                enabled = text.isNotBlank() && drawable
-            ) {
-                Text(stringResource(R.string.tools_watermark_action))
             }
         },
         dismissButton = {

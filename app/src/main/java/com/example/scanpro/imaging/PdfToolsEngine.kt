@@ -71,8 +71,74 @@ data class WatermarkConfig(
     val colorRgb: Int = 0x666666,
     val opacityPercent: Int = 25,
     val fontSizePt: Float = 48f,
-    val pageRange: String = ""
-)
+    val pageRange: String = "",
+    /** Counter-clockwise angle as the page is seen; when null it is 45 degrees if [isDiagonal], otherwise 0. */
+    val angleDegrees: Float? = null,
+    /** Where the text is centred, as a fraction of the page as seen: 0,0 is the top-left corner and 1,1 the bottom-right. */
+    val centerX: Float = 0.5f,
+    val centerY: Float = 0.5f,
+    /** Repeat the text across the whole page, in rows turned to [angleDegrees], instead of one stamp. */
+    val tiled: Boolean = false
+) {
+    val effectiveAngle: Float get() = angleDegrees ?: if (isDiagonal) 45f else 0f
+}
+
+/**
+ * Where a watermark goes on a page. Everything here is worked out in the page as it is *seen* (top-left origin, after
+ * the page's own /Rotate), then mapped back into the page's stored coordinates, so a page turned on its side gets an
+ * upright watermark in the right place.
+ */
+internal object WatermarkGeometry {
+    /** One piece of text: its centre in page coordinates, and the angle to draw it at in page coordinates (radians, anticlockwise). */
+    class Stamp(val x: Float, val y: Float, val angleRad: Double)
+
+    /** [seenX]/[seenY] are in points from the top-left of the page as seen; [width]/[height] are the stored page box. */
+    fun toPage(seenX: Float, seenY: Float, width: Float, height: Float, rotation: Int): Pair<Float, Float> = when (((rotation % 360) + 360) % 360) {
+        90 -> seenY to seenX
+        180 -> (width - seenX) to seenY
+        270 -> (width - seenY) to (height - seenX)
+        else -> seenX to (height - seenY)
+    }
+
+    fun seenSize(width: Float, height: Float, rotation: Int): Pair<Float, Float> =
+        if (((rotation % 360) + 360) % 360 % 180 == 90) height to width else width to height
+
+    /** The stamps for one page: one in the chosen spot, or a staggered grid across the page when [tiled]. */
+    fun stamps(config: WatermarkConfig, textWidth: Float, fontSize: Float, width: Float, height: Float, rotation: Int): List<Stamp> {
+        val (seenW, seenH) = seenSize(width, height, rotation)
+        val seenAngle = Math.toRadians(config.effectiveAngle.toDouble())
+        val pageAngle = seenAngle + Math.toRadians((((rotation % 360) + 360) % 360).toDouble())
+        val cx = config.centerX.coerceIn(0f, 1f) * seenW
+        val cy = config.centerY.coerceIn(0f, 1f) * seenH
+        if (!config.tiled) {
+            val (px, py) = toPage(cx, cy, width, height, rotation)
+            return listOf(Stamp(px, py, pageAngle))
+        }
+        // Rows run along the text's own direction, so a diagonal mark tiles diagonally.
+        val stepAlong = textWidth * 1.35f + fontSize
+        val stepAcross = fontSize * 3.4f
+        val reach = Math.hypot(seenW.toDouble(), seenH.toDouble()).toFloat()
+        val cos = Math.cos(seenAngle).toFloat()
+        val sin = Math.sin(seenAngle).toFloat()
+        val out = ArrayList<Stamp>()
+        val rows = (reach / stepAcross).toInt() + 1
+        val cols = (reach / stepAlong).toInt() + 1
+        for (j in -rows..rows) {
+            val stagger = if (j % 2 != 0) stepAlong / 2f else 0f
+            for (i in -cols..cols) {
+                val along = i * stepAlong + stagger
+                val across = j * stepAcross
+                // Seen coordinates have y pointing down, so an anticlockwise angle flips the sine term.
+                val sx = cx + along * cos + across * sin
+                val sy = cy - along * sin + across * cos
+                if (sx < -textWidth || sx > seenW + textWidth || sy < -fontSize * 2 || sy > seenH + fontSize * 2) continue
+                val (px, py) = toPage(sx, sy, width, height, rotation)
+                out.add(Stamp(px, py, pageAngle))
+            }
+        }
+        return out
+    }
+}
 
 enum class PageNumberPosition {
     BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT
@@ -676,36 +742,28 @@ object PdfToolsEngine {
 
                 if (i in targetPages) {
                     val page = doc.getPage(i)
-                    val box = page.mediaBox
-                    val width = box.width
-                    val height = box.height
                     val textWidth = (font.getStringWidth(config.text) / 1000f) * fontSize
-                    val textHeight = fontSize
 
+                    val rotation = page.rotation
+                    // The visible box (crop box) is what the reader sees; it need not start at 0,0 on scanned PDFs.
+                    val visible = page.cropBox
+                    val stamps = WatermarkGeometry.stamps(config, textWidth, fontSize, visible.width, visible.height, rotation)
                     PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
                         cs.setGraphicsStateParameters(gState)
                         cs.setNonStrokingColor(r, g, b)
-                        cs.beginText()
-                        cs.setFont(font, fontSize)
-
-                        if (config.isDiagonal) {
-                            val angleRad = Math.toRadians(45.0)
-                            val cos = Math.cos(angleRad).toFloat()
-                            val sin = Math.sin(angleRad).toFloat()
-                            // The page box need not start at 0,0 (cropped or scanned PDFs), so centre within it.
-                            val cx = box.lowerLeftX + width / 2f
-                            val cy = box.lowerLeftY + height / 2f
-                            val tx = cx - (textWidth / 2f * cos) + (textHeight / 4f * sin)
-                            val ty = cy - (textWidth / 2f * sin) - (textHeight / 4f * cos)
+                        stamps.forEach { stamp ->
+                            val cos = Math.cos(stamp.angleRad).toFloat()
+                            val sin = Math.sin(stamp.angleRad).toFloat()
+                            // Half the cap height of Helvetica, so the text is centred on the point rather than sitting on it.
+                            val halfCap = fontSize * 0.36f
+                            val tx = visible.lowerLeftX + stamp.x - (textWidth / 2f * cos) + (halfCap * sin)
+                            val ty = visible.lowerLeftY + stamp.y - (textWidth / 2f * sin) - (halfCap * cos)
+                            cs.beginText()
+                            cs.setFont(font, fontSize)
                             cs.setTextMatrix(Matrix(cos, sin, -sin, cos, tx, ty))
-                        } else {
-                            val x = box.lowerLeftX + (width - textWidth) / 2f
-                            val y = box.lowerLeftY + (height - textHeight) / 2f
-                            cs.newLineAtOffset(x, y)
+                            cs.showText(config.text)
+                            cs.endText()
                         }
-
-                        cs.showText(config.text)
-                        cs.endText()
                     }
                     watermarkedCount++
                 }

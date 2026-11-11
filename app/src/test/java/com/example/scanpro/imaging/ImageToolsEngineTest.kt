@@ -102,6 +102,19 @@ class ImageToolsEngineTest {
     }
 
     @Test
+    fun compressImage_tinyPng_isNeverLargerThanTheOriginal() = runBlocking {
+        val sourceFile = File(testDir, "tiny.png")
+        saveBitmap(createSampleBitmap(16, 16), Bitmap.CompressFormat.PNG, sourceFile)
+        val originalSize = sourceFile.length()
+        val outFile = File(testDir, "tiny_out.png")
+
+        val result = ImageToolsEngine.compressImage(app, Uri.fromFile(sourceFile), ImageCompressConfig(outputFormat = ImageExportFormat.PNG), outFile)
+
+        assertTrue("A tiny PNG must not come back larger (was $originalSize, got ${outFile.length()})", outFile.length() <= originalSize)
+        assertEquals(outFile.length(), result.outputSizeBytes)
+    }
+
+    @Test
     fun compressImage_withQuality_respectsMaxDimension() = runBlocking {
         val sourceFile = File(testDir, "highres.jpg")
         val bmp = createSampleBitmap(2000, 1500)
@@ -220,6 +233,38 @@ class ImageToolsEngineTest {
         BitmapFactory.decodeFile(outFile.absolutePath, bounds)
         assertEquals(600, bounds.outWidth)
         assertEquals(600, bounds.outHeight)
+    }
+
+    /** A 1000x800 source resized into a 600x600 box in the given fit mode; returns the width and height written. */
+    private fun resizeWithFit(fit: ImageResizeFit): Pair<Int, Int> = runBlocking {
+        val sourceFile = File(testDir, "fit_${fit.name}.jpg")
+        saveBitmap(createSampleBitmap(1000, 800), Bitmap.CompressFormat.JPEG, sourceFile)
+        val outFile = File(testDir, "fit_${fit.name}_out.jpg")
+        ImageToolsEngine.resizeImage(app, Uri.fromFile(sourceFile), ImageResizeConfig(600, 600, ImageExportFormat.JPEG, fit = fit), outFile)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(outFile.absolutePath, bounds)
+        bounds.outWidth to bounds.outHeight
+    }
+
+    @Test
+    fun resizeImage_fitKeepsProportionsInsideTheBox() {
+        val (w, h) = resizeWithFit(ImageResizeFit.FIT)
+        assertEquals(600, w)
+        assertEquals(480, h) // 1000x800 is 5:4, so a 600-wide result is 480 tall, not 600
+    }
+
+    @Test
+    fun resizeImage_fillGivesTheExactBoxWithoutStretching() {
+        val (w, h) = resizeWithFit(ImageResizeFit.FILL)
+        assertEquals(600, w)
+        assertEquals(600, h)
+    }
+
+    @Test
+    fun resizeImage_stretchGivesTheExactBox() {
+        val (w, h) = resizeWithFit(ImageResizeFit.STRETCH)
+        assertEquals(600, w)
+        assertEquals(600, h)
     }
 
     @Test

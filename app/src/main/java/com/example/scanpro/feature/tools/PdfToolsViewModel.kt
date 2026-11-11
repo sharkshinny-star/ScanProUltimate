@@ -189,7 +189,8 @@ class PdfToolsViewModel @Inject constructor(
         job = viewModelScope.launch {
             try {
                 // Held alive by the foreground service: a long merge or compression must survive the user switching apps.
-                val result = operations.keepAlive(label) { work() }
+                // Off the main thread: tools resolve file names and touch disk before their engines switch dispatchers.
+                val result = operations.keepAlive(label) { withContext(Dispatchers.IO) { work() } }
                 _result.value = result
                 if (!endedWithQuestion) notifications.taskFinished(result?.message)
             } catch (cancelled: CancellationException) {
@@ -214,13 +215,16 @@ class PdfToolsViewModel @Inject constructor(
     private fun bundled(files: List<File>, prefix: String, @PluralsRes message: Int): suspend () -> PdfToolResult? = {
         if (files.isEmpty()) null
         else PdfToolResult(
-            outputFile = PdfToolsEngine.bundleOutputs(context, files, "${prefix}_${System.currentTimeMillis()}"),
+            outputFile = PdfToolsEngine.bundleOutputs(context, files, "$prefix ${nameStamp()}"),
             pageCount = files.size,
             originalSizeBytes = 0,
             outputSizeBytes = files.sumOf { it.length() },
             message = context.resources.getQuantityString(message, files.size, files.size),
         )
     }
+
+    /** A readable, file-safe time for output names (the zip title used to show a raw millisecond count). */
+    private fun nameStamp(): String = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm-ss", java.util.Locale.US).format(java.util.Date())
 
     private fun named(uri: Uri, suffix: String, extension: String = "pdf"): File =
         PdfToolsEngine.outputLocation(context, "${PdfToolsEngine.sourceBaseName(context, uri)} $suffix.$extension")
@@ -243,7 +247,8 @@ class PdfToolsViewModel @Inject constructor(
             pageCount = res.pageCount,
             originalSizeBytes = res.originalSizeBytes,
             outputSizeBytes = res.compressedSizeBytes,
-            message = context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(context, res.originalSizeBytes), formatBytes(context, res.compressedSizeBytes)) +
+            message = (if (res.compressedSizeBytes >= res.originalSizeBytes) context.getString(R.string.msg_tools_compress_no_gain, formatBytes(context, res.originalSizeBytes))
+                else context.getString(R.string.msg_tools_compressed_by, res.savingsPercentage, formatBytes(context, res.originalSizeBytes), formatBytes(context, res.compressedSizeBytes))) +
                 (if (res.isSearchablePreserved) "" else context.getString(R.string.msg_tools_compressed_not_searchable)) +
                 if (res.missedTarget && customTargetBytes != null) context.getString(R.string.msg_tools_compress_missed_target, formatBytes(context, customTargetBytes)) else "",
             comparesSize = true
@@ -532,7 +537,7 @@ class PdfToolsViewModel @Inject constructor(
     fun convertImage(uris: List<Uri>, targetFormat: ImageExportFormat, quality: Int = 100) =
         launchTool(R.string.tools_progress_converting_img, R.string.tools_err_convert_img) {
             val base = if (uris.size == 1) named(uris.first(), "converted", targetFormat.extension)
-            else PdfToolsEngine.outputLocation(context, "converted_${System.currentTimeMillis()}.${targetFormat.extension}")
+            else PdfToolsEngine.outputLocation(context, "converted ${nameStamp()}.${targetFormat.extension}")
             ImageToolsEngine.convertImage(context, uris, targetFormat, quality, base, ::report)
         }
 

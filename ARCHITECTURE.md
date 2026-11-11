@@ -346,3 +346,14 @@ document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCa
 ## 15. External-service extension points
 
 Cloud sync, accounts, collaboration, subscription entitlements, and server AI are intentionally not mocked. They require real product decisions around authentication, backend storage, key management, privacy consent, billing products, conflict resolution and operational monitoring.
+
+## Tools and Settings UI structure (F116–F123)
+
+- `feature/tools/ToolsLanding.kt`: Tools landing (search with intent keywords, category chips, pinned and recent tools kept in the `tools_ui` preferences).
+- `feature/tools/PageGrid.kt`: `ReorderablePageGrid` (press-and-hold drag with auto-scroll) and `PageActionsSheet`; shared by Organise, Images to PDF and Merge.
+- `feature/tools/ImagesToPdfEditor.kt`, `WatermarkEditor.kt`, `MergeEditor.kt`: full-screen editors opened from `PdfToolsScreen.kt`. They work on cached copies and only hand a final list or config to the view model.
+- `feature/tools/ToolResultDialog.kt`: the one result dialog (thumbnail, size, compression comparison, Open/Share/Save).
+- `imaging/PdfToolsEngine.kt`: `WatermarkGeometry` maps the page as seen (rotation, CropBox) back to stored PDF coordinates; the preview and the saved file share it.
+- `feature/settings/SettingsSearch.kt`: settings search and jump-to-row (`SettingsLocator`), backup status and explainer.
+- `scanner/CameraScannerScreen.kt`: `ScanIntroDialog`, first-use explainers for Document, ID Card and Book, with one "don't remind me" preference per mode.
+- Decision: view-model tool work runs on `Dispatchers.IO`; `DocumentDatabase` builds Room lazily so the first frame does not wait for disk.

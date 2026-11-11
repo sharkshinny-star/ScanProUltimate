@@ -123,6 +123,7 @@
     <string name="msg_tools_compressing">PDF कंप्रेस हो रही है…</string>
     <string name="msg_tools_compression_failed">कंप्रेस नहीं हो सका</string>
     <string name="msg_tools_compressed_by">%1$d%% छोटी हुई (%2$s → %3$s)</string>
+    <string name="msg_tools_compress_no_gain">पहले से ही सबसे छोटी है: इससे छोटा संस्करण संभव नहीं था (%1$s)</string>
     <string name="msg_tools_compressed_not_searchable">। पेज इमेज में बदल दिए गए, इसलिए टेक्स्ट अब चुना या खोजा नहीं जा सकता।</string>
     <string name="msg_tools_compress_missed_target">। %1$s तक नहीं पहुँच सका, इससे छोटा नहीं हो सकता। बड़ा लक्ष्य आज़माएँ।</string>
     <string name="msg_tools_exporting_pages">पेज एक्सपोर्ट हो रहे हैं…</string>
