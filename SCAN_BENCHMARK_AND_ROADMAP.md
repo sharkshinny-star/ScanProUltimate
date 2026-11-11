@@ -1,0 +1,89 @@
+# Scan quality benchmark, competitor notes and roadmap
+
+Status: 2026-11-11. Everything here is labelled **Verified** (measured or seen on the OnePlus CPH2569) or **Not verified**
+(an assumption or something that could not be tested). Nothing is claimed about how another app works inside.
+
+## 1. Competitors on the phone
+
+Installed: Adobe Scan, OKEN Scanner (package `com.cambyte.okenscan`), iLovePDF, PDF Scanner (`pdfscanner.scan.pdf.scanner.free`).
+
+### Verified
+| | Cold start (ms, 4 runs, force-stopped between) | First run, without accepting anything |
+|---|---|---|
+| Adobe Scan | 990, 983, 1202, 1064 | A consent screen: scans are "processed in and saved to Adobe cloud storage"; OK is required to continue |
+| OKEN Scanner | 934, 902, 1032, 1182 | Empty library, "Start Scanning", optional sign-in prompt |
+| iLovePDF | 991, 1133, 610, 585 | Opens on a file browser listing device files, not a camera |
+| PDF Scanner | 809, 919, 846, 834 | Language picker first |
+| ScanPro (debug build) | 2824 on the first run; about 2000 to 2200 in earlier runs | Language picker, welcome, permission explainer, empty Home with Start scanning |
+
+Caveats: the competitors are release builds and ScanPro is a debug build (no code shrinking, no baseline profile), so the start-up
+comparison is **not like for like**. A fair run needs a locally signed, minified ScanPro build; that build type does not exist yet.
+OKEN Scanner's launcher activity is in the `com.intsig.camscanner` namespace; I make no claim beyond that name.
+
+### Not verified (not tested)
+Everything else in the brief: their camera behaviour, auto-capture, edge accuracy, filters, OCR, PDF size, and animations. A fair
+comparison needs printed test pages on a fixed rig, and Adobe Scan cannot be used without accepting cloud processing, which I did not
+do on the owner's behalf. iLovePDF's home screen lists files from the phone, so I did not screenshot or open it.
+
+## 2. ScanPro today
+
+### Verified strengths
+- Capture to save works end to end: capture, quality warning ("may need a retake"), review with crop, six filters, page strip, rename and
+  folder, save, then a sheet with share, copy text, add pages, Drive, device save, print, scan another.
+- A real computer-vision pipeline already exists: edge detection from five sources, background flattening, CLAHE, adaptive threshold,
+  glare inpainting. Offline throughout.
+- Dark and light themes, six languages (Indic text machine-written, needs review).
+- Edge detection on generated scenes: 9 of 12 near perfect (about 0.2% corner error).
+
+### Verified problems (and what was done)
+| Finding | Status |
+|---|---|
+| No test measured detection accuracy | Fixed: `ScanDetectionBenchmarkTest` (F126) |
+| Faint-edge pages (grey on grey, white on white) failed: 24% and 6% corner error | Fixed in F126: 1.5% and 1.6% |
+| Camera screen redrew in full on every analysis frame | Fixed in F125 |
+| Start-up did eager disk reads on the main thread | Reduced in F124 |
+| Three zoom buttons sat over the page being framed | Fixed in F125 |
+| A hard shadow across the page breaks detection (10.8% error) | **Open** |
+| Control panel covers the lower preview, more with each page | **Open** |
+| Two Save buttons on the review screen | Open, documented as deliberate |
+
+### Not verified
+Real printed documents, books with curved pages, handwriting, receipts that are really curled, OCR accuracy, PDF size against
+competitors, battery and memory, mid-range devices, a release build.
+
+## 3. Benchmark: how to run and read it
+See `BUILD_AND_TEST.md`. Scenes: clean A4, strong perspective, 20 degree rotation, page near the frame edge, receipt on a dark desk,
+low contrast, white on white, busy patterned mat, hard shadow, noise and softness, book spread, dim light. Metrics: found, mean
+corner error as a percent of the frame diagonal, IoU against the true page, detection time.
+
+| Scene | Before F126 (error % / IoU) | After F126 |
+|---|---|---|
+| clean, perspective, rotated, near edge, receipt, mat, book, dim, noisy | 0.16 to 0.23 / 0.97 to 0.99 | unchanged |
+| low_contrast_grey_desk | 24.29 / 0.328 | 1.48 / 0.907 |
+| white_page_white_table | 6.13 / 0.642 | 1.59 / 0.915 |
+| hard_shadow_across_page | 10.77 / 0.354 | 10.77 / 0.354 (open) |
+| Mean IoU | 0.849 | 0.920 |
+
+Limits: synthetic scenes are flat colours with no lens blur, rolling shutter or real paper texture. They prove the geometry and
+lighting cases; they do not replace real photographs.
+
+## 4. Roadmap (by user impact, then effort, then risk)
+
+1. **Real-photo corpus and a fair competitor run** (high impact, medium effort, low risk). Print the test pages once (A4 text, small
+   text, receipt, handwriting, a book) and photograph them on a fixed rig; run each app on the same photos by import where the app lets
+   you without an account. Without this, claims about being better than the competitors are unsupported.
+2. **Hard-shadow detection** (high impact, medium effort, medium risk). The page edge disappears where a shadow is as dark as the
+   surface. Options to measure with the benchmark: combine partial outlines into one quad, or fit lines to the visible edge segments.
+3. **Enhancement and readability benchmark** (high impact, medium effort, low risk). Score each filter on the generated pages: text
+   contrast, halo around letters, background evenness, colour accuracy, and OCR word accuracy. Then tune, instead of judging by eye.
+4. **A release-like build type for honest timing** (medium impact, small effort, low risk): minified, debug-signed, with the baseline
+   profile; then compare start-up and camera-open time against the competitors on equal terms.
+5. **Control panel over the preview** (medium impact, medium effort, medium risk): move the preview upward or shrink the page strip,
+   and change the outline mapping with it; check with the benchmark and by eye.
+6. **Page-level performance budget**: capture-to-review time and save time per page, measured on this phone and a mid-range device.
+
+## 5. Quality strategy
+- Technologies in use: CameraX, OpenCV, ML Kit text recognition, all on device. No change proposed without a measured reason.
+- Objectives, to be held with the benchmark: found on 12 of 12 scenes; corner error below 2% on every scene except known failures;
+  detection under 60 ms per frame on this phone in a release build; no scene gets worse between commits.
+- Never trade readable text for a stronger filter: the readability benchmark (item 3) must pass before a filter change ships.

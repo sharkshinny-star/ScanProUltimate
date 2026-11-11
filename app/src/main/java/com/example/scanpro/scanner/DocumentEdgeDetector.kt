@@ -73,6 +73,9 @@ object DocumentEdgeDetector {
 
     private const val ANALYSIS_LONG_SIDE = 900.0
     private const val MIN_DOCUMENT_AREA_RATIO = 0.08
+    /** Canny limits for the faint-edge source, on a widely blurred copy where a 12-level step peaks near 5. */
+    private const val FAINT_CANNY_LOW = 2.5
+    private const val FAINT_CANNY_HIGH = 7.0
 
     fun detect(grayInput: Mat): DocumentDetection {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
@@ -127,6 +130,23 @@ object DocumentEdgeDetector {
             Imgproc.dilate(edgesCanny, cannyClosed, kernel)
             Imgproc.morphologyEx(cannyClosed, cannyClosed, Imgproc.MORPH_CLOSE, bigKernel)
 
+            // Method 4: faint edges. The Canny limits above scale with the frame's brightness, so a bright page with a
+            // faint edge (grey on grey, white on a pale table) sits below them. Here Canny runs on a widely blurred
+            // copy with low limits: text, wood grain and noise average out, while the long step between the page
+            // margin and the surface behind it stays. Hysteresis keeps a faint stretch of the outline when it joins a
+            // strong one (a page with a shadow along two sides), so the outline still closes.
+            val smooth = Mat()
+            val faintEdges = Mat()
+            val faintClosed = Mat()
+            try {
+                Imgproc.GaussianBlur(processed, smooth, Size(25.0, 25.0), 0.0)
+                Imgproc.Canny(smooth, faintEdges, FAINT_CANNY_LOW, FAINT_CANNY_HIGH)
+                Imgproc.dilate(faintEdges, faintClosed, kernel)
+                Imgproc.morphologyEx(faintClosed, faintClosed, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0)))
+            } finally {
+                smooth.release(); faintEdges.release()
+            }
+
             // Blur & Brightness diagnostics
             Imgproc.Laplacian(processed, laplacian, CvType.CV_64F)
             Core.meanStdDev(laplacian, mean, stdDev)
@@ -148,6 +168,7 @@ object DocumentEdgeDetector {
                 Triple(cannyClosed, 1.0, Imgproc.RETR_EXTERNAL),
                 Triple(thinEdges, 0.98, Imgproc.RETR_LIST),
                 Triple(brightMask, 0.96, Imgproc.RETR_EXTERNAL),
+                Triple(faintClosed, 0.97, Imgproc.RETR_EXTERNAL),
                 Triple(combinedEdges, 0.85, Imgproc.RETR_EXTERNAL),
                 Triple(darkMask, 0.7, Imgproc.RETR_EXTERNAL)
             )
@@ -200,6 +221,7 @@ object DocumentEdgeDetector {
                 darkMask.release()
                 bigKernel.release()
                 cannyClosed.release()
+                faintClosed.release()
                 thinEdges.release()
             }
 
