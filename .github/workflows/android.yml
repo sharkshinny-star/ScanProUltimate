@@ -1,19 +1,20 @@
 # Android CI, one job so a push uses as few runner minutes as possible: Room schema check, unit tests and lint, the Play
 # bundle (translation as an on-demand module), the sideload APKs (one per CPU type plus universal, translation built in)
 # and an APK size report with a budget, so a dependency that silently adds megabytes fails the build.
-# Pushes to the working branch run tests and lint only (FULL_BUILD); release builds run on main, PRs and manual runs.
-# Runs on pushes to main and the working branch and on pull requests; docs-only changes are skipped.
+# Runs only on pushes to main, pull requests to main and manual runs; docs-only changes are skipped. Pull requests run
+# tests and lint; the release builds and size report (FULL_BUILD) run on main, manual runs and PRs labelled full-build.
 # Artifacts are uploaded only on a manual run; test reports only when a run fails; both are kept 3 days.
 
 name: Android CI
 
 on:
   push:
-    # The working branch is listed too: the owner checks CI on it before merging to main.
-    branches: [main, claude/awesome-clarke-ussjo3]
+    # Only main: working-branch pushes cost no runner minutes (run tests and lint locally, or start a manual run).
+    branches: [main]
     paths-ignore: ['**.md', 'docs/**', 'supabase/**']
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled]
     paths-ignore: ['**.md', 'docs/**', 'supabase/**']
   workflow_dispatch:
 
@@ -35,13 +36,13 @@ jobs:
   build:
     # Kill switch: set the repository variable CI_PAUSED to true (Settings > Secrets and variables > Actions >
     # Variables) to stop all runs for the rest of the month without editing files.
-    if: vars.CI_PAUSED != 'true'
+    if: vars.CI_PAUSED != 'true' && (github.event.action != 'labeled' || github.event.label.name == 'full-build')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      # Pushes to the working branch run only tests and lint; the two release builds and the size report run on
-      # main, pull requests and manual runs (they are about half of a run's minutes).
-      FULL_BUILD: ${{ github.event_name != 'push' || github.ref == 'refs/heads/main' }}
+      # Pull requests run only tests and lint; the two release builds and the size report run on main, manual runs
+      # and PRs labelled full-build (they are about half of a run's minutes).
+      FULL_BUILD: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full-build') }}
     steps:
       - uses: actions/checkout@v7
 
