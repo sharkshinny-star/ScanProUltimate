@@ -1,20 +1,18 @@
 # Android CI, one job so a push uses as few runner minutes as possible: Room schema check, unit tests and lint, the Play
 # bundle (translation as an on-demand module), the sideload APKs (one per CPU type plus universal, translation built in)
 # and an APK size report with a budget, so a dependency that silently adds megabytes fails the build.
-# Runs only on pushes to main, pull requests to main and manual runs; docs-only changes are skipped. Pull requests run
-# tests and lint; the release builds and size report (FULL_BUILD) run on main, manual runs and PRs labelled full-build.
+# The repository is public, so standard runners are free and unlimited: every push to main or the working branch, every
+# pull request to main and every manual run does the full build. Docs-only changes are still skipped.
 # Artifacts are uploaded only on a manual run; test reports only when a run fails; both are kept 3 days.
 
 name: Android CI
 
 on:
   push:
-    # Only main: working-branch pushes cost no runner minutes (run tests and lint locally, or start a manual run).
-    branches: [main]
+    branches: [main, claude/awesome-clarke-ussjo3]
     paths-ignore: ['**.md', 'docs/**', 'supabase/**']
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, labeled]
     paths-ignore: ['**.md', 'docs/**', 'supabase/**']
   workflow_dispatch:
 
@@ -36,13 +34,9 @@ jobs:
   build:
     # Kill switch: set the repository variable CI_PAUSED to true (Settings > Secrets and variables > Actions >
     # Variables) to stop all runs for the rest of the month without editing files.
-    if: vars.CI_PAUSED != 'true' && (github.event.action != 'labeled' || github.event.label.name == 'full-build')
+    if: vars.CI_PAUSED != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      # Pull requests run only tests and lint; the two release builds and the size report run on main, manual runs
-      # and PRs labelled full-build (they are about half of a run's minutes).
-      FULL_BUILD: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full-build') }}
     steps:
       - uses: actions/checkout@v7
 
@@ -67,7 +61,6 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug $CI_GRADLE
 
       - name: Play bundle
-        if: env.FULL_BUILD == 'true'
         run: ./gradlew :app:bundleRelease $CI_GRADLE
 
       # The build re-exports the Room schema; a difference from the committed files means a table changed without
@@ -76,11 +69,9 @@ jobs:
         run: bash scripts/ci/check-room-schema.sh --after-build
 
       - name: Sideload APKs
-        if: env.FULL_BUILD == 'true'
         run: ./gradlew -Pscanpro.sideload=true :app:assembleRelease $CI_GRADLE
 
       - name: Size report
-        if: env.FULL_BUILD == 'true'
         run: scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test results
