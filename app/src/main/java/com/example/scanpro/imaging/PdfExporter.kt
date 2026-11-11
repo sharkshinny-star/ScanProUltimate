@@ -50,6 +50,8 @@ object PdfExporter {
      * Writes [pages] as a PDF. [decode] reads each page image at most `maxDimension` pixels on its longer side: scan
      * pages are already upright and opaque, while pictures picked for Images to PDF pass [decodePicture]. [beforePage]
      * runs before each page (1-based) is read, for progress, and may throw to stop a cancelled job between pages.
+     * [pointSizes], one width-and-height pair in points per page, keeps each page at that size with no margin (Compress
+     * PDF rebuilding a PDF's own pages); otherwise [pageSize] decides and the image sits inside a margin.
      */
     fun export(
         pages: List<ScanPage>,
@@ -59,7 +61,8 @@ object PdfExporter {
         searchable: Boolean,
         pageNumbers: Boolean,
         decode: (path: String, maxDimension: Int) -> Bitmap? = ImageProcessor::decodeScaled,
-        beforePage: (number: Int, total: Int) -> Unit = { _, _ -> }
+        beforePage: (number: Int, total: Int) -> Unit = { _, _ -> },
+        pointSizes: List<Pair<Int, Int>>? = null
     ) {
         userRequire(pages.isNotEmpty(), R.string.err_document_has_no_pages)
         destination.parentFile?.mkdirs()
@@ -69,10 +72,10 @@ object PdfExporter {
         val scratch = File(destination.parentFile ?: File("."), ".pdf_jpeg_${UUID.randomUUID()}")
         try {
             scratch.mkdirs()
-            val images = write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, scratch)
+            val images = write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, scratch, pointSizes)
             runCatching { embedJpegs(destination, images) }.getOrElse { failure ->
                 android.util.Log.w("PdfExporter", "JPEG embedding failed; wrote the larger lossless PDF instead", failure)
-                write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, null)
+                write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, null, pointSizes)
             }
         } finally {
             scratch.deleteRecursively()
@@ -112,7 +115,8 @@ object PdfExporter {
         pageNumbers: Boolean,
         decode: (path: String, maxDimension: Int) -> Bitmap?,
         beforePage: (number: Int, total: Int) -> Unit,
-        jpegDir: File?
+        jpegDir: File?,
+        pointSizes: List<Pair<Int, Int>>?
     ): List<PageImage> {
         val placed = ArrayList<PageImage>()
         val pdf = PdfDocument()
@@ -122,7 +126,9 @@ object PdfExporter {
                 // Fail loudly: silently skipping a page would produce a short PDF with wrong page numbers.
                 val bitmap = decode(pageModel.imagePath, quality.maxImageDimension)
                     ?: userError(R.string.err_could_not_read_pdf_page, index + 1)
-                val (pageWidth, pageHeight) = pageDimensions(pageSize, bitmap.width, bitmap.height)
+                val fixedSize = pointSizes?.getOrNull(index)
+                val (pageWidth, pageHeight) = fixedSize ?: pageDimensions(pageSize, bitmap.width, bitmap.height)
+                val margin = if (fixedSize != null) 0f else MARGIN
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
                 val page = pdf.startPage(info)
                 val canvas = page.canvas
@@ -130,8 +136,8 @@ object PdfExporter {
                 if (jpegDir == null) canvas.drawColor(Color.WHITE)
 
                 val bottomReserve = if (pageNumbers) 18f else 0f
-                val availableWidth = pageWidth - MARGIN * 2
-                val availableHeight = pageHeight - MARGIN * 2 - bottomReserve
+                val availableWidth = pageWidth - margin * 2
+                val availableHeight = pageHeight - margin * 2 - bottomReserve
                 val scale = min(
                     availableWidth / bitmap.width.toFloat(),
                     availableHeight / bitmap.height.toFloat()

@@ -8,7 +8,6 @@ import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.systemBarsPadding
 import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -349,6 +348,7 @@ fun DocumentRoute(
         onExportProtectedPdf = viewModel::exportPasswordProtectedPdf,
         onExportEncryptedBackup = viewModel::exportEncryptedBackup,
         onWithFreshPdf = { onFailed, onReady -> viewModel.withFreshPdf(onFailed, onReady) },
+        onSavePdfTo = viewModel::savePdfTo,
         scanSaved = scanSaved,
         undoState = undoState,
         onUndo = viewModel::undo,
@@ -430,6 +430,8 @@ internal fun DocumentDetailScreen(
     onExportEncryptedBackup: (String) -> Unit,
     /** Runs onReady with a current PDF (page edits rebuild it lazily), or onFailed if that isn't possible. */
     onWithFreshPdf: (onFailed: () -> Unit, onReady: (ScanDocument) -> Unit) -> Unit,
+    /** Saves the current PDF to a destination the picker created; deletes it again if saving fails. */
+    onSavePdfTo: (Uri) -> Unit,
     /** True right after this document was scanned: offer share, save and rename straight away. */
     scanSaved: Boolean = false,
     undoState: UndoState = UndoState(),
@@ -524,21 +526,8 @@ internal fun DocumentDetailScreen(
         if (uris.isNotEmpty()) onAppendImages(uris)
     }
     val savePdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
-        if (uri != null) {
-            // An edit may have finished while the picker was open, so make sure the PDF is current again,
-            // then copy off the main thread (cloud providers can be slow).
-            val deleteDestination = { runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) } }
-            onWithFreshPdf({ deleteDestination() }) { fresh ->
-                detailScope.launch {
-                    val ok = withContext(Dispatchers.IO) {
-                        copyFileToUri(context, fresh.pdfPath, uri).also { copied ->
-                            if (!copied) deleteDestination()
-                        }
-                    }
-                    if (!ok) android.widget.Toast.makeText(context, resources.getString(R.string.doc_could_not_save_pdf), android.widget.Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+        // Rebuilt if an edit made it stale, then copied, all in the view model: this screen may be gone by then.
+        if (uri != null) onSavePdfTo(uri)
     }
 
     /** Google Drive's own "Save to Drive" screen; without Drive, the system picker, which lists other cloud apps too. */

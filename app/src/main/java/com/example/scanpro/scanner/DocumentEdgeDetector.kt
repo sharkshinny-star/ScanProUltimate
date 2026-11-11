@@ -231,7 +231,7 @@ object DocumentEdgeDetector {
             // Sharpness is judged on the page itself: a blurry background around a sharp page, or the other
             // way round, must not decide whether the capture is taken.
             val blur = if (candidate == null) blurWhole else runCatching {
-                val box = Imgproc.boundingRect(MatOfPoint(*candidate.points.toTypedArray()))
+                val box = pageBox(candidate.points)
                 val inside = org.opencv.core.Rect(
                     box.x.coerceIn(0, working.cols() - 1), box.y.coerceIn(0, working.rows() - 1),
                     box.width.coerceIn(1, working.cols() - box.x.coerceIn(0, working.cols() - 1)),
@@ -251,7 +251,7 @@ object DocumentEdgeDetector {
             }.getOrDefault(blurWhole)
             // Glare is judged on the unsmoothed page: a reflection is a solid patch of clipped white.
             val glare = if (candidate == null) 0.0 else runCatching {
-                val box = Imgproc.boundingRect(MatOfPoint(*candidate.points.toTypedArray()))
+                val box = pageBox(candidate.points)
                 val x = box.x.coerceIn(0, working.cols() - 1)
                 val y = box.y.coerceIn(0, working.rows() - 1)
                 PageQuality.glareShare(
@@ -393,4 +393,10 @@ object DocumentEdgeDetector {
     }
 
     private data class Candidate(val points: List<Point>, val score: Float)
+}
+
+/** The page's bounding box; releases the temporary point Mat at once rather than leaving it to finalisers per frame. */
+private fun pageBox(points: List<org.opencv.core.Point>): org.opencv.core.Rect {
+    val mat = MatOfPoint(*points.toTypedArray())
+    return try { Imgproc.boundingRect(mat) } finally { mat.release() }
 }

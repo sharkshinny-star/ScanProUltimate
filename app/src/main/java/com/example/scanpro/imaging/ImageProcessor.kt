@@ -119,7 +119,8 @@ object ImageProcessor {
         annotations: List<PageAnnotation>,
         maxDimension: Int
     ): Bitmap {
-        var bitmap = decodeScaled(source.absolutePath, maxDimension)
+        // Laid on white: a transparent PNG would otherwise turn black in the JPEG and in the OpenCV filters.
+        var bitmap = decodeScaled(source.absolutePath, maxDimension)?.let(PdfExporter::onWhite)
             ?: userError(R.string.err_could_not_decode_image, source.name)
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
         if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
@@ -236,7 +237,7 @@ object ImageProcessor {
     fun rotateImageFile(source: File, destination: File, degrees: Int) {
         val totalRotation = ((degrees % 360) + 360) % 360
         if (totalRotation == 0 && source.absolutePath == destination.absolutePath) return
-        var bitmap = decodeScaled(source.absolutePath, 4200) ?: userError(R.string.err_could_not_decode_source)
+        var bitmap = decodeScaled(source.absolutePath, 4200)?.let(PdfExporter::onWhite) ?: userError(R.string.err_could_not_decode_source)
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
         val combined = ((exifRotation + totalRotation) % 360 + 360) % 360
         if (combined != 0) {
@@ -251,7 +252,7 @@ object ImageProcessor {
 
     /** [source] decoded to at most [maxDimension] px, turned upright and cut along [quad]; the caller recycles it. */
     fun cropSourceToBitmap(source: File, quad: CropQuad, maxDimension: Int): Bitmap {
-        var bitmap = decodeScaled(source.absolutePath, maxDimension) ?: userError(R.string.err_could_not_decode_source)
+        var bitmap = decodeScaled(source.absolutePath, maxDimension)?.let(PdfExporter::onWhite) ?: userError(R.string.err_could_not_decode_source)
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
         if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
         return bitmap.then { cropPage(it, quad) }

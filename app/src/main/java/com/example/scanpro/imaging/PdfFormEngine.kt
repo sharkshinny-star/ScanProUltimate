@@ -167,11 +167,16 @@ object PdfFormEngine {
             )
             is PDCheckBox -> FormField(name, label, FormFieldKind.CHECKBOX, if (field.isChecked) FormFieldRules.CHECKED else "", readOnly = readOnly, required = required)
             is PDRadioButton -> {
-                // Forms often store "Choice1" as the state and keep the readable text as the export value.
-                val states = field.onValues.sorted()
+                // With an /Opt array PDFBox already returns the readable export values here, in the form's own order;
+                // otherwise the widgets' state names. Never sort them: the order is the form's, and a label must stay
+                // with its own value (sorting once paired "Yes" with "No", so the other option was saved).
+                val states = field.onValues.toList()
                 val exports = runCatching { field.exportValues }.getOrDefault(emptyList())
-                val options = states.mapIndexed { i, state -> FormOption(state, exports.getOrNull(i)?.takeIf { it.isNotBlank() && it != state } ?: state.replace('_', ' ')) }
-                FormField(name, label, FormFieldKind.RADIO, field.value.takeIf { it != "Off" }.orEmpty(), options, readOnly, required = required)
+                val options = states.map { state -> FormOption(state, state.replace('_', ' ')) }
+                // With /Opt the stored state can be the option's index ("0", "1") rather than its export value.
+                val raw = field.value.takeIf { it != "Off" }.orEmpty()
+                val current = if (raw in states) raw else raw.toIntOrNull()?.let(exports::getOrNull)?.takeIf { it in states } ?: raw
+                FormField(name, label, FormFieldKind.RADIO, current, options, readOnly, required = required)
             }
             is PDChoice -> {
                 val exports = field.optionsExportValues

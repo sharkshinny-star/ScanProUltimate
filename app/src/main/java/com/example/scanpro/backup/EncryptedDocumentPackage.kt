@@ -2,6 +2,7 @@ package com.example.scanpro.backup
 
 import android.content.Context
 import android.net.Uri
+import com.example.scanpro.data.OcrWord
 import com.example.scanpro.data.AnnotationType
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.JsonCodec
@@ -50,6 +51,9 @@ class EncryptedDocumentPackage(private val context: Context) {
     data class RestoredPage(
         val file: File,
         val ocrText: String,
+        /** True when the text was corrected by hand; older backups don't record it. */
+        val ocrEdited: Boolean = false,
+        val ocrWords: List<OcrWord> = emptyList(),
         /** Original source image, or null for older backups that only contain the rendered page. */
         val sourceFile: File? = null,
         val filter: PageFilter = PageFilter.ORIGINAL,
@@ -177,6 +181,10 @@ class EncryptedDocumentPackage(private val context: Context) {
                                     put(JSONObject().apply {
                                         put("file", pageEntry(index))
                                         put("ocr", page.ocrText)
+                                        // Without these a restored correction is overwritten by the next edit, and
+                                        // the PDF text layer and Excel export lose word positions.
+                                        put("ocrEdited", page.ocrEdited)
+                                        if (page.ocrWords.isNotEmpty()) put("words", JsonCodec.encodeWords(page.ocrWords))
                                         if (File(page.sourcePath).isFile) put("source", sourceEntry(index))
                                         put("filter", page.filter.name)
                                         put("rotation", page.rotationDegrees)
@@ -306,6 +314,8 @@ class EncryptedDocumentPackage(private val context: Context) {
                             RestoredPage(
                                 file = file,
                                 ocrText = pageJson.optString("ocr"),
+                                ocrEdited = pageJson.optBoolean("ocrEdited", false),
+                                ocrWords = JsonCodec.decodeWords(pageJson.optString("words")),
                                 sourceFile = sourceFile,
                                 filter = enumOrDefault(pageJson.optString("filter"), PageFilter.ORIGINAL),
                                 rotationDegrees = pageJson.optInt("rotation", 0),

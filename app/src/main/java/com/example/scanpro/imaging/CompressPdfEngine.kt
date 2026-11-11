@@ -55,6 +55,7 @@ data class CompressionResult(
 
 object CompressPdfEngine {
     private const val MAX_TARGET_PASSES = 6
+    private const val MAX_RASTER_DIMENSION = 4000f
     /** A result at least this fraction of the target is close enough; the search stops. */
     private const val CLOSE_ENOUGH = 0.85
     private const val MIN_TARGET_SCALE = 0.25f
@@ -232,14 +233,17 @@ object CompressPdfEngine {
                         val bitmap = xObject.image ?: continue
                         val scaledW = (bitmap.width * targetScale).toInt().coerceAtLeast(1)
                         val scaledH = (bitmap.height * targetScale).toInt().coerceAtLeast(1)
-                        val scaledBitmap = bitmap.scale(scaledW, scaledH, true)
+                        var scaledBitmap: android.graphics.Bitmap? = null
                         try {
-                            val recompressedImage = JPEGFactory.createFromImage(pdDoc, scaledBitmap, jpegQuality / 100f)
+                            val scaled = bitmap.scale(scaledW, scaledH, true).also { scaledBitmap = it }
+                            val recompressedImage = JPEGFactory.createFromImage(pdDoc, scaled, jpegQuality / 100f)
                             replaced[original] = recompressedImage
                             produced += recompressedImage.cosObject
                             resources.put(xObjectName, recompressedImage)
                         } finally {
-                            if (scaledBitmap !== bitmap && !scaledBitmap.isRecycled) scaledBitmap.recycle()
+                            // Free the full-size decode too: with many large scans they would pile up until GC.
+                            scaledBitmap?.takeIf { it !== bitmap && !it.isRecycled }?.recycle()
+                            if (!bitmap.isRecycled) bitmap.recycle()
                         }
                     }
                 }
@@ -259,6 +263,7 @@ object CompressPdfEngine {
     ) {
         val renderDir = File(context.cacheDir, "raster_${UUID.randomUUID()}").apply { mkdirs() }
         val pages = mutableListOf<ScanPage>()
+        val pointSizes = mutableListOf<Pair<Int, Int>>()
 
         try {
             ParcelFileDescriptor.open(inputPdf, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
@@ -269,7 +274,10 @@ object CompressPdfEngine {
                         val pageLabel = context.getString(R.string.tools_compress_progress_page, index + 1, totalPages)
                         onProgress(index + 1, totalPages, pageLabel)
                         renderer.openPage(index).use { page ->
-                            val scale = targetScale * 2.0f
+                            // Capped like PDF to images: a poster-sized page would otherwise ask for a bitmap of a
+                            // gigabyte or more and fail the whole job, and the exporter scales it down anyway.
+                            val scale = minOf(targetScale * 2.0f, MAX_RASTER_DIMENSION / maxOf(page.width, page.height).coerceAtLeast(1).toFloat())
+                            pointSizes.add(page.width.coerceAtLeast(1) to page.height.coerceAtLeast(1))
                             val width = (page.width * scale).toInt().coerceAtLeast(1)
                             val height = (page.height * scale).toInt().coerceAtLeast(1)
                             val bitmap = createBitmap(width, height)
@@ -310,6 +318,8 @@ object CompressPdfEngine {
                 pageSize = PdfPageSize.AUTO,
                 searchable = false,
                 pageNumbers = false,
+                // Each page keeps its original size, edge to edge, so printing at actual size still matches.
+                pointSizes = pointSizes,
                 beforePage = { number, total ->
                     onProgress(number, total, rebuildingLabel)
                 }

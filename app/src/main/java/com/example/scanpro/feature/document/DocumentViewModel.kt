@@ -4,6 +4,10 @@ import kotlinx.coroutines.flow.combine
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.CancellationException
+import com.example.scanpro.core.ui.copyFileToUri
+import android.provider.DocumentsContract
 import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -311,6 +315,29 @@ class DocumentViewModel @Inject constructor(
                 throw error
             }
             withContext(Dispatchers.Main) { onReady(fresh) }
+        }
+    }
+
+    /**
+     * Saves the document's PDF to [destination], which the system picker has already created. Runs entirely in the
+     * operation queue, so leaving the screen or rotating while the PDF is rebuilt can't leave an empty file behind.
+     */
+    fun savePdfTo(destination: Uri) {
+        val deleteDestination = { runCatching { DocumentsContract.deleteDocument(context.contentResolver, destination) } }
+        operations.enqueue(context.getString(R.string.msg_preparing_pdf), null) {
+            val saved = try {
+                val fresh = repository.ensurePdf(id)
+                withContext(Dispatchers.IO) { copyFileToUri(context, fresh.pdfPath, destination) }
+            } catch (cancelled: CancellationException) {
+                withContext(NonCancellable + Dispatchers.IO) { deleteDestination() }
+                throw cancelled
+            } catch (error: Exception) {
+                false
+            }
+            if (!saved) {
+                withContext(Dispatchers.IO) { deleteDestination() }
+                throw IllegalStateException(context.getString(R.string.doc_could_not_save_pdf))
+            }
         }
     }
 

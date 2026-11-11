@@ -190,7 +190,9 @@ class DocumentRepository @Inject constructor(
     suspend fun reOcrDocument(id: String, script: OcrScript? = null): Int = editor.reOcrDocument(id, script)
     suspend fun undo(documentId: String): Boolean = editor.undo(documentId)
     suspend fun redo(documentId: String): Boolean = editor.redo(documentId)
-    suspend fun cleanUnusedSignatures(documentId: String) = editor.cleanUnusedSignatures(documentId)
+    // A removed page still offered for Undo keeps its signatures too.
+    suspend fun cleanUnusedSignatures(documentId: String) =
+        editor.cleanUnusedSignatures(documentId, listOfNotNull(organiser.pendingRemovedPage(documentId)))
 
     // ---- PageOrganiser
     suspend fun movePage(documentId: String, pageId: String, delta: Int) = organiser.movePage(documentId, pageId, delta)
