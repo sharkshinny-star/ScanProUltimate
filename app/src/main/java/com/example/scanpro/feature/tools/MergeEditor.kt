@@ -1,5 +1,8 @@
 package com.example.scanpro.feature.tools
 
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import android.graphics.Bitmap
 import android.graphics.Color as AndroidColor
 import android.graphics.pdf.PdfRenderer
@@ -176,6 +179,8 @@ internal fun MergeEditor(
                             lifted = dragging,
                             displayName = displayName,
                             onRemove = { order.remove(uri) },
+                            onMoveUp = if (index > 0) ({ order.add(index - 1, order.removeAt(index)) }) else null,
+                            onMoveDown = if (index < order.lastIndex) ({ order.add(index + 1, order.removeAt(index)) }) else null,
                             context = context
                         )
                     }
@@ -192,8 +197,13 @@ private fun MergeFileCard(
     lifted: Boolean,
     displayName: (Uri) -> String,
     onRemove: () -> Unit,
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?,
     context: android.content.Context
 ) {
+    // Dragging is the only visible way to reorder; TalkBack and switch users get Move up / Move down actions.
+    val moveUpLabel = stringResource(R.string.tools_order_move_up)
+    val moveDownLabel = stringResource(R.string.tools_order_move_down)
     val thumbPx = with(androidx.compose.ui.platform.LocalDensity.current) { 88.dp.roundToPx() }
     val info by produceState<MergeFileInfo?>(null, uri) {
         value = withContext(Dispatchers.IO) { loadMergeInfo(context, uri, displayName(uri), thumbPx) }
@@ -203,7 +213,12 @@ private fun MergeFileCard(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = if (lifted) 6.dp else 0.dp,
         shadowElevation = if (lifted) 8.dp else 0.dp,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics {
+            customActions = buildList {
+                onMoveUp?.let { add(CustomAccessibilityAction(moveUpLabel) { it(); true }) }
+                onMoveDown?.let { add(CustomAccessibilityAction(moveDownLabel) { it(); true }) }
+            }
+        }
     ) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("$position", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(28.dp))

@@ -141,6 +141,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -320,6 +321,7 @@ fun PdfToolsScreen(
     val toolResults by viewModel.toolResults.collectAsStateWithLifecycle()
     val recentScope = rememberCoroutineScope()
     val formSession by viewModel.form.collectAsStateWithLifecycle()
+    val formWithoutFields by viewModel.formWithoutFields.collectAsStateWithLifecycle()
     val signViewModel: SignPdfViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
     var showOcrDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -919,6 +921,25 @@ fun PdfToolsScreen(
                 )
             }
 
+            formWithoutFields?.let { uri ->
+                AlertDialog(
+                    onDismissRequest = viewModel::dismissFormWithoutFields,
+                    icon = { Icon(Icons.Default.EditNote, contentDescription = null) },
+                    title = { Text(stringResource(R.string.tools_fill_no_fields_title)) },
+                    text = { Text(stringResource(R.string.tools_fill_no_fields_body)) },
+                    confirmButton = {
+                        Button(onClick = {
+                            viewModel.dismissFormWithoutFields()
+                            selectedTool = "sign"
+                            signViewModel.open(uri)
+                        }) { Text(stringResource(R.string.tools_fill_no_fields_action)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = viewModel::dismissFormWithoutFields) { Text(stringResource(R.string.common_close)) }
+                    }
+                )
+            }
+
             formSession?.let { session ->
                 FormFillDialog(
                     session = session,
@@ -1142,37 +1163,23 @@ private fun CompressPdfDialog(
     val isTargetTooLarge = isCustomTarget && customBytes != null && originalSize > 0 && customBytes >= originalSize
     val isTargetZero = isCustomTarget && targetInput.isNotBlank() && (customBytes == null || customBytes <= 0)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_compress_pdf)) },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    val canConfirm = if (isCustomTarget) {
+        customBytes != null && customBytes > 0 && (originalSize <= 0 || customBytes < originalSize)
+    } else true
+    // A full tool page (F146): the dialog crammed seven controls into a pop-up and hid its button on small phones.
+    ToolPage(
+        title = stringResource(R.string.tools_compress_pdf),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_compress_pdf),
+        onAction = {
+            if (!isCustomTarget) toolPrefs.edit().putString(LAST_COMPRESS_PRESET, preset.name).apply()
+            onConfirm(preset, if (isCustomTarget) customBytes else null)
+        },
+        actionEnabled = canConfirm,
+        actionIcon = Icons.Default.Compress
+    ) {
+            Column {
                 PickedFileRow(uri)
-                Spacer(modifier = Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(R.string.tools_compress_current_size),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            formatBytes(LocalContext.current, originalSize),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
                 Spacer(modifier = Modifier.height(12.dp))
 
                 CompressionPreset.entries.forEach { item ->
@@ -1189,19 +1196,13 @@ private fun CompressPdfDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable {
+                            .selectable(selected = isSelected, role = Role.RadioButton) {
                                 isCustomTarget = false
                                 preset = item
                             }
                             .padding(vertical = 4.dp, horizontal = 2.dp)
                     ) {
-                        RadioButton(
-                            selected = isSelected,
-                            onClick = {
-                                isCustomTarget = false
-                                preset = item
-                            }
-                        )
+                        RadioButton(selected = isSelected, onClick = null)
                         Spacer(modifier = Modifier.width(6.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -1243,13 +1244,10 @@ private fun CompressPdfDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { isCustomTarget = true }
+                        .selectable(selected = isCustomSelected, role = Role.RadioButton) { isCustomTarget = true }
                         .padding(vertical = 4.dp, horizontal = 2.dp)
                 ) {
-                    RadioButton(
-                        selected = isCustomSelected,
-                        onClick = { isCustomTarget = true }
-                    )
+                    RadioButton(selected = isCustomSelected, onClick = null)
                     Spacer(modifier = Modifier.width(6.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -1441,25 +1439,7 @@ private fun CompressPdfDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        },
-        confirmButton = {
-            val canConfirm = if (isCustomTarget) {
-                customBytes != null && customBytes > 0 && (originalSize <= 0 || customBytes < originalSize)
-            } else true
-            Button(
-                onClick = {
-                    if (!isCustomTarget) toolPrefs.edit().putString(LAST_COMPRESS_PRESET, preset.name).apply()
-                    onConfirm(preset, if (isCustomTarget) customBytes else null)
-                },
-                enabled = canConfirm
-            ) {
-                Text(stringResource(R.string.tools_compress_pdf))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
-        }
-    )
+    }
 }
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -1484,11 +1464,21 @@ private fun PdfToImagesDialog(
         }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_pdf2img_dialog_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = stringResource(R.string.tools_pdf2img_dialog_title),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_pdf2img_export_button),
+        onAction = {
+            if (allPages) onConfirm(format, null, scale)
+            else PageRanges.parse(rangesText, pageCount ?: Int.MAX_VALUE)
+                .onSuccess { ranges -> onConfirm(format, ranges.flatMap { it.toList() }, scale) }
+                .onFailure { error = it.message }
+        },
+        actionEnabled = true,
+        actionSupport = null
+    ) {
+            Column {
                 PickedFileRow(uri)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(stringResource(R.string.tools_pdf2img_format), style = MaterialTheme.typography.labelLarge)
@@ -1551,19 +1541,7 @@ private fun PdfToImagesDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(onClick = {
-                if (allPages) onConfirm(format, null, scale)
-                else PageRanges.parse(rangesText, pageCount ?: Int.MAX_VALUE)
-                    .onSuccess { ranges -> onConfirm(format, ranges.flatMap { it.toList() }, scale) }
-                    .onFailure { error = it.message }
-            }) { Text(stringResource(R.string.tools_pdf2img_export_button)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
 }
 
 /** Page size and quality for Images to PDF, the two settings the engine already takes. */
@@ -1572,10 +1550,17 @@ private fun PdfToImagesDialog(
 private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (PdfPageSize, PdfQuality) -> Unit) {
     var size by rememberSaveable { mutableStateOf(PdfPageSize.AUTO) }
     var quality by rememberSaveable { mutableStateOf(PdfQuality.BALANCED) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(pluralStringResource(R.plurals.tools_img2pdf_title, count, count)) },
-        text = {
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = pluralStringResource(R.plurals.tools_img2pdf_title, count, count),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_img2pdf_create),
+        onAction = {
+            onConfirm(size, quality)
+        },
+        actionEnabled = true,
+        actionSupport = null
+    ) {
             Column {
                 Text(stringResource(R.string.tools_img2pdf_page_size), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(6.dp))
@@ -1611,10 +1596,7 @@ private fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (Pdf
                     }
                 }
             }
-        },
-        confirmButton = { Button(onClick = { onConfirm(size, quality) }) { Text(stringResource(R.string.tools_img2pdf_create)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
-    )
+        }
 }
 
 @Composable
@@ -1801,20 +1783,35 @@ private fun PasswordDialog(
     val enterPasswordError = stringResource(R.string.tools_password_enter)
     val mismatchError = stringResource(R.string.tools_password_mismatch)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                stringResource(
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = stringResource(
                     when {
                         mergeFileName != null -> R.string.ui_pdf_password_title
                         isProtect -> R.string.tools_password_protect_title
                         else -> R.string.tools_unlock_pdf
                     }
-                )
-            )
+                ),
+        onClose = onDismiss,
+        actionLabel = stringResource(
+            when {
+                mergeFileName != null -> R.string.common_continue
+                isProtect -> R.string.tools_protect_pdf
+                else -> R.string.tools_unlock_pdf
+            }
+        ),
+        onAction = {
+            if (password.length < minimum) {
+                errorText = if (isProtect) tooShortError else enterPasswordError
+            } else if (isProtect && confirm != password) {
+                errorText = mismatchError
+            } else {
+                onConfirm(password)
+            }
         },
-        text = {
+        actionEnabled = true,
+        actionSupport = null
+    ) {
             Column {
                 if (fileUri != null) {
                     PickedFileRow(fileUri)
@@ -1879,34 +1876,7 @@ private fun PasswordDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (password.length < minimum) {
-                        errorText = if (isProtect) tooShortError else enterPasswordError
-                    } else if (isProtect && confirm != password) {
-                        errorText = mismatchError
-                    } else {
-                        onConfirm(password)
-                    }
-                }
-            ) {
-                Text(
-                    stringResource(
-                        when {
-                            mergeFileName != null -> R.string.common_continue
-                            isProtect -> R.string.tools_protect_pdf
-                            else -> R.string.tools_unlock_pdf
-                        }
-                    )
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
 }
 
 @Composable
@@ -2022,10 +1992,29 @@ private fun SplitDialog(
         return
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_split_title)) },
-        text = {
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = stringResource(R.string.tools_split_title),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_split_pdf),
+        onAction = {
+            val n = chunkSizeText.toIntOrNull()
+            val pages = pageCount ?: Int.MAX_VALUE
+            when (mode) {
+                SplitMode.PAGE_RANGES -> PageRanges.parse(rangesText, pages)
+                    .onSuccess { onConfirm(mode, rangesText, 1) }
+                    .onFailure { error = it.message }
+                SplitMode.EVERY_N_PAGES -> when {
+                    n == null || n < 1 -> error = resources.getString(R.string.tools_split_enter_count)
+                    pageCount != null && n >= pageCount!! -> error = resources.getQuantityString(R.plurals.tools_split_whole_document, pageCount!!, pageCount!!)
+                    else -> onConfirm(mode, rangesText, n)
+                }
+                SplitMode.SINGLE_PAGES -> onConfirm(mode, rangesText, 1)
+            }
+        },
+        actionEnabled = true,
+        actionSupport = null
+    ) {
             Column {
                 PickedFileRow(uri)
                 Spacer(modifier = Modifier.height(12.dp))
@@ -2077,32 +2066,7 @@ private fun SplitDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val n = chunkSizeText.toIntOrNull()
-                    val pages = pageCount ?: Int.MAX_VALUE
-                    when (mode) {
-                        SplitMode.PAGE_RANGES -> PageRanges.parse(rangesText, pages)
-                            .onSuccess { onConfirm(mode, rangesText, 1) }
-                            .onFailure { error = it.message }
-                        SplitMode.EVERY_N_PAGES -> when {
-                            n == null || n < 1 -> error = resources.getString(R.string.tools_split_enter_count)
-                            pageCount != null && n >= pageCount!! -> error = resources.getQuantityString(R.plurals.tools_split_whole_document, pageCount!!, pageCount!!)
-                            else -> onConfirm(mode, rangesText, n)
-                        }
-                        SplitMode.SINGLE_PAGES -> onConfirm(mode, rangesText, 1)
-                    }
-                }
-            ) {
-                Text(stringResource(R.string.tools_split_pdf))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2709,14 +2673,34 @@ private fun CompressImageDialog(
     val isTargetLarger = mode == 0 && origBytes > 0 && (targetBytes ?: 0L) >= origBytes
     val isTargetZero = mode == 0 && targetKb <= 0
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_compress_img_title)) },
-        text = {
+    val canConfirm = if (mode == 0) targetKb > 0 && !isTargetLarger else true
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = stringResource(R.string.tools_compress_img_title),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_compress_img_action),
+        onAction = {
+            onConfirm(
+                ImageCompressConfig(
+                    targetSizeBytes = if (mode == 0) targetBytes else null,
+                    qualityPercent = qualityPercent,
+                    maxDimension = maxDim,
+                    outputFormat = format
+                )
+            )
+        },
+        actionEnabled = canConfirm,
+        actionSupport = when {
+            // The reason the button is disabled, where it can be seen: it used to be greyed out with no explanation
+            // when the chosen size was bigger than the photo.
+            isTargetLarger -> stringResource(R.string.tools_compress_err_target_larger, formatBytes(context, origBytes))
+            isTargetZero -> stringResource(R.string.tools_compress_err_target_positive)
+            else -> null
+        }
+    ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
             ) {
                 metadata?.let { meta ->
                     Surface(
@@ -2915,30 +2899,7 @@ private fun CompressImageDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        },
-        confirmButton = {
-            val canConfirm = if (mode == 0) {
-                targetKb > 0 && !isTargetLarger
-            } else true
-            Button(
-                onClick = {
-                    val config = ImageCompressConfig(
-                        targetSizeBytes = if (mode == 0) targetBytes else null,
-                        qualityPercent = qualityPercent,
-                        maxDimension = maxDim,
-                        outputFormat = format
-                    )
-                    onConfirm(config)
-                },
-                enabled = canConfirm
-            ) {
-                Text(stringResource(R.string.tools_compress_img_action))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
 }
 
 @Composable
@@ -2953,19 +2914,22 @@ private fun ConvertImageDialog(
     var exportPdf by rememberSaveable { mutableStateOf(false) }
     var jpegQuality by rememberSaveable { mutableStateOf(92) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                if (uris.size <= 1) stringResource(R.string.tools_convert_img_title)
-                else stringResource(R.string.tools_convert_img_title) + " (${uris.size})"
-            )
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = if (uris.size <= 1) stringResource(R.string.tools_convert_img_title)
+                else stringResource(R.string.tools_convert_img_title) + " (${uris.size})",
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_convert_img_action),
+        onAction = {
+            if (exportPdf) onConvertToPdf()
+            else onConfirm(format, if (format == ImageExportFormat.PNG) 100 else jpegQuality)
         },
-        text = {
+        actionEnabled = true,
+        actionSupport = null
+    ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                    .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (uris.size == 1) {
@@ -3151,19 +3115,7 @@ private fun ConvertImageDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(onClick = {
-                if (exportPdf) onConvertToPdf()
-                else onConfirm(format, if (format == ImageExportFormat.PNG) 100 else jpegQuality)
-            }) {
-                Text(stringResource(R.string.tools_convert_img_action))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
 }
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -3176,7 +3128,7 @@ private fun ResizeImageDialog(
     onConfirm: (ImageResizeConfig) -> Unit
 ) {
     var metadata by remember { mutableStateOf<ImageMetadata?>(null) }
-    var resizeMode by rememberSaveable { mutableIntStateOf(0) } // 0 = Dimensions, 1 = Percentage
+    var resizeMode by rememberSaveable { mutableIntStateOf(1) } // 0 = Dimensions, 1 = Percentage (default: half size)
     var percentage by rememberSaveable { mutableIntStateOf(50) }
     var widthInput by rememberSaveable { mutableStateOf("") }
     var heightInput by rememberSaveable { mutableStateOf("") }
@@ -3199,24 +3151,40 @@ private fun ResizeImageDialog(
     val origH = metadata?.height ?: 1
     val aspectRatio = origW.toFloat() / origH.toFloat()
 
-    val w = if (resizeMode == 1) {
-        (origW * percentage / 100f).roundToInt().coerceIn(10, 8000)
-    } else widthInput.toIntOrNull() ?: 0
+    // Percent mode scales both sides by one factor, clamped together so the picture is never distorted.
+    val percentScale = run {
+        val wanted = percentage / 100f
+        val maxScale = 8000f / maxOf(origW, origH)
+        val minScale = 10f / minOf(origW, origH)
+        wanted.coerceIn(minScale, maxOf(minScale, maxScale))
+    }
+    val w = if (resizeMode == 1) (origW * percentScale).roundToInt() else widthInput.toIntOrNull() ?: 0
+    val h = if (resizeMode == 1) (origH * percentScale).roundToInt() else heightInput.toIntOrNull() ?: 0
 
-    val h = if (resizeMode == 1) {
-        (origH * percentage / 100f).roundToInt().coerceIn(10, 8000)
-    } else heightInput.toIntOrNull() ?: 0
+    val unchanged = metadata != null && w == origW && h == origH
+    val isValid = w in 10..8000 && h in 10..8000 && !unchanged
 
-    val isValid = w in 10..8000 && h in 10..8000
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_resize_img_title)) },
-        text = {
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = stringResource(R.string.tools_resize_img_title),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_resize_img_action),
+        onAction = {
+            onConfirm(
+                ImageResizeConfig(
+                    targetWidth = w,
+                    targetHeight = h,
+                    outputFormat = format,
+                    fit = if (resizeMode == 0) fit else ImageResizeFit.STRETCH
+                )
+            )
+        },
+        actionEnabled = isValid,
+        actionSupport = if (unchanged) stringResource(R.string.tools_resize_img_unchanged) else null
+    ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
             ) {
                 metadata?.let { meta ->
                     Text(
@@ -3441,28 +3409,7 @@ private fun ResizeImageDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(
-                        ImageResizeConfig(
-                            targetWidth = w,
-                            targetHeight = h,
-                            outputFormat = format,
-                            fit = if (resizeMode == 0) fit else ImageResizeFit.STRETCH
-                        )
-                    )
-                },
-                enabled = isValid
-            ) {
-                Text(stringResource(R.string.tools_resize_img_action))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
 }
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -3476,14 +3423,26 @@ private fun PageNumbersPdfDialog(
     var selectedFormat by rememberSaveable { mutableStateOf(PageNumberFormat.PAGE_N_OF_M) }
     var skipCover by rememberSaveable { mutableStateOf(true) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_page_numbers_title)) },
-        text = {
+    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
+    ToolPage(
+        title = stringResource(R.string.tools_page_numbers_title),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_page_numbers_action),
+        onAction = {
+            onConfirm(
+                PageNumbersConfig(
+                    position = selectedPosition,
+                    format = selectedFormat,
+                    skipFirstPage = skipCover
+                )
+            )
+        },
+        actionEnabled = true,
+        actionSupport = null
+    ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                    .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 PickedFileRow(uri)
@@ -3553,26 +3512,7 @@ private fun PageNumbersPdfDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(
-                        PageNumbersConfig(
-                            position = selectedPosition,
-                            format = selectedFormat,
-                            skipFirstPage = skipCover
-                        )
-                    )
-                }
-            ) {
-                Text(stringResource(R.string.tools_page_numbers_action))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
 }
 
 @get:StringRes

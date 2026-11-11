@@ -152,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDF जोड़ी नहीं जा सकीं</string>
     <string name="msg_tools_reading_form_fields">फ़ॉर्म के फ़ील्ड पढ़े जा रहे हैं…</string>
     <string name="msg_tools_read_form_failed">इस PDF का फ़ॉर्म पढ़ा नहीं जा सका</string>
-    <string name="msg_tools_no_fillable_fields">इस PDF में भरने लायक कोई फ़ील्ड नहीं है। इसे अपने डॉक्यूमेंट में इंपोर्ट करें और उस पर लिखने के लिए टेक्स्ट जोड़ें का इस्तेमाल करें।</string>
     <string name="msg_tools_filling_form">फ़ॉर्म भरा जा रहा है…</string>
     <string name="msg_tools_save_form_failed">भरा हुआ फ़ॉर्म सेव नहीं हो सका</string>
     <string name="msg_tools_making_searchable">PDF को खोजने लायक बनाया जा रहा है…</string>

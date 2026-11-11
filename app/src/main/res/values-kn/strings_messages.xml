@@ -152,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDF ಗಳನ್ನು ಸೇರಿಸಲು ಆಗಲಿಲ್ಲ</string>
     <string name="msg_tools_reading_form_fields">ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳನ್ನು ಓದಲಾಗುತ್ತಿದೆ…</string>
     <string name="msg_tools_read_form_failed">ಈ PDF ನ ಫಾರ್ಮ್ ಓದಲು ಆಗಲಿಲ್ಲ</string>
-    <string name="msg_tools_no_fillable_fields">ಈ PDF ನಲ್ಲಿ ತುಂಬಬಹುದಾದ ಫೀಲ್ಡ್‌ಗಳಿಲ್ಲ. ಇದನ್ನು ನಿಮ್ಮ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳಿಗೆ ಇಂಪೋರ್ಟ್ ಮಾಡಿ, ಅದರ ಮೇಲೆ ಟೈಪ್ ಮಾಡಲು ಪಠ್ಯ ಸೇರಿಸಿ ಬಳಸಿ.</string>
     <string name="msg_tools_filling_form">ಫಾರ್ಮ್ ತುಂಬಲಾಗುತ್ತಿದೆ…</string>
     <string name="msg_tools_save_form_failed">ತುಂಬಿದ ಫಾರ್ಮ್ ಉಳಿಸಲು ಆಗಲಿಲ್ಲ</string>
     <string name="msg_tools_making_searchable">PDF ಅನ್ನು ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>

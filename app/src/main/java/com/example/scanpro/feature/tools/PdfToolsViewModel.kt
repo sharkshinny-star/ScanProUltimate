@@ -433,7 +433,8 @@ class PdfToolsViewModel @Inject constructor(
     fun openForm(uri: Uri) = launchTool(R.string.msg_tools_reading_form_fields, R.string.msg_tools_read_form_failed) {
         val fields = PdfFormEngine.readFields(context, uri)
         if (fields.isEmpty()) {
-            _message.value = context.getString(R.string.msg_tools_no_fillable_fields)
+            // Not a dead end: the screen offers to type on the same PDF with Sign (F146).
+            _formWithoutFields.value = uri
         } else {
             _form.value = FormSession(uri, fields, fields.associateBy({ it.name }) { it.value })
         }
@@ -445,6 +446,12 @@ class PdfToolsViewModel @Inject constructor(
     }
 
     fun closeForm() { _form.value = null }
+
+    private val _formWithoutFields = MutableStateFlow<Uri?>(null)
+    /** A PDF picked for Fill that has no form fields; the screen offers to type on it instead. */
+    val formWithoutFields: StateFlow<Uri?> = _formWithoutFields.asStateFlow()
+
+    fun dismissFormWithoutFields() { _formWithoutFields.value = null }
 
     fun saveForm(flatten: Boolean) {
         val session = _form.value ?: return

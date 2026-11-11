@@ -165,7 +165,6 @@
     <string name="tools_img2pdf_fitted_hint">படங்கள் %1$s பக்கங்களில் பொருத்தப்படும்</string>
     <string name="tools_img2pdf_quality">தரம்</string>
     <string name="tools_img2pdf_create">PDF உருவாக்கு</string>
-    <string name="tools_compress_current_size">தற்போதைய அளவு</string>
     <string name="tools_compress_note">PDF-இல் ஏற்கெனவே உரை உள்ள இடங்களில் அது தேர்ந்தெடுக்கக்கூடியதாகவே இருக்கும். சிறியதாகாத ஃபைல் அப்படியே வைக்கப்படும்.</string>
     <string name="tools_compress_preset_high">உயர் தரம்</string>
     <string name="tools_compress_preset_high_desc">லேசான சுருக்கம், நுணுக்கமான விவரங்களைப் பாதுகாக்கும்</string>
@@ -317,6 +316,10 @@
     <string name="tools_resize_img_preset_avatar">அவதார் (400 × 400)</string>
     <string name="tools_resize_img_scale_label">அளவு</string>
     <string name="tools_resize_img_action">மறுஅளவிடு</string>
+    <string name="tools_resize_img_unchanged">அசலிலிருந்து வேறுபட்ட அளவைத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="tools_fill_no_fields_title">நிரப்பக்கூடிய புலங்கள் இல்லை</string>
+    <string name="tools_fill_no_fields_body">இந்த PDF-இல் நிரப்ப படிவப் புலங்கள் இல்லை. இருந்தாலும் அதன் பக்கங்களில் எங்கு வேண்டுமானாலும் உரை தட்டச்சு செய்யலாம் அல்லது உங்கள் கையொப்பத்தைச் சேர்க்கலாம்.</string>
+    <string name="tools_fill_no_fields_action">PDF-இல் தட்டச்சு செய்</string>
     <string name="tools_resize_img_success">%1$d × %2$d px அளவுக்கு மாற்றப்பட்டது (%3$s)</string>
 
     <string name="tools_progress_compressing_img">படம் சுருக்கப்படுகிறது…</string>

@@ -165,7 +165,6 @@
     <string name="tools_img2pdf_fitted_hint">ചിത്രങ്ങൾ %1$s പേജുകളിൽ ഒതുക്കും</string>
     <string name="tools_img2pdf_quality">ഗുണനിലവാരം</string>
     <string name="tools_img2pdf_create">PDF ഉണ്ടാക്കുക</string>
-    <string name="tools_compress_current_size">നിലവിലെ വലുപ്പം</string>
     <string name="tools_compress_note">PDF-ൽ ഇതിനകം ടെക്സ്റ്റ് ഉള്ളിടത്ത് അത് തിരഞ്ഞെടുക്കാനാകും. ചെറുതാകാത്ത ഫയൽ അതേപടി നിലനിർത്തും.</string>
     <string name="tools_compress_preset_high">ഉയർന്ന ഗുണനിലവാരം</string>
     <string name="tools_compress_preset_high_desc">ചെറിയ കംപ്രഷൻ, ചെറിയ വിശദാംശങ്ങൾ നിലനിർത്തും</string>
@@ -317,6 +316,10 @@
     <string name="tools_resize_img_preset_avatar">അവതാരം (400 × 400)</string>
     <string name="tools_resize_img_scale_label">സ്കെയിൽ</string>
     <string name="tools_resize_img_action">റീസൈസ് ചെയ്യുക</string>
+    <string name="tools_resize_img_unchanged">യഥാർത്ഥത്തിൽ നിന്ന് വ്യത്യസ്തമായ വലുപ്പം തിരഞ്ഞെടുക്കുക.</string>
+    <string name="tools_fill_no_fields_title">പൂരിപ്പിക്കാവുന്ന ഫീൽഡുകളില്ല</string>
+    <string name="tools_fill_no_fields_body">ഈ PDF-ൽ പൂരിപ്പിക്കാൻ ഫോം ഫീൽഡുകളൊന്നുമില്ല. എങ്കിലും അതിന്റെ പേജുകളിൽ എവിടെയും ടെക്സ്റ്റ് ടൈപ്പ് ചെയ്യാനോ ഒപ്പ് ചേർക്കാനോ കഴിയും.</string>
+    <string name="tools_fill_no_fields_action">PDF-ൽ ടൈപ്പ് ചെയ്യുക</string>
     <string name="tools_resize_img_success">%1$d × %2$d px ലേക്ക് റീസൈസ് ചെയ്തു (%3$s)</string>
 
     <string name="tools_progress_compressing_img">ചിത്രം കംപ്രസ് ചെയ്യുന്നു…</string>

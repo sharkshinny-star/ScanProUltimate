@@ -165,7 +165,6 @@
     <string name="tools_img2pdf_fitted_hint">इमेज %1$s पेजों पर फ़िट की जाती हैं</string>
     <string name="tools_img2pdf_quality">क्वालिटी</string>
     <string name="tools_img2pdf_create">PDF बनाएं</string>
-    <string name="tools_compress_current_size">अभी का साइज़</string>
     <string name="tools_compress_note">जहां PDF में पहले से टेक्स्ट है, वह चुना जा सकेगा। जो फ़ाइल छोटी नहीं होगी, उसे वैसे ही रखा जाता है।</string>
     <string name="tools_compress_preset_high">हाई क्वालिटी</string>
     <string name="tools_compress_preset_high_desc">थोड़ा कंप्रेशन, बारीकियां बनी रहती हैं</string>
@@ -317,6 +316,10 @@
     <string name="tools_resize_img_preset_avatar">अवतार (400 × 400)</string>
     <string name="tools_resize_img_scale_label">स्केल</string>
     <string name="tools_resize_img_action">रीसाइज़ करें</string>
+    <string name="tools_resize_img_unchanged">मूल से अलग आकार चुनें।</string>
+    <string name="tools_fill_no_fields_title">भरने योग्य फ़ील्ड नहीं</string>
+    <string name="tools_fill_no_fields_body">इस PDF में भरने के लिए कोई फ़ॉर्म फ़ील्ड नहीं है। आप फिर भी इसके पन्नों पर कहीं भी टेक्स्ट लिख सकते हैं या अपना हस्ताक्षर जोड़ सकते हैं।</string>
+    <string name="tools_fill_no_fields_action">PDF पर लिखें</string>
     <string name="tools_resize_img_success">%1$d × %2$d px पर रीसाइज़ किया गया (%3$s)</string>
 
     <string name="tools_progress_compressing_img">इमेज कंप्रेस हो रही है…</string>

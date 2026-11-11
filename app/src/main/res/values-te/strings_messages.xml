@@ -152,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDFలను కలపలేకపోయాం</string>
     <string name="msg_tools_reading_form_fields">ఫారమ్ ఫీల్డ్‌లను చదువుతోంది…</string>
     <string name="msg_tools_read_form_failed">ఈ PDF ఫారమ్‌ను చదవలేకపోయాం</string>
-    <string name="msg_tools_no_fillable_fields">ఈ PDFలో నింపగల ఫీల్డ్‌లు ఏవీ లేవు. దీన్ని మీ డాక్యుమెంట్‌లలోకి ఇంపోర్ట్ చేసి, టెక్స్ట్ జోడించండితో టైప్ చేయండి.</string>
     <string name="msg_tools_filling_form">ఫారమ్ నింపుతోంది…</string>
     <string name="msg_tools_save_form_failed">నింపిన ఫారమ్‌ను సేవ్ చేయలేకపోయాం</string>
     <string name="msg_tools_making_searchable">PDFని సెర్చ్ చేయగలిగేలా చేస్తోంది…</string>

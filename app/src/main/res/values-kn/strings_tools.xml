@@ -165,7 +165,6 @@
     <string name="tools_img2pdf_fitted_hint">ಚಿತ್ರಗಳನ್ನು %1$s ಪುಟಗಳಿಗೆ ಹೊಂದಿಸಲಾಗುತ್ತದೆ</string>
     <string name="tools_img2pdf_quality">ಗುಣಮಟ್ಟ</string>
     <string name="tools_img2pdf_create">PDF ರಚಿಸಿ</string>
-    <string name="tools_compress_current_size">ಈಗಿನ ಗಾತ್ರ</string>
     <string name="tools_compress_note">PDF ನಲ್ಲಿ ಈಗಾಗಲೇ ಪಠ್ಯವಿರುವಲ್ಲಿ ಅದನ್ನು ಆಯ್ಕೆಮಾಡಬಹುದು. ಚಿಕ್ಕದಾಗದ ಫೈಲ್ ಅನ್ನು ಹಾಗೆಯೇ ಇಡಲಾಗುತ್ತದೆ.</string>
     <string name="tools_compress_preset_high">ಹೆಚ್ಚು ಗುಣಮಟ್ಟ</string>
     <string name="tools_compress_preset_high_desc">ಸ್ವಲ್ಪ ಕಂಪ್ರೆಷನ್, ಸೂಕ್ಷ್ಮ ವಿವರಗಳು ಉಳಿಯುತ್ತವೆ</string>
@@ -317,6 +316,10 @@
     <string name="tools_resize_img_preset_avatar">ಅವತಾರ್ (400 × 400)</string>
     <string name="tools_resize_img_scale_label">ಪ್ರಮಾಣ</string>
     <string name="tools_resize_img_action">ಮರುಗಾತ್ರಗೊಳಿಸಿ</string>
+    <string name="tools_resize_img_unchanged">ಮೂಲಕ್ಕಿಂತ ಬೇರೆ ಗಾತ್ರವನ್ನು ಆರಿಸಿ.</string>
+    <string name="tools_fill_no_fields_title">ತುಂಬಬಹುದಾದ ಕ್ಷೇತ್ರಗಳಿಲ್ಲ</string>
+    <string name="tools_fill_no_fields_body">ಈ PDF ನಲ್ಲಿ ತುಂಬಲು ಯಾವುದೇ ಫಾರ್ಮ್ ಕ್ಷೇತ್ರಗಳಿಲ್ಲ. ಆದರೂ ನೀವು ಅದರ ಪುಟಗಳಲ್ಲಿ ಎಲ್ಲಿ ಬೇಕಾದರೂ ಪಠ್ಯ ಟೈಪ್ ಮಾಡಬಹುದು ಅಥವಾ ನಿಮ್ಮ ಸಹಿ ಸೇರಿಸಬಹುದು.</string>
+    <string name="tools_fill_no_fields_action">PDF ಮೇಲೆ ಟೈಪ್ ಮಾಡಿ</string>
     <string name="tools_resize_img_success">%1$d × %2$d px ಗೆ ಮರುಗಾತ್ರಗೊಳಿಸಲಾಗಿದೆ (%3$s)</string>
 
     <string name="tools_progress_compressing_img">ಚಿತ್ರವನ್ನು ಸಂಕುಚಿತಗೊಳಿಸಲಾಗುತ್ತಿದೆ…</string>

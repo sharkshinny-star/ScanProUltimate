@@ -167,7 +167,6 @@
     <string name="msg_tools_merge_failed">Failed to merge PDFs</string>
     <string name="msg_tools_reading_form_fields">Reading form fields…</string>
     <string name="msg_tools_read_form_failed">Could not read this PDF\'s form</string>
-    <string name="msg_tools_no_fillable_fields">This PDF has no fillable fields. Import it into your documents and use Add text to type on it.</string>
     <string name="msg_tools_filling_form">Filling form…</string>
     <string name="msg_tools_save_form_failed">Could not save the filled form</string>
     <string name="msg_tools_making_searchable">Making PDF searchable…</string>

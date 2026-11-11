@@ -165,7 +165,6 @@
     <string name="tools_img2pdf_fitted_hint">చిత్రాలు %1$s పేజీలకు సరిపడేలా ఉంచబడతాయి</string>
     <string name="tools_img2pdf_quality">క్వాలిటీ</string>
     <string name="tools_img2pdf_create">PDF తయారు చేయండి</string>
-    <string name="tools_compress_current_size">ప్రస్తుత సైజ్</string>
     <string name="tools_compress_note">PDFలో ఇప్పటికే టెక్స్ట్ ఉన్నచోట అది ఎంచుకోగలిగేలానే ఉంటుంది. చిన్నది కాని ఫైల్ అలాగే ఉంచబడుతుంది.</string>
     <string name="tools_compress_preset_high">అధిక క్వాలిటీ</string>
     <string name="tools_compress_preset_high_desc">కొంచెం కంప్రెషన్, సూక్ష్మ వివరాలను ఉంచుతుంది</string>
@@ -317,6 +316,10 @@
     <string name="tools_resize_img_preset_avatar">అవతార్ (400 × 400)</string>
     <string name="tools_resize_img_scale_label">స్కేల్</string>
     <string name="tools_resize_img_action">పరిమాణం మార్చు</string>
+    <string name="tools_resize_img_unchanged">అసలు కంటే వేరే పరిమాణాన్ని ఎంచుకోండి.</string>
+    <string name="tools_fill_no_fields_title">పూరించదగిన ఫీల్డ్‌లు లేవు</string>
+    <string name="tools_fill_no_fields_body">ఈ PDFలో పూరించడానికి ఫారమ్ ఫీల్డ్‌లు లేవు. అయినా దాని పేజీలలో ఎక్కడైనా టెక్స్ట్ టైప్ చేయవచ్చు లేదా మీ సంతకాన్ని జోడించవచ్చు.</string>
+    <string name="tools_fill_no_fields_action">PDFపై టైప్ చేయండి</string>
     <string name="tools_resize_img_success">%1$d × %2$d pxకి మార్చబడింది (%3$s)</string>
 
     <string name="tools_progress_compressing_img">చిత్రాన్ని కుదిస్తోంది…</string>

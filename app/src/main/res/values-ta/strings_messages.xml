@@ -152,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDF-களை இணைக்க முடியவில்லை</string>
     <string name="msg_tools_reading_form_fields">படிவப் புலங்கள் படிக்கப்படுகின்றன…</string>
     <string name="msg_tools_read_form_failed">இந்த PDF-இன் படிவத்தைப் படிக்க முடியவில்லை</string>
-    <string name="msg_tools_no_fillable_fields">இந்த PDF-இல் நிரப்பக்கூடிய புலங்கள் இல்லை. இதை உங்கள் ஆவணங்களில் இறக்குமதி செய்து, பக்கத்தில் உரை சேர் மூலம் அதில் டைப் செய்யுங்கள்.</string>
     <string name="msg_tools_filling_form">படிவம் நிரப்பப்படுகிறது…</string>
     <string name="msg_tools_save_form_failed">நிரப்பிய படிவத்தைச் சேமிக்க முடியவில்லை</string>
     <string name="msg_tools_making_searchable">PDF தேடக்கூடியதாக்கப்படுகிறது…</string>

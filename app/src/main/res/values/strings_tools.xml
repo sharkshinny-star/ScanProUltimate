@@ -192,7 +192,6 @@
     <string name="tools_img2pdf_fitted_hint">Images are fitted onto %1$s pages</string>
     <string name="tools_img2pdf_quality">Quality</string>
     <string name="tools_img2pdf_create">Create PDF</string>
-    <string name="tools_compress_current_size">Current size</string>
     <string name="tools_compress_note">Text stays selectable where the PDF already has it. A file that would not get smaller is kept as it is.</string>
     <string name="tools_compress_preset_high">High Quality</string>
     <string name="tools_compress_preset_high_desc">Slight compression, preserves fine detail</string>
@@ -347,6 +346,10 @@
     <string name="tools_resize_img_preset_avatar">Avatar (400 × 400)</string>
     <string name="tools_resize_img_scale_label">Scale</string>
     <string name="tools_resize_img_action">Resize</string>
+    <string name="tools_resize_img_unchanged">Pick a size different from the original.</string>
+    <string name="tools_fill_no_fields_title">No fillable fields</string>
+    <string name="tools_fill_no_fields_body">This PDF has no form fields to fill. You can still type text or add your signature anywhere on its pages.</string>
+    <string name="tools_fill_no_fields_action">Type on the PDF</string>
     <string name="tools_resize_img_success">Resized to %1$d × %2$d px (%3$s)</string>
 
     <string name="tools_progress_compressing_img">Compressing image…</string>

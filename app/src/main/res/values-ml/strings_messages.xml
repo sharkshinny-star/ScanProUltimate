@@ -152,7 +152,6 @@
     <string name="msg_tools_merge_failed">PDF-കൾ ലയിപ്പിക്കാനായില്ല</string>
     <string name="msg_tools_reading_form_fields">ഫോം ഫീൽഡുകൾ വായിക്കുന്നു…</string>
     <string name="msg_tools_read_form_failed">ഈ PDF-ന്റെ ഫോം വായിക്കാനായില്ല</string>
-    <string name="msg_tools_no_fillable_fields">ഈ PDF-ൽ പൂരിപ്പിക്കാവുന്ന ഫീൽഡുകളൊന്നുമില്ല. ഇത് നിങ്ങളുടെ ഡോക്യുമെന്റുകളിലേക്ക് ഇംപോർട്ട് ചെയ്ത് ടെക്സ്റ്റ് ചേർക്കുക ഉപയോഗിച്ച് ടൈപ്പ് ചെയ്യുക.</string>
     <string name="msg_tools_filling_form">ഫോം പൂരിപ്പിക്കുന്നു…</string>
     <string name="msg_tools_save_form_failed">പൂരിപ്പിച്ച ഫോം സേവ് ചെയ്യാനായില്ല</string>
     <string name="msg_tools_making_searchable">PDF തിരയാവുന്നതാക്കുന്നു…</string>
