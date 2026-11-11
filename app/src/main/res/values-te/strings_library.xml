@@ -238,4 +238,14 @@
     <string name="settings_review_mode_subtitle">అవసరమైతే: పేజీ అంచు దొరకకపోతే, మసకగా, మెరుపుతో లేదా చాలా చీకటిగా ఉంటే తప్ప "పూర్తయింది" వెంటనే సేవ్ చేస్తుంది. ఎప్పుడూ కాదు: ఆటోమేటిక్ క్రాప్, ఫిల్టర్‌తో ఎల్లప్పుడూ వెంటనే సేవ్</string>
     <string name="lib_share_separate">వేర్వేరు PDFలు (%1$d)</string>
     <string name="lib_share_one_pdf">ఒకే PDF</string>
+    <string name="settings_search_placeholder">సెట్టింగ్‌లను వెతకండి</string>
+    <string name="settings_search_clear">శోధనను క్లియర్ చేయండి</string>
+    <string name="settings_search_no_match">“%1$s”కి సరిపోయే సెట్టింగ్ లేదు</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF లేదా lock లాంటి పదాన్ని ప్రయత్నించండి.</string>
+    <string name="settings_backup_last">చివరి బ్యాకప్: %1$s</string>
+    <string name="settings_backup_never">ఇంకా బ్యాకప్ లేదు. ఫోన్ మార్చే ముందు బ్యాకప్ తీసుకోండి.</string>
+    <string name="settings_backup_intro_title">మీ లైబ్రరీని బ్యాకప్ చేయండి</string>
+    <string name="settings_backup_intro_body">ప్రతి డాక్యుమెంట్ మీరు ఎంచుకున్న ఫోల్డర్‌లో ప్రత్యేక ఎన్‌క్రిప్టెడ్ ఫైల్‌గా సేవ్ అవుతుంది; క్లౌడ్ డ్రైవ్ ఫోల్డర్ కూడా పనిచేస్తుంది.\n\nతదుపరి దశలో పాస్‌వర్డ్ సెట్ చేస్తారు. దాన్ని తిరిగి పొందలేము, కాబట్టి భద్రంగా ఉంచండి.</string>
+    <string name="settings_backup_choose_folder">ఫోల్డర్ ఎంచుకోండి</string>
+    <string name="settings_backup_nothing">ఇంకా బ్యాకప్ చేయడానికి డాక్యుమెంట్లు లేవు.</string>
 </resources>

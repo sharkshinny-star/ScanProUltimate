@@ -1,5 +1,9 @@
 package com.example.scanpro.feature.settings
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.Checklist
@@ -157,6 +161,7 @@ fun SettingsRoute(
     val reviewMode by viewModel.reviewMode.collectAsStateWithLifecycle()
     val namePattern by viewModel.namePattern.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val lastBackupAt by viewModel.lastBackupAt.collectAsStateWithLifecycle()
     val reclaimable by viewModel.freeSpaceOffer.collectAsStateWithLifecycle()
     val freeingUp by viewModel.freeingUp.collectAsStateWithLifecycle()
     val notifyFinished by viewModel.notifyFinished.collectAsStateWithLifecycle()
@@ -185,6 +190,7 @@ fun SettingsRoute(
             systemSettingsIntent = viewModel::notificationSettingsIntent
         ),
         onBackupAll = viewModel::backupAll,
+        lastBackupAt = lastBackupAt,
         trashRetentionDays = trashRetentionDays,
         defaultOcrScript = defaultOcrScript,
         onTrashRetentionChange = viewModel::setTrashRetentionDays,
@@ -229,6 +235,7 @@ fun SettingsRoute(
 @Composable
 fun SettingsScreen(
     busy: Boolean = false,
+    lastBackupAt: Long = 0L,
     notifications: NotificationSettings = NotificationSettings(),
     onBackupAll: (Uri, String) -> Unit = { _, _ -> },
     pdfQuality: PdfQuality,
@@ -277,6 +284,11 @@ fun SettingsScreen(
     // Backup: every document as its own encrypted file in a folder the user picks (a cloud drive works
     // too); restore reads one such file back. Documents never leave the device otherwise.
     var backupFolder by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var backupIntroOpen by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var pendingJump by remember { mutableStateOf<String?>(null) }
+    val scrollState = rememberScrollState()
+    val locator = remember { SettingsLocator(scrollState) }
     var backupToRestore by rememberSaveable { mutableStateOf<Uri?>(null) }
     val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let {
@@ -286,6 +298,19 @@ fun SettingsScreen(
     }
     val backupPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) backupToRestore = uri
+    }
+    if (backupIntroOpen) {
+        BackupIntroDialog(
+            onChoose = { backupIntroOpen = false; pickBackupFolder.launch(documentsFolderUri()) },
+            onDismiss = { backupIntroOpen = false }
+        )
+    }
+    val nothingToBackUp = stringResource(R.string.settings_backup_nothing)
+    androidx.compose.runtime.LaunchedEffect(pendingJump, query) {
+        val target = pendingJump ?: return@LaunchedEffect
+        if (query.isNotBlank()) return@LaunchedEffect
+        locator.jumpTo(target)
+        pendingJump = null
     }
     backupFolder?.let { folder ->
         PasswordInputDialog(
@@ -339,6 +364,7 @@ fun SettingsScreen(
         )
     }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    androidx.compose.runtime.CompositionLocalProvider(LocalSettingsLocator provides locator) {
     val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     Scaffold(
@@ -362,14 +388,23 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .widthIn(max = 720.dp)
-                    .verticalScroll(rememberScrollState())
+                    .onGloballyPositioned { locator.viewportTop = it.positionInRoot().y }
+                    .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp)
                     .padding(top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(22.dp)
             ) {
+                SettingsSearchField(query, onQueryChange = { query = it })
+                if (query.isNotBlank()) {
+                    SettingsSearchResults(query, rememberSettingHits(query)) { hit ->
+                        pendingJump = hit.title
+                        query = ""
+                    }
+                } else {
                 StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace)
 
                 SettingsSection(stringResource(R.string.settings_section_backup)) {
+                    BackupStatus(lastBackupAt, hasDocuments = documentCount > 0)
                     SettingsRow(
                         icon = Icons.Rounded.Backup,
                         tone = TileTone.Indigo,
@@ -377,7 +412,9 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_backup_all_subtitle),
                         trailing = { Chevron() },
                         enabled = !busy,
-                        onClick = { pickBackupFolder.launch(null) }
+                        onClick = {
+                            if (documentCount == 0) scope.launch { snackbarHostState.showSnackbar(nothingToBackUp) } else backupIntroOpen = true
+                        }
                     )
                     InsetDivider()
                     SettingsRow(
@@ -723,8 +760,10 @@ fun SettingsScreen(
                 }
 
                 AboutFooter()
+                }
             }
         }
+    }
     }
 }
 
@@ -854,9 +893,17 @@ private fun SettingsRow(
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null
 ) {
+    val locator = LocalSettingsLocator.current
+    val flash by animateColorAsState(
+        if (locator?.highlighted == title) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f) else Color.Transparent,
+        label = "settingFlash"
+    )
     Row(
         Modifier
             .fillMaxWidth()
+            // Where this row sits, so a search result can scroll to it.
+            .onGloballyPositioned { coords -> locator?.let { it.tops[title] = coords.positionInRoot().y - it.viewportTop + it.scroll.value } }
+            .background(flash)
             .then(if (onClick != null) Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically

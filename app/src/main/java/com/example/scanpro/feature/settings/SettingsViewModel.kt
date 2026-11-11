@@ -123,6 +123,8 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** When the library was last backed up (0 if never), for the line at the top of Backup. */
+    val lastBackupAt: StateFlow<Long> = settings.lastBackupAt.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
     val pdfQuality = settings.pdfQuality.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PdfQuality.BALANCED)
     val autoTitle = settings.autoTitle.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     val appLock = settings.appLock.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)

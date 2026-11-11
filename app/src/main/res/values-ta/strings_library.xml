@@ -238,4 +238,14 @@
     <string name="settings_review_mode_subtitle">தேவைப்பட்டால்: ஒரு பக்கத்தின் விளிம்பு கிடைக்காவிட்டால், மங்கலாக, பளபளப்பாக அல்லது மிகவும் இருளாக இருந்தால் தவிர "முடிந்தது" உடனே சேமிக்கும். ஒருபோதும் இல்லை: தானியங்கி வெட்டு மற்றும் வடிகட்டியுடன் எப்போதும் உடனே சேமிக்கும்</string>
     <string name="lib_share_separate">தனித்தனி PDF-கள் (%1$d)</string>
     <string name="lib_share_one_pdf">ஒரே PDF</string>
+    <string name="settings_search_placeholder">அமைப்புகளைத் தேடு</string>
+    <string name="settings_search_clear">தேடலை அழி</string>
+    <string name="settings_search_no_match">“%1$s” உடன் பொருந்தும் அமைப்பு இல்லை</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF அல்லது lock போன்ற சொல்லை முயலவும்.</string>
+    <string name="settings_backup_last">கடைசி காப்புப்பிரதி: %1$s</string>
+    <string name="settings_backup_never">இன்னும் காப்புப்பிரதி இல்லை. போன் மாற்றும் முன் காப்புப்பிரதி எடுங்கள்.</string>
+    <string name="settings_backup_intro_title">உங்கள் நூலகத்தைக் காப்புப்பிரதி எடுங்கள்</string>
+    <string name="settings_backup_intro_body">ஒவ்வொரு ஆவணமும் நீங்கள் தேர்ந்த கோப்புறையில் தனி மறைகுறியாக்கப்பட்ட கோப்பாகச் சேமிக்கப்படும்; கிளவுட் டிரைவ் கோப்புறையும் பயன்படுத்தலாம்.\n\nஅடுத்த படியில் கடவுச்சொல் அமைப்பீர்கள். அதை மீட்க முடியாது, எனவே பாதுகாப்பாக வைத்திருங்கள்.</string>
+    <string name="settings_backup_choose_folder">கோப்புறையைத் தேர்ந்தெடு</string>
+    <string name="settings_backup_nothing">காப்புப்பிரதி எடுக்க இன்னும் ஆவணங்கள் இல்லை.</string>
 </resources>

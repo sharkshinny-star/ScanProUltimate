@@ -238,4 +238,14 @@
     <string name="settings_review_mode_subtitle">ആവശ്യമെങ്കിൽ: ഒരു പേജിന്റെ അരിക് കണ്ടെത്താനാകാതെയോ, മങ്ങിയതോ, തിളക്കമുള്ളതോ, വളരെ ഇരുണ്ടതോ അല്ലെങ്കിൽ "പൂർത്തിയായി" ഉടൻ സേവ് ചെയ്യും. ഒരിക്കലും ഇല്ല: ഓട്ടോമാറ്റിക് ക്രോപ്പും ഫിൽട്ടറും ഉപയോഗിച്ച് എപ്പോഴും ഉടൻ സേവ് ചെയ്യും</string>
     <string name="lib_share_separate">വെവ്വേറെ PDF-കൾ (%1$d)</string>
     <string name="lib_share_one_pdf">ഒറ്റ PDF</string>
+    <string name="settings_search_placeholder">ക്രമീകരണങ്ങൾ തിരയുക</string>
+    <string name="settings_search_clear">തിരയൽ മായ്ക്കുക</string>
+    <string name="settings_search_no_match">“%1$s” ന് യോജിക്കുന്ന ക്രമീകരണം ഇല്ല</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF അല്ലെങ്കിൽ lock പോലുള്ള വാക്ക് പരീക്ഷിക്കുക.</string>
+    <string name="settings_backup_last">അവസാന ബാക്കപ്പ്: %1$s</string>
+    <string name="settings_backup_never">ഇതുവരെ ബാക്കപ്പ് ഇല്ല. ഫോൺ മാറ്റുന്നതിന് മുമ്പ് ബാക്കപ്പ് എടുക്കുക.</string>
+    <string name="settings_backup_intro_title">നിങ്ങളുടെ ലൈബ്രറി ബാക്കപ്പ് ചെയ്യുക</string>
+    <string name="settings_backup_intro_body">ഓരോ ഡോക്യുമെന്റും നിങ്ങൾ തിരഞ്ഞെടുത്ത ഫോൾഡറിൽ പ്രത്യേക എൻക്രിപ്റ്റ് ചെയ്ത ഫയലായി സേവ് ചെയ്യും; ക്ലൗഡ് ഡ്രൈവ് ഫോൾഡറും ഉപയോഗിക്കാം.\n\nഅടുത്ത ഘട്ടത്തിൽ പാസ്‌വേഡ് സജ്ജമാക്കും. അത് തിരിച്ചെടുക്കാനാവില്ല, അതിനാൽ സുരക്ഷിതമായി സൂക്ഷിക്കുക.</string>
+    <string name="settings_backup_choose_folder">ഫോൾഡർ തിരഞ്ഞെടുക്കുക</string>
+    <string name="settings_backup_nothing">ബാക്കപ്പ് ചെയ്യാൻ ഇതുവരെ ഡോക്യുമെന്റുകൾ ഇല്ല.</string>
 </resources>

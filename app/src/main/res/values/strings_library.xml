@@ -287,4 +287,14 @@
     <string name="tip_theme_action">Pick colours</string>
     <string name="lib_share_separate">Separate PDFs (%1$d)</string>
     <string name="lib_share_one_pdf">One PDF</string>
+    <string name="settings_search_placeholder">Search settings</string>
+    <string name="settings_search_clear">Clear search</string>
+    <string name="settings_search_no_match">No setting matches “%1$s”</string>
+    <string name="settings_search_no_match_hint">Try a word like backup, dark, PDF or lock.</string>
+    <string name="settings_backup_last">Last backup: %1$s</string>
+    <string name="settings_backup_never">No backup yet. Back up before you change phone.</string>
+    <string name="settings_backup_intro_title">Back up your library</string>
+    <string name="settings_backup_intro_body">Every document is saved as its own encrypted file in a folder you choose; a cloud-drive folder works too.\n\nYou set a password in the next step. It cannot be recovered, so keep it safe.</string>
+    <string name="settings_backup_choose_folder">Choose folder</string>
+    <string name="settings_backup_nothing">There are no documents to back up yet.</string>
 </resources>

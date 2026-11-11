@@ -238,4 +238,14 @@
     <string name="settings_review_mode_subtitle">ज़रूरत पड़ने पर: "हो गया" सीधे सेव करता है, जब तक किसी पेज की किनारी न मिले, वह धुँधला हो, चमक हो या बहुत गहरा हो। कभी नहीं: अपने-आप क्रॉप और फ़िल्टर के साथ हमेशा तुरंत सेव</string>
     <string name="lib_share_separate">अलग-अलग PDF (%1$d)</string>
     <string name="lib_share_one_pdf">एक PDF में</string>
+    <string name="settings_search_placeholder">सेटिंग खोजें</string>
+    <string name="settings_search_clear">खोज साफ़ करें</string>
+    <string name="settings_search_no_match">“%1$s” से मेल खाती कोई सेटिंग नहीं</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF या lock जैसा शब्द आज़माएँ।</string>
+    <string name="settings_backup_last">पिछला बैकअप: %1$s</string>
+    <string name="settings_backup_never">अभी तक कोई बैकअप नहीं। फ़ोन बदलने से पहले बैकअप लें।</string>
+    <string name="settings_backup_intro_title">अपनी लाइब्रेरी का बैकअप लें</string>
+    <string name="settings_backup_intro_body">हर दस्तावेज़ आपके चुने फ़ोल्डर में अलग एन्क्रिप्टेड फ़ाइल के रूप में सेव होता है; क्लाउड ड्राइव का फ़ोल्डर भी चलेगा।\n\nअगले चरण में आप पासवर्ड सेट करेंगे। उसे वापस नहीं पाया जा सकता, इसलिए सुरक्षित रखें।</string>
+    <string name="settings_backup_choose_folder">फ़ोल्डर चुनें</string>
+    <string name="settings_backup_nothing">अभी बैकअप के लिए कोई दस्तावेज़ नहीं है।</string>
 </resources>

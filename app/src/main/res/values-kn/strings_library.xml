@@ -238,4 +238,14 @@
     <string name="settings_review_mode_subtitle">ಅಗತ್ಯವಿದ್ದರೆ: ಪುಟದ ಅಂಚು ಸಿಗದಿದ್ದರೆ, ಮಸುಕಾಗಿದ್ದರೆ, ಹೊಳಪು ಇದ್ದರೆ ಅಥವಾ ತುಂಬಾ ಕತ್ತಲಾಗಿದ್ದರೆ ಹೊರತು "ಮುಗಿದಿದೆ" ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ. ಎಂದಿಗೂ ಇಲ್ಲ: ಸ್ವಯಂಚಾಲಿತ ಕ್ರಾಪ್ ಮತ್ತು ಫಿಲ್ಟರ್‌ನೊಂದಿಗೆ ಯಾವಾಗಲೂ ತಕ್ಷಣ ಉಳಿಸುತ್ತದೆ</string>
     <string name="lib_share_separate">ಪ್ರತ್ಯೇಕ PDF ಗಳು (%1$d)</string>
     <string name="lib_share_one_pdf">ಒಂದೇ PDF</string>
+    <string name="settings_search_placeholder">ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಹುಡುಕಿ</string>
+    <string name="settings_search_clear">ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ</string>
+    <string name="settings_search_no_match">“%1$s” ಗೆ ಹೊಂದುವ ಸೆಟ್ಟಿಂಗ್ ಇಲ್ಲ</string>
+    <string name="settings_search_no_match_hint">backup, dark, PDF ಅಥವಾ lock ಮುಂತಾದ ಪದವನ್ನು ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="settings_backup_last">ಕೊನೆಯ ಬ್ಯಾಕಪ್: %1$s</string>
+    <string name="settings_backup_never">ಇನ್ನೂ ಬ್ಯಾಕಪ್ ಇಲ್ಲ. ಫೋನ್ ಬದಲಿಸುವ ಮೊದಲು ಬ್ಯಾಕಪ್ ಮಾಡಿ.</string>
+    <string name="settings_backup_intro_title">ನಿಮ್ಮ ಲೈಬ್ರರಿಯನ್ನು ಬ್ಯಾಕಪ್ ಮಾಡಿ</string>
+    <string name="settings_backup_intro_body">ಪ್ರತಿ ದಾಖಲೆಯನ್ನು ನೀವು ಆಯ್ಕೆಮಾಡಿದ ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಪ್ರತ್ಯೇಕ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿದ ಫೈಲ್ ಆಗಿ ಉಳಿಸಲಾಗುತ್ತದೆ; ಕ್ಲೌಡ್ ಡ್ರೈವ್ ಫೋಲ್ಡರ್ ಕೂಡ ಸರಿ.\n\nಮುಂದಿನ ಹಂತದಲ್ಲಿ ಪಾಸ್‌ವರ್ಡ್ ಹೊಂದಿಸುತ್ತೀರಿ. ಅದನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗದು, ಆದ್ದರಿಂದ ಸುರಕ್ಷಿತವಾಗಿಡಿ.</string>
+    <string name="settings_backup_choose_folder">ಫೋಲ್ಡರ್ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="settings_backup_nothing">ಬ್ಯಾಕಪ್ ಮಾಡಲು ಇನ್ನೂ ದಾಖಲೆಗಳಿಲ್ಲ.</string>
 </resources>
