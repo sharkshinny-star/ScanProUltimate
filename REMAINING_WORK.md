@@ -21,16 +21,16 @@ Nothing below has been tried on a device unless it says so. CI covers compile, u
 5. **`main`** is about 25 commits behind the working branch. The owner chose to leave it for now.
 
 **Device checks (R44)**
-6. QR scanner (F124): two or more codes in one frame show tappable outlines and open nothing until tapped; one code still
+6. QR scanner (F134): two or more codes in one frame show tappable outlines and open nothing until tapped; one code still
    opens at once; a picture with several codes opens the chooser; the outlines line up with the codes on a real preview.
-7. Scan history (F124): entries appear, reopen in the result sheet, favourite, delete, Clear all; the switch stops recording;
+7. Scan history (F134): entries appear, reopen in the result sheet, favourite, delete, Clear all; the switch stops recording;
    a Wi-Fi code shows only the network name and search never finds its password.
-8. QR generator (F124): each type (text, link, Wi-Fi, phone, email, contact, UPI) scans back correctly with another phone's
+8. QR generator (F134): each type (text, link, Wi-Fi, phone, email, contact, UPI) scans back correctly with another phone's
    scanner; Share as PNG and Save as document work.
-9. Sign PDF (F125): draw and saved signatures, a typed date, several stamps on several pages, **a rotated PDF and a PDF with
+9. Sign PDF (F135): draw and saved signatures, a typed date, several stamps on several pages, **a rotated PDF and a PDF with
    a shifted crop box** (the maths is only tested against existing code), a protected PDF (copy is unprotected, the screen says so).
-10. PDF to text or Word (F126): a text PDF, a scanned PDF (OCR pages named in the result), a protected PDF.
-11. Insert pages (F126): from a second PDF, a range in the order given, after a chosen page, with a protected second PDF.
+10. PDF to text or Word (F136): a text PDF, a scanned PDF (OCR pages named in the result), a protected PDF.
+11. Insert pages (F136): from a second PDF, a range in the order given, after a chosen page, with a protected second PDF.
 12. Restore a moved-aside library (item 5, `MovedAsideLibraryTest`): the Library-screen dialog (Restore, Not now, Do not ask
     again) has no UI test. Downgrade then upgrade, and check documents come back without duplicates.
 

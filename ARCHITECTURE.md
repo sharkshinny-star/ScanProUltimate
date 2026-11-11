@@ -361,7 +361,7 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 
 `setAsideNewerDatabase` moves a database written by a newer schema to `scanpro-room.db.newer-v<N>`. When this build's schema is `>= N`, `DocumentDatabase.movedAsideLibraries()` lists it and `LibraryRoute` offers to restore it. Restoring opens the old file as a second Room database and copies in only documents whose id is missing here and whose folder still exists; nothing is overwritten. The file is then renamed to `.restored-v<N>-<time>` (or `.declined-v<N>-<time>` for "Do not ask again"), never deleted. "Not now" hides the offer for the session only.
 
-### QR scanner, history and generator (F124)
+### QR scanner, history and generator (F134)
 
 - `scanner/BarcodeFrameAnalyzer` reports every code of a frame with its ML Kit box and the upright image size (`onCodes` returns true to pause). `scanner/QrOverlayMath` maps the boxes to the FIT_CENTER preview (pure, tested); `QrOverlay` draws the outlines (48 dp minimum) and the chooser sheet. One code with no outlines showing opens the sheet at once; two or more only show outlines.
 - `scanner/ScannedCode` is the model the result sheet renders. It is built from an ML Kit `Barcode` for live scans and parsed from the stored raw text for history (Wi-Fi, vCard, MECARD, events, geo, mailto, tel, sms, links).
@@ -369,8 +369,20 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - `feature/qr/*`: history and generator screens with their view models, payload builders (`QrPayloads`) and the ZXing encoder (`QrEncoder`: error correction M, 4-module quiet zone, 1024 px). Dependency: `com.google.zxing:core:3.5.3` (Apache-2.0, pure Java, no network).
 - Destinations `QR_HISTORY` and `QR_GENERATOR` in `ScanProDestinations`, reached from the camera's QR mode.
 
-### Sign PDF, PDF to text or Word, Insert pages (F125, F126)
+### Sign PDF, PDF to text or Word, Insert pages (F135, F136)
 
 - `imaging/SignPdfEngine`: renders nothing itself; `SignGeometry` turns a stamp's position, size and rotation into a PDF `cm` matrix through `PdfTextLayerMath.toPageSpace` (page rotation and crop-box origin). `stamp` appends to each page with `PDPageContentStream` in append mode. `feature/tools/SignPdfViewModel` keeps the session across rotation; `SignPdfScreen` is drawn inside the Tools screen. The working copy lives in cache (`sign_*`, swept by `CacheCleaner`).
 - `imaging/PdfToTextEngine`: per page, text layer first, then OCR through an injectable function; output `.txt` or `.docx` (`DocxExporter`). `imaging/InsertPagesEngine`: validates and merges the arranged pages with the chosen pages of a second PDF. `PdfPasswordNeededException` ends a run with a question; `PdfToolsViewModel` asks and retries with a memory-only password.
+
+## Scanning quality, conversions and tool feedback (F124-F133)
+
+- `scanner/DocumentEdgeDetector.kt`: a sixth candidate source for faint page edges (Canny with low limits on a widely blurred copy). Measured by `androidTest/.../scanner/ScanDetectionBenchmarkTest.kt`: 12 generated scenes with exact corners, run on a phone with `am instrument` (never Gradle's connected tests, which uninstall the app).
+- `scanner/CameraScannerScreen.kt`: values that change every analysis frame (outline, shutter ring, guidance) are read while drawing or from a coroutine, not during composition, so the camera screen does not recompose per frame.
+- `imaging/PdfRepairEngine.kt`: Repair PDF (forgiving re-parse and rewrite, else rebuild readable pages as pictures).
+- `imaging/PdfToTextEngine.kt`: a third output, Excel; word positions come from a position-aware PDFBox stripper or OCR, and `intelligence/OcrLayout.table` rebuilds the columns for `XlsxExporter`.
+- `imaging/OfficeToHtml.kt` (`Pptx`): PowerPoint to PDF, one page per slide in slide order.
+- `imaging/PptxExporter.kt`, `imaging/PdfToPptEngine.kt`: PDF to PowerPoint, one picture slide per page; a dependency-free .pptx writer (master, layout, theme).
+- `core/ui/UiUtils.kt` `openFile`: a tool result opens with an "Open with" app chooser, not a share sheet.
+- `feature/tools`: the processing card is a large ring with the real percentage; `ToolResultDialog` plays a short success burst (skipped when animations are off); Compress PDF remembers its last level in the `tools_ui` preferences.
+- Decision: competitor studies (Adobe Scan, iLovePDF) informed patterns only; no proprietary assets or code. ScanPro stays offline: no cloud conversion, accounts or usage limits.
 
