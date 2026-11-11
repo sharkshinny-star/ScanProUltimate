@@ -46,7 +46,7 @@ jobs:
           java-version: 17
 
       # main and the working branch save the Gradle cache; PRs just read it.
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
         with:
           # Write the cache from the working branch too, so the Gradle distribution and dependencies are not
           # downloaded on every run (the branch is the only one that builds; main never does).
