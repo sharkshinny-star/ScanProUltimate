@@ -361,7 +361,7 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 
 `setAsideNewerDatabase` moves a database written by a newer schema to `scanpro-room.db.newer-v<N>`. When this build's schema is `>= N`, `DocumentDatabase.movedAsideLibraries()` lists it and `LibraryRoute` offers to restore it. Restoring opens the old file as a second Room database and copies in only documents whose id is missing here and whose folder still exists; nothing is overwritten. The file is then renamed to `.restored-v<N>-<time>` (or `.declined-v<N>-<time>` for "Do not ask again"), never deleted. "Not now" hides the offer for the session only.
 
-### QR scanner, history and generator (F102)
+### QR scanner, history and generator (F124)
 
 - `scanner/BarcodeFrameAnalyzer` reports every code of a frame with its ML Kit box and the upright image size (`onCodes` returns true to pause). `scanner/QrOverlayMath` maps the boxes to the FIT_CENTER preview (pure, tested); `QrOverlay` draws the outlines (48 dp minimum) and the chooser sheet. One code with no outlines showing opens the sheet at once; two or more only show outlines.
 - `scanner/ScannedCode` is the model the result sheet renders. It is built from an ML Kit `Barcode` for live scans and parsed from the stored raw text for history (Wi-Fi, vCard, MECARD, events, geo, mailto, tel, sms, links).
@@ -369,7 +369,7 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - `feature/qr/*`: history and generator screens with their view models, payload builders (`QrPayloads`) and the ZXing encoder (`QrEncoder`: error correction M, 4-module quiet zone, 1024 px). Dependency: `com.google.zxing:core:3.5.3` (Apache-2.0, pure Java, no network).
 - Destinations `QR_HISTORY` and `QR_GENERATOR` in `ScanProDestinations`, reached from the camera's QR mode.
 
-### Sign PDF, PDF to text or Word, Insert pages (F103, F104)
+### Sign PDF, PDF to text or Word, Insert pages (F125, F126)
 
 - `imaging/SignPdfEngine`: renders nothing itself; `SignGeometry` turns a stamp's position, size and rotation into a PDF `cm` matrix through `PdfTextLayerMath.toPageSpace` (page rotation and crop-box origin). `stamp` appends to each page with `PDPageContentStream` in append mode. `feature/tools/SignPdfViewModel` keeps the session across rotation; `SignPdfScreen` is drawn inside the Tools screen. The working copy lives in cache (`sign_*`, swept by `CacheCleaner`).
 - `imaging/PdfToTextEngine`: per page, text layer first, then OCR through an injectable function; output `.txt` or `.docx` (`DocxExporter`). `imaging/InsertPagesEngine`: validates and merges the arranged pages with the chosen pages of a second PDF. `PdfPasswordNeededException` ends a run with a question; `PdfToolsViewModel` asks and retries with a memory-only password.

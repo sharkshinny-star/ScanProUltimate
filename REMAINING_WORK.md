@@ -4,6 +4,52 @@ Everything still open on `claude/awesome-clarke-ussjo3`, as of 2026-11-08 (after
 `AUDIT_FINDINGS.md`, which holds the full problem description and evidence for each ID; keep that table as the source
 of truth and update this list when items close.
 
+## Pending (added 2026-11-11, after CI run 131 went green on `dfe132f`)
+
+Nothing below has been tried on a device unless it says so. CI covers compile, unit tests and lint only.
+
+**Needs the owner**
+1. **Undo history across sessions (item 7).** Design written, nothing built: `UNDO_PERSISTENCE_DESIGN.md`. Waiting on three
+   answers: keep up to 20 earlier text states (including text from before a redaction) in plain app-private storage? Limits
+   (20 steps, about 6 MB per document) or shorter? Keep a Recycle-bin document's history until it is purged?
+2. **A native speaker's read of every new string** (written by the assistant, unreviewed): `strings_qr.xml`,
+   `strings_sign_pdf.xml`, `strings_pdf_text_insert.xml` and the `lib_restore_aside_*` strings in `strings_library.xml`,
+   in Hindi, Kannada, Malayalam, Tamil and Telugu.
+3. **Delete the old branch** `ccr-d3174e53-3zuive` on GitHub (PR #10 is closed; its commits are all in the working branch).
+4. **Dependabot pull requests** #15 (Gradle 9.8.2 to 9.9.0) and #16 (ZXing core 3.5.3 to 3.5.4) are open and unreviewed.
+   Each costs a CI run. Dependabot is set to monthly, at most 3 Gradle pull requests, actions grouped into one.
+5. **`main`** is about 25 commits behind the working branch. The owner chose to leave it for now.
+
+**Device checks (R44)**
+6. QR scanner (F124): two or more codes in one frame show tappable outlines and open nothing until tapped; one code still
+   opens at once; a picture with several codes opens the chooser; the outlines line up with the codes on a real preview.
+7. Scan history (F124): entries appear, reopen in the result sheet, favourite, delete, Clear all; the switch stops recording;
+   a Wi-Fi code shows only the network name and search never finds its password.
+8. QR generator (F124): each type (text, link, Wi-Fi, phone, email, contact, UPI) scans back correctly with another phone's
+   scanner; Share as PNG and Save as document work.
+9. Sign PDF (F125): draw and saved signatures, a typed date, several stamps on several pages, **a rotated PDF and a PDF with
+   a shifted crop box** (the maths is only tested against existing code), a protected PDF (copy is unprotected, the screen says so).
+10. PDF to text or Word (F126): a text PDF, a scanned PDF (OCR pages named in the result), a protected PDF.
+11. Insert pages (F126): from a second PDF, a range in the order given, after a chosen page, with a protected second PDF.
+12. Restore a moved-aside library (item 5, `MovedAsideLibraryTest`): the Library-screen dialog (Restore, Not now, Do not ask
+    again) has no UI test. Downgrade then upgrade, and check documents come back without duplicates.
+
+**Not started (from the owner's list)**
+13. Keep OCR word boxes in backups (item 4): after a restore, Excel export falls back to plain lines.
+14. Offer OCR on documents brought back by "Recover missing documents" (item 6): recovered pages have no text.
+15. QR ideas: product barcodes and ISBN with "open in my browser" (no online lookup, offline-first); live text mode
+    (Lens-style highlight, copy, call, translate).
+16. Tool ideas: Redact PDF (text must really be removed, not covered), table to Excel, receipt and expense summary, batch tools.
+
+**Known gaps and limits**
+17. No test that `splitBookSpread` removes its halves when the save fails (it needs a seam to make the save fail).
+18. `CacheCleaner` deletes `sign_*` temp files after one hour, so a signing session left open longer could lose its working copy.
+19. Scan history stores raw text, so Wi-Fi passwords sit in `filesDir/scan_history.json`, unencrypted like the rest of the library (R20).
+20. Multi-code outlines assume the preview and analysis share one 4:3 field of view with FIT_CENTER (`cropRect` is not used).
+21. `upload-artifact` v7 (Dependabot bump) has not run: those steps only run on a failed build or a manual run.
+22. CI cost: a push run with no saved Gradle cache took about 39 minutes (run 131); runs with the cache took 19 to 24. The
+    account shares 2,000 Actions minutes a month. Push in batches (`AGENTS.md`).
+
 ## Before release: device checklist
 
 The device suite (`connectedDebugAndroidTest`, 6 passed), Home search pill stability (R42), refactor smoke test (F81), rotation pass (R38) and document tab labels in Hindi and Telugu have run and passed (Tamil wraps a tab mid-word: R46) on a physical OnePlus CPH2569 (Android 15). The checks below remain open for device verification:
