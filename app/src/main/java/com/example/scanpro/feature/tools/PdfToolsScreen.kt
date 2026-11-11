@@ -1591,7 +1591,7 @@ private fun ProcessingOverlay(
                         if (fraction != null) {
                             val shown by androidx.compose.animation.core.animateFloatAsState(
                                 targetValue = fraction,
-                                animationSpec = androidx.compose.animation.core.tween(350),
+                                animationSpec = androidx.compose.animation.core.tween(180),
                                 label = "toolProgress"
                             )
                             CircularProgressIndicator(
@@ -1602,7 +1602,8 @@ private fun ProcessingOverlay(
                                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                             )
                             Text(
-                                text = stringResource(R.string.tools_progress_percent, (shown * 100).toInt()),
+                                // The real figure, so it always agrees with the "28 / 40" below; only the ring eases.
+                                text = stringResource(R.string.tools_progress_percent, (fraction * 100).toInt()),
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold
                             )

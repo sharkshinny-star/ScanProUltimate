@@ -167,7 +167,6 @@ internal fun ResultDialog(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 Box(contentAlignment = Alignment.BottomEnd) {
-                    SuccessBurst(Modifier.matchParentSize())
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -196,6 +195,8 @@ internal fun ResultDialog(
                             Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                         }
                     }
+                    // Drawn over the thumbnail, so the specks are seen leaving it rather than hidden behind it.
+                    SuccessBurst(Modifier.matchParentSize())
                 }
 
                 Spacer(Modifier.height(14.dp))
@@ -350,8 +351,9 @@ private fun SuccessBurst(modifier: Modifier) {
     androidx.compose.foundation.Canvas(modifier) {
         val t = progress.value
         if (t >= 1f) return@Canvas
-        val distance = size.maxDimension * 0.9f
-        val fade = (1f - t) * (1f - t)
+        val distance = size.maxDimension * 1.05f
+        // Stays bright while the specks fly out, then fades quickly at the end.
+        val fade = 1f - t * t
         specks.forEach { speck ->
             val travel = distance * speck.reach * t
             val x = center.x + kotlin.math.cos(speck.angle) * travel
