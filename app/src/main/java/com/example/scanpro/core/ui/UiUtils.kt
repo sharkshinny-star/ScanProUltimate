@@ -130,7 +130,7 @@ fun copyText(context: Context, text: String) {
             putBoolean(if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true)
         }
     }
-    clipboard.primaryClip = clip
+    clipboard.setPrimaryClip(clip)
     Toast.makeText(context, context.getString(R.string.core_text_copied), Toast.LENGTH_SHORT).show()
 }
 

@@ -133,7 +133,7 @@ class ImportScanWorker @AssistedInject constructor(
                 )
             }
         }
-        clipboard.primaryClip = clip
+        clipboard.setPrimaryClip(clip)
         operations.showMessage(applicationContext.getString(R.string.msg_text_copied_to_clipboard))
     }
 

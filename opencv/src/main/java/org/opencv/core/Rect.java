@@ -92,7 +92,8 @@ public class Rect {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Rect it)) return false;
+        if (!(obj instanceof Rect)) return false;
+        Rect it = (Rect) obj;
         return x == it.x && y == it.y && width == it.width && height == it.height;
     }
 

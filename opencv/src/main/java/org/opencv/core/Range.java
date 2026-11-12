@@ -70,7 +70,8 @@ public class Range {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Range it)) return false;
+        if (!(obj instanceof Range)) return false;
+        Range it = (Range) obj;
         return start == it.start && end == it.end;
     }
 

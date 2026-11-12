@@ -75,7 +75,8 @@ class LanguageChangeDeviceTest {
             var after: Activity? = null
             scenario.onActivity { after = it }
             assertSame("the same activity carries on", before, after)
-            assertFalse(before!!.isFinishing || before.isDestroyed)
+            val original = before!!
+            assertFalse(original.isFinishing || original.isDestroyed)
             assertTrue(AppLocale.isChosen(context))
             assertEquals("hi", context.getSystemService(LocaleManager::class.java).applicationLocales.toLanguageTags())
         }
