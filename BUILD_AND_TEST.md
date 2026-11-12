@@ -58,6 +58,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 | Note | `IntroductionsScreenshotTest` failed once with a Robolectric native-runtime load error (`FileSystemAlreadyExistsException` in `maybeCopyFonts`) when run filtered together with an SDK 34 test class; it passed alone and in the full suite. |
 | Not run | Device check, instrumented tests, release build |
 
+## Latest results (2026-11-12, Gradle wrapper 9.9.0 -> 9.9.1)
+
+- `./gradlew assembleDebug`: exit 0 on the working tree. Not run: unit tests, lint, release build.
+
 ## Latest results (2026-11-12, F147 tools revamp, worktree on a60b413 + 4 commits, now 4e835ca..237d569)
 
 - `:app:compileDebugKotlin`: passed.
