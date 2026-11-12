@@ -45,7 +45,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 - `:app:compileDebugKotlin`: passed.
 - `ToolOpenPasswordTest` 8, `MergePasswordTest` 6, `SplitLinksTest` 2: 16 tests, 0 failed.
-- Full `:app:testDebugUnitTest` and `:app:lintDebug`: running when committed; results follow in the next commit. Not run: release builds, device.
+- Full `:app:testDebugUnitTest` on `7ef24ee`: 729 tests, 0 failed, 30 skipped. (The first full run, on `28539c5`, had 1 failure, `PdfToolsFeaturesTest.pdfToImagesRejectsPasswordProtectedPdf`, fixed in `7ef24ee`.)
+- `:app:lintDebug` on `7ef24ee`: 0 errors, 74 warnings, 15 hints; the one new warning (`EmptySuperCall` in `PdfToolsViewModel.onCleared`) is fixed in the docs commit after it, which was compiled again.
+- Running tests and lint in one Gradle call ran this container out of memory (daemon killed); run them one after the other.
+- Not run: release builds, device.
 
 ## Latest results (2026-11-12, merge of origin e29b727 + ff7d4c7 into F140/F141, `a60b413`)
 
