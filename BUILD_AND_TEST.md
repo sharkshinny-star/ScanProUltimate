@@ -48,7 +48,8 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Full `:app:testDebugUnitTest` on `7ef24ee`: 729 tests, 0 failed, 30 skipped. (The first full run, on `28539c5`, had 1 failure, `PdfToolsFeaturesTest.pdfToImagesRejectsPasswordProtectedPdf`, fixed in `7ef24ee`.)
 - `:app:lintDebug` on `7ef24ee`: 0 errors, 74 warnings, 15 hints; the one new warning (`EmptySuperCall` in `PdfToolsViewModel.onCleared`) is fixed in the docs commit after it, which was compiled again.
 - Running tests and lint in one Gradle call ran this container out of memory (daemon killed); run them one after the other.
-- Not run: release builds, device.
+- `:app:bundleRelease` on `d2dfded`: passed; AAB 46.7 MB. Sideload `assembleRelease`: passed; arm64 34.2 MB, armeabi-v7a 26.2 MB, x86_64 40.1 MB, universal 83.4 MB (unsigned).
+- Not run: device, signed build, 16 KB alignment check.
 
 ## Latest results (2026-11-12, merge of origin e29b727 + ff7d4c7 into F140/F141, `a60b413`)
 
