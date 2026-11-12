@@ -647,7 +647,7 @@ object PdfToolsEngine {
             // first meant parsing every PDF twice.
             try {
                 ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
-                    PdfRenderer(pfd).use { renderer ->
+                    openRenderer(pfd, tempFile).use { renderer ->
                         val totalPages = renderer.pageCount
                         val chosen = pages?.asSequence()?.filter { it in 1..totalPages }?.distinct()?.sorted()?.toList() ?: (1..totalPages).toList()
                         userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
@@ -690,12 +690,6 @@ object PdfToolsEngine {
                 }
             } catch (securityEx: SecurityException) {
                 userError(R.string.tools_err_password_protected, cause = securityEx)
-            } catch (refused: java.io.IOException) {
-                // The renderer's error for a protected file differs between Android versions.
-                if (runCatching { PdfSecurity.protection(tempFile) }.getOrNull() == PdfProtection.PASSWORD_REQUIRED) {
-                    userError(R.string.tools_err_password_protected, cause = refused)
-                }
-                throw refused
             }
             return@withContext imageFiles
         } finally {
@@ -1065,6 +1059,19 @@ object PdfToolsEngine {
      * the file unrestricted, as the Unlock tool does.
      */
     internal fun PDDocument.editable(): PDDocument = apply { if (isEncrypted) isAllSecurityToBeRemoved = true }
+
+    /**
+     * Opens [pfd] in the system renderer. Its error for a protected file differs between Android versions (and it may
+     * not open the file at all), so on any failure PDFBox tells a password from a broken file.
+     */
+    private fun openRenderer(pfd: ParcelFileDescriptor, file: File): PdfRenderer = try {
+        PdfRenderer(pfd)
+    } catch (refused: Throwable) {
+        if (runCatching { PdfSecurity.protection(file) }.getOrNull() == PdfProtection.PASSWORD_REQUIRED) {
+            userError(R.string.tools_err_password_protected, cause = refused)
+        }
+        throw refused
+    }
 
     /** Larger than the 8 KB default: picked PDFs are often tens of megabytes from a cloud provider. */
     private const val COPY_BUFFER = 64 * 1024
