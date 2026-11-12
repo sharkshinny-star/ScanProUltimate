@@ -25,6 +25,7 @@
     <string name="tools_progress_count">%1$d / %2$d</string>
     <string name="tools_result_preview_pdf">Preview PDF</string>
     <string name="tools_result_open">Open</string>
+    <string name="tools_result_share_zip">Share as one zip</string>
 
     <string name="tools_share_save_to_device">Save to device</string>
 

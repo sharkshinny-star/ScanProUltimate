@@ -20,6 +20,7 @@
     <string name="tools_progress_count">%1$d / %2$d</string>
     <string name="tools_result_preview_pdf">PDF प्रीव्यू</string>
     <string name="tools_result_open">खोलें</string>
+    <string name="tools_result_share_zip">एक zip के रूप में साझा करें</string>
     <string name="tools_share_save_to_device">डिवाइस में सेव करें</string>
     <string name="tools_unlock_no_open_password_title">खोलने के लिए पासवर्ड नहीं है</string>
     <string name="tools_unlock_no_password_title">इस PDF पर पासवर्ड नहीं है</string>

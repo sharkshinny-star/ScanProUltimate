@@ -20,6 +20,7 @@
     <string name="tools_progress_count">%1$d / %2$d</string>
     <string name="tools_result_preview_pdf">PDF ಪ್ರಿವ್ಯೂ</string>
     <string name="tools_result_open">ತೆರೆಯಿರಿ</string>
+    <string name="tools_result_share_zip">ಒಂದು zip ಆಗಿ ಹಂಚಿಕೊಳ್ಳಿ</string>
     <string name="tools_share_save_to_device">ಸಾಧನಕ್ಕೆ ಉಳಿಸಿ</string>
     <string name="tools_unlock_no_open_password_title">ತೆರೆಯಲು ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲ</string>
     <string name="tools_unlock_no_password_title">ಈ PDF ಗೆ ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲ</string>

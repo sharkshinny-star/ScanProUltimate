@@ -72,6 +72,9 @@ import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.imaging.PdfToolResult
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import androidx.compose.material3.TextButton
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.withContext
 
 /** What the preview slot of the result shows when the file cannot be drawn (a zip, a text file, a locked PDF). */
@@ -119,6 +122,43 @@ private fun loadResultPreview(file: File, heightPx: Int): ResultPreview = runCat
     }
 }.getOrElse { ResultPreview.Placeholder(placeholderFor(file)) }
 
+/** More files than this go out as the zip itself: a share intent carrying hundreds of links can fail to start. */
+internal const val MAX_SHARED_PARTS = 200
+
+/**
+ * Unpacks a multi-file result (split parts, page images) next to the exports so the files can be shared one by one:
+ * chat apps take ten pages, not a zip. Entry names are reduced to their last segment, so a crafted entry cannot
+ * write outside the folder. Returns null when the zip holds too many files or cannot be read.
+ */
+internal fun unpackForSharing(cacheDir: File, zip: File): List<File>? = runCatching {
+    val dir = File(File(cacheDir, "exports/shared_parts"), zip.nameWithoutExtension).apply {
+        deleteRecursively()
+        mkdirs()
+    }
+    val parts = mutableListOf<File>()
+    java.util.zip.ZipInputStream(zip.inputStream().buffered()).use { input ->
+        while (true) {
+            val entry = input.nextEntry ?: break
+            if (entry.isDirectory) continue
+            if (parts.size >= MAX_SHARED_PARTS) return@runCatching null
+            val name = File(entry.name).name.ifBlank { "part_${parts.size + 1}" }
+            val out = File(dir, name)
+            out.outputStream().use { input.copyTo(it) }
+            parts += out
+        }
+    }
+    parts.takeIf { it.isNotEmpty() }
+}.getOrNull()
+
+private fun sharedMimeFor(files: List<File>): String {
+    val types = files.map { mimeFor(it) }.distinct()
+    return when {
+        types.size == 1 -> types.first()
+        types.all { it.startsWith("image/") } -> "image/*"
+        else -> "*/*"
+    }
+}
+
 /**
  * The screen every tool ends on. It shows what was made (a real thumbnail, not a generic icon), what it is called and
  * how big it is, the tool's own one-line message, and the three things people do next: open it, share it, save it.
@@ -136,6 +176,22 @@ internal fun ResultDialog(
     val context = LocalContext.current
     val file = result.outputFile
     val mime = mimeFor(file)
+    val isBundle = mime == "application/zip"
+    val scope = rememberCoroutineScope()
+    var preparingShare by remember { mutableStateOf(false) }
+    val shareResult: () -> Unit = {
+        if (!isBundle) {
+            shareFile(context, file.absolutePath, mime, file.name)
+        } else if (!preparingShare) {
+            preparingShare = true
+            scope.launch {
+                val parts = withContext(Dispatchers.IO) { unpackForSharing(context.cacheDir, file) }
+                preparingShare = false
+                if (parts == null) shareFile(context, file.absolutePath, mime, file.name)
+                else shareFile(context, parts.first().absolutePath, sharedMimeFor(parts), file.name, parts.drop(1).map { it.absolutePath })
+            }
+        }
+    }
     val saveLabel = stringResource(
         when (mime) {
             "application/zip" -> R.string.tools_result_save_zip_cd
@@ -284,7 +340,8 @@ internal fun ResultDialog(
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
-                        onClick = { shareFile(context, file.absolutePath, mime, file.name) },
+                        onClick = shareResult,
+                        enabled = !preparingShare,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp)
                     ) {
@@ -300,6 +357,12 @@ internal fun ResultDialog(
                         Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.common_save), maxLines = 1)
+                    }
+                }
+                if (isBundle) {
+                    // Share sends the files themselves; the zip stays one tap away for email or a computer.
+                    TextButton(onClick = { shareFile(context, file.absolutePath, mime, file.name) }) {
+                        Text(stringResource(R.string.tools_result_share_zip))
                     }
                 }
                 if (nextTools.isNotEmpty()) {
