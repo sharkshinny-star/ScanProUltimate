@@ -25,6 +25,8 @@
     <string name="tools_source_password_prompt_insert">“%1$s” सुरक्षित है। उसके पेज जोड़ने के लिए पासवर्ड डालें।</string>
     <string name="tools_source_password_note_text">टेक्स्ट फ़ाइल या Word दस्तावेज़ पर कोई पासवर्ड नहीं होगा।</string>
     <string name="tools_source_password_note_insert">नई PDF बिना पासवर्ड के खुलेगी। उसे सुरक्षित करने के लिए बाद में PDF सुरक्षित करें इस्तेमाल करें।</string>
+    <string name="tools_source_password_prompt_open">“%1$s” सुरक्षित है। खोलने के लिए इसका पासवर्ड डालें।</string>
+    <string name="tools_source_password_note_open">इस टूल से सहेजी गई फ़ाइल बिना पासवर्ड के खुलेगी। उसे सुरक्षित करने के लिए बाद में PDF सुरक्षित करें टूल इस्तेमाल करें।</string>
 
     <string name="tools_organizer_insert_pages">दूसरी PDF से पेज जोड़ें…</string>
     <string name="tools_insert_title">पेज जोड़ें</string>

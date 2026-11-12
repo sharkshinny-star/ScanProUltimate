@@ -25,6 +25,8 @@
     <string name="tools_source_password_prompt_insert">“%1$s” రక్షించబడింది. దాని పేజీలను చేర్చడానికి పాస్‌వర్డ్ ఇవ్వండి.</string>
     <string name="tools_source_password_note_text">టెక్స్ట్ ఫైల్ లేదా Word పత్రానికి పాస్‌వర్డ్ ఉండదు.</string>
     <string name="tools_source_password_note_insert">కొత్త PDF పాస్‌వర్డ్ లేకుండా తెరుచుకుంటుంది. దాన్ని రక్షించడానికి తర్వాత PDF రక్షించండి ఉపయోగించండి.</string>
+    <string name="tools_source_password_prompt_open">“%1$s” రక్షించబడింది. తెరవడానికి దాని పాస్‌వర్డ్ నమోదు చేయండి.</string>
+    <string name="tools_source_password_note_open">ఈ టూల్ సేవ్ చేసే ఫైల్ పాస్‌వర్డ్ లేకుండా తెరుచుకుంటుంది. దాన్ని రక్షించడానికి, తర్వాత PDF రక్షణ టూల్‌ను వాడండి.</string>
 
     <string name="tools_organizer_insert_pages">మరో PDF నుండి పేజీలను చేర్చండి…</string>
     <string name="tools_insert_title">పేజీలను చేర్చండి</string>

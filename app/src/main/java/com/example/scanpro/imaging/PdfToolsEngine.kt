@@ -224,14 +224,51 @@ object PdfToolsEngine {
      */
     fun outputLocation(context: Context, name: String): File {
         val dir = File(context.cacheDir, "exports").also { it.mkdirs() }
+        // A second run on the same file gets " (2)", not a silently replaced result.
+        return uniqueFile(dir, name)
+    }
+
+    /** [name] in [dir], or "name (2).ext" and so on when a file of that name is already there. */
+    fun uniqueFile(dir: File, name: String): File {
         val plain = File(dir, name)
         if (!plain.exists()) return plain
-        // A second run on the same file gets " (2)", not a silently replaced result.
         val base = name.substringBeforeLast('.')
-        val extension = name.substringAfterLast('.', "")
+        val extension = name.substringAfterLast('.', "").let { if (it.isEmpty()) "" else ".$it" }
         var n = 2
-        while (File(dir, "$base ($n)" + if (extension.isEmpty()) "" else ".$extension").exists()) n++
-        return File(dir, "$base ($n)" + if (extension.isEmpty()) "" else ".$extension")
+        while (File(dir, "$base ($n)$extension").exists()) n++
+        return File(dir, "$base ($n)$extension")
+    }
+
+    /**
+     * True when [uri] can't be opened without its password. The system renderer answers in milliseconds for a file it
+     * can open; anything else (a protected file, or a provider that gives no seekable file) is settled by PDFBox, whose
+     * answer does not depend on the Android version. A file neither can read is left to the tool, which explains it.
+     */
+    suspend fun needsOpenPassword(context: Context, uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        val opens = runCatching {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { PdfRenderer(it).close(); true }
+        }.getOrNull() == true
+        !opens && runCatching { inspectProtection(context, uri) == PdfProtection.PASSWORD_REQUIRED }.getOrDefault(false)
+    }
+
+    /**
+     * Writes [uri] without its protection to [destination], opened with [password]. False when the password is wrong;
+     * nothing is left behind then.
+     */
+    suspend fun decryptCopy(context: Context, uri: Uri, password: String, destination: File): Boolean = withContext(Dispatchers.IO) {
+        val tempFile = copyUriToTemp(context, uri, "open_in_${UUID.randomUUID()}.pdf")
+        try {
+            PdfSecurity.unlock(tempFile, destination, password)
+            true
+        } catch (wrong: InvalidPasswordException) {
+            destination.delete()
+            false
+        } catch (error: Throwable) {
+            destination.delete()
+            throw error
+        } finally {
+            tempFile.delete()
+        }
     }
 
     /** The picked file's own name without its extension, safe for a file name, or [fallback]. */
@@ -402,6 +439,7 @@ object PdfToolsEngine {
 
         try {
             val originalSize = tempFile.length()
+            var added = 0
             PDDocument().use { extractedDoc -> loadPdf(tempFile).use { doc ->
                 userRequire(doc.numberOfPages > 1, R.string.tools_extract_single_page_desc)
                 selectedPageIndices.forEachIndexed { index, pageIdx ->
@@ -409,17 +447,20 @@ object PdfToolsEngine {
                     onProgress(index + 1, selectedPageIndices.size, AppStrings.get(R.string.tools_progress_extracting_page, index + 1, selectedPageIndices.size))
                     if (pageIdx in 0 until doc.numberOfPages) {
                         extractedDoc.addImportedPage(doc.getPage(pageIdx))
+                        added++
                     }
                 }
+                // Pages chosen from a different file (or one that changed) must not produce an empty PDF.
+                userRequire(added > 0, R.string.tools_err_extract_none)
                 extractedDoc.dropLinksToMissingPages()
                 extractedDoc.save(outputFile)
             } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
-                pageCount = selectedPageIndices.size,
+                pageCount = added,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = AppStrings.plural(R.plurals.tools_result_extracted, selectedPageIndices.size, selectedPageIndices.size)
+                message = AppStrings.plural(R.plurals.tools_result_extracted, added, added)
             )
         } finally {
             tempFile.delete()
@@ -477,6 +518,7 @@ object PdfToolsEngine {
 
         try {
             val originalSize = tempFile.length()
+            var added = 0
             PDDocument().use { newDoc -> loadPdf(tempFile).use { doc ->
                 userRequire(doc.numberOfPages > 1, R.string.tools_organize_single_page_desc)
                 pageSpecs.forEachIndexed { index, spec ->
@@ -488,17 +530,19 @@ object PdfToolsEngine {
                             page.rotation = Math.floorMod(page.rotation + spec.rotationDegrees, 360)
                         }
                         newDoc.addImportedPage(page)
+                        added++
                     }
                 }
+                userRequire(added > 0, R.string.tools_err_keep_one_page)
                 newDoc.dropLinksToMissingPages()
                 newDoc.save(outputFile)
             } }
             return@withContext PdfToolResult(
                 outputFile = outputFile,
-                pageCount = pageSpecs.size,
+                pageCount = added,
                 originalSizeBytes = originalSize,
                 outputSizeBytes = outputFile.length(),
-                message = AppStrings.plural(R.plurals.tools_result_organized, pageSpecs.size, pageSpecs.size)
+                message = AppStrings.plural(R.plurals.tools_result_organized, added, added)
             )
         } finally {
             tempFile.delete()
@@ -594,14 +638,13 @@ object PdfToolsEngine {
         val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in_${UUID.randomUUID()}.pdf")
         val imageFiles = mutableListOf<File>()
         val base = sourceBaseName(context, inputUri)
+        // Pages of one PDF are mostly the same size: one bitmap is drawn over again instead of a new one per page.
+        var bitmap: Bitmap? = null
 
         try {
-            // Only a password stops here. A file PDFBox cannot parse at all goes on to Android's own renderer, which
-            // often still draws it: Repair's last resort depends on that, and used to fail on exactly those files.
-            val protection = runCatching { PdfSecurity.protection(tempFile) }.getOrNull()
-            if (protection == PdfProtection.PASSWORD_REQUIRED) {
-                userError(R.string.tools_err_password_protected)
-            }
+            // Android's own renderer goes first: it draws files PDFBox cannot parse at all (Repair's last resort depends
+            // on that). PDFBox is asked only when the renderer refuses, to tell a password from a broken file; asking it
+            // first meant parsing every PDF twice.
             try {
                 ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                     PdfRenderer(pfd).use { renderer ->
@@ -618,27 +661,28 @@ object PdfToolsEngine {
                                 val scale = minOf(scale, 4000f / maxOf(page.width, page.height).coerceAtLeast(1))
                                 val width = (page.width * scale).toInt().coerceAtLeast(1)
                                 val height = (page.height * scale).toInt().coerceAtLeast(1)
-                                val bitmap = createBitmap(width, height)
-                                // PdfRenderer draws onto what is there; transparent pixels turn black in a JPEG.
-                                bitmap.eraseColor(Color.WHITE)
-                                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                val canvas = bitmap?.takeIf { it.width == width && it.height == height }
+                                    ?: createBitmap(width, height).also { bitmap?.recycle(); bitmap = it }
+                                // PdfRenderer draws onto what is there: transparent pixels turn black in a JPEG, and a
+                                // reused bitmap still holds the previous page.
+                                canvas.eraseColor(Color.WHITE)
+                                page.render(canvas, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
                                 val imgFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.${format.extension}")
-                                FileOutputStream(imgFile).use { out ->
+                                FileOutputStream(imgFile).buffered().use { out ->
                                     if (format == ImageExportFormat.JPEG) {
-                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                                        canvas.compress(Bitmap.CompressFormat.JPEG, 92, out)
                                     } else if (format == ImageExportFormat.PNG) {
-                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                        canvas.compress(Bitmap.CompressFormat.PNG, 100, out)
                                     } else {
                                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                                            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                                            canvas.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
                                         } else {
                                             @Suppress("DEPRECATION")
-                                            bitmap.compress(Bitmap.CompressFormat.WEBP, 90, out)
+                                            canvas.compress(Bitmap.CompressFormat.WEBP, 90, out)
                                         }
                                     }
                                 }
-                                bitmap.recycle()
                                 imageFiles.add(imgFile)
                             }
                         }
@@ -646,9 +690,16 @@ object PdfToolsEngine {
                 }
             } catch (securityEx: SecurityException) {
                 userError(R.string.tools_err_password_protected, cause = securityEx)
+            } catch (refused: java.io.IOException) {
+                // The renderer's error for a protected file differs between Android versions.
+                if (runCatching { PdfSecurity.protection(tempFile) }.getOrNull() == PdfProtection.PASSWORD_REQUIRED) {
+                    userError(R.string.tools_err_password_protected, cause = refused)
+                }
+                throw refused
             }
             return@withContext imageFiles
         } finally {
+            bitmap?.recycle()
             tempFile.delete()
         }
     }
@@ -1015,11 +1066,14 @@ object PdfToolsEngine {
      */
     internal fun PDDocument.editable(): PDDocument = apply { if (isEncrypted) isAllSecurityToBeRemoved = true }
 
+    /** Larger than the 8 KB default: picked PDFs are often tens of megabytes from a cloud provider. */
+    private const val COPY_BUFFER = 64 * 1024
+
     internal fun copyUriToTemp(context: Context, uri: Uri, fileName: String): File {
         val tempFile = File(context.cacheDir, fileName)
         try {
             context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                FileOutputStream(tempFile).use { output -> input.copyTo(output, COPY_BUFFER) }
             } ?: userError(R.string.tools_err_unreadable_location)
         } catch (error: Throwable) {
             // A copy that failed half way must not leave part of the user's file behind in the cache.

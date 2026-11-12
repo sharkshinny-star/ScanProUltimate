@@ -55,8 +55,18 @@ data class SourcePasswordRequest(
     val fileName: String,
     val wrongPassword: Boolean,
     val attempt: Int,
-    val forInsert: Boolean
+    val purpose: PasswordPurpose
 )
+
+/** Why a protected PDF's password is asked for; picks the question and the "no password afterwards" note. */
+enum class PasswordPurpose(@androidx.annotation.StringRes val prompt: Int, @androidx.annotation.StringRes val note: Int) {
+    /** PDF to Word, Excel or text reads the file's text. */
+    TEXT(R.string.tools_source_password_prompt_text, R.string.tools_source_password_note_text),
+    /** Insert pages takes pages from it. */
+    INSERT(R.string.tools_source_password_prompt_insert, R.string.tools_source_password_note_insert),
+    /** Any other tool opens it: an unlocked working copy is made for that tool. */
+    OPEN(R.string.tools_source_password_prompt_open, R.string.tools_source_password_note_open)
+}
 
 /**
  * Asks for the output (Word, Excel or plain text) and the writing system, which pages without text are read in.
@@ -146,15 +156,12 @@ internal fun SourcePasswordDialog(
         text = {
             Column {
                 Text(
-                    stringResource(
-                        if (request.forInsert) R.string.tools_source_password_prompt_insert else R.string.tools_source_password_prompt_text,
-                        request.fileName
-                    ),
+                    stringResource(request.purpose.prompt, request.fileName),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    stringResource(if (request.forInsert) R.string.tools_source_password_note_insert else R.string.tools_source_password_note_text),
+                    stringResource(request.purpose.note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

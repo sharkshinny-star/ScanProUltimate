@@ -61,7 +61,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - **Known quirk:** `:app:testDebugUnitTest --tests 'com.example.scanpro.scanner.*'` on its own aborts the test JVM (SIGABRT, `Class not found: java/nio/FloatBuffer`, Robolectric native runtime, around `CapturedStripTest`). It does the same on the commit before F149; the full suite and the scanner + imaging filter pass. Not investigated further.
 - Not run: device check of the blank hint on real photos.
 
-## Latest results (2026-11-12, F148 PRD port, uncommitted tree on e6ae8ff)
+## Latest results (2026-11-12, F148 protected PDFs in every page tool, commit 28539c5)
+
+- `:app:compileDebugKotlin`: passed.
+- `ToolOpenPasswordTest` 8, `MergePasswordTest` 6, `SplitLinksTest` 2: 16 tests, 0 failed.
+
+## Latest results (2026-11-12, F148 PRD port, commit 6de4604)
 
 - `:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin`: pass (after restoring `setPrimaryClip` in three files; e6ae8ff did not compile).
 - **Known build error (fixed by reverting):** on Gradle 9.9.1, `bundleDebugClassesToRuntimeJar` produced a jar without the Kotlin classes (885 of 2572 entries), so unit tests failed with `NoClassDefFoundError` (126 of 179 in the targeted set). Same tests on 9.9.0: pass. Wrapper is back on 9.9.0; do not take 9.9.1 again without running unit tests.
