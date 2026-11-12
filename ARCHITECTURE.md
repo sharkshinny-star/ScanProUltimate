@@ -407,3 +407,4 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - Settings: `SettingsPage` enum; the main page lists pages, `SettingsSection(page)` draws only on its page (`LocalSettingsPage`); each page has its own scroll and `SettingsLocator` inside an `AnimatedContent`.
 - Launch: `MainActivity.activityCreatedInProcess` makes the first activity of a process a launch even with saved state; the splash exit listener waits (max 1.5 s) for theme, palette and lock settings before handing over.
 
+- **Tool pages (F147):** `feature/tools/ToolPage.kt` is the shared full-screen scaffold for tool options (top bar with Close, scrolling option cards, sticky action button with a reason line when disabled); `ToolChoices.kt` holds the remembered OCR script choice. Multi-file tool results are unpacked on demand into `cache/exports/shared_parts/` for sharing (swept with the other exports after a day).

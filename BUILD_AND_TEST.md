@@ -58,6 +58,13 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 | Note | `IntroductionsScreenshotTest` failed once with a Robolectric native-runtime load error (`FileSystemAlreadyExistsException` in `maybeCopyFonts`) when run filtered together with an SDK 34 test class; it passed alone and in the full suite. |
 | Not run | Device check, instrumented tests, release build |
 
+## Latest results (2026-11-12, F147 tools revamp, worktree on a60b413 + 4 commits, now 4e835ca..237d569)
+
+- `:app:compileDebugKotlin`: passed.
+- Targeted unit tests (ToolChoices, SplitLinks, CompressPdfEngine, PptxExporter, CacheCleaner, WatermarkUnicode): 20 tests, 0 failed, 0 skipped.
+- `ResultShareTest` (3 tests) was added after that run: compiled in the full run, result not recorded.
+- **Not run to completion:** the full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (started, still running when this was written), release build, any device check.
+
 ## Latest results (2026-11-12, F140, uncommitted tree on 4e2b4bd)
 
 - `:app:compileDebugKotlin`: 0 errors. `:app:testDebugUnitTest`: 676 tests, 0 failed, 64 skipped (`ColourThemeScreenshotTest.settingsAppearance` now opens the Appearance page first). `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS.
