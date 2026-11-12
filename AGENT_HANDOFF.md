@@ -178,6 +178,8 @@ Details per finding: `AUDIT_FINDINGS.md`.
 
 ## 3. Unresolved issues
 
+- **Push pending (2026-11-12):** `claude/awesome-clarke-ussjo3` at `a60b413` is 13 commits ahead of origin (F140, F141, two merges). This Mac has no GitHub credentials; the owner must run `git push origin claude/awesome-clarke-ussjo3`.
+
 Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 0. **F146 device check.** Clear data and watch the Home tour, a tool introduction followed by its picker, the camera explainers' pictures (Document, ID card, Book) and Settings > Support > Show introductions again, in light and dark. The 45 new strings in Hindi, Kannada, Malayalam, Tamil and Telugu need a speaker's read (R19).

@@ -41,6 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-12, merge of origin e29b727 + ff7d4c7 into F140/F141, `a60b413`)
+
+- `:app:testDebugUnitTest`: 698 tests, 0 failed, 64 skipped.
+- Conflicts resolved: `DocumentEdgeDetector.kt` (both sides fixed the same Mat leak; kept the shared `pageBox`), `PdfToolsEngine.kt` (remote `use {}` and `PageNumberGeometry` kept, F139 picture stamp for non-Latin watermark text re-added). The remote's F134-F137 bug-hunt IDs clashed and were renumbered F142-F145 in the docs.
+- Not run: device check of the merged tree, lint, release build. Not pushed: no GitHub credentials on this Mac.
+
 ## Latest results (2026-11-12, F146 first-time introductions, worktree `ScanProTips` rebased on `a60b413`)
 
 | Check | Result |
