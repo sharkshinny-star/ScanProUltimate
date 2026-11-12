@@ -159,6 +159,9 @@
     <string name="scan_exposure">ஒளிவெளிப்பாடு</string>
     <string name="scan_id_front_only">முன்பக்கம் மட்டும்</string>
     <string name="scan_id_both_sides">இரு பக்கங்களும்</string>
+    <string name="scan_id_passport">கடவுச்சீட்டு</string>
+    <string name="scan_id_passport_page">புகைப்படப் பக்கம்</string>
+    <string name="scan_id_side_step">%1$s · %3$d-இல் %2$d</string>
     <string name="scan_book_one_page">ஒரு பக்கம்</string>
     <string name="scan_book_two_pages">இரு பக்கங்கள்</string>
     <string name="scan_book_two_pages_rtl">இரு பக்கங்கள், வலது முதலில்</string>

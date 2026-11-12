@@ -159,6 +159,9 @@
     <string name="scan_exposure">എക്സ്പോഷർ</string>
     <string name="scan_id_front_only">മുൻവശം മാത്രം</string>
     <string name="scan_id_both_sides">ഇരുവശവും</string>
+    <string name="scan_id_passport">പാസ്‌പോർട്ട്</string>
+    <string name="scan_id_passport_page">ഫോട്ടോ പേജ്</string>
+    <string name="scan_id_side_step">%1$s · %3$d-ൽ %2$d</string>
     <string name="scan_book_one_page">ഒരു പേജ്</string>
     <string name="scan_book_two_pages">രണ്ട് പേജുകൾ</string>
     <string name="scan_book_two_pages_rtl">രണ്ട് പേജുകൾ, വലത് ആദ്യം</string>

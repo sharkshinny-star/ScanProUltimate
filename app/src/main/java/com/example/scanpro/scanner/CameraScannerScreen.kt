@@ -57,6 +57,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -299,8 +300,12 @@ fun CameraScannerScreen(
     // Saveable, so captured pages survive rotation and process death instead of being lost (and
     // their files orphaned) when the activity is recreated.
     var scanMode by rememberSaveable { mutableStateOf(ScanMode.entries.firstOrNull { it.name == initialMode } ?: ScanMode.DOCUMENT) }
-    // Both sides by default: the owner's ID cards are two-sided and both belong on one page (front above back).
-    var scanBothSides by rememberSaveable { mutableStateOf(true) }
+    // Both sides by default: the owner's ID cards are two-sided and both belong on one page (front above back). The
+    // last choice (one side, both sides or passport) is remembered, and picking the ID card mode no longer resets it.
+    var idKind by rememberSaveable {
+        mutableStateOf(IdCardKind.entries.firstOrNull { it.name == prefs.getString("id_kind", null) } ?: IdCardKind.BOTH_SIDES)
+    }
+    val scanBothSides = idKind == IdCardKind.BOTH_SIDES
     // The one page both sides were put on (IdCardComposer), once Done was tapped after the second side.
     var idComposite by rememberSaveable { mutableStateOf<String?>(null) }
     // Book mode (R29): 0 one page per shot, 1 two pages left first, 2 two pages right first; and the halves made so far,
@@ -713,6 +718,8 @@ fun CameraScannerScreen(
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     /** Height of the bottom control panel (portrait), so the viewfinder can stay clear of it. */
     var panelHeightPx by remember { mutableIntStateOf(0) }
+    /** Height of the transient status chip in that panel: left out of the reserve so a hint does not resize the viewfinder. */
+    var statusHeightPx by remember { mutableIntStateOf(0) }
     var counterCenter by remember { mutableStateOf<Offset?>(null) }
 
     fun flyIntoCounter(photo: File) {
@@ -782,6 +789,7 @@ fun CameraScannerScreen(
                     val viewH = previewView.height.toFloat()
                     val density = previewView.resources.displayMetrics.density
                     val idMode = scanMode == ScanMode.ID_CARD
+                    val idRatio = idKind.heightRatio
                     scope.launch {
                         val quad = withContext(Dispatchers.Default) {
                             runCatching {
@@ -790,7 +798,7 @@ fun CameraScannerScreen(
                                     android.graphics.BitmapFactory.decodeFile(raw.absolutePath, bounds)
                                     val turned = androidx.exifinterface.media.ExifInterface(raw.absolutePath).rotationDegrees % 180 != 0
                                     val (w, h) = if (turned) bounds.outHeight to bounds.outWidth else bounds.outWidth to bounds.outHeight
-                                    idCardCrop(viewW, viewH, w, h, density) ?: OpenCvScanProcessor.detectCrop(raw)
+                                    idCardCrop(viewW, viewH, w, h, density, idRatio) ?: OpenCvScanProcessor.detectCrop(raw)
                                 } else {
                                     OpenCvScanProcessor.detectCrop(raw)
                                 }
@@ -1168,11 +1176,15 @@ fun CameraScannerScreen(
         val density = androidx.compose.ui.platform.LocalDensity.current
         val previewInsets: Pair<androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp> =
             if (landscape || screenSize.width == 0 || panelHeightPx == 0) 0.dp to 0.dp else {
+                // A hint or Undo chip comes and goes; it may cover the bottom of the frame for a moment rather than
+                // make the whole viewfinder jump each time.
+                val reserved = (panelHeightPx - if (status != null) statusHeightPx + with(density) { 8.dp.roundToPx() } else 0)
+                    .coerceAtLeast(0)
                 val frameHeight = screenSize.width * 4f / 3f
-                val limit = screenSize.height - panelHeightPx
+                val limit = screenSize.height - reserved
                 val naturalTop = (screenSize.height - frameHeight) / 2f
                 if (naturalTop + frameHeight <= limit) 0.dp to 0.dp else {
-                    with(density) { naturalTop.coerceAtLeast(0f).toDp() to panelHeightPx.toDp() }
+                    with(density) { naturalTop.coerceAtLeast(0f).toDp() to reserved.toDp() }
                 }
             }
         val previewTop by androidx.compose.animation.core.animateDpAsState(previewInsets.first, tween(180), label = "previewTop")
@@ -1207,7 +1219,21 @@ fun CameraScannerScreen(
                 if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = { shownQuad }, accent = scanLine, rightFirst = bookLayout == 2)
             }
             if (scanMode == ScanMode.ID_CARD) {
-                IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
+                // Which side is next, and how many there are: "Front · 1 of 2", then "Back · 2 of 2".
+                val idLabel = when {
+                    idKind == IdCardKind.PASSPORT -> stringResource(R.string.scan_id_passport_page)
+                    scanBothSides -> {
+                        val back = pages.isNotEmpty()
+                        stringResource(
+                            R.string.scan_id_side_step,
+                            stringResource(if (back) R.string.scan_id_side_back else R.string.scan_id_side_front),
+                            if (back) 2 else 1,
+                            2
+                        )
+                    }
+                    else -> stringResource(R.string.scan_id_side_front)
+                }
+                IdCardFrame(label = idLabel, heightRatio = idKind.heightRatio)
             }
             focusPoint?.let { point ->
                 Box(
@@ -1560,7 +1586,11 @@ fun CameraScannerScreen(
                 Spacer(Modifier.height(8.dp))
             }
             if (status != null) {
-                Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.14f)) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color.White.copy(alpha = 0.14f),
+                    modifier = Modifier.onSizeChanged { statusHeightPx = it.height }
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             status.orEmpty(),
@@ -1635,15 +1665,18 @@ fun CameraScannerScreen(
                     }
                 }
             }
-            // ID cards add a Front only / Both sides row; the mode tabs stay, so a wrong tap is undone with another tap.
+            // ID cards add a Front only / Both sides / Passport row; the mode tabs stay, so a wrong tap is undone with another tap.
             if (scanMode == ScanMode.ID_CARD) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf(false to R.string.scan_id_front_only, true to R.string.scan_id_both_sides).forEach { (both, text) ->
-                        ModeTab(stringResource(text), selected = scanBothSides == both, enabled = pages.isEmpty() && retakeOfPage == null) {
-                            if (pages.isEmpty() && retakeOfPage == null) scanBothSides = both
+                    IdCardKind.entries.forEach { kind ->
+                        ModeTab(stringResource(kind.labelRes), selected = idKind == kind, enabled = pages.isEmpty() && retakeOfPage == null) {
+                            if (pages.isEmpty() && retakeOfPage == null) {
+                                idKind = kind
+                                prefs.edit { putString("id_kind", kind.name) }
+                            }
                         }
                     }
                 }
@@ -1659,7 +1692,6 @@ fun CameraScannerScreen(
                         if (modesEnabled) {
                             barcodeMode = false
                             scanMode = mode
-                            scanBothSides = false
                             status = hint
                         } else {
                             status = modeLockedMessage
@@ -1671,7 +1703,6 @@ fun CameraScannerScreen(
                     if (modesEnabled) {
                         barcodeMode = true
                         scanMode = ScanMode.DOCUMENT
-                        scanBothSides = false
                         status = qrHint
                     } else {
                         status = modeLockedMessage
@@ -1954,6 +1985,9 @@ private fun modeHint(mode: ScanMode): Int = when (mode) {
 private fun ModeTab(text: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     Column(
         Modifier
+            // As wide as the label: a fillMaxWidth underline in a plain Row otherwise made the first tab take the whole
+            // row, and "Both sides" was pushed off screen (only "Front only" showed in ID card mode).
+            .width(IntrinsicSize.Max)
             .clip(RoundedCornerShape(6.dp))
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics { this.selected = selected }
@@ -2002,12 +2036,28 @@ private fun PermissionPanel(askable: Boolean, onRequest: () -> Unit, onFallback:
 }
 
 /** The ID card guide's rectangle in a camera area of [width] x [height] px: card-shaped, a little above centre. */
-internal fun idCardFrame(width: Float, height: Float, density: Float): FrameRect {
+internal fun idCardFrame(width: Float, height: Float, density: Float, heightRatio: Float = IdCardKind.ID1_RATIO): FrameRect {
     val w = width * 0.88f
-    val h = w * 0.63f
+    val h = w * heightRatio
     val left = (width - w) / 2f
     val top = (height - h) / 2f - 40f * density
     return FrameRect(left, top, left + w, top + h)
+}
+
+/**
+ * What ID card mode captures. Cards are ID-1 (85.6 x 54 mm); a passport photo page is ID-3 (125 x 88 mm), so its guide
+ * is a little taller. Both sides put the front above the back on one page ([IdCardComposer]).
+ */
+internal enum class IdCardKind(@StringRes val labelRes: Int, val heightRatio: Float) {
+    ONE_SIDE(R.string.scan_id_front_only, 0.63f),
+    BOTH_SIDES(R.string.scan_id_both_sides, 0.63f),
+    PASSPORT(R.string.scan_id_passport, 88f / 125f);
+
+    companion object {
+        /** Card height / width. 0.63 rather than 54 / 85.6 so the guide is unchanged from before. */
+        const val ID1_RATIO = 0.63f
+        const val ID3_RATIO = 88f / 125f
+    }
 }
 
 internal data class FrameRect(val left: Float, val top: Float, val right: Float, val bottom: Float) {
@@ -2019,14 +2069,21 @@ internal data class FrameRect(val left: Float, val top: Float, val right: Float,
  * Where the ID card guide lies in a photo of [imageWidth] x [imageHeight] (already upright) shown fitted and centred
  * in a [viewWidth] x [viewHeight] camera area, as the photo's crop: only the card inside the guide is kept.
  */
-internal fun idCardCrop(viewWidth: Float, viewHeight: Float, imageWidth: Int, imageHeight: Int, density: Float): CropQuad? {
+internal fun idCardCrop(
+    viewWidth: Float,
+    viewHeight: Float,
+    imageWidth: Int,
+    imageHeight: Int,
+    density: Float,
+    heightRatio: Float = IdCardKind.ID1_RATIO
+): CropQuad? {
     if (viewWidth <= 0f || viewHeight <= 0f || imageWidth <= 0 || imageHeight <= 0) return null
     val scale = minOf(viewWidth / imageWidth, viewHeight / imageHeight)
     val shownW = imageWidth * scale
     val shownH = imageHeight * scale
     val offX = (viewWidth - shownW) / 2f
     val offY = (viewHeight - shownH) / 2f
-    val frame = idCardFrame(viewWidth, viewHeight, density)
+    val frame = idCardFrame(viewWidth, viewHeight, density, heightRatio)
     fun nx(x: Float) = ((x - offX) / shownW).coerceIn(0f, 1f)
     fun ny(y: Float) = ((y - offY) / shownH).coerceIn(0f, 1f)
     val l = nx(frame.left); val r = nx(frame.right); val t = ny(frame.top); val b = ny(frame.bottom)
@@ -2042,10 +2099,10 @@ internal fun idCardCrop(viewWidth: Float, viewHeight: Float, imageWidth: Int, im
  * out, since only what is inside it is kept (see [idCardCrop]).
  */
 @Composable
-private fun IdCardFrame(label: String) {
+private fun IdCardFrame(label: String, heightRatio: Float) {
     Box(Modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
-            val frame = idCardFrame(size.width, size.height, density)
+            val frame = idCardFrame(size.width, size.height, density, heightRatio)
             val left = frame.left; val top = frame.top; val width = frame.width(); val height = frame.height()
             val radius = 14.dp.toPx()
             val outside = Path().apply {
@@ -2065,9 +2122,31 @@ private fun IdCardFrame(label: String) {
             corner(left, top + height, 1f, -1f)
             corner(left + width, top + height, -1f, -1f)
         }
-        Text(stringResource(R.string.scan_id_fit_inside), color = Color.White, style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.TopCenter).padding(top = 110.dp))
-        Surface(modifier = Modifier.align(Alignment.Center).offset(y = (-40).dp), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.45f)) {
-            Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+        // The hint and the side label sit inside the guide (hint near its top edge, label in its middle), placed from the
+        // same geometry as the brackets. They used fixed offsets from the screen and overlapped once the viewfinder got
+        // smaller (F150) or on short screens.
+        val local = androidx.compose.ui.platform.LocalDensity.current
+        var areaSize by remember { mutableStateOf(IntSize.Zero) }
+        Box(Modifier.fillMaxSize().onSizeChanged { areaSize = it })
+        if (areaSize.width > 0) {
+            val frame = idCardFrame(areaSize.width.toFloat(), areaSize.height.toFloat(), local.density, heightRatio)
+            Box(
+                Modifier
+                    .offset { IntOffset(frame.left.toInt(), frame.top.toInt()) }
+                    .size(with(local) { frame.width().toDp() }, with(local) { frame.height().toDp() })
+            ) {
+                Text(
+                    stringResource(R.string.scan_id_fit_inside),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 14.dp, start = 16.dp, end = 16.dp)
+                )
+                Surface(modifier = Modifier.align(Alignment.Center), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.45f)) {
+                    Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+                }
+            }
         }
     }
 }

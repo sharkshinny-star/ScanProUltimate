@@ -180,6 +180,9 @@
     <string name="scan_exposure">Exposure</string>
     <string name="scan_id_front_only">Front only</string>
     <string name="scan_id_both_sides">Both sides</string>
+    <string name="scan_id_passport">Passport</string>
+    <string name="scan_id_passport_page">Photo page</string>
+    <string name="scan_id_side_step">%1$s · %2$d of %3$d</string>
     <string name="scan_book_one_page">One page</string>
     <string name="scan_book_two_pages">Two pages</string>
     <string name="scan_book_two_pages_rtl">Two pages, right first</string>

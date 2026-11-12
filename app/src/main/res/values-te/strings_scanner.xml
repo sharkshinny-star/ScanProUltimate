@@ -159,6 +159,9 @@
     <string name="scan_exposure">ఎక్స్‌పోజర్</string>
     <string name="scan_id_front_only">ముందు వైపు మాత్రమే</string>
     <string name="scan_id_both_sides">రెండు వైపులా</string>
+    <string name="scan_id_passport">పాస్‌పోర్ట్</string>
+    <string name="scan_id_passport_page">ఫోటో పేజీ</string>
+    <string name="scan_id_side_step">%1$s · %3$dలో %2$d</string>
     <string name="scan_book_one_page">ఒక పేజీ</string>
     <string name="scan_book_two_pages">రెండు పేజీలు</string>
     <string name="scan_book_two_pages_rtl">రెండు పేజీలు, కుడి ముందు</string>

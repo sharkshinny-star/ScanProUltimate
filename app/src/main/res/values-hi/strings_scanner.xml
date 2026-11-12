@@ -159,6 +159,9 @@
     <string name="scan_exposure">एक्सपोज़र</string>
     <string name="scan_id_front_only">सिर्फ़ आगे</string>
     <string name="scan_id_both_sides">दोनों तरफ़</string>
+    <string name="scan_id_passport">पासपोर्ट</string>
+    <string name="scan_id_passport_page">फ़ोटो वाला पेज</string>
+    <string name="scan_id_side_step">%1$s · %3$d में से %2$d</string>
     <string name="scan_book_one_page">एक पेज</string>
     <string name="scan_book_two_pages">दो पेज</string>
     <string name="scan_book_two_pages_rtl">दो पेज, दायाँ पहले</string>
