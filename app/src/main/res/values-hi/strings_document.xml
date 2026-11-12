@@ -216,6 +216,7 @@
     <string name="doc_opening_document">डॉक्यूमेंट खुल रहा है</string>
     <string name="doc_tab_pages">पेज</string>
     <string name="doc_edit_page">पेज %1$d एडिट करें</string>
+    <string name="doc_view_page">पेज %1$d देखें</string>
     <string name="doc_page_options">पेज के विकल्प</string>
     <string name="doc_move_earlier">पहले ले जाएं</string>
     <string name="doc_move_later">बाद में ले जाएं</string>

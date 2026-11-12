@@ -501,6 +501,8 @@ internal fun DocumentDetailScreen(
     var watermarkOpen by rememberSaveable { mutableStateOf(false) }
     var annotationTextOpen by rememberSaveable { mutableStateOf(false) }
     var cropOpen by rememberSaveable { mutableStateOf(false) }
+    // A tap on a page shows the finished page; the crop editor (which shows the original photo) opens from there.
+    var previewOpen by rememberSaveable { mutableStateOf(false) }
     var bookSplitOpen by rememberSaveable { mutableStateOf(false) }
     var markupOpen by rememberSaveable { mutableStateOf(false) }
     var editTextOpen by rememberSaveable { mutableStateOf(false) }
@@ -673,7 +675,7 @@ internal fun DocumentDetailScreen(
                             count = pages.size,
                             current = page.id == currentPage?.id,
                             enabled = !busy,
-                            onOpen = { selectedPageId = page.id; cropOpen = true },
+                            onOpen = { selectedPageId = page.id; previewOpen = true },
                             onOptions = { selectedPageId = page.id; pageSheetOpen = true },
                             onMoveEarlier = if (index > 0) ({ onMove(page.id, -1) }) else null,
                             onMoveLater = if (index < pages.lastIndex) ({ onMove(page.id, 1) }) else null,
@@ -1319,6 +1321,17 @@ internal fun DocumentDetailScreen(
         )
     }
 
+    if (previewOpen && currentPage != null && !cropOpen) {
+        PagePreviewDialog(
+            page = currentPage,
+            index = currentIndex,
+            count = pages.size,
+            onDismiss = { previewOpen = false },
+            onCrop = { cropOpen = true },
+            onPage = if (pages.size > 1) ({ delta -> pages.getOrNull(currentIndex + delta)?.let { selectedPageId = it.id } }) else null
+        )
+    }
+
     if (cropOpen && currentPage != null) {
         CropEditorDialog(
             sourcePath = currentPage.sourcePath,
@@ -1498,8 +1511,8 @@ private fun DocumentTabs(selected: Int, onSelect: (Int) -> Unit) {
 }
 
 /**
- * One page in the grid: the thumbnail, its number under it and the earlier/later buttons. A tap opens the
- * crop editor; a long press the rest of the page's tools. The current page (the one the chip row acts on)
+ * One page in the grid: the thumbnail, its number under it and the earlier/later buttons. A tap shows the finished
+ * page full screen (Crop is there); a long press the rest of the page's tools. The current page (the one the chip row acts on)
  * has a primary border.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -1518,7 +1531,7 @@ private fun PageCell(
 ) {
     val shape = RoundedCornerShape(10.dp)
     val description = stringResource(R.string.viewer_page_of, index + 1, count)
-    val editLabel = stringResource(R.string.doc_edit_page, index + 1)
+    val editLabel = stringResource(R.string.doc_view_page, index + 1)
     val optionsLabel = stringResource(R.string.doc_page_options)
     Column(
         modifier

@@ -216,6 +216,7 @@
     <string name="doc_opening_document">ಡಾಕ್ಯುಮೆಂಟ್ ತೆರೆಯಲಾಗುತ್ತಿದೆ</string>
     <string name="doc_tab_pages">ಪುಟಗಳು</string>
     <string name="doc_edit_page">ಪುಟ %1$d ಎಡಿಟ್ ಮಾಡಿ</string>
+    <string name="doc_view_page">ಪುಟ %1$d ನೋಡಿ</string>
     <string name="doc_page_options">ಪುಟದ ಆಯ್ಕೆಗಳು</string>
     <string name="doc_move_earlier">ಮುಂದಕ್ಕೆ ಸರಿಸಿ</string>
     <string name="doc_move_later">ಹಿಂದಕ್ಕೆ ಸರಿಸಿ</string>

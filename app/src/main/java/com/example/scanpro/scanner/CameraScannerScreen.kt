@@ -718,8 +718,6 @@ fun CameraScannerScreen(
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     /** Height of the bottom control panel (portrait), so the viewfinder can stay clear of it. */
     var panelHeightPx by remember { mutableIntStateOf(0) }
-    /** Height of the transient status chip in that panel: left out of the reserve so a hint does not resize the viewfinder. */
-    var statusHeightPx by remember { mutableIntStateOf(0) }
     var counterCenter by remember { mutableStateOf<Offset?>(null) }
 
     fun flyIntoCounter(photo: File) {
@@ -1149,6 +1147,41 @@ fun CameraScannerScreen(
 
     // The scanner's chrome uses the dark theme's surfaces whatever the app theme, so the preview reads as the content.
     val scanLine = ScanProTheme.colors.scanLine
+        // The hint / Undo chip. Portrait: in the dark band above the viewfinder, where the live guidance pill sits (that
+        // pill is hidden while a hint shows), so it neither covers the outline nor resizes the frame. Landscape: in the panel.
+        val statusChip: @Composable (Modifier) -> Unit = { modifier ->
+        Surface(
+            shape = RoundedCornerShape(50),
+            // Dark like the guidance pill: it can sit over the camera image on shorter screens.
+            color = Color.Black.copy(alpha = 0.6f),
+            modifier = modifier
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    status.orEmpty(),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
+                )
+                pendingDelete?.let { deleted ->
+                    // Undo puts the page back where it was, with its outline, filter and sliders.
+                    TextButton(onClick = {
+                        val at = deleted.index.coerceAtMost(pages.size)
+                        pages.add(at, deleted.uri)
+                        val key = deleted.uri.toString()
+                        deleted.quad?.let { quads[key] = it }
+                        deleted.filter?.let { filters[key] = it }
+                        deleted.adjustments?.let { adjustments[key] = it }
+                        if (deleted.wasComposite) idComposite = key
+                        pendingDelete = null
+                        status = resources.getString(R.string.scan_status_page_restored, at + 1)
+                    }, contentPadding = PaddingValues(horizontal = 12.dp)) {
+                        Text(stringResource(R.string.common_undo), color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+        }
     Box(
         Modifier
             .fillMaxSize()
@@ -1176,10 +1209,8 @@ fun CameraScannerScreen(
         val density = androidx.compose.ui.platform.LocalDensity.current
         val previewInsets: Pair<androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp> =
             if (landscape || screenSize.width == 0 || panelHeightPx == 0) 0.dp to 0.dp else {
-                // A hint or Undo chip comes and goes; it may cover the bottom of the frame for a moment rather than
-                // make the whole viewfinder jump each time.
-                val reserved = (panelHeightPx - if (status != null) statusHeightPx + with(density) { 8.dp.roundToPx() } else 0)
-                    .coerceAtLeast(0)
+                // The hint chip is not in the portrait panel (it sits above the viewfinder), so the panel's height is steady.
+                val reserved = panelHeightPx
                 val frameHeight = screenSize.width * 4f / 3f
                 val limit = screenSize.height - reserved
                 val naturalTop = (screenSize.height - frameHeight) / 2f
@@ -1263,6 +1294,9 @@ fun CameraScannerScreen(
                     Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
                 }
             }
+        }
+        if (status != null && !landscape) {
+            statusChip(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 62.dp, start = 16.dp, end = 16.dp))
         }
         if (showLevel && !barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
             LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp + panelClearance))
@@ -1585,37 +1619,8 @@ fun CameraScannerScreen(
                 )
                 Spacer(Modifier.height(8.dp))
             }
-            if (status != null) {
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = Color.White.copy(alpha = 0.14f),
-                    modifier = Modifier.onSizeChanged { statusHeightPx = it.height }
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            status.orEmpty(),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
-                        )
-                        pendingDelete?.let { deleted ->
-                            // Undo puts the page back where it was, with its outline, filter and sliders.
-                            TextButton(onClick = {
-                                val at = deleted.index.coerceAtMost(pages.size)
-                                pages.add(at, deleted.uri)
-                                val key = deleted.uri.toString()
-                                deleted.quad?.let { quads[key] = it }
-                                deleted.filter?.let { filters[key] = it }
-                                deleted.adjustments?.let { adjustments[key] = it }
-                                if (deleted.wasComposite) idComposite = key
-                                pendingDelete = null
-                                status = resources.getString(R.string.scan_status_page_restored, at + 1)
-                            }, contentPadding = PaddingValues(horizontal = 12.dp)) {
-                                Text(stringResource(R.string.common_undo), color = Color.White, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
+            if (status != null && landscape) {
+                statusChip(Modifier)
                 Spacer(Modifier.height(8.dp))
             }
 

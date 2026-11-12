@@ -255,6 +255,7 @@
     <!-- Document screen rebuilt from the owner's "Document" design: bar, tabs, page grid, export sheet -->
     <string name="doc_tab_pages">Pages</string>
     <string name="doc_edit_page">Edit page %1$d</string>
+    <string name="doc_view_page">View page %1$d</string>
     <string name="doc_page_options">Page options</string>
     <string name="doc_move_earlier">Move earlier</string>
     <string name="doc_move_later">Move later</string>

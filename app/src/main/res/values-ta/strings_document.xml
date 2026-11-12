@@ -216,6 +216,7 @@
     <string name="doc_opening_document">ஆவணம் திறக்கப்படுகிறது</string>
     <string name="doc_tab_pages">பக்கங்கள்</string>
     <string name="doc_edit_page">பக்கம் %1$d-ஐத் திருத்து</string>
+    <string name="doc_view_page">பக்கம் %1$d-ஐப் பார்க்க</string>
     <string name="doc_page_options">பக்க விருப்பங்கள்</string>
     <string name="doc_move_earlier">முன்னே நகர்த்து</string>
     <string name="doc_move_later">பின்னே நகர்த்து</string>

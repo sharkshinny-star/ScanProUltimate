@@ -216,6 +216,7 @@
     <string name="doc_opening_document">డాక్యుమెంట్ తెరుస్తోంది</string>
     <string name="doc_tab_pages">పేజీలు</string>
     <string name="doc_edit_page">పేజీ %1$d ఎడిట్ చేయండి</string>
+    <string name="doc_view_page">పేజీ %1$d చూడండి</string>
     <string name="doc_page_options">పేజీ ఆప్షన్‌లు</string>
     <string name="doc_move_earlier">ముందుకు జరపండి</string>
     <string name="doc_move_later">వెనక్కి జరపండి</string>
