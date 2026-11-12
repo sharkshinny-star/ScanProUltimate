@@ -1173,76 +1173,16 @@ public class Mat extends CleanableMat {
         }
     }
 
-    public static class Tuple2<T> {
-        public Tuple2(T _0, T _1) {
-            this._0 = _0;
-            this._1 = _1;
-        }
+    public record Tuple2<T>(T _0, T _1) {
 
-        public T get_0() {
-            return _0;
-        }
-
-        public T get_1() {
-            return _1;
-        }
-
-        private final T _0;
-        private final T _1;
     }
 
-    public static class Tuple3<T> {
-        public Tuple3(T _0, T _1, T _2) {
-            this._0 = _0;
-            this._1 = _1;
-            this._2 = _2;
-        }
+    public record Tuple3<T>(T _0, T _1, T _2) {
 
-        public T get_0() {
-            return _0;
-        }
-
-        public T get_1() {
-            return _1;
-        }
-
-        public T get_2() {
-            return _2;
-        }
-
-        private final T _0;
-        private final T _1;
-        private final T _2;
     }
 
-    public static class Tuple4<T> {
-        public Tuple4(T _0, T _1, T _2, T _3) {
-            this._0 = _0;
-            this._1 = _1;
-            this._2 = _2;
-            this._3 = _3;
-        }
+    public record Tuple4<T>(T _0, T _1, T _2, T _3) {
 
-        public T get_0() {
-            return _0;
-        }
-
-        public T get_1() {
-            return _1;
-        }
-
-        public T get_2() {
-            return _2;
-        }
-
-        public T get_3() {
-            return _3;
-        }
-
-        private final T _0;
-        private final T _1;
-        private final T _2;
-        private final T _3;
     }
 
     public interface Atable<T> {

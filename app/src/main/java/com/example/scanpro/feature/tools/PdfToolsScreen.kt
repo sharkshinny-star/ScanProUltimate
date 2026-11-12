@@ -1125,14 +1125,14 @@ private const val LAST_COMPRESS_PRESET = "last_compress_preset"
 
 @Composable
 private fun CompressPdfDialog(
-    context: android.content.Context,
+    context: Context,
     uri: Uri,
     onDismiss: () -> Unit,
     onConfirm: (preset: CompressionPreset, customTargetBytes: Long?) -> Unit
 ) {
     var originalSize by remember { mutableLongStateOf(0L) }
     // Starts on the level chosen last time (iLovePDF remembers it too): most people compress the same way every time.
-    val toolPrefs = remember(context) { context.getSharedPreferences("tools_ui", android.content.Context.MODE_PRIVATE) }
+    val toolPrefs = remember(context) { context.getSharedPreferences("tools_ui", Context.MODE_PRIVATE) }
     var preset by rememberSaveable {
         mutableStateOf(
             CompressionPreset.entries.firstOrNull { it.name == toolPrefs.getString(LAST_COMPRESS_PRESET, null) } ?: CompressionPreset.BALANCED
@@ -1163,9 +1163,7 @@ private fun CompressPdfDialog(
     val isTargetTooLarge = isCustomTarget && customBytes != null && originalSize > 0 && customBytes >= originalSize
     val isTargetZero = isCustomTarget && targetInput.isNotBlank() && (customBytes == null || customBytes <= 0)
 
-    val canConfirm = if (isCustomTarget) {
-        customBytes != null && customBytes > 0 && (originalSize <= 0 || customBytes < originalSize)
-    } else true
+    val canConfirm = !isCustomTarget || customBytes != null && customBytes > 0 && (originalSize <= 0 || customBytes < originalSize)
     // A full tool page (F146): the dialog crammed seven controls into a pop-up and hid its button on small phones.
     ToolPage(
         title = stringResource(R.string.tools_compress_pdf),
@@ -1703,7 +1701,7 @@ private fun ProcessingOverlay(
             ) {
                 Column(
                     // Scrolls when a large font or landscape leaves too little height, so Cancel is never cut off.
-                    modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(24.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState()).padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // The processing animation: a ring that fills with the real progress (circling while the tool
@@ -2061,7 +2059,7 @@ private fun SplitDialog(
                         singleLine = true,
                         isError = error != null,
                         supportingText = error?.let { { Text(it) } },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -2240,7 +2238,7 @@ private fun PdfPageOrganizerSheet(
     // Closing with deletes, moves or rotations that were not applied asks first.
     var confirmClose by rememberSaveable { mutableStateOf(false) }
     val requestClose = { if (undoStack.isNotEmpty()) confirmClose = true else onClose() }
-    androidx.activity.compose.BackHandler(enabled = undoStack.isNotEmpty()) { confirmClose = true }
+    BackHandler(enabled = undoStack.isNotEmpty()) { confirmClose = true }
     if (confirmClose) {
         com.example.scanpro.feature.document.DiscardEditsDialog(
             onKeepEditing = { confirmClose = false },
@@ -2258,7 +2256,7 @@ private fun PdfPageOrganizerSheet(
                 title = {
                     Text(
                         maxLines = 2,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleSmall,
                         text = stringResource(
                             when (mode) {
@@ -2673,7 +2671,7 @@ private fun CompressImageDialog(
     val isTargetLarger = mode == 0 && origBytes > 0 && (targetBytes ?: 0L) >= origBytes
     val isTargetZero = mode == 0 && targetKb <= 0
 
-    val canConfirm = if (mode == 0) targetKb > 0 && !isTargetLarger else true
+    val canConfirm = mode != 0 || targetKb > 0 && !isTargetLarger
     // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
     ToolPage(
         title = stringResource(R.string.tools_compress_img_title),

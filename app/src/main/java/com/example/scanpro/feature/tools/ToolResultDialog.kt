@@ -403,7 +403,7 @@ private class Speck(val angle: Float, val reach: Float, val sizeDp: Float, val s
  */
 @Composable
 private fun SuccessBurst(modifier: Modifier) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val animationsOn = remember {
         android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     }

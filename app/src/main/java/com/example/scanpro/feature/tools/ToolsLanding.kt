@@ -460,7 +460,7 @@ private fun SearchResultRow(hit: SearchHit, onClick: () -> Unit) {
         IconTile(hit.tool.icon, hit.tool.tone, size = 40.dp, corner = 12.dp, iconSize = 22.dp)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(
                 TOOL_DESCRIPTIONS[hit.tool.id]?.let { stringResource(it) } ?: stringResource(hit.sectionTitle),
                 style = MaterialTheme.typography.bodySmall,

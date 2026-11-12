@@ -88,7 +88,6 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -541,7 +540,7 @@ internal fun DocumentDetailScreen(
     }
     val sharePdfNow: () -> Unit = { onWithFreshPdf({}) { sharePdf(context, it) } }
 
-    val wordScope = androidx.compose.runtime.rememberCoroutineScope()
+    val wordScope = rememberCoroutineScope()
     if (scanSaved) {
         ScanSavedSheet(
             document = document,
@@ -551,7 +550,7 @@ internal fun DocumentDetailScreen(
             onShareJpg = { shareImages(context, document) },
             onShareWord = { title ->
                 wordScope.launch {
-                    val file = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val file = withContext(Dispatchers.IO) {
                         val pagesText = document.pages.sortedBy { it.position }.map {
                             com.example.scanpro.imaging.PdfTextPage(it.ocrText, if (it.ocrText.isBlank()) com.example.scanpro.imaging.PageTextSource.NONE else com.example.scanpro.imaging.PageTextSource.OCR)
                         }

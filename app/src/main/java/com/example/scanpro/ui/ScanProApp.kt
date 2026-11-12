@@ -306,8 +306,8 @@ fun ScanProApp(
                 androidx.compose.animation.AnimatedVisibility(
                     visible = welcomeShowing,
                     enter = androidx.compose.animation.EnterTransition.None,
-                    exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(320)) +
-                        androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(320), targetScale = 1.06f)
+                    exit = androidx.compose.animation.fadeOut(tween(320)) +
+                        androidx.compose.animation.scaleOut(tween(320), targetScale = 1.06f)
                 ) {
                     androidx.activity.compose.BackHandler { viewModel.markWelcomeSeen() }
                     WelcomeScreen(onGetStarted = viewModel::markWelcomeSeen)

@@ -555,7 +555,7 @@ fun PdfViewerScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         IconTile(
-                            androidx.compose.material.icons.Icons.Rounded.ErrorOutline,
+                            Icons.Rounded.ErrorOutline,
                             TileTone.Rose,
                             size = 72.dp, corner = 24.dp, iconSize = 36.dp
                         )

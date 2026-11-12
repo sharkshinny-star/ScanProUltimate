@@ -41,7 +41,7 @@ class SplitLinksTest {
         junk.createOutputStream().use { out -> out.write(ByteArray(300_000) { (it * 31 % 251).toByte() }) }
         pages[2].cosObject.setItem(COSName.getPDFName("Heavy"), junk)
         fun link(from: PDPage, to: PDPage) {
-            val destination = PDPageFitDestination().apply { setPage(to) }
+            val destination = PDPageFitDestination().apply { page = to }
             from.annotations = from.annotations + PDAnnotationLink().apply { this.destination = destination; page = from }
         }
         link(pages[0], pages[2])

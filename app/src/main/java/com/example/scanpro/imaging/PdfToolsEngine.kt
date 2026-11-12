@@ -806,9 +806,9 @@ object PdfToolsEngine {
                     doc, config.text, fontSize, (config.colorRgb and 0xFFFFFF) or (0xFF shl 24)
                 )
                 val alpha = (config.opacityPercent.coerceIn(5, 100) / 100f)
-                val r = android.graphics.Color.red(config.colorRgb) / 255f
-                val g = android.graphics.Color.green(config.colorRgb) / 255f
-                val b = android.graphics.Color.blue(config.colorRgb) / 255f
+                val r = Color.red(config.colorRgb) / 255f
+                val g = Color.green(config.colorRgb) / 255f
+                val b = Color.blue(config.colorRgb) / 255f
 
                 val gState = PDExtendedGraphicsState().apply {
                     nonStrokingAlphaConstant = alpha

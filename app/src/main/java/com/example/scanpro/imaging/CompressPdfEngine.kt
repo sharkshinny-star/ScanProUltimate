@@ -239,7 +239,7 @@ object CompressPdfEngine {
                             // Only a smaller image replaces the original. A black-and-white scan (CCITT or JBIG2) grows
                             // as a JPEG; replacing it anyway made the whole file bigger, which then sent the document
                             // down the picture-only path and lost its text.
-                            val before = (original as? com.tom_roush.pdfbox.cos.COSStream)?.length ?: Long.MAX_VALUE
+                            val before = original?.length ?: Long.MAX_VALUE
                             if (recompressedImage.cosObject.length < before) {
                                 replaced[original] = recompressedImage
                                 produced += recompressedImage.cosObject

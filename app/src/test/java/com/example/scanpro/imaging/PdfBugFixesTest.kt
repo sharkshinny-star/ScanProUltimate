@@ -62,7 +62,8 @@ class PdfBugFixesTest {
                         setItem(COSName.getPDFName(index.toString()), PDAppearanceStream(doc).apply { bBox = PDRectangle(20f, 20f) })
                         setItem(COSName.Off, PDAppearanceStream(doc).apply { bBox = PDRectangle(20f, 20f) })
                     }
-                    appearance = PDAppearanceDictionary().apply { setNormalAppearance(PDAppearanceEntry(states)) }
+                    appearance = PDAppearanceDictionary().apply { normalAppearance =
+                        PDAppearanceEntry(states) }
                     setAppearanceState("Off")
                 }
             }

@@ -96,10 +96,10 @@ class PptxExporterTest {
     fun `slides can be read from files one at a time`() {
         val dir = kotlin.io.path.createTempDirectory("pptx").toFile()
         val pictures = List(3) { n -> java.io.File(dir, "page$n.jpg").apply { writeBytes(ByteArray(2_000) { (it + n).toByte() }) } }
-        val out = java.io.ByteArrayOutputStream()
+        val out = ByteArrayOutputStream()
         PptxExporter.write(pictures.map { PptxExporter.Slide(it, 100, 141) }, out)
         val entries = HashMap<String, ByteArray>()
-        java.util.zip.ZipInputStream(out.toByteArray().inputStream()).use { zip ->
+        ZipInputStream(out.toByteArray().inputStream()).use { zip ->
             while (true) {
                 val entry = zip.nextEntry ?: break
                 entries[entry.name] = zip.readBytes()

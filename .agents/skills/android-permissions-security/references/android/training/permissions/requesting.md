@@ -410,8 +410,7 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions,
                 // system settings in an effort to convince the user to change
                 // their decision.
             }
-            return;
-        }
+    }
         // Other 'case' lines to check for other
         // permissions this app might request.
     }

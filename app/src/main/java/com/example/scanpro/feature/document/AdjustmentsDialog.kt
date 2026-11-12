@@ -104,7 +104,7 @@ fun AdjustmentsDialog(
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .padding(10.dp)
                         .sizeIn(minHeight = 120.dp, maxHeight = 300.dp),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
+                    contentAlignment = Alignment.Center
                 ) {
                     preview?.let { bitmap ->
                         Image(

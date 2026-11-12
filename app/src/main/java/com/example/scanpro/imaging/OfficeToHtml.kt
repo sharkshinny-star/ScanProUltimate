@@ -97,7 +97,7 @@ object OfficeToHtml {
     private fun note(text: String): String = esc(text)
 
     /** A complete, self-contained HTML document (inline CSS, images as data: URIs, no scripts, no external links loaded). */
-    fun convert(kind: Kind, input: java.io.InputStream, title: String, notes: Notes = Notes.ENGLISH): String {
+    fun convert(kind: Kind, input: InputStream, title: String, notes: Notes = Notes.ENGLISH): String {
         val previous = activeNotes.get()
         activeNotes.set(notes)
         try {
@@ -107,7 +107,7 @@ object OfficeToHtml {
         }
     }
 
-    private fun convertChecked(kind: Kind, input: java.io.InputStream, title: String): String = try {
+    private fun convertChecked(kind: Kind, input: InputStream, title: String): String = try {
         when (kind) {
             Kind.DOCX -> Docx.convert(input, title)
             Kind.XLSX -> Xlsx.convert(input, title)
@@ -807,7 +807,7 @@ object OfficeToHtml {
                     }
                 }
                 override fun characters(ch: CharArray, start: Int, length: Int) {
-                    if (inT) cur?.append(ch, start, length)
+                    if (inT) cur?.appendRange(ch, start, start + length)
                 }
             })
             return out
@@ -887,7 +887,7 @@ object OfficeToHtml {
                     }
                 }
                 override fun characters(ch: CharArray, start: Int, length: Int) {
-                    text?.append(ch, start, length)
+                    text?.appendRange(ch, start, start + length)
                 }
             })
             return Sheet(cells, merges, truncated)

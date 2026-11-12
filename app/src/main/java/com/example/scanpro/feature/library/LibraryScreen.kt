@@ -447,16 +447,16 @@ internal fun LibraryScreen(
                         if (selecting) {
                             // Several documents: separate PDFs, or one combined PDF in the order they were picked.
                             var shareChoice by remember { mutableStateOf(false) }
-                            androidx.compose.foundation.layout.Box {
+                            Box {
                                 IconButton(onClick = { if (selected.size > 1) shareChoice = true else onShareSelected(selected.toSet()) }) {
                                     Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.lib_cd_share_selected))
                                 }
-                                androidx.compose.material3.DropdownMenu(expanded = shareChoice, onDismissRequest = { shareChoice = false }) {
-                                    androidx.compose.material3.DropdownMenuItem(
+                                DropdownMenu(expanded = shareChoice, onDismissRequest = { shareChoice = false }) {
+                                    DropdownMenuItem(
                                         text = { Text(stringResource(R.string.lib_share_separate, selected.size)) },
                                         onClick = { shareChoice = false; onShareSelected(selected.toSet()) }
                                     )
-                                    androidx.compose.material3.DropdownMenuItem(
+                                    DropdownMenuItem(
                                         text = { Text(stringResource(R.string.lib_share_one_pdf)) },
                                         onClick = { shareChoice = false; onShareCombined(selected.toList()) }
                                     )
@@ -857,7 +857,7 @@ internal fun LibraryScreen(
 // ---------------------------------------------------------------------------------------------
 
 /** The tags in use as chips, one selectable, plus All tags to clear the filter (R35). */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TagFilterSheet(tags: List<String>, selected: String, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss, sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -1432,12 +1432,12 @@ private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () 
                 )
                 if (folders.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 240.dp)) {
+                    LazyColumn(Modifier.heightIn(max = 240.dp)) {
                         items(folders, key = { it }) { existing ->
-                            androidx.compose.material3.TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
+                            TextButton(onClick = { name = existing }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Rounded.Folder, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                Text(existing, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
@@ -1445,12 +1445,12 @@ private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () 
             }
         },
         confirmButton = {
-            androidx.compose.material3.Button(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.lib_move)) }
+            Button(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.lib_move)) }
         },
         dismissButton = {
             Row {
-                androidx.compose.material3.TextButton(onClick = { onConfirm("") }) { Text(stringResource(R.string.lib_no_folder)) }
-                androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+                TextButton(onClick = { onConfirm("") }) { Text(stringResource(R.string.lib_no_folder)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
             }
         }
     )

@@ -133,7 +133,7 @@ class ImportScanWorker @AssistedInject constructor(
                 )
             }
         }
-        clipboard.setPrimaryClip(clip)
+        clipboard.primaryClip = clip
         operations.showMessage(applicationContext.getString(R.string.msg_text_copied_to_clipboard))
     }
 
@@ -217,7 +217,7 @@ class ImportScanWorker @AssistedInject constructor(
             // WorkManager refuses input over 10 KB, which a batch of about 60 pages passes (a path, crop, filter and
             // sliders per page). Then the work gets only the path of the request saved above.
             val workInput = input.toWorkData()
-                ?: if (inSession) androidx.work.workDataOf(KEY_REQUEST_FILE to File(sessionDir, SESSION_IMPORT_REQUEST).absolutePath)
+                ?: if (inSession) workDataOf(KEY_REQUEST_FILE to File(sessionDir, SESSION_IMPORT_REQUEST).absolutePath)
                 else error("Scan import request too large and not in a scanner session")
             val request = OneTimeWorkRequestBuilder<ImportScanWorker>()
                 .setInputData(workInput)

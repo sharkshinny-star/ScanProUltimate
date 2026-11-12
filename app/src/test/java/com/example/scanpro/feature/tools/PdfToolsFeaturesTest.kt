@@ -309,7 +309,7 @@ class PdfToolsFeaturesTest {
         val base1 = com.example.scanpro.imaging.PdfToolsEngine.sourceBaseName(app, invoiceUri)
         assertEquals("Invoice_2026", base1)
 
-        val fileUri = android.net.Uri.fromFile(java.io.File("/tmp/My Document (Final).pdf"))
+        val fileUri = android.net.Uri.fromFile(File("/tmp/My Document (Final).pdf"))
         val base2 = com.example.scanpro.imaging.PdfToolsEngine.sourceBaseName(app, fileUri)
         assertEquals("My Document (Final)", base2)
 

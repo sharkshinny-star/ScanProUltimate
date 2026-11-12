@@ -658,7 +658,7 @@ fun CameraScannerScreen(
     // A removed page's file goes after six seconds without Undo; Done settles it at once.
     LaunchedEffect(pendingDelete) {
         val deleted = pendingDelete ?: return@LaunchedEffect
-        kotlinx.coroutines.delay(6_000)
+        delay(6_000)
         if (pendingDelete === deleted) {
             pendingDelete = null
             deleteInBackground(File(deleted.uri.path.orEmpty()))
@@ -707,7 +707,7 @@ fun CameraScannerScreen(
     val flash = remember { Animatable(0f) }
     val flight = remember { Animatable(0f) }
     val counterPulse = remember { Animatable(1f) }
-    var flyingPage by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var flyingPage by remember { mutableStateOf<Bitmap?>(null) }
     var screenOrigin by remember { mutableStateOf(Offset.Zero) }
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
     var counterCenter by remember { mutableStateOf<Offset?>(null) }
@@ -1341,7 +1341,12 @@ fun CameraScannerScreen(
             AlertDialog(
                 onDismissRequest = { confirmQuit = false },
                 title = { Text(stringResource(R.string.scan_quit_title)) },
-                text = { androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) { Text(stringResource(R.string.scan_quit_body)) } },
+                text = {
+                    Column(
+                        Modifier.verticalScroll(
+                        rememberScrollState()
+                    )) { Text(stringResource(R.string.scan_quit_body)) }
+                },
                 confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.common_cancel)) } }
             )
@@ -1682,7 +1687,7 @@ fun CameraScannerScreen(
                 // inner disc is the button.
                 // Driven from a coroutine and read only while drawing: `steadiness` changes with every camera frame, and
                 // reading it here during composition recomposed the whole camera screen about 25 times a second.
-                val ringProgress = remember { androidx.compose.animation.core.Animatable(0f) }
+                val ringProgress = remember { Animatable(0f) }
                 LaunchedEffect(Unit) {
                     snapshotFlow { (if (stable) 1f else steadiness) to (steadiness == 0f) }.collectLatest { (target, resetting) ->
                         ringProgress.animateTo(target, if (resetting) tween(200) else spring(stiffness = 700f))
@@ -2226,7 +2231,7 @@ internal fun resetScanIntros(context: android.content.Context) {
 internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Unit) {
     var dontRemind by rememberSaveable { mutableStateOf(false) }
     val (icon, title, body) = when (mode) {
-        ScanMode.BOOK -> Triple(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.MenuBook, R.string.scan_book_intro_title, R.string.scan_book_intro_body)
+        ScanMode.BOOK -> Triple(Icons.AutoMirrored.Rounded.MenuBook, R.string.scan_book_intro_title, R.string.scan_book_intro_body)
         ScanMode.ID_CARD -> Triple(Icons.Rounded.Badge, R.string.scan_idcard_intro_title, R.string.scan_idcard_intro_body)
         else -> Triple(Icons.Filled.DocumentScanner, R.string.scan_doc_intro_title, R.string.scan_doc_intro_body)
     }
@@ -2252,7 +2257,7 @@ internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> U
                     .fillMaxWidth()
                     .padding(top = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .toggleable(value = dontRemind, role = androidx.compose.ui.semantics.Role.Checkbox) { dontRemind = it }
+                    .toggleable(value = dontRemind, role = Role.Checkbox) { dontRemind = it }
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -2287,7 +2292,7 @@ private fun SpineGuide(detection: DocumentDetection?, quad: () -> CropQuad?, acc
             accent.copy(alpha = 0.9f), topMid, bottomMid, strokeWidth = 3f, cap = StrokeCap.Round,
             pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 10f))
         )
-        fun half(a: com.example.scanpro.data.NormalizedPoint, b: Offset, c: com.example.scanpro.data.NormalizedPoint, d: Offset): Offset {
+        fun half(a: NormalizedPoint, b: Offset, c: NormalizedPoint, d: Offset): Offset {
             val pa = point(a.x, a.y); val pc = point(c.x, c.y)
             return Offset((pa.x + b.x + pc.x + d.x) / 4f, (pa.y + b.y + pc.y + d.y) / 4f)
         }

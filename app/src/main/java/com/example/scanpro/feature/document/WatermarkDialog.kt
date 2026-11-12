@@ -97,7 +97,8 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                             selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ), shape = androidx.compose.foundation.shape.CircleShape)
+                        ), shape = CircleShape
+                        )
                     }
                 }
                 Eyebrow(stringResource(R.string.doc_position), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -107,7 +108,8 @@ fun WatermarkDialog(onDismiss: () -> Unit, onConfirm: (WatermarkStyle) -> Unit) 
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                             selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ), shape = androidx.compose.foundation.shape.CircleShape)
+                        ), shape = CircleShape
+                        )
                     }
                 }
                 Eyebrow(stringResource(R.string.doc_colour), color = MaterialTheme.colorScheme.onSurfaceVariant)

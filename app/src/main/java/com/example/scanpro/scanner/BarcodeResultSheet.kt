@@ -250,7 +250,7 @@ private fun copy(context: Context, label: String, text: String, sensitive: Boole
             putBoolean(if (Build.VERSION.SDK_INT >= 33) android.content.ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true)
         }
     }
-    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
+    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip = clip
     if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, context.getString(R.string.scan_code_copied), Toast.LENGTH_SHORT).show()
 }
 
@@ -269,7 +269,7 @@ internal fun calendarMillis(time: Barcode.CalendarDateTime?): Long? {
 
 /** Android 11+: the system "Save this network?" request for a scanned Wi-Fi code; null on older versions or odd codes. */
 private fun wifiAddIntent(wifi: WifiCode): Intent? {
-    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
     val ssid = wifi.ssid.takeIf { it.isNotEmpty() } ?: return null
     val password = wifi.password
     val builder = android.net.wifi.WifiNetworkSuggestion.Builder().setSsid(ssid)

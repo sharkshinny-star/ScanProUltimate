@@ -141,9 +141,9 @@ object ImageToolsEngine {
 
             // Tiny or already-optimised pictures can come out bigger. When the format is unchanged, keep the original
             // bytes instead of handing back something larger than what the user picked.
-            val sourceMime = android.graphics.BitmapFactory.Options().also {
+            val sourceMime = BitmapFactory.Options().also {
                 it.inJustDecodeBounds = true
-                android.graphics.BitmapFactory.decodeFile(tempFile.absolutePath, it)
+                BitmapFactory.decodeFile(tempFile.absolutePath, it)
             }.outMimeType.orEmpty().lowercase()
             val outExt = outputFile.extension.lowercase()
             val sameFormat = when (outExt) {

@@ -130,7 +130,7 @@ fun copyText(context: Context, text: String) {
             putBoolean(if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE", true)
         }
     }
-    clipboard.setPrimaryClip(clip)
+    clipboard.primaryClip = clip
     Toast.makeText(context, context.getString(R.string.core_text_copied), Toast.LENGTH_SHORT).show()
 }
 
@@ -147,7 +147,7 @@ fun formatBytes(context: Context, bytes: Long): String =
  * Bytes in the "kB" that [formatBytes] shows: the system formatter is decimal from Android 8 (API 26) and binary
  * before. A typed target must use the same unit, or "170 KB" is rejected for a file the dialog calls 171 kB.
  */
-fun displayedKiloByte(): Double = if (android.os.Build.VERSION.SDK_INT >= 26) 1000.0 else 1024.0
+fun displayedKiloByte(): Double = if (Build.VERSION.SDK_INT >= 26) 1000.0 else 1024.0
 
 /** How long a trashed document has left before it is deleted for good, in the largest whole unit. */
 sealed class TrashCountdown(val isUrgent: Boolean) {
@@ -216,7 +216,7 @@ fun openFile(context: Context, path: String, mimeType: String, chooserTitle: Str
     // The chooser lists the apps that can open it (asking the package manager first would need <queries> on Android 11+).
     try {
         context.startActivity(Intent.createChooser(view, chooserTitle).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
-    } catch (_: android.content.ActivityNotFoundException) {
+    } catch (_: ActivityNotFoundException) {
         shareFile(context, path, mimeType, chooserTitle)
     }
 }

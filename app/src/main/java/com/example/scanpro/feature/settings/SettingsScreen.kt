@@ -1207,11 +1207,11 @@ private fun PrivacyDialog(onDismiss: () -> Unit) {
 @Composable
 private fun <T> SettingsChoiceRow(options: List<T>, selected: T, onSelect: (T) -> Unit, label: @Composable (T) -> String) {
     if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.15f) {
-        androidx.compose.foundation.layout.Column(
+        Column(
             Modifier.fillMaxWidth().selectableGroup().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)
         ) {
             options.forEach { option ->
-                androidx.compose.foundation.layout.Row(
+                Row(
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
@@ -1220,7 +1220,7 @@ private fun <T> SettingsChoiceRow(options: List<T>, selected: T, onSelect: (T) -
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     androidx.compose.material3.RadioButton(selected = option == selected, onClick = null)
-                    androidx.compose.foundation.layout.Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(12.dp))
                     Text(label(option), style = MaterialTheme.typography.bodyLarge)
                 }
             }
