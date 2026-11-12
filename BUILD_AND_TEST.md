@@ -41,6 +41,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-12, F150 viewfinder above the control panel, uncommitted tree on 83e541e)
+
+- Full `:app:testDebugUnitTest :app:lintDebug` (Gradle 9.9.0): 731 tests, 0 failed, 65 skipped; lint 0 errors, 74 warnings. Debug build installed on the OnePlus and the camera screen checked (screenshot): bottom edge and corners of the outline visible, 0 crashes, 0 ANRs.
+- Not run: release build, camera with captured pages / landscape / other screen shapes.
+
 ## Latest results (2026-11-12, F149 blank-page hint, uncommitted tree on 6de4604)
 
 - Full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (Gradle 9.9.0): 731 tests, 0 failed, 65 skipped (9 new in `BlankPageTest`); lint 0 errors, 74 warnings; debug APK built. Release bundle not rebuilt for this change.

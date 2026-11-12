@@ -142,6 +142,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
@@ -710,6 +711,8 @@ fun CameraScannerScreen(
     var flyingPage by remember { mutableStateOf<Bitmap?>(null) }
     var screenOrigin by remember { mutableStateOf(Offset.Zero) }
     var screenSize by remember { mutableStateOf(IntSize.Zero) }
+    /** Height of the bottom control panel (portrait), so the viewfinder can stay clear of it. */
+    var panelHeightPx by remember { mutableIntStateOf(0) }
     var counterCenter by remember { mutableStateOf<Offset?>(null) }
 
     fun flyIntoCounter(photo: File) {
@@ -1157,30 +1160,65 @@ fun CameraScannerScreen(
                 }
             )
         }
-        AndroidView(
-            factory = { previewView },
-            modifier = Modifier.fillMaxSize(),
-            update = { view ->
-                view.setOnTouchListener { _, event ->
-                    if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) twoFingers[0] = false
-                    if (event.pointerCount > 1) twoFingers[0] = true
-                    pinchDetector.onTouchEvent(event)
-                    if (event.action == android.view.MotionEvent.ACTION_UP && !twoFingers[0]) {
-                        // Report the tap as a click for accessibility services.
-                        view.performClick()
-                        focusPoint = Offset(event.x, event.y)
-                        boundCamera?.let { camera ->
-                            val point = view.meteringPointFactory.createPoint(event.x, event.y)
-                            val action = FocusMeteringAction.Builder(point).build()
-                            camera.cameraControl.startFocusAndMetering(action)
-                        }
-                    }
-                    true
+        // The viewfinder shows the whole 4:3 frame, and the page outline is drawn over that same frame, so both live in
+        // one box that stops above the control panel. Before, the panel was drawn over the bottom of the frame and hid
+        // the bottom edge and corners of the outline. The top of the frame stays where it was and the frame shrinks a
+        // little to end above the panel (FIT_CENTER keeps the whole frame, so nothing is cropped).
+        // Landscape: the panel is on the right, and the box ends where it starts.
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val previewInsets: Pair<androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp> =
+            if (landscape || screenSize.width == 0 || panelHeightPx == 0) 0.dp to 0.dp else {
+                val frameHeight = screenSize.width * 4f / 3f
+                val limit = screenSize.height - panelHeightPx
+                val naturalTop = (screenSize.height - frameHeight) / 2f
+                if (naturalTop + frameHeight <= limit) 0.dp to 0.dp else {
+                    with(density) { naturalTop.coerceAtLeast(0f).toDp() to panelHeightPx.toDp() }
                 }
             }
-        )
+        val previewTop by androidx.compose.animation.core.animateDpAsState(previewInsets.first, tween(180), label = "previewTop")
+        val previewBottom by androidx.compose.animation.core.animateDpAsState(previewInsets.second, tween(180), label = "previewBottom")
+        Box(Modifier.fillMaxSize().padding(top = previewTop, bottom = previewBottom, end = panelClearance)) {
+            AndroidView(
+                factory = { previewView },
+                modifier = Modifier.fillMaxSize(),
+                update = { view ->
+                    view.setOnTouchListener { _, event ->
+                        if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) twoFingers[0] = false
+                        if (event.pointerCount > 1) twoFingers[0] = true
+                        pinchDetector.onTouchEvent(event)
+                        if (event.action == android.view.MotionEvent.ACTION_UP && !twoFingers[0]) {
+                            // Report the tap as a click for accessibility services.
+                            view.performClick()
+                            focusPoint = Offset(event.x, event.y)
+                            boundCamera?.let { camera ->
+                                val point = view.meteringPointFactory.createPoint(event.x, event.y)
+                                val action = FocusMeteringAction.Builder(point).build()
+                                camera.cameraControl.startFocusAndMetering(action)
+                            }
+                        }
+                        true
+                    }
+                }
+            )
 
-        if (showGrid && !reviewing) ThirdsGrid()
+            if (showGrid && !reviewing) ThirdsGrid()
+            if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
+                DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable, accent = scanLine)
+                if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = { shownQuad }, accent = scanLine, rightFirst = bookLayout == 2)
+            }
+            if (scanMode == ScanMode.ID_CARD) {
+                IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
+            }
+            focusPoint?.let { point ->
+                Box(
+                    Modifier
+                        .offset { IntOffset((point.x - 32.dp.toPx()).toInt(), (point.y - 32.dp.toPx()).toInt()) }
+                        .size(64.dp)
+                        .border(2.dp, Color(0xFF22D3EE), RoundedCornerShape(4.dp))
+                )
+            }
+        }
+
         if (!reviewing && maxZoomRatio > 1.05f) {
             // One small pill instead of a column of three buttons: the column sat over the middle of the page being
             // framed. It shows the current zoom and a tap moves to the next stop (1x, 2x, 5x); pinching still works.
@@ -1202,21 +1240,6 @@ fun CameraScannerScreen(
         }
         if (showLevel && !barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
             LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp + panelClearance))
-        }
-        if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
-            DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable, accent = scanLine)
-            if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = { shownQuad }, accent = scanLine, rightFirst = bookLayout == 2)
-        }
-        if (scanMode == ScanMode.ID_CARD) {
-            IdCardFrame(label = stringResource(if (scanBothSides && pages.size == 1) R.string.scan_id_side_back else R.string.scan_id_side_front))
-        }
-        focusPoint?.let { point ->
-            Box(
-                Modifier
-                    .offset { IntOffset((point.x - 32.dp.toPx()).toInt(), (point.y - 32.dp.toPx()).toInt()) }
-                    .size(64.dp)
-                    .border(2.dp, Color(0xFF22D3EE), RoundedCornerShape(4.dp))
-            )
         }
 
         if (barcodeMode && foundCode == null) {
@@ -1501,6 +1524,7 @@ fun CameraScannerScreen(
                         .statusBarsPadding()
                 } else {
                     Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                        .onSizeChanged { panelHeightPx = it.height }
                         .background(CameraPanel, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 }
                 )
