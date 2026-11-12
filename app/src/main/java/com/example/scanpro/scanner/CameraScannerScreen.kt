@@ -145,6 +145,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -1575,6 +1576,43 @@ fun CameraScannerScreen(
             }
         }
 
+        // Floating thumbnail strip in portrait: floats above the bottom panel so it never expands the panel
+        // or shrinks the 4:3 camera viewfinder.
+        if (!landscape && pages.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = with(LocalDensity.current) { panelHeightPx.toDp() } + 8.dp
+                    )
+            ) {
+                CapturedStrip(
+                    pages = pages,
+                    quads = quads,
+                    filters = filters,
+                    quality = quality,
+                    // The same fallback the save uses, so a thumbnail shows the look the page will get.
+                    sessionFilter = sessionFilter ?: defaultFilter ?: scanMode.defaultFilter,
+                    onOpen = { index ->
+                        reviewIndex = index
+                        reviewing = true
+                    },
+                    onDelete = { index ->
+                        val uri = pages.getOrNull(index) ?: return@CapturedStrip
+                        val key = uri.toString()
+                        pendingDelete?.let { deleteInBackground(File(it.uri.path.orEmpty())) }
+                        pendingDelete = PendingDelete(uri, index, quads[key], filters[key], adjustments[key], idComposite == key)
+                        quads.remove(key); filters.remove(key); adjustments.remove(key)
+                        if (idComposite == key) idComposite = null
+                        pages.removeAt(index)
+                        status = resources.getString(R.string.scan_status_page_removed, index + 1)
+                    }
+                )
+            }
+        }
+
         Column(
             modifier = (
                 if (landscape) {
@@ -1592,9 +1630,8 @@ fun CameraScannerScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // The pages so far, newest last; tap one to check it in the review step. Every capture lands here and
-            // Done finishes, so there is no Single/Batch choice to make first.
-            if (pages.isNotEmpty()) {
+            // In landscape, captured pages stay inside the side panel where vertical height is unconstrained.
+            if (landscape && pages.isNotEmpty()) {
                 CapturedStrip(
                     pages = pages,
                     quads = quads,
@@ -2211,7 +2248,15 @@ internal fun CapturedStrip(
     val haptic = LocalHapticFeedback.current
     val deleteHint = stringResource(R.string.scan_strip_delete_hint)
     LaunchedEffect(pages.size) { if (pages.isNotEmpty()) listState.animateScrollToItem(pages.lastIndex) }
-    LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+    LazyRow(
+        state = listState,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.Black.copy(alpha = 0.45f))
+            .padding(2.dp)
+    ) {
         itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "captured_thumb" }) { index, uri ->
             val key = uri.toString()
             val quad = quads[key]
@@ -2249,11 +2294,10 @@ internal fun CapturedStrip(
                 Modifier
                     // A new page fades in at the end and a removed one fades out while its neighbours close the gap (F146).
                     .animateItem()
-                    // 48 dp wide, the smallest touch target Android recommends (it was 44 dp).
                     .size(48.dp, 62.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color.White.copy(alpha = 0.1f))
-                    .border(1.dp, if (flagged) QualityAmber else Color.White.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .border(1.5.dp, if (flagged) QualityAmber else Color.White.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                     .combinedClickable(
                         onClick = { onOpen(index) },
                         onLongClick = {
