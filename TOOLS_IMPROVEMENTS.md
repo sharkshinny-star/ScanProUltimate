@@ -9,14 +9,7 @@ Suggested order: items 1 to 3 together (one change, mostly reuse of the F49 Merg
 
 ## Fixes to existing tools
 
-### 1. Every tool should ask for a protected PDF's password (P2)
-- **Now:** only Merge asks (F49). Split, Extract, Rotate, Organise (`PdfToolsEngine.kt`), Fill form (`PdfFormEngine.kt`)
-  and Make searchable (`PdfOcrEngine.kt`) open files with `PdfToolsEngine.loadPdf`, which stops a password-protected
-  PDF with "This PDF is password-protected. Unlock it first with the Unlock PDF tool."
-- **Do:** give these tools the Merge treatment: an `openPdf(file, password)` call, a "needs password" exception, a
-  question in `PdfToolsViewModel` (memory-only password, cleared when the job ends) and the existing `PasswordDialog`.
-  Also check Compress and PDF to Images (they render with `PdfRenderer`).
-- **Note:** the output is unprotected, as with Merge; the dialog must say so (no silent weakening of security).
+Item 1 (every tool asks for a protected PDF's password) was built as F148, 2026-11-12.
 
 ## New tools (reuse existing code)
 

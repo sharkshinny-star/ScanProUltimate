@@ -27,6 +27,8 @@
     <string name="tools_source_password_prompt_insert">“%1$s” is protected. Enter its password to insert its pages.</string>
     <string name="tools_source_password_note_text">The text file or Word document will have no password.</string>
     <string name="tools_source_password_note_insert">The new PDF will open without a password. To protect it, use Protect PDF afterwards.</string>
+    <string name="tools_source_password_prompt_open">“%1$s” is protected. Enter its password to open it.</string>
+    <string name="tools_source_password_note_open">What this tool saves will open without a password. To protect it, use Protect PDF afterwards.</string>
 
     <string name="tools_organizer_insert_pages">Insert pages from another PDF…</string>
     <string name="tools_insert_title">Insert pages</string>

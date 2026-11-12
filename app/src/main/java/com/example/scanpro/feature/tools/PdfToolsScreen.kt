@@ -465,7 +465,8 @@ fun PdfToolsScreen(
         else openFile(context, file.absolutePath, mimeFor(file), file.name)
     }
 
-    fun startTool(tool: String, uri: Uri) {
+    /** Opens [tool]'s options on [uri], a file that opens without a password (or an unlocked copy of one). */
+    fun openTool(tool: String, uri: Uri) {
         selectedTool = tool
         pendingUri = uri
         when (tool) {
@@ -493,6 +494,21 @@ fun PdfToolsScreen(
             "pdf2excel" -> { pdfTextFormat = TextExportFormat.EXCEL; showPdfToTextDialog = true }
             "pdf2ppt" -> viewModel.pdfToPowerPoint(uri)
         }
+    }
+    fun startTool(tool: String, uri: Uri) {
+        // Tools that open the PDF's pages check for an open password first and ask for it, rather than failing later.
+        if (tool in OPENS_PAGES) {
+            selectedTool = tool
+            viewModel.prepareTool(tool, uri)
+        } else {
+            openTool(tool, uri)
+        }
+    }
+    val toolReady by viewModel.toolReady.collectAsStateWithLifecycle()
+    LaunchedEffect(toolReady) {
+        val target = toolReady ?: return@LaunchedEffect
+        viewModel.clearToolReady()
+        openTool(target.tool, target.uri)
     }
     val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.officeToPdf(uri)
@@ -1760,6 +1776,14 @@ private fun ProcessingOverlay(
         }
     }
 }
+
+/**
+ * Tools that open one PDF's pages and so need it unlocked: a protected file is asked about once and an unlocked working
+ * copy is used. Sign and PDF to Word/Excel/text ask for themselves; Unlock, Protect and Repair deal with protection.
+ */
+private val OPENS_PAGES = setOf(
+    "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark", "pdf2ppt"
+)
 
 @Composable
 private fun PasswordDialog(

@@ -83,6 +83,12 @@ data class MergePasswordRequest(
     val attempt: Int,
 )
 
+/** A single-file tool ready to open [uri]: the screen shows that tool's options. */
+data class ToolTarget(val tool: String, val uri: Uri)
+
+/** Where unlocked working copies of protected PDFs live while a tool uses them; swept at start-up. */
+const val WORKING_COPY_DIR = "tool_input"
+
 /**
  * Runs the PDF tools outside the screen, so rotating the device, resizing a split-screen window or unfolding a
  * foldable never kills a running job or loses its result, and Cancel really stops the work.
@@ -109,6 +115,8 @@ class PdfToolsViewModel @Inject constructor(
     init {
         // A recent file may have been deleted, or its access revoked, since it was opened.
         viewModelScope.launch(Dispatchers.IO) { recents.prune() }
+        // An unlocked working copy left behind when the app was closed while a tool was open.
+        viewModelScope.launch(Dispatchers.IO) { File(context.cacheDir, WORKING_COPY_DIR).deleteRecursively() }
     }
 
     fun rememberPdfs(uris: List<Uri>) {
@@ -217,6 +225,8 @@ class PdfToolsViewModel @Inject constructor(
                     withContext(Dispatchers.IO) { work()?.let { it.copy(outputFile = results.keep(it.outputFile)) } }
                 }
                 _result.value = result
+                // The unlocked copy a tool read from has served its purpose once the result is kept.
+                if (result != null) releaseWorkingCopy()
                 if (!endedWithQuestion) notifications.taskFinished(result?.message)
             } catch (cancelled: CancellationException) {
                 _message.value = context.getString(R.string.msg_tools_operation_cancelled)
@@ -445,7 +455,10 @@ class PdfToolsViewModel @Inject constructor(
         _form.update { session -> session?.copy(values = session.values + (name to value)) }
     }
 
-    fun closeForm() { _form.value = null }
+    fun closeForm() {
+        _form.value = null
+        releaseWorkingCopy()
+    }
 
     private val _formWithoutFields = MutableStateFlow<Uri?>(null)
     /** A PDF picked for Fill that has no form fields; the screen offers to type on it instead. */
@@ -486,11 +499,15 @@ class PdfToolsViewModel @Inject constructor(
         )
         val output = outcome.outputFile
         if (output == null) {
-            _message.value = if (outcome.alreadyHadText == outcome.pageCount) {
+            val text = if (outcome.alreadyHadText == outcome.pageCount) {
                 context.getString(R.string.msg_tools_already_searchable)
             } else {
                 context.getString(R.string.msg_tools_no_readable_text)
             }
+            _message.value = text
+            // Say what happened, not a bare "Done", to someone who switched apps during a long OCR run.
+            endedWithQuestion = true
+            notifications.taskFinished(text)
             null
         } else {
             val made = context.resources.getQuantityString(R.plurals.msg_tools_made_pages_searchable, outcome.madeSearchable, outcome.madeSearchable)
@@ -514,15 +531,13 @@ class PdfToolsViewModel @Inject constructor(
     private var sourcePasswordRetry: ((String) -> Unit)? = null
     private var sourcePasswordQuestions = 0
 
-    private suspend fun askSourcePassword(locked: PdfPasswordNeededException, forInsert: Boolean, retry: (String) -> Unit) {
+    private suspend fun askSourcePassword(locked: PdfPasswordNeededException, purpose: PasswordPurpose, retry: (String) -> Unit) {
         val name = withContext(Dispatchers.IO) { displayName(locked.uri) }
         sourcePasswordRetry = retry
-        _sourcePassword.value = SourcePasswordRequest(name, locked.wrongPassword, ++sourcePasswordQuestions, forInsert)
+        _sourcePassword.value = SourcePasswordRequest(name, locked.wrongPassword, ++sourcePasswordQuestions, purpose)
         endedWithQuestion = true
         // Instead of "Done", for a user who switched to another app while the file was read.
-        notifications.taskFailed(
-            context.getString(if (forInsert) R.string.tools_source_password_prompt_insert else R.string.tools_source_password_prompt_text, name)
-        )
+        notifications.taskFailed(context.getString(purpose.prompt, name))
     }
 
     /** The password for the file [sourcePassword] asked about: the tool runs again with it. It is kept in memory only. */
@@ -542,6 +557,91 @@ class PdfToolsViewModel @Inject constructor(
     fun cancelSourcePassword() {
         _sourcePassword.value = null
         sourcePasswordRetry = null
+    }
+
+    private val _toolReady = MutableStateFlow<ToolTarget?>(null)
+    /** Set when a single-file tool may open its options: on the picked file, or on an unlocked copy of it. */
+    val toolReady: StateFlow<ToolTarget?> = _toolReady.asStateFlow()
+    fun clearToolReady() { _toolReady.value = null }
+
+    /**
+     * The decrypted copy of a protected PDF that the current tool works on, in the app's private cache. It is deleted
+     * when the tool's result is kept, when another file is picked, when the form is closed, when the Tools screen goes
+     * away, and at the next start if the app was closed in between. The password itself is never kept.
+     */
+    private var workingCopy: File? = null
+
+    private fun workingCopyDir() = File(context.cacheDir, WORKING_COPY_DIR)
+
+    private fun releaseWorkingCopy() {
+        workingCopy?.delete()
+        workingCopy = null
+    }
+
+    override fun onCleared() {
+        releaseWorkingCopy()
+        super.onCleared()
+    }
+
+    /**
+     * First step of every tool that reads one PDF's pages. A file that opens freely goes straight to its options; one
+     * that needs a password is asked about once, here, so Compress, Split, Organise, Fill form, Watermark and the rest
+     * work on protected files instead of each failing with "unlock it first".
+     */
+    fun prepareTool(tool: String, uri: Uri) {
+        if (job?.isActive == true) {
+            _message.value = context.getString(R.string.msg_tools_still_working)
+            return
+        }
+        // "Try again" after a failure runs the tool on the working copy itself: keep it then.
+        if (workingCopy?.let(Uri::fromFile) != uri) releaseWorkingCopy()
+        cancelSourcePassword()
+        _failure.value = null
+        val label = context.getString(R.string.msg_tools_checking_protection)
+        job = viewModelScope.launch {
+            // Most files are answered in milliseconds: the progress card only appears for a slow one.
+            val reveal = launch { kotlinx.coroutines.delay(400); _progress.value = ToolProgress(title = label) }
+            try {
+                if (PdfToolsEngine.needsOpenPassword(context, uri)) askToolPassword(tool, uri, wrongPassword = false)
+                else _toolReady.value = ToolTarget(tool, uri)
+            } finally {
+                reveal.cancel()
+                _progress.value = null
+            }
+        }
+    }
+
+    private suspend fun askToolPassword(tool: String, uri: Uri, wrongPassword: Boolean) =
+        askSourcePassword(PdfPasswordNeededException(uri, wrongPassword), PasswordPurpose.OPEN) { typed -> unlockForTool(tool, uri, typed) }
+
+    /** Writes an unlocked working copy of [uri] with [password] and opens [tool] on it; a wrong password asks again. */
+    private fun unlockForTool(tool: String, uri: Uri, password: String) {
+        if (job?.isActive == true) {
+            _message.value = context.getString(R.string.msg_tools_still_working)
+            return
+        }
+        _progress.value = ToolProgress(title = context.getString(R.string.msg_tools_unlocking))
+        job = viewModelScope.launch {
+            try {
+                val copy = withContext(Dispatchers.IO) {
+                    val dir = workingCopyDir().apply { mkdirs() }
+                    // Named after the original, so the tool's results are too ("Invoice compressed.pdf").
+                    PdfToolsEngine.uniqueFile(dir, PdfToolsEngine.sourceBaseName(context, uri) + ".pdf")
+                }
+                if (PdfToolsEngine.decryptCopy(context, uri, password, copy)) {
+                    workingCopy = copy
+                    _toolReady.value = ToolTarget(tool, Uri.fromFile(copy))
+                } else {
+                    askToolPassword(tool, uri, wrongPassword = true)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                _failure.value = error.localizedMessage ?: context.getString(R.string.msg_tools_unlock_failed)
+            } finally {
+                _progress.value = null
+            }
+        }
     }
 
     fun pdfToText(uri: Uri, format: TextExportFormat, script: OcrScript, password: String? = null) {
@@ -570,7 +670,7 @@ class PdfToolsViewModel @Inject constructor(
                     message = parts.joinToString(" ")
                 )
             } catch (locked: PdfPasswordNeededException) {
-                askSourcePassword(locked, forInsert = false) { typed -> pdfToText(uri, format, script, typed) }
+                askSourcePassword(locked, PasswordPurpose.TEXT) { typed -> pdfToText(uri, format, script, typed) }
                 null
             }
         }
@@ -582,7 +682,7 @@ class PdfToolsViewModel @Inject constructor(
             try {
                 InsertPagesEngine.insertPages(context, baseUri, specs, insertion, named(baseUri, "inserted"), password, ::report)
             } catch (locked: PdfPasswordNeededException) {
-                askSourcePassword(locked, forInsert = true) { typed -> insertPages(baseUri, specs, insertion, typed) }
+                askSourcePassword(locked, PasswordPurpose.INSERT) { typed -> insertPages(baseUri, specs, insertion, typed) }
                 null
             }
         }
