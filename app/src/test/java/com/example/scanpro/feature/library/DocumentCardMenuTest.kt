@@ -28,14 +28,15 @@ class DocumentCardMenuTest {
     private val app = ApplicationProvider.getApplicationContext<Application>()
     private val doc = DocumentSummary(
         id = "d1", title = "Lease agreement", createdAt = 1L, updatedAt = 1L, pdfPath = "", pageCount = 2,
-        coverPath = null, sizeBytes = 1000L, isFavorite = true
+        coverPath = null, sizeBytes = 1000L, isFavorite = true,
     )
     private val calls = mutableListOf<String>()
     private val menu = DocumentCardMenu(
+        onRename = { calls += "rename" },
         onShare = { calls += "share" },
         onMoveToFolder = { calls += "move" },
         onToggleFavourite = { calls += "favourite" },
-        onMoveToRecycleBin = { calls += "trash" }
+        onMoveToRecycleBin = { calls += "trash" },
     )
 
     private fun pick(grid: Boolean, label: Int) {
@@ -65,6 +66,12 @@ class DocumentCardMenuTest {
     fun `grid card move to recycle bin`() {
         pick(grid = true, R.string.doc_move_to_recycle_bin)
         assertEquals(listOf("trash"), calls)
+    }
+
+    @Test
+    fun `grid card rename`() {
+        pick(grid = true, R.string.common_rename)
+        assertEquals(listOf("rename"), calls)
     }
 
     @Test

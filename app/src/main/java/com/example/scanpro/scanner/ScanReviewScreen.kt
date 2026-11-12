@@ -68,7 +68,7 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Rotate90DegreesCw
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
@@ -406,7 +406,7 @@ fun ScanReviewScreen(
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
-        // Top bar: Back · title · Undo · Retake · Delete · Save PDF · overflow (Adobe Scan style).
+        // Top bar: Back · title · Undo · Retake · Delete · overflow; Save is the large button at the bottom.
         var menu by remember { mutableStateOf(false) }
         Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(enabled = !blocked, onClick = onBack) {
@@ -421,26 +421,15 @@ fun ScanReviewScreen(
             }
             if (onRetake != null) {
                 IconButton(enabled = !blocked, onClick = onRetake) {
-                    Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.scan_review_retake_page))
+                    // A camera, not a circular arrow: the arrow read as Rotate, which is the round button by Save.
+                    Icon(Icons.Default.CameraAlt, contentDescription = stringResource(R.string.scan_review_retake_page))
                 }
             }
             IconButton(enabled = !blocked, onClick = { confirmDelete = true }) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.scan_review_delete_page))
             }
-            Button(
-                enabled = !blocked,
-                onClick = onDone,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                modifier = Modifier.padding(end = 4.dp)
-            ) {
-                if (processing) {
-                    ProcessingDots(MaterialTheme.colorScheme.onPrimary, dotSize = 5.dp)
-                } else {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.common_save), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                }
-            }
+            // No Save here: the large Save button at the bottom does the same, and two primary buttons for one action
+            // made the screen read as if they did different things.
             Box {
                 IconButton(enabled = !blocked, onClick = { menu = true }) {
                     Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.scan_review_more))
@@ -519,6 +508,7 @@ fun ScanReviewScreen(
         var swipe by remember { mutableFloatStateOf(0f) }
         // Pages follow the reading direction: swiping towards the end of the row (left in LTR, right in RTL) goes forward.
         val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        val haptic = LocalHapticFeedback.current
         val stage: @Composable (Modifier) -> Unit = { stageModifier -> Column(stageModifier) {
         // A page that came out blurred, glary or dark says so, with a one-tap retake (Genius Scan, Scanbot). Above the
         // page rather than over it, so it never covers a corner handle.
@@ -544,8 +534,13 @@ fun ScanReviewScreen(
                         onDragEnd = {
                             if (!blocked) {
                                 val travel = if (isRtl) -swipe else swipe
-                                if (travel < -120f && current < pages.lastIndex) onIndexChange(current + 1)
-                                else if (travel > 120f && current > 0) onIndexChange(current - 1)
+                                if (travel < -120f && current < pages.lastIndex) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onIndexChange(current + 1)
+                                } else if (travel > 120f && current > 0) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onIndexChange(current - 1)
+                                }
                             }
                             swipe = 0f
                         },
@@ -577,7 +572,14 @@ fun ScanReviewScreen(
                         bitmap = result.asImageBitmap(),
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                if (panel != PANEL_CROP) {
+                                    translationX = swipe
+                                    alpha = (1f - (kotlin.math.abs(swipe) / 500f)).coerceIn(0.5f, 1f)
+                                }
+                            }
                     )
                 } else {
                     FileLoadingAnimation()

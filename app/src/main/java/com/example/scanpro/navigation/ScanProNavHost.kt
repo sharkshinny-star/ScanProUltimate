@@ -113,7 +113,9 @@ fun ScanProNavHost(
             SettingsRoute(
                 snackbarHostState = snackbarHostState,
                 onAppLockChange = onAppLockChange,
-                bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.SETTINGS, onTab = onTab, onScan = onScan) }
+                bottomBar = { ScanProBottomBar(selectedRoute = ScanProDestinations.SETTINGS, onTab = onTab, onScan = onScan) },
+                onOpenFiles = { onTab(ScanProDestinations.FILES) },
+                onOpenRecycleBin = { navController.navigate(ScanProDestinations.TRASH) }
             )
         }
         composable(ScanProDestinations.TOOLS) {

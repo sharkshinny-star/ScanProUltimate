@@ -11,6 +11,13 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import com.example.scanpro.core.designsystem.ProcessingDots
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -966,11 +973,42 @@ internal fun DocumentDetailScreen(
                         }
                     }
                     InsightCard(stringResource(R.string.doc_ask_about_scan)) {
-                        val ask = {
-                            val question = assistantQuestion
+                        var asking by remember { mutableStateOf(false) }
+                        val ask: (String) -> Unit = { query ->
                             val text = document.ocrText
-                            if (question.isNotBlank() && text.isNotBlank()) {
-                                scope.launch { assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(question, text) } }
+                            if (query.isNotBlank() && text.isNotBlank()) {
+                                asking = true
+                                assistantQuestion = query
+                                scope.launch {
+                                    assistantAnswer = withContext(Dispatchers.Default) { DocumentIntelligenceEngine.answer(query, text) }
+                                    asking = false
+                                }
+                            }
+                        }
+                        if (hasText) {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                listOf(
+                                    "Summary" to "summary of this document",
+                                    "Total & due" to "what is the total amount due",
+                                    "Dates" to "what are the key dates",
+                                    "Action items" to "what are the action items"
+                                ).forEach { (label, q) ->
+                                    AssistChip(
+                                        onClick = { ask(q) },
+                                        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.AutoFixHigh,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
                         OutlinedTextField(
@@ -979,22 +1017,40 @@ internal fun DocumentDetailScreen(
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = { Text(stringResource(R.string.doc_ask_placeholder)) },
                             trailingIcon = {
-                                IconButton(onClick = ask, enabled = assistantQuestion.isNotBlank() && hasText) {
+                                IconButton(onClick = { ask(assistantQuestion) }, enabled = assistantQuestion.isNotBlank() && hasText && !asking) {
                                     Icon(Icons.Default.Search, contentDescription = stringResource(R.string.doc_find_answer))
                                 }
                             },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { ask() }),
+                            keyboardActions = KeyboardActions(onSearch = { ask(assistantQuestion) }),
                             maxLines = 3
                         )
-                        // Answers are passages of the recognised text, so they read in the same mono as the text tab.
-                        SelectionContainer {
+                        if (asking) {
+                            Box(Modifier.fillMaxWidth().padding(top = 12.dp), contentAlignment = Alignment.Center) {
+                                ProcessingDots(MaterialTheme.colorScheme.primary, dotSize = 6.dp)
+                            }
+                        }
+                        AnimatedVisibility(
+                            visible = assistantAnswer.isNotBlank() && !asking,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            SelectionContainer {
+                                Text(
+                                    assistantAnswer,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    lineHeight = 19.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(top = 10.dp)
+                                )
+                            }
+                        }
+                        if (assistantAnswer.isBlank() && !asking) {
                             Text(
-                                assistantAnswer.ifBlank { stringResource(R.string.doc_ask_supporting) },
+                                stringResource(R.string.doc_ask_supporting),
                                 style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                lineHeight = 19.sp,
-                                color = if (assistantAnswer.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 10.dp)
                             )
                         }
@@ -1339,7 +1395,8 @@ internal fun DocumentDetailScreen(
             initial = currentPage.crop,
             onDismiss = { cropOpen = false },
             onConfirm = {
-                onCrop(currentPage.id, it)
+                // Done with the outline unchanged is not an edit: no re-render, no new "modified" time, nothing to undo.
+                if (it != currentPage.crop) onCrop(currentPage.id, it)
                 cropOpen = false
                 // Done finishes the job: back to the document, not to the page preview it may have been opened from
                 // (that dark screen looked like the editor had not closed). Back from the editor still returns there.

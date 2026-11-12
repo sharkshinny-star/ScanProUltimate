@@ -2,9 +2,11 @@ package com.example.scanpro.navigation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -56,13 +59,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
+import com.example.scanpro.core.designsystem.FitText
 import com.example.scanpro.core.designsystem.ScanProTheme
+import com.example.scanpro.core.designsystem.cappedFontScale
+import com.example.scanpro.core.designsystem.rememberMotionEnabled
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.scanpro.core.designsystem.FitText
-import com.example.scanpro.core.designsystem.cappedFontScale
 
 /** Windows at least this wide (tablets, unfolded foldables, split-screen on a large display) get a side rail. */
 const val WIDE_WINDOW_DP = 600
@@ -137,9 +141,16 @@ fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit, onScan: () 
 @Composable
 private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    val motion = rememberMotionEnabled()
     val tint by animateColorAsState(if (selected) scheme.onSecondaryContainer else scheme.onSurfaceVariant, label = "tint")
     val pill by animateColorAsState(if (selected) scheme.secondaryContainer else Color.Transparent, label = "pill")
     val pillWidth by animateDpAsState(if (selected) 56.dp else 32.dp, spring(stiffness = 600f), label = "pillWidth")
+    // Subtle bounce on tab selection icon: graphicsLayer ensures draw-phase only execution (zero recompositions).
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected && motion) 1.10f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 500f),
+        label = "tabIconScale"
+    )
     val interaction = remember { MutableInteractionSource() }
     val label = stringResource(tab.label)
     Column(
@@ -163,7 +174,17 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
                 .background(pill, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+            Icon(
+                if (selected) tab.selectedIcon else tab.icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier
+                    .size(24.dp)
+                    .graphicsLayer {
+                        scaleX = iconScale
+                        scaleY = iconScale
+                    }
+            )
         }
         Spacer(Modifier.height(4.dp))
         // The bar has a fixed height and a quarter of the width: at a 150 % font size "Settings" lost its last letter
@@ -183,11 +204,22 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
 fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = ScanButtonSize) {
     val brand = ScanProTheme.colors
     val interaction = remember { MutableInteractionSource() }
+    val isPressed by interaction.collectIsPressedAsState()
+    val motion = rememberMotionEnabled()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed && motion) 0.92f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 700f),
+        label = "scanButtonScale"
+    )
     val scanLabel = stringResource(R.string.lib_scan)
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     Box(
         modifier
             .size(size)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .shadow(10.dp, CircleShape, ambientColor = brand.gradientStart.copy(alpha = 0.5f), spotColor = brand.gradientEnd.copy(alpha = 0.6f))
             .background(Brush.linearGradient(listOf(brand.gradientStart, brand.gradientEnd)), CircleShape)
             .clip(CircleShape)

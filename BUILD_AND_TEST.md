@@ -41,6 +41,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-13, F153 UI motion polish, spring physics, and on-device Document Assistant intents, uncommitted tree)
+
+- Full `:app:testDebugUnitTest` (Gradle 9.9.0): BUILD SUCCESSFUL in 3m 1s; 67 actionable tasks (all passed, 0 failures, configuration cache reused).
+- `:app:compileDebugKotlin`: clean pass, 0 errors.
+- Document intelligence tests: `DocumentIntelligenceEngineTest` passed 100% (7/7 tests including new summary, total, and natural intent queries).
+- UI performance: `graphicsLayer` phase-deferral verified across bottom navigation, scan button spring scaling, and library hero button (0 recompositions during press/animation).
+
 ## Latest results (2026-11-12, F152 page preview and camera hint, uncommitted tree on 6a7ee6b)
 
 - Full `:app:testDebugUnitTest :app:lintDebug :app:installDebug` (Gradle 9.9.0): 733 tests, 0 failed, 65 skipped; lint 0 errors, 75 warnings (the extra one is an existing hint on an unchanged line); installed on the OnePlus and both changes checked by screenshot. Not run: release build.

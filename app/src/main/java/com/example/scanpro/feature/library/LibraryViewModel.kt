@@ -207,6 +207,11 @@ class LibraryViewModel @Inject constructor(
         else context.getString(R.string.lib_msg_moved_to_folder, folder.trim())
     ) { ids.forEach { repository.setFolder(it, folder) } }
 
+    /** Renames one document from its card's ⋮ menu: the same rules as inside the document (a clash is allowed and said). */
+    fun renameDocument(id: String, title: String) = operations.run(null, null) {
+        if (repository.rename(id, title)) operations.showMessage(context.getString(R.string.msg_renamed_duplicate_name))
+    }
+
     /** Stars or unstars the selected documents. Queued if another job is running. */
     fun setFavorite(ids: Set<String>, favorite: Boolean) = operations.run(
         null,

@@ -147,6 +147,9 @@ fun SettingsRoute(
     snackbarHostState: SnackbarHostState,
     onAppLockChange: (Boolean) -> Unit,
     bottomBar: @Composable () -> Unit,
+    /** The library summary's tiles open the documents and the recycle bin. */
+    onOpenFiles: () -> Unit = {},
+    onOpenRecycleBin: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val pdfQuality by viewModel.pdfQuality.collectAsStateWithLifecycle()
@@ -232,7 +235,9 @@ fun SettingsRoute(
         onFreeUpSpace = viewModel::freeUpSpace,
         onDismissFreeSpace = viewModel::dismissFreeSpace,
         onRecoverLibrary = viewModel::recoverLibrary,
-        bottomBar = bottomBar
+        bottomBar = bottomBar,
+        onOpenFiles = onOpenFiles,
+        onOpenRecycleBin = onOpenRecycleBin
     )
 }
 
@@ -280,7 +285,9 @@ fun SettingsScreen(
     freeingUp: Boolean = false,
     onFreeUpSpace: () -> Unit = {},
     onDismissFreeSpace: () -> Unit = {},
-    bottomBar: @Composable () -> Unit = {}
+    bottomBar: @Composable () -> Unit = {},
+    onOpenFiles: () -> Unit = {},
+    onOpenRecycleBin: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var languageDialogOpen by rememberSaveable { mutableStateOf(false) }
@@ -442,7 +449,7 @@ fun SettingsScreen(
                             }
                         }
                     } else {
-                        StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace)
+                        StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace, onOpenFiles, onOpenRecycleBin)
                         SettingsPagesCard(onOpen = { page = it })
                         AboutFooter()
                     }
@@ -839,7 +846,9 @@ private fun StorageCard(
     busy: Boolean = false,
     freeingUp: Boolean = false,
     onFreeUpSpace: () -> Unit = {},
-    onDismissFreeSpace: () -> Unit = {}
+    onDismissFreeSpace: () -> Unit = {},
+    onOpenFiles: () -> Unit = {},
+    onOpenRecycleBin: () -> Unit = {}
 ) {
     Surface(
         shape = MaterialTheme.shapes.large,
@@ -857,9 +866,10 @@ private fun StorageCard(
             }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Stat(Modifier.weight(1f), documentCount.toString(), pluralStringResource(R.plurals.settings_stat_documents, documentCount))
+                // The documents and recycle-bin tiles look like buttons, so they open what they count.
+                Stat(Modifier.weight(1f), documentCount.toString(), pluralStringResource(R.plurals.settings_stat_documents, documentCount), onOpenFiles)
                 // No bin icon: in a third of a 360dp row it left room for "in" and nothing else.
-                Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin))
+                Stat(Modifier.weight(1f), "$trashCount", stringResource(R.string.settings_stat_in_recycle_bin), onOpenRecycleBin)
                 Stat(Modifier.weight(1f), formatBytes(LocalContext.current, storageBytes), stringResource(R.string.settings_stat_used))
             }
             // Scans from older versions were saved as lossless PDFs, many times larger than they need to be.
@@ -904,8 +914,10 @@ private fun StorageCard(
 }
 
 @Composable
-private fun Stat(modifier: Modifier, value: String, label: String) {
-    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLowest, modifier = modifier) {
+private fun Stat(modifier: Modifier, value: String, label: String, onClick: (() -> Unit)? = null) {
+    val shape = MaterialTheme.shapes.medium
+    val color = MaterialTheme.colorScheme.surfaceContainerLowest
+    val content: @Composable () -> Unit = {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
             // Three tiles share a 360dp phone's width, so "46.1 MB" doesn't fit at full size. One line with
             // maxLines = 1 dropped the unit after the line break; shrinking the text keeps it whole.
@@ -924,6 +936,8 @@ private fun Stat(modifier: Modifier, value: String, label: String) {
             Text(label, style = MaterialTheme.typography.labelSmall.cappedFontScale(1.2f), color = MaterialTheme.colorScheme.onSurfaceVariant, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
+    if (onClick != null) Surface(onClick = onClick, shape = shape, color = color, modifier = modifier, content = content)
+    else Surface(shape = shape, color = color, modifier = modifier, content = content)
 }
 
 /**

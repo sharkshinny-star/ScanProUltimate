@@ -83,6 +83,19 @@ object DocumentIntelligenceEngine {
         val qTokens = tokens(question).filter { it.length >= 3 && it !in STOPWORDS }.toSet()
         if (qTokens.isEmpty() || text.isBlank()) return AppStrings.get(R.string.assistant_ask_specific)
 
+        // Intent shortcuts for natural on-device assistant queries
+        if (qTokens.any { it in setOf("summary", "summarise", "overview") }) {
+            val insights = analyze(raw)
+            if (insights.summary.isNotBlank()) return insights.summary
+        }
+        if (qTokens.any { it in setOf("total", "amount", "cost", "price", "due", "balance") }) {
+            total(text)?.let { return "Total: $it" }
+        }
+        if (qTokens.any { it in setOf("action", "actions", "todo", "task", "tasks") }) {
+            val actions = extractActionItems(text)
+            if (actions.isNotEmpty()) return actions.joinToString("\n• ", prefix = "• ")
+        }
+
         val chunks = text.split(Regex("\\n{2,}|(?<=[.!?])\\s+"))
             .map(String::trim)
             .filter { it.length >= 12 }

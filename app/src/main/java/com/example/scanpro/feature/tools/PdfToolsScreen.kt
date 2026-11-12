@@ -1230,7 +1230,9 @@ private fun CompressPdfDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        if (originalSize > 0) {
+                        // The guess is a fixed share of the size, which only holds for PDFs made of photos. For a small file the
+                        // note below already says it may not shrink, so no "~196 B" promise next to it.
+                        if (originalSize >= SMALL_PDF_BYTES) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Surface(
                                 shape = RoundedCornerShape(8.dp),

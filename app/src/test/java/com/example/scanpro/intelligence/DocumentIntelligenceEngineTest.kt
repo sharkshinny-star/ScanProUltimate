@@ -42,6 +42,16 @@ class DocumentIntelligenceEngineTest {
     }
 
     @Test
+    fun `question answering resolves summary and total queries`() {
+        val text = "TAX INVOICE\nNorthwind Traders Pvt Ltd\nGSTIN 29ABCDE1234F1Z5\nSubtotal INR 900\nAmount due INR 1,062"
+        val summaryAnswer = DocumentIntelligenceEngine.answer("Give me a summary", text)
+        assertTrue(summaryAnswer.contains("Northwind Traders") && summaryAnswer.contains("1,062"))
+
+        val totalAnswer = DocumentIntelligenceEngine.answer("What is the total amount due?", text)
+        assertEquals("Total: INR 1,062", totalAnswer)
+    }
+
+    @Test
     fun receiptSummaryNamesTheShopTotalAndDate() {
         val text = "Receipt\nBlue Bottle Coffee\n12 Market Street\nDate: 03/10/2026\nLatte 4.50\nSubtotal 7.75\nTax 0.62\nTotal $8.37\nCash 10.00\nChange 1.63\nThank you"
         assertEquals("Receipt from Blue Bottle Coffee · Total $8.37 · 03/10/2026", DocumentIntelligenceEngine.analyze(text).summary)

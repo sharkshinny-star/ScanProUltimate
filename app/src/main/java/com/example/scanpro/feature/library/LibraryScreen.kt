@@ -8,6 +8,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -249,6 +250,7 @@ fun LibraryRoute(
             viewModel.combinePdfs(ids) { file -> com.example.scanpro.core.ui.shareFile(context, file.absolutePath, "application/pdf", file.name) }
         },
         onRenameFolder = viewModel::renameFolder,
+        onRenameDocument = viewModel::renameDocument,
         onTab = onTab,
         onQuickScan = onQuickScan,
         onOpenTools = onOpenTools,
@@ -315,6 +317,7 @@ internal fun LibraryScreen(
     /** Shares the selection as one combined PDF, in selection order. */
     onShareCombined: (List<String>) -> Unit = {},
     onRenameFolder: (String, String) -> Unit,
+    onRenameDocument: (id: String, title: String) -> Unit = { _, _ -> },
     onTab: (String) -> Unit,
     onQuickScan: (String) -> Unit = {},
     onOpenTools: () -> Unit = {},
@@ -334,7 +337,10 @@ internal fun LibraryScreen(
     var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
     // The document whose card ⋮ asked to move it; null when no such dialog is open.
     var movingDocument by rememberSaveable { mutableStateOf<String?>(null) }
+    // The document whose card ⋮ asked to rename it (id to current title); null when the dialog is closed.
+    var renamingDocument by rememberSaveable { mutableStateOf<Pair<String, String>?>(null) }
     fun cardMenu(doc: DocumentSummary) = DocumentCardMenu(
+        onRename = { renamingDocument = doc.id to doc.title },
         onShare = { onShareSelected(setOf(doc.id)) },
         onMoveToFolder = { movingDocument = doc.id },
         onToggleFavourite = { onSetFavorite(setOf(doc.id), !doc.isFavorite) },
@@ -781,6 +787,19 @@ internal fun LibraryScreen(
                 onSetFolderLocked(name, true)
             }
         )
+    }
+    renamingDocument?.let { (id, title) ->
+        TextInputDialog(
+            title = stringResource(R.string.doc_rename_document),
+            initial = title,
+            label = stringResource(R.string.doc_name),
+            confirmLabel = stringResource(R.string.common_rename),
+            onDismiss = { renamingDocument = null },
+        ) { name ->
+            val clean = name.trim().take(120)
+            if (clean.isNotEmpty() && clean != title) onRenameDocument(id, clean)
+            renamingDocument = null
+        }
     }
     renameFolderSource?.let { source ->
         TextInputDialog(
@@ -1342,10 +1361,22 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                 color = brand.onGradientMuted
             )
             Spacer(Modifier.height(10.dp))
+            val btnInteraction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+            val btnPressed by btnInteraction.collectIsPressedAsState()
+            val btnScale by androidx.compose.animation.core.animateFloatAsState(
+                targetValue = if (btnPressed && motion) 0.94f else 1.0f,
+                animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 600f),
+                label = "heroBtnScale"
+            )
             Button(
                 onClick = onStartScan,
                 enabled = enabled,
+                interactionSource = btnInteraction,
                 shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.graphicsLayer {
+                    scaleX = btnScale
+                    scaleY = btnScale
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
                     contentColor = brand.gradientStart,

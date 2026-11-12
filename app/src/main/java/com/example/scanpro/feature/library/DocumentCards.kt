@@ -245,6 +245,7 @@ internal fun highlightedSnippet(snippet: String, highlight: Color): AnnotatedStr
  * (Adobe Scan, Lens and CamScanner put the same few actions on every file).
  */
 internal class DocumentCardMenu(
+    val onRename: () -> Unit,
     val onShare: () -> Unit,
     val onMoveToFolder: () -> Unit,
     val onToggleFavourite: () -> Unit,
@@ -263,6 +264,8 @@ private fun DocumentCardMenuButton(document: DocumentSummary, menu: DocumentCard
             )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            // Rename first: it was only inside the document's own menu, while other scanners offer it on the card.
+            DropdownMenuItem(text = { Text(stringResource(R.string.common_rename)) }, onClick = { open = false; menu.onRename() })
             DropdownMenuItem(text = { Text(stringResource(R.string.doc_share_pdf)) }, onClick = { open = false; menu.onShare() })
             DropdownMenuItem(text = { Text(stringResource(R.string.lib_menu_move_to_folder)) }, onClick = { open = false; menu.onMoveToFolder() })
             DropdownMenuItem(
@@ -321,14 +324,17 @@ internal fun DocumentGridCard(
             SelectionBadge(selected, Modifier.align(Alignment.TopEnd).padding(6.dp))
         }
         Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.Top) {
+            // Two lines: at half the screen width one line showed only ~10 characters ("Android St…", "Scan 2026-…"),
+            // so scans could not be told apart by name. Two lines are always reserved so the cards in a row line up.
             Text(
                 document.title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
+                maxLines = 2,
+                minLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).padding(top = 12.dp)
             )
             // 48 dp: the smallest touch target Android recommends (it was 32 dp).
             if (menu != null) DocumentCardMenuButton(document, menu, Modifier.size(48.dp))

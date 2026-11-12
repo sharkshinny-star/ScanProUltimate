@@ -169,6 +169,15 @@ private val TOOL_KEYWORDS = mapOf(
 
 private class SearchHit(val tool: PdfToolCard, val sectionTitle: Int)
 
+private val WORD_BREAK = Regex("[^\\p{L}\\p{M}\\p{N}]+")
+
+/**
+ * Whether a typed [word] starts one of the words of [text]. Matching anywhere inside a word made "word" find
+ * Protect and Unlock ("pass**word**"); a word start still finds "smaller" from "smal" and "password" from "pass".
+ */
+internal fun toolSearchMatches(word: String, text: String): Boolean =
+    text.split(WORD_BREAK).any { it.startsWith(word) }
+
 /** Every tool whose name, category or keywords contain every word typed; best (name-first) matches first. */
 @Composable
 private fun rememberSearchHits(query: String): List<SearchHit> {
@@ -182,8 +191,8 @@ private fun rememberSearchHits(query: String): List<SearchHit> {
             val name = resources.getString(hit.tool.title).lowercase() + " " + resources.getString(hit.tool.label).lowercase()
             val rest = resources.getString(hit.sectionTitle).lowercase() + " " + TOOL_KEYWORDS[hit.tool.id].orEmpty()
             when {
-                words.all { it in name } -> 0 to hit
-                words.all { it in name || it in rest } -> 1 to hit
+                words.all { toolSearchMatches(it, name) } -> 0 to hit
+                words.all { toolSearchMatches(it, name) || toolSearchMatches(it, rest) } -> 1 to hit
                 else -> null
             }
         }.sortedBy { it.first }.map { it.second }

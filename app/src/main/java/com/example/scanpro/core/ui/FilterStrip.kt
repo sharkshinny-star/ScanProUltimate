@@ -75,7 +75,18 @@ fun FilterStrip(
     val text = if (onDark) Color.White else MaterialTheme.colorScheme.onSurface
     val frame = if (onDark) Color.White.copy(alpha = 0.22f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
 
+    // The chosen filter must be in view: with six filters the last one (Whiteboard) sits past the edge of a phone, and a
+    // page using it showed no highlight at all, as if no filter were chosen.
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    androidx.compose.runtime.LaunchedEffect(selected) {
+        val index = PageFilter.entries.indexOf(selected)
+        val info = listState.layoutInfo
+        val item = info.visibleItemsInfo.firstOrNull { it.index == index }
+        val fullyVisible = item != null && item.offset >= info.viewportStartOffset && item.offset + item.size <= info.viewportEndOffset
+        if (index >= 0 && !fullyVisible) listState.animateScrollToItem(index)
+    }
     LazyRow(
+        state = listState,
         modifier = modifier.fillMaxWidth(),
         // Tight enough that the fifth filter shows part-way on a phone: six filters, so the row must look scrollable.
         horizontalArrangement = Arrangement.spacedBy(8.dp),
