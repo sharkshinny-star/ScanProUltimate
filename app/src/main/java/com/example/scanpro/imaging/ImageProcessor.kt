@@ -68,7 +68,6 @@ object ImageProcessor {
             renderPageAt(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension)
         } catch (memory: OutOfMemoryError) {
             // A page the device can't hold at full size is still saved, at half the resolution, rather than lost.
-            System.gc()
             renderPageAt(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations, maxDimension / 2)
         }
     }
@@ -308,7 +307,6 @@ object ImageProcessor {
                 }
             )
         } catch (_: OutOfMemoryError) {
-            System.gc()
             try {
                 BitmapFactory.decodeFile(
                     path,

@@ -3,6 +3,7 @@ package com.example.scanpro.scanner
 import com.example.scanpro.imaging.OpenCvRuntime
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.example.scanpro.data.CropQuad
@@ -19,6 +20,7 @@ class OpenCvDocumentAnalyzer(
     private val onUnavailable: () -> Unit = {},
 ) : ImageAnalysis.Analyzer {
     private var reportedUnavailable = false
+    private var lastFrameSize = 0L
     private val main = Handler(Looper.getMainLooper())
     private var previousQuad: CropQuad? = null
     private var stableFrames = 0
@@ -74,6 +76,12 @@ class OpenCvDocumentAnalyzer(
             return
         }
         try {
+            // Log the delivered analysis size once per change, to confirm on a device that CameraX honoured the bounded selector.
+            val frameSize = (image.width.toLong() shl 32) or image.height.toLong()
+            if (frameSize != lastFrameSize) {
+                lastFrameSize = frameSize
+                Log.d("ScanProAnalyzer", "CameraX analysis frame: ${image.width}x${image.height}")
+            }
             // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
             // are found describe exactly the pixels the user sees and the capture keeps.
             val gray = toRotatedGrayMat(image).croppedToViewport(image)

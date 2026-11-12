@@ -88,11 +88,17 @@ object DocumentEdgeDetector {
         val edgesCanny = Mat()
         val edgesAdaptive = Mat()
         val combinedEdges = Mat()
-        val hierarchy = Mat()
-        val laplacian = Mat()
         val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(5.0, 5.0))
-        val stdDev = MatOfDouble()
-        val mean = MatOfDouble()
+        val bigKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0))
+        // Every per-frame Mat is released in the outer finally, so an exception part-way through a frame
+        // (the analyser runs this up to 30 times a second) cannot leak native memory.
+        val brightMask = Mat()
+        val darkMask = Mat()
+        val cannyClosed = Mat()
+        val smooth = Mat()
+        val faintEdges = Mat()
+        val faintClosed = Mat()
+        val thinEdges = Mat()
 
         try {
             Imgproc.GaussianBlur(working, processed, Size(5.0, 5.0), 0.0)
@@ -120,16 +126,12 @@ object DocumentEdgeDetector {
 
             // Method 3: paper is usually the big bright (or big dark) region against its surroundings, so
             // a global threshold finds it even where the page edge itself is faint or shadowed.
-            val brightMask = Mat()
-            val darkMask = Mat()
             Imgproc.threshold(processed, brightMask, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
             Core.bitwise_not(brightMask, darkMask)
-            val bigKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0))
             Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_CLOSE, bigKernel)
             Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_OPEN, bigKernel)
 
             // Cleaner Canny map for the contour search: dilated so a small gap in the page outline closes.
-            val cannyClosed = Mat()
             Imgproc.dilate(edgesCanny, cannyClosed, kernel)
             Imgproc.morphologyEx(cannyClosed, cannyClosed, Imgproc.MORPH_CLOSE, bigKernel)
 
@@ -138,22 +140,13 @@ object DocumentEdgeDetector {
             // copy with low limits: text, wood grain and noise average out, while the long step between the page
             // margin and the surface behind it stays. Hysteresis keeps a faint stretch of the outline when it joins a
             // strong one (a page with a shadow along two sides), so the outline still closes.
-            val smooth = Mat()
-            val faintEdges = Mat()
-            val faintClosed = Mat()
-            try {
-                Imgproc.GaussianBlur(processed, smooth, Size(25.0, 25.0), 0.0)
-                Imgproc.Canny(smooth, faintEdges, FAINT_CANNY_LOW, FAINT_CANNY_HIGH)
-                Imgproc.dilate(faintEdges, faintClosed, kernel)
-                Imgproc.morphologyEx(faintClosed, faintClosed, Imgproc.MORPH_CLOSE, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0)))
-            } finally {
-                smooth.release(); faintEdges.release()
-            }
+            Imgproc.GaussianBlur(processed, smooth, Size(25.0, 25.0), 0.0)
+            Imgproc.Canny(smooth, faintEdges, FAINT_CANNY_LOW, FAINT_CANNY_HIGH)
+            Imgproc.dilate(faintEdges, faintClosed, kernel)
+            Imgproc.morphologyEx(faintClosed, faintClosed, Imgproc.MORPH_CLOSE, bigKernel)
 
-            // Blur & Brightness diagnostics
-            Imgproc.Laplacian(processed, laplacian, CvType.CV_64F)
-            Core.meanStdDev(laplacian, mean, stdDev)
-            val blurWhole = stdDev.toArray().firstOrNull()?.let { it * it } ?: 0.0
+            // Brightness is cheap. Sharpness is measured after candidate selection, on the page alone, so a
+            // frame with a page pays for one Laplacian; the whole-frame one runs only when there is no page.
             val brightness = Core.mean(working).`val`[0]
 
             val frameArea = working.cols().toDouble() * working.rows().toDouble()
@@ -165,7 +158,6 @@ object DocumentEdgeDetector {
             // favour the sources that are least likely to trace text or texture instead of the page.
             // The thin Canny map keeps a page separate from a neighbouring object it nearly touches, which
             // the heavily closed maps would fuse into one blob; it is searched with every contour, not just outer ones.
-            val thinEdges = Mat()
             Imgproc.morphologyEx(edgesCanny, thinEdges, Imgproc.MORPH_CLOSE, kernel)
             val sources = listOf(
                 Triple(cannyClosed, 1.0, Imgproc.RETR_EXTERNAL),
@@ -175,57 +167,48 @@ object DocumentEdgeDetector {
                 Triple(combinedEdges, 0.85, Imgproc.RETR_EXTERNAL),
                 Triple(darkMask, 0.7, Imgproc.RETR_EXTERNAL)
             )
-            try {
-                sources.forEach { (map, weight, retrieval) ->
-                    val contours = mutableListOf<MatOfPoint>()
-                    val sourceHierarchy = Mat()
-                    try {
-                        // External contours only: a page is the outer outline, and text inside it is noise.
-                        Imgproc.findContours(map, contours, sourceHierarchy, retrieval, Imgproc.CHAIN_APPROX_SIMPLE)
-                        contours.forEach { contour ->
-                            if (abs(Imgproc.contourArea(contour)) < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
-                            val (points, solidity) = pageCorners(contour, frameArea) ?: return@forEach
-                            val ordered = order(points)
-                            val geometry = ordered.map { QuadGeometry.P(it.x, it.y) }
-                            if (!QuadGeometry.isPlausiblePage(geometry)) return@forEach
+            sources.forEach { (map, weight, retrieval) ->
+                val contours = mutableListOf<MatOfPoint>()
+                val sourceHierarchy = Mat()
+                try {
+                    // External contours only: a page is the outer outline, and text inside it is noise.
+                    Imgproc.findContours(map, contours, sourceHierarchy, retrieval, Imgproc.CHAIN_APPROX_SIMPLE)
+                    contours.forEach { contour ->
+                        if (abs(Imgproc.contourArea(contour)) < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
+                        val (points, solidity) = pageCorners(contour, frameArea) ?: return@forEach
+                        val ordered = order(points)
+                        val geometry = ordered.map { QuadGeometry.P(it.x, it.y) }
+                        if (!QuadGeometry.isPlausiblePage(geometry)) return@forEach
 
-                            val polygon = MatOfPoint(*ordered.toTypedArray())
-                            try {
-                                val polygonArea = abs(Imgproc.contourArea(polygon))
-                                val areaRatio = (polygonArea / frameArea).coerceIn(0.0, 1.0)
-                                val rect = Imgproc.boundingRect(polygon)
-                                val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
-                                var score = areaRatio * 0.46 + rectangularity * 0.22 + edgeBalance(ordered) * 0.14 +
-                                    QuadGeometry.angleScore(geometry) * 0.18
-                                // An outline that is just the camera frame is the background, not a page.
-                                val margin = 0.012 * max(frameWidth, frameHeight)
-                                val onBorder = ordered.count {
-                                    it.x < margin || it.y < margin || it.x > frameWidth - margin || it.y > frameHeight - margin
-                                }
-                                if (areaRatio > 0.9 && onBorder >= 3) score *= 0.3
-                                // Several objects fused into one blob have a dented outline; a page is nearly solid.
-                                score *= weight * solidity * solidity * solidity
-
-                                val current = best
-                                if (current == null || score.toFloat() > current.score) {
-                                    best = Candidate(ordered, score.toFloat())
-                                }
-                            } finally {
-                                polygon.release()
+                        val polygon = MatOfPoint(*ordered.toTypedArray())
+                        try {
+                            val polygonArea = abs(Imgproc.contourArea(polygon))
+                            val areaRatio = (polygonArea / frameArea).coerceIn(0.0, 1.0)
+                            val rect = Imgproc.boundingRect(polygon)
+                            val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
+                            var score = areaRatio * 0.46 + rectangularity * 0.22 + edgeBalance(ordered) * 0.14 +
+                                QuadGeometry.angleScore(geometry) * 0.18
+                            // An outline that is just the camera frame is the background, not a page.
+                            val margin = 0.012 * max(frameWidth, frameHeight)
+                            val onBorder = ordered.count {
+                                it.x < margin || it.y < margin || it.x > frameWidth - margin || it.y > frameHeight - margin
                             }
+                            if (areaRatio > 0.9 && onBorder >= 3) score *= 0.3
+                            // Several objects fused into one blob have a dented outline; a page is nearly solid.
+                            score *= weight * solidity * solidity * solidity
+
+                            val current = best
+                            if (current == null || score.toFloat() > current.score) {
+                                best = Candidate(ordered, score.toFloat())
+                            }
+                        } finally {
+                            polygon.release()
                         }
-                    } finally {
-                        contours.forEach(MatOfPoint::release)
-                        sourceHierarchy.release()
                     }
+                } finally {
+                    contours.forEach(MatOfPoint::release)
+                    sourceHierarchy.release()
                 }
-            } finally {
-                brightMask.release()
-                darkMask.release()
-                bigKernel.release()
-                cannyClosed.release()
-                faintClosed.release()
-                thinEdges.release()
             }
 
             val candidate = best
@@ -250,25 +233,15 @@ object DocumentEdgeDetector {
             } ?: brightness
             // Sharpness is judged on the page itself: a blurry background around a sharp page, or the other
             // way round, must not decide whether the capture is taken.
-            val blur = if (pageBox == null) blurWhole else runCatching {
-                val box = pageBox
-                val inside = org.opencv.core.Rect(
-                    box.x.coerceIn(0, working.cols() - 1), box.y.coerceIn(0, working.rows() - 1),
-                    box.width.coerceIn(1, working.cols() - box.x.coerceIn(0, working.cols() - 1)),
-                    box.height.coerceIn(1, working.rows() - box.y.coerceIn(0, working.rows() - 1))
-                )
-                val region = processed.submat(inside)
-                val regionLaplacian = Mat()
-                val regionMean = MatOfDouble()
-                val regionStd = MatOfDouble()
-                try {
-                    Imgproc.Laplacian(region, regionLaplacian, CvType.CV_64F)
-                    Core.meanStdDev(regionLaplacian, regionMean, regionStd)
-                    regionStd.toArray().firstOrNull()?.let { it * it } ?: blurWhole
-                } finally {
-                    region.release(); regionLaplacian.release(); regionMean.release(); regionStd.release()
-                }
-            }.getOrDefault(blurWhole)
+            val blur = pageBox?.let { box ->
+                runCatching {
+                    val x = box.x.coerceIn(0, working.cols() - 1)
+                    val y = box.y.coerceIn(0, working.rows() - 1)
+                    varianceOfLaplacian(processed, org.opencv.core.Rect(
+                        x, y, box.width.coerceIn(1, working.cols() - x), box.height.coerceIn(1, working.rows() - y)
+                    ))
+                }.getOrNull()
+            } ?: varianceOfLaplacian(processed)
             // Mask the page polygon, not its bounding box: a white table outside a skewed page is not glare.
             val glare = if (candidate == null || pageBox == null) 0.0 else runCatching {
                 val box = pageBox
@@ -307,11 +280,33 @@ object DocumentEdgeDetector {
             edgesCanny.release()
             edgesAdaptive.release()
             combinedEdges.release()
-            hierarchy.release()
-            laplacian.release()
             kernel.release()
-            stdDev.release()
+            bigKernel.release()
+            brightMask.release()
+            darkMask.release()
+            cannyClosed.release()
+            smooth.release()
+            faintEdges.release()
+            faintClosed.release()
+            thinEdges.release()
+        }
+    }
+
+    /** Variance of the Laplacian (higher is sharper) over [source], or only over [bounds] when given. */
+    private fun varianceOfLaplacian(source: Mat, bounds: org.opencv.core.Rect? = null): Double {
+        val region = if (bounds == null) source else source.submat(bounds)
+        val laplacian = Mat()
+        val mean = MatOfDouble()
+        val stdDev = MatOfDouble()
+        try {
+            Imgproc.Laplacian(region, laplacian, CvType.CV_64F)
+            Core.meanStdDev(laplacian, mean, stdDev)
+            return stdDev.toArray().firstOrNull()?.let { it * it } ?: 0.0
+        } finally {
+            if (region !== source) region.release()
+            laplacian.release()
             mean.release()
+            stdDev.release()
         }
     }
 
@@ -334,10 +329,13 @@ object DocumentEdgeDetector {
      */
     private fun pageCorners(contour: MatOfPoint, frameArea: Double): Pair<Array<Point>, Double>? {
         val hullIndices = org.opencv.core.MatOfInt()
-        Imgproc.convexHull(contour, hullIndices)
-        val all = contour.toArray()
-        val hull = hullIndices.toArray().map { all[it] }.toTypedArray()
-        hullIndices.release()
+        val hull = try {
+            Imgproc.convexHull(contour, hullIndices)
+            val all = contour.toArray()
+            hullIndices.toArray().map { all[it] }.toTypedArray()
+        } finally {
+            hullIndices.release()
+        }
         if (hull.size < 4) return null
 
         val hull2f = MatOfPoint2f(*hull)

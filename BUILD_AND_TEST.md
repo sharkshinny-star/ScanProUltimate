@@ -41,6 +41,15 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-12, F148 PRD port, uncommitted tree on e6ae8ff)
+
+- `:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin`: pass (after restoring `setPrimaryClip` in three files; e6ae8ff did not compile).
+- **Known build error (fixed by reverting):** on Gradle 9.9.1, `bundleDebugClassesToRuntimeJar` produced a jar without the Kotlin classes (885 of 2572 entries), so unit tests failed with `NoClassDefFoundError` (126 of 179 in the targeted set). Same tests on 9.9.0: pass. Wrapper is back on 9.9.0; do not take 9.9.1 again without running unit tests.
+- Targeted `:app:testDebugUnitTest --tests 'com.example.scanpro.scanner.*' --tests 'com.example.scanpro.imaging.*' --tests '*ScanHistoryStoreTest'` on 9.9.0: 296 tests, 0 failed, 37 skipped. The OpenCV tests (including the new detector test) skip on macOS; they need Linux x86_64 or CI.
+- Full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (Gradle 9.9.0): 722 tests, 0 failed, 65 skipped; lint 0 errors, 73 warnings; debug APK built.
+- `:app:bundleRelease`: exit 0 (`app-release.aab`, 49 MB).
+- Not run: any device check (camera analysis size in Logcat, crop gutter in portrait/landscape/large font); OpenCV tests on Linux (CI).
+
 ## Latest results (2026-11-12, merge of origin e29b727 + ff7d4c7 into F140/F141, `a60b413`)
 
 - `:app:testDebugUnitTest`: 698 tests, 0 failed, 64 skipped.

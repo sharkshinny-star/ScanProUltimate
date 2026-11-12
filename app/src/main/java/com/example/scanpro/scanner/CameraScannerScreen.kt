@@ -913,8 +913,17 @@ fun CameraScannerScreen(
                     .setCaptureMode(if (hdCapture) ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY else ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                     .setJpegQuality(if (hdCapture) 98 else 95)
                     .build()
+                // Live detection stays bounded at 4:3 1280x960 (or the nearest lower size the camera offers): the detector
+                // scales every frame down to 900 px anyway, so a larger stream only costs conversion time and memory.
+                // Capture keeps its own high-resolution selector, so this does not shrink saved pages.
+                val analysisSelector = ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                    .setResolutionStrategy(
+                        ResolutionStrategy(android.util.Size(1280, 960), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER)
+                    )
+                    .build()
                 val analysis = ImageAnalysis.Builder()
-                    .setResolutionSelector(selector)
+                    .setResolutionSelector(analysisSelector)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .build()

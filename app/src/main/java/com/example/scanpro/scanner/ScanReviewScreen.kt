@@ -35,11 +35,11 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -1201,87 +1201,105 @@ private fun CropCanvas(
     val latestEnabled by rememberUpdatedState(enabled)
     val latestCurveMode by rememberUpdatedState(curveMode)
     val pagePreview = stringResource(R.string.a11y_page_preview)
-    Canvas(
-        Modifier
-            .aspectRatio(image.width.toFloat() / image.height.toFloat())
-            .semantics { contentDescription = pagePreview }
-            .pointerInput(image) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    val points = handles(latest, latestCurveMode).map { Offset(it.x * size.width, it.y * size.height) }
-                    val nearest = points.indices.minByOrNull { hypot(points[it].x - down.position.x, points[it].y - down.position.y) } ?: 0
-                    val reach = 44.dp.toPx()
-                    val distance = hypot(points[nearest].x - down.position.x, points[nearest].y - down.position.y)
-                    // Away from every corner the touch is left alone, so the page can be swiped.
-                    if (distance > reach || !latestEnabled) return@awaitEachGesture
-                    active = nearest
-                    dragging = true
-                    drag(down.id) { change ->
-                        change.consume()
-                        val delta = change.position - change.previousPosition
-                        if (active >= 4) {
-                            onCropChange(bend(latest, active - 4, delta.x / size.width, delta.y / size.height))
-                            return@drag
+    // The page is fitted to both the width and the height with a safe gutter round it, so a handle on the page's
+    // edge is drawn whole and can be grabbed from every side, not just from its inner half.
+    BoxWithConstraints(contentAlignment = Alignment.Center) {
+        val imageRatio = image.width.toFloat() / image.height.toFloat()
+        val handleInset = minOf(18.dp, maxWidth / 10f, maxHeight / 10f)
+        val contentWidthDp = minOf((maxWidth - handleInset * 2).coerceAtLeast(1.dp), (maxHeight - handleInset * 2).coerceAtLeast(1.dp) * imageRatio)
+        val contentHeightDp = contentWidthDp / imageRatio
+        val insetPx = with(LocalDensity.current) { handleInset.toPx() }
+        Canvas(
+            Modifier
+                .width(contentWidthDp + handleInset * 2)
+                .height(contentHeightDp + handleInset * 2)
+                .semantics { contentDescription = pagePreview }
+                .pointerInput(image, insetPx) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
+                        val points = handles(latest, latestCurveMode).map { Offset(insetPx + it.x * contentWidth, insetPx + it.y * contentHeight) }
+                        val nearest = points.indices.minByOrNull { hypot(points[it].x - down.position.x, points[it].y - down.position.y) } ?: 0
+                        val reach = 44.dp.toPx()
+                        val distance = hypot(points[nearest].x - down.position.x, points[nearest].y - down.position.y)
+                        // Away from every corner the touch is left alone, so the page can be swiped.
+                        if (distance > reach || !latestEnabled) return@awaitEachGesture
+                        active = nearest
+                        dragging = true
+                        drag(down.id) { change ->
+                            change.consume()
+                            val delta = change.position - change.previousPosition
+                            if (active >= 4) {
+                                onCropChange(bend(latest, active - 4, delta.x / contentWidth, delta.y / contentHeight))
+                                return@drag
+                            }
+                            val list = corners(latest).toMutableList()
+                            val p = list[active]
+                            list[active] = NormalizedPoint(
+                                (p.x + delta.x / contentWidth).coerceIn(0f, 1f),
+                                (p.y + delta.y / contentHeight).coerceIn(0f, 1f)
+                            )
+                            // copy() keeps any bends: they are stored relative to the corners, so they follow them.
+                            onCropChange(latest.copy(topLeft = list[0], topRight = list[1], bottomRight = list[2], bottomLeft = list[3]))
                         }
-                        val list = corners(latest).toMutableList()
-                        val p = list[active]
-                        list[active] = NormalizedPoint(
-                            (p.x + delta.x / size.width).coerceIn(0f, 1f),
-                            (p.y + delta.y / size.height).coerceIn(0f, 1f)
-                        )
-                        // copy() keeps any bends: they are stored relative to the corners, so they follow them.
-                        onCropChange(latest.copy(topLeft = list[0], topRight = list[1], bottomRight = list[2], bottomLeft = list[3]))
+                        dragging = false
                     }
-                    dragging = false
                 }
-            }
-    ) {
-        // The filtered view under the outline; the corner loupe below keeps the full-detail photo.
-        drawImage(display.asImageBitmap(), dstOffset = IntOffset.Zero, dstSize = IntSize(size.width.toInt(), size.height.toInt()))
-        val all = handles(crop, curveMode = true).map { Offset(it.x * size.width, it.y * size.height) }
-        val points = all.take(4)
-        // Each edge as the curve it will be flattened along (a straight edge's midpoint gives a straight line).
-        fun control(a: Offset, b: Offset, mid: Offset) = Offset(2f * mid.x - (a.x + b.x) / 2f, 2f * mid.y - (a.y + b.y) / 2f)
-        val path = Path().apply {
-            moveTo(points[0].x, points[0].y)
-            for (edge in 0 until 4) {
-                val a = points[edge]
-                val b = points[(edge + 1) % 4]
-                val c = control(a, b, all[4 + edge])
-                quadraticTo(c.x, c.y, b.x, b.y)
-            }
-            close()
-        }
-        drawPath(path, accent.copy(alpha = 0.18f))
-        drawPath(path, Color.White, style = Stroke(width = 2.dp.toPx()))
-        // Corner handles: 30 dp circles with a translucent primary fill, a white ring and a thin primary outer ring.
-        points.forEach { centre ->
-            drawCircle(accent.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
-            drawCircle(Color.White, radius = 13.dp.toPx(), center = centre, style = Stroke(width = 2.5.dp.toPx()))
-            drawCircle(accent, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
-        }
-        if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
-        if (dragging && active < 4) {
-            val corner = corners(crop)[active]
-            val sample = 96
-            val sx = (corner.x * image.width).toInt().coerceIn(0, image.width - 1)
-            val sy = (corner.y * image.height).toInt().coerceIn(0, image.height - 1)
-            val left = (sx - sample / 2).coerceIn(0, (image.width - sample).coerceAtLeast(0))
-            val top = (sy - sample / 2).coerceIn(0, (image.height - sample).coerceAtLeast(0))
-            val loupe = 120.dp.toPx()
-            val dstLeft = if (corner.x < 0.5f) size.width - loupe - 8.dp.toPx() else 8.dp.toPx()
-            val dstTop = 8.dp.toPx()
-            drawRect(Color.Black.copy(alpha = 0.8f), Offset(dstLeft - 4.dp.toPx(), dstTop - 4.dp.toPx()), Size(loupe + 8.dp.toPx(), loupe + 8.dp.toPx()))
+        ) {
+            // The filtered view under the outline; the corner loupe below keeps the full-detail photo.
+            val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+            val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
             drawImage(
-                image.asImageBitmap(),
-                srcOffset = IntOffset(left, top),
-                srcSize = IntSize(sample.coerceAtMost(image.width - left), sample.coerceAtMost(image.height - top)),
-                dstOffset = IntOffset(dstLeft.toInt(), dstTop.toInt()),
-                dstSize = IntSize(loupe.toInt(), loupe.toInt())
+                display.asImageBitmap(),
+                dstOffset = IntOffset(insetPx.toInt(), insetPx.toInt()),
+                dstSize = IntSize(contentWidth.toInt(), contentHeight.toInt())
             )
-            val c = Offset(dstLeft + loupe / 2f, dstTop + loupe / 2f)
-            drawLine(Color.White, Offset(c.x - 14.dp.toPx(), c.y), Offset(c.x + 14.dp.toPx(), c.y), strokeWidth = 2f)
-            drawLine(Color.White, Offset(c.x, c.y - 14.dp.toPx()), Offset(c.x, c.y + 14.dp.toPx()), strokeWidth = 2f)
+            val all = handles(crop, curveMode = true).map { Offset(insetPx + it.x * contentWidth, insetPx + it.y * contentHeight) }
+            val points = all.take(4)
+            // Each edge as the curve it will be flattened along (a straight edge's midpoint gives a straight line).
+            fun control(a: Offset, b: Offset, mid: Offset) = Offset(2f * mid.x - (a.x + b.x) / 2f, 2f * mid.y - (a.y + b.y) / 2f)
+            val path = Path().apply {
+                moveTo(points[0].x, points[0].y)
+                for (edge in 0 until 4) {
+                    val a = points[edge]
+                    val b = points[(edge + 1) % 4]
+                    val c = control(a, b, all[4 + edge])
+                    quadraticTo(c.x, c.y, b.x, b.y)
+                }
+                close()
+            }
+            drawPath(path, accent.copy(alpha = 0.18f))
+            drawPath(path, Color.White, style = Stroke(width = 2.dp.toPx()))
+            // Corner handles: 30 dp circles with a translucent primary fill, a white ring and a thin primary outer ring.
+            points.forEach { centre ->
+                drawCircle(accent.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
+                drawCircle(Color.White, radius = 13.dp.toPx(), center = centre, style = Stroke(width = 2.5.dp.toPx()))
+                drawCircle(accent, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
+            }
+            if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
+            if (dragging && active < 4) {
+                val corner = corners(crop)[active]
+                val sample = 96
+                val sx = (corner.x * image.width).toInt().coerceIn(0, image.width - 1)
+                val sy = (corner.y * image.height).toInt().coerceIn(0, image.height - 1)
+                val left = (sx - sample / 2).coerceIn(0, (image.width - sample).coerceAtLeast(0))
+                val top = (sy - sample / 2).coerceIn(0, (image.height - sample).coerceAtLeast(0))
+                val loupe = 120.dp.toPx()
+                val dstLeft = if (corner.x < 0.5f) size.width - loupe - 8.dp.toPx() else 8.dp.toPx()
+                val dstTop = 8.dp.toPx()
+                drawRect(Color.Black.copy(alpha = 0.8f), Offset(dstLeft - 4.dp.toPx(), dstTop - 4.dp.toPx()), Size(loupe + 8.dp.toPx(), loupe + 8.dp.toPx()))
+                drawImage(
+                    image.asImageBitmap(),
+                    srcOffset = IntOffset(left, top),
+                    srcSize = IntSize(sample.coerceAtMost(image.width - left), sample.coerceAtMost(image.height - top)),
+                    dstOffset = IntOffset(dstLeft.toInt(), dstTop.toInt()),
+                    dstSize = IntSize(loupe.toInt(), loupe.toInt())
+                )
+                val c = Offset(dstLeft + loupe / 2f, dstTop + loupe / 2f)
+                drawLine(Color.White, Offset(c.x - 14.dp.toPx(), c.y), Offset(c.x + 14.dp.toPx(), c.y), strokeWidth = 2f)
+                drawLine(Color.White, Offset(c.x, c.y - 14.dp.toPx()), Offset(c.x, c.y + 14.dp.toPx()), strokeWidth = 2f)
+            }
         }
     }
 }

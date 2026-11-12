@@ -8,10 +8,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -158,7 +158,6 @@ fun CropEditorDialog(
                             if (result != null) break
                         } catch (t: Throwable) {
                             Log.w("CropEditorDialog", "Failed decoding $path at $dim", t)
-                            System.gc()
                         }
                     }
                     if (result != null) break
@@ -214,7 +213,7 @@ fun CropEditorDialog(
             }
 
             // Centre Viewport with Document Canvas
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
@@ -224,27 +223,44 @@ fun CropEditorDialog(
                 contentAlignment = Alignment.Center
             ) {
                 bitmap?.let { image ->
-                    val ratio = image.width.toFloat() / image.height.toFloat()
+                    // Fit the page to both the width and the height, with a safe gutter round it, so a tall page or a
+                    // short landscape window can't push a corner handle off-screen or under the edge of the canvas.
+                    val imageRatio = image.width.toFloat() / image.height.toFloat()
+                    val handleInset = minOf(18.dp, maxWidth / 10f, maxHeight / 10f)
+                    val contentMaxWidth = (maxWidth - handleInset * 2).coerceAtLeast(1.dp)
+                    val contentMaxHeight = (maxHeight - handleInset * 2).coerceAtLeast(1.dp)
+                    val contentWidthDp = minOf(contentMaxWidth, contentMaxHeight * imageRatio)
+                    val contentHeightDp = contentWidthDp / imageRatio
+                    val insetPx = with(LocalDensity.current) { handleInset.toPx() }
                     Canvas(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(ratio)
+                            .width(contentWidthDp + handleInset * 2)
+                            .height(contentHeightDp + handleInset * 2)
                             .semantics { contentDescription = pagePreview }
-                            .pointerInput(Unit) {
+                            .pointerInput(insetPx) {
                                 var currentCrop = latestCrop
                                 detectDragGestures(
                                     onDragStart = { start ->
-                                        draggingCorner = true
                                         currentCrop = latestCrop
-                                        val handles = handlesForCrop(currentCrop, size.width.toFloat(), size.height.toFloat())
-                                        activeCorner = handles.indices.minByOrNull { index ->
+                                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
+                                        val handles = handlesForCrop(currentCrop, contentWidth, contentHeight)
+                                            .map { Offset(it.x + insetPx, it.y + insetPx) }
+                                        val distance = { index: Int ->
                                             hypot((handles[index].x - start.x).toDouble(), (handles[index].y - start.y).toDouble())
-                                        } ?: 0
+                                        }
+                                        val nearest = handles.indices.minByOrNull(distance)
+                                        // A drag that starts far from every handle (a stray swipe across the page) moves nothing.
+                                        activeCorner = nearest?.takeIf { distance(it) <= 48.dp.toPx() } ?: -1
+                                        draggingCorner = activeCorner >= 0
                                     },
                                     onDragEnd = { draggingCorner = false },
                                     onDragCancel = { draggingCorner = false },
                                     onDrag = { change, dragAmount ->
+                                        if (activeCorner < 0) return@detectDragGestures
                                         change.consume()
+                                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
                                         val points = listOf(
                                             currentCrop.topLeft,
                                             currentCrop.topRight,
@@ -253,8 +269,8 @@ fun CropEditorDialog(
                                         ).toMutableList()
 
                                         if (latestCurveMode && activeCorner >= 4) {
-                                            val dx = dragAmount.x / size.width
-                                            val dy = dragAmount.y / size.height
+                                            val dx = dragAmount.x / contentWidth
+                                            val dy = dragAmount.y / contentHeight
                                             fun moved(bow: NormalizedPoint?) = NormalizedPoint(
                                                 ((bow?.x ?: 0f) + dx).coerceIn(-0.3f, 0.3f),
                                                 ((bow?.y ?: 0f) + dy).coerceIn(-0.3f, 0.3f)
@@ -272,13 +288,13 @@ fun CropEditorDialog(
                                             // Corner handle
                                             val current = points[activeCorner]
                                             points[activeCorner] = NormalizedPoint(
-                                                x = (current.x + dragAmount.x / size.width).coerceIn(0f, 1f),
-                                                y = (current.y + dragAmount.y / size.height).coerceIn(0f, 1f)
+                                                x = (current.x + dragAmount.x / contentWidth).coerceIn(0f, 1f),
+                                                y = (current.y + dragAmount.y / contentHeight).coerceIn(0f, 1f)
                                             )
                                         } else {
                                             // Edge midpoint handle
-                                            val dx = dragAmount.x / size.width
-                                            val dy = dragAmount.y / size.height
+                                            val dx = dragAmount.x / contentWidth
+                                            val dy = dragAmount.y / contentHeight
                                             when (activeCorner) {
                                                 4 -> { // Top edge
                                                     points[0] = NormalizedPoint((points[0].x + dx).coerceIn(0f, 1f), (points[0].y + dy).coerceIn(0f, 1f))
@@ -305,12 +321,15 @@ fun CropEditorDialog(
                                 )
                             }
                     ) {
+                        val contentWidth = (size.width - insetPx * 2f).coerceAtLeast(1f)
+                        val contentHeight = (size.height - insetPx * 2f).coerceAtLeast(1f)
                         drawImage(
                             image = image.asImageBitmap(),
-                            dstOffset = IntOffset.Zero,
-                            dstSize = IntSize(size.width.toInt(), size.height.toInt())
+                            dstOffset = IntOffset(insetPx.toInt(), insetPx.toInt()),
+                            dstSize = IntSize(contentWidth.toInt(), contentHeight.toInt())
                         )
-                        val handles = handlesForCrop(crop, size.width, size.height)
+                        val handles = handlesForCrop(crop, contentWidth, contentHeight)
+                            .map { Offset(it.x + insetPx, it.y + insetPx) }
                         val corners = handles.take(4)
 
                         // Every edge is drawn as the curve the page will be flattened along.
@@ -338,7 +357,7 @@ fun CropEditorDialog(
                         }
 
                         // Loupe magnifier on drag
-                        if (draggingCorner && activeCorner < 4) {
+                        if (draggingCorner && activeCorner in 0..3) {
                             val normalized = listOf(crop.topLeft, crop.topRight, crop.bottomRight, crop.bottomLeft)[activeCorner]
                             val sampleSize = 96
                             val sourceX = (normalized.x * image.width).toInt().coerceIn(0, image.width - 1)
