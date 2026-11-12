@@ -1341,6 +1341,9 @@ internal fun DocumentDetailScreen(
             onConfirm = {
                 onCrop(currentPage.id, it)
                 cropOpen = false
+                // Done finishes the job: back to the document, not to the page preview it may have been opened from
+                // (that dark screen looked like the editor had not closed). Back from the editor still returns there.
+                previewOpen = false
             },
             onRotateRight = { onRotate(currentPage.id) },
             pageIndex = currentIndex,
