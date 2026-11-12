@@ -21,6 +21,7 @@ class OpenCvDocumentAnalyzer(
 ) : ImageAnalysis.Analyzer {
     private var reportedUnavailable = false
     private var lastFrameSize = 0L
+    private var failedFrames = 0
     private val main = Handler(Looper.getMainLooper())
     private var previousQuad: CropQuad? = null
     private var stableFrames = 0
@@ -128,8 +129,13 @@ class OpenCvDocumentAnalyzer(
             } finally {
                 gray.release()
             }
-        } catch (_: Throwable) {
-            // Analyser failures should never kill the camera pipeline.
+        } catch (error: Throwable) {
+            // Analyser failures should never kill the camera pipeline. One bad frame is dropped quietly, but a
+            // detector that keeps failing is logged (the first time, then every 100th) so it shows up in debug.
+            failedFrames++
+            if (failedFrames == 1 || failedFrames % 100 == 0) {
+                Log.w("ScanProAnalyzer", "Document detector failed on $failedFrames frame(s)", error)
+            }
         } finally {
             image.close()
         }

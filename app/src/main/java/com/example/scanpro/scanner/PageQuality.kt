@@ -16,7 +16,9 @@ import org.opencv.imgproc.Imgproc
 enum class PageIssue(@StringRes val messageRes: Int) {
     BLURRY(R.string.scan_quality_blurry),
     GLARE(R.string.scan_quality_glare),
-    DARK(R.string.scan_quality_dark)
+    DARK(R.string.scan_quality_dark),
+    /** Almost nothing on the page ([BlankPage]): a hint only, nothing is removed for the user. */
+    BLANK(R.string.scan_quality_blank)
 }
 
 /**

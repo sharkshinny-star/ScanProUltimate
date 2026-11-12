@@ -41,6 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-12, F149 blank-page hint, uncommitted tree on 6de4604)
+
+- Full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (Gradle 9.9.0): 731 tests, 0 failed, 65 skipped (9 new in `BlankPageTest`); lint 0 errors, 74 warnings; debug APK built. Release bundle not rebuilt for this change.
+- **Known quirk:** `:app:testDebugUnitTest --tests 'com.example.scanpro.scanner.*'` on its own aborts the test JVM (SIGABRT, `Class not found: java/nio/FloatBuffer`, Robolectric native runtime, around `CapturedStripTest`). It does the same on the commit before F149; the full suite and the scanner + imaging filter pass. Not investigated further.
+- Not run: device check of the blank hint on real photos.
+
 ## Latest results (2026-11-12, F148 PRD port, uncommitted tree on e6ae8ff)
 
 - `:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin`: pass (after restoring `setPrimaryClip` in three files; e6ae8ff did not compile).

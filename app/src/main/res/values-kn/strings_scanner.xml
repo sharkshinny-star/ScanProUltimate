@@ -268,6 +268,7 @@
     <string name="scan_quality_blurry">ಈ ಪುಟ ಮಸುಕಾಗಿ ಕಾಣುತ್ತದೆ: ಚಿಕ್ಕ ಪಠ್ಯ ಓದಲು ಕಷ್ಟವಾಗಬಹುದು</string>
     <string name="scan_quality_glare">ಹೊಳಪು ಈ ಪುಟದ ಒಂದು ಭಾಗವನ್ನು ಮರೆಮಾಡುತ್ತಿದೆ</string>
     <string name="scan_quality_dark">ಈ ಪುಟ ತುಂಬಾ ಕತ್ತಲಾಗಿ ಕಾಣುತ್ತದೆ</string>
+    <string name="scan_quality_blank">ಈ ಪುಟ ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತದೆ</string>
     <string name="scan_quality_retake">ಮತ್ತೆ ತೆಗೆಯಿರಿ</string>
     <string name="scan_quality_page_flagged">ಪುಟ %1$d, ಮತ್ತೆ ತೆಗೆಯಬೇಕಾಗಬಹುದು</string>
     <string name="scan_strip_delete_hint">ಅಳಿಸಲು ದೀರ್ಘವಾಗಿ ಒತ್ತಿರಿ</string>

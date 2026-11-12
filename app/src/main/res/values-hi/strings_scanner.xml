@@ -268,6 +268,7 @@
     <string name="scan_quality_blurry">यह पेज धुंधला लग रहा है: छोटा टेक्स्ट पढ़ना मुश्किल हो सकता है</string>
     <string name="scan_quality_glare">चमक इस पेज का कुछ हिस्सा छिपा रही है</string>
     <string name="scan_quality_dark">यह पेज बहुत गहरा लग रहा है</string>
+    <string name="scan_quality_blank">यह पेज खाली लग रहा है</string>
     <string name="scan_quality_retake">फिर से लें</string>
     <string name="scan_quality_page_flagged">पेज %1$d, शायद फिर से लेना पड़े</string>
     <string name="scan_strip_delete_hint">हटाने के लिए देर तक दबाएं</string>
