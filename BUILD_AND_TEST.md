@@ -72,15 +72,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 - `:app:compileDebugKotlin`: passed.
 - `ToolOpenPasswordTest` 8, `MergePasswordTest` 6, `SplitLinksTest` 2: 16 tests, 0 failed.
-
-## Latest results (2026-11-12, F148 PRD port, commit 6de4604)
-
-- `:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin`: pass (after restoring `setPrimaryClip` in three files; e6ae8ff did not compile).
-- **Known build error (fixed by reverting):** on Gradle 9.9.1, `bundleDebugClassesToRuntimeJar` produced a jar without the Kotlin classes (885 of 2572 entries), so unit tests failed with `NoClassDefFoundError` (126 of 179 in the targeted set). Same tests on 9.9.0: pass. Wrapper is back on 9.9.0; do not take 9.9.1 again without running unit tests.
-- Targeted `:app:testDebugUnitTest --tests 'com.example.scanpro.scanner.*' --tests 'com.example.scanpro.imaging.*' --tests '*ScanHistoryStoreTest'` on 9.9.0: 296 tests, 0 failed, 37 skipped. The OpenCV tests (including the new detector test) skip on macOS; they need Linux x86_64 or CI.
-- Full `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` (Gradle 9.9.0): 722 tests, 0 failed, 65 skipped; lint 0 errors, 73 warnings; debug APK built.
-- `:app:bundleRelease`: exit 0 (`app-release.aab`, 49 MB).
-- Not run: any device check (camera analysis size in Logcat, crop gutter in portrait/landscape/large font); OpenCV tests on Linux (CI).
+- Full `:app:testDebugUnitTest` and `:app:lintDebug`: running when committed; results follow in the next commit. Not run: release builds, device.
 
 ## Latest results (2026-11-12, merge of origin e29b727 + ff7d4c7 into F140/F141, `a60b413`)
 

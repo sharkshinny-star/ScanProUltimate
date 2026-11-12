@@ -580,7 +580,6 @@ class PdfToolsViewModel @Inject constructor(
 
     override fun onCleared() {
         releaseWorkingCopy()
-        super.onCleared()
     }
 
     /**
