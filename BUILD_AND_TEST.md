@@ -8,7 +8,7 @@ had ever been built).
 | Tool | Version |
 |---|---|
 | JDK | 17 or newer |
-| Gradle (wrapper) | 9.8.2 |
+| Gradle (wrapper) | 9.9.0 |
 | Android Gradle Plugin | 9.5.0 |
 | Kotlin / Compose compiler | 2.4.21 |
 | KSP | 2.3.13 |
