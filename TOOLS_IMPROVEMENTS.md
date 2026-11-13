@@ -9,7 +9,7 @@ Suggested order: items 1 to 3 together (one change, mostly reuse of the F49 Merg
 
 ## Fixes to existing tools
 
-Item 1 (every tool asks for a protected PDF's password) was built as F148, 2026-11-12.
+Item 1 (every tool asks for a protected PDF's password) was built as F155 (pushed as F148), 2026-11-12.
 
 ## New tools (reuse existing code)
 

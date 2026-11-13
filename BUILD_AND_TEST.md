@@ -68,11 +68,17 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - **Known quirk:** `:app:testDebugUnitTest --tests 'com.example.scanpro.scanner.*'` on its own aborts the test JVM (SIGABRT, `Class not found: java/nio/FloatBuffer`, Robolectric native runtime, around `CapturedStripTest`). It does the same on the commit before F149; the full suite and the scanner + imaging filter pass. Not investigated further.
 - Not run: device check of the blank hint on real photos.
 
-## Latest results (2026-11-12, F148 protected PDFs in every page tool, commit 28539c5)
+## Latest results (2026-11-12/13, F155 (pushed as F148) protected PDFs in every page tool, commits 28539c5..d2dfded)
 
 - `:app:compileDebugKotlin`: passed.
 - `ToolOpenPasswordTest` 8, `MergePasswordTest` 6, `SplitLinksTest` 2: 16 tests, 0 failed.
-- Full `:app:testDebugUnitTest` and `:app:lintDebug`: running when committed; results follow in the next commit. Not run: release builds, device.
+- Full `:app:testDebugUnitTest` on `7ef24ee`: 729 tests, 0 failed, 30 skipped. (The first full run, on `28539c5`, had 1 failure, `PdfToolsFeaturesTest.pdfToImagesRejectsPasswordProtectedPdf`, fixed in `7ef24ee`.)
+- `:app:lintDebug` on `7ef24ee`: 0 errors, 74 warnings, 15 hints; the one new warning (`EmptySuperCall`) is fixed in `d2dfded`, which was compiled again.
+- Running tests and lint in one Gradle call ran this container out of memory (daemon killed); run them one after the other.
+- `:app:bundleRelease` on `d2dfded`: passed; AAB 46.7 MB. Sideload `assembleRelease`: passed; arm64 34.2 MB, armeabi-v7a 26.2 MB, x86_64 40.1 MB, universal 83.4 MB (unsigned).
+- 16 KB page alignment (2026-11-13, on those sideload APKs): arm64-v8a and x86_64 have 8 `.so` each, every `LOAD` segment aligned to `0x4000` (`readelf -lW`); `zipalign -c -P 16 4` passes for the arm64, x86_64, armeabi-v7a and universal APKs. The AAB itself was not checked (no `bundletool` here).
+- These results are for `d2dfded`, before the merge of F149–F154 from the other session; that merged tree was not built here.
+- Not run: device, signed build.
 
 ## Latest results (2026-11-12, merge of origin e29b727 + ff7d4c7 into F140/F141, `a60b413`)
 

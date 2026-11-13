@@ -23,7 +23,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Every single-file tool works on a protected PDF once its password is given (F148): the engine tells whether a file
+ * Every single-file tool works on a protected PDF once its password is given (F155, pushed as F148): the engine tells whether a file
  * needs one, writes an unlocked working copy with the right password and leaves nothing behind with a wrong one.
  */
 @RunWith(RobolectricTestRunner::class)
