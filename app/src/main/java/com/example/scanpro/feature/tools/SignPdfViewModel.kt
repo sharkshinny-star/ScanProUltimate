@@ -244,7 +244,6 @@ class SignPdfViewModel @Inject constructor(
     override fun onCleared() {
         // The session is app-private cache; drop it with the screen's owner rather than leave pages around.
         deleteWorkingFiles(_state.value.file)
-        super.onCleared()
     }
 
     companion object {

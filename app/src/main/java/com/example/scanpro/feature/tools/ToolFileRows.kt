@@ -150,11 +150,12 @@ internal fun FileThumbnail(
             loadThumb(context, source, extension, heightPx).also { if (it is Thumb.Picture) ThumbCache.put(cacheKey, it.bitmap) }
         }
     }
+    val thumbSizeModifier = if (renderHeight == 64.dp) Modifier.size(width = 46.dp, height = 60.dp) else Modifier
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = modifier
-            .size(width = 46.dp, height = 60.dp)
+            .then(thumbSizeModifier)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
     ) {
         when (val t = thumb) {

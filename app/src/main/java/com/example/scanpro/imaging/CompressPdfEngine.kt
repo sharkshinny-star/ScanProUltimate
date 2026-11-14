@@ -21,6 +21,7 @@ import java.util.UUID
 import kotlinx.coroutines.currentCoroutineContext
 import com.example.scanpro.R
 import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.ui.COPY_BUFFER
 
 enum class CompressionPreset(
     val label: String,
@@ -73,7 +74,7 @@ object CompressPdfEngine {
 
         try {
             context.contentResolver.openInputStream(inputUri)?.use { input ->
-                FileOutputStream(tempInput).use { output -> input.copyTo(output) }
+                FileOutputStream(tempInput).buffered(COPY_BUFFER).use { output -> input.copyTo(output, COPY_BUFFER) }
             } ?: userError(R.string.err_could_not_open_input_pdf)
 
             val originalSize = tempInput.length()

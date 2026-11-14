@@ -573,7 +573,7 @@ object PdfToolsEngine {
                 val localFile = if (uri.scheme == "file") uri.path?.let(::File)?.takeIf { it.exists() && it.isFile } else null
                 val imgFile = localFile ?: File(tempDir, "img_$index").also { target ->
                     context.contentResolver.openInputStream(uri)?.use { input ->
-                        FileOutputStream(target).use { output -> input.copyTo(output) }
+                        FileOutputStream(target).buffered(COPY_BUFFER).use { output -> input.copyTo(output, COPY_BUFFER) }
                     } ?: userError(R.string.tools_err_image_unreadable, index + 1)
                 }
                 // Only the header is read here: a file that is not a picture is named before any page is drawn.
@@ -802,7 +802,7 @@ object PdfToolsEngine {
             files.forEach { file ->
                 currentCoroutineContext().ensureActive()
                 out.putNextEntry(ZipEntry(file.name))
-                file.inputStream().use { it.copyTo(out) }
+                file.inputStream().buffered(COPY_BUFFER).use { it.copyTo(out, COPY_BUFFER) }
                 out.closeEntry()
             }
         }
@@ -1016,15 +1016,15 @@ object PdfToolsEngine {
             val originalSize = tempFile.length()
             onProgress(1, 2, AppStrings.get(R.string.tools_progress_extracting_text))
 
-            val doc = openPdf(tempFile, password)
-            val totalPages = doc.numberOfPages
-            userRequire(totalPages > 0, R.string.tools_err_no_pages)
+            val (totalPages, text, wordCount) = openPdf(tempFile, password).use { doc ->
+                val totalPages = doc.numberOfPages
+                userRequire(totalPages > 0, R.string.tools_err_no_pages)
 
-            val stripper = PDFTextStripper()
-            val text = stripper.getText(doc).trim()
-            doc.close()
-
-            val wordCount = if (text.isBlank()) 0 else text.split("\\s+".toRegex()).count { it.isNotBlank() }
+                val stripper = PDFTextStripper()
+                val text = stripper.getText(doc).trim()
+                val wordCount = if (text.isBlank()) 0 else text.split("\\s+".toRegex()).count { it.isNotBlank() }
+                Triple(totalPages, text, wordCount)
+            }
             outputFile.writeText(text, Charsets.UTF_8)
             val outputSize = outputFile.length()
 
@@ -1080,7 +1080,7 @@ object PdfToolsEngine {
         val tempFile = File(context.cacheDir, fileName)
         try {
             context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(tempFile).use { output -> input.copyTo(output, COPY_BUFFER) }
+                FileOutputStream(tempFile).buffered(COPY_BUFFER).use { output -> input.copyTo(output, COPY_BUFFER) }
             } ?: userError(R.string.tools_err_unreadable_location)
         } catch (error: Throwable) {
             // A copy that failed half way must not leave part of the user's file behind in the cache.

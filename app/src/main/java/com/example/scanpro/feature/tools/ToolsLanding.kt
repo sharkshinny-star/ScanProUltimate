@@ -2,6 +2,8 @@ package com.example.scanpro.feature.tools
 
 import android.content.Context
 import androidx.compose.animation.animateContentSize
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.ripple
@@ -178,12 +180,14 @@ private val WORD_BREAK = Regex("[^\\p{L}\\p{M}\\p{N}]+")
 internal fun toolSearchMatches(word: String, text: String): Boolean =
     text.split(WORD_BREAK).any { it.startsWith(word) }
 
+private val SPACES_REGEX = Regex("\\s+")
+
 /** Every tool whose name, category or keywords contain every word typed; best (name-first) matches first. */
 @Composable
 private fun rememberSearchHits(query: String): List<SearchHit> {
     val resources = androidx.compose.ui.platform.LocalResources.current
     return remember(query, resources) {
-        val words = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val words = query.trim().lowercase().split(SPACES_REGEX).filter { it.isNotEmpty() }
         if (words.isEmpty()) return@remember emptyList()
         val all = TOOL_SECTIONS.flatMap { section -> section.tools.map { SearchHit(it, section.title) } } +
             SearchHit(VIEWER_TOOL, R.string.tools_section_convert)
@@ -274,9 +278,14 @@ internal suspend fun androidx.compose.foundation.lazy.LazyListState.scrollToKey(
 
 /** A heading on the Tools page, with how many tools it holds (F140). */
 @Composable
-private fun SectionTitle(text: String, count: Int? = null, modifier: Modifier = Modifier) {
+private fun SectionTitle(text: String, modifier: Modifier = Modifier, count: Int? = null) {
     Row(modifier.padding(top = 18.dp, bottom = 10.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.semantics { heading() }
+        )
         if (count != null) {
             Spacer(Modifier.width(8.dp))
             Text(

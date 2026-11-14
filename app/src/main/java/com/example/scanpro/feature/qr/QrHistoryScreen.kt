@@ -181,7 +181,7 @@ internal fun QrHistoryScreen(
                     )
                 }
             }
-            items(shown, key = { it.raw }) { entry ->
+            items(shown, key = { it.raw }, contentType = { "qr_history_entry" }) { entry ->
                 // Removed, filtered and re-sorted codes fade and glide into place (F146).
                 Column(Modifier.animateItem()) {
                     HistoryRow(

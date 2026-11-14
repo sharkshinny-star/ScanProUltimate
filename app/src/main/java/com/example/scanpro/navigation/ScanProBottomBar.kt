@@ -87,7 +87,7 @@ private val tabs = listOf(
     Tab(ScanProDestinations.HOME, R.string.nav_tab_home, Icons.Outlined.Home, Icons.Rounded.Home),
     Tab(ScanProDestinations.FILES, R.string.nav_tab_files, Icons.Outlined.Folder, Icons.Rounded.Folder),
     Tab(ScanProDestinations.TOOLS, R.string.nav_tab_tools, Icons.Outlined.Handyman, Icons.Rounded.Handyman),
-    Tab(ScanProDestinations.SETTINGS, R.string.common_settings, Icons.Outlined.Settings, Icons.Rounded.Settings)
+    Tab(ScanProDestinations.SETTINGS, R.string.common_settings, Icons.Outlined.Settings, Icons.Rounded.Settings),
 )
 
 /** Height of the bar itself, above the navigation-bar inset. */
@@ -227,12 +227,11 @@ fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: android
                 selected = false,
                 role = Role.Button,
                 interactionSource = interaction,
-                indication = ripple(bounded = true, color = Color.White),
-                onClick = {
-                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
-                    onClick()
-                }
-            )
+                indication = ripple(bounded = true, color = Color.White)
+            ) {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
+                onClick()
+            }
             .semantics { contentDescription = scanLabel },
         contentAlignment = Alignment.Center
     ) {
@@ -248,7 +247,7 @@ fun ScanProNavigationRail(selectedRoute: String, onTab: (String) -> Unit, onScan
     val short = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } < SHORT_WINDOW_DP.dp
     // At a large font size on such a phone, four labelled tabs do not fit the height (the last label was cut off
     // at the bottom, R44): only the selected tab then shows its label, and the others keep it as their description.
-    val compactLabels = short && LocalDensity.current.fontScale > 1.3f
+    val compactLabels = short && (LocalDensity.current.fontScale > 1.3f)
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         header = {

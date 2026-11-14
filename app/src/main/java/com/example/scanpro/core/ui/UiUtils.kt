@@ -20,6 +20,9 @@ import com.example.scanpro.data.ScanDocument
 import java.io.File
 import kotlinx.coroutines.launch
 
+/** Shared 64 KB buffer size for high-throughput stream copying and file I/O operations. */
+const val COPY_BUFFER = 64 * 1024
+
 /**
  * Every document's PDF is stored as "document.pdf", and the receiving app names the attachment after the
  * file. So a copy named after the title is made in the shareable export cache first, off the main thread.
@@ -382,8 +385,8 @@ private class PdfFilePrintAdapter(
         val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         Thread {
             val result = runCatching {
-                java.io.FileOutputStream(destination.fileDescriptor).use { output ->
-                    file.inputStream().use { input -> input.copyTo(output) }
+                java.io.FileOutputStream(destination.fileDescriptor).buffered(COPY_BUFFER).use { output ->
+                    file.inputStream().buffered(COPY_BUFFER).use { input -> input.copyTo(output, COPY_BUFFER) }
                 }
             }
             mainHandler.post {

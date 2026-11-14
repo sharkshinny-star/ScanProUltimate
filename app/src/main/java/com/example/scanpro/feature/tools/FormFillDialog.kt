@@ -142,7 +142,7 @@ internal fun FormFillDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                items(session.fields, key = { it.name }) { field ->
+                items(session.fields, key = { it.name }, contentType = { "form_field_item" }) { field ->
                     FieldInput(field, session.values[field.name] ?: field.value) { onValueChange(field.name, it) }
                 }
             }

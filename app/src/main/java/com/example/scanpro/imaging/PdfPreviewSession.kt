@@ -76,7 +76,7 @@ class PdfPreviewSession private constructor(
             val copy = File(context.cacheDir, "thumb_${UUID.randomUUID()}.pdf")
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    FileOutputStream(copy).use { input.copyTo(it) }
+                    FileOutputStream(copy).buffered(64 * 1024).use { input.copyTo(it, 64 * 1024) }
                 } ?: userError(R.string.err_could_not_read_pdf_location)
                 val descriptor = ParcelFileDescriptor.open(copy, ParcelFileDescriptor.MODE_READ_ONLY)
                 try {

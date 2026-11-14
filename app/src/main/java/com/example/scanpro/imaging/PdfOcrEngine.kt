@@ -18,6 +18,7 @@ import java.io.FileOutputStream
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
 import com.example.scanpro.R
+import com.example.scanpro.core.ui.COPY_BUFFER
 import com.example.scanpro.core.text.AppStrings
 import com.example.scanpro.core.text.userRequire
 
@@ -105,7 +106,7 @@ object PdfOcrEngine {
             try {
                 bitmap.eraseColor(Color.WHITE)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                FileOutputStream(target).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                FileOutputStream(target).buffered(COPY_BUFFER).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
             } finally {
                 bitmap.recycle()
             }

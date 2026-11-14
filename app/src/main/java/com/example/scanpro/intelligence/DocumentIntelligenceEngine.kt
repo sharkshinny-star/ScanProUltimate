@@ -31,7 +31,7 @@ data class DocumentInsights(
     val phoneNumbers: List<String>,
     val references: List<String>,
     val actionItems: List<String>,
-    val suggestedTags: List<String>
+    val suggestedTags: List<String>,
 )
 
 /**
@@ -51,7 +51,7 @@ object DocumentIntelligenceEngine {
     )
     private val emailRegex = Regex("[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", RegexOption.IGNORE_CASE)
     // No dots: "10.00 20.00 30.00" is a column of prices, not a phone number.
-    private val phoneRegex = Regex("(?<!\\d)(?:\\+?\\d[\\d ()-]{7,}\\d)(?!\\d)")
+    private val phoneRegex = Regex("(?<!\\d)\\+?\\d[\\d ()-]{7,}\\d(?!\\d)")
     private val referenceRegex = Regex("""(?i)\b(?:invoice|receipt|order|ref(?:erence)?|gstin|tax id|account|contract)[ \t]*(?:(?:no\.?|number|#)[ \t]*)?[:#-]?[ \t]*([A-Z0-9](?=[A-Z0-9/_-]*\d)[A-Z0-9/_-]{3,})""")
 
     fun analyze(raw: String): DocumentInsights {
@@ -63,7 +63,7 @@ object DocumentIntelligenceEngine {
         val amounts = amountRegex.findAll(text).map { it.value.trim() }.distinct().take(8).toList()
         val dates = dateRegex.findAll(text).map { it.value.trim() }.distinct().take(8).toList()
         val emails = emailRegex.findAll(text).map { it.value.trim() }.distinct().take(8).toList()
-        val phones = phoneRegex.findAll(text).map { it.value.trim() }.filter { it.count(Char::isDigit) in 8..15 }.distinct().take(8).toList()
+        val phones = phoneRegex.findAll(text).map { it.value.trim() }.filter { (it.count(Char::isDigit) in 8..15) }.distinct().take(8).toList()
         val refs = referenceRegex.findAll(text).mapNotNull { it.groups[1]?.value?.trim() }.distinct().take(8).toList()
         val actionItems = extractActionItems(text)
         val summary = structuredSummary(text, kind, dates) ?: extractiveSummary(text, kind, amounts, dates)
@@ -80,13 +80,13 @@ object DocumentIntelligenceEngine {
     fun answer(question: String, raw: String): String {
         val text = normalize(raw)
         // Drop question words and filler so "What is the address?" matches on "address", not "the".
-        val qTokens = tokens(question).filter { it.length >= 3 && it !in STOPWORDS }.toSet()
+        val qTokens = tokens(question).asSequence().filter { it.length >= 3 && it !in STOPWORDS }.toSet()
         if (qTokens.isEmpty() || text.isBlank()) return AppStrings.get(R.string.assistant_ask_specific)
 
         // Intent shortcuts for natural on-device assistant queries
         if (qTokens.any { it in setOf("summary", "summarise", "overview") }) {
-            val insights = analyze(raw)
-            if (insights.summary.isNotBlank()) return insights.summary
+            val summary = analyze(raw).summary
+            if (summary.isNotBlank()) return summary
         }
         if (qTokens.any { it in setOf("total", "amount", "cost", "price", "due", "balance") }) {
             total(text)?.let { return "Total: $it" }

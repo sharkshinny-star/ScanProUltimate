@@ -63,7 +63,7 @@ fun ScanProNavHost(
     saveFolders: List<String> = emptyList(),
     defaultFilter: PageFilter? = null,
     /** Check pages before saving (Settings): whether the camera's Done opens the review. */
-    reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.ALWAYS
+    reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.ALWAYS,
 ) {
     val context = LocalContext.current
     val pdfDocumentTitle = stringResource(R.string.nav_pdf_document)
@@ -253,9 +253,9 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Bool
     // Sheet popping back to caller: caller is already rendered and stationary underneath.
     pop && initialState.isSheetLike() -> EnterTransition.None
     // The screen underneath comes back from a quarter of the way across, opaque.
-    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it / 4 })
+    pop -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing)) { it / 4 }
     // The pushed screen draws its own background, so it slides in opaque.
-    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), initialOffset = { it })
+    else -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing)) { it }
 }
 
 /** The transition for the screen going out, mirroring [enterFor]. */

@@ -64,9 +64,9 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -225,7 +225,7 @@ internal fun WatermarkEditor(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 6.dp)
                     )
-                    val maxPanel = (LocalConfiguration.current.screenHeightDp * 0.36f).dp
+                    val maxPanel = with(LocalDensity.current) { (LocalWindowInfo.current.containerSize.height * 0.36f).toDp() }
                     Surface(
                         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerLow,

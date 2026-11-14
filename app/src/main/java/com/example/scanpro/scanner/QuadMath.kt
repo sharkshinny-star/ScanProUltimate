@@ -30,6 +30,22 @@ internal fun rotateQuad(crop: CropQuad, clockwise: Boolean): CropQuad {
     }
 }
 
+/**
+ * Moves the edge between corners [a] and [b] by ([dx], [dy]) as one piece. The move is cut short where either end
+ * would leave the image, so the edge keeps its length and angle instead of folding against the border. Ends that
+ * are already outside (an outline saved by an older build) are never pushed further out.
+ */
+internal fun translateEdge(a: NormalizedPoint, b: NormalizedPoint, dx: Float, dy: Float): Pair<NormalizedPoint, NormalizedPoint> {
+    fun limit(delta: Float, p: Float, q: Float): Float {
+        val low = minOf(0f, -minOf(p, q))
+        val high = maxOf(0f, 1f - maxOf(p, q))
+        return if (delta.isNaN()) 0f else delta.coerceIn(low, high)
+    }
+    val mx = limit(dx, a.x, b.x)
+    val my = limit(dy, a.y, b.y)
+    return NormalizedPoint(a.x + mx, a.y + my) to NormalizedPoint(b.x + mx, b.y + my)
+}
+
 private fun bows(q: CropQuad) = listOf(q.topBow, q.bottomBow, q.leftBow, q.rightBow)
 
 /** "key|8 corner values" for a straight outline, plus 8 bend values when any edge is bent. */

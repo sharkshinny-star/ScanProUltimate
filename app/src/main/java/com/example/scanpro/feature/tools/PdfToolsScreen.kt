@@ -2975,7 +2975,7 @@ private fun ConvertImageDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        itemsIndexed(uris) { idx, _ ->
+                        itemsIndexed(uris, key = { idx, uri -> "$idx:$uri" }, contentType = { _, _ -> "crop_item" }) { idx, _ ->
                             OutlinedButton(
                                 onClick = { onCropImage(idx) },
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)

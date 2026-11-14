@@ -149,6 +149,7 @@ internal class DocumentStore(
      * may include words that are now covered.
      */
     internal suspend fun renderAndOcr(page: ScanPage, runOcr: Boolean = true, redactionChanged: Boolean = false, script: OcrScript? = null): ScanPage {
+        ThumbnailStore.forget(context, page.imagePath)
         pageRenderer.render(
             source = File(page.sourcePath),
             destination = File(page.imagePath),

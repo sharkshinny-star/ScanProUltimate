@@ -257,7 +257,7 @@ fun PdfViewerScreen(
                 val file = local ?: File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf").also { temp ->
                     tempFiles += temp
                     context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                        FileOutputStream(temp).use { output -> input.copyTo(output) }
+                        FileOutputStream(temp).buffered(64 * 1024).use { output -> input.copyTo(output, 64 * 1024) }
                     } ?: throw IllegalStateException(resources.getString(R.string.viewer_could_not_open_file))
                 }
                 try {
@@ -337,7 +337,7 @@ fun PdfViewerScreen(
                         File(pdfUri.path.orEmpty())
                     } else {
                         context.contentResolver.openInputStream(pdfUri)?.use { input ->
-                            FileOutputStream(tempPdf).use { output -> input.copyTo(output) }
+                            FileOutputStream(tempPdf).buffered(64 * 1024).use { output -> input.copyTo(output, 64 * 1024) }
                         }
                         tempPdf
                     }

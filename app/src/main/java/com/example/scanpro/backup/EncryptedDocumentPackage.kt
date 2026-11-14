@@ -91,7 +91,7 @@ class EncryptedDocumentPackage(private val context: Context) {
         try {
             context.contentResolver.openInputStream(source).use { input ->
                 if (input == null) userError(R.string.err_could_not_open_backup)
-                FileOutputStream(encrypted).use { output -> copyCapped(input, output, MAX_PACKAGE_BYTES) }
+                FileOutputStream(encrypted).buffered(64 * 1024).use { output -> copyCapped(input, output, MAX_PACKAGE_BYTES) }
             }
         } catch (error: Throwable) {
             encrypted.delete()
@@ -265,7 +265,7 @@ class EncryptedDocumentPackage(private val context: Context) {
                                 safe.mkdirs()
                             } else {
                                 safe.parentFile?.mkdirs()
-                                FileOutputStream(safe).use { out ->
+                                FileOutputStream(safe).buffered(64 * 1024).use { out ->
                                     // Cap total unpacked size so a crafted backup cannot fill the device (zip bomb).
                                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                                     while (true) {

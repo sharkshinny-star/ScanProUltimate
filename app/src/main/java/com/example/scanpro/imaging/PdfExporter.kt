@@ -22,6 +22,7 @@ import kotlin.math.min
 import com.example.scanpro.R
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.userRequire
+import com.example.scanpro.core.ui.COPY_BUFFER
 
 object PdfExporter {
     private const val A4_WIDTH = 595
@@ -212,7 +213,7 @@ object PdfExporter {
                 }
                 pdf.finishPage(page)
             }
-            FileOutputStream(destination).use { output -> pdf.writeTo(output) }
+            FileOutputStream(destination).buffered(COPY_BUFFER).use { output -> pdf.writeTo(output) }
         } finally {
             pdf.close()
         }

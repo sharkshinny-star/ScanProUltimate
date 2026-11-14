@@ -311,7 +311,7 @@ fun CameraScannerScreen(
     var idComposite by rememberSaveable { mutableStateOf<String?>(null) }
     // Book mode (R29): 0 one page per shot, 1 two pages left first, 2 two pages right first; and the halves made so far,
     // which fast save trusts like the ID composite (they are cut out already).
-    var bookLayout by rememberSaveable { mutableStateOf(1) }
+    var bookLayout by rememberSaveable { mutableIntStateOf(1) }
     var bookHalves by rememberSaveable { mutableStateOf(listOf<String>()) }
     // First-use explainer for Document, ID Card and Book modes: shown once per mode per camera session until
     // "Don't remind me again" is ticked for that mode.

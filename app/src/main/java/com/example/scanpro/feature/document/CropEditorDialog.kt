@@ -88,6 +88,7 @@ import com.example.scanpro.core.designsystem.GlassIconButton
 import com.example.scanpro.core.designsystem.ScanProTheme
 import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.scanner.DocumentEdgeDetector
+import com.example.scanpro.scanner.translateEdge
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -292,27 +293,15 @@ fun CropEditorDialog(
                                                 y = (current.y + dragAmount.y / contentHeight).coerceIn(0f, 1f)
                                             )
                                         } else {
-                                            // Edge midpoint handle
-                                            val dx = dragAmount.x / contentWidth
-                                            val dy = dragAmount.y / contentHeight
-                                            when (activeCorner) {
-                                                4 -> { // Top edge
-                                                    points[0] = NormalizedPoint((points[0].x + dx).coerceIn(0f, 1f), (points[0].y + dy).coerceIn(0f, 1f))
-                                                    points[1] = NormalizedPoint((points[1].x + dx).coerceIn(0f, 1f), (points[1].y + dy).coerceIn(0f, 1f))
-                                                }
-                                                5 -> { // Right edge
-                                                    points[1] = NormalizedPoint((points[1].x + dx).coerceIn(0f, 1f), (points[1].y + dy).coerceIn(0f, 1f))
-                                                    points[2] = NormalizedPoint((points[2].x + dx).coerceIn(0f, 1f), (points[2].y + dy).coerceIn(0f, 1f))
-                                                }
-                                                6 -> { // Bottom edge
-                                                    points[2] = NormalizedPoint((points[2].x + dx).coerceIn(0f, 1f), (points[2].y + dy).coerceIn(0f, 1f))
-                                                    points[3] = NormalizedPoint((points[3].x + dx).coerceIn(0f, 1f), (points[3].y + dy).coerceIn(0f, 1f))
-                                                }
-                                                7 -> { // Left edge
-                                                    points[0] = NormalizedPoint((points[0].x + dx).coerceIn(0f, 1f), (points[0].y + dy).coerceIn(0f, 1f))
-                                                    points[3] = NormalizedPoint((points[3].x + dx).coerceIn(0f, 1f), (points[3].y + dy).coerceIn(0f, 1f))
-                                                }
-                                            }
+                                            // Edge handle: the edge moves as one piece and stops at the image border.
+                                            val first = activeCorner - 4
+                                            val second = (first + 1) % 4
+                                            val (a, b) = translateEdge(
+                                                points[first], points[second],
+                                                dragAmount.x / contentWidth, dragAmount.y / contentHeight
+                                            )
+                                            points[first] = a
+                                            points[second] = b
                                         }
                                         // copy() keeps any bend: it is stored relative to the corners, so it follows them.
                                         currentCrop = currentCrop.copy(topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3])
@@ -540,6 +529,8 @@ fun CropEditorDialog(
                         crop = CropQuad(NormalizedPoint(0f, 0f), NormalizedPoint(1f, 0f), NormalizedPoint(1f, 1f), NormalizedPoint(0f, 1f))
                     }
 
+                    // The outline is drawn on the source photo, which a page rotation does not turn (it only changes
+                    // `rotationDegrees`), so the outline must stay as it is here.
                     if (onRotateLeft != null) DarkToolAction(RotateLeftIcon, stringResource(R.string.doc_rotate_left), onClick = onRotateLeft)
                     if (onRotateRight != null) DarkToolAction(RotateRightIcon, stringResource(R.string.doc_rotate_right), onClick = onRotateRight)
 

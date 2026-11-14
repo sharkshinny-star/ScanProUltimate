@@ -11,6 +11,7 @@ import com.example.scanpro.R
 import com.example.scanpro.core.text.AppStrings
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.userRequire
+import com.example.scanpro.core.ui.COPY_BUFFER
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.data.CropQuad
 import kotlinx.coroutines.Dispatchers
@@ -197,7 +198,7 @@ object ImageToolsEngine {
         val prepared = prepareForFormat(bitmap, format)
         if ((prepared !== bitmap) && !bitmap.isRecycled) bitmap.recycle()
 
-        FileOutputStream(outputFile).use { out ->
+        FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
             encodeToStream(prepared, format, quality, out)
         }
         prepared.recycle()
@@ -266,7 +267,7 @@ object ImageToolsEngine {
         }
 
         if (bestBytes != null) {
-            FileOutputStream(outputFile).use { it.write(bestBytes) }
+            FileOutputStream(outputFile).buffered(COPY_BUFFER).use { it.write(bestBytes) }
         } else {
             sourceFile.copyTo(outputFile, overwrite = true)
         }
@@ -315,7 +316,7 @@ object ImageToolsEngine {
                     File(outputLocation.parentFile, "$base.${targetFormat.extension}")
                 }
 
-                FileOutputStream(singleOut).use { out ->
+                FileOutputStream(singleOut).buffered(COPY_BUFFER).use { out ->
                     encodeToStream(prepared, targetFormat, quality, out)
                 }
                 prepared.recycle()
@@ -389,7 +390,7 @@ object ImageToolsEngine {
             val prepared = prepareForFormat(scaled, config.outputFormat)
             if ((prepared !== scaled) && !scaled.isRecycled) scaled.recycle()
 
-            FileOutputStream(outputFile).use { out ->
+            FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
                 encodeToStream(prepared, config.outputFormat, config.qualityPercent, out)
             }
             prepared.recycle()
@@ -442,7 +443,7 @@ object ImageToolsEngine {
                     ?: userError(R.string.tools_err_image_undecodable, 1)
                 val prepared = prepareForFormat(bmp, format)
                 if (prepared !== bmp && !bmp.isRecycled) bmp.recycle()
-                FileOutputStream(outputFile).use { out ->
+                FileOutputStream(outputFile).buffered(COPY_BUFFER).use { out ->
                     encodeToStream(prepared, format, 100, out)
                 }
                 prepared.recycle()

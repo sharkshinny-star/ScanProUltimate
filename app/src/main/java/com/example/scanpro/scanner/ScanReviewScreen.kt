@@ -766,7 +766,7 @@ fun ScanReviewScreen(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                itemsIndexed(pages, key = { _, uri -> uri.toString() }) { index, uri ->
+                itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "review_reorder_item" }) { index, uri ->
                     val isCurrent = index == current
                     Surface(
                         shape = RoundedCornerShape(10.dp),

@@ -99,7 +99,7 @@ fun SignaturePadDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
                     ) {
-                        items(saved, key = { it.absolutePath }) { file ->
+                        items(saved, key = { it.absolutePath }, contentType = { "signature_item" }) { file ->
                             SavedSignature(file, onClick = { onUseSaved(file) }, onLongClick = { deleting = file })
                         }
                     }

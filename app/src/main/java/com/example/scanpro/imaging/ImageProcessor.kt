@@ -28,6 +28,7 @@ import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
 import com.example.scanpro.R
 import com.example.scanpro.core.text.userError
+import com.example.scanpro.core.ui.COPY_BUFFER
 import com.example.scanpro.core.text.userRequire
 
 object ImageProcessor {
@@ -218,7 +219,7 @@ object ImageProcessor {
 
     fun saveSignature(bitmap: Bitmap, destination: File) {
         destination.parentFile?.mkdirs()
-        FileOutputStream(destination).use { output ->
+        FileOutputStream(destination).buffered(COPY_BUFFER).use { output ->
             userRequire(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output), R.string.err_could_not_save_signature)
         }
     }
@@ -852,7 +853,7 @@ object ImageProcessor {
 
     private fun saveJpeg(bitmap: Bitmap, file: File, quality: Int) {
         file.parentFile?.mkdirs()
-        FileOutputStream(file).use { output ->
+        FileOutputStream(file).buffered(COPY_BUFFER).use { output ->
             userRequire(bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output), R.string.err_could_not_save_image, file.name)
         }
     }

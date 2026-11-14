@@ -91,6 +91,8 @@ class HomeRecentItem(
 /** Card size: portrait, like a page; two and a bit fit across a phone, so the row reads as one that scrolls. */
 private val RecentCardWidth = 130.dp
 internal val RecentThumbHeight = 175.dp
+private val RecentCardShape = RoundedCornerShape(16.dp)
+private val RecentOuterShape = RoundedCornerShape(18.dp)
 
 /**
  * Home's Recent row (F140): one sideways row of identical portrait cards whichever chip is chosen, the way iLovePDF's home
@@ -104,14 +106,13 @@ fun HomeRecentRow(items: List<HomeRecentItem>, modifier: Modifier = Modifier) {
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items, key = { it.key }) { HomeRecentCard(it) }
+        items(items, key = { it.key }, contentType = { "home_recent_card" }) { HomeRecentCard(it) }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeRecentCard(item: HomeRecentItem) {
-    val shape = RoundedCornerShape(16.dp)
     val outline by animateColorAsState(
         if (item.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
         label = "recentOutline"
@@ -122,7 +123,7 @@ private fun HomeRecentCard(item: HomeRecentItem) {
     Column(
         Modifier
             .width(RecentCardWidth)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RecentOuterShape)
             .combinedClickable(
                 role = Role.Button,
                 onClickLabel = stringResource(R.string.tools_recent_open),
@@ -136,9 +137,9 @@ private fun HomeRecentCard(item: HomeRecentItem) {
         Box(
             Modifier
                 .size(width = RecentCardWidth, height = RecentThumbHeight)
-                .clip(shape)
+                .clip(RecentCardShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .border(if (item.selected) 2.5.dp else 1.dp, outline, shape)
+                .border(if (item.selected) 2.5.dp else 1.dp, outline, RecentCardShape)
         ) {
             item.thumbnail(Modifier.fillMaxSize())
             item.badge?.let { TypeBadge(it, Modifier.align(Alignment.TopStart).padding(8.dp)) }
