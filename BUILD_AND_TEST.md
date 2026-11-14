@@ -48,6 +48,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - `:app:lintDebug`: 0 errors, 72 warnings, 14 hints. `:app:bundleRelease`: passed; AAB 49,017,062 bytes (46.7 MiB), unsigned as configured.
 - NOT run on this tree: sideload `assembleRelease`, instrumented tests. No device was connected (`adb devices` empty), so nothing was seen on a phone and no performance was measured.
 - Not pushed: `d408169` and the docs commit after it are local only.
+- Emulator check (2026-11-15, AVD `ScanProUX`, Android 17, 1080x2400, debug build of `d408169`; no phone was connected): `:app:installDebug` passed; Home, a document, the crop editor, Tools and tool search opened; dragging the crop editor's right edge handle past the picture moved the edge as one piece and stopped at the border; Done applied the crop and the page thumbnail refreshed; PDF to Word or text (plain text) on a test PDF gave the right five lines; logcat: 0 ScanPro crashes, 0 ANRs; cold start 3.9, 3.3, 3.9 s (debug build on an emulator, not comparable with a phone). R51 reproduced: Right in the crop editor changes nothing on screen but the page comes out turned. NOT checked: camera capture, other tools, dark theme, other languages, any real phone.
 
 ## Latest results (2026-11-13, F156 (then written up as F155) App Performance, Stream I/O 64KB buffering & List Recomposition Optimizations, uncommitted tree)
 
