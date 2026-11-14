@@ -41,6 +41,28 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-15, F156 on `d408169`, macOS, Android Studio Preview JDK)
+
+- Full `:app:testDebugUnitTest`: exit 0; 748 tests, 0 failed, 0 errors, 65 skipped (counted from the result XML).
+- Re-run after the last edit: `QuadMathTest` 12 passed (3 new for `translateEdge`), `LibraryRecoveryTest` 7 passed.
+- `:app:lintDebug`: 0 errors, 72 warnings, 14 hints. `:app:bundleRelease`: passed; AAB 49,017,062 bytes (46.7 MiB), unsigned as configured.
+- NOT run on this tree: sideload `assembleRelease`, instrumented tests. No device was connected (`adb devices` empty), so nothing was seen on a phone and no performance was measured.
+- Not pushed: `d408169` and the docs commit after it are local only.
+
+## Latest results (2026-11-13, F156 (then written up as F155) App Performance, Stream I/O 64KB buffering & List Recomposition Optimizations, uncommitted tree)
+
+- Full `:app:testDebugUnitTest` (Gradle 9.9.0): BUILD SUCCESSFUL; 683 passed, 65 skipped, 0 failed.
+- `:app:compileDebugKotlin`: clean pass, 0 errors.
+- `:app:lintDebug`: clean pass, 0 errors.
+- Stream I/O & UI Optimizations: standardized 64 KB `COPY_BUFFER` across `UiUtils`, `ImageProcessor`, `ImageToolsEngine`, `PdfToolsEngine`, `ThumbnailStore`, `PdfExporter`, `SpecialExporters`, `CompressPdfEngine`, and `PdfOcrEngine` with `.buffered(COPY_BUFFER)`; optimized LazyList contentTypes and keys across all screens; fixed FileThumbnail custom renderHeight sizing; cached search regex patterns in `ToolsLanding`.
+
+## Latest results (2026-11-13, F156 (then written up as F154) bug fixes, resource leak prevention & lint cleanup, uncommitted tree)
+
+- Full `:app:testDebugUnitTest` (Gradle 9.9.0): BUILD SUCCESSFUL; 683 passed, 65 skipped, 0 failed.
+- `:app:compileDebugKotlin`: clean pass, 0 errors.
+- `:app:lintDebug`: clean pass, 0 errors.
+- Fixed: empty `super.onCleared()` in `SignPdfViewModel`, Compose parameter ordering for `SectionTitle` in `ToolsLanding`, and `PDDocument` resource leak prevention in `PdfToolsEngine.extractText`.
+
 ## Latest results (2026-11-13, F153 UI motion polish, spring physics, and on-device Document Assistant intents, uncommitted tree)
 
 - Full `:app:testDebugUnitTest` (Gradle 9.9.0): BUILD SUCCESSFUL in 3m 1s; 67 actionable tasks (all passed, 0 failures, configuration cache reused).
