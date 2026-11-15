@@ -1878,8 +1878,7 @@ fun CameraScannerScreen(
                                 stringResource(if (autoCapture) R.string.scan_detect_auto else R.string.scan_detect_manual),
                                 style = MaterialTheme.typography.labelLarge,
                                 maxLines = 1,
-                                softWrap = false,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                softWrap = false
                             )
                         }
                     }

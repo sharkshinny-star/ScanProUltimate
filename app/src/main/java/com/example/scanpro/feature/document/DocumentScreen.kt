@@ -1633,7 +1633,8 @@ private fun PageCell(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterStart).padding(start = 6.dp)
             )
-            Row(Modifier.align(Alignment.CenterEnd)) {
+            // A document with one page has nowhere to move it: no greyed arrows.
+            if (onMoveEarlier != null || onMoveLater != null) Row(Modifier.align(Alignment.CenterEnd)) {
                 MoveButton(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.doc_move_earlier), enabled, onMoveEarlier)
                 MoveButton(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.doc_move_later), enabled, onMoveLater)
             }

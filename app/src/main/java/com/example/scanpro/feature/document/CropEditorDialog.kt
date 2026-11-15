@@ -442,15 +442,15 @@ fun CropEditorDialog(
                     .navigationBarsPadding()
                     .padding(vertical = 12.dp)
             ) {
-                // Page Navigation Bar (e.g. 1/1 + Add Page)
-                FlowRow(
+                // Page navigation and Add page; nothing to show for a single page with no Add page.
+                if (pageCount > 1 || onAddPage != null) FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                     itemVerticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
+                    if (pageCount > 1) Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = Color.White.copy(alpha = 0.12f)
                     ) {
@@ -554,7 +554,8 @@ fun CropEditorDialog(
                     }
 
                     if (onRotateLeft != null) DarkToolAction(RotateLeftIcon, stringResource(R.string.doc_rotate_left), onClick = onRotateLeft)
-                    if (onRotateRight != null) DarkToolAction(RotateRightIcon, stringResource(R.string.doc_rotate_right), onClick = onRotateRight)
+                    // "Right" only means something next to "Left"; alone, the button is "Rotate".
+                    if (onRotateRight != null) DarkToolAction(RotateRightIcon, stringResource(if (onRotateLeft != null) R.string.doc_rotate_right else R.string.doc_rotate), onClick = onRotateRight)
 
                     AccentButton(stringResource(R.string.common_done), enabled = bitmap != null, onClick = { onConfirm(toSource(crop)) })
                 }

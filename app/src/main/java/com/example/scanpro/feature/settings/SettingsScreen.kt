@@ -450,7 +450,7 @@ fun SettingsScreen(
                         }
                     } else {
                         StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace, onOpenFiles, onOpenRecycleBin)
-                        SettingsPagesCard(onOpen = { page = it })
+                        SettingsPagesCard(trashRetentionDays, onOpen = { page = it })
                         AboutFooter()
                     }
                 } else {
@@ -966,7 +966,7 @@ internal val LocalSettingsPage = staticCompositionLocalOf<SettingsPage?> { null 
 
 /** The main page's list of pages: one row each, title and a one-line summary. */
 @Composable
-private fun SettingsPagesCard(onOpen: (SettingsPage) -> Unit) {
+private fun SettingsPagesCard(trashRetentionDays: Int, onOpen: (SettingsPage) -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -979,7 +979,11 @@ private fun SettingsPagesCard(onOpen: (SettingsPage) -> Unit) {
                     icon = page.icon,
                     tone = page.tone,
                     title = stringResource(page.title),
-                    subtitle = page.summary.map { stringResource(it) }.joinToString(" · "),
+                    // The Recycle bin page holds one setting, whose name alone reads as half a sentence
+                    // ("Keep deleted documents for"): say what is set instead.
+                    subtitle = if (page == SettingsPage.RECYCLE_BIN) {
+                        pluralStringResource(R.plurals.core_trash_auto_deletes_days, trashRetentionDays, trashRetentionDays)
+                    } else page.summary.map { stringResource(it) }.joinToString(" · "),
                     subtitleMaxLines = 1,
                     trailing = { Chevron() },
                     onClick = { onOpen(page) }
