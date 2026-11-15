@@ -41,6 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-15, F158 on `6b81ab9`, macOS + Android 17 emulator)
+
+- Full `:app:testDebugUnitTest`: exit 0; 752 tests, 0 failed, 0 errors, 65 skipped.
+- `:app:installDebug` on AVD `ScanProUX`: camera Manual button in the app font; crop editor shows Rotate and no page switcher for one page; no move arrows under a single page; Settings Recycle bin row reads "Auto-deletes in 7 days"; logcat 0 ScanPro crashes, 0 ANRs.
+- NOT run on this tree: `:app:lintDebug`, `bundleRelease`, sideload build, a real phone. Not pushed.
+
 ## Latest results (2026-11-15, F157 on `ba1aabf`, macOS + Android 17 emulator)
 
 - Full `:app:testDebugUnitTest`: exit 0; 752 tests, 0 failed, 0 errors, 65 skipped.
