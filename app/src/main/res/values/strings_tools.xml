@@ -152,13 +152,13 @@
     <string name="tools_section_secure">Secure</string>
     <string name="tools_tile_organize">Organise PDF</string>
     <string name="tools_tile_rotate">Rotate</string>
-    <string name="tools_tile_extract">Extract Pages</string>
+    <string name="tools_tile_extract">Extract pages</string>
     <string name="tools_card_fill">Fill form</string>
     <string name="tools_card_ocr">Make searchable</string>
     <string name="tools_card_compress">Compress</string>
     <string name="tools_card_merge">Merge PDF</string>
     <string name="tools_card_split">Split PDF</string>
-    <string name="tools_card_extract">Extract Pages</string>
+    <string name="tools_card_extract">Extract pages</string>
     <string name="tools_card_rotate">Rotate pages</string>
     <string name="tools_card_organize">Organise PDF</string>
     <string name="tools_card_pdf2img">PDF to images</string>
@@ -296,7 +296,7 @@
     <string name="tools_office_note_file_truncated">The file was too large; only the first %1$s cells are shown.</string>
 
     <!-- Image Tools -->
-    <string name="tools_section_image">Image Tools</string>
+    <string name="tools_section_image">Image tools</string>
     <string name="tools_card_compress_img">Compress Image</string>
     <string name="tools_tile_compress_img">Compress</string>
     <string name="tools_card_convert_img">Convert Image</string>
@@ -413,9 +413,9 @@
     <string name="tools_err_watermark">Could not apply watermark to PDF</string>
 
     <!-- Page Numbers Tool -->
-    <string name="tools_card_page_numbers">Page Numbers</string>
+    <string name="tools_card_page_numbers">Page numbers</string>
     <string name="tools_tile_page_numbers">Numbers</string>
-    <string name="tools_page_numbers_title">Add Page Numbers</string>
+    <string name="tools_page_numbers_title">Add page numbers</string>
     <string name="tools_page_numbers_position_label">Position</string>
     <string name="tools_page_numbers_pos_bottom_center">Bottom Centre</string>
     <string name="tools_page_numbers_pos_bottom_right">Bottom Right</string>
@@ -428,7 +428,7 @@
     <string name="tools_page_numbers_fmt_dash">- 1 -</string>
     <string name="tools_page_numbers_fmt_simple">1</string>
     <string name="tools_page_numbers_skip_cover">Skip first page (cover)</string>
-    <string name="tools_page_numbers_action">Add Page Numbers</string>
+    <string name="tools_page_numbers_action">Add page numbers</string>
     <string name="tools_progress_page_numbers">Adding page numbers to PDF…</string>
     <string name="tools_page_numbers_success">Page numbers added to %1$d pages</string>
     <string name="tools_err_page_numbers">Could not add page numbers to PDF</string>

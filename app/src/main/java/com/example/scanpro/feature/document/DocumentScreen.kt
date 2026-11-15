@@ -1403,6 +1403,7 @@ internal fun DocumentDetailScreen(
                 previewOpen = false
             },
             onRotateRight = { onRotate(currentPage.id) },
+            turns = currentPage.rotationDegrees / 90,
             pageIndex = currentIndex,
             pageCount = pages.size,
             // Moving to another page keeps the editor open; a changed crop on the page being left is applied first.
