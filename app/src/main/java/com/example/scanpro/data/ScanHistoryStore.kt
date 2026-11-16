@@ -18,7 +18,18 @@ import org.json.JSONObject
  * One scanned code kept in the history. [format] and [valueType] are ML Kit's Barcode.FORMAT_* and Barcode.TYPE_*
  * numbers; the code is shown again by parsing [raw].
  */
-data class ScanHistoryEntry(val raw: String, val format: Int, val valueType: Int, val savedAt: Long, val favourite: Boolean = false)
+data class ScanHistoryEntry(
+    val raw: String,
+    val format: Int,
+    val valueType: Int,
+    val savedAt: Long,
+    val favourite: Boolean = false,
+    /** True for a code made in the generator, false for one scanned with the camera or from a picture. */
+    val created: Boolean = false
+)
+
+/** Which entries the history screen lists. */
+enum class ScanHistoryFilter { ALL, SCANNED, CREATED, FAVOURITES }
 
 /** The list rules of the scan history, as pure functions: newest first, no repeats, at most [LIMIT]. */
 object ScanHistory {
@@ -48,6 +59,25 @@ object ScanHistory {
     fun remove(list: List<ScanHistoryEntry>, raw: String): List<ScanHistoryEntry> = list.filterNot { it.raw == raw }
 
     /**
+     * Puts a deleted [entry] back at [index] (clamped), for Undo. Nothing changes when an entry with the same text has
+     * come back meanwhile (scanned again), so Undo never makes a duplicate.
+     */
+    fun restore(list: List<ScanHistoryEntry>, entry: ScanHistoryEntry, index: Int): List<ScanHistoryEntry> {
+        if (list.any { it.raw == entry.raw }) return list
+        val result = ArrayList(list)
+        result.add(index.coerceIn(0, result.size), entry)
+        return if (result.size > LIMIT) add(list, entry) else result
+    }
+
+    /** The entries [filter] keeps, in the same order. */
+    fun only(list: List<ScanHistoryEntry>, filter: ScanHistoryFilter): List<ScanHistoryEntry> = when (filter) {
+        ScanHistoryFilter.ALL -> list
+        ScanHistoryFilter.SCANNED -> list.filter { !it.created }
+        ScanHistoryFilter.CREATED -> list.filter { it.created }
+        ScanHistoryFilter.FAVOURITES -> list.filter { it.favourite }
+    }
+
+    /**
      * The entries whose text contains [query], ignoring case and surrounding spaces; all of them for a blank query.
      * A Wi-Fi code is matched on its network name only, so searching never finds a password.
      */
@@ -73,6 +103,7 @@ object ScanHistory {
                     .put("type", entry.valueType)
                     .put("at", entry.savedAt)
                     .put("fav", entry.favourite)
+                    .put("made", entry.created)
             )
         }
         return array.toString()
@@ -86,7 +117,7 @@ object ScanHistory {
             val item = array.optJSONObject(index) ?: continue
             val raw = item.optString("raw", "")
             if (raw.isEmpty()) continue
-            result.add(ScanHistoryEntry(raw, item.optInt("format", 0), item.optInt("type", 0), item.optLong("at", 0L), item.optBoolean("fav", false)))
+            result.add(ScanHistoryEntry(raw, item.optInt("format", 0), item.optInt("type", 0), item.optLong("at", 0L), item.optBoolean("fav", false), item.optBoolean("made", false)))
         }
         return result
     }
@@ -135,10 +166,13 @@ class ScanHistoryStore internal constructor(
         worker.execute { load() }
     }
 
-    fun add(raw: String, format: Int, valueType: Int, now: Long = System.currentTimeMillis()) {
+    fun add(raw: String, format: Int, valueType: Int, now: Long = System.currentTimeMillis(), created: Boolean = false) {
         if (raw.isEmpty()) return
-        change { ScanHistory.add(it, ScanHistoryEntry(raw, format, valueType, now)) }
+        change { ScanHistory.add(it, ScanHistoryEntry(raw, format, valueType, now, created = created)) }
     }
+
+    /** Puts back an entry deleted a moment ago at its old place (Undo); see [ScanHistory.restore]. */
+    fun restore(entry: ScanHistoryEntry, index: Int) = change { ScanHistory.restore(it, entry, index) }
 
     fun setFavourite(raw: String, favourite: Boolean) = change { ScanHistory.setFavourite(it, raw, favourite) }
 
