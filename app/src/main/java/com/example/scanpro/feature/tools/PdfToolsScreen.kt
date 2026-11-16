@@ -117,6 +117,7 @@ fun PdfToolsScreen(
     val formSession by viewModel.form.collectAsStateWithLifecycle()
     val formWithoutFields by viewModel.formWithoutFields.collectAsStateWithLifecycle()
     val signViewModel: SignPdfViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+    val signState by signViewModel.state.collectAsStateWithLifecycle()
     var showOcrDialog by rememberSaveable { mutableStateOf(false) }
 
     var selectedTool by rememberSaveable { mutableStateOf<String?>(null) }
@@ -436,6 +437,9 @@ fun PdfToolsScreen(
         onDeleteResult = { viewModel.deleteResult(it.file) },
         bottomBar = bottomBar,
         snackbarHostState = snackbarHostState,
+        // The organiser and Sign PDF are drawn in this tab rather than in a window of their own, so while one is open
+        // the landing's title and the bottom bar make way for it (they showed above and below the editor).
+        editorOpen = (showOrganizerSheet && pendingUri != null && selectedTool != null) || signState.visible,
         overlayContent = {
             // Sign PDF fills the screen; the progress and result dialogs below are drawn over it.
             SignPdfScreen(
@@ -826,6 +830,8 @@ fun PdfToolsScreen(
     onDeleteResult: (ToolResultFile) -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    /** A full-screen editor drawn by [overlayContent] owns the screen: no title bar or bottom bar around it. */
+    editorOpen: Boolean = false,
     overlayContent: @Composable () -> Unit = {}
 ) {
     var query by rememberSaveable { mutableStateOf("") }
@@ -848,12 +854,14 @@ fun PdfToolsScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.tools_screen_title)) },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
+            if (!editorOpen) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.tools_screen_title)) },
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                )
+            }
         },
-        bottomBar = bottomBar,
+        bottomBar = { if (!editorOpen) bottomBar() },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Box(

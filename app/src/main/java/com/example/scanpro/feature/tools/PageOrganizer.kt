@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -85,6 +84,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -99,7 +105,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private data class ThumbnailPageModel(
+internal data class ThumbnailPageModel(
     val index: Int,
     val rotation: Int = 0,
     val selected: Boolean = true
@@ -284,95 +290,72 @@ internal fun PdfPageOrganizerSheet(
         )
     }
 
-    // Shown inside the Tools tab, which already keeps clear of the status bar and the bottom bar: taking those insets
-    // again here left a dark band under the pages and a gap above the title.
+    // Shown inside the Tools tab, which hides its own title and bottom bar while this is open but still keeps clear of
+    // the status and navigation bars: taking those insets again here left a dark band under the pages and a gap above.
     Scaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
-                title = {
-                    Text(
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleSmall,
-                        text = stringResource(
-                            when (mode) {
-                                "extract" -> R.string.tools_organizer_extract_title
-                                "rotate" -> R.string.tools_organizer_rotate_title
-                                else -> R.string.tools_organizer_organize_title
+            var organizerMenu by remember { mutableStateOf(false) }
+            OrganizerTopBar(
+                title = stringResource(
+                    when (mode) {
+                        // The bar is narrow: a short title here, and "Select pages to extract" in the line under it.
+                        "extract" -> R.string.tools_organizer_extract_short_title
+                        "rotate" -> R.string.tools_organizer_rotate_title
+                        else -> R.string.tools_organizer_organize_title
+                    }
+                ),
+                onClose = requestClose,
+                canUndo = undoStack.isNotEmpty(),
+                onUndo = ::undo,
+                menuEnabled = !isLoading,
+                menuOpen = organizerMenu,
+                onMenuOpenChange = { organizerMenu = it },
+                menu = {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.tools_organizer_rotate_all)) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = null) },
+                        onClick = { organizerMenu = false; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(rotation = (pages[i].rotation + 90) % 360) } } }
+                    )
+                    if (mode != "rotate") {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(if (pages.all { it.selected }) R.string.tools_organizer_untick_all else R.string.tools_organizer_tick_all)) },
+                            onClick = { organizerMenu = false; val all = pages.all { it.selected }; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(selected = !all) } } }
+                        )
+                    }
+                    if (mode == "organize" && onInsertPages != null) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.tools_organizer_insert_pages)) },
+                            enabled = keptCount > 0,
+                            onClick = {
+                                organizerMenu = false
+                                onInsertPages(pages.filter { it.selected }.map { PageSpec(it.index, it.rotation) })
                             }
                         )
+                    }
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.common_reset)) },
+                        leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
+                        onClick = {
+                            organizerMenu = false
+                            val count = session?.pageCount ?: pages.size
+                            change { pages.clear(); pages.addAll((0 until count).map { ThumbnailPageModel(it, selected = defaultSelected) }) }
+                        }
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = requestClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close))
-                    }
+                saveLabel = when (mode) {
+                    "extract" -> stringResource(R.string.tools_organizer_extract_count, keptCount)
+                    "organize" -> stringResource(R.string.tools_organizer_save_count, keptCount)
+                    else -> stringResource(R.string.tools_organizer_save_pdf)
                 },
-                actions = {
-                    IconButton(onClick = ::undo, enabled = undoStack.isNotEmpty()) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.common_undo))
-                    }
-                    var organizerMenu by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { organizerMenu = true }, enabled = !isLoading) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more))
-                        }
-                        DropdownMenu(expanded = organizerMenu, onDismissRequest = { organizerMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.tools_organizer_rotate_all)) },
-                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.RotateRight, contentDescription = null) },
-                                onClick = { organizerMenu = false; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(rotation = (pages[i].rotation + 90) % 360) } } }
-                            )
-                            if (mode != "rotate") {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(if (pages.all { it.selected }) R.string.tools_organizer_untick_all else R.string.tools_organizer_tick_all)) },
-                                    onClick = { organizerMenu = false; val all = pages.all { it.selected }; change { pages.indices.forEach { i -> pages[i] = pages[i].copy(selected = !all) } } }
-                                )
-                            }
-                            if (mode == "organize" && onInsertPages != null) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.tools_organizer_insert_pages)) },
-                                    enabled = keptCount > 0,
-                                    onClick = {
-                                        organizerMenu = false
-                                        onInsertPages(pages.filter { it.selected }.map { PageSpec(it.index, it.rotation) })
-                                    }
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.common_reset)) },
-                                leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
-                                onClick = {
-                                    organizerMenu = false
-                                    val count = session?.pageCount ?: pages.size
-                                    change { pages.clear(); pages.addAll((0 until count).map { ThumbnailPageModel(it, selected = defaultSelected) }) }
-                                }
-                            )
-                        }
-                    }
-                    Button(
-                        onClick = {
-                            // Organise drops the pages that were unticked; Rotate keeps every page.
-                            val specs = pages.filter { mode == "rotate" || it.selected }.map { PageSpec(it.index, it.rotation) }
-                            val extracted = pages.filter { it.selected }.map { it.index }
-                            val rotations = pages.associate { it.index to it.rotation }
-                            onApply(specs, extracted, rotations)
-                        },
-                        // Nothing to extract or keep would only end in an error message.
-                        enabled = !isLoading && pages.isNotEmpty() && (mode == "rotate" || keptCount > 0) && !extractsEverything
-                    ) {
-                        Text(
-                            when (mode) {
-                                "extract" -> stringResource(R.string.tools_organizer_extract_count, keptCount)
-                                "organize" -> stringResource(R.string.tools_organizer_save_count, keptCount)
-                                else -> stringResource(R.string.tools_organizer_save_pdf)
-                            }
-                        )
-                    }
-                    // The bar has no window insets here, so without this the Save button touched the screen edge.
-                    Spacer(Modifier.width(12.dp))
+                // Nothing to extract or keep would only end in an error message.
+                saveEnabled = !isLoading && pages.isNotEmpty() && (mode == "rotate" || keptCount > 0) && !extractsEverything,
+                onSave = {
+                    // Organise drops the pages that were unticked; Rotate keeps every page.
+                    val specs = pages.filter { mode == "rotate" || it.selected }.map { PageSpec(it.index, it.rotation) }
+                    val extracted = pages.filter { it.selected }.map { it.index }
+                    val rotations = pages.associate { it.index to it.rotation }
+                    onApply(specs, extracted, rotations)
                 }
             )
         }
@@ -390,6 +373,7 @@ internal fun PdfPageOrganizerSheet(
                     when {
                         extractsEverything -> OrganizerBanner(stringResource(R.string.tools_extract_all_selected), warning = true)
                         mode == "organize" -> OrganizerBanner(stringResource(R.string.tools_organizer_drag_hint), warning = false)
+                        mode == "extract" -> OrganizerBanner(stringResource(R.string.tools_organizer_extract_title), warning = false)
                     }
                     ReorderablePageGrid(
                         items = pages,
@@ -400,10 +384,15 @@ internal fun PdfPageOrganizerSheet(
                         // One undo step for the whole drag, recorded when the page is picked up.
                         onDragStarted = { undoStack.add(pages.toList()); if (undoStack.size > 50) undoStack.removeAt(0) }
                     ) { item, index, dragging ->
+                        // Rendered only while the card is on screen.
+                        val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
+                            val preview = session ?: return@produceState
+                            value = withContext(Dispatchers.IO) { preview.render(item.index, 360) }
+                        }
                         OrganizerPageCard(
                             item = item,
                             position = index + 1,
-                            session = session,
+                            thumbnail = thumbnail,
                             mode = mode,
                             isDragging = dragging,
                             onClick = {
@@ -479,29 +468,28 @@ internal fun OrganizerBanner(text: String, warning: Boolean) {
 }
 
 /**
- * One page in the organiser: a portrait thumbnail with its current position, and what a tap does for the tool
- * (Organise: open the page menu, Rotate: turn it, Extract: tick it). Pressing and holding picks it up to move it.
- * The thumbnail is rendered only while the card is on screen.
+ * One page in the organiser: a portrait thumbnail and, under it, a footer with the page's current position and what
+ * the page offers (Organise: its menu, Rotate: a preview, Extract: whether it is ticked). Nothing is drawn over the page
+ * itself, so the controls never hide its content. A tap does what the tool does (Organise: open the page menu, whose
+ * "View" shows the page large; Rotate: turn it; Extract: tick it). Pressing and holding picks the page up to move it.
  */
 @Composable
-private fun OrganizerPageCard(
+internal fun OrganizerPageCard(
     item: ThumbnailPageModel,
     position: Int,
-    session: PdfPreviewSession?,
+    thumbnail: Bitmap?,
     mode: String,
     isDragging: Boolean,
     onClick: () -> Unit,
     onPreview: () -> Unit,
     onMore: () -> Unit
 ) {
-    val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
-        val preview = session ?: return@produceState
-        value = withContext(Dispatchers.IO) { preview.render(item.index, 360) }
-    }
     val extract = mode == "extract"
     val removed = mode == "organize" && !item.selected
     val chosen = extract && item.selected
     val pageName = stringResource(R.string.tools_page_number, position)
+    val removedLabel = stringResource(R.string.tools_page_removed_label)
+    val previewLabel = stringResource(R.string.tools_organizer_preview_page, position)
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = if (chosen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -513,85 +501,149 @@ private fun OrganizerPageCard(
                 if (extract) Modifier.toggleable(value = item.selected, role = Role.Checkbox, onValueChange = { onClick() })
                 else Modifier.clickable(role = Role.Button, onClick = onClick)
             )
-            .semantics { contentDescription = pageName }
-    ) {
-        Box(Modifier.fillMaxWidth().aspectRatio(0.74f).padding(10.dp), contentAlignment = Alignment.Center) {
-            val bitmap = thumbnail
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            rotationZ = item.rotation.toFloat()
-                            // A page turned on its side is wider than the card: shrink it to fit instead of clipping.
-                            if (item.rotation % 180 != 0) { scaleX = 0.74f; scaleY = 0.74f }
-                            alpha = if (removed) 0.35f else 1f
-                        }
-                )
-            } else {
-                // A blank page that shimmers until its thumbnail is drawn.
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                ) { LoadingShimmer(Modifier.matchParentSize()) }
+            .semantics {
+                contentDescription = if (removed) "$pageName, $removedLabel" else pageName
+                // Rotate turns the page on a tap, so its preview is offered to screen readers as an action too.
+                if (mode == "rotate") customActions = listOf(CustomAccessibilityAction(previewLabel) { onPreview(); true })
             }
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.82f),
-                modifier = Modifier.align(Alignment.TopStart).offset((-6).dp, (-6).dp)
+    ) {
+        Column {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.78f)
+                    .padding(start = 10.dp, end = 10.dp, top = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val bitmap = thumbnail
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                rotationZ = item.rotation.toFloat()
+                                // A page turned on its side is wider than the card: shrink it to fit instead of clipping.
+                                if (item.rotation % 180 != 0) { scaleX = 0.78f; scaleY = 0.78f }
+                                alpha = if (removed) 0.35f else 1f
+                            }
+                    )
+                } else {
+                    // A blank page that shimmers until its thumbnail is drawn.
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    ) { LoadingShimmer(Modifier.matchParentSize()) }
+                }
+                if (removed) {
+                    // On a faded page, in a chip of its own so it reads over any content.
+                    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.errorContainer) {
+                        Text(
+                            removedLabel,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .padding(start = 12.dp, end = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "$position",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.inverseOnSurface,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    color = if (chosen) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f).clearAndSetSemantics { }
                 )
-            }
-            when {
-                extract -> Icon(
-                    if (item.selected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                    contentDescription = null,
-                    tint = if (item.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.align(Alignment.TopEnd).size(26.dp)
-                )
-                else -> IconButton(onClick = onPreview, modifier = Modifier.align(Alignment.TopEnd).size(36.dp)) {
-                    Icon(
-                        Icons.Default.Fullscreen,
-                        contentDescription = stringResource(R.string.tools_organizer_preview_page, position),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                when (mode) {
+                    "extract" -> Icon(
+                        if (item.selected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                        contentDescription = null,
+                        tint = if (item.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(end = 8.dp).size(24.dp)
                     )
+                    "organize" -> IconButton(onClick = onMore, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    else -> IconButton(onClick = onPreview, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Default.Fullscreen, contentDescription = previewLabel, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-            }
-            if (mode == "organize") {
-                if (removed) {
-                    Text(
-                        stringResource(R.string.tools_page_removed_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                IconButton(onClick = onMore, modifier = Modifier.align(Alignment.BottomEnd).size(40.dp)) {
-                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            if (mode == "rotate") {
-                Icon(
-                    Icons.AutoMirrored.Filled.RotateRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.align(Alignment.BottomEnd).size(26.dp)
-                )
             }
         }
     }
+}
+
+/**
+ * The organiser's bar: close, the title on one line (it shrinks a little before it is cut short), Undo, the menu and
+ * a compact Save button, so the actions leave the title room on a narrow phone.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun OrganizerTopBar(
+    title: String,
+    onClose: () -> Unit,
+    canUndo: Boolean,
+    onUndo: () -> Unit,
+    menuEnabled: Boolean,
+    menuOpen: Boolean,
+    onMenuOpenChange: (Boolean) -> Unit,
+    menu: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+    saveLabel: String,
+    saveEnabled: Boolean,
+    onSave: () -> Unit
+) {
+    TopAppBar(
+        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
+        title = {
+            Text(
+                title,
+                maxLines = 1,
+                softWrap = false,
+                style = MaterialTheme.typography.titleMedium,
+                autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(
+                    minFontSize = 12.sp,
+                    maxFontSize = MaterialTheme.typography.titleMedium.fontSize
+                ),
+                modifier = Modifier.semantics { heading() }
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onClose) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_close))
+            }
+        },
+        actions = {
+            IconButton(onClick = onUndo, enabled = canUndo) {
+                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.common_undo))
+            }
+            Box {
+                IconButton(onClick = { onMenuOpenChange(true) }, enabled = menuEnabled) {
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more))
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { onMenuOpenChange(false) }, content = menu)
+            }
+            Button(
+                onClick = onSave,
+                enabled = saveEnabled,
+                contentPadding = PaddingValues(horizontal = 14.dp),
+                modifier = Modifier.heightIn(min = 36.dp).padding(start = 2.dp, end = 10.dp)
+            ) {
+                Text(saveLabel, maxLines = 1)
+            }
+        }
+    )
 }
 
 /** Full-resolution preview of a single page when tapped or long-pressed in the organiser. */
