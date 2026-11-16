@@ -41,6 +41,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-16 second round, F160–F163 on `edabdab`, Linux cloud container)
+
+- Full `:app:testDebugUnitTest :app:lintDebug`: exit 0; 884 tests, 0 failed, 82 skipped (opt-in screenshots); lint 0 errors, 91 warnings.
+- Screenshot renders run separately and looked at: `IntroductionsScreenshotTest` (14), `FeedbackScreenshotTest`, `FilesAccessScreenshotTest`. `IntroductionsScreenshotTest` and `PdfToolsFeaturesTest` hit the known Robolectric `FileSystemAlreadyExistsException` when filtered together with other classes; both pass alone and in the full suite.
+- `:app:bundleRelease`: passed; AAB 49,725,212 bytes (47.4 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device or emulator.
+
 ## Latest results (2026-11-16, F157–F159 merged on `691da1b`, Linux cloud container)
 
 - Full `:app:testDebugUnitTest :app:lintDebug` (`--no-daemon`): exit 0; 821 tests, 0 failed, 56 skipped (counted from the result XML); lint 0 errors, 75 warnings.

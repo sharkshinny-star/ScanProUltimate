@@ -412,3 +412,10 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - Launch: `MainActivity.activityCreatedInProcess` makes the first activity of a process a launch even with saved state; the splash exit listener waits (max 1.5 s) for theme, palette and lock settings before handing over.
 
 - **Tool pages (F147):** `feature/tools/ToolPage.kt` is the shared full-screen scaffold for tool options (top bar with Close, scrolling option cards, sticky action button with a reason line when disabled); `ToolChoices.kt` holds the remembered OCR script choice. Multi-file tool results are unpacked on demand into `cache/exports/shared_parts/` for sharing (swept with the other exports after a day).
+
+### Second round 2026-11-16 (F160–F163)
+
+- Tools: `ToolSection.tiles` vs `tools`; `SEARCH_ONLY_TOOL_IDS`, `IMAGE_TOOLS_TILE` + `ImageToolsChooser`; `PdfToolCard.beta`. PDF to PowerPoint (`PdfToPptEngine`, `PptxExporter`) deleted.
+- Feedback: `feature/feedback/` (rating sheet, issue/feature form), `data/FeedbackSchedule.kt` (`FeedbackPrompts`, SharedPreferences; scans 1 and 2, then 30 days); delivery through `core/ui/Support.kt` `contactSupport` with `SupportMessage` (email → share → clipboard), no network.
+- Files on this phone: `feature/phonepdfs/` (`PhonePdfSource` MediaStore query and change observer, `PhoneFiles` filters/sort, `PhoneThumbnails`, screen and view model), `data/FilesAccessPrompts.kt`; permissions `MANAGE_EXTERNAL_STORAGE` (opt-in) and `READ_EXTERNAL_STORAGE` maxSdk 29. Read only.
+- Introductions: `core/designsystem/IntroArt.kt` (Canvas art: phone scan, receipts, private tools, sample document, ID card front/back, open book, `renderSampleScanBitmap`), `scanner/BookSplitOverlay.kt`, `BookSpread.leftFirst/swapped` (layout 1 = A|B, 2 = B|A).
