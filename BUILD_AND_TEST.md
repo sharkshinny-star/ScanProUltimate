@@ -41,6 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-16, F162 on `6ef7b0f`, macOS + Android 17 emulator)
+
+- Full `:app:testDebugUnitTest`: exit 0; 762 tests, 0 failed, 65 skipped. This run also covers the one-line `CameraScannerScreen.kt` change noted below.
+- `:app:installDebug` on AVD `ScanProUX`, app theme Dark, system text 1.5x: Home, Files, Tools, Settings; full document names on three lines, thumbnails on a grey sheet; logcat 0 ScanPro crashes, 0 ANRs. Emulator put back to text 1.0x, system light, app theme Light.
+- NOT run on this tree: `:app:lintDebug`, release builds (last run on `5764a06`), a real phone. Not pushed: `git push` fails with "could not read Username" (no GitHub credentials on this Mac).
+
 ## Latest results (2026-11-16, F160 `e873472` and F161 `5764a06`, macOS + Android 17 emulator)
 
 - Full `:app:testDebugUnitTest`: exit 0; 762 tests, 0 failed, 65 skipped (new: `PageInspectorTest` 4, `SteadinessTest` 5). Run before one later one-line change in `CameraScannerScreen.kt` (the screen also refreshes when `isConvincingPage` changes); that line was compiled by the lint and release builds below, the suite was not re-run after it.
