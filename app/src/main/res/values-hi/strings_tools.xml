@@ -477,11 +477,6 @@
     <string name="tools_card_pdf2excel">PDF से Excel</string>
     <string name="tools_pdf2text_excel">Excel वर्कबुक (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">हर पेज के लिए एक शीट। शब्द पेज पर जहाँ हैं उसी से कॉलम बनते हैं, इसलिए तालिकाएँ सेल में आती हैं।</string>
-    <string name="tools_card_pdf2ppt">PDF से PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">%1$d स्लाइड बनी, पेज की एक तस्वीर।</item>
-        <item quantity="other">%1$d स्लाइड बनीं, हर पेज की एक तस्वीर।</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">यह नहीं हो सका</string>
     <string name="tools_failure_try_again">फिर से कोशिश करें</string>
@@ -516,7 +511,6 @@
     <string name="tools_desc_pdf2img">पेज इमेज के रूप में सहेजें</string>
     <string name="tools_desc_pdf2text">Word या सादा टेक्स्ट पाएँ</string>
     <string name="tools_desc_pdf2excel">टेबल को शीट में निकालें</string>
-    <string name="tools_desc_pdf2ppt">हर पेज एक स्लाइड</string>
     <string name="tools_desc_protect">पासवर्ड से लॉक करें</string>
     <string name="tools_desc_unlock">पासवर्ड हटाएँ</string>
     <string name="tools_desc_crop_img">फ़ोटो के किनारे काटें</string>

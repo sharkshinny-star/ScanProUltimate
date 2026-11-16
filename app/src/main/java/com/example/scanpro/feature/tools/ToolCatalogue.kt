@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Merge
-import androidx.compose.material.icons.filled.Slideshow
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.SyncAlt
@@ -45,10 +45,30 @@ data class PdfToolCard(
     /** Colour family of the icon tile, so related tools share a hue. */
     val tone: TileTone = TileTone.Indigo,
     /** Short label under the tile; the full [title] when no shorter word fits. */
-    @StringRes val label: Int = title
+    @StringRes val label: Int = title,
+    /** Shown with a "Beta" badge: works, but results vary with the PDF (e.g. table detection). */
+    val beta: Boolean = false
 )
 
-internal class ToolSection(val id: String, @StringRes val title: Int, val tools: List<PdfToolCard>)
+internal class ToolSection(val id: String, @StringRes val title: Int, val tools: List<PdfToolCard>) {
+    /**
+     * What the landing shows as tiles. Tools in [SEARCH_ONLY_TOOL_IDS] stay in [tools] (search, pins, recents,
+     * introductions, "Try again" and "Next tools" still find them) but get no tile of their own; the Convert section
+     * gains the one [IMAGE_TOOLS_TILE] in place of the four image tools.
+     */
+    val tiles: List<PdfToolCard>
+        get() = tools.filter { it.id !in SEARCH_ONLY_TOOL_IDS } + (if (id == "convert") listOf(IMAGE_TOOLS_TILE) else emptyList())
+}
+
+/**
+ * Tools with no tile on the landing (owner's clean-up, 2026-11-16): Organise pages already rotates and extracts,
+ * Repair is offered from the failure dialog when a PDF can't be read, and the four image tools sit behind one
+ * "Image tools" tile. All of them are still found by search.
+ */
+internal val SEARCH_ONLY_TOOL_IDS = setOf("rotate", "extract", "repair", "crop_img", "compress_img", "convert_img", "resize_img")
+
+/** The one tile that opens a chooser of the image tools (crop, compress, convert, resize). */
+internal val IMAGE_TOOLS_TILE = PdfToolCard("image_tools", R.string.tools_card_image_tools, Icons.Default.PhotoLibrary, TileTone.Coral)
 
 /** Tiles grouped the way the leading scanners do: what you do to a PDF, what you turn it into, how you lock it. */
 internal val TOOL_SECTIONS = listOf(
@@ -77,8 +97,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
             PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral),
             PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.AutoMirrored.Filled.Article, TileTone.Teal, label = R.string.tools_tile_pdf2text),
-            PdfToolCard("pdf2excel", R.string.tools_card_pdf2excel, Icons.Default.TableChart, TileTone.Teal),
-            PdfToolCard("pdf2ppt", R.string.tools_card_pdf2ppt, Icons.Default.Slideshow, TileTone.Coral),
+            PdfToolCard("pdf2excel", R.string.tools_card_pdf2excel, Icons.Default.TableChart, TileTone.Teal, beta = true),
             PdfToolCard("extract_images", R.string.tools_card_extract_images, Icons.Default.Collections, TileTone.Coral)
         )
     ),

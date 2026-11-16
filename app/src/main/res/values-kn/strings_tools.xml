@@ -477,11 +477,6 @@
     <string name="tools_card_pdf2excel">PDF ನಿಂದ Excel</string>
     <string name="tools_pdf2text_excel">Excel ವರ್ಕ್‌ಬುಕ್ (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಶೀಟ್. ಪದಗಳು ಪುಟದಲ್ಲಿರುವ ಸ್ಥಳದಿಂದ ಕಾಲಮ್‌ಗಳನ್ನು ಮರುನಿರ್ಮಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಕೋಷ್ಟಕಗಳು ಸೆಲ್‌ಗಳಾಗಿ ಬರುತ್ತವೆ.</string>
-    <string name="tools_card_pdf2ppt">PDF ನಿಂದ PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">%1$d ಸ್ಲೈಡ್ ಮಾಡಲಾಗಿದೆ, ಪುಟದ ಚಿತ್ರ.</item>
-        <item quantity="other">%1$d ಸ್ಲೈಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ, ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಚಿತ್ರ.</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">ಇದು ಆಗಲಿಲ್ಲ</string>
     <string name="tools_failure_try_again">ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ</string>
@@ -516,7 +511,6 @@
     <string name="tools_desc_pdf2img">ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಉಳಿಸಿ</string>
     <string name="tools_desc_pdf2text">Word ಅಥವಾ ಸರಳ ಪಠ್ಯ ಪಡೆಯಿರಿ</string>
     <string name="tools_desc_pdf2excel">ಕೋಷ್ಟಕಗಳನ್ನು ಶೀಟ್‌ಗೆ ತೆಗೆಯಿರಿ</string>
-    <string name="tools_desc_pdf2ppt">ಪ್ರತಿ ಪುಟ ಒಂದು ಸ್ಲೈಡ್</string>
     <string name="tools_desc_protect">ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಲಾಕ್ ಮಾಡಿ</string>
     <string name="tools_desc_unlock">ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆದುಹಾಕಿ</string>
     <string name="tools_desc_crop_img">ಫೋಟೋ ಅಂಚುಗಳನ್ನು ಕತ್ತರಿಸಿ</string>

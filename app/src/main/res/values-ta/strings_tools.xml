@@ -477,11 +477,6 @@
     <string name="tools_card_pdf2excel">PDF-இலிருந்து Excel</string>
     <string name="tools_pdf2text_excel">Excel பணிப்புத்தகம் (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ஒவ்வொரு பக்கத்திற்கும் ஒரு தாள். சொற்கள் பக்கத்தில் இருக்கும் இடத்தைக் கொண்டு நெடுவரிசைகள் அமைக்கப்படுவதால் அட்டவணைகள் கலங்களாக வரும்.</string>
-    <string name="tools_card_pdf2ppt">PDF-இலிருந்து PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">%1$d ஸ்லைடு உருவானது, பக்கத்தின் படம்.</item>
-        <item quantity="other">%1$d ஸ்லைடுகள் உருவாயின், ஒவ்வொரு பக்கத்திற்கும் ஒரு படம்.</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">இது நடக்கவில்லை</string>
     <string name="tools_failure_try_again">மீண்டும் முயலவும்</string>
@@ -516,7 +511,6 @@
     <string name="tools_desc_pdf2img">பக்கங்களைப் படங்களாகச் சேமிக்கவும்</string>
     <string name="tools_desc_pdf2text">Word அல்லது வெற்று உரை பெறவும்</string>
     <string name="tools_desc_pdf2excel">அட்டவணைகளைத் தாளுக்கு எடுக்கவும்</string>
-    <string name="tools_desc_pdf2ppt">ஒவ்வொரு பக்கமும் ஒரு ஸ்லைடு</string>
     <string name="tools_desc_protect">கடவுச்சொல்லால் பூட்டவும்</string>
     <string name="tools_desc_unlock">கடவுச்சொல்லை நீக்கவும்</string>
     <string name="tools_desc_crop_img">புகைப்பட ஓரங்களை வெட்டவும்</string>

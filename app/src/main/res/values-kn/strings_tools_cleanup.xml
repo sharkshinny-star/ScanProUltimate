@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tools landing clean-up (2026-11-16): Image tools tile, Beta badge, Repair from the failure dialog. -->
+<resources>
+    <string name="tools_card_image_tools">ಚಿತ್ರ ಉಪಕರಣಗಳು</string>
+    <string name="tools_desc_image_tools">ಫೋಟೋಗಳನ್ನು ಕತ್ತರಿಸಿ, ಸಂಕುಚಿಸಿ, ಪರಿವರ್ತಿಸಿ ಅಥವಾ ಗಾತ್ರ ಬದಲಿಸಿ</string>
+    <string name="tools_badge_beta">ಬೀಟಾ</string>
+    <string name="tools_failure_repair">ಈ PDF ಅನ್ನು ಸರಿಪಡಿಸಿ</string>
+</resources>

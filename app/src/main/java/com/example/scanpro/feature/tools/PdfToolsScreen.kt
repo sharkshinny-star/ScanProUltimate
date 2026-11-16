@@ -237,7 +237,6 @@ fun PdfToolsScreen(
             showConvertImageDialog = true
         }
     }
-    val savePowerPointLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.presentationml.presentation")) { saveTo(it) }
     val saveExcelLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) { saveTo(it) }
     val saveWordLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
@@ -255,7 +254,6 @@ fun PdfToolsScreen(
             "text/plain" -> saveTextLauncher.launch(name)
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> saveWordLauncher.launch(name)
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> saveExcelLauncher.launch(name)
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> savePowerPointLauncher.launch(name)
             else -> saveJpegLauncher.launch(name)
         }
     }
@@ -293,7 +291,6 @@ fun PdfToolsScreen(
             "sign" -> signViewModel.open(uri)
             "pdf2text" -> { pdfTextFormat = TextExportFormat.WORD; showPdfToTextDialog = true }
             "pdf2excel" -> { pdfTextFormat = TextExportFormat.EXCEL; showPdfToTextDialog = true }
-            "pdf2ppt" -> viewModel.pdfToPowerPoint(uri)
             "blank_pages" -> viewModel.findBlankPages(uri)
             "greyscale" -> showGreyscaleDialog = true
             "flatten" -> showFlattenDialog = true
@@ -403,9 +400,17 @@ fun PdfToolsScreen(
     // The first time a tile is tapped (F146), its introduction comes before the picker. Marked as seen on every way
     // out, so it never shows twice. Saveable, so turning the phone keeps it up.
     var introToolId by rememberSaveable { mutableStateOf<String?>(null) }
+    var imageToolsOpen by rememberSaveable { mutableStateOf(false) }
     val launchTool: (PdfToolCard) -> Unit = { tool ->
-        if (toolIntro(tool.id) != null && FirstRunHints.isDue(context, FirstRunHints.toolKey(tool.id))) introToolId = tool.id
+        if (tool.id == IMAGE_TOOLS_TILE.id) imageToolsOpen = true
+        else if (toolIntro(tool.id) != null && FirstRunHints.isDue(context, FirstRunHints.toolKey(tool.id))) introToolId = tool.id
         else openTool(tool)
+    }
+    if (imageToolsOpen) {
+        ImageToolsChooser(
+            onPick = { picked -> imageToolsOpen = false; launchTool(picked) },
+            onDismiss = { imageToolsOpen = false }
+        )
     }
     introToolId?.let { id ->
         val tool = ALL_TOOLS.firstOrNull { it.id == id }
@@ -526,6 +531,11 @@ fun PdfToolsScreen(
                     } else null,
                     onChooseAnother = if (card != null && (failedTool in RETRYABLE_TOOLS || failedTool in MULTI_FILE_TOOLS)) {
                         { viewModel.clearFailure(); launchTool(card) }
+                    } else null,
+                    // A PDF that can't be read gets one more chance: Repair rewrites it with the forgiving parser and,
+                    // failing that, keeps the pages the system renderer can still draw (owner's clean-up: no Repair tile).
+                    onRepair = if (failedTool in RETRYABLE_TOOLS && failedTool !in IMAGE_INPUT_TOOLS && failedTool != "repair" && failedUri != null) {
+                        { viewModel.clearFailure(); selectedTool = "repair"; viewModel.repair(failedUri) }
                     } else null,
                     onDismiss = viewModel::clearFailure
                 )
@@ -987,9 +997,12 @@ private const val RESULTS_SHOWN = 5
 /** Tools that work on one picked file, so a failed run can be tried again with the same file. */
 private val RETRYABLE_TOOLS = setOf(
     "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
-    "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel", "pdf2ppt",
+    "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel",
     "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
 )
+
+/** Tools whose input is a picture, not a PDF: their failures are never offered Repair. */
+private val IMAGE_INPUT_TOOLS = setOf("crop_img", "compress_img", "resize_img", "convert_img")
 
 /** Tools that start from several files or from a document that is not a PDF: after a failure they can only be picked again. */
 private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img")
@@ -999,7 +1012,7 @@ private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img"
  * copy is used. Sign and PDF to Word/Excel/text ask for themselves; Unlock, Protect and Repair deal with protection.
  */
 private val OPENS_PAGES = setOf(
-    "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark", "pdf2ppt",
+    "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark",
     "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
 )
 
