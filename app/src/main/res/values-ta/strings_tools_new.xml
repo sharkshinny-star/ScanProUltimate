@@ -87,4 +87,10 @@
     <string name="tools_info_save_failed">புதிய விவரங்களைச் சேமிக்க முடியவில்லை.</string>
     <string name="tools_info_saved">விவரங்கள் புதுப்பிக்கப்பட்டன</string>
     <string name="tools_info_removed">எல்லா மெட்டாடேட்டாவும் அகற்றப்பட்டது</string>
+
+    <string name="hint_tool_blank_pages">ஸ்கேன் செய்த PDF-இன் வெற்றுப் பக்கங்களைக் கண்டறிந்து, பட்டியலைச் சரிபார்த்த பின் அகற்றவும்.</string>
+    <string name="hint_tool_greyscale">குறைந்த செலவில் அச்சிட அல்லது சிறிய கோப்புக்காக வண்ண PDF-ஐச் சாம்பல் நிழல்களாக மாற்றவும்.</string>
+    <string name="hint_tool_flatten">படிவப் பதில்கள், கருத்துகள், முத்திரைகளைப் பக்கங்களிலேயே வரையவும், யாரும் மாற்ற முடியாதபடி.</string>
+    <string name="hint_tool_extract_images">PDF-இல் உள்ள ஒவ்வொரு படத்தையும் தனிப் படக் கோப்பாகச் சேமிக்கவும்.</string>
+    <string name="hint_tool_pdf_info">PDF-இன் மறைந்த விவரங்களைப் பார்க்கவும், தலைப்பு அல்லது ஆசிரியரைத் திருத்தவும், அல்லது தனியுரிமைக்காக அனைத்தையும் அகற்றவும்.</string>
 </resources>

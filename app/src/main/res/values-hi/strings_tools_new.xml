@@ -87,4 +87,10 @@
     <string name="tools_info_save_failed">नई जानकारी सहेजी नहीं जा सकी।</string>
     <string name="tools_info_saved">जानकारी अपडेट हो गई</string>
     <string name="tools_info_removed">सारा मेटाडेटा हटा दिया गया</string>
+
+    <string name="hint_tool_blank_pages">स्कैन किए गए PDF के खाली पेज ढूँढें और सूची जाँचने के बाद उन्हें हटाएँ।</string>
+    <string name="hint_tool_greyscale">सस्ती छपाई या छोटी फ़ाइल के लिए रंगीन PDF को ग्रे रंगों में बदलें।</string>
+    <string name="hint_tool_flatten">फ़ॉर्म के जवाब, टिप्पणियाँ और स्टैम्प पेजों में बना दें, ताकि कोई उन्हें बदल न सके।</string>
+    <string name="hint_tool_extract_images">PDF के अंदर की हर तस्वीर को अलग इमेज फ़ाइल के रूप में सहेजें।</string>
+    <string name="hint_tool_pdf_info">PDF की छिपी जानकारी देखें, शीर्षक या लेखक बदलें, या निजता के लिए सब हटा दें।</string>
 </resources>

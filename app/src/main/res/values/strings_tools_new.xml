@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Organise pages, Extract mode: the short title in the bar. -->
     <string name="tools_organizer_extract_short_title">Extract pages</string>
 
@@ -46,7 +46,7 @@
     </plurals>
 
     <!-- Greyscale PDF -->
-    <string name="tools_grey_confirm_body">Every page is redrawn in shades of grey at %1$d dpi. Text becomes part of the page image, so use Make searchable afterwards if you need to search or copy it. The original is not changed.</string>
+    <string name="tools_grey_confirm_body" tools:ignore="PluralsCandidate">Every page is redrawn in shades of grey at %1$d dpi. Text becomes part of the page image, so use Make searchable afterwards if you need to search or copy it. The original is not changed.</string>
     <string name="tools_grey_confirm_action">Make greyscale</string>
     <string name="tools_grey_progress">Converting to greyscale…</string>
     <string name="tools_grey_err_failed">Couldn\'t convert this PDF to greyscale.</string>
@@ -97,4 +97,11 @@
     <string name="tools_info_save_failed">Couldn\'t save the new details.</string>
     <string name="tools_info_saved">Details updated</string>
     <string name="tools_info_removed">All metadata removed</string>
+
+    <!-- First-use introductions of the new tools. -->
+    <string name="hint_tool_blank_pages">Find the empty pages in a scanned PDF and remove them, after you check the list.</string>
+    <string name="hint_tool_greyscale">Turn a colour PDF into shades of grey, for cheaper printing or a smaller file.</string>
+    <string name="hint_tool_flatten">Draw form answers, comments and stamps into the pages so nobody can change them.</string>
+    <string name="hint_tool_extract_images">Save every picture inside a PDF as its own image file.</string>
+    <string name="hint_tool_pdf_info">See a PDF\'s hidden details, edit the title or author, or remove them all for privacy.</string>
 </resources>

@@ -87,4 +87,10 @@
     <string name="tools_info_save_failed">ಹೊಸ ವಿವರಗಳನ್ನು ಉಳಿಸಲು ಆಗಲಿಲ್ಲ.</string>
     <string name="tools_info_saved">ವಿವರಗಳನ್ನು ನವೀಕರಿಸಲಾಗಿದೆ</string>
     <string name="tools_info_removed">ಎಲ್ಲ ಮೆಟಾಡೇಟಾವನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ</string>
+
+    <string name="hint_tool_blank_pages">ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ PDF ನ ಖಾಲಿ ಪುಟಗಳನ್ನು ಹುಡುಕಿ, ಪಟ್ಟಿಯನ್ನು ಪರಿಶೀಲಿಸಿದ ನಂತರ ತೆಗೆದುಹಾಕಿ.</string>
+    <string name="hint_tool_greyscale">ಕಡಿಮೆ ವೆಚ್ಚದ ಮುದ್ರಣ ಅಥವಾ ಚಿಕ್ಕ ಫೈಲ್‌ಗಾಗಿ ಬಣ್ಣದ PDF ಅನ್ನು ಬೂದು ಛಾಯೆಗಳಿಗೆ ಬದಲಿಸಿ.</string>
+    <string name="hint_tool_flatten">ಫಾರ್ಮ್ ಉತ್ತರಗಳು, ಕಾಮೆಂಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳನ್ನು ಪುಟಗಳಲ್ಲೇ ಚಿತ್ರಿಸಿ, ಯಾರೂ ಬದಲಿಸಲಾಗದಂತೆ.</string>
+    <string name="hint_tool_extract_images">PDF ಒಳಗಿನ ಪ್ರತಿ ಚಿತ್ರವನ್ನು ಪ್ರತ್ಯೇಕ ಚಿತ್ರ ಫೈಲ್ ಆಗಿ ಉಳಿಸಿ.</string>
+    <string name="hint_tool_pdf_info">PDF ನ ಮರೆಯಾದ ವಿವರಗಳನ್ನು ನೋಡಿ, ಶೀರ್ಷಿಕೆ ಅಥವಾ ಲೇಖಕರನ್ನು ಬದಲಿಸಿ, ಅಥವಾ ಗೌಪ್ಯತೆಗಾಗಿ ಎಲ್ಲವನ್ನೂ ತೆಗೆದುಹಾಕಿ.</string>
 </resources>

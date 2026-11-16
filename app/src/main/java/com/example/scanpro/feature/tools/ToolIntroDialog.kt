@@ -49,6 +49,11 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "compress_img" -> ToolIntro(R.string.hint_tool_compress_img, HintInput.Image)
     "convert_img" -> ToolIntro(R.string.hint_tool_convert_img, HintInput.Images)
     "resize_img" -> ToolIntro(R.string.hint_tool_resize_img, HintInput.Image)
+    "blank_pages" -> ToolIntro(R.string.hint_tool_blank_pages, HintInput.Pdf)
+    "greyscale" -> ToolIntro(R.string.hint_tool_greyscale, HintInput.Pdf)
+    "flatten" -> ToolIntro(R.string.hint_tool_flatten, HintInput.Pdf)
+    "extract_images" -> ToolIntro(R.string.hint_tool_extract_images, HintInput.Pdf)
+    "pdf_info" -> ToolIntro(R.string.hint_tool_pdf_info, HintInput.Pdf)
     else -> null
 }
 
