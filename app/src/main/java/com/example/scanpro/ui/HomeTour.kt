@@ -34,7 +34,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
-import com.example.scanpro.core.designsystem.DocumentScanIllustration
+import com.example.scanpro.core.designsystem.SampleDocumentArt
 import com.example.scanpro.core.designsystem.FilesIllustration
 import com.example.scanpro.core.designsystem.GradientButton
 import com.example.scanpro.core.designsystem.IllustratedDialogFrame
@@ -67,7 +67,7 @@ internal fun HomeTourDialog(onDone: () -> Unit) {
             Column {
                 IllustrationPanel {
                     when (page) {
-                        TourPage.Scan -> DocumentScanIllustration(Modifier.fillMaxSize())
+                        TourPage.Scan -> SampleDocumentArt(Modifier.fillMaxSize())
                         TourPage.Files -> FilesIllustration(current, Modifier.fillMaxSize())
                         TourPage.Tools -> ToolsGridIllustration(current, Modifier.fillMaxSize())
                     }

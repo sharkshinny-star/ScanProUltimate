@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="intro_welcome_scan_title">ஆவணங்களை விரைவாக ஸ்கேன் செய்யுங்கள்</string>
+    <string name="intro_welcome_scan_body">எந்தப் பக்கத்தை நோக்கியும் கேமராவைக் காட்டுங்கள்: ScanPro %1$s, அதை நேராக்கி சுத்தம் செய்கிறது.</string>
+    <string name="intro_welcome_scan_keyword">ஓரங்களைக் கண்டறிகிறது</string>
+    <string name="intro_welcome_files_title">கோப்புகளை எளிதாக நிர்வகியுங்கள்</string>
+    <string name="intro_welcome_files_body">ஒவ்வொரு ஸ்கேனையும் %1$s வைத்திருங்கள், பக்கத்திலுள்ள சொற்களைக் கொண்டு மீண்டும் கண்டறியுங்கள்.</string>
+    <string name="intro_welcome_files_keyword">கோப்புறைகளில் ஒழுங்காக</string>
+    <string name="intro_welcome_tools_title">PDF கருவிகள், முழுமையாகத் தனிப்பட்டவை</string>
+    <string name="intro_welcome_tools_body">PDF-களை இணைக்கவும், கையொப்பமிடவும், சுருக்கவும், பாதுகாக்கவும். %1$s: கணக்கு இல்லை, பதிவேற்றம் இல்லை.</string>
+    <string name="intro_welcome_tools_keyword">எதுவும் உங்கள் ஃபோனை விட்டு வெளியேறாது</string>
+    <string name="intro_welcome_page">பக்கம் %1$d / %2$d</string>
+    <string name="intro_doc_title">எப்படி ஸ்கேன் செய்வது</string>
+    <string name="intro_doc_body">கையில் ஆவணம் இல்லையா? எங்கள் மாதிரி ஆவணத்துடன் ஸ்மார்ட் ஸ்கேனிங்கை முயற்சிக்கவும்!</string>
+    <string name="intro_doc_tip">இல்லையெனில் நல்ல வெளிச்சத்தில் பக்கத்தைத் தட்டையாக வைத்து கேமராவைக் காட்டுங்கள். ScanPro ஓரங்களைத் தானே கண்டறியும்.</string>
+    <string name="intro_doc_try">இப்போது முயற்சிக்கவும்</string>
+    <string name="intro_doc_sample_ready">மாதிரிப் பக்கம் சேர்க்கப்பட்டது. செதுக்கல் மற்றும் வடிப்பான்களை முயற்சித்து, பின் சேமிக்கவும் அல்லது நிராகரிக்கவும்.</string>
+    <string name="intro_doc_sample_failed">மாதிரிப் பக்கத்தை உருவாக்க முடியவில்லை. பதிலாக கேமராவை ஒரு ஆவணத்தை நோக்கிக் காட்டுங்கள்.</string>
+    <string name="intro_book_body">புத்தக ஸ்கேன்: திறந்த புத்தகத்தின் இடது மற்றும் வலது பக்கங்களை ஒன்றாக ஸ்கேன் செய்து, தானாகவே இரண்டு படங்களாகப் பிரிக்கவும்.</string>
+    <string name="intro_book_order_left_first">இடது பக்கம் முதலில் சேமிக்கப்படும் (A | B). மாற்ற தட்டவும்.</string>
+    <string name="intro_book_order_right_first">வலது பக்கம் முதலில் சேமிக்கப்படும் (B | A). மாற்ற தட்டவும்.</string>
+    <string name="intro_book_two_pages">இரண்டு பக்கங்கள்</string>
+    <string name="intro_idcard_body">அட்டையை சமதளப் பரப்பில் தட்டையாக வைத்து சட்டகத்தை நிரப்புங்கள். முதலில் முன்பக்கம், பின் பின்பக்கம் ஸ்கேன் செய்யுங்கள்; ScanPro இரு பக்கங்களையும் ஒரே பக்கத்தில் வைக்கும்.</string>
+</resources>

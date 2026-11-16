@@ -24,4 +24,20 @@ class BookSpreadTest {
         assertEquals(listOf("L", "R"), BookSpread.ordered("L", "R", leftFirst = true))
         assertEquals(listOf("R", "L"), BookSpread.ordered("L", "R", leftFirst = false))
     }
+
+    @Test
+    fun `the swap button changes which half becomes page 1, and the half lettered A is always page 1`() {
+        fun firstPage(layout: Int) = BookSpread.ordered("left", "right", BookSpread.leftFirst(layout)).first()
+        fun halfLetteredA(layout: Int): String {
+            val (leftLetter, _) = com.example.scanpro.core.designsystem.bookHalfLetters(BookSpread.leftFirst(layout))
+            return if (leftLetter == "A") "left" else "right"
+        }
+        assertEquals("left", firstPage(1))
+        val swapped = BookSpread.swapped(1)
+        assertEquals(2, swapped)
+        assertEquals("right", firstPage(swapped))
+        assertEquals(1, BookSpread.swapped(swapped))
+        assertEquals("one page per shot is not a spread", 0, BookSpread.swapped(0))
+        for (layout in listOf(1, 2)) assertEquals(halfLetteredA(layout), firstPage(layout))
+    }
 }
