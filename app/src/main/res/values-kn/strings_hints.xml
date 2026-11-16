@@ -25,7 +25,6 @@
     <string name="hint_tool_pdf2img">PDF ನ ಪ್ರತಿ ಪುಟವನ್ನು ಚಿತ್ರವಾಗಿ ಉಳಿಸಿ.</string>
     <string name="hint_tool_pdf2text">PDF ನ ಪಠ್ಯವನ್ನು Word ಅಥವಾ ಸರಳ ಪಠ್ಯ ಫೈಲ್‌ಗೆ ನಕಲಿಸಿ.</string>
     <string name="hint_tool_pdf2excel">PDF ನಲ್ಲಿರುವ ಕೋಷ್ಟಕಗಳನ್ನು ನೀವು ಸಂಪಾದಿಸಬಹುದಾದ ಸ್ಪ್ರೆಡ್‌ಶೀಟ್ ಆಗಿ ಮಾಡಿ.</string>
-    <string name="hint_tool_pdf2ppt">PDF ನಿಂದ PowerPoint ಪ್ರೆಸೆಂಟೇಶನ್ ಮಾಡಿ, ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಸ್ಲೈಡ್.</string>
     <string name="hint_tool_protect">PDF ಅನ್ನು ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಲಾಕ್ ಮಾಡಿ, ಅದನ್ನು ತಿಳಿದವರು ಮಾತ್ರ ತೆರೆಯಬಹುದು.</string>
     <string name="hint_tool_unlock">ನಿಮಗೆ ತೆರೆಯಲು ಅನುಮತಿ ಇರುವ PDF ನಿಂದ ಪಾಸ್‌ವರ್ಡ್ ಅಥವಾ ಸಂಪಾದನೆಯ ನಿರ್ಬಂಧಗಳನ್ನು ತೆಗೆದುಹಾಕಿ.</string>
     <string name="hint_tool_crop_img">ಚಿತ್ರವನ್ನು ಕತ್ತರಿಸಿ ನಿಮಗೆ ಬೇಕಾದ ಭಾಗವನ್ನು ಮಾತ್ರ ಉಳಿಸಿಕೊಳ್ಳಿ.</string>

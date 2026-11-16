@@ -42,7 +42,6 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "pdf2img" -> ToolIntro(R.string.hint_tool_pdf2img, HintInput.Pdf)
     "pdf2text" -> ToolIntro(R.string.hint_tool_pdf2text, HintInput.Pdf)
     "pdf2excel" -> ToolIntro(R.string.hint_tool_pdf2excel, HintInput.Pdf)
-    "pdf2ppt" -> ToolIntro(R.string.hint_tool_pdf2ppt, HintInput.Pdf)
     "protect" -> ToolIntro(R.string.hint_tool_protect, HintInput.Pdf)
     "unlock" -> ToolIntro(R.string.hint_tool_unlock, HintInput.Pdf)
     "crop_img" -> ToolIntro(R.string.hint_tool_crop_img, HintInput.Image)
