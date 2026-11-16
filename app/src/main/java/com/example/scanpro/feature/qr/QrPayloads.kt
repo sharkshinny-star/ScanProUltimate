@@ -137,9 +137,9 @@ object QrPayloads {
         return "%04d%02d%02d".format(java.util.Locale.ROOT, year, month, day)
     }
 
-    /** A time typed as HH:MM (24-hour), as HHMMSS; null when it is not a real time. */
+    /** A time typed as HH:MM, HH.MM or HHMM (24-hour; number pads have no colon), as HHMMSS; null when it is not a real time. */
     fun icalTime(value: String): String? {
-        val match = Regex("^(\\d{1,2})[:.](\\d{2})$").matchEntire(value.trim()) ?: return null
+        val match = Regex("^(\\d{1,2})[:.]?(\\d{2})$").matchEntire(value.trim()) ?: return null
         val hour = match.groupValues[1].toInt()
         val minute = match.groupValues[2].toInt()
         if (hour > 23 || minute > 59) return null

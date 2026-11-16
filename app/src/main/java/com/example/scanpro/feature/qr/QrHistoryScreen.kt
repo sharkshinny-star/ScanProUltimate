@@ -1,7 +1,21 @@
 package com.example.scanpro.feature.qr
 
 import android.text.format.DateUtils
+import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.example.scanpro.core.ui.shareFile
+import com.example.scanpro.data.ScanHistoryFilter
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -62,6 +76,10 @@ fun QrHistoryRoute(onBack: () -> Unit, viewModel: QrHistoryViewModel = hiltViewM
     val entries by viewModel.entries.collectAsStateWithLifecycle()
     val saveHistory by viewModel.saveHistory.collectAsStateWithLifecycle()
     val storageAvailable by viewModel.storageAvailable.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val exportTitle = stringResource(R.string.qrhist_export_title)
+    val exportFailed = stringResource(R.string.qrhist_export_failed)
     QrHistoryScreen(
         entries = entries,
         saveHistory = saveHistory,
@@ -70,7 +88,15 @@ fun QrHistoryRoute(onBack: () -> Unit, viewModel: QrHistoryViewModel = hiltViewM
         onRemove = viewModel::remove,
         onClear = viewModel::clear,
         onBack = onBack,
-        storageAvailable = storageAvailable
+        storageAvailable = storageAvailable,
+        onRestore = viewModel::restore,
+        onExport = { shown ->
+            scope.launch {
+                val file = viewModel.writeCsv(context, shown)
+                if (file != null) shareFile(context, file.path, "text/csv", exportTitle)
+                else Toast.makeText(context, exportFailed, Toast.LENGTH_SHORT).show()
+            }
+        }
     )
 }
 
@@ -86,15 +112,37 @@ internal fun QrHistoryScreen(
     onClear: () -> Unit,
     onBack: () -> Unit,
     /** False while the saved history cannot be opened or saved securely: new codes are not recorded until it is cleared. */
-    storageAvailable: Boolean = true
+    storageAvailable: Boolean = true,
+    /** Puts a just-deleted entry back at its old place (the snackbar's Undo). */
+    onRestore: (ScanHistoryEntry, Int) -> Unit = { _, _ -> },
+    /** Exports the entries shown as CSV through the share sheet; null hides the button. */
+    onExport: ((List<ScanHistoryEntry>) -> Unit)? = null,
+    initialFilter: ScanHistoryFilter = ScanHistoryFilter.ALL
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    var filter by rememberSaveable { mutableStateOf(initialFilter) }
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val deletedLabel = stringResource(R.string.qrhist_deleted)
+    val undoLabel = stringResource(R.string.qrhist_undo)
+    // Deleting is one tap, so it can always be undone for a few seconds.
+    val removeWithUndo: (ScanHistoryEntry) -> Unit = { entry ->
+        val index = entries.indexOfFirst { it.raw == entry.raw }
+        onRemove(entry.raw)
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            if (snackbar.showSnackbar(deletedLabel, actionLabel = undoLabel, duration = SnackbarDuration.Short) == SnackbarResult.ActionPerformed) {
+                onRestore(entry, index.coerceAtLeast(0))
+            }
+        }
+    }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
     var opened by remember { mutableStateOf<ScannedCode?>(null) }
-    val shown = remember(entries, query) { ScanHistory.filter(entries, query) }
+    val shown = remember(entries, query, filter) { ScanHistory.filter(ScanHistory.only(entries, filter), query) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
@@ -102,6 +150,13 @@ internal fun QrHistoryScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                    }
+                },
+                actions = {
+                    if (onExport != null) {
+                        IconButton(onClick = { onExport(shown) }, enabled = shown.isNotEmpty()) {
+                            Icon(Icons.Default.FileDownload, contentDescription = stringResource(R.string.qrhist_export))
+                        }
                     }
                 }
             )
@@ -170,11 +225,36 @@ internal fun QrHistoryScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        ScanHistoryFilter.ALL to R.string.qrhist_filter_all,
+                        ScanHistoryFilter.SCANNED to R.string.qrhist_filter_scanned,
+                        ScanHistoryFilter.CREATED to R.string.qrhist_filter_created,
+                        ScanHistoryFilter.FAVOURITES to R.string.qrhist_filter_favourites
+                    ).forEach { (option, label) ->
+                        FilterChip(selected = filter == option, onClick = { filter = option }, label = { Text(stringResource(label)) })
+                    }
+                }
+                if (onExport != null && shown.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.qrhist_export_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
             }
             if (shown.isEmpty()) {
                 item {
                     Text(
-                        stringResource(if (entries.isEmpty()) R.string.qr_history_empty else R.string.qr_history_no_matches),
+                        stringResource(
+                            when {
+                                entries.isEmpty() -> R.string.qr_history_empty
+                                query.isBlank() -> R.string.qrhist_filter_empty
+                                else -> R.string.qr_history_no_matches
+                            }
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 24.dp)
@@ -188,7 +268,7 @@ internal fun QrHistoryScreen(
                         entry = entry,
                         onOpen = { opened = parseScannedCode(entry.raw, entry.format, entry.valueType) },
                         onFavourite = { onFavourite(entry.raw, !entry.favourite) },
-                        onRemove = { onRemove(entry.raw) }
+                        onRemove = { removeWithUndo(entry) }
                     )
                     HorizontalDivider()
                 }
@@ -222,7 +302,10 @@ private fun HistoryRow(entry: ScanHistoryEntry, onOpen: () -> Unit, onFavourite:
     }
     ListItem(
         modifier = Modifier.clickable(role = Role.Button, onClick = onOpen),
-        overlineContent = { Text("${titleFor(code)} · $whenScanned") },
+        overlineContent = {
+            val source = if (entry.created) stringResource(R.string.qrhist_filter_created) + " · " else ""
+            Text("$source${titleFor(code)} · $whenScanned")
+        },
         headlineContent = { Text(codeSummary(code, 120), maxLines = 2) },
         trailingContent = {
             Row(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalAlignment = Alignment.CenterVertically) {

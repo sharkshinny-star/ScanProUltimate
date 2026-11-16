@@ -52,6 +52,8 @@ class QrPayloadsMoreTest {
         assertNull(QrPayloads.icalDate("16/11/2026"))
         assertEquals("093000", QrPayloads.icalTime("9:30"))
         assertEquals("235900", QrPayloads.icalTime("23.59"))
+        assertEquals("093000", QrPayloads.icalTime("930"))
+        assertNull(QrPayloads.icalTime("9"))
         assertNull(QrPayloads.icalTime("24:00"))
     }
 
