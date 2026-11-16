@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="intro_welcome_scan_title">ದಾಖಲೆಗಳನ್ನು ಬೇಗನೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="intro_welcome_scan_body">ಯಾವುದೇ ಪುಟದತ್ತ ಕ್ಯಾಮೆರಾ ತೋರಿಸಿ: ScanPro %1$s, ಅದನ್ನು ನೇರಗೊಳಿಸಿ ಸ್ವಚ್ಛಗೊಳಿಸುತ್ತದೆ.</string>
+    <string name="intro_welcome_scan_keyword">ಅಂಚುಗಳನ್ನು ಹುಡುಕುತ್ತದೆ</string>
+    <string name="intro_welcome_files_title">ಫೈಲ್‌ಗಳನ್ನು ಸುಲಭವಾಗಿ ನಿರ್ವಹಿಸಿ</string>
+    <string name="intro_welcome_files_body">ಪ್ರತಿ ಸ್ಕ್ಯಾನ್ ಅನ್ನು %1$s ಇರಿಸಿ ಮತ್ತು ಪುಟದಲ್ಲಿನ ಪದಗಳಿಂದ ಮತ್ತೆ ಹುಡುಕಿ.</string>
+    <string name="intro_welcome_files_keyword">ಫೋಲ್ಡರ್‌ಗಳಲ್ಲಿ ಜೋಡಿಸಿ</string>
+    <string name="intro_welcome_tools_title">PDF ಪರಿಕರಗಳು, ಸಂಪೂರ್ಣ ಖಾಸಗಿ</string>
+    <string name="intro_welcome_tools_body">PDF ಗಳನ್ನು ಸೇರಿಸಿ, ಸಹಿ ಮಾಡಿ, ಕುಗ್ಗಿಸಿ ಮತ್ತು ರಕ್ಷಿಸಿ. %1$s: ಖಾತೆ ಇಲ್ಲ, ಅಪ್‌ಲೋಡ್ ಇಲ್ಲ.</string>
+    <string name="intro_welcome_tools_keyword">ಏನೂ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ</string>
+    <string name="intro_welcome_page">ಪುಟ %1$d / %2$d</string>
+    <string name="intro_doc_title">ಸ್ಕ್ಯಾನ್ ಮಾಡುವುದು ಹೇಗೆ</string>
+    <string name="intro_doc_body">ಈಗ ಕೈಯಲ್ಲಿ ದಾಖಲೆ ಇಲ್ಲವೇ? ನಮ್ಮ ಮಾದರಿ ದಾಖಲೆಯೊಂದಿಗೆ ಸ್ಮಾರ್ಟ್ ಸ್ಕ್ಯಾನಿಂಗ್ ಪ್ರಯತ್ನಿಸಿ!</string>
+    <string name="intro_doc_tip">ಇಲ್ಲದಿದ್ದರೆ ಉತ್ತಮ ಬೆಳಕಿನಲ್ಲಿ ಪುಟವನ್ನು ಸಮತಟ್ಟಾಗಿ ಇರಿಸಿ ಕ್ಯಾಮೆರಾ ತೋರಿಸಿ. ScanPro ಅಂಚುಗಳನ್ನು ತಾನೇ ಹುಡುಕುತ್ತದೆ.</string>
+    <string name="intro_doc_try">ಈಗ ಪ್ರಯತ್ನಿಸಿ</string>
+    <string name="intro_doc_sample_ready">ಮಾದರಿ ಪುಟ ಸೇರಿಸಲಾಗಿದೆ. ಕ್ರಾಪ್ ಮತ್ತು ಫಿಲ್ಟರ್‌ಗಳನ್ನು ಪ್ರಯತ್ನಿಸಿ, ನಂತರ ಉಳಿಸಿ ಅಥವಾ ತ್ಯಜಿಸಿ.</string>
+    <string name="intro_doc_sample_failed">ಮಾದರಿ ಪುಟ ಮಾಡಲಾಗಲಿಲ್ಲ. ಬದಲಿಗೆ ಕ್ಯಾಮೆರಾವನ್ನು ದಾಖಲೆಯತ್ತ ತೋರಿಸಿ.</string>
+    <string name="intro_book_body">ಪುಸ್ತಕ ಸ್ಕ್ಯಾನ್: ತೆರೆದ ಪುಸ್ತಕದ ಎಡ ಮತ್ತು ಬಲ ಪುಟಗಳನ್ನು ಒಟ್ಟಿಗೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ, ಅವುಗಳನ್ನು ತಾನಾಗಿಯೇ ಎರಡು ಚಿತ್ರಗಳಾಗಿ ವಿಭಜಿಸಿ.</string>
+    <string name="intro_book_order_left_first">ಎಡ ಪುಟ ಮೊದಲು ಉಳಿಸಲಾಗುತ್ತದೆ (A | B). ಬದಲಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="intro_book_order_right_first">ಬಲ ಪುಟ ಮೊದಲು ಉಳಿಸಲಾಗುತ್ತದೆ (B | A). ಬದಲಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="intro_book_two_pages">ಎರಡು ಪುಟಗಳು</string>
+    <string name="intro_idcard_body">ಕಾರ್ಡ್ ಅನ್ನು ಸರಳ ಮೇಲ್ಮೈಯಲ್ಲಿ ಸಮತಟ್ಟಾಗಿ ಇರಿಸಿ ಚೌಕಟ್ಟನ್ನು ತುಂಬಿಸಿ. ಮೊದಲು ಮುಂಭಾಗ, ನಂತರ ಹಿಂಭಾಗ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ; ScanPro ಎರಡೂ ಬದಿಗಳನ್ನು ಒಂದೇ ಪುಟದಲ್ಲಿ ಇರಿಸುತ್ತದೆ.</string>
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rebuilt introductions (2026-11-16): welcome pages, "How to scan", book and ID card explainers. -->
+<resources>
+    <string name="intro_welcome_scan_title">Quickly scan documents</string>
+    <string name="intro_welcome_scan_body">Point the camera at any page: ScanPro %1$s, straightens it and cleans it up.</string>
+    <string name="intro_welcome_scan_keyword">finds the edges</string>
+    <string name="intro_welcome_files_title">Simply manage files</string>
+    <string name="intro_welcome_files_body">Keep every scan %1$s and find it again by the words on the page.</string>
+    <string name="intro_welcome_files_keyword">sorted in folders</string>
+    <string name="intro_welcome_tools_title">PDF tools, fully private</string>
+    <string name="intro_welcome_tools_body">Merge, sign, compress and protect PDFs. %1$s: no account, no uploads.</string>
+    <string name="intro_welcome_tools_keyword">Nothing leaves your phone</string>
+    <string name="intro_welcome_page">Page %1$d of %2$d</string>
+    <string name="intro_doc_title">How to scan</string>
+    <string name="intro_doc_body">Don\'t have a document at hand? Try smart scanning with our sample doc!</string>
+    <string name="intro_doc_tip">Otherwise lay a page flat in good light and point the camera at it. ScanPro finds the edges for you.</string>
+    <string name="intro_doc_try">Try now</string>
+    <string name="intro_doc_sample_ready">Sample page added. Try the crop and filters, then save or discard it.</string>
+    <string name="intro_doc_sample_failed">Couldn\'t make the sample page. Point the camera at a document instead.</string>
+    <string name="intro_book_body">Book scan: scan the left and right pages of an open book as a whole and split them into two images automatically.</string>
+    <string name="intro_book_order_left_first">Left page saved first (A | B). Tap to swap.</string>
+    <string name="intro_book_order_right_first">Right page saved first (B | A). Tap to swap.</string>
+    <string name="intro_book_two_pages">Two pages</string>
+    <string name="intro_idcard_body">Place the card flat on a plain surface and fill the frame. Scan the front, then the back; ScanPro puts both sides on one page.</string>
+</resources>

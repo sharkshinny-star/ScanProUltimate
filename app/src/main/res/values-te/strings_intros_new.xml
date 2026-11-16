@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="intro_welcome_scan_title">పత్రాలను త్వరగా స్కాన్ చేయండి</string>
+    <string name="intro_welcome_scan_body">ఏ పేజీ వైపైనా కెమెరా చూపండి: ScanPro %1$s, దాన్ని నిటారుగా చేసి శుభ్రపరుస్తుంది.</string>
+    <string name="intro_welcome_scan_keyword">అంచులను కనుగొంటుంది</string>
+    <string name="intro_welcome_files_title">ఫైళ్లను సులభంగా నిర్వహించండి</string>
+    <string name="intro_welcome_files_body">ప్రతి స్కాన్‌ను %1$s ఉంచండి, పేజీలోని పదాలతో మళ్లీ కనుగొనండి.</string>
+    <string name="intro_welcome_files_keyword">ఫోల్డర్లలో అమర్చి</string>
+    <string name="intro_welcome_tools_title">PDF టూల్స్, పూర్తిగా ప్రైవేట్</string>
+    <string name="intro_welcome_tools_body">PDFలను కలపండి, సంతకం చేయండి, కుదించండి, రక్షించండి. %1$s: ఖాతా లేదు, అప్‌లోడ్ లేదు.</string>
+    <string name="intro_welcome_tools_keyword">ఏదీ మీ ఫోన్ నుండి బయటకు వెళ్లదు</string>
+    <string name="intro_welcome_page">పేజీ %1$d / %2$d</string>
+    <string name="intro_doc_title">స్కాన్ ఎలా చేయాలి</string>
+    <string name="intro_doc_body">చేతిలో పత్రం లేదా? మా నమూనా పత్రంతో స్మార్ట్ స్కానింగ్ ప్రయత్నించండి!</string>
+    <string name="intro_doc_tip">లేకపోతే మంచి వెలుతురులో పేజీని చదునుగా ఉంచి కెమెరా చూపండి. ScanPro అంచులను స్వయంగా కనుగొంటుంది.</string>
+    <string name="intro_doc_try">ఇప్పుడు ప్రయత్నించండి</string>
+    <string name="intro_doc_sample_ready">నమూనా పేజీ జోడించబడింది. క్రాప్ మరియు ఫిల్టర్లను ప్రయత్నించి, ఆపై సేవ్ చేయండి లేదా తీసివేయండి.</string>
+    <string name="intro_doc_sample_failed">నమూనా పేజీని తయారు చేయలేకపోయాం. బదులుగా కెమెరాను ఒక పత్రం వైపు చూపండి.</string>
+    <string name="intro_book_body">బుక్ స్కాన్: తెరిచిన పుస్తకం యొక్క ఎడమ మరియు కుడి పేజీలను కలిపి స్కాన్ చేసి, ఆటోమేటిక్‌గా రెండు చిత్రాలుగా విభజించండి.</string>
+    <string name="intro_book_order_left_first">ఎడమ పేజీ ముందుగా సేవ్ అవుతుంది (A | B). మార్చడానికి నొక్కండి.</string>
+    <string name="intro_book_order_right_first">కుడి పేజీ ముందుగా సేవ్ అవుతుంది (B | A). మార్చడానికి నొక్కండి.</string>
+    <string name="intro_book_two_pages">రెండు పేజీలు</string>
+    <string name="intro_idcard_body">కార్డును సాదా ఉపరితలంపై చదునుగా ఉంచి ఫ్రేమ్‌ను నింపండి. ముందుగా ముందు వైపు, తర్వాత వెనుక వైపు స్కాన్ చేయండి; ScanPro రెండు వైపులనూ ఒకే పేజీలో ఉంచుతుంది.</string>
+</resources>

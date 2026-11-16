@@ -18,6 +18,19 @@ object BookSpread {
         return Halves(0, split, split, width - split)
     }
 
+    /**
+     * Book mode's layouts in the camera: 0 one page per shot, 1 two pages with the left saved first (A | B), 2 two pages
+     * with the right saved first (B | A).
+     */
+    fun leftFirst(layout: Int): Boolean = layout != 2
+
+    /** The swap button: A | B becomes B | A and back; one page per shot stays as it is. */
+    fun swapped(layout: Int): Int = when (layout) {
+        1 -> 2
+        2 -> 1
+        else -> layout
+    }
+
     /** The halves in reading order. */
     fun <T> ordered(left: T, right: T, leftFirst: Boolean): List<T> = if (leftFirst) listOf(left, right) else listOf(right, left)
 

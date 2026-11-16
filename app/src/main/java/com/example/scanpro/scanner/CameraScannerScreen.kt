@@ -103,6 +103,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material.icons.filled.GridOff
+import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -286,6 +289,7 @@ fun CameraScannerScreen(
     var overflowOpen by rememberSaveable { mutableStateOf(false) }
     val onLabel = stringResource(R.string.common_on)
     val offLabel = stringResource(R.string.common_off)
+    val gridLabel = stringResource(R.string.scan_show_grid)
     var showAdjustments by rememberSaveable { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
@@ -320,6 +324,8 @@ fun CameraScannerScreen(
     // "Don't remind me again" is ticked for that mode.
     var introShownFor by rememberSaveable { mutableStateOf(listOf<String>()) }
     var introMode by rememberSaveable { mutableStateOf<String?>(null) }
+    // "Try now" on the Document explainer: the built-in sample page goes through the normal review (crop, filters).
+    var trySample by remember { mutableStateOf(false) }
     LaunchedEffect(scanMode, permissionGranted) {
         // Not over the camera-permission card: two prompts at once. It shows once the camera is usable.
         if (!permissionGranted) return@LaunchedEffect
@@ -331,10 +337,22 @@ fun CameraScannerScreen(
     }
     introMode?.let { name ->
         val mode = ScanMode.entries.firstOrNull { it.name == name }
-        if (mode == null) introMode = null else ScanIntroDialog(mode, onStart = { dontRemind ->
-            if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+        if (mode == null) {
             introMode = null
-        })
+        } else {
+            ScanIntroDialog(
+                mode,
+                onTry = { dontRemind ->
+                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+                    introMode = null
+                    trySample = true
+                },
+                onStart = { dontRemind ->
+                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+                    introMode = null
+                }
+            )
+        }
     }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
     // than saving at once, whatever "Check pages before saving" says.
@@ -843,7 +861,7 @@ fun CameraScannerScreen(
                             }
                             val at = pages.indexOf(captured)
                             if (ok && at >= 0) {
-                                val halves = com.example.scanpro.imaging.BookSpread.ordered(Uri.fromFile(leftFile), Uri.fromFile(rightFile), leftFirst = bookLayout == 1)
+                                val halves = com.example.scanpro.imaging.BookSpread.ordered(Uri.fromFile(leftFile), Uri.fromFile(rightFile), leftFirst = com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout))
                                 pages.removeAt(at)
                                 pages.addAll(at, halves)
                                 quads.remove(captured.toString())
@@ -882,6 +900,36 @@ fun CameraScannerScreen(
                 }
             }
         )
+    }
+
+    LaunchedEffect(trySample) {
+        if (!trySample) return@LaunchedEffect
+        trySample = false
+        if (pages.size >= pageLimit) return@LaunchedEffect
+        val sample = File(sessionDir, "raw_sample_${UUID.randomUUID()}.jpg")
+        val quad = withContext(Dispatchers.IO) {
+            runCatching {
+                sessionDir.mkdirs()
+                val bitmap = com.example.scanpro.core.designsystem.renderSampleScanBitmap()
+                try {
+                    sample.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                } finally {
+                    bitmap.recycle()
+                }
+                runCatching { OpenCvScanProcessor.detectCrop(sample) }.getOrNull()
+            }
+        }
+        if (quad.isFailure || !sample.exists()) {
+            deleteInBackground(sample)
+            status = resources.getString(R.string.intro_doc_sample_failed)
+            return@LaunchedEffect
+        }
+        val uri = Uri.fromFile(sample)
+        pages.add(uri)
+        quad.getOrNull()?.let { quads[uri.toString()] = it }
+        status = resources.getString(R.string.intro_doc_sample_ready)
+        reviewIndex = pages.lastIndex
+        reviewing = true
     }
 
     LaunchedEffect(focusPoint) {
@@ -1278,7 +1326,15 @@ fun CameraScannerScreen(
             if (showGrid && !reviewing) ThirdsGrid()
             if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
                 DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable, accent = scanLine)
-                if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = { shownQuad }, accent = scanLine, rightFirst = bookLayout == 2)
+            }
+            if (scanMode == ScanMode.BOOK && bookLayout != 0 && !barcodeMode && !reviewing) {
+                val tracking = detectMode != DetectMode.NO_DETECT
+                BookSplitGuide(
+                    detection = if (tracking) detection else null,
+                    quad = { if (tracking) shownQuad else null },
+                    accent = scanLine,
+                    leftFirst = com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout)
+                )
             }
             if (scanMode == ScanMode.ID_CARD) {
                 // Which side is next, and how many there are: "Front · 1 of 2", then "Back · 2 of 2".
@@ -1755,10 +1811,49 @@ fun CameraScannerScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf(0 to R.string.scan_book_one_page, 1 to R.string.scan_book_two_pages, 2 to R.string.scan_book_two_pages_rtl).forEach { (layout, text) ->
-                        ModeTab(stringResource(text), selected = bookLayout == layout, enabled = pages.isEmpty() && retakeOfPage == null) {
-                            if (pages.isEmpty() && retakeOfPage == null) bookLayout = layout
+                    val canChange = pages.isEmpty() && retakeOfPage == null
+                    ModeTab(stringResource(R.string.scan_book_one_page), selected = bookLayout == 0, enabled = canChange) {
+                        if (canChange) bookLayout = 0
+                    }
+                    ModeTab(stringResource(R.string.intro_book_two_pages), selected = bookLayout != 0, enabled = canChange) {
+                        if (canChange && bookLayout == 0) bookLayout = 1
+                    }
+                    if (bookLayout != 0) {
+                        // A | B or B | A: which half is saved first. The letters in the viewfinder swap with it.
+                        val leftFirst = com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout)
+                        val orderText = stringResource(if (leftFirst) R.string.intro_book_order_left_first else R.string.intro_book_order_right_first)
+                        val (a, b) = com.example.scanpro.core.designsystem.bookHalfLetters(leftFirst)
+                        Surface(
+                            onClick = {
+                                bookLayout = com.example.scanpro.imaging.BookSpread.swapped(bookLayout)
+                                status = resources.getString(
+                                    if (com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout)) R.string.intro_book_order_left_first
+                                    else R.string.intro_book_order_right_first
+                                )
+                            },
+                            enabled = retakeOfPage == null,
+                            shape = RoundedCornerShape(50),
+                            color = CameraGlass,
+                            contentColor = Color.White,
+                            modifier = Modifier.semantics { contentDescription = orderText }
+                        ) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("$a | $b", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(18.dp))
+                            }
                         }
+                    }
+                    Surface(
+                        onClick = { showGrid = !showGrid; prefs.edit { putBoolean("grid", showGrid) } },
+                        shape = CircleShape,
+                        color = if (showGrid) Color.White else CameraGlass,
+                        contentColor = if (showGrid) Color(0xFF222222) else Color.White,
+                        modifier = Modifier.semantics {
+                            contentDescription = gridLabel
+                            stateDescription = if (showGrid) onLabel else offLabel
+                        }
+                    ) {
+                        Icon(if (showGrid) Icons.Default.GridOn else Icons.Default.GridOff, contentDescription = null, modifier = Modifier.padding(6.dp).size(20.dp))
                     }
                 }
             }
@@ -2478,35 +2573,43 @@ internal fun resetScanIntros(context: android.content.Context) {
 }
 
 /**
- * What a scan mode does, for someone using it for the first time; "Start now" closes it. Drawn as an illustrated
- * introduction (F146): the page being found and straightened, the ID card turning over, or the book parting at the
- * spine, with the mode's icon in the corner.
+ * What a scan mode does, for someone using it for the first time (F146, rebuilt 2026-11-16 with clear pictures). Document
+ * mode is "How to scan": the built-in sample page on a desk, with Skip and Try now ([onTry] runs the sample through the
+ * normal review); without [onTry] the main button is Start now. ID card shows a card's front and back; Book an open
+ * book with the A / B halves the viewfinder shows. "Don't remind me again" is passed to whichever button closes it.
  */
 @Composable
-internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Unit) {
+internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Unit)? = null, onStart: (dontRemind: Boolean) -> Unit) {
     var dontRemind by rememberSaveable { mutableStateOf(false) }
-    val (icon, title, body) = when (mode) {
-        ScanMode.BOOK -> Triple(Icons.AutoMirrored.Rounded.MenuBook, R.string.scan_book_intro_title, R.string.scan_book_intro_body)
-        ScanMode.ID_CARD -> Triple(Icons.Rounded.Badge, R.string.scan_idcard_intro_title, R.string.scan_idcard_intro_body)
-        else -> Triple(Icons.Filled.DocumentScanner, R.string.scan_doc_intro_title, R.string.scan_doc_intro_body)
+    val sample = mode != ScanMode.BOOK && mode != ScanMode.ID_CARD
+    val (title, body) = when (mode) {
+        ScanMode.BOOK -> R.string.scan_book_intro_title to R.string.intro_book_body
+        ScanMode.ID_CARD -> R.string.scan_idcard_intro_title to R.string.intro_idcard_body
+        else -> R.string.intro_doc_title to R.string.intro_doc_body
     }
+    val frontLabel = stringResource(R.string.scan_id_side_front)
+    val backLabel = stringResource(R.string.scan_id_side_back)
     com.example.scanpro.core.designsystem.IllustratedDialog(
         title = stringResource(title),
         body = stringResource(body),
+        pictureHeight = 236.dp,
         illustration = {
+            val art = Modifier.fillMaxSize()
             when (mode) {
-                ScanMode.BOOK -> com.example.scanpro.core.designsystem.BookScanIllustration()
-                ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.IdCardIllustration()
-                else -> com.example.scanpro.core.designsystem.DocumentScanIllustration()
+                ScanMode.BOOK -> com.example.scanpro.core.designsystem.OpenBookArt(art)
+                ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.IdCardArt(frontLabel, backLabel, art)
+                else -> com.example.scanpro.core.designsystem.SampleDocumentArt(art)
             }
         },
-        badgeIcon = icon,
-        badgeTone = when (mode) {
-            ScanMode.BOOK -> com.example.scanpro.core.designsystem.TileTone.Violet
-            ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.TileTone.Teal
-            else -> com.example.scanpro.core.designsystem.TileTone.Indigo
-        },
         extra = {
+            if (sample) {
+                Text(
+                    stringResource(R.string.intro_doc_tip),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -2520,44 +2623,12 @@ internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> U
                 Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
             }
         },
-        confirmText = stringResource(R.string.scan_book_intro_start),
-        onConfirm = { onStart(dontRemind) },
+        confirmText = stringResource(if (sample && onTry != null) R.string.intro_doc_try else R.string.scan_book_intro_start),
+        onConfirm = { if (sample && onTry != null) onTry(dontRemind) else onStart(dontRemind) },
+        dismissText = if (sample && onTry != null) stringResource(R.string.hint_skip) else null,
+        buttonsInRow = sample && onTry != null,
         onDismiss = { onStart(dontRemind) }
     )
-}
-
-/** Book mode, two pages (R29): a dashed line down the middle of the live outline, where the spread will be split. */
-@Composable
-private fun SpineGuide(detection: DocumentDetection?, quad: () -> CropQuad?, accent: Color, rightFirst: Boolean = false) {
-    // Big faint A and B on the two halves say which is saved first: A on the left, or on the right for "right first".
-    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-    val letterStyle = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.4f))
-    Canvas(Modifier.fillMaxSize()) {
-        val result = detection ?: return@Canvas
-        val outline = quad() ?: return@Canvas
-        val frameWidth = result.frameWidth.toFloat().coerceAtLeast(1f)
-        val frameHeight = result.frameHeight.toFloat().coerceAtLeast(1f)
-        val scale = minOf(size.width / frameWidth, size.height / frameHeight)
-        val left = (size.width - frameWidth * scale) / 2f
-        val top = (size.height - frameHeight * scale) / 2f
-        fun point(x: Float, y: Float): Offset = Offset(left + x * frameWidth * scale, top + y * frameHeight * scale)
-        val topMid = point((outline.topLeft.x + outline.topRight.x) / 2f, (outline.topLeft.y + outline.topRight.y) / 2f)
-        val bottomMid = point((outline.bottomLeft.x + outline.bottomRight.x) / 2f, (outline.bottomLeft.y + outline.bottomRight.y) / 2f)
-        drawLine(
-            accent.copy(alpha = 0.9f), topMid, bottomMid, strokeWidth = 3f, cap = StrokeCap.Round,
-            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 10f))
-        )
-        fun half(a: NormalizedPoint, b: Offset, c: NormalizedPoint, d: Offset): Offset {
-            val pa = point(a.x, a.y); val pc = point(c.x, c.y)
-            return Offset((pa.x + b.x + pc.x + d.x) / 4f, (pa.y + b.y + pc.y + d.y) / 4f)
-        }
-        val leftCentre = half(outline.topLeft, topMid, outline.bottomLeft, bottomMid)
-        val rightCentre = half(outline.topRight, topMid, outline.bottomRight, bottomMid)
-        listOf(leftCentre to (if (rightFirst) "B" else "A"), rightCentre to (if (rightFirst) "A" else "B")).forEach { (centre, letter) ->
-            val laid = measurer.measure(letter, letterStyle)
-            drawText(laid, topLeft = Offset(centre.x - laid.size.width / 2f, centre.y - laid.size.height / 2f))
-        }
-    }
 }
 
 /**

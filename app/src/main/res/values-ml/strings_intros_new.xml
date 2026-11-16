@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="intro_welcome_scan_title">രേഖകൾ വേഗത്തിൽ സ്കാൻ ചെയ്യുക</string>
+    <string name="intro_welcome_scan_body">ഏത് പേജിലേക്കും ക്യാമറ ചൂണ്ടുക: ScanPro %1$s, അത് നേരെയാക്കി വൃത്തിയാക്കുന്നു.</string>
+    <string name="intro_welcome_scan_keyword">അരികുകൾ കണ്ടെത്തുന്നു</string>
+    <string name="intro_welcome_files_title">ഫയലുകൾ ലളിതമായി നിയന്ത്രിക്കുക</string>
+    <string name="intro_welcome_files_body">ഓരോ സ്കാനും %1$s സൂക്ഷിക്കുക, പേജിലെ വാക്കുകൾ കൊണ്ട് വീണ്ടും കണ്ടെത്തുക.</string>
+    <string name="intro_welcome_files_keyword">ഫോൾഡറുകളിൽ ക്രമീകരിച്ച്</string>
+    <string name="intro_welcome_tools_title">PDF ടൂളുകൾ, പൂർണ്ണമായും സ്വകാര്യം</string>
+    <string name="intro_welcome_tools_body">PDF-കൾ ലയിപ്പിക്കുക, ഒപ്പിടുക, ചുരുക്കുക, സംരക്ഷിക്കുക. %1$s: അക്കൗണ്ടില്ല, അപ്‌ലോഡില്ല.</string>
+    <string name="intro_welcome_tools_keyword">ഒന്നും നിങ്ങളുടെ ഫോണിൽ നിന്ന് പുറത്തുപോകില്ല</string>
+    <string name="intro_welcome_page">പേജ് %1$d / %2$d</string>
+    <string name="intro_doc_title">എങ്ങനെ സ്കാൻ ചെയ്യാം</string>
+    <string name="intro_doc_body">കൈയിൽ രേഖയില്ലേ? ഞങ്ങളുടെ സാമ്പിൾ രേഖ ഉപയോഗിച്ച് സ്മാർട്ട് സ്കാനിംഗ് പരീക്ഷിക്കുക!</string>
+    <string name="intro_doc_tip">അല്ലെങ്കിൽ നല്ല വെളിച്ചത്തിൽ പേജ് പരന്നു വെച്ച് ക്യാമറ ചൂണ്ടുക. ScanPro അരികുകൾ സ്വയം കണ്ടെത്തും.</string>
+    <string name="intro_doc_try">ഇപ്പോൾ പരീക്ഷിക്കുക</string>
+    <string name="intro_doc_sample_ready">സാമ്പിൾ പേജ് ചേർത്തു. ക്രോപ്പും ഫിൽട്ടറുകളും പരീക്ഷിക്കുക, തുടർന്ന് സേവ് ചെയ്യുക അല്ലെങ്കിൽ ഉപേക്ഷിക്കുക.</string>
+    <string name="intro_doc_sample_failed">സാമ്പിൾ പേജ് ഉണ്ടാക്കാനായില്ല. പകരം ക്യാമറ ഒരു രേഖയിലേക്ക് ചൂണ്ടുക.</string>
+    <string name="intro_book_body">ബുക്ക് സ്കാൻ: തുറന്ന പുസ്തകത്തിന്റെ ഇടത്തും വലത്തുമുള്ള പേജുകൾ ഒന്നിച്ച് സ്കാൻ ചെയ്ത് സ്വയമേവ രണ്ട് ചിത്രങ്ങളായി വിഭജിക്കുക.</string>
+    <string name="intro_book_order_left_first">ഇടത് പേജ് ആദ്യം സേവ് ചെയ്യും (A | B). മാറ്റാൻ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="intro_book_order_right_first">വലത് പേജ് ആദ്യം സേവ് ചെയ്യും (B | A). മാറ്റാൻ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="intro_book_two_pages">രണ്ട് പേജുകൾ</string>
+    <string name="intro_idcard_body">കാർഡ് ഒരു സാധാരണ പ്രതലത്തിൽ പരന്നു വെച്ച് ഫ്രെയിം നിറയ്ക്കുക. ആദ്യം മുൻവശം, പിന്നെ പിൻവശം സ്കാൻ ചെയ്യുക; ScanPro രണ്ടു വശങ്ങളും ഒരു പേജിൽ വെക്കുന്നു.</string>
+</resources>

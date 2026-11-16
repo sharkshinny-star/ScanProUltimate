@@ -45,10 +45,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.AutoFixHigh
-import androidx.compose.material.icons.rounded.DocumentScanner
-import androidx.compose.material.icons.rounded.Draw
-import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -77,6 +73,25 @@ import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import com.example.scanpro.R
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.core.view.WindowCompat
+import com.example.scanpro.core.designsystem.PhoneScanArt
+import com.example.scanpro.core.designsystem.PrivateToolsArt
+import com.example.scanpro.core.designsystem.ReceiptGridArt
+import kotlinx.coroutines.launch
 import com.example.scanpro.core.designsystem.AuroraBackground
 import com.example.scanpro.core.designsystem.BrandLockup
 import com.example.scanpro.core.designsystem.GradientButton
@@ -84,14 +99,6 @@ import com.example.scanpro.core.designsystem.IconTile
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.designsystem.rememberMotionEnabled
-
-private class WelcomePoint(val icon: ImageVector, @StringRes val text: Int, val tone: TileTone)
-
-private val points = listOf(
-    WelcomePoint(Icons.Rounded.DocumentScanner, R.string.ui_welcome_point_scan, TileTone.Indigo),
-    WelcomePoint(Icons.Rounded.AutoFixHigh, R.string.ui_welcome_point_clean, TileTone.Teal),
-    WelcomePoint(Icons.Rounded.Draw, R.string.ui_welcome_point_share, TileTone.Violet)
-)
 
 /**
  * The runtime permissions asked for together once, right after the welcome on first launch, as most scanner apps do:
@@ -110,11 +117,10 @@ internal object StartupPermissions {
 }
 
 /**
- * Shown once on first launch: one page with the promise, the privacy line and three things the app does, then a
- * single button. If Android has not granted the camera and notifications yet, a second page explains why the app
- * would like them and asks for both in one go, so the first scan opens straight into the camera. [onGetStarted]
- * runs when the user is through (Back on either page skips the rest). Drawn edge to edge over the ambient brand
- * backdrop, with the content stepping aside for the system bars.
+ * Shown once on first launch: three full-bleed pages, each a large picture over a bold headline and a line with its
+ * key words in bold (scan; manage files; PDF tools that never leave the phone), with page dots and a Next pill. On
+ * the last page Get started goes on, as before, to the permission page if Android has not granted the camera and
+ * notifications yet, then [onGetStarted]. Skip (or Back, handled by the caller) jumps straight to that step.
  */
 @Composable
 fun WelcomeScreen(onGetStarted: () -> Unit) {
@@ -130,17 +136,156 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
         if (asking) {
             PermissionsPage(onDone = onGetStarted)
         } else {
-            OnboardingPage(
-                heroIcon = Icons.Rounded.Shield,
-                heroTone = TileTone.Teal,
-                title = stringResource(R.string.ui_welcome_title),
-                body = stringResource(R.string.ui_welcome_tagline),
-                points = points.map { OnboardingPoint(it.icon, it.tone, stringResource(it.text)) },
-                primary = stringResource(R.string.ui_welcome_get_started),
-                onPrimary = {
-                    // Nothing left to ask (granted already, e.g. reinstalled with permissions restored): straight in.
-                    if (StartupPermissions.missing(context).isEmpty()) onGetStarted() else askingPermissions = true
+            WelcomePager(onFinish = {
+                // Nothing left to ask (granted already, e.g. reinstalled with permissions restored): straight in.
+                if (StartupPermissions.missing(context).isEmpty()) onGetStarted() else askingPermissions = true
+            })
+        }
+    }
+}
+
+/** One welcome page: its picture, headline, and a line whose %1$s is filled with [keyword], shown in bold. */
+private class WelcomeSlide(
+    @StringRes val title: Int,
+    @StringRes val body: Int,
+    @StringRes val keyword: Int,
+    val art: @Composable (Modifier) -> Unit
+)
+
+private val welcomeSlides = listOf(
+    WelcomeSlide(R.string.intro_welcome_scan_title, R.string.intro_welcome_scan_body, R.string.intro_welcome_scan_keyword) { PhoneScanArt(it) },
+    WelcomeSlide(R.string.intro_welcome_files_title, R.string.intro_welcome_files_body, R.string.intro_welcome_files_keyword) { ReceiptGridArt(it) },
+    WelcomeSlide(R.string.intro_welcome_tools_title, R.string.intro_welcome_tools_body, R.string.intro_welcome_tools_keyword) { PrivateToolsArt(it) }
+)
+
+@Composable
+private fun WelcomePager(onFinish: () -> Unit) {
+    val pager = rememberPagerState { welcomeSlides.size }
+    val scope = rememberCoroutineScope()
+    val motion = rememberMotionEnabled()
+    val last = welcomeSlides.lastIndex
+    val background = MaterialTheme.colorScheme.background
+    // The pictures sit under the status bar on a dark desk: light status-bar icons while the welcome is up.
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (view.context as? android.app.Activity)?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        val before = controller?.isAppearanceLightStatusBars
+        controller?.isAppearanceLightStatusBars = false
+        onDispose { if (before != null) controller.isAppearanceLightStatusBars = before }
+    }
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .background(background)
+            // Taps on empty parts of the welcome must not reach the app drawn underneath it.
+            .pointerInput(Unit) { detectTapGestures { } }
+    ) {
+        val artHeight = maxHeight * (if (maxHeight < 620.dp) 0.42f else 0.52f)
+        Column(Modifier.fillMaxSize()) {
+            HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), verticalAlignment = Alignment.Top) { page ->
+                val slide = welcomeSlides[page]
+                Column(Modifier.fillMaxSize()) {
+                    Box(Modifier.fillMaxWidth().height(artHeight)) {
+                        slide.art(Modifier.fillMaxSize())
+                        // The picture fades into the page below it.
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .background(Brush.verticalGradient(listOf(Color.Transparent, background)))
+                        )
+                    }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 28.dp)
+                    ) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            stringResource(slide.title),
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.semantics { heading() }
+                        )
+                        Spacer(Modifier.height(14.dp))
+                        val keyword = stringResource(slide.keyword)
+                        val body = stringResource(slide.body, keyword)
+                        val onSurface = MaterialTheme.colorScheme.onSurface
+                        Text(
+                            buildAnnotatedString {
+                                append(body)
+                                val at = body.indexOf(keyword)
+                                if (at >= 0) addStyle(SpanStyle(fontWeight = FontWeight.Bold, color = onSurface), at, at + keyword.length)
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(start = 28.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                WelcomeDots(welcomeSlides.size, pager.currentPage)
+                Spacer(Modifier.weight(1f))
+                val onLast = pager.currentPage == last
+                Button(
+                    onClick = {
+                        if (onLast) {
+                            onFinish()
+                        } else {
+                            scope.launch {
+                                if (motion) pager.animateScrollToPage(pager.currentPage + 1) else pager.scrollToPage(pager.currentPage + 1)
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(50),
+                    contentPadding = PaddingValues(horizontal = 28.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                        stringResource(if (onLast) R.string.ui_welcome_get_started else R.string.hint_next),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        // Skip, over the picture: a dark pill so it reads on the desk in either theme.
+        if (pager.currentPage < last) {
+            TextButton(
+                onClick = onFinish,
+                colors = ButtonDefaults.textButtonColors(containerColor = Color.Black.copy(alpha = 0.38f), contentColor = Color.White),
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 8.dp, end = 16.dp)
+            ) { Text(stringResource(R.string.hint_skip), fontWeight = FontWeight.SemiBold) }
+        }
+    }
+}
+
+/** Page dots, the current one a wider pill; read out as "Page 1 of 3". */
+@Composable
+private fun WelcomeDots(count: Int, current: Int) {
+    val description = stringResource(R.string.intro_welcome_page, current + 1, count)
+    Row(Modifier.clearAndSetSemantics { contentDescription = description }, verticalAlignment = Alignment.CenterVertically) {
+        repeat(count) { index ->
+            val selected = index == current
+            Box(
+                Modifier
+                    .padding(end = 8.dp)
+                    .height(8.dp)
+                    .width(if (selected) 24.dp else 8.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f))
             )
         }
     }
