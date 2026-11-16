@@ -343,6 +343,21 @@ fun PdfToolsScreen(
             imagesToOrder = uris
         }
     }
+    // Files on this phone handed files over (F160): the same flow as picking them here.
+    val handoff by com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(handoff) {
+        val request = handoff ?: return@LaunchedEffect
+        com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.pending.value = null
+        selectedTool = request.tool
+        when (request.tool) {
+            com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.MERGE -> {
+                viewModel.rememberPdfs(request.uris)
+                ordering = request.uris
+            }
+            com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.IMAGES_TO_PDF -> imagesToOrder = request.uris
+            com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.OFFICE_TO_PDF -> request.uris.firstOrNull()?.let(viewModel::officeToPdf)
+        }
+    }
     ordering?.let { picked ->
         MergeEditor(
             initialUris = picked,

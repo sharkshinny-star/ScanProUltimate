@@ -70,6 +70,8 @@ class AppViewModel @Inject constructor(
     val defaultScanMode: StateFlow<String> = settings.defaultScanMode.stateIn(viewModelScope, SharingStarted.Eagerly, ScanMode.DOCUMENT.name)
     val defaultFilter: StateFlow<PageFilter?> = settings.defaultFilter.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val reviewMode: StateFlow<com.example.scanpro.data.ReviewMode> = settings.reviewMode.stateIn(viewModelScope, SharingStarted.Eagerly, com.example.scanpro.data.ReviewMode.WHEN_NEEDED)
+    /** Scans saved so far: after the first, Home may offer to make ScanPro the default PDF viewer (once). */
+    val completedScans: StateFlow<Int> = settings.completedScans.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     val dynamicColor: StateFlow<Boolean> = settings.dynamicColor
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
