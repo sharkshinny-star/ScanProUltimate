@@ -41,6 +41,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-16, F164 on `8402c17`, macOS + Android 17 emulator + CPH2569 install)
+
+- Full `:app:testDebugUnitTest`: exit 0; 763 tests, 0 failed, 65 skipped.
+- `:app:installDebug` on the emulator and the phone. Emulator: camera introduction once only, 3D stage, one sentence; 0 crashes.
+- Camera open/close frames, emulator only, `/tmp/scanpro-run/jank.sh` (gfxinfo reset, tap, 2 s): open 17.5% / 14.7% janky, close 39.7% / 38.7% janky. No before-figure. The phone was locked, so nothing measured there.
+- NOT run: lint, release builds. Not pushed.
+
 ## Latest results (2026-11-16, F163 on `af9a7cb`, macOS + Android 17 emulator)
 
 - Full `:app:testDebugUnitTest`: exit 0; 762 tests, 0 failed, 65 skipped.
