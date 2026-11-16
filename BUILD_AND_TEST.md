@@ -41,6 +41,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-16, F163 on `af9a7cb`, macOS + Android 17 emulator)
+
+- Full `:app:testDebugUnitTest`: exit 0; 762 tests, 0 failed, 65 skipped.
+- `:app:installDebug` on AVD `ScanProUX`: redesigned Home (scan card with mode pills, three shortcuts) and Tools (three-column tiles) seen in the light theme; Receipt pill opens the camera; logcat 0 ScanPro crashes, 0 ANRs.
+- With two devices attached, pass `ANDROID_SERIAL=emulator-5554` (or the phone's serial) to `driver.sh`: plain `adb` fails with "more than one device", and Gradle's `installDebug` installs on every authorised device.
+- NOT run on this tree: `:app:lintDebug`, release builds (last on `5764a06`), a real phone. Not pushed (no GitHub credentials on this Mac).
+
 ## Latest results (2026-11-16, F162 on `6ef7b0f`, macOS + Android 17 emulator)
 
 - Full `:app:testDebugUnitTest`: exit 0; 762 tests, 0 failed, 65 skipped. This run also covers the one-line `CameraScannerScreen.kt` change noted below.
