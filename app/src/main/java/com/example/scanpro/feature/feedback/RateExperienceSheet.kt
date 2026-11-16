@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -80,6 +81,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RateExperienceSheet(onClose: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var rating by rememberSaveable { mutableIntStateOf(0) }
@@ -108,17 +110,17 @@ fun RateExperienceSheet(onClose: () -> Unit) {
                     val mood = Mood.of(rating) ?: return@RateExperienceContent
                     sending = true
                     scope.launch {
-                        val moodLabel = context.getString(mood.label)
+                        val moodLabel = resources.getString(mood.label)
                         val delivery = contactSupport(
                             context,
                             SupportTopic.FEEDBACK,
                             SupportMessage(
-                                subject = context.getString(R.string.feedback_email_subject, mood.rating, moodLabel),
+                                subject = resources.getString(R.string.feedback_email_subject, mood.rating, moodLabel),
                                 text = ratingEmailText(
-                                    ratingLine = context.getString(R.string.feedback_email_rating, mood.rating, moodLabel),
-                                    question = context.getString(followUpQuestion(mood.rating)),
-                                    reasons = reasonsFor(mood.rating).filter { it in reasons }.map { context.getString(it.label) },
-                                    commentsLabel = context.getString(R.string.feedback_email_comments),
+                                    ratingLine = resources.getString(R.string.feedback_email_rating, mood.rating, moodLabel),
+                                    question = resources.getString(followUpQuestion(mood.rating)),
+                                    reasons = reasonsFor(mood.rating).filter { it in reasons }.map { resources.getString(it.label) },
+                                    commentsLabel = resources.getString(R.string.feedback_email_comments),
                                     comments = text
                                 )
                             )
