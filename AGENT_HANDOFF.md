@@ -199,9 +199,8 @@ Details per finding: `AUDIT_FINDINGS.md`.
 - **F164 to check on a phone:** the three drink-water notices arrive at about 10:00, 12:00 and 15:00, survive a
   restart, and the notice's "Turn off" button stops them; pinch zoom stays smooth; the ID guide's card↔passport
   morph; the folded "More ways to save"; the new strings in five languages need a native speaker's read (R19).
-- **Merge of F164 with F157–F163 (this session):** unit suite, lint and a release build passed on F164 alone
-  (BUILD_AND_TEST.md); after the merge the full suite must be re-run before anything else is trusted — recorded
-  under "Latest results" if done, otherwise it was NOT run.
+- **Merge of F164 with F157–F163 (this session):** the full suite was re-run on the merge commit: 889 tests,
+  0 failed (lint and the release build were not re-run after the merge; they passed on F164 alone).
 - **R53:** F160–F163 not checked on a device; Play Console All files access declaration must be filed before release; new strings machine-translated. Organise's new description ("Reorder, rotate, extract or delete pages") is English only; the five translations still say "add or delete".
 - **R52:** F157–F159 not checked on a device; new strings machine-translated. Open question for the owner: QR history CSV export is a plain file in the cache until `CacheCleaner` removes it (Wi-Fi passwords excluded).
 - **Owner decision needed (held back 2026-11-15, `git stash list`, entry "Held back for owner decision"):** the uncommitted tree added `READ_MEDIA_IMAGES`, `READ_MEDIA_VISUAL_USER_SELECTED` and `READ_EXTERNAL_STORAGE` to the manifest and made `recoverOrphanedDocuments` run at every launch and look in external storage (app external dirs, `Documents/ScanPro`, `Pictures/ScanPro`, `Downloads/ScanPro`). Not committed because: nothing requests the permissions at run time, the app has never stored documents outside `filesDir/documents`, the permissions contradict the "no broad storage permission" decision and the Play Data safety form sent on 2026-11-08 (Play's photo and video permission policy would also need a declaration), and recovery at launch can race an import that has written its pages but not yet its record. `git stash pop` brings it back; `git stash drop` discards it. See R50.

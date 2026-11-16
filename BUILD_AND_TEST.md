@@ -46,8 +46,8 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - On F164 alone (parent `dd48c75`): full `:app:testDebugUnitTest` BUILD SUCCESSFUL; 756 tests, 0 failed, 0 errors,
   30 skipped (counted from the result XML; includes the new `HydrationScheduleTest`, 5 tests). `:app:lintDebug`:
   0 errors, 75 warnings. One `:app:assembleRelease`: APK 38,609,727 bytes (36.8 MiB), unsigned as configured.
-- After the merge with `42be05e` (F157–F163): the merged suite run is recorded below this line when it was run;
-  if no such line exists it was NOT run.
+- After the merge with `42be05e` (F157–F163), on the merge commit: full `:app:testDebugUnitTest` BUILD SUCCESSFUL;
+  889 tests, 0 failed, 0 errors, 82 skipped (result XML). Lint and a release build were NOT re-run on the merge.
 - Environment: fresh container; SDK at `/opt/android-sdk` (cmdline-tools 13114758, platform android-37.0,
   build-tools 37.0.0); Maven Central 429 again → the documented `~/.gradle/init.d/central-mirror.gradle` (local only).
 - NOT run: instrumented tests, any device or emulator.
