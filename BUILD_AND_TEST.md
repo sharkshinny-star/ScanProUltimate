@@ -41,6 +41,16 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-16, F160 `e873472` and F161 `5764a06`, macOS + Android 17 emulator)
+
+- Full `:app:testDebugUnitTest`: exit 0; 762 tests, 0 failed, 65 skipped (new: `PageInspectorTest` 4, `SteadinessTest` 5). Run before one later one-line change in `CameraScannerScreen.kt` (the screen also refreshes when `isConvincingPage` changes); that line was compiled by the lint and release builds below, the suite was not re-run after it.
+- `:app:lintDebug`: 0 errors, 72 warnings (71 before; none new in F161's files except an existing `UseKtx` note in `OpenCvScanProcessor.kt`). `scripts/ci/scanpro-quality-audit.py`: PASS.
+- `:app:bundleRelease :app:assembleRelease`: exit 0; `app-release.aab` 49.0 MB, `app-release-unsigned.apk` 38.6 MB. Unsigned as configured; not installed, signing not validated.
+- `ScanDetectionBenchmarkTest` on AVD `ScanProUX` (arm64 emulator on Apple silicon, so absolute times are faster than a phone): before, 12 scenes at 32.7 to 49.8 ms (median about 38 ms); after, median 23.0, 23.2 and 23.9 ms in three runs; 12 of 12 found before and after; mean IoU 0.920 → 0.922; `hard_shadow_across_page` still IoU 0.355. A run straight after a Gradle build is noisy (median 29 ms seen): let the Mac settle first.
+- Stage timings that led to the change (1280x960 frame, emulator): area-average resize 14.51 ms vs bilinear 0.33 ms; Gaussian adaptive threshold 4.51 ms; faint-edge blur and Canny 6.5 ms; contours of the combined map 5.4 ms; everything else under 2 ms each.
+- Emulator, debug build: Tools page without Rotate, Extract and PDF to Excel tiles; Organise PDF on a 4-page PDF: Arrange / Rotate / Extract switch, rotate one page, Save PDF, result kept; camera: two manual captures, Done, Scan saved sheet "2 pages"; logcat 0 ScanPro crashes, 0 ANRs. Cold start (debug) 3.4, 2.5, 3.0 s, within the 1.9 to 3.7 s seen before.
+- NOT run: a real phone, a real page under the camera (auto-capture, quality ticks with a page in view), dark theme, other languages. Not pushed.
+
 ## Latest results (2026-11-16, F159 on `d8759b3`, macOS + Android 17 emulator)
 
 - Full `:app:testDebugUnitTest`: exit 0; 753 tests, 0 failed, 0 errors, 65 skipped.

@@ -50,7 +50,9 @@ The primary scanner is `scanner/CameraScannerScreen.kt`.
 1. CameraX binds `Preview`, `ImageCapture`, and `ImageAnalysis` to the lifecycle.
 2. Analyser receives YUV frames and extracts the Y plane into a greyscale OpenCV `Mat`.
 3. Frames are rotated into display orientation.
-4. `DocumentEdgeDetector` bounds analysis to a long side of roughly 900 px.
+4. `DocumentEdgeDetector` bounds analysis to a long side of roughly 900 px (bilinear down to half size, area averaging below; F161).
+   `Steadiness` (in `OpenCvDocumentAnalyzer.kt`) decides when a page has held still: 350 ms and at least 4 frames, not a frame count.
+   `PageInspector` gives each captured photo one decode and one detection, shared by the crop outline and the quality notes.
 5. Gaussian smoothing + adaptive Canny + morphology produce edge candidates.
 6. Contours are approximated to convex quadrilaterals.
 7. Candidates are scored by area, rectangularity, and opposite-edge balance.
