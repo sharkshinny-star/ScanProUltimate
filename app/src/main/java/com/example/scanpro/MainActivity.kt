@@ -161,6 +161,11 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+        // CameraX's one-off start-up (its executors and camera list) runs now, off the main thread, so the first time the
+        // camera opens does not pay for it while the screen is sliding in.
+        if (packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_ANY)) {
+            runCatching { androidx.camera.lifecycle.ProcessCameraProvider.getInstance(applicationContext) }
+        }
         setContent {
           androidx.compose.runtime.CompositionLocalProvider(
             com.example.scanpro.core.security.LocalDeviceUnlock provides { onSuccess -> authenticate(onSuccess = onSuccess) }

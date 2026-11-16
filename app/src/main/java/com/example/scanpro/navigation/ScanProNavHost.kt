@@ -94,7 +94,12 @@ fun ScanProNavHost(
         enterTransition = { if (motion) enterFor(pop = false) else EnterTransition.None },
         exitTransition = { if (motion) exitFor(pop = false) else ExitTransition.None },
         popEnterTransition = { if (motion) enterFor(pop = true) else EnterTransition.None },
-        popExitTransition = { if (motion) exitFor(pop = true) else ExitTransition.None }
+        popExitTransition = { if (motion) exitFor(pop = true) else ExitTransition.None },
+        // The back gesture follows the same transitions as the close buttons. Left unset, the library's own predictive
+        // transition took over: the camera shrank into a card while its controls re-laid themselves out (seen in an
+        // owner's screen recording), which looked like dropped frames.
+        predictivePopEnterTransition = { if (motion) enterFor(pop = true) else EnterTransition.None },
+        predictivePopExitTransition = { if (motion) exitFor(pop = true) else ExitTransition.None }
     ) {
         // Search shares the library screen but is pushed on top of a tab rather than being one.
         listOf(ScanProDestinations.HOME, ScanProDestinations.FILES, ScanProDestinations.SEARCH).forEach { route ->

@@ -41,6 +41,10 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-17, F164 camera smoothness, Linux cloud container)
+
+- Full `:app:testDebugUnitTest :app:lintDebug`: exit 0; 887 tests, 0 failed, 82 skipped; lint 0 errors, 91 warnings. NOT run: release build this round, instrumented tests, any device.
+
 ## Latest results (2026-11-16 second round, F160–F163 on `edabdab`, Linux cloud container)
 
 - Full `:app:testDebugUnitTest :app:lintDebug`: exit 0; 884 tests, 0 failed, 82 skipped (opt-in screenshots); lint 0 errors, 91 warnings.

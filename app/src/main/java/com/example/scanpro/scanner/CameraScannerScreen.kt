@@ -246,6 +246,20 @@ fun CameraScannerScreen(
         }
     }
 
+    // The viewfinder fades in when the first frame arrives (and out when the camera is released for the review), instead
+    // of cutting from black to a picture.
+    var previewStreaming by remember { mutableStateOf(false) }
+    DisposableEffect(lifecycleOwner, previewView) {
+        val observer = androidx.lifecycle.Observer<PreviewView.StreamState> { previewStreaming = it == PreviewView.StreamState.STREAMING }
+        previewView.previewStreamState.observe(lifecycleOwner, observer)
+        onDispose { previewView.previewStreamState.removeObserver(observer) }
+    }
+    val previewAlpha by androidx.compose.animation.core.animateFloatAsState(
+        if (previewStreaming) 1f else 0f,
+        androidx.compose.animation.core.tween(180),
+        label = "previewAlpha"
+    )
+
     var permissionGranted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
@@ -449,11 +463,17 @@ fun CameraScannerScreen(
     var confirmQuit by rememberSaveable { mutableStateOf(false) }
     // Closing with captured pages would discard them, so ask first.
     val retaking = retakeIndex in pages.indices
+    // Leaving: the detector stops at once, so its OpenCV work does not compete with the slide-out animation (the preview
+    // keeps showing until the screen is gone; the camera itself is released when the screen leaves the composition).
+    val closeScreen = {
+        (boundUseCases.firstOrNull { it is ImageAnalysis } as? ImageAnalysis)?.clearAnalyzer()
+        onClose()
+    }
     val requestClose = {
         when {
             retaking -> { retakeIndex = -1; reviewing = true }
             pages.isNotEmpty() && !completed -> confirmQuit = true
-            else -> onClose()
+            else -> closeScreen()
         }
     }
     BackHandler(enabled = pages.isNotEmpty() && !completed) { requestClose() }
@@ -503,8 +523,10 @@ fun CameraScannerScreen(
     // bracket by hand, with no outline or guidance, so firing the shutter there would come as a surprise.
     val autoCaptureActive = autoCapture && !barcodeMode && !capturing && !reviewing &&
         (retaking || pages.size < pageLimit) && scanMode != ScanMode.ID_CARD
-    // The guidance string last shown, so the analyser builds a new one only when the guidance itself changes.
-    val guidanceShown = remember { IntArray(1) }
+    // The hint only changes once the new one has held for GUIDANCE_HOLD_MS: the detector's verdict flips between
+    // "too dark", "hold steady" and "ready" from frame to frame, and a pill that changes text four times a second
+    // reads as flicker (seen in an owner's screen recording).
+    val guidanceHold = remember { GuidanceHold(GUIDANCE_HOLD_MS) }
     val analyzer = remember {
         OpenCvDocumentAnalyzer(
             onDetection = { result, isStable, progress ->
@@ -528,9 +550,8 @@ fun CameraScannerScreen(
                     else -> previous.towards(target, 0.45f)
                 }
                 // "Hold… capturing" is chosen where it is shown, which knows whether auto-capture is on.
-                if (guidanceShown[0] != result.guidance.labelRes) {
-                    guidanceShown[0] = result.guidance.labelRes
-                    liveGuidance = resources.getString(result.guidance.labelRes)
+                guidanceHold.update(result.guidance.labelRes, android.os.SystemClock.uptimeMillis())?.let { label ->
+                    liveGuidance = resources.getString(label)
                 }
             },
             onAutoCapture = { autoCaptureSignal++ },
@@ -964,6 +985,10 @@ fun CameraScannerScreen(
             boundUseCases = emptyList()
             return@LaunchedEffect
         }
+        // The first bind (three use cases, up to 48 MP) runs on the main thread: started while the screen is still
+        // sliding up it froze the animation for about half a second. It waits for the slide to finish (nothing is
+        // lost: the viewfinder cannot show a picture before the camera opens anyway).
+        if (cameraProvider == null) delay(CAMERA_BIND_DELAY_MS)
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
             // The screen may have been left before the camera provider became ready.
@@ -1302,7 +1327,7 @@ fun CameraScannerScreen(
         Box(Modifier.fillMaxSize().padding(top = previewTop, bottom = previewBottom, end = panelClearance)) {
             AndroidView(
                 factory = { previewView },
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = previewAlpha },
                 update = { view ->
                     view.setOnTouchListener { _, event ->
                         if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) twoFingers[0] = false
@@ -1542,7 +1567,7 @@ fun CameraScannerScreen(
                         rememberScrollState()
                     )) { Text(stringResource(R.string.scan_quit_body)) }
                 },
-                confirmButton = { TextButton(onClick = { confirmQuit = false; onClose() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
+                confirmButton = { TextButton(onClick = { confirmQuit = false; closeScreen() }) { Text(stringResource(R.string.scan_quit_discard), color = MaterialTheme.colorScheme.error) } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.common_cancel)) } }
             )
         }
@@ -2742,6 +2767,12 @@ internal fun skippedPicksMessage(resources: android.content.res.Resources, heic:
 }
 
 /** Sub-folder holding one folder per scanner session; cleaned after import or when abandoned. */
+/** How long a changed live hint must hold before it replaces the one on screen. */
+private const val GUIDANCE_HOLD_MS = 400L
+
+/** About the length of the camera's slide-up (see the navigation host): the first bind starts after it. */
+private const val CAMERA_BIND_DELAY_MS = 240L
+
 internal const val SESSION_ROOT = "pro_scanner_session"
 
 /** Marker in a session folder whose photos are queued for import: cleanup must leave the folder alone. */
