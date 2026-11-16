@@ -1105,7 +1105,8 @@ fun CameraScannerScreen(
 
     // 17: a level bubble from the accelerometer, so an oblique angle shows before the capture.
     var tilt by remember { mutableStateOf(Offset.Zero) }
-    DisposableEffect(permissionGranted) {
+    val levelShowing = showLevel && permissionGranted && !barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD
+    DisposableEffect(levelShowing) {
         val sensors = context.getSystemService(android.content.Context.SENSOR_SERVICE) as? android.hardware.SensorManager
         val accelerometer = sensors?.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
         val listener = object : android.hardware.SensorEventListener {
@@ -1121,7 +1122,9 @@ fun CameraScannerScreen(
             }
             override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
         }
-        if (permissionGranted && accelerometer != null) sensors.registerListener(listener, accelerometer, android.hardware.SensorManager.SENSOR_DELAY_UI)
+        // Registered only while the bubble is on screen: at SENSOR_DELAY_UI the callback runs dozens of
+        // times a second, which is pure waste while nothing shows the readings.
+        if (levelShowing && accelerometer != null) sensors.registerListener(listener, accelerometer, android.hardware.SensorManager.SENSOR_DELAY_UI)
         onDispose { sensors?.unregisterListener(listener) }
     }
 
@@ -1183,15 +1186,17 @@ fun CameraScannerScreen(
         }
     }
 
-    LaunchedEffect(zoomRatio, maxZoomRatio, boundCamera) {
-        boundCamera?.cameraControl?.setZoomRatio(zoomRatio.coerceIn(1f, maxZoomRatio))
+    // snapshotFlow, not effect keys: a pinch changes the zoom every frame, and re-keying the effect on it
+    // cancelled and restarted a coroutine per frame. One effect per camera now watches the values instead.
+    LaunchedEffect(boundCamera) {
+        val camera = boundCamera ?: return@LaunchedEffect
+        snapshotFlow { zoomRatio.coerceIn(1f, maxZoomRatio) }.collectLatest { camera.cameraControl.setZoomRatio(it) }
     }
 
-    LaunchedEffect(exposureIndex, exposureMin, exposureMax, boundCamera) {
-        if (exposureMin < exposureMax) {
-            boundCamera?.cameraControl?.setExposureCompensationIndex(
-                exposureIndex.coerceIn(exposureMin, exposureMax)
-            )
+    LaunchedEffect(boundCamera) {
+        val camera = boundCamera ?: return@LaunchedEffect
+        snapshotFlow { Triple(exposureIndex, exposureMin, exposureMax) }.collectLatest { (index, min, max) ->
+            if (min < max) camera.cameraControl.setExposureCompensationIndex(index.coerceIn(min, max))
         }
     }
 
@@ -1389,29 +1394,20 @@ fun CameraScannerScreen(
         }
 
         if (!reviewing && maxZoomRatio > 1.05f) {
-            // One small pill instead of a column of three buttons: the column sat over the middle of the page being
-            // framed. It shows the current zoom and a tap moves to the next stop (1x, 2x, 5x); pinching still works.
-            val stops = listOf(1f, 2f, 5f).filter { it <= maxZoomRatio + 0.01f || it == 1f }
-            val label = stops.firstOrNull { kotlin.math.abs(zoomRatio - it) < 0.01f }?.let { "${it.toInt()}x" }
-                ?: String.format(java.util.Locale.ROOT, "%.1fx", zoomRatio)
-            val description = stringResource(R.string.scan_zoom_level, label)
-            Surface(
-                onClick = { zoomRatio = stops.firstOrNull { it > zoomRatio + 0.01f } ?: stops.first() },
-                shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.45f),
-                contentColor = Color.White,
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp + panelClearance).size(44.dp).semantics { contentDescription = description }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                }
-            }
+            ZoomPill(
+                zoomRatio = { zoomRatio },
+                maxZoomRatio = maxZoomRatio,
+                onZoomChange = { zoomRatio = it },
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp + panelClearance)
+            )
         }
         if (status != null && !landscape) {
             statusChip(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 62.dp, start = 16.dp, end = 16.dp))
         }
-        if (showLevel && !barcodeMode && !reviewing && scanMode != ScanMode.ID_CARD) {
-            LevelBubble(tilt = tilt, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp + panelClearance))
+        if (levelShowing) {
+            // The lean is handed over as a lambda and read while drawing, so a sensor reading never
+            // recomposes this screen, only redraws the bubble.
+            LevelBubble(tilt = { tilt }, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp + panelClearance))
         }
 
         if (barcodeMode && foundCode == null) {
@@ -2202,6 +2198,32 @@ private fun QrViewfinder(hint: String, motion: Boolean) {
     }
 }
 
+/**
+ * One small pill instead of a column of three buttons: the column sat over the middle of the page being
+ * framed. It shows the current zoom and a tap moves to the next stop (1x, 2x, 5x); pinching still works.
+ * Its own composable on purpose: a pinch changes the zoom every frame, and reading it at the call site
+ * recomposed the whole camera screen for each step; here only this pill recomposes.
+ */
+@Composable
+private fun ZoomPill(zoomRatio: () -> Float, maxZoomRatio: Float, onZoomChange: (Float) -> Unit, modifier: Modifier = Modifier) {
+    val ratio = zoomRatio()
+    val stops = listOf(1f, 2f, 5f).filter { it <= maxZoomRatio + 0.01f || it == 1f }
+    val label = stops.firstOrNull { kotlin.math.abs(ratio - it) < 0.01f }?.let { "${it.toInt()}x" }
+        ?: String.format(java.util.Locale.ROOT, "%.1fx", ratio)
+    val description = stringResource(R.string.scan_zoom_level, label)
+    Surface(
+        onClick = { onZoomChange(stops.firstOrNull { it > ratio + 0.01f } ?: stops.first()) },
+        shape = CircleShape,
+        color = Color.Black.copy(alpha = 0.45f),
+        contentColor = Color.White,
+        modifier = modifier.size(44.dp).semantics { contentDescription = description }
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(label, style = MaterialTheme.typography.labelMedium, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+        }
+    }
+}
+
 /** The square pills either side of the shutter (gallery; Auto or the page count). */
 @Composable
 private fun BottomPill(
@@ -2356,9 +2378,24 @@ internal fun idCardCrop(
  */
 @Composable
 private fun IdCardFrame(label: String, heightRatio: Float) {
-    Box(Modifier.fillMaxSize()) {
+    val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+    // Switching Front only / Both sides / Passport morphs the guide between the two card shapes instead of
+    // snapping, and the whole guide settles in with a soft spring when the mode opens.
+    val shownRatio by androidx.compose.animation.core.animateFloatAsState(
+        heightRatio,
+        if (motion) spring(dampingRatio = 0.8f, stiffness = 380f) else androidx.compose.animation.core.snap(),
+        label = "idRatio"
+    )
+    var entered by remember { mutableStateOf(!motion) }
+    LaunchedEffect(Unit) { entered = true }
+    val appear by androidx.compose.animation.core.animateFloatAsState(
+        if (entered) 1f else 0f,
+        if (motion) spring(dampingRatio = 0.85f, stiffness = 300f) else androidx.compose.animation.core.snap(),
+        label = "idAppear"
+    )
+    Box(Modifier.fillMaxSize().graphicsLayer { alpha = appear }) {
         Canvas(Modifier.fillMaxSize()) {
-            val frame = idCardFrame(size.width, size.height, density, heightRatio)
+            val frame = idCardFrame(size.width, size.height, density, shownRatio)
             val left = frame.left; val top = frame.top; val width = frame.width(); val height = frame.height()
             val radius = 14.dp.toPx()
             val outside = Path().apply {
@@ -2385,7 +2422,7 @@ private fun IdCardFrame(label: String, heightRatio: Float) {
         var areaSize by remember { mutableStateOf(IntSize.Zero) }
         Box(Modifier.fillMaxSize().onSizeChanged { areaSize = it })
         if (areaSize.width > 0) {
-            val frame = idCardFrame(areaSize.width.toFloat(), areaSize.height.toFloat(), local.density, heightRatio)
+            val frame = idCardFrame(areaSize.width.toFloat(), areaSize.height.toFloat(), local.density, shownRatio)
             Box(
                 Modifier
                     .offset { IntOffset(frame.left.toInt(), frame.top.toInt()) }
@@ -2400,7 +2437,17 @@ private fun IdCardFrame(label: String, heightRatio: Float) {
                     modifier = Modifier.align(Alignment.TopCenter).padding(top = 14.dp, start = 16.dp, end = 16.dp)
                 )
                 Surface(modifier = Modifier.align(Alignment.Center), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.45f)) {
-                    Text(label, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+                    // "Front · 1 of 2" turns into "Back · 2 of 2" with a small rise, so the change of side is seen.
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = label,
+                        transitionSpec = {
+                            (androidx.compose.animation.fadeIn(tween(200)) + androidx.compose.animation.slideInVertically(tween(200)) { it / 2 })
+                                .togetherWith(androidx.compose.animation.fadeOut(tween(140)))
+                        },
+                        label = "idSide"
+                    ) { text ->
+                        Text(text, color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+                    }
                 }
             }
         }
@@ -2422,18 +2469,25 @@ enum class FlashMode(@StringRes val labelRes: Int) {
  * over the page (within a few degrees), so a skewed shot is noticed before it is taken.
  */
 @Composable
-private fun LevelBubble(tilt: Offset, accent: Color, modifier: Modifier = Modifier) {
-    val level = kotlin.math.abs(tilt.x) < 6f && kotlin.math.abs(tilt.y) < 6f
-    val ring by androidx.compose.animation.animateColorAsState(if (level) accent else Color.White.copy(alpha = 0.7f), tween(180), label = "level")
+private fun LevelBubble(tilt: () -> Offset, accent: Color, modifier: Modifier = Modifier) {
+    // [tilt] is read only inside the draw block: a new reading (dozens a second) redraws this one
+    // bubble and recomposes nothing. The mint blend is smoothed in the same place for the same reason.
+    val blend = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { tilt().let { kotlin.math.abs(it.x) < 6f && kotlin.math.abs(it.y) < 6f } }
+            .collectLatest { level -> blend.animateTo(if (level) 1f else 0f, tween(180)) }
+    }
     Canvas(modifier.size(44.dp)) {
+        val lean = tilt()
+        val ring = androidx.compose.ui.graphics.lerp(Color.White.copy(alpha = 0.7f), accent, blend.value)
         val radius = size.minDimension / 2f
         drawCircle(Color.Black.copy(alpha = 0.35f), radius)
         drawCircle(ring, radius - 1.5.dp.toPx(), style = Stroke(2.dp.toPx()))
         drawCircle(ring.copy(alpha = 0.5f), 5.dp.toPx(), style = Stroke(1.dp.toPx()))
         // Up to 25 degrees of lean moves the bubble to the rim.
         val reach = radius - 7.dp.toPx()
-        val dx = (tilt.x / 25f).coerceIn(-1f, 1f) * reach
-        val dy = (-tilt.y / 25f).coerceIn(-1f, 1f) * reach
+        val dx = (lean.x / 25f).coerceIn(-1f, 1f) * reach
+        val dy = (-lean.y / 25f).coerceIn(-1f, 1f) * reach
         drawCircle(ring, 5.dp.toPx(), center = center + Offset(dx, dy))
     }
 }

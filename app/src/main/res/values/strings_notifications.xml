@@ -35,6 +35,15 @@
     <string name="settings_notify_trash_body">The day before deleted documents are removed for good</string>
     <string name="settings_notify_backup_title">Backup reminder</string>
     <string name="settings_notify_backup_body">When you haven\'t made a backup for a month</string>
+    <string name="settings_notify_water_title">Drink water reminders</string>
+    <string name="settings_notify_water_body">Three gentle nudges a day to have a glass of water</string>
+    <string name="notify_channel_water">Drink water</string>
+    <string name="notify_channel_water_description">Three reminders a day to have a glass of water, if you keep them on</string>
+    <string name="notify_water_title">Time for a glass of water</string>
+    <string name="notify_water_body_morning">A sip now keeps the morning sharp. 💧</string>
+    <string name="notify_water_body_midday">Midday already — have a glass of water with your break.</string>
+    <string name="notify_water_body_afternoon">Last call of the day: one more glass keeps you going.</string>
+    <string name="notify_water_turn_off">Turn off</string>
     <string name="settings_notifications_system_title">System notification settings</string>
     <string name="settings_notifications_system_body">Sounds, lock screen and more, per kind of notice</string>
 </resources>

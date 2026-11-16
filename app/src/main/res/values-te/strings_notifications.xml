@@ -32,4 +32,13 @@
     <string name="settings_notify_backup_body">మీరు ఒక నెలగా బ్యాకప్ చేయకపోతే</string>
     <string name="settings_notifications_system_title">సిస్టమ్ నోటిఫికేషన్ సెట్టింగ్‌లు</string>
     <string name="settings_notifications_system_body">ఒక్కో రకం నోటీసుకు సౌండ్‌లు, లాక్ స్క్రీన్ మరియు మరిన్ని</string>
+    <string name="settings_notify_water_title">నీళ్లు తాగే రిమైండర్లు</string>
+    <string name="settings_notify_water_body">ఒక గ్లాసు నీళ్లు తాగమని రోజుకు మూడు సార్లు మృదువైన గుర్తు</string>
+    <string name="notify_channel_water">నీళ్లు తాగండి</string>
+    <string name="notify_channel_water_description">మీరు ఆన్ లో ఉంచితే, రోజుకు మూడు సార్లు నీళ్లు తాగే రిమైండర్</string>
+    <string name="notify_water_title">ఒక గ్లాసు నీళ్ల సమయం</string>
+    <string name="notify_water_body_morning">ఇప్పుడు ఒక గుక్క ఉదయాన్ని చురుగ్గా ఉంచుతుంది. 💧</string>
+    <string name="notify_water_body_midday">మధ్యాహ్నం అయింది — విరామంతో పాటు ఒక గ్లాసు నీళ్లు తాగండి.</string>
+    <string name="notify_water_body_afternoon">ఈ రోజు చివరి గుర్తు: మరో గ్లాసు మిమ్మల్ని ఉత్సాహంగా ఉంచుతుంది.</string>
+    <string name="notify_water_turn_off">ఆఫ్ చేయండి</string>
 </resources>

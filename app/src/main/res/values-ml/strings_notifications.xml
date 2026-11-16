@@ -32,4 +32,13 @@
     <string name="settings_notify_backup_body">ഒരു മാസമായി ബാക്കപ്പ് എടുത്തിട്ടില്ലെങ്കിൽ</string>
     <string name="settings_notifications_system_title">സിസ്റ്റം അറിയിപ്പ് ക്രമീകരണങ്ങൾ</string>
     <string name="settings_notifications_system_body">ശബ്ദങ്ങൾ, ലോക്ക് സ്ക്രീൻ എന്നിവയും മറ്റും, ഓരോ തരം അറിയിപ്പിനും</string>
+    <string name="settings_notify_water_title">വെള്ളം കുടിക്കാനുള്ള ഓർമ്മപ്പെടുത്തലുകൾ</string>
+    <string name="settings_notify_water_body">ഒരു ഗ്ലാസ് വെള്ളം കുടിക്കാൻ ദിവസം മൂന്നു തവണ മൃദുവായ ഓർമ്മ</string>
+    <string name="notify_channel_water">വെള്ളം കുടിക്കൂ</string>
+    <string name="notify_channel_water_description">ഓൺ ആക്കി വെച്ചാൽ, ദിവസം മൂന്നു തവണ വെള്ളം കുടിക്കാനുള്ള ഓർമ്മപ്പെടുത്തൽ</string>
+    <string name="notify_water_title">ഒരു ഗ്ലാസ് വെള്ളത്തിനുള്ള സമയം</string>
+    <string name="notify_water_body_morning">ഇപ്പോൾ ഒരു കവിൾ വെള്ളം രാവിലെ ഉന്മേഷം നിലനിർത്തും. 💧</string>
+    <string name="notify_water_body_midday">ഉച്ചയായി — ഇടവേളയ്ക്കൊപ്പം ഒരു ഗ്ലാസ് വെള്ളം കുടിക്കൂ.</string>
+    <string name="notify_water_body_afternoon">ഇന്നത്തെ അവസാന ഓർമ്മ: ഒരു ഗ്ലാസ് കൂടി നിങ്ങളെ ഉഷാറാക്കും.</string>
+    <string name="notify_water_turn_off">ഓഫാക്കുക</string>
 </resources>

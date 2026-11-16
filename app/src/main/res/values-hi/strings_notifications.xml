@@ -32,4 +32,13 @@
     <string name="settings_notify_backup_body">जब आपने एक महीने से बैकअप न लिया हो</string>
     <string name="settings_notifications_system_title">सिस्टम नोटिफ़िकेशन सेटिंग्स</string>
     <string name="settings_notifications_system_body">हर तरह की सूचना के लिए आवाज़, लॉक स्क्रीन और बहुत कुछ</string>
+    <string name="settings_notify_water_title">पानी पीने के रिमाइंडर</string>
+    <string name="settings_notify_water_body">दिन में तीन बार एक गिलास पानी पीने की हल्की याद</string>
+    <string name="notify_channel_water">पानी पिएँ</string>
+    <string name="notify_channel_water_description">दिन में तीन बार पानी पीने की याद, अगर आप इन्हें चालू रखें</string>
+    <string name="notify_water_title">एक गिलास पानी का समय</string>
+    <string name="notify_water_body_morning">अभी एक घूँट सुबह को तरोताज़ा रखता है। 💧</string>
+    <string name="notify_water_body_midday">दोपहर हो गई — ब्रेक के साथ एक गिलास पानी पी लें।</string>
+    <string name="notify_water_body_afternoon">आज की आख़िरी याद: एक और गिलास आपको चलाए रखेगा।</string>
+    <string name="notify_water_turn_off">बंद करें</string>
 </resources>

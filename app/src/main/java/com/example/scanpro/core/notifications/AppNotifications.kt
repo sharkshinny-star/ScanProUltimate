@@ -96,6 +96,34 @@ class AppNotifications @Inject constructor(
         )
     }
 
+    /**
+     * One of the day's three drink-water reminders ([HydrationSchedule]); [slot] picks the wording. Nothing private
+     * in it, so it reads the same on the lock screen. "Turn off" stops the reminders from the notice itself.
+     */
+    suspend fun drinkWater(slot: Int) {
+        if (!settings.hydrationReminders.first()) return
+        val bodies = intArrayOf(R.string.notify_water_body_morning, R.string.notify_water_body_midday, R.string.notify_water_body_afternoon)
+        val turnOff = PendingIntent.getBroadcast(
+            context,
+            ID_WATER,
+            Intent(context, com.example.scanpro.work.HydrationOffReceiver::class.java)
+                .setAction(com.example.scanpro.work.HydrationOffReceiver.ACTION_TURN_OFF),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        post(
+            id = ID_WATER,
+            channel = CHANNEL_WATER,
+            title = context.getString(R.string.notify_water_title),
+            detail = context.getString(bodies[slot.coerceIn(0, bodies.lastIndex)]),
+            tap = openAppIntent(),
+            neutralWhenLocked = false,
+            action = NotificationCompat.Action(0, context.getString(R.string.notify_water_turn_off), turnOff),
+            timeoutMs = WATER_TIMEOUT_MS
+        )
+    }
+
+    fun clearDrinkWater() = NotificationManagerCompat.from(context).cancel(ID_WATER)
+
     /** Clears finished and failed notices once the user is back in the app, where the snackbar already said it. */
     fun clearTaskNotices() {
         val manager = NotificationManagerCompat.from(context)
@@ -126,6 +154,10 @@ class AppNotifications @Inject constructor(
                 NotificationChannel(CHANNEL_REMINDERS, context.getString(R.string.notify_channel_reminders), NotificationManager.IMPORTANCE_LOW).apply {
                     description = context.getString(R.string.notify_channel_reminders_description)
                     setShowBadge(false)
+                },
+                NotificationChannel(CHANNEL_WATER, context.getString(R.string.notify_channel_water), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = context.getString(R.string.notify_channel_water_description)
+                    setShowBadge(false)
                 }
             )
         )
@@ -137,7 +169,10 @@ class AppNotifications @Inject constructor(
         title: String,
         detail: String?,
         tap: PendingIntent,
-        neutralWhenLocked: Boolean = true
+        neutralWhenLocked: Boolean = true,
+        action: NotificationCompat.Action? = null,
+        /** The notice removes itself after this long; 0 keeps it until dismissed. */
+        timeoutMs: Long = 0
     ) {
         if (!canPost()) return
         ensureChannels()
@@ -158,7 +193,11 @@ class AppNotifications @Inject constructor(
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(publicVersion)
-            .setCategory(if (channel == CHANNEL_REMINDERS) NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_STATUS)
+            .setCategory(if (channel == CHANNEL_REMINDERS || channel == CHANNEL_WATER) NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_STATUS)
+            .apply {
+                if (action != null) addAction(action)
+                if (timeoutMs > 0) setTimeoutAfter(timeoutMs)
+            }
             .build()
         try {
             NotificationManagerCompat.from(context).notify(id, notification)
@@ -195,5 +234,9 @@ class AppNotifications @Inject constructor(
         const val ID_FAILED = 0x5CB1
         const val ID_TRASH = 0x5CB2
         const val ID_BACKUP = 0x5CB3
+        const val CHANNEL_WATER = "drink_water"
+        const val ID_WATER = 0x5CB4
+        /** A reminder nobody looked at goes away after an hour, so the three never read as a backlog. */
+        const val WATER_TIMEOUT_MS = 60L * 60 * 1000
     }
 }

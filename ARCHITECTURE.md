@@ -233,6 +233,23 @@ sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional remin
 routed by `AppViewModel.destinationRequest` below the app-lock gate. No document names; neutral text when app lock is on.
 Runtime permissions (camera, notifications on 13+) are asked once after the welcome on first launch (`StartupPermissions` in `ui/WelcomeScreen.kt`), then again in context if refused.
 
+**Drink-water reminders (F157).** `core/notifications/HydrationSchedule` (pure, tested) places three notices a day with
+widening gaps: one hour after the day starts at 09:00, then two hours on, then three (10:00, 12:00, 15:00 local time).
+`work/HydrationReminders` (Hilt singleton) keeps exactly one delayed `HydrationWorker` in a unique WorkManager queue:
+each run shows the notice (skipped when more than 45 min late: phone off, Doze) and queues the next with
+`APPEND_OR_REPLACE`, so no exact-alarm or boot permission is needed and the queue survives restarts
+(`ScanProApplication` re-syncs it at start). Channel `drink_water`; the notice carries a "Turn off" action
+(`HydrationOffReceiver`, not exported) and times itself out after an hour. Preference `notify_drink_water`
+(`SettingsStore.hydrationReminders`, default on; the switch sits in Settings > Notifications and goes through
+`HydrationReminders.setEnabled`, which starts or stops the queue with the flag).
+
+**Default PDF app (F157).** Android has no role an app can request for PDFs, so `core/ui/DefaultPdfApp` resolves who
+handles `ACTION_VIEW application/pdf` (`OURS` / `UNSET` / `OTHER`), and `ask()` opens ScanPro's own one-page sample PDF so
+the system's "Open with" sheet does the asking; for `OTHER` the other app's settings page (the only place its default can
+be cleared) is opened. Entry points: a one-time card at the top of Tools (`FirstRunHints` key `default_pdf_ask`, hidden
+when already the default) and a Settings > Feedback & support row that shows the current holder. When the sample PDF
+comes back through the sheet, `MainActivity` recognises it (`isProbe`) and shows a confirmation instead of importing it.
+
 ## 12b. Colour themes, Home tips, What's new
 
 - **Colour themes.** `data/Models.kt` `AccentPalette` (Indigo, Ocean, Emerald, Sunset, Berry) is stored by name in
@@ -419,4 +436,4 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - Feedback: `feature/feedback/` (rating sheet, issue/feature form), `data/FeedbackSchedule.kt` (`FeedbackPrompts`, SharedPreferences; scans 1 and 2, then 30 days); delivery through `core/ui/Support.kt` `contactSupport` with `SupportMessage` (email → share → clipboard), no network.
 - Files on this phone: `feature/phonepdfs/` (`PhonePdfSource` MediaStore query and change observer, `PhoneFiles` filters/sort, `PhoneThumbnails`, screen and view model), `data/FilesAccessPrompts.kt`; permissions `MANAGE_EXTERNAL_STORAGE` (opt-in) and `READ_EXTERNAL_STORAGE` maxSdk 29. Read only.
 - Introductions: `core/designsystem/IntroArt.kt` (Canvas art: phone scan, receipts, private tools, sample document, ID card front/back, open book, `renderSampleScanBitmap`), `scanner/BookSplitOverlay.kt`, `BookSpread.leftFirst/swapped` (layout 1 = A|B, 2 = B|A).
-- F164 (camera): `scanner/GuidanceHold.kt` steadies the live hint; `CameraScannerScreen` waits `CAMERA_BIND_DELAY_MS` before its first bind and fades the preview in on `PreviewView.StreamState.STREAMING`; `MainActivity` starts `ProcessCameraProvider` at launch; the nav host sets `predictivePop*Transition` equal to the pop transitions.
+- F165 (camera): `scanner/GuidanceHold.kt` steadies the live hint; `CameraScannerScreen` waits `CAMERA_BIND_DELAY_MS` before its first bind and fades the preview in on `PreviewView.StreamState.STREAMING`; `MainActivity` starts `ProcessCameraProvider` at launch; the nav host sets `predictivePop*Transition` equal to the pop transitions.

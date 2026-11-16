@@ -43,6 +43,7 @@ class SettingsViewModel @Inject constructor(
     private val repository: DocumentRepository,
     private val operations: OperationRunner,
     private val notifications: AppNotifications,
+    private val hydration: com.example.scanpro.work.HydrationReminders,
     library: DocumentLibrary
 ) : ViewModel() {
     val busy: StateFlow<Boolean> = operations.busy
@@ -166,6 +167,9 @@ class SettingsViewModel @Inject constructor(
     fun setNotifyFailures(value: Boolean) { viewModelScope.launch { settings.setNotifyFailures(value) } }
     fun setNotifyTrash(value: Boolean) { viewModelScope.launch { settings.setNotifyTrash(value) } }
     fun setNotifyBackup(value: Boolean) { viewModelScope.launch { settings.setNotifyBackup(value) } }
+    val notifyWater = settings.hydrationReminders.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    /** Through [com.example.scanpro.work.HydrationReminders], so the queued reminder starts or stops with the switch. */
+    fun setNotifyWater(value: Boolean) { viewModelScope.launch { hydration.setEnabled(value) } }
     /** Whether Android lets the app post notifications at all (permission and the app-wide switch). */
     fun canPostNotifications(): Boolean = notifications.canPost()
     fun notificationSettingsIntent() = notifications.systemSettingsIntent()
