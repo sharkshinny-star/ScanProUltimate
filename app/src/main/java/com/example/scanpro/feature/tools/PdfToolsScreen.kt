@@ -1061,7 +1061,15 @@ fun PdfToolsScreen(
                 .padding(padding),
             contentAlignment = Alignment.TopCenter
         ) {
-            val toolColumns = if (com.example.scanpro.navigation.isWideWindow()) 4 else 2
+            // Tools redesign (2026-11-16): three compact tiles to a row on a phone (six on a wide window), so a section
+            // fits on one screen instead of three. Two wide cards with their descriptions remain for large text, where
+            // three columns would cut the names.
+            val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.3f
+            val toolColumns = when {
+                com.example.scanpro.navigation.isWideWindow() -> if (largeText) 4 else 6
+                largeText -> 2
+                else -> 3
+            }
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),

@@ -340,7 +340,9 @@ private fun ToolCard(
     pinned: Boolean,
     onClick: () -> Unit,
     onTogglePin: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Three or more to a row: the icon and the name, centred. What the tool does is still read out and searchable. */
+    compact: Boolean = false
 ) {
     val name = stringResource(tool.title)
     val description = TOOL_DESCRIPTIONS[tool.id]?.let { stringResource(it) }
@@ -368,8 +370,31 @@ private fun ToolCard(
                 contentDescription = if (description != null) "$name. $description" else name
                 customActions = listOf(CustomAccessibilityAction(pinLabel) { onTogglePin(); true })
             }
-            .padding(start = 14.dp, end = 12.dp, top = 14.dp, bottom = 14.dp)
+            .padding(start = if (compact) 8.dp else 14.dp, end = if (compact) 8.dp else 12.dp, top = 14.dp, bottom = if (compact) 12.dp else 14.dp),
+        horizontalAlignment = if (compact) Alignment.CenterHorizontally else Alignment.Start
     ) {
+        if (compact) {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                IconTile(tool.icon, tool.tone, size = 48.dp, corner = 15.dp, iconSize = 24.dp)
+                if (pinned) {
+                    Icon(
+                        Icons.Default.PushPin,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.TopEnd).size(14.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                name,
+                style = MaterialTheme.typography.labelLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            return@Column
+        }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             IconTile(tool.icon, tool.tone, size = 42.dp, corner = 13.dp, iconSize = 22.dp)
             Spacer(Modifier.weight(1f))
@@ -419,7 +444,8 @@ private fun ToolCardRow(
                 pinned = memory.isPinned(tool.id),
                 onClick = { memory.used(tool.id); onLaunch(tool) },
                 onTogglePin = { memory.togglePin(tool.id) },
-                modifier = Modifier.weight(1f).fillMaxHeight()
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                compact = perRow >= 3
             )
         }
         // A short last row keeps its cards the same width as the rows above.
