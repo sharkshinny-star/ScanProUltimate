@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -43,6 +44,11 @@ import com.example.scanpro.feature.qr.QrGeneratorRoute
 import com.example.scanpro.feature.qr.QrHistoryRoute
 import com.example.scanpro.feature.trash.TrashRoute
 import com.example.scanpro.feature.viewer.PdfViewerScreen
+import com.example.scanpro.feature.phonepdfs.PhoneFile
+import com.example.scanpro.feature.phonepdfs.PhoneFileActions
+import com.example.scanpro.feature.phonepdfs.PhoneFileKind
+import com.example.scanpro.feature.phonepdfs.PhonePdfSource
+import com.example.scanpro.feature.phonepdfs.PhonePdfsRoute
 import com.example.scanpro.scanner.CameraScannerScreen
 
 /** Back handlers use dropUnlessResumed so a double tap during the exit animation can't pop two screens. */
@@ -64,6 +70,8 @@ fun ScanProNavHost(
     defaultFilter: PageFilter? = null,
     /** Check pages before saving (Settings): whether the camera's Done opens the review. */
     reviewMode: com.example.scanpro.data.ReviewMode = com.example.scanpro.data.ReviewMode.ALWAYS,
+    /** Copies a PDF from shared storage into the library (Files on this phone > Add to ScanPro). */
+    onImportPdfUri: (android.net.Uri) -> Unit = {},
 ) {
     val context = LocalContext.current
     val pdfDocumentTitle = stringResource(R.string.nav_pdf_document)
@@ -104,6 +112,8 @@ fun ScanProNavHost(
                     onTrash = { navController.navigate(ScanProDestinations.TRASH) },
                     onKeptScans = { navController.navigate(ScanProDestinations.KEPT_SCANS) { launchSingleTop = true } },
                     onSearch = { navController.navigate(ScanProDestinations.SEARCH) { launchSingleTop = true } },
+                    onPhonePdfs = { navController.navigate(ScanProDestinations.PHONE_PDFS) { launchSingleTop = true } },
+                    onImportPdfUri = onImportPdfUri,
                     onBack = dropUnlessResumed { navController.popBackStack() },
                     onTab = onTab
                 )
@@ -133,15 +143,36 @@ fun ScanProNavHost(
         ) { entry ->
             val pdfUri = entry.arguments?.getString(ScanProDestinations.PDF_URI_ARG).orEmpty().toUri()
             val title = entry.arguments?.getString(ScanProDestinations.PDF_TITLE_ARG) ?: pdfDocumentTitle
+            // One of the moments after which the "default PDF viewer" sheet may be offered on Home.
+            LaunchedEffect(Unit) { com.example.scanpro.data.FilesAccessPrompts.markPdfOpened(context) }
             PdfViewerScreen(
                 title = title,
                 pdfUri = pdfUri,
                 onBack = dropUnlessResumed { navController.popBackStack() },
                 onShare = {
-                    // Files ScanPro made are shared through its FileProvider; picked files are passed on as they are.
-                    if (pdfUri.scheme == "file") shareFile(context, pdfUri.path.orEmpty(), "application/pdf", title)
-                    else shareUri(context, pdfUri, "application/pdf", title)
+                    val path = pdfUri.path.orEmpty()
+                    when {
+                        // Files ScanPro made are shared through its FileProvider; picked files are passed on as they are.
+                        pdfUri.scheme == "file" && !PhonePdfSource.isInSharedStorage(path) ->
+                            shareFile(context, path, "application/pdf", title)
+                        // A PDF that Files on this phone found by walking shared storage: ScanPro's FileProvider
+                        // covers only its own folders, so it is shared by its MediaStore address.
+                        pdfUri.scheme == "file" -> PhonePdfSource.shareableUri(context, PhoneFile(pdfUri, title, PhoneFileKind.PDF, "application/pdf", 0, 0, path = path)) { uri ->
+                            if (uri != null) shareUri(context, uri, "application/pdf", title)
+                        }
+                        else -> shareUri(context, pdfUri, "application/pdf", title)
+                    }
                 }
+            )
+        }
+        composable(ScanProDestinations.PHONE_PDFS) {
+            PhonePdfsRoute(
+                onBack = dropUnlessResumed { navController.popBackStack() },
+                actions = PhoneFileActions(
+                    onOpenPdf = onOpenPdfViewer,
+                    onAddToScanPro = onImportPdfUri,
+                    onOpenTools = { onTab(ScanProDestinations.TOOLS) }
+                )
             )
         }
         composable(

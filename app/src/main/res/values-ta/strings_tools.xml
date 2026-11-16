@@ -477,11 +477,6 @@
     <string name="tools_card_pdf2excel">PDF-இலிருந்து Excel</string>
     <string name="tools_pdf2text_excel">Excel பணிப்புத்தகம் (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ஒவ்வொரு பக்கத்திற்கும் ஒரு தாள். சொற்கள் பக்கத்தில் இருக்கும் இடத்தைக் கொண்டு நெடுவரிசைகள் அமைக்கப்படுவதால் அட்டவணைகள் கலங்களாக வரும்.</string>
-    <string name="tools_card_pdf2ppt">PDF-இலிருந்து PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">%1$d ஸ்லைடு உருவானது, பக்கத்தின் படம்.</item>
-        <item quantity="other">%1$d ஸ்லைடுகள் உருவாயின், ஒவ்வொரு பக்கத்திற்கும் ஒரு படம்.</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">இது நடக்கவில்லை</string>
     <string name="tools_failure_try_again">மீண்டும் முயலவும்</string>
@@ -516,7 +511,6 @@
     <string name="tools_desc_pdf2img">பக்கங்களைப் படங்களாகச் சேமிக்கவும்</string>
     <string name="tools_desc_pdf2text">Word அல்லது வெற்று உரை பெறவும்</string>
     <string name="tools_desc_pdf2excel">அட்டவணைகளைத் தாளுக்கு எடுக்கவும்</string>
-    <string name="tools_desc_pdf2ppt">ஒவ்வொரு பக்கமும் ஒரு ஸ்லைடு</string>
     <string name="tools_desc_protect">கடவுச்சொல்லால் பூட்டவும்</string>
     <string name="tools_desc_unlock">கடவுச்சொல்லை நீக்கவும்</string>
     <string name="tools_desc_crop_img">புகைப்பட ஓரங்களை வெட்டவும்</string>
@@ -524,13 +518,4 @@
     <string name="tools_desc_convert_img">JPG, PNG அல்லது WebP</string>
     <string name="tools_desc_resize_img">புகைப்பட அளவுகளை மாற்றவும்</string>
     <string name="tools_desc_viewer">படி, தேடு, பக்கத்துக்குச் செல்</string>
-    <string name="default_pdf_card_title">PDF-களை ScanPro-வில் திறக்கவும்</string>
-    <string name="default_pdf_card_body">ScanPro-வை உங்கள் PDF ஆப்பாக்குங்கள்: இயல்பாக அமை என்பதைத் தட்டி, ScanPro-வைத் தேர்ந்து, பிறகு எப்போதும் என்பதைத் தேர்வு செய்யுங்கள்.</string>
-    <string name="default_pdf_card_action">இயல்பாக அமை</string>
-    <string name="default_pdf_sample_line">இனி PDF-கள் ScanPro-வில் திறக்கும். மகிழுங்கள்!</string>
-    <string name="default_pdf_settings_title">இயல்பு PDF ஆப்</string>
-    <string name="default_pdf_state_ours">உங்கள் PDF-கள் ஏற்கனவே ScanPro-வில் திறக்கின்றன</string>
-    <string name="default_pdf_state_unset">தட்டி, ScanPro-வைத் தேர்ந்து, பிறகு எப்போதும் என்பதைத் தேர்வு செய்யுங்கள்</string>
-    <string name="default_pdf_state_other">இப்போது PDF-களை %1$s திறக்கிறது; அதன் அமைப்புகளில் அதை நீக்கத் தட்டவும்</string>
-    <string name="default_pdf_confirmed">ScanPro இப்போது உங்கள் PDF ஆப்</string>
 </resources>

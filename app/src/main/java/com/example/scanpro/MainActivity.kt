@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.example.scanpro.ui.EmphasizedDecelerate
 import com.example.scanpro.ui.LaunchIntro
 import androidx.core.content.ContextCompat
+import android.content.Context
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -455,12 +456,6 @@ class MainActivity : FragmentActivity() {
             }
             Intent.ACTION_VIEW -> {
                 val uri = intent.data
-                // The sample PDF the "Set as default" flow opened (DefaultPdfApp): landing here means the
-                // person picked ScanPro, so say it worked; there is nothing in the sample to import.
-                if (com.example.scanpro.core.ui.DefaultPdfApp.isProbe(this, uri)) {
-                    viewModel.showMessage(getString(R.string.default_pdf_confirmed))
-                    return
-                }
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
                         appViewModel.submitExternalImport { appViewModel.importPdf(uri) }
@@ -485,12 +480,7 @@ class MainActivity : FragmentActivity() {
      */
     private fun publishShortcuts() {
         runCatching {
-            fun shortcut(id: String, short: Int, long: Int, action: String) = ShortcutInfoCompat.Builder(this, id)
-                .setShortLabel(getString(short))
-                .setLongLabel(getString(long))
-                .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
-                .setIntent(Intent(this, MainActivity::class.java).setAction(action))
-                .build()
+            fun shortcut(id: String, short: Int, long: Int, action: String) = launcherShortcut(this, id, short, long, action)
             ShortcutManagerCompat.setDynamicShortcuts(
                 this,
                 listOf(
@@ -597,6 +587,19 @@ class MainActivity : FragmentActivity() {
         const val ACTION_OPEN_SETTINGS = "com.example.scanpro.action.OPEN_SETTINGS"
         const val ACTION_OPEN_KEPT_SCANS = "com.example.scanpro.action.OPEN_KEPT_SCANS"
         const val EXTRA_DOCUMENT_ID = "documentId"
+        /** One launcher shortcut that opens this activity with [action]. */
+        private fun launcherShortcut(context: Context, id: String, short: Int, long: Int, action: String) =
+            ShortcutInfoCompat.Builder(context, id)
+                .setShortLabel(context.getString(short))
+                .setLongLabel(context.getString(long))
+                .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
+                .setIntent(Intent(context, MainActivity::class.java).setAction(action))
+                .build()
+
+        /** The "Scan now" shortcut, for Settings to offer pinning it to the home screen (same id as the dynamic one). */
+        fun scanNowShortcut(context: Context): ShortcutInfoCompat =
+            launcherShortcut(context, SHORTCUT_SCAN_NOW, R.string.shortcut_scan_short, R.string.shortcut_scan_long, ACTION_SCAN_NOW)
+
         // Shortcut ids are stored by launchers (pinned shortcuts); never rename them.
         private const val SHORTCUT_SCAN_NOW = "scan_now"
         private const val SHORTCUT_REPORT_ISSUE = "bugs_or_issues"

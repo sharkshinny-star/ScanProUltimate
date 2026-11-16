@@ -35,8 +35,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -74,8 +72,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.IconTile
-import com.example.scanpro.core.designsystem.TileTone
-import androidx.compose.material3.Surface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -148,7 +144,8 @@ internal fun rememberToolsMemory(): ToolsMemory {
 private val TOOL_KEYWORDS = mapOf(
     "merge" to "join combine put together concatenate",
     "split" to "separate divide cut apart",
-    "organize" to "reorder rearrange delete remove pages sort",
+    "organize" to "reorder rearrange delete remove pages sort rotate turn extract pull out",
+    "image_tools" to "photo picture jpg png crop compress convert resize",
     "rotate" to "turn flip sideways upside down orientation",
     "extract" to "pull out select pages",
     "compress" to "shrink reduce smaller size email optimise optimize",
@@ -162,10 +159,14 @@ private val TOOL_KEYWORDS = mapOf(
     "pdf2img" to "export pictures jpg png save as images",
     "pdf2text" to "txt copy words plain text word docx",
     "pdf2excel" to "excel xlsx spreadsheet table sheet cells csv",
-    "pdf2ppt" to "powerpoint pptx slides presentation deck",
     "protect" to "password encrypt lock secure",
     "unlock" to "remove password decrypt open",
     "repair" to "fix broken damaged corrupt will not open recover",
+    "blank_pages" to "empty white delete remove clean up scan",
+    "greyscale" to "grayscale black white monochrome grey gray colour color print ink",
+    "flatten" to "lock form fields annotations comments stamps uneditable merge layers",
+    "extract_images" to "pictures photos jpg png save get images",
+    "pdf_info" to "metadata properties details title author privacy remove clean exif producer",
     "crop_img" to "trim cut photo",
     "compress_img" to "shrink reduce photo kb mb size",
     "convert_img" to "jpg jpeg png webp format change",
@@ -245,7 +246,7 @@ internal fun ToolCategoryChips(selected: String, onSelect: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         FilterChip(selected = selected == ALL_CATEGORIES, onClick = { onSelect(ALL_CATEGORIES) }, label = { Text(stringResource(R.string.tools_category_all)) })
-        TOOL_SECTIONS.forEach { section ->
+        TOOL_SECTIONS.filter { it.tiles.isNotEmpty() }.forEach { section ->
             FilterChip(selected = selected == section.id, onClick = { onSelect(section.id) }, label = { Text(stringResource(section.title)) })
         }
     }
@@ -312,10 +313,16 @@ internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
     "merge" to R.string.tools_desc_merge,
     "split" to R.string.tools_desc_split,
     "organize" to R.string.tools_desc_organize,
+    "image_tools" to R.string.tools_desc_image_tools,
     "rotate" to R.string.tools_desc_rotate,
     "extract" to R.string.tools_desc_extract,
     "compress" to R.string.tools_desc_compress,
     "repair" to R.string.tools_desc_repair,
+    "blank_pages" to R.string.tools_desc_blank_pages,
+    "greyscale" to R.string.tools_desc_greyscale,
+    "flatten" to R.string.tools_desc_flatten,
+    "extract_images" to R.string.tools_desc_extract_images,
+    "pdf_info" to R.string.tools_desc_pdf_info,
     "page_numbers" to R.string.tools_desc_page_numbers,
     "watermark" to R.string.tools_desc_watermark,
     "sign" to R.string.tools_desc_sign,
@@ -326,7 +333,6 @@ internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
     "pdf2img" to R.string.tools_desc_pdf2img,
     "pdf2text" to R.string.tools_desc_pdf2text,
     "pdf2excel" to R.string.tools_desc_pdf2excel,
-    "pdf2ppt" to R.string.tools_desc_pdf2ppt,
     "protect" to R.string.tools_desc_protect,
     "unlock" to R.string.tools_desc_unlock,
     "crop_img" to R.string.tools_desc_crop_img,
@@ -380,6 +386,7 @@ private fun ToolCard(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             IconTile(tool.icon, tool.tone, size = 42.dp, corner = 13.dp, iconSize = 22.dp)
             Spacer(Modifier.weight(1f))
+            if (tool.beta) BetaBadge()
             if (pinned) {
                 Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
             }
@@ -495,50 +502,6 @@ private fun SearchResultRow(hit: SearchHit, onClick: () -> Unit) {
 }
 
 /**
- * Asks once to make ScanPro the app PDFs open with, at the top of Tools (the app's PDF hub): Android has no
- * way to request it, so the card opens ScanPro's own sample PDF and the system's "Open with" sheet does the
- * asking. Gone for good after either button, and never shown when ScanPro already is the default.
- */
-@Composable
-private fun DefaultPdfCard() {
-    val context = LocalContext.current
-    var due by remember {
-        mutableStateOf(
-            com.example.scanpro.data.FirstRunHints.isDue(context, DEFAULT_PDF_HINT) &&
-                com.example.scanpro.core.ui.DefaultPdfApp.status(context).state != com.example.scanpro.core.ui.DefaultPdfApp.State.OURS
-        )
-    }
-    if (!due) return
-    val dismiss = {
-        com.example.scanpro.data.FirstRunHints.markSeen(context, DEFAULT_PDF_HINT)
-        due = false
-    }
-    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-        Row(Modifier.padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.Top) {
-            IconTile(Icons.Default.PictureAsPdf, TileTone.Coral, size = 40.dp, corner = 12.dp, iconSize = 22.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.default_pdf_card_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(
-                    stringResource(R.string.default_pdf_card_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                androidx.compose.material3.TextButton(onClick = { dismiss(); com.example.scanpro.core.ui.DefaultPdfApp.ask(context) }) {
-                    Text(stringResource(R.string.default_pdf_card_action), fontWeight = FontWeight.Bold)
-                }
-            }
-            IconButton(onClick = dismiss) {
-                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_cancel), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-/** FirstRunHints key for [DefaultPdfCard]. */
-private const val DEFAULT_PDF_HINT = "default_pdf_ask"
-
-/**
  * The body of the Tools landing, as list items: search results while a query is typed; otherwise pinned tools, the
  * last few used, and the categories (all of them, or the one chosen). The caller owns the list and the other items.
  */
@@ -570,10 +533,6 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
             }
         }
         return
-    }
-
-    if (category == ALL_CATEGORIES) {
-        item(key = "default-pdf", contentType = "default-pdf") { DefaultPdfCard() }
     }
 
     val everyTool = TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL
@@ -608,11 +567,11 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
 
     // F140: a heading and then one list item per row of cards, so only the rows on screen are composed when the tab opens
     // (the whole section used to be one item).
-    TOOL_SECTIONS.filter { category == ALL_CATEGORIES || it.id == category }.forEach { section ->
+    TOOL_SECTIONS.filter { it.tiles.isNotEmpty() && (category == ALL_CATEGORIES || it.id == category) }.forEach { section ->
         item(key = "section-${section.id}", contentType = "tools-header") {
-            SectionTitle(stringResource(section.title), count = section.tools.size)
+            SectionTitle(stringResource(section.title), count = section.tiles.size)
         }
-        section.tools.chunked(perRow).forEachIndexed { index, row ->
+        section.tiles.chunked(perRow).forEachIndexed { index, row ->
             item(key = "section-${section.id}-$index", contentType = "tools-row") {
                 ToolCardRow(row, perRow, memory, onLaunch)
             }
@@ -636,5 +595,23 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
                 }
             }
         }
+    }
+}
+
+/** Small "Beta" label on a tool whose results depend a lot on the PDF it is given. */
+@Composable
+internal fun BetaBadge(modifier: Modifier = Modifier) {
+    androidx.compose.material3.Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+    ) {
+        Text(
+            stringResource(R.string.tools_badge_beta),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+        )
     }
 }

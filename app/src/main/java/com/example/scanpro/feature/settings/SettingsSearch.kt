@@ -19,11 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,7 +63,8 @@ import kotlin.math.roundToInt
  */
 @Stable
 internal class SettingsLocator(val scroll: ScrollState) {
-    val tops = mutableStateMapOf<String, Float>()
+    // A plain map: rows write it on every layout pass (each scroll frame), and nothing needs to recompose when it changes.
+    val tops = HashMap<String, Float>()
     var viewportTop by mutableFloatStateOf(0f)
     var highlighted by mutableStateOf<String?>(null)
 
@@ -103,7 +101,11 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_smart_titles_title, R.string.settings_smart_titles_body, R.string.settings_section_scanning),
     SettingEntry(R.string.settings_name_pattern_title, R.string.settings_name_pattern_body, R.string.settings_section_scanning),
     SettingEntry(R.string.settings_ocr_language_title, null, R.string.settings_section_scanning),
-    SettingEntry(R.string.settings_trash_retention_title, R.string.settings_trash_retention_subtitle, R.string.settings_section_backup),
+    SettingEntry(R.string.settings_recycle_bin_open, null, R.string.settings_section_recycle_bin),
+    SettingEntry(R.string.settings_trash_retention_title, R.string.settings_trash_retention_subtitle, R.string.settings_section_recycle_bin),
+    SettingEntry(R.string.settings_open_by_default_title, R.string.settings_open_by_default_subtitle, R.string.settings_section_shortcuts),
+    SettingEntry(R.string.settings_widget_title, R.string.settings_widget_subtitle, R.string.settings_section_shortcuts),
+    SettingEntry(R.string.settings_scan_shortcut_title, R.string.settings_scan_shortcut_subtitle, R.string.settings_section_shortcuts),
     SettingEntry(R.string.settings_app_lock_title, R.string.settings_app_lock_body, R.string.settings_section_privacy),
     SettingEntry(R.string.settings_privacy_title, R.string.settings_privacy_subtitle, R.string.settings_section_privacy),
     SettingEntry(R.string.settings_privacy_policy, null, R.string.settings_section_privacy),
@@ -116,8 +118,9 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_whats_new_title, R.string.settings_whats_new_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_show_intros_title, R.string.settings_show_intros_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_rate_title, R.string.settings_rate_subtitle, R.string.settings_section_support),
-    SettingEntry(R.string.settings_contact_title, R.string.settings_contact_subtitle, R.string.settings_section_support),
-    SettingEntry(R.string.default_pdf_settings_title, R.string.default_pdf_card_title, R.string.settings_section_support),
+    SettingEntry(R.string.settings_feedback, R.string.settings_feedback_subtitle, R.string.settings_section_support),
+    SettingEntry(R.string.settings_report_issue_title, R.string.settings_report_issue_subtitle, R.string.settings_section_support),
+    SettingEntry(R.string.settings_request_features, null, R.string.settings_section_support),
     SettingEntry(R.string.settings_share_with_friends, R.string.settings_share_subtitle, R.string.settings_section_support)
 )
 
@@ -224,32 +227,15 @@ internal fun SettingsSearchResults(query: String, hits: List<SettingHit>, onPick
     }
 }
 
-/** One line at the top of Backup: when the library was last backed up, or a nudge if it never was. */
+/** When the library was last backed up, or a nudge if it never was: the Backup rows' summary. */
 @Composable
-internal fun BackupStatus(lastBackupAt: Long, hasDocuments: Boolean) {
+internal fun backupStatusText(lastBackupAt: Long): String {
     val context = LocalContext.current
-    val done = lastBackupAt > 0L
-    val text = if (done) {
+    return if (lastBackupAt > 0L) {
         stringResource(R.string.settings_backup_last, DateUtils.formatDateTime(context, lastBackupAt, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR or DateUtils.FORMAT_ABBREV_MONTH))
     } else {
         stringResource(R.string.settings_backup_never)
     }
-    // A nudge only makes sense when there is something to lose.
-    val warn = !done && hasDocuments
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            if (warn) Icons.Default.Warning else Icons.Default.CheckCircle,
-            contentDescription = null,
-            tint = if (warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-    }
-    InsetDivider()
 }
 
 /** What a backup is, before the folder picker: the picker alone says nothing about encryption, the password or where to save. */

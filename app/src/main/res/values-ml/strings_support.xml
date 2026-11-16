@@ -24,30 +24,4 @@
     <string name="print_err_failed">PDF പ്രിന്റ് ചെയ്യാനായില്ല</string>
     <string name="backup_warning_unredacted_document">ഈ ഡോക്യുമെന്റിൽ മറച്ചതോ മായ്ച്ചതോ ആയ ഭാഗങ്ങളുണ്ട്. ബാക്കപ്പിൽ ഒറിജിനൽ ഫോട്ടോകൾ ഉള്ളതിനാൽ, ബാക്കപ്പും അതിന്റെ പാസ്‌വേഡും ഉള്ള ആർക്കും മറച്ചത് കാണാം. മറച്ച കോപ്പി പങ്കിടാൻ, പകരം PDF എക്സ്പോർട്ട് ചെയ്യുക.</string>
     <string name="backup_warning_unredacted_all">നിങ്ങൾ മറച്ചതോ മായ്ച്ചതോ ആയ ഭാഗങ്ങൾ ഉൾപ്പെടെ, ഓരോ പേജിന്റെയും ഒറിജിനൽ ഫോട്ടോ ബാക്കപ്പിൽ ഉണ്ടാകും. ബാക്കപ്പും അതിന്റെ പാസ്‌വേഡും ഉള്ള ആർക്കും മറച്ചത് കാണാം. മറച്ച കോപ്പികൾ പങ്കിടാൻ, പകരം PDF-കൾ എക്സ്പോർട്ട് ചെയ്യുക.</string>
-    <string name="rate_title">ScanPro നിങ്ങൾക്ക് എങ്ങനെയുണ്ട്?</string>
-    <string name="rate_body">നിങ്ങളുടെ റേറ്റിംഗ് ഓരോ സ്കാനും മികച്ചതാക്കാൻ ഞങ്ങളെ സഹായിക്കും.</string>
-    <string name="rate_tap_a_star">ഒരു സ്റ്റാറിൽ ടാപ്പ് ചെയ്യുക</string>
-    <string name="rate_label_1">മോശം</string>
-    <string name="rate_label_2">തരക്കേടില്ല</string>
-    <string name="rate_label_3">നല്ലത്</string>
-    <string name="rate_label_4">വളരെ നല്ലത്</string>
-    <string name="rate_label_5">അടിപൊളി!</string>
-    <string name="rate_title_1">നിങ്ങളെ നിരാശപ്പെടുത്തിയതിൽ ഖേദിക്കുന്നു</string>
-    <string name="rate_body_1">എന്താണ് പ്രശ്നമെന്ന് പറയൂ, ഞങ്ങൾ പരിഹരിക്കാം.</string>
-    <string name="rate_title_2">ഇനിയും മെച്ചപ്പെടുത്താം</string>
-    <string name="rate_body_2">എന്താണ് ശരിയാക്കേണ്ടതെന്ന് പറയൂ.</string>
-    <string name="rate_title_3">അഭിപ്രായത്തിന് നന്ദി</string>
-    <string name="rate_body_3">എന്ത് മെച്ചപ്പെടുത്തണമെന്ന് ഒരു വരി എഴുതിയാൽ വലിയ സഹായമാകും.</string>
-    <string name="rate_title_4">ഇഷ്ടപ്പെട്ടതിൽ സന്തോഷം!</string>
-    <string name="rate_body_4">ഒരു ചെറിയ റിവ്യൂ മറ്റുള്ളവർക്ക് ScanPro കണ്ടെത്താൻ സഹായിക്കും.</string>
-    <string name="rate_title_5">നിങ്ങൾ ഞങ്ങളെ സന്തോഷിപ്പിച്ചു!</string>
-    <string name="rate_body_5">ഒരു ചെറിയ റിവ്യൂവിലൂടെ സ്നേഹം പങ്കിടൂ.</string>
-    <string name="rate_not_now">ഇപ്പോൾ വേണ്ട</string>
-    <string name="rate_on_google_play">Google Play-ൽ റേറ്റ് ചെയ്യുക</string>
-    <string name="rate_send_feedback">അഭിപ്രായം അയയ്ക്കുക</string>
-    <string name="rate_stars_content_description">റേറ്റിംഗ്, ഒന്ന് മുതൽ അഞ്ച് സ്റ്റാർ വരെ</string>
-    <plurals name="rate_star">
-        <item quantity="one">%1$d സ്റ്റാർ</item>
-        <item quantity="other">%1$d സ്റ്റാറുകൾ</item>
-    </plurals>
 </resources>

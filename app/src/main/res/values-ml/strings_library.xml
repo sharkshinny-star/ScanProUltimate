@@ -207,18 +207,11 @@
     <string name="settings_report_issue_subtitle">ആപ്പ് ലോഗുകളും ഡിവൈസ് വിവരങ്ങളും സ്വയം ചേർക്കും</string>
     <string name="settings_share_subtitle">Play Store ലിങ്ക് ഒരു സുഹൃത്തിന് അയയ്ക്കുക</string>
     <string name="settings_library_title">നിങ്ങളുടെ ലൈബ്രറി</string>
-    <string name="settings_library_subtitle">ഈ ഡിവൈസിൽ മാത്രം സൂക്ഷിച്ചിരിക്കുന്നു</string>
     <string name="settings_free_space_title">സ്ഥലം ഒഴിവാക്കുക</string>
     <string name="settings_free_space_subtitle">പഴയ സ്കാനുകൾ ആവശ്യത്തിലധികം വലിയ PDF-കളിലാണ് സേവ് ചെയ്തിരിക്കുന്നത്. അവ വീണ്ടും നിർമ്മിച്ചാൽ %1$s വരെ സ്ഥലം ഒഴിവാകും; ഓരോ പേജും തിരയാവുന്ന ടെക്സ്റ്റും അതുപോലെ തുടരും.</string>
     <string name="settings_free_space_action">ഒഴിവാക്കുക</string>
     <string name="settings_free_space_running">സ്ഥലം ഒഴിവാക്കുന്നു…</string>
     <string name="settings_free_space_done">%1$s ഒഴിവായി</string>
-    <plurals name="settings_stat_documents">
-        <item quantity="one">ഡോക്യുമെന്റ്</item>
-        <item quantity="other">ഡോക്യുമെന്റുകൾ</item>
-    </plurals>
-    <string name="settings_stat_in_recycle_bin">റീസൈക്കിൾ ബിന്നിൽ</string>
-    <string name="settings_stat_used">ഉപയോഗിച്ചു</string>
     <string name="settings_footer_privacy">പൂർണ്ണമായും സ്വകാര്യം. അക്കൗണ്ട് ഇല്ല, ഒന്നും അപ്‌ലോഡ് ചെയ്യുന്നില്ല.</string>
     <string name="settings_privacy_dialog_title">നിങ്ങളുടെ സ്കാനുകൾ ഈ ഫോണിൽ തന്നെ ഇരിക്കും</string>
     <string name="settings_privacy_dialog_account">ScanPro-യ്ക്ക് അക്കൗണ്ട് വേണ്ട, ഒരു സെർവറിലേക്കും ഒന്നും അയയ്ക്കുന്നില്ല. ഡോക്യുമെന്റുകൾ, ടെക്സ്റ്റ് തിരിച്ചറിയൽ, PDF ടൂളുകൾ എല്ലാം ഡിവൈസിൽ തന്നെ പ്രവർത്തിക്കുന്നു.</string>
@@ -263,6 +256,4 @@
     <string name="home_recent_files">അടുത്തിടെയുള്ള ഫയലുകൾ</string>
     <string name="home_recent_opened">തുറന്നവ</string>
     <string name="home_recent_scans">സ്കാനുകൾ</string>
-    <string name="settings_contact_title">ഞങ്ങളെ ബന്ധപ്പെടൂ</string>
-    <string name="settings_contact_subtitle">അഭിപ്രായം, പ്രശ്നങ്ങൾ, ഫീച്ചർ നിർദ്ദേശങ്ങൾ</string>
 </resources>

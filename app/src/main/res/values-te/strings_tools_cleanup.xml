@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tools landing clean-up (2026-11-16): Image tools tile, Beta badge, Repair from the failure dialog. -->
+<resources>
+    <string name="tools_card_image_tools">చిత్ర సాధనాలు</string>
+    <string name="tools_desc_image_tools">ఫోటోలను కత్తిరించండి, కుదించండి, మార్చండి లేదా పరిమాణం మార్చండి</string>
+    <string name="tools_badge_beta">బీటా</string>
+    <string name="tools_failure_repair">ఈ PDFను సరిచేయండి</string>
+</resources>

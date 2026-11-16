@@ -477,11 +477,6 @@
     <string name="tools_card_pdf2excel">PDF నుండి Excel</string>
     <string name="tools_pdf2text_excel">Excel వర్క్‌బుక్ (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ప్రతి పేజీకి ఒక షీట్. పదాలు పేజీలో ఉన్న చోటు నుండి నిలువు వరుసలు నిర్మించబడతాయి, కాబట్టి పట్టికలు సెల్‌లుగా వస్తాయి.</string>
-    <string name="tools_card_pdf2ppt">PDF నుండి PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">%1$d స్లైడ్ తయారైంది, పేజీ చిత్రం.</item>
-        <item quantity="other">%1$d స్లైడ్‌లు తయారయ్యాయి, ప్రతి పేజీకి ఒక చిత్రం.</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">ఇది జరగలేదు</string>
     <string name="tools_failure_try_again">మళ్లీ ప్రయత్నించండి</string>
@@ -516,7 +511,6 @@
     <string name="tools_desc_pdf2img">పేజీలను చిత్రాలుగా సేవ్ చేయండి</string>
     <string name="tools_desc_pdf2text">Word లేదా సాధారణ టెక్స్ట్ పొందండి</string>
     <string name="tools_desc_pdf2excel">పట్టికలను షీట్‌లోకి తీయండి</string>
-    <string name="tools_desc_pdf2ppt">ప్రతి పేజీ ఒక స్లైడ్</string>
     <string name="tools_desc_protect">పాస్‌వర్డ్‌తో లాక్ చేయండి</string>
     <string name="tools_desc_unlock">పాస్‌వర్డ్ తొలగించండి</string>
     <string name="tools_desc_crop_img">ఫోటో అంచులను కత్తిరించండి</string>
@@ -524,13 +518,4 @@
     <string name="tools_desc_convert_img">JPG, PNG లేదా WebP</string>
     <string name="tools_desc_resize_img">ఫోటో కొలతలు మార్చండి</string>
     <string name="tools_desc_viewer">చదవండి, వెతకండి, పేజీకి వెళ్లండి</string>
-    <string name="default_pdf_card_title">PDF-లను ScanPro లో తెరవండి</string>
-    <string name="default_pdf_card_body">ScanPro ని మీ PDF యాప్ చేయండి: డిఫాల్ట్‌గా సెట్ చేయి నొక్కి, ScanPro ఎంచుకుని, ఆపై ఎల్లప్పుడూ ఎంచుకోండి.</string>
-    <string name="default_pdf_card_action">డిఫాల్ట్‌గా సెట్ చేయి</string>
-    <string name="default_pdf_sample_line">ఇప్పుడు PDF-లు ScanPro లో తెరుచుకుంటాయి. ఆనందించండి!</string>
-    <string name="default_pdf_settings_title">డిఫాల్ట్ PDF యాప్</string>
-    <string name="default_pdf_state_ours">మీ PDF-లు ఇప్పటికే ScanPro లో తెరుచుకుంటాయి</string>
-    <string name="default_pdf_state_unset">నొక్కి, ScanPro ఎంచుకుని, ఆపై ఎల్లప్పుడూ ఎంచుకోండి</string>
-    <string name="default_pdf_state_other">ఇప్పుడు PDF-లను %1$s తెరుస్తోంది; దాని సెట్టింగ్స్‌లో దాన్ని తీసేయడానికి నొక్కండి</string>
-    <string name="default_pdf_confirmed">ScanPro ఇప్పుడు మీ PDF యాప్</string>
 </resources>

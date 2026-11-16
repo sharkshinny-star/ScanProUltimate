@@ -39,14 +39,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.scanpro.AppViewModel
 import com.example.scanpro.R
-import com.example.scanpro.core.ui.RatingSheet
-import com.example.scanpro.core.ui.openPlayStoreListing
-import com.example.scanpro.core.ui.SupportTopic
-import com.example.scanpro.core.ui.contactSupport
-import kotlinx.coroutines.launch
+import com.example.scanpro.feature.feedback.RateExperienceSheet
 import com.example.scanpro.core.ui.shareFile
 import com.example.scanpro.feature.lock.LockScreen
+import com.example.scanpro.data.DefaultViewerPrompt
+import com.example.scanpro.data.DefaultViewerPromptState
+import com.example.scanpro.data.FilesAccessPrompts
 import com.example.scanpro.data.FirstRunHints
+import com.example.scanpro.feature.phonepdfs.DefaultViewerSheet
+import com.example.scanpro.feature.phonepdfs.ImportTipSheet
+import com.example.scanpro.feature.phonepdfs.isDefaultPdfViewer
 import com.example.scanpro.navigation.ScanProDestinations
 import com.example.scanpro.navigation.ScanProNavHost
 import com.example.scanpro.navigation.ScanProNavigationRail
@@ -65,7 +67,6 @@ fun ScanProApp(
     launchSettled: Boolean = true
 ) {
     val context = LocalContext.current
-    val supportScope = androidx.compose.runtime.rememberCoroutineScope()
     val libraryRevision by viewModel.libraryRevision.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val exportArtifact by viewModel.exportArtifact.collectAsStateWithLifecycle()
@@ -76,28 +77,22 @@ fun ScanProApp(
     val destinationRequest by viewModel.destinationRequest.collectAsStateWithLifecycle()
     val pdfPasswordRequest by viewModel.pdfPasswordRequest.collectAsStateWithLifecycle()
     val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
-    val ratingDue by viewModel.ratingDue.collectAsStateWithLifecycle()
+    val feedbackPrompt by viewModel.feedbackPrompt.collectAsStateWithLifecycle()
+    val scanSavedPending by viewModel.scanSavedPending.collectAsStateWithLifecycle()
+    // Stays open once shown, even if the screen underneath changes, until the user closes it.
+    var feedbackOpen by rememberSaveable { mutableStateOf(false) }
     val whatsNewDue by viewModel.whatsNewDue.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // Once, after the first saved document and never over the welcome or lock screens. Marked as shown on every
-    // way out, so it cannot come back.
-    if (ratingDue && sessionUnlocked && welcomeSeen == true && launchSettled) {
-        RatingSheet(
-            onNotNow = viewModel::markRatingShown,
-            onRateOnPlay = {
-                viewModel.markRatingShown()
-                openPlayStoreListing(context)
-            },
-            onSendFeedback = {
-                viewModel.markRatingShown()
-                supportScope.launch { contactSupport(context, SupportTopic.FEEDBACK) }
-            }
-        )
-    }
     val navController = rememberNavController()
-    val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) viewModel.importPdf(uri)
+    // Several PDFs may be picked at once (long-press in the picker); each becomes its own document, as when shared.
+    val pdfImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        uris.forEach(viewModel::importPdf)
+    }
+    // The first PDF import explains the system picker once (tap, long-press for several, Select), then goes on to it.
+    var importTipOpen by rememberSaveable { mutableStateOf(false) }
+    val startPdfImport: () -> Unit = {
+        if (FilesAccessPrompts.importTipShown(context)) pdfImportLauncher.launch(arrayOf("application/pdf"))
+        else importTipOpen = true
     }
 
     LaunchedEffect(message) {
@@ -252,7 +247,8 @@ fun ScanProApp(
                             navController = navController,
                             snackbarHostState = snackbarHostState,
                             onImportImages = onImportImages,
-                            onImportPdf = { pdfImportLauncher.launch(arrayOf("application/pdf")) },
+                            onImportPdf = startPdfImport,
+                            onImportPdfUri = { uri -> viewModel.importPdf(uri) },
                             onCameraScanComplete = viewModel::importCameraSession,
                             onCameraRetakeComplete = viewModel::replacePageFromCamera,
                             onFallbackScanner = onFallbackScanner,
@@ -266,8 +262,25 @@ fun ScanProApp(
                     }
                 }
 
+                // "Rate your experience" (FeedbackSchedule): after a "Scan saved" sheet closed, once the user is back on
+                // the document or a main tab with nothing else open, never over the welcome or lock screens.
+                val feedbackCalm = feedbackPrompt && sessionUnlocked && welcomeSeen == true && launchSettled &&
+                    scanSavedPending == null && !whatsNewDue &&
+                    (currentRoute == ScanProDestinations.DOCUMENT || currentRoute in ScanProDestinations.topLevel)
+                LaunchedEffect(feedbackCalm) {
+                    if (feedbackCalm) {
+                        // A beat after the "Scan saved" sheet has slid away, so the two never overlap.
+                        kotlinx.coroutines.delay(400)
+                        feedbackOpen = true
+                        viewModel.onFeedbackPromptShown()
+                    }
+                }
+                if (feedbackOpen) {
+                    RateExperienceSheet(onClose = { feedbackOpen = false })
+                }
+
                 // Once, after an update that has something to tell (never together with the welcome or the rating sheet).
-                if (whatsNewDue && !welcomeShowing && !ratingDue && launchSettled) {
+                if (whatsNewDue && !welcomeShowing && !feedbackOpen && launchSettled) {
                     WhatsNewSheet(
                         onPickColours = {
                             viewModel.markWhatsNewSeen()
@@ -283,7 +296,7 @@ fun ScanProApp(
                 var tourDue by remember(welcomeSeen, currentRoute) {
                     mutableStateOf(welcomeSeen == true && FirstRunHints.isDue(context, FirstRunHints.HOME_TOUR))
                 }
-                val tourAllowed = tourDue && !welcomeShowing && !whatsNewDue && !ratingDue && launchSettled &&
+                val tourAllowed = tourDue && !welcomeShowing && !whatsNewDue && !feedbackOpen && launchSettled &&
                     currentRoute == ScanProDestinations.HOME
                 // A beat after the welcome has faded away, so the two never overlap.
                 var tourReady by remember { mutableStateOf(false) }
@@ -299,6 +312,70 @@ fun ScanProApp(
                         FirstRunHints.markSeen(context, FirstRunHints.HOME_TOUR)
                         tourDue = false
                     })
+                }
+
+                if (importTipOpen) {
+                    ImportTipSheet(
+                        onImport = {
+                            FilesAccessPrompts.markImportTipShown(context)
+                            importTipOpen = false
+                            pdfImportLauncher.launch(arrayOf("application/pdf"))
+                        },
+                        onCancel = {
+                            FilesAccessPrompts.markImportTipShown(context)
+                            importTipOpen = false
+                        }
+                    )
+                }
+
+                // "Set ScanPro as your default PDF viewer": once, on Home, after the first scan or the first PDF opened
+                // in the viewer, and never in the same visit as the welcome, the tour, What's new or the rating sheet.
+                var promptShownThisSession by rememberSaveable { mutableStateOf(false) }
+                LaunchedEffect(feedbackPrompt, whatsNewDue, tourAllowed) {
+                    if (feedbackPrompt || whatsNewDue || tourAllowed) promptShownThisSession = true
+                }
+                var defaultViewerShown by remember { mutableStateOf(FilesAccessPrompts.defaultViewerShown(context)) }
+                // The feedback schedule counts saved scans (data/FeedbackSchedule.kt); read again when the screen changes.
+                val completedScans = remember(currentRoute) { com.example.scanpro.data.FeedbackPrompts.load(context).completedScans }
+                // Looked up again whenever the screen changes: a PDF may just have been opened, or ScanPro made the default.
+                val pdfOpened = remember(currentRoute) { FilesAccessPrompts.pdfOpened(context) }
+                val alreadyDefault = remember(currentRoute, defaultViewerShown) { !defaultViewerShown && isDefaultPdfViewer(context) }
+                val defaultViewerAllowed = DefaultViewerPrompt.isDue(
+                    DefaultViewerPromptState(
+                        alreadyShown = defaultViewerShown,
+                        pdfOpened = pdfOpened,
+                        completedScans = completedScans,
+                        alreadyDefault = alreadyDefault,
+                        onHome = currentRoute == ScanProDestinations.HOME,
+                        otherPromptDue = welcomeShowing || whatsNewDue || feedbackPrompt || tourDue || importTipOpen || !launchSettled,
+                        promptShownThisSession = promptShownThisSession
+                    )
+                )
+                var defaultViewerReady by remember { mutableStateOf(false) }
+                LaunchedEffect(defaultViewerAllowed) {
+                    defaultViewerReady = false
+                    if (defaultViewerAllowed) {
+                        kotlinx.coroutines.delay(600)
+                        defaultViewerReady = true
+                    }
+                }
+                if (defaultViewerAllowed && defaultViewerReady) {
+                    val failed = stringResource(R.string.default_viewer_settings_failed)
+                    DefaultViewerSheet(
+                        onSetDefault = {
+                            FilesAccessPrompts.markDefaultViewerShown(context)
+                            defaultViewerShown = true
+                            promptShownThisSession = true
+                            if (!com.example.scanpro.feature.settings.HomeScreenPins.openDefaultAppSettings(context)) {
+                                android.widget.Toast.makeText(context, failed, android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        onNotNow = {
+                            FilesAccessPrompts.markDefaultViewerShown(context)
+                            defaultViewerShown = true
+                            promptShownThisSession = true
+                        }
+                    )
                 }
 
                 // First launch only, drawn over the app so the library is already there underneath when it

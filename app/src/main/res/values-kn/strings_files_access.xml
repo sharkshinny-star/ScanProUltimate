@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Machine translation; needs a native speaker's read. -->
+<resources>
+    <string name="phone_pdfs_title">ಈ ಫೋನ್‌ನ ಫೈಲ್‌ಗಳು</string>
+    <string name="phone_files_card_title">ನಿಮ್ಮ ಎಲ್ಲಾ ಫೈಲ್‌ಗಳನ್ನು ಇಲ್ಲಿ ನೋಡಿ</string>
+    <string name="phone_pdfs_card_body">ಡೌನ್‌ಲೋಡ್‌ಗಳು, ಚಾಟ್ ಆ್ಯಪ್‌ಗಳು ಮತ್ತು ಇತರ ಫೋಲ್ಡರ್‌ಗಳಿಂದ PDF, ಫೋಟೋ ಮತ್ತು Office ಫೈಲ್‌ಗಳನ್ನು ಹುಡುಕಿ. ಏನೂ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ, ಮತ್ತು ಇದು ಐಚ್ಛಿಕ.</string>
+    <string name="phone_pdfs_card_hide">ಈ ಕಾರ್ಡ್ ಮರೆಮಾಡಿ</string>
+    <string name="phone_files_tab_mine">ನನ್ನ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು</string>
+    <string name="phone_files_tab_phone">ಈ ಫೋನ್‌ನಲ್ಲಿ</string>
+    <string name="phone_pdfs_explainer_title">ನಿಮ್ಮ ಫೋನ್‌ನ ಪ್ರತಿಯೊಂದು ಫೈಲ್ ನೋಡಿ</string>
+    <string name="phone_pdfs_explainer_why">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಎಲ್ಲಿಯಾದರೂ, ಉದಾಹರಣೆಗೆ ಡೌನ್‌ಲೋಡ್‌ಗಳು ಅಥವಾ ಚಾಟ್ ಆ್ಯಪ್‌ಗಳಲ್ಲಿ ಬಂದ ಫೈಲ್‌ಗಳಲ್ಲಿ, PDF, ಫೋಟೋ ಮತ್ತು Office ಫೈಲ್‌ಗಳನ್ನು ಹುಡುಕಲು ಮತ್ತು ತೆರೆಯಲು ScanPro ಗೆ ಎಲ್ಲಾ ಫೈಲ್‌ಗಳ ಆ್ಯಕ್ಸೆಸ್ ಬೇಕು.</string>
+    <string name="phone_pdfs_explainer_private">ಏನೂ ನಿಮ್ಮ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ. ScanPro ನಿಮ್ಮ ಫೈಲ್‌ಗಳನ್ನು ಓದುತ್ತದೆ ಮಾತ್ರ; ನೀವು ಕೇಳದ ಹೊರತು ಅವುಗಳನ್ನು ಎಂದಿಗೂ ಬದಲಿಸುವುದಿಲ್ಲ ಅಥವಾ ಅಳಿಸುವುದಿಲ್ಲ.</string>
+    <string name="phone_pdfs_explainer_optional">ಇದು ಐಚ್ಛಿಕ. ಸ್ಕ್ಯಾನಿಂಗ್, ನಿಮ್ಮ ಡಾಕ್ಯುಮೆಂಟ್‌ಗಳು ಮತ್ತು ಎಲ್ಲಾ ಪರಿಕರಗಳು ಇದಿಲ್ಲದೆಯೂ ಕೆಲಸ ಮಾಡುತ್ತವೆ.</string>
+    <string name="phone_pdfs_explainer_steps">ಮುಂದಿನ ಪರದೆಯಲ್ಲಿ ScanPro ಗಾಗಿ \"ಎಲ್ಲಾ ಫೈಲ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸಲು ಆ್ಯಕ್ಸೆಸ್ ಅನುಮತಿಸಿ\" ಆನ್ ಮಾಡಿ, ನಂತರ ಹಿಂತಿರುಗಿ.</string>
+    <string name="phone_pdfs_explainer_steps_dialog">ScanPro ನಿಮ್ಮ ಫೈಲ್‌ಗಳನ್ನು ಓದಬಹುದೇ ಎಂದು Android ಕೇಳುತ್ತದೆ.</string>
+    <string name="phone_pdfs_allow">ಆ್ಯಕ್ಸೆಸ್ ಅನುಮತಿಸಿ</string>
+    <string name="phone_pdfs_not_now">ಈಗ ಬೇಡ</string>
+    <string name="phone_pdfs_settings_failed">ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಪುಟ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ. ಸೆಟ್ಟಿಂಗ್‌ಗಳು &gt; ಆ್ಯಪ್‌ಗಳಲ್ಲಿ ScanPro ಗೆ ಎಲ್ಲಾ ಫೈಲ್‌ಗಳ ಆ್ಯಕ್ಸೆಸ್ ಅನುಮತಿಸಿ.</string>
+    <string name="phone_pdfs_refresh">ರಿಫ್ರೆಶ್ ಮಾಡಿ</string>
+    <string name="phone_pdfs_search_hint">ಫೈಲ್‌ಗಳನ್ನು ಹುಡುಕಿ</string>
+    <string name="phone_pdfs_clear_search">ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ</string>
+    <string name="phone_files_filter_all">ಎಲ್ಲಾ</string>
+    <string name="phone_files_filter_pdf">PDF</string>
+    <string name="phone_files_filter_images">ಚಿತ್ರಗಳು</string>
+    <string name="phone_files_filter_word">Word</string>
+    <string name="phone_files_filter_excel">Excel</string>
+    <string name="phone_files_filter_powerpoint">PowerPoint</string>
+    <string name="phone_files_filter_text">ಪಠ್ಯ</string>
+    <string name="phone_pdfs_sort_name">ಹೆಸರು</string>
+    <string name="phone_pdfs_sort_date">ದಿನಾಂಕ</string>
+    <string name="phone_pdfs_sort_size">ಗಾತ್ರ</string>
+    <string name="phone_pdfs_sort_ascending">ಏರಿಕೆ ಕ್ರಮ</string>
+    <string name="phone_pdfs_sort_descending">ಇಳಿಕೆ ಕ್ರಮ</string>
+    <plurals name="phone_files_count">
+        <item quantity="one">%1$d ಫೈಲ್</item>
+        <item quantity="other">%1$d ಫೈಲ್‌ಗಳು</item>
+    </plurals>
+    <plurals name="phone_files_selected">
+        <item quantity="one">%1$d ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ</item>
+    </plurals>
+    <string name="phone_pdfs_loading">ಫೈಲ್‌ಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="phone_pdfs_empty">ಈ ಫೋನ್‌ನಲ್ಲಿ ಯಾವುದೇ ಫೈಲ್ ಸಿಗಲಿಲ್ಲ.</string>
+    <string name="phone_pdfs_no_match">\"%1$s\" ಗೆ ಹೊಂದುವ ಫೈಲ್ ಇಲ್ಲ.</string>
+    <string name="phone_pdfs_more">%1$s ಗಾಗಿ ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು</string>
+    <string name="phone_pdfs_open">ತೆರೆಯಿರಿ</string>
+    <string name="phone_pdfs_add">ScanPro ಗೆ ಸೇರಿಸಿ</string>
+    <string name="phone_pdfs_share">ಹಂಚಿಕೊಳ್ಳಿ</string>
+    <string name="phone_files_open_with">ಇದರೊಂದಿಗೆ ತೆರೆಯಿರಿ</string>
+    <string name="phone_files_convert">PDF ಗೆ ಪರಿವರ್ತಿಸಿ</string>
+    <string name="phone_files_merge">ವಿಲೀನಗೊಳಿಸಿ</string>
+    <string name="phone_files_images_to_pdf">ಚಿತ್ರಗಳಿಂದ PDF</string>
+    <string name="phone_files_clear_selection">ಆಯ್ಕೆ ತೆರವುಗೊಳಿಸಿ</string>
+    <string name="phone_files_close">ಮುಚ್ಚಿ</string>
+    <string name="phone_files_no_app">ಈ ಫೋನ್‌ನ ಯಾವುದೇ ಆ್ಯಪ್ ಈ ಫೈಲ್ ತೆರೆಯಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
+    <string name="default_viewer_title">ScanPro ಅನ್ನು ನಿಮ್ಮ ಡೀಫಾಲ್ಟ್ PDF ವೀಕ್ಷಕವಾಗಿ ಹೊಂದಿಸಿ</string>
+    <string name="default_viewer_body">ಇತರ ಆ್ಯಪ್‌ಗಳಿಂದ PDFಗಳನ್ನು ನೇರವಾಗಿ ScanPro ನಲ್ಲಿ, ಅದರ ವೀಕ್ಷಕ ಮತ್ತು ಪರಿಕರಗಳೊಂದಿಗೆ ತೆರೆಯಿರಿ.</string>
+    <string name="default_viewer_hint">PDF ಅನ್ನು ಯಾವ ಆ್ಯಪ್ ತೆರೆಯಬೇಕು ಎಂದು Android ಕೇಳಿದಾಗ, ScanPro ಆಯ್ಕೆಮಾಡಿ ಮತ್ತು ಯಾವಾಗಲೂ ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="default_viewer_set">ಡೀಫಾಲ್ಟ್ ಆಗಿ ಹೊಂದಿಸಿ</string>
+    <string name="default_viewer_not_now">ಈಗ ಬೇಡ</string>
+    <string name="default_viewer_settings_failed">ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಪುಟ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="import_tip_title">ಫೈಲ್‌ಗಳನ್ನು ಆಮದು ಮಾಡುವುದು ಹೇಗೆ?</string>
+    <string name="import_tip_body">ಒಂದು ಫೈಲ್ ಆಯ್ಕೆಮಾಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ, ಹಲವನ್ನು ಆಯ್ಕೆಮಾಡಲು ದೀರ್ಘವಾಗಿ ಒತ್ತಿ, ನಂತರ ಆಮದು ಮಾಡಲು ಮೇಲಿನ ಬಲಭಾಗದಲ್ಲಿ ಆಯ್ಕೆಮಾಡಿ ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+    <string name="import_tip_cancel">ರದ್ದುಮಾಡಿ</string>
+    <string name="import_tip_import">ಆಮದು ಮಾಡಿ</string>
+</resources>

@@ -54,16 +54,16 @@ class AppViewModel @Inject constructor(
     val themeMode: StateFlow<ThemeMode?> = settings.themeMode
         .map<ThemeMode, ThemeMode?> { it }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    /**
-     * The Play in-app review flow is due once, after the third saved scan, when the app is in a calm place
-     * (the document screen). Google decides whether a card is shown; nothing in the app promises one.
-     */
-    /** The one-time rating sheet, due after the first saved scan (the owner's "New Look" design). */
-    val ratingDue: StateFlow<Boolean> = combine(settings.completedScans, settings.feedbackPromptShown) { scans, shown ->
-        scans >= RATING_AFTER_SCANS && !shown
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /** "Rate your experience" is waiting for a calm moment (see [com.example.scanpro.data.FeedbackSchedule]). */
+    val feedbackPrompt: StateFlow<Boolean> get() = operations.feedbackPrompt
+    /** A "Scan saved" sheet is waiting or open; the rating sheet never shows over it. */
+    val scanSavedPending: StateFlow<String?> get() = operations.scanSaved
 
-    fun markRatingShown() { viewModelScope.launch { settings.setFeedbackPromptShown() } }
+    /** The rating sheet is on screen: it counts as shown whatever the user does with it. */
+    fun onFeedbackPromptShown() {
+        com.example.scanpro.data.FeedbackPrompts.markShown(context)
+        operations.clearFeedbackPrompt()
+    }
 
     /** Wallpaper-derived colours (Android 12+); applied as soon as it is known, false until then. */
     /** Camera defaults from Settings: the mode it opens in and the filter new scans start with. */
@@ -209,6 +209,7 @@ class AppViewModel @Inject constructor(
     fun importScan(pdfUri: Uri?, imageUris: List<Uri>) {
         operations.enqueue(context.getString(R.string.msg_import_scan_progress), null) {
             val document = repository.importScan(pdfUri, imageUris, settings.pdfQuality.first(), settings.autoTitle.first())
+            com.example.scanpro.data.FeedbackPrompts.recordCompletedScan(context)
             operations.offerScanSaved(document.id)
             operations.requestOpenDocument(document.id)
         }
@@ -317,7 +318,3 @@ class AppViewModel @Inject constructor(
 }
 
 private const val MAX_IMPORT_IMAGES = 100
-
-
-/** Saved camera scans before the rating sheet appears (once). */
-const val RATING_AFTER_SCANS = 1

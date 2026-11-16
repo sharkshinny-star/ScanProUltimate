@@ -79,6 +79,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.DynamicFeed
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FlashAuto
@@ -102,11 +103,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material.icons.filled.GridOff
+import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -154,6 +159,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -283,6 +289,7 @@ fun CameraScannerScreen(
     var overflowOpen by rememberSaveable { mutableStateOf(false) }
     val onLabel = stringResource(R.string.common_on)
     val offLabel = stringResource(R.string.common_off)
+    val gridLabel = stringResource(R.string.scan_show_grid)
     var showAdjustments by rememberSaveable { mutableStateOf(false) }
     val autoCapture = detectMode == DetectMode.AUTO
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
@@ -317,6 +324,8 @@ fun CameraScannerScreen(
     // "Don't remind me again" is ticked for that mode.
     var introShownFor by rememberSaveable { mutableStateOf(listOf<String>()) }
     var introMode by rememberSaveable { mutableStateOf<String?>(null) }
+    // "Try now" on the Document explainer: the built-in sample page goes through the normal review (crop, filters).
+    var trySample by remember { mutableStateOf(false) }
     LaunchedEffect(scanMode, permissionGranted) {
         // Not over the camera-permission card: two prompts at once. It shows once the camera is usable.
         if (!permissionGranted) return@LaunchedEffect
@@ -328,10 +337,22 @@ fun CameraScannerScreen(
     }
     introMode?.let { name ->
         val mode = ScanMode.entries.firstOrNull { it.name == name }
-        if (mode == null) introMode = null else ScanIntroDialog(mode, onStart = { dontRemind ->
-            if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+        if (mode == null) {
             introMode = null
-        })
+        } else {
+            ScanIntroDialog(
+                mode,
+                onTry = { dontRemind ->
+                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+                    introMode = null
+                    trySample = true
+                },
+                onStart = { dontRemind ->
+                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+                    introMode = null
+                }
+            )
+        }
     }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
     // than saving at once, whatever "Check pages before saving" says.
@@ -524,18 +545,41 @@ fun CameraScannerScreen(
     // Several codes found in a picture from the gallery: the person picks one from a list.
     var pictureCodes by remember { mutableStateOf<List<ScannedCode>>(emptyList()) }
     var barcodeUnavailable by remember { mutableStateOf(false) }
+    // QR mode's batch scan collects every new code without opening it; beep and vibrate are the person's choice.
+    var qrBatch by remember { mutableStateOf(prefs.getBoolean("qr_batch", false)) }
+    var qrBeep by remember { mutableStateOf(prefs.getBoolean("qr_beep", false)) }
+    var qrVibrate by remember { mutableStateOf(prefs.getBoolean("qr_vibrate", true)) }
+    val batchCodes = remember { mutableStateListOf<ScannedCode>() }
+    var showBatch by remember { mutableStateOf(false) }
+    val beeper = remember { CodeBeeper() }
+    DisposableEffect(beeper) { onDispose { beeper.release() } }
+    val codeFeedback = {
+        if (qrVibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (qrBeep) beeper.beep()
+    }
+    /** Adds the codes not yet in the batch; true when any was new. */
+    val collect = { codes: List<ScannedCode> ->
+        val fresh = codes.filter { code -> batchCodes.none { it.raw == code.raw } }.distinctBy { it.raw }
+        fresh.forEach { batchCodes.add(it); qrScans.record(it) }
+        if (fresh.isNotEmpty()) codeFeedback()
+        fresh.isNotEmpty()
+    }
     val barcodeAnalyzer = remember {
         BarcodeFrameAnalyzer(
             context = context.applicationContext,
             onCodes = { frame ->
-                if (frame.codes.size >= 2 || outlinedFrame != null) {
+                if (qrBatch) {
+                    // Keep reading: a repeat of a collected code is ignored, a new one is added with a beep or buzz.
+                    collect(frame.codes.map { it.code })
+                    false
+                } else if (frame.codes.size >= 2 || outlinedFrame != null) {
                     // Keep looking: the outlines follow the codes until one is tapped.
                     outlinedFrame = frame
                     false
                 } else {
                     // A single code opens straight away, as it always has; returning true pauses the reader meanwhile.
                     val only = frame.codes.first().code
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    codeFeedback()
                     foundCode = only
                     qrScans.record(only)
                     true
@@ -548,7 +592,11 @@ fun CameraScannerScreen(
     // QR mode's gallery button: read a code from a screenshot or photo, like Lens.
     val codePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) barcodeAnalyzer.scanImage(uri) { codes ->
-            if (codes.size == 1) {
+            if (qrBatch && codes.isNotEmpty()) {
+                collect(codes)
+                barcodeAnalyzer.resume()
+                showBatch = true
+            } else if (codes.size == 1) {
                 foundCode = codes.first()
                 qrScans.record(codes.first())
             } else if (codes.size > 1) {
@@ -813,7 +861,7 @@ fun CameraScannerScreen(
                             }
                             val at = pages.indexOf(captured)
                             if (ok && at >= 0) {
-                                val halves = com.example.scanpro.imaging.BookSpread.ordered(Uri.fromFile(leftFile), Uri.fromFile(rightFile), leftFirst = bookLayout == 1)
+                                val halves = com.example.scanpro.imaging.BookSpread.ordered(Uri.fromFile(leftFile), Uri.fromFile(rightFile), leftFirst = com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout))
                                 pages.removeAt(at)
                                 pages.addAll(at, halves)
                                 quads.remove(captured.toString())
@@ -852,6 +900,36 @@ fun CameraScannerScreen(
                 }
             }
         )
+    }
+
+    LaunchedEffect(trySample) {
+        if (!trySample) return@LaunchedEffect
+        trySample = false
+        if (pages.size >= pageLimit) return@LaunchedEffect
+        val sample = File(sessionDir, "raw_sample_${UUID.randomUUID()}.jpg")
+        val quad = withContext(Dispatchers.IO) {
+            runCatching {
+                sessionDir.mkdirs()
+                val bitmap = com.example.scanpro.core.designsystem.renderSampleScanBitmap()
+                try {
+                    sample.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
+                } finally {
+                    bitmap.recycle()
+                }
+                runCatching { OpenCvScanProcessor.detectCrop(sample) }.getOrNull()
+            }
+        }
+        if (quad.isFailure || !sample.exists()) {
+            deleteInBackground(sample)
+            status = resources.getString(R.string.intro_doc_sample_failed)
+            return@LaunchedEffect
+        }
+        val uri = Uri.fromFile(sample)
+        pages.add(uri)
+        quad.getOrNull()?.let { quads[uri.toString()] = it }
+        status = resources.getString(R.string.intro_doc_sample_ready)
+        reviewIndex = pages.lastIndex
+        reviewing = true
     }
 
     LaunchedEffect(focusPoint) {
@@ -1253,7 +1331,15 @@ fun CameraScannerScreen(
             if (showGrid && !reviewing) ThirdsGrid()
             if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
                 DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable, accent = scanLine)
-                if (scanMode == ScanMode.BOOK && bookLayout != 0) SpineGuide(detection = detection, quad = { shownQuad }, accent = scanLine, rightFirst = bookLayout == 2)
+            }
+            if (scanMode == ScanMode.BOOK && bookLayout != 0 && !barcodeMode && !reviewing) {
+                val tracking = detectMode != DetectMode.NO_DETECT
+                BookSplitGuide(
+                    detection = if (tracking) detection else null,
+                    quad = { if (tracking) shownQuad else null },
+                    accent = scanLine,
+                    leftFirst = com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout)
+                )
             }
             if (scanMode == ScanMode.ID_CARD) {
                 // Which side is next, and how many there are: "Front · 1 of 2", then "Back · 2 of 2".
@@ -1304,6 +1390,7 @@ fun CameraScannerScreen(
                 hint = stringResource(
                     when {
                         barcodeUnavailable -> R.string.scan_qr_downloading
+                        qrBatch -> R.string.qrscan_batch_on
                         outlinedFrame != null -> R.string.qr_pick_one_hint
                         else -> R.string.scan_qr_point
                     }
@@ -1312,10 +1399,10 @@ fun CameraScannerScreen(
             )
         }
         outlinedFrame?.let { frame ->
-            if (barcodeMode && foundCode == null) {
+            if (barcodeMode && foundCode == null && !qrBatch) {
                 QrCodeOutlines(frame) { picked ->
                     barcodeAnalyzer.pause()
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    codeFeedback()
                     outlinedFrame = null
                     foundCode = picked
                     qrScans.record(picked)
@@ -1329,6 +1416,21 @@ fun CameraScannerScreen(
                 barcodeAnalyzer.resume()
             }
             BarcodeResultSheet(code, onScanAgain = scanAgain, onDismiss = scanAgain)
+        }
+        if (showBatch && barcodeMode && foundCode == null) {
+            QrBatchSheet(
+                codes = batchCodes,
+                onPick = { picked ->
+                    showBatch = false
+                    barcodeAnalyzer.pause()
+                    foundCode = picked
+                },
+                onClear = {
+                    batchCodes.clear()
+                    showBatch = false
+                },
+                onDismiss = { showBatch = false }
+            )
         }
         if (pictureCodes.isNotEmpty()) {
             QrCodeChooserSheet(
@@ -1561,6 +1663,15 @@ fun CameraScannerScreen(
                         if (!barcodeMode) {
                             SwitchItem(R.string.scan_hd_capture, hdCapture) { hdCapture = !hdCapture; prefs.edit { putBoolean("hd", hdCapture) } }
                         }
+                        if (barcodeMode) {
+                            SwitchItem(R.string.qrscan_batch, qrBatch) { qrBatch = !qrBatch; outlinedFrame = null; prefs.edit { putBoolean("qr_batch", qrBatch) } }
+                            SwitchItem(R.string.qrscan_beep, qrBeep) {
+                                qrBeep = !qrBeep
+                                prefs.edit { putBoolean("qr_beep", qrBeep) }
+                                if (qrBeep) beeper.beep() // a sample, so the person hears what they turned on
+                            }
+                            SwitchItem(R.string.qrscan_vibrate, qrVibrate) { qrVibrate = !qrVibrate; prefs.edit { putBoolean("qr_vibrate", qrVibrate) } }
+                        }
                         SwitchItem(R.string.scan_show_grid, showGrid) { showGrid = !showGrid; prefs.edit { putBoolean("grid", showGrid) } }
                         SwitchItem(R.string.scan_show_level, showLevel) { showLevel = !showLevel; prefs.edit { putBoolean("level", showLevel) } }
                         DropdownMenuItem(
@@ -1696,10 +1807,49 @@ fun CameraScannerScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf(0 to R.string.scan_book_one_page, 1 to R.string.scan_book_two_pages, 2 to R.string.scan_book_two_pages_rtl).forEach { (layout, text) ->
-                        ModeTab(stringResource(text), selected = bookLayout == layout, enabled = pages.isEmpty() && retakeOfPage == null) {
-                            if (pages.isEmpty() && retakeOfPage == null) bookLayout = layout
+                    val canChange = pages.isEmpty() && retakeOfPage == null
+                    ModeTab(stringResource(R.string.scan_book_one_page), selected = bookLayout == 0, enabled = canChange) {
+                        if (canChange) bookLayout = 0
+                    }
+                    ModeTab(stringResource(R.string.intro_book_two_pages), selected = bookLayout != 0, enabled = canChange) {
+                        if (canChange && bookLayout == 0) bookLayout = 1
+                    }
+                    if (bookLayout != 0) {
+                        // A | B or B | A: which half is saved first. The letters in the viewfinder swap with it.
+                        val leftFirst = com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout)
+                        val orderText = stringResource(if (leftFirst) R.string.intro_book_order_left_first else R.string.intro_book_order_right_first)
+                        val (a, b) = com.example.scanpro.core.designsystem.bookHalfLetters(leftFirst)
+                        Surface(
+                            onClick = {
+                                bookLayout = com.example.scanpro.imaging.BookSpread.swapped(bookLayout)
+                                status = resources.getString(
+                                    if (com.example.scanpro.imaging.BookSpread.leftFirst(bookLayout)) R.string.intro_book_order_left_first
+                                    else R.string.intro_book_order_right_first
+                                )
+                            },
+                            enabled = retakeOfPage == null,
+                            shape = RoundedCornerShape(50),
+                            color = CameraGlass,
+                            contentColor = Color.White,
+                            modifier = Modifier.semantics { contentDescription = orderText }
+                        ) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("$a | $b", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(18.dp))
+                            }
                         }
+                    }
+                    Surface(
+                        onClick = { showGrid = !showGrid; prefs.edit { putBoolean("grid", showGrid) } },
+                        shape = CircleShape,
+                        color = if (showGrid) Color.White else CameraGlass,
+                        contentColor = if (showGrid) Color(0xFF222222) else Color.White,
+                        modifier = Modifier.semantics {
+                            contentDescription = gridLabel
+                            stateDescription = if (showGrid) onLabel else offLabel
+                        }
+                    ) {
+                        Icon(if (showGrid) Icons.Default.GridOn else Icons.Default.GridOff, contentDescription = null, modifier = Modifier.padding(6.dp).size(20.dp))
                     }
                 }
             }
@@ -1796,7 +1946,31 @@ fun CameraScannerScreen(
                     }
                 }
                 // QR codes are read live, so there is no shutter in QR mode: just the viewfinder, like Lens.
-                if (barcodeMode) Spacer(Modifier.size(72.dp)) else {
+                if (barcodeMode) {
+                    // Batch scan on or off, where the shutter sits in the other modes (codes are read live, no shutter).
+                    val batchLabel = stringResource(R.string.qrscan_batch)
+                    Surface(
+                        onClick = {
+                            qrBatch = !qrBatch
+                            outlinedFrame = null
+                            prefs.edit { putBoolean("qr_batch", qrBatch) }
+                        },
+                        shape = CircleShape,
+                        color = if (qrBatch) TorchOn else Color.White.copy(alpha = 0.12f),
+                        contentColor = if (qrBatch) Color(0xFF2B2000) else Color.White,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .semantics {
+                                contentDescription = batchLabel
+                                stateDescription = if (qrBatch) onLabel else offLabel
+                                role = Role.Switch
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.DynamicFeed, contentDescription = null, modifier = Modifier.size(30.dp))
+                        }
+                    }
+                } else {
                 val shutterScale by androidx.compose.animation.core.animateFloatAsState(if (capturing) 0.86f else 1f, spring(stiffness = 900f), label = "shutter")
                 Box(
                     Modifier
@@ -1877,6 +2051,21 @@ fun CameraScannerScreen(
                                 softWrap = false,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                             )
+                        }
+                    } else if (barcodeMode && qrBatch && batchCodes.isNotEmpty()) {
+                        // The collected codes; tapping the count opens the list.
+                        val countLabel = stringResource(R.string.qrscan_batch_count, batchCodes.size)
+                        BottomPill(
+                            onClick = { showBatch = true },
+                            color = TorchOn,
+                            contentColor = Color(0xFF2B2000),
+                            modifier = Modifier.semantics { contentDescription = countLabel }
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.QrCode, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("${batchCodes.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -2438,35 +2627,43 @@ internal fun resetScanIntros(context: android.content.Context) {
 }
 
 /**
- * What a scan mode does, for someone using it for the first time; "Start now" closes it. Drawn as an illustrated
- * introduction (F146): the page being found and straightened, the ID card turning over, or the book parting at the
- * spine, with the mode's icon in the corner.
+ * What a scan mode does, for someone using it for the first time (F146, rebuilt 2026-11-16 with clear pictures). Document
+ * mode is "How to scan": the built-in sample page on a desk, with Skip and Try now ([onTry] runs the sample through the
+ * normal review); without [onTry] the main button is Start now. ID card shows a card's front and back; Book an open
+ * book with the A / B halves the viewfinder shows. "Don't remind me again" is passed to whichever button closes it.
  */
 @Composable
-internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Unit) {
+internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Unit)? = null, onStart: (dontRemind: Boolean) -> Unit) {
     var dontRemind by rememberSaveable { mutableStateOf(false) }
-    val (icon, title, body) = when (mode) {
-        ScanMode.BOOK -> Triple(Icons.AutoMirrored.Rounded.MenuBook, R.string.scan_book_intro_title, R.string.scan_book_intro_body)
-        ScanMode.ID_CARD -> Triple(Icons.Rounded.Badge, R.string.scan_idcard_intro_title, R.string.scan_idcard_intro_body)
-        else -> Triple(Icons.Filled.DocumentScanner, R.string.scan_doc_intro_title, R.string.scan_doc_intro_body)
+    val sample = mode != ScanMode.BOOK && mode != ScanMode.ID_CARD
+    val (title, body) = when (mode) {
+        ScanMode.BOOK -> R.string.scan_book_intro_title to R.string.intro_book_body
+        ScanMode.ID_CARD -> R.string.scan_idcard_intro_title to R.string.intro_idcard_body
+        else -> R.string.intro_doc_title to R.string.intro_doc_body
     }
+    val frontLabel = stringResource(R.string.scan_id_side_front)
+    val backLabel = stringResource(R.string.scan_id_side_back)
     com.example.scanpro.core.designsystem.IllustratedDialog(
         title = stringResource(title),
         body = stringResource(body),
+        pictureHeight = 236.dp,
         illustration = {
+            val art = Modifier.fillMaxSize()
             when (mode) {
-                ScanMode.BOOK -> com.example.scanpro.core.designsystem.BookScanIllustration()
-                ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.IdCardIllustration()
-                else -> com.example.scanpro.core.designsystem.DocumentScanIllustration()
+                ScanMode.BOOK -> com.example.scanpro.core.designsystem.OpenBookArt(art)
+                ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.IdCardArt(frontLabel, backLabel, art)
+                else -> com.example.scanpro.core.designsystem.SampleDocumentArt(art)
             }
         },
-        badgeIcon = icon,
-        badgeTone = when (mode) {
-            ScanMode.BOOK -> com.example.scanpro.core.designsystem.TileTone.Violet
-            ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.TileTone.Teal
-            else -> com.example.scanpro.core.designsystem.TileTone.Indigo
-        },
         extra = {
+            if (sample) {
+                Text(
+                    stringResource(R.string.intro_doc_tip),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -2480,44 +2677,12 @@ internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> U
                 Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
             }
         },
-        confirmText = stringResource(R.string.scan_book_intro_start),
-        onConfirm = { onStart(dontRemind) },
+        confirmText = stringResource(if (sample && onTry != null) R.string.intro_doc_try else R.string.scan_book_intro_start),
+        onConfirm = { if (sample && onTry != null) onTry(dontRemind) else onStart(dontRemind) },
+        dismissText = if (sample && onTry != null) stringResource(R.string.hint_skip) else null,
+        buttonsInRow = sample && onTry != null,
         onDismiss = { onStart(dontRemind) }
     )
-}
-
-/** Book mode, two pages (R29): a dashed line down the middle of the live outline, where the spread will be split. */
-@Composable
-private fun SpineGuide(detection: DocumentDetection?, quad: () -> CropQuad?, accent: Color, rightFirst: Boolean = false) {
-    // Big faint A and B on the two halves say which is saved first: A on the left, or on the right for "right first".
-    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-    val letterStyle = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.4f))
-    Canvas(Modifier.fillMaxSize()) {
-        val result = detection ?: return@Canvas
-        val outline = quad() ?: return@Canvas
-        val frameWidth = result.frameWidth.toFloat().coerceAtLeast(1f)
-        val frameHeight = result.frameHeight.toFloat().coerceAtLeast(1f)
-        val scale = minOf(size.width / frameWidth, size.height / frameHeight)
-        val left = (size.width - frameWidth * scale) / 2f
-        val top = (size.height - frameHeight * scale) / 2f
-        fun point(x: Float, y: Float): Offset = Offset(left + x * frameWidth * scale, top + y * frameHeight * scale)
-        val topMid = point((outline.topLeft.x + outline.topRight.x) / 2f, (outline.topLeft.y + outline.topRight.y) / 2f)
-        val bottomMid = point((outline.bottomLeft.x + outline.bottomRight.x) / 2f, (outline.bottomLeft.y + outline.bottomRight.y) / 2f)
-        drawLine(
-            accent.copy(alpha = 0.9f), topMid, bottomMid, strokeWidth = 3f, cap = StrokeCap.Round,
-            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(14f, 10f))
-        )
-        fun half(a: NormalizedPoint, b: Offset, c: NormalizedPoint, d: Offset): Offset {
-            val pa = point(a.x, a.y); val pc = point(c.x, c.y)
-            return Offset((pa.x + b.x + pc.x + d.x) / 4f, (pa.y + b.y + pc.y + d.y) / 4f)
-        }
-        val leftCentre = half(outline.topLeft, topMid, outline.bottomLeft, bottomMid)
-        val rightCentre = half(outline.topRight, topMid, outline.bottomRight, bottomMid)
-        listOf(leftCentre to (if (rightFirst) "B" else "A"), rightCentre to (if (rightFirst) "A" else "B")).forEach { (centre, letter) ->
-            val laid = measurer.measure(letter, letterStyle)
-            drawText(laid, topLeft = Offset(centre.x - laid.size.width / 2f, centre.y - laid.size.height / 2f))
-        }
-    }
 }
 
 /**

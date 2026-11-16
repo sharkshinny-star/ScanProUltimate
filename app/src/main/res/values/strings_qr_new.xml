@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- QR generator: more kinds of code, form checks, styling and output. -->
+    <string name="qrgen_type_sms">SMS</string>
+    <string name="qrgen_type_location">Location</string>
+    <string name="qrgen_type_event">Event</string>
+    <string name="qrgen_type_ean13">EAN-13 barcode</string>
+    <string name="qrgen_type_code128">Code 128 barcode</string>
+    <string name="qrgen_field_message">Message (optional)</string>
+    <string name="qrgen_field_latitude">Latitude</string>
+    <string name="qrgen_field_longitude">Longitude</string>
+    <string name="qrgen_field_place">Place name (optional)</string>
+    <string name="qrgen_field_event_title">Event title</string>
+    <string name="qrgen_field_start_date">Start date</string>
+    <string name="qrgen_field_start_time">Start time (optional)</string>
+    <string name="qrgen_field_end_date">End date (optional)</string>
+    <string name="qrgen_field_end_time">End time (optional)</string>
+    <string name="qrgen_field_location">Location (optional)</string>
+    <string name="qrgen_field_description">Description (optional)</string>
+    <string name="qrgen_field_ean13">Product number (12 or 13 digits)</string>
+    <string name="qrgen_field_code128">Text or number</string>
+    <string name="qrgen_pick_date">Pick a date</string>
+    <string name="qrgen_hint_text">Anything you like: a note, a code, a message</string>
+    <string name="qrgen_event_all_day">Leave the times empty for an all-day event. Times are in this phone\'s time zone.</string>
+    <string name="qrgen_location_help">Tip: in a maps app, press and hold a place to copy its coordinates.</string>
+    <string name="qrgen_error_link">Enter a web address without spaces, like example.com</string>
+    <string name="qrgen_error_email">That does not look like an email address</string>
+    <string name="qrgen_error_phone">Enter a number with digits</string>
+    <string name="qrgen_error_latitude">Latitude must be a number from -90 to 90</string>
+    <string name="qrgen_error_longitude">Longitude must be a number from -180 to 180</string>
+    <string name="qrgen_error_date">Use year-month-day, like %1$s</string>
+    <string name="qrgen_error_time">Use 24-hour time, like %1$s</string>
+    <string name="qrgen_error_end_before_start">The end is before the start</string>
+    <string name="qrgen_error_amount">Enter an amount like 250 or 99.50</string>
+    <string name="qrgen_error_ean_digits">Use digits only</string>
+    <string name="qrgen_error_ean_length">Type 12 digits (the check digit is added) or all 13</string>
+    <string name="qrgen_error_ean_check">The last digit should be %1$d. Check the number.</string>
+    <string name="qrgen_ean_check_added">Check digit to be added: %1$d</string>
+    <string name="qrgen_error_code128_characters">Only English letters, digits, spaces and punctuation</string>
+    <string name="qrgen_error_code128_long">Too long. Character limit: %1$d</string>
+    <string name="qrgen_fix_fields">Check the highlighted field to see the code</string>
+
+    <string name="qrgen_style">Style</string>
+    <string name="qrgen_colour_code">Code colour</string>
+    <string name="qrgen_colour_background">Background</string>
+    <string name="qrgen_colour_option">Colour %1$d of %2$d</string>
+    <string name="qrgen_contrast_low">Low contrast: it may not scan in poor light. A dark code on a light background works best.</string>
+    <string name="qrgen_contrast_too_low">Too little contrast: most phones will not be able to scan this. Choose a darker code colour or a lighter background.</string>
+    <string name="qrgen_contrast_inverted">Light code on a dark background: many scanners cannot read this. Use a dark code on a light background.</string>
+    <string name="qrgen_correction">Error correction</string>
+    <string name="qrgen_correction_option">%1$s · %2$d%%</string>
+    <string name="qrgen_correction_help">Higher correction still scans when the code is scratched or partly covered, but it makes the code denser.</string>
+    <string name="qrgen_size">Image size</string>
+    <string name="qrgen_size_option">%1$d px</string>
+    <string name="qrgen_barcode_preview">Barcode preview</string>
+    <string name="qrgen_save_gallery">Save to gallery</string>
+    <string name="qrgen_saved_gallery">Saved to Pictures/ScanPro</string>
+    <string name="qrgen_copy_text">Copy text</string>
+    <string name="qrgen_copied">Copied</string>
+    <string name="qrgen_clip_label">Code text</string>
+
+    <!-- Scan history: filters, undo, export. -->
+    <string name="qrhist_filter_all">All</string>
+    <string name="qrhist_filter_scanned">Scanned</string>
+    <string name="qrhist_filter_created">Created</string>
+    <string name="qrhist_filter_favourites">Favourites</string>
+    <string name="qrhist_filter_empty">Nothing here yet</string>
+    <string name="qrhist_deleted">Deleted</string>
+    <string name="qrhist_undo">Undo</string>
+    <string name="qrhist_export">Export as CSV</string>
+    <string name="qrhist_export_title">Scan history (CSV)</string>
+    <string name="qrhist_export_failed">Could not export the history</string>
+    <string name="qrhist_export_note">Exports the entries shown. Wi-Fi passwords are left out.</string>
+
+    <!-- Scan result: link preview and product search. -->
+    <string name="qrscan_open_link_title">Open this link?</string>
+    <string name="qrscan_open_link_body">It goes to %1$s. Check the full address before opening it.</string>
+    <string name="qrscan_open">Open</string>
+    <string name="qrscan_copy_link">Copy link</string>
+    <string name="qrscan_warn_not_encrypted">Not encrypted (http): do not type passwords or card details on this page.</string>
+    <string name="qrscan_warn_ip">The address is a number (an IP address) instead of a site name.</string>
+    <string name="qrscan_warn_lookalike">The site name uses look-alike letters, a common trick to imitate real sites.</string>
+    <string name="qrscan_warn_at">The text before the @ is not the site. The real site is %1$s.</string>
+    <string name="qrscan_warn_shortened">Shortened link: the real destination stays hidden until it opens.</string>
+    <string name="qrscan_search_product">Search the web for this number</string>
+    <string name="qrscan_search_detail">Opens your browser. Nothing is sent until you tap.</string>
+
+    <!-- Scanner QR mode: batch scanning and feedback. -->
+    <string name="qrscan_batch">Batch scan</string>
+    <string name="qrscan_batch_on">Batch scan on: each new code is collected</string>
+    <string name="qrscan_batch_count">Collected codes: %1$d</string>
+    <string name="qrscan_batch_title">Collected codes</string>
+    <string name="qrscan_batch_copy_all">Copy all</string>
+    <string name="qrscan_batch_share_all">Share all</string>
+    <string name="qrscan_batch_clear">Clear list</string>
+    <string name="qrscan_beep">Beep on scan</string>
+    <string name="qrscan_vibrate">Vibrate on scan</string>
+</resources>

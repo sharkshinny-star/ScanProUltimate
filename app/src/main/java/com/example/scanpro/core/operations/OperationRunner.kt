@@ -85,6 +85,12 @@ class OperationRunner @Inject constructor(
     fun offerScanSaved(id: String) { _scanSaved.value = id }
     fun clearScanSaved(id: String) { _scanSaved.compareAndSet(id, null) }
 
+    private val _feedbackPrompt = MutableStateFlow(false)
+    /** True when "Rate your experience" should show: set as a "Scan saved" sheet closes and the schedule is due. */
+    val feedbackPrompt: StateFlow<Boolean> = _feedbackPrompt.asStateFlow()
+    fun requestFeedbackPrompt() { _feedbackPrompt.value = true }
+    fun clearFeedbackPrompt() { _feedbackPrompt.value = false }
+
     private val mutex = Mutex()
     @Volatile private var current: kotlinx.coroutines.Job? = null
 

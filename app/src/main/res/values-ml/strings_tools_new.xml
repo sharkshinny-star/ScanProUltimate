@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">പേജുകൾ എടുക്കുക</string>
+
+    <string name="tools_card_blank_pages">ശൂന്യ പേജുകൾ നീക്കുക</string>
+    <string name="tools_tile_blank_pages">ശൂന്യ പേജുകൾ</string>
+    <string name="tools_desc_blank_pages">ശൂന്യ പേജുകൾ കണ്ടെത്തി ഇല്ലാതാക്കുക</string>
+    <string name="tools_card_greyscale">ഗ്രേസ്കെയിൽ PDF</string>
+    <string name="tools_tile_greyscale">ഗ്രേസ്കെയിൽ</string>
+    <string name="tools_desc_greyscale">നിറമുള്ള പേജുകൾ ചാരനിറമാക്കുക</string>
+    <string name="tools_card_flatten">PDF ഫ്ലാറ്റൻ ചെയ്യുക</string>
+    <string name="tools_tile_flatten">ഫ്ലാറ്റൻ</string>
+    <string name="tools_desc_flatten">ഫോമുകളും കമന്റുകളും സ്ഥിരമാക്കുക</string>
+    <string name="tools_card_extract_images">ചിത്രങ്ങൾ എടുക്കുക</string>
+    <string name="tools_desc_extract_images">PDF-നുള്ളിലെ ചിത്രങ്ങൾ സേവ് ചെയ്യുക</string>
+    <string name="tools_card_pdf_info">PDF വിവരവും മെറ്റാഡാറ്റയും</string>
+    <string name="tools_tile_pdf_info">വിവരവും മെറ്റാഡാറ്റയും</string>
+    <string name="tools_desc_pdf_info">മറഞ്ഞ വിവരങ്ങൾ കാണുക, മാറ്റുക, നീക്കുക</string>
+
+    <string name="tools_new_progress_page">പേജ് %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">ശൂന്യ പേജുകൾ തിരയുന്നു…</string>
+    <string name="tools_blank_progress_removing">ശൂന്യ പേജുകൾ നീക്കുന്നു…</string>
+    <string name="tools_blank_err_failed">ഈ PDF-ൽ ശൂന്യ പേജുകൾ പരിശോധിക്കാനായില്ല.</string>
+    <string name="tools_blank_err_all">PDF-ൽ കുറഞ്ഞത് ഒരു പേജ് ഉണ്ടായിരിക്കണം.</string>
+    <string name="tools_blank_none_title">ശൂന്യ പേജുകളില്ല</string>
+    <string name="tools_blank_none_body">ഈ PDF-ലെ എല്ലാ പേജിലും എന്തെങ്കിലും ഉണ്ട്, അതിനാൽ നീക്കാൻ ഒന്നുമില്ല.</string>
+    <string name="tools_blank_found_title">ശൂന്യ പേജുകൾ കണ്ടെത്തി</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d പേജുകളിൽ %1$d എണ്ണം ശൂന്യമായി തോന്നുന്നു: പേജ് %3$s. പുതിയ പകർപ്പിൽ അത് നീക്കും; ഒറിജിനൽ മാറില്ല.</item>
+        <item quantity="other">%2$d പേജുകളിൽ %1$d എണ്ണം ശൂന്യമായി തോന്നുന്നു: പേജുകൾ %3$s. പുതിയ പകർപ്പിൽ അവ നീക്കും; ഒറിജിനൽ മാറില്ല.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">എല്ലാ പേജുകളും ശൂന്യമായി തോന്നുന്നു. PDF-ന് കുറഞ്ഞത് ഒരു പേജ് വേണം, അതിനാൽ ഒന്നും നീക്കാനാവില്ല.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d പേജ് നീക്കുക</item>
+        <item quantity="other">%1$d പേജുകൾ നീക്കുക</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d ശൂന്യ പേജ് നീക്കി</item>
+        <item quantity="other">%1$d ശൂന്യ പേജുകൾ നീക്കി</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">ഓരോ പേജും %1$d dpi-ൽ ചാരനിറങ്ങളിൽ വീണ്ടും വരയ്ക്കുന്നു. ടെക്സ്റ്റ് പേജ് ചിത്രത്തിന്റെ ഭാഗമാകും, അതിനാൽ അത് തിരയാനോ പകർത്താനോ പിന്നീട് \"തിരയാവുന്നതാക്കുക\" ഉപയോഗിക്കുക. ഒറിജിനൽ മാറില്ല.</string>
+    <string name="tools_grey_confirm_action">ഗ്രേസ്കെയിലാക്കുക</string>
+    <string name="tools_grey_progress">ഗ്രേസ്കെയിലിലേക്ക് മാറ്റുന്നു…</string>
+    <string name="tools_grey_err_failed">ഈ PDF ഗ്രേസ്കെയിലിലേക്ക് മാറ്റാനായില്ല.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d പേജ് ഗ്രേസ്കെയിലിലേക്ക് മാറ്റി</item>
+        <item quantity="other">%1$d പേജുകൾ ഗ്രേസ്കെയിലിലേക്ക് മാറ്റി</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">ഫോം ഫീൽഡുകൾ, കമന്റുകൾ, ഹൈലൈറ്റുകൾ, സ്റ്റാമ്പുകൾ എന്നിവ പേജുകളിൽ തന്നെ വരയ്ക്കുന്നു, അതിനാൽ അവ ഇനി മാറ്റാനോ നീക്കാനോ കഴിയില്ല. ലിങ്കുകൾ പ്രവർത്തിക്കും. ഒറിജിനൽ മാറില്ല.</string>
+    <string name="tools_flatten_confirm_action">ഫ്ലാറ്റൻ ചെയ്യുക</string>
+    <string name="tools_flatten_progress">ഫ്ലാറ്റൻ ചെയ്യുന്നു…</string>
+    <string name="tools_flatten_err_failed">ഈ PDF ഫ്ലാറ്റൻ ചെയ്യാനായില്ല.</string>
+    <string name="tools_flatten_nothing">ഈ PDF-ൽ ഫ്ലാറ്റൻ ചെയ്യാൻ ഫോം ഫീൽഡുകളോ കമന്റുകളോ ഇല്ല.</string>
+    <string name="tools_flatten_done">ഫ്ലാറ്റൻ ചെയ്തു. ഫോം ഫീൽഡുകൾ: %1$d, കമന്റുകളും സ്റ്റാമ്പുകളും: %2$d</string>
+
+    <string name="tools_ximg_progress">ചിത്രങ്ങൾ എടുക്കുന്നു…</string>
+    <string name="tools_ximg_err_failed">ഈ PDF-ൽ നിന്ന് ചിത്രങ്ങൾ എടുക്കാനായില്ല.</string>
+    <string name="tools_ximg_err_none">ഈ PDF-ൽ സേവ് ചെയ്യാവുന്ന ചിത്രങ്ങളില്ല. മുഴുവൻ പേജുകളും ചിത്രങ്ങളായി സേവ് ചെയ്യാൻ \"PDF-ൽ നിന്ന് ചിത്രങ്ങൾ\" ഉപയോഗിക്കുക.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d ചിത്രം എടുത്തു</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ എടുത്തു</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF വിവരങ്ങൾ വായിക്കുന്നു…</string>
+    <string name="tools_info_err_failed">ഈ PDF-ന്റെ വിവരങ്ങൾ വായിക്കാനായില്ല.</string>
+    <string name="tools_info_pages">പേജുകൾ</string>
+    <string name="tools_info_version">PDF പതിപ്പ്</string>
+    <string name="tools_info_size">ഫയൽ വലുപ്പം</string>
+    <string name="tools_info_created">സൃഷ്ടിച്ചത്</string>
+    <string name="tools_info_modified">മാറ്റിയത്</string>
+    <string name="tools_info_creator">സൃഷ്ടിച്ച ആപ്പ്</string>
+    <string name="tools_info_producer">നിർമ്മാതാവ്</string>
+    <string name="tools_info_not_set">സജ്ജമാക്കിയിട്ടില്ല</string>
+    <string name="tools_info_edit_heading">മാറ്റാവുന്ന വിവരങ്ങൾ</string>
+    <string name="tools_info_field_title">ശീർഷകം</string>
+    <string name="tools_info_field_author">രചയിതാവ്</string>
+    <string name="tools_info_field_subject">വിഷയം</string>
+    <string name="tools_info_field_keywords">കീവേഡുകൾ</string>
+    <string name="tools_info_save">പകർപ്പ് സേവ് ചെയ്യുക</string>
+    <string name="tools_info_remove_all">എല്ലാ മെറ്റാഡാറ്റയും നീക്കുക</string>
+    <string name="tools_info_remove_all_hint">സ്വകാര്യതയ്ക്കായി: ശീർഷകം, രചയിതാവ്, ആപ്പുകൾ, തീയതികൾ, മറ്റ് മറഞ്ഞ വിവരങ്ങൾ എന്നിവ പുതിയ പകർപ്പിൽ നീക്കുന്നു.</string>
+    <string name="tools_info_xmp_note">ഈ PDF-ൽ അതിന്റെ വിവരങ്ങളുടെ രണ്ടാമത്തെ (XMP) പകർപ്പും ഉണ്ട്. സേവ് ചെയ്യുമ്പോൾ അത് നീക്കും, അതിനാൽ എല്ലാ റീഡറുകളും ഒരേ വിവരങ്ങൾ കാണിക്കും.</string>
+    <string name="tools_info_saving">വിവരങ്ങൾ സേവ് ചെയ്യുന്നു…</string>
+    <string name="tools_info_save_failed">പുതിയ വിവരങ്ങൾ സേവ് ചെയ്യാനായില്ല.</string>
+    <string name="tools_info_saved">വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്തു</string>
+    <string name="tools_info_removed">എല്ലാ മെറ്റാഡാറ്റയും നീക്കി</string>
+
+    <string name="hint_tool_blank_pages">സ്കാൻ ചെയ്ത PDF-ലെ ശൂന്യ പേജുകൾ കണ്ടെത്തി, പട്ടിക പരിശോധിച്ച ശേഷം നീക്കുക.</string>
+    <string name="hint_tool_greyscale">ചെലവ് കുറഞ്ഞ പ്രിന്റിനോ ചെറിയ ഫയലിനോ നിറമുള്ള PDF ചാരനിറങ്ങളിലേക്ക് മാറ്റുക.</string>
+    <string name="hint_tool_flatten">ഫോം ഉത്തരങ്ങളും കമന്റുകളും സ്റ്റാമ്പുകളും പേജുകളിൽ തന്നെ വരയ്ക്കുക, ആർക്കും മാറ്റാനാവാത്ത വിധം.</string>
+    <string name="hint_tool_extract_images">PDF-നുള്ളിലെ ഓരോ ചിത്രവും പ്രത്യേക ചിത്ര ഫയലായി സേവ് ചെയ്യുക.</string>
+    <string name="hint_tool_pdf_info">PDF-ന്റെ മറഞ്ഞ വിവരങ്ങൾ കാണുക, ശീർഷകമോ രചയിതാവോ മാറ്റുക, അല്ലെങ്കിൽ സ്വകാര്യതയ്ക്കായി എല്ലാം നീക്കുക.</string>
+</resources>

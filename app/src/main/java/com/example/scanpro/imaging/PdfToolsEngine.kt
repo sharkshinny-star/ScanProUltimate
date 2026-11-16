@@ -1064,7 +1064,7 @@ object PdfToolsEngine {
      * Opens [pfd] in the system renderer. Its error for a protected file differs between Android versions (and it may
      * not open the file at all), so on any failure PDFBox tells a password from a broken file.
      */
-    private fun openRenderer(pfd: ParcelFileDescriptor, file: File): PdfRenderer = try {
+    internal fun openRenderer(pfd: ParcelFileDescriptor, file: File): PdfRenderer = try {
         PdfRenderer(pfd)
     } catch (refused: Throwable) {
         if (runCatching { PdfSecurity.protection(file) }.getOrNull() == PdfProtection.PASSWORD_REQUIRED) {

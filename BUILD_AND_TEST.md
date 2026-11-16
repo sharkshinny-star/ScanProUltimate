@@ -41,16 +41,30 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-## Latest results (2026-11-16, F157, cloud Linux container, JDK via Gradle toolchain)
+## Latest results (2026-11-16 third round, F164 before its merge with F157–F163, Linux cloud container)
 
-- Full `:app:testDebugUnitTest`: BUILD SUCCESSFUL; 756 tests, 0 failed, 0 errors, 30 skipped (counted from the result
-  XML; includes the new `HydrationScheduleTest`, 5 tests). `:app:compileDebugKotlin`: clean.
-- `:app:lintDebug`: BUILD SUCCESSFUL (3m 10s); 0 errors, 75 warnings (72 before this session; the new ones are in the new files' TODO-free but warning-prone areas, none blocking). One `:app:assembleRelease` (sideload build, right before the push):
-  BUILD SUCCESSFUL (4m 32s); APK 38,609,727 bytes (36.8 MiB), unsigned as configured. `bundleRelease` NOT run.
-- Environment: fresh container; SDK installed at `/opt/android-sdk` (cmdline-tools 13114758, platform android-37.0,
-  build-tools 37.0.0); Maven Central returned HTTP 429 again, fixed with the documented
-  `~/.gradle/init.d/central-mirror.gradle` (local only, never committed).
-- NOT run: instrumented tests, any device or emulator; nothing was seen on a phone.
+- On F164 alone (parent `dd48c75`): full `:app:testDebugUnitTest` BUILD SUCCESSFUL; 756 tests, 0 failed, 0 errors,
+  30 skipped (counted from the result XML; includes the new `HydrationScheduleTest`, 5 tests). `:app:lintDebug`:
+  0 errors, 75 warnings. One `:app:assembleRelease`: APK 38,609,727 bytes (36.8 MiB), unsigned as configured.
+- After the merge with `42be05e` (F157–F163): the merged suite run is recorded below this line when it was run;
+  if no such line exists it was NOT run.
+- Environment: fresh container; SDK at `/opt/android-sdk` (cmdline-tools 13114758, platform android-37.0,
+  build-tools 37.0.0); Maven Central 429 again → the documented `~/.gradle/init.d/central-mirror.gradle` (local only).
+- NOT run: instrumented tests, any device or emulator.
+
+## Latest results (2026-11-16 second round, F160–F163 on `edabdab`, Linux cloud container)
+
+- Full `:app:testDebugUnitTest :app:lintDebug`: exit 0; 884 tests, 0 failed, 82 skipped (opt-in screenshots); lint 0 errors, 91 warnings.
+- Screenshot renders run separately and looked at: `IntroductionsScreenshotTest` (14), `FeedbackScreenshotTest`, `FilesAccessScreenshotTest`. `IntroductionsScreenshotTest` and `PdfToolsFeaturesTest` hit the known Robolectric `FileSystemAlreadyExistsException` when filtered together with other classes; both pass alone and in the full suite.
+- `:app:bundleRelease`: passed; AAB 49,725,212 bytes (47.4 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device or emulator.
+
+## Latest results (2026-11-16, F157–F159 merged on `691da1b`, Linux cloud container)
+
+- Full `:app:testDebugUnitTest :app:lintDebug` (`--no-daemon`): exit 0; 821 tests, 0 failed, 56 skipped (counted from the result XML); lint 0 errors, 75 warnings.
+- `:app:bundleRelease`: passed; AAB 49,454,029 bytes (47.2 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device or emulator (none available).
+- SDK set up by hand in `/opt/android-sdk` (cmdline-tools 13114758; platform 37.0 and Build-Tools 36 unzipped from `dl.google.com` because `sdkmanager` downloads were reset). Maven Central returned HTTP 429 through the proxy on a cold cache; `--max-workers=1` and retrying worked.
 
 ## Latest results (2026-11-15, F156 on `d408169`, macOS, Android Studio Preview JDK)
 

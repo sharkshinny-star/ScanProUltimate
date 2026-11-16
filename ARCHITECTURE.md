@@ -399,6 +399,9 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - `data/ScanHistoryStore` (`@Singleton`): `filesDir/scan_history.json`, newest first, 200 entries, written on one worker thread through a temp file and rename; switch `scanHistoryEnabled` in `SettingsStore`. It holds raw text, so Wi-Fi passwords are stored unencrypted like the rest of the library (R20); the list shows the network name and search ignores the password.
 - `feature/qr/*`: history and generator screens with their view models, payload builders (`QrPayloads`) and the ZXing encoder (`QrEncoder`: error correction M, 4-module quiet zone, 1024 px). Dependency: `com.google.zxing:core:3.5.4` (Apache-2.0, pure Java, no network).
 - Destinations `QR_HISTORY` and `QR_GENERATOR` in `ScanProDestinations`, reached from the camera's QR mode.
+- F158: `QrForm` (form state and validation per kind), `CodeFormat`/`CodeStyle`/`QrCorrection` (`QrEncoder.encode` via ZXing `MultiFormatWriter`, EAN-13 and Code 128 too), WCAG contrast check, `ScanHistoryEntry.created` (JSON `made`), `ScanHistoryCsv`, `LinkSafety`. Strings in `strings_qr_new.xml`.
+- F159 (tools): `PdfToolsScreen.kt` keeps the screen and state; catalogue in `ToolCatalogue.kt`, organiser in `PageOrganizer.kt`, dialogs in `CompressPdfDialog.kt`, `PdfToolDialogs.kt`, `ImageToolDialogs.kt`, `CleanupToolDialogs.kt`. Engines `imaging/PdfCleanupTools.kt` (blank pages, greyscale, flatten, extract images) and `imaging/PdfMetadataEngine.kt`. Strings in `strings_tools_new.xml`.
+- F157 (settings): `SettingsScreen.kt` (route, bar, navigation, search), `SettingsMainPage.kt`, `SettingsComponents.kt`, one `Settings*Page.kt` per page incl. `SettingsShortcutsPage.kt`. Strings in `strings_settings_new.xml`.
 
 ### Sign PDF, PDF to text or Word, Insert pages (F135, F136)
 
@@ -426,3 +429,10 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - Launch: `MainActivity.activityCreatedInProcess` makes the first activity of a process a launch even with saved state; the splash exit listener waits (max 1.5 s) for theme, palette and lock settings before handing over.
 
 - **Tool pages (F147):** `feature/tools/ToolPage.kt` is the shared full-screen scaffold for tool options (top bar with Close, scrolling option cards, sticky action button with a reason line when disabled); `ToolChoices.kt` holds the remembered OCR script choice. Multi-file tool results are unpacked on demand into `cache/exports/shared_parts/` for sharing (swept with the other exports after a day).
+
+### Second round 2026-11-16 (F160–F163)
+
+- Tools: `ToolSection.tiles` vs `tools`; `SEARCH_ONLY_TOOL_IDS`, `IMAGE_TOOLS_TILE` + `ImageToolsChooser`; `PdfToolCard.beta`. PDF to PowerPoint (`PdfToPptEngine`, `PptxExporter`) deleted.
+- Feedback: `feature/feedback/` (rating sheet, issue/feature form), `data/FeedbackSchedule.kt` (`FeedbackPrompts`, SharedPreferences; scans 1 and 2, then 30 days); delivery through `core/ui/Support.kt` `contactSupport` with `SupportMessage` (email → share → clipboard), no network.
+- Files on this phone: `feature/phonepdfs/` (`PhonePdfSource` MediaStore query and change observer, `PhoneFiles` filters/sort, `PhoneThumbnails`, screen and view model), `data/FilesAccessPrompts.kt`; permissions `MANAGE_EXTERNAL_STORAGE` (opt-in) and `READ_EXTERNAL_STORAGE` maxSdk 29. Read only.
+- Introductions: `core/designsystem/IntroArt.kt` (Canvas art: phone scan, receipts, private tools, sample document, ID card front/back, open book, `renderSampleScanBitmap`), `scanner/BookSplitOverlay.kt`, `BookSpread.leftFirst/swapped` (layout 1 = A|B, 2 = B|A).

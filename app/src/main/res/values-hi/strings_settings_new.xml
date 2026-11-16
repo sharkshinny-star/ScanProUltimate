@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_shortcuts">शॉर्टकट और डिफ़ॉल्ट ऐप</string>
+    <string name="settings_shortcuts_summary">डिफ़ॉल्ट PDF ऐप · विजेट · स्कैन शॉर्टकट</string>
+
+    <string name="settings_open_by_default_title">PDF हमेशा ScanPro में खोलें</string>
+    <string name="settings_open_by_default_subtitle">Android सेटिंग में PDF फ़ाइलों के लिए ScanPro चुनें</string>
+    <string name="settings_open_by_default_body">PDF फ़ाइलें कौन-सा ऐप खोले, यह Android तय करता है। अगली बार PDF खोलते समय ScanPro चुनें और हमेशा पर टैप करें।\n\nअगर कोई दूसरा ऐप सीधे PDF खोल देता है, तो पहले Android सेटिंग में उस ऐप के डिफ़ॉल्ट साफ़ करें। नीचे का बटन वहाँ ScanPro का अपना पेज खोलता है।</string>
+    <string name="settings_open_android_settings">Android सेटिंग खोलें</string>
+    <string name="settings_android_settings_unavailable">इस फ़ोन पर Android सेटिंग नहीं खुल सकी</string>
+
+    <string name="settings_group_home_screen">होम स्क्रीन</string>
+    <string name="settings_widget_title">होम स्क्रीन विजेट जोड़ें</string>
+    <string name="settings_widget_subtitle">एक टैप में स्कैन या ID कार्ड स्कैन शुरू करें</string>
+    <string name="settings_scan_shortcut_title">होम स्क्रीन पर स्कैन शॉर्टकट जोड़ें</string>
+    <string name="settings_scan_shortcut_subtitle">एक आइकन जो सीधे कैमरा खोलता है</string>
+    <string name="settings_pin_not_accepted">आपकी होम स्क्रीन ने इसे स्वीकार नहीं किया। इसे होम स्क्रीन से जोड़कर देखें।</string>
+
+    <string name="settings_group_camera">कैमरा</string>
+    <string name="settings_group_saving">सेव करना</string>
+    <string name="settings_group_advanced">उन्नत</string>
+    <string name="settings_group_help">सहायता</string>
+    <string name="settings_group_contact">संपर्क करें</string>
+    <string name="settings_group_spread">दूसरों को बताएँ</string>
+    <string name="settings_group_legal">कानूनी</string>
+    <string name="settings_group_notify_about">इनके बारे में सूचित करें</string>
+
+    <string name="settings_recycle_bin_open">रीसायकल बिन खोलें</string>
+    <string name="settings_recycle_bin_empty">खाली</string>
+    <plurals name="settings_recycle_bin_count">
+        <item quantity="one">%d दस्तावेज़</item>
+        <item quantity="other">%d दस्तावेज़</item>
+    </plurals>
+    <string name="settings_recycle_bin_summary">%1$s · %2$s तक रखे जाते हैं</string>
+    <string name="settings_library_summary">%1$s · %2$s इस्तेमाल</string>
+    <plurals name="settings_library_documents">
+        <item quantity="one">%d दस्तावेज़</item>
+        <item quantity="other">%d दस्तावेज़</item>
+    </plurals>
+</resources>

@@ -477,11 +477,6 @@
     <string name="tools_card_pdf2excel">PDF-ൽ നിന്ന് Excel</string>
     <string name="tools_pdf2text_excel">Excel വർക്ക്ബുക്ക് (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ഓരോ പേജിനും ഒരു ഷീറ്റ്. വാക്കുകൾ പേജിൽ ഉള്ള സ്ഥാനത്തുനിന്ന് നിരകൾ പുനർനിർമ്മിക്കുന്നതിനാൽ പട്ടികകൾ സെല്ലുകളായി വരും.</string>
-    <string name="tools_card_pdf2ppt">PDF-ൽ നിന്ന് PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">%1$d സ്ലൈഡ് ഉണ്ടാക്കി, പേജിന്റെ ചിത്രം.</item>
-        <item quantity="other">%1$d സ്ലൈഡുകൾ ഉണ്ടാക്കി, ഓരോ പേജിനും ഒരു ചിത്രം.</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">ഇത് നടന്നില്ല</string>
     <string name="tools_failure_try_again">വീണ്ടും ശ്രമിക്കുക</string>
@@ -516,7 +511,6 @@
     <string name="tools_desc_pdf2img">പേജുകൾ ചിത്രങ്ങളായി സേവ് ചെയ്യുക</string>
     <string name="tools_desc_pdf2text">Word അല്ലെങ്കിൽ സാധാരണ ടെക്സ്റ്റ് നേടുക</string>
     <string name="tools_desc_pdf2excel">പട്ടികകൾ ഷീറ്റിലേക്ക് എടുക്കുക</string>
-    <string name="tools_desc_pdf2ppt">ഓരോ പേജും ഒരു സ്ലൈഡ്</string>
     <string name="tools_desc_protect">പാസ്‌വേഡ് ഉപയോഗിച്ച് ലോക്ക് ചെയ്യുക</string>
     <string name="tools_desc_unlock">പാസ്‌വേഡ് നീക്കം ചെയ്യുക</string>
     <string name="tools_desc_crop_img">ഫോട്ടോയുടെ അരികുകൾ മുറിക്കുക</string>
@@ -524,13 +518,4 @@
     <string name="tools_desc_convert_img">JPG, PNG അല്ലെങ്കിൽ WebP</string>
     <string name="tools_desc_resize_img">ഫോട്ടോ അളവുകൾ മാറ്റുക</string>
     <string name="tools_desc_viewer">വായിക്കുക, തിരയുക, പേജിലേക്ക് പോകുക</string>
-    <string name="default_pdf_card_title">PDF-കൾ ScanPro-യിൽ തുറക്കൂ</string>
-    <string name="default_pdf_card_body">ScanPro-യെ നിങ്ങളുടെ PDF ആപ്പാക്കൂ: ഡിഫോൾട്ടാക്കുക ടാപ്പ് ചെയ്ത്, ScanPro തിരഞ്ഞെടുത്ത്, പിന്നെ എപ്പോഴും തിരഞ്ഞെടുക്കൂ.</string>
-    <string name="default_pdf_card_action">ഡിഫോൾട്ടാക്കുക</string>
-    <string name="default_pdf_sample_line">ഇനി PDF-കൾ ScanPro-യിൽ തുറക്കും. ആസ്വദിക്കൂ!</string>
-    <string name="default_pdf_settings_title">ഡിഫോൾട്ട് PDF ആപ്പ്</string>
-    <string name="default_pdf_state_ours">നിങ്ങളുടെ PDF-കൾ ഇപ്പോഴേ ScanPro-യിൽ തുറക്കുന്നു</string>
-    <string name="default_pdf_state_unset">ടാപ്പ് ചെയ്ത്, ScanPro തിരഞ്ഞെടുത്ത്, പിന്നെ എപ്പോഴും തിരഞ്ഞെടുക്കൂ</string>
-    <string name="default_pdf_state_other">ഇപ്പോൾ PDF-കൾ %1$s തുറക്കുന്നു; അതിന്റെ ക്രമീകരണങ്ങളിൽ അതു മാറ്റാൻ ടാപ്പ് ചെയ്യൂ</string>
-    <string name="default_pdf_confirmed">ScanPro ഇപ്പോൾ നിങ്ങളുടെ PDF ആപ്പാണ്</string>
 </resources>

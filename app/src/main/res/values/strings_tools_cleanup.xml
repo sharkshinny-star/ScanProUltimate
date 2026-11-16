@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tools landing clean-up (2026-11-16): Image tools tile, Beta badge, Repair from the failure dialog. -->
+<resources>
+    <string name="tools_card_image_tools">Image tools</string>
+    <string name="tools_desc_image_tools">Crop, compress, convert or resize photos</string>
+    <string name="tools_badge_beta">Beta</string>
+    <string name="tools_failure_repair">Repair this PDF</string>
+</resources>

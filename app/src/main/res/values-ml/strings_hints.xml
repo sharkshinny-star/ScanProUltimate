@@ -25,7 +25,6 @@
     <string name="hint_tool_pdf2img">PDF-ന്റെ ഓരോ പേജും ചിത്രമായി സേവ് ചെയ്യുക.</string>
     <string name="hint_tool_pdf2text">PDF-ലെ ടെക്സ്റ്റ് ഒരു Word അല്ലെങ്കിൽ പ്ലെയിൻ ടെക്സ്റ്റ് ഫയലിലേക്ക് പകർത്തുക.</string>
     <string name="hint_tool_pdf2excel">PDF-ലെ പട്ടികകൾ എഡിറ്റ് ചെയ്യാവുന്ന സ്പ്രെഡ്‌ഷീറ്റാക്കുക.</string>
-    <string name="hint_tool_pdf2ppt">PDF-ൽ നിന്ന് PowerPoint പ്രസന്റേഷൻ ഉണ്ടാക്കുക, ഓരോ പേജിനും ഒരു സ്ലൈഡ്.</string>
     <string name="hint_tool_protect">PDF പാസ്‌വേഡ് ഉപയോഗിച്ച് ലോക്ക് ചെയ്യുക, അത് അറിയുന്നവർക്ക് മാത്രം തുറക്കാനാകും.</string>
     <string name="hint_tool_unlock">തുറക്കാൻ അനുവാദമുള്ള PDF-ൽ നിന്ന് പാസ്‌വേഡോ എഡിറ്റിംഗ് നിയന്ത്രണങ്ങളോ നീക്കം ചെയ്യുക.</string>
     <string name="hint_tool_crop_img">ചിത്രം മുറിച്ച് ആവശ്യമുള്ള ഭാഗം മാത്രം നിലനിർത്തുക.</string>

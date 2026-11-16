@@ -86,6 +86,12 @@ data class MergePasswordRequest(
 /** A single-file tool ready to open [uri]: the screen shows that tool's options. */
 data class ToolTarget(val tool: String, val uri: Uri)
 
+/** Remove blank pages: the 0-based [blankPages] of [uri]'s [pageCount] pages, waiting for the user's yes. */
+data class BlankPagesFound(val uri: Uri, val pageCount: Int, val blankPages: List<Int>)
+
+/** PDF info and metadata: the details of [uri] being looked at. */
+data class PdfInfoSession(val uri: Uri, val info: com.example.scanpro.imaging.PdfInfo)
+
 /** Where unlocked working copies of protected PDFs live while a tool uses them; swept at start-up. */
 const val WORKING_COPY_DIR = "tool_input"
 
@@ -313,11 +319,6 @@ class PdfToolsViewModel @Inject constructor(
 
     fun protect(uri: Uri, password: String) = launchTool(R.string.msg_encrypting_pdf, R.string.msg_tools_protect_failed) {
         PdfToolsEngine.protectPdf(context, uri, password, named(uri, "protected"))
-    }
-
-    fun pdfToPowerPoint(uri: Uri) = launchTool(R.string.msg_tools_pdf2ppt_working, R.string.msg_tools_pdf2ppt_failed) {
-        val base = PdfToolsEngine.sourceBaseName(context, uri)
-        com.example.scanpro.imaging.PdfToPptEngine.convert(context, uri, PdfToolsEngine.outputLocation(context, "$base.pptx"), ::report)
     }
 
     fun repair(uri: Uri) = launchTool(R.string.msg_tools_repairing, R.string.msg_tools_repair_failed) {
@@ -807,5 +808,66 @@ class PdfToolsViewModel @Inject constructor(
 
     suspend fun inspectImage(uri: Uri): ImageMetadata? = withContext(Dispatchers.IO) {
         ImageToolsEngine.inspectImage(context, uri)
+    }
+
+    // ---- Remove blank pages, Greyscale, Flatten, Extract images, PDF info and metadata ----
+
+    private val _blankPages = MutableStateFlow<BlankPagesFound?>(null)
+    /** What the blank-page check found, waiting for the user to confirm the removal. */
+    val blankPages: StateFlow<BlankPagesFound?> = _blankPages.asStateFlow()
+    fun clearBlankPages() { _blankPages.value = null }
+
+    fun findBlankPages(uri: Uri) = launchTool(R.string.tools_blank_progress_scanning, R.string.tools_blank_err_failed) {
+        val scan = com.example.scanpro.imaging.PdfCleanupTools.findBlankPages(context, uri, ::report)
+        _blankPages.value = BlankPagesFound(uri, scan.pageCount, scan.blankPages)
+        // A question, not a result: the working copy stays for the removal that may follow.
+        endedWithQuestion = true
+        null
+    }
+
+    fun removeBlankPages(found: BlankPagesFound) {
+        _blankPages.value = null
+        launchTool(R.string.tools_blank_progress_removing, R.string.tools_blank_err_failed) {
+            com.example.scanpro.imaging.PdfCleanupTools.removePages(
+                context, found.uri, found.blankPages.toSet(), named(found.uri, "no blank pages"), ::report
+            )
+        }
+    }
+
+    fun greyscale(uri: Uri) = launchTool(R.string.tools_grey_progress, R.string.tools_grey_err_failed) {
+        com.example.scanpro.imaging.PdfCleanupTools.greyscale(context, uri, named(uri, "greyscale"), ::report)
+    }
+
+    fun flatten(uri: Uri) = launchTool(R.string.tools_flatten_progress, R.string.tools_flatten_err_failed) {
+        com.example.scanpro.imaging.PdfCleanupTools.flatten(context, uri, named(uri, "flattened"), ::report)
+    }
+
+    fun extractImages(uri: Uri) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        inScratchDir("$base images") { dir ->
+            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report)
+            bundled(files, "$base images", R.plurals.tools_ximg_done)()
+        }
+    }
+
+    private val _pdfInfo = MutableStateFlow<PdfInfoSession?>(null)
+    /** The details of the PDF open in PDF info and metadata. */
+    val pdfInfo: StateFlow<PdfInfoSession?> = _pdfInfo.asStateFlow()
+    fun closePdfInfo() { _pdfInfo.value = null }
+
+    fun openPdfInfo(uri: Uri) = launchTool(R.string.tools_info_progress, R.string.tools_info_err_failed) {
+        _pdfInfo.value = PdfInfoSession(uri, com.example.scanpro.imaging.PdfMetadataEngine.read(context, uri))
+        endedWithQuestion = true
+        null
+    }
+
+    /** Saves a copy with [edit] applied, or with every detail removed when [removeAll]. */
+    fun saveMetadata(uri: Uri, edit: com.example.scanpro.imaging.PdfMetadataEdit?, removeAll: Boolean) {
+        _pdfInfo.value = null
+        launchTool(R.string.tools_info_saving, R.string.tools_info_save_failed) {
+            com.example.scanpro.imaging.PdfMetadataEngine.write(
+                context, uri, edit, removeAll, named(uri, if (removeAll) "no metadata" else "details")
+            )
+        }
     }
 }
