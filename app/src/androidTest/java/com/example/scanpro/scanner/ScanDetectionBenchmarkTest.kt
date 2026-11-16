@@ -44,7 +44,7 @@ class ScanDetectionBenchmarkTest {
 
     private class Scene(val name: String, val bitmap: Bitmap, val truth: List<PointF>)
 
-    private class Result(val name: String, val found: Boolean, val cornerErrorPct: Double, val iou: Double, val millis: Double)
+    private class Result(val name: String, val found: Boolean, val cornerErrorPct: Double, val iou: Double, val millis: Double, val blur: Double = 0.0)
 
     @Test
     fun detectorOnKnownScenes() {
@@ -52,9 +52,10 @@ class ScanDetectionBenchmarkTest {
         val results = scenes().map { scene -> measure(scene).also { scene.bitmap.recycle() } }
 
         val report = buildString {
-            appendLine("scene | found | cornerErr% | IoU | ms")
-            results.forEach { appendLine("${it.name} | ${it.found} | ${"%.2f".format(it.cornerErrorPct)} | ${"%.3f".format(it.iou)} | ${"%.1f".format(it.millis)}") }
+            appendLine("scene | found | cornerErr% | IoU | ms | sharpness")
+            results.forEach { appendLine("${it.name} | ${it.found} | ${"%.2f".format(it.cornerErrorPct)} | ${"%.3f".format(it.iou)} | ${"%.1f".format(it.millis)} | ${"%.0f".format(it.blur)}") }
             val found = results.count { it.found }
+            appendLine("median ms over scenes ${"%.1f".format(results.map { it.millis }.sorted()[results.size / 2])}")
             appendLine("found $found of ${results.size}; mean IoU of found ${"%.3f".format(results.filter { it.found }.map { it.iou }.average())}")
         }
         report.lines().forEach { Log.i(TAG, it) }
@@ -69,18 +70,23 @@ class ScanDetectionBenchmarkTest {
     }
 
     private fun measure(scene: Scene): Result {
-        // One warm-up so class loading and native set-up are not counted, then the average of five runs.
+        // One warm-up so class loading and native set-up are not counted.
         DocumentEdgeDetector.detect(scene.bitmap)
         var last: CropQuad? = null
-        val start = System.nanoTime()
-        repeat(5) { last = DocumentEdgeDetector.detect(scene.bitmap).quad }
-        val millis = (System.nanoTime() - start) / 5e6
-        val quad = last ?: return Result(scene.name, false, Double.NaN, 0.0, millis)
+        var blur = 0.0
+        // The median of nine runs: one run interrupted by the system does not move it, as it moved the old average.
+        val times = List(9) {
+            val start = System.nanoTime()
+            DocumentEdgeDetector.detect(scene.bitmap).let { last = it.quad; blur = it.blurScore }
+            (System.nanoTime() - start) / 1e6
+        }
+        val millis = times.sorted()[times.size / 2]
+        val quad = last ?: return Result(scene.name, false, Double.NaN, 0.0, millis, blur)
         val found = listOf(quad.topLeft, quad.topRight, quad.bottomRight, quad.bottomLeft).map { PointF(it.x * width, it.y * height) }
         val diagonal = hypot(width.toDouble(), height.toDouble())
         val error = scene.truth.indices.map { hypot((found[it].x - scene.truth[it].x).toDouble(), (found[it].y - scene.truth[it].y).toDouble()) }.average() / diagonal * 100.0
         if (error > 2.0) Log.i(TAG, "  ${scene.name} found ${found.joinToString { "(${it.x.toInt()},${it.y.toInt()})" }} truth ${scene.truth.joinToString { "(${it.x.toInt()},${it.y.toInt()})" }}")
-        return Result(scene.name, true, error, overlap(scene.truth, found), millis)
+        return Result(scene.name, true, error, overlap(scene.truth, found), millis, blur)
     }
 
     /** Overlap of two quadrilaterals by drawing both on a small mask: shared pixels over the pixels of either. */

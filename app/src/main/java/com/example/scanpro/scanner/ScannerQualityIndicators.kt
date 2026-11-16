@@ -21,10 +21,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.example.scanpro.R
 
-/** Small, non-interactive diagnostics below the live camera hint, only after a page is found. */
+/**
+ * Small, non-interactive diagnostics below the live camera hint, only once the outline is trusted to be a page. While
+ * the hint still says "Move closer" or "Point at a document", three green ticks about a shape that is not a page yet
+ * read as "all good" under an instruction that says otherwise.
+ */
 @Composable
 internal fun ScannerQualityIndicators(detection: DocumentDetection, modifier: Modifier = Modifier) {
-    if (detection.quad == null) return
+    if (!detection.isConvincingPage) return
     val sharp = !detection.isBlurry
     val glareFree = !PageQuality.isGlare(detection.glareShare)
     val level = !detection.isSkewed

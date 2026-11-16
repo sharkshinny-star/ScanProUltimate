@@ -227,6 +227,8 @@ fun CameraScannerScreen(
     val panelClearance = if (landscape) 244.dp else 0.dp
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    // One decode and one detection per photo, shared by the crop outline and the quality notes.
+    val inspector = remember(scope) { PageInspector(scope) }
     val haptic = LocalHapticFeedback.current
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
@@ -405,12 +407,11 @@ fun CameraScannerScreen(
     LaunchedEffect(pages.toList()) {
         val keys = pages.map { it.toString() }.toSet()
         quality.keys.retainAll(keys)
+        inspector.retain(pages.map { File(it.path.orEmpty()).absolutePath }.toSet())
         for (page in pages.toList()) {
             val key = page.toString()
             if (key in quality) continue
-            val issues = withContext(Dispatchers.Default) {
-                runCatching { OpenCvScanProcessor.assessQuality(File(page.path.orEmpty())) }.getOrDefault(emptySet())
-            }
+            val issues = inspector.of(File(page.path.orEmpty()))?.second ?: emptySet()
             if (pages.contains(page)) quality[key] = issues
         }
     }
@@ -490,7 +491,7 @@ fun CameraScannerScreen(
                 val previousResult = detection
                 if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
                     previousResult.isBlurry != result.isBlurry || previousResult.isReady != result.isReady ||
-                    previousResult.isSkewed != result.isSkewed ||
+                    previousResult.isSkewed != result.isSkewed || previousResult.isConvincingPage != result.isConvincingPage ||
                     PageQuality.isGlare(previousResult.glareShare) != PageQuality.isGlare(result.glareShare) ||
                     previousResult.frameWidth != result.frameWidth || previousResult.frameHeight != result.frameHeight
                 ) detection = result
@@ -585,7 +586,7 @@ fun CameraScannerScreen(
             // still be widened later; nothing here cuts pixels out of the photo.
             val crops = withContext(Dispatchers.Default) {
                 inputs.map { (uri, quad) ->
-                    quad ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
+                    quad ?: inspector.of(File(uri.path.orEmpty()))?.first ?: CropQuad.DEFAULT
                 }
             }
             // The navigation host accepts the scan only while this screen is resumed. If the user left the app
@@ -630,11 +631,14 @@ fun CameraScannerScreen(
                     var crop = quads[key]
                     var issue = quality[key]
                     if (i in trusted) issue = issue ?: emptySet()
-                    if (crop == null && issue == null) {
-                        runCatching { OpenCvScanProcessor.inspect(File(uri.path.orEmpty())) }.getOrNull()?.let { (c, q) -> crop = c; issue = q }
+                    if (crop == null || issue == null) {
+                        // Joins the background run already under way for this photo instead of starting another.
+                        val found = inspector.of(File(uri.path.orEmpty()))
+                        crop = crop ?: found?.first
+                        issue = issue ?: found?.second
                     }
-                    crops += crop ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
-                    issues += issue ?: runCatching { OpenCvScanProcessor.assessQuality(File(uri.path.orEmpty())) }.getOrDefault(emptySet())
+                    crops += crop ?: CropQuad.DEFAULT
+                    issues += issue ?: emptySet()
                 }
                 crops to issues
             }
@@ -789,19 +793,16 @@ fun CameraScannerScreen(
                     val idMode = scanMode == ScanMode.ID_CARD
                     val idRatio = idKind.heightRatio
                     scope.launch {
-                        val quad = withContext(Dispatchers.Default) {
+                        val guideCrop = if (!idMode) null else withContext(Dispatchers.Default) {
                             runCatching {
-                                if (idMode) {
-                                    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                                    android.graphics.BitmapFactory.decodeFile(raw.absolutePath, bounds)
-                                    val turned = androidx.exifinterface.media.ExifInterface(raw.absolutePath).rotationDegrees % 180 != 0
-                                    val (w, h) = if (turned) bounds.outHeight to bounds.outWidth else bounds.outWidth to bounds.outHeight
-                                    idCardCrop(viewW, viewH, w, h, density, idRatio) ?: OpenCvScanProcessor.detectCrop(raw)
-                                } else {
-                                    OpenCvScanProcessor.detectCrop(raw)
-                                }
+                                val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                                android.graphics.BitmapFactory.decodeFile(raw.absolutePath, bounds)
+                                val turned = androidx.exifinterface.media.ExifInterface(raw.absolutePath).rotationDegrees % 180 != 0
+                                val (w, h) = if (turned) bounds.outHeight to bounds.outWidth else bounds.outWidth to bounds.outHeight
+                                idCardCrop(viewW, viewH, w, h, density, idRatio)
                             }.getOrNull()
                         }
+                        val quad = guideCrop ?: inspector.of(raw)?.first
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                         // Book mode, two pages: the spread is cut out and split at the spine into two pages (R29).
                         if (scanMode == ScanMode.BOOK && bookLayout != 0 && !replacing && quad != null && pages.contains(captured)) {

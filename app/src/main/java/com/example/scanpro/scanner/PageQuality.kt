@@ -26,8 +26,13 @@ enum class PageIssue(@StringRes val messageRes: Int) {
  * page the camera called sharp and lit is not flagged afterwards, and the other way round.
  */
 object PageQuality {
-    /** Variance of the Laplacian on the page below which it reads as blurred (the camera's "Hold steady"). */
-    const val BLUR_LIMIT = 80.0
+    /**
+     * Variance of the Laplacian on the page below which it reads as blurred (the camera's "Hold steady"). Was 80 while
+     * the detector shrank frames by area averaging; the bilinear shrink it uses now keeps a little more fine detail,
+     * which raised the score of every benchmark scene by 6 to 14% (9% typical), so the limit moved with it and the
+     * same pages are called blurred as before.
+     */
+    const val BLUR_LIMIT = 87.0
     /** Mean grey level below which the frame is too dark (the camera's "Too dark"). */
     const val DARK_LIMIT = 45.0
     /** Grey level from which a pixel counts as clipped white: a reflection, not paper. */
