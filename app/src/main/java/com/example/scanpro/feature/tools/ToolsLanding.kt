@@ -91,7 +91,7 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     suspend fun load() {
         val (p, r) = withContext(Dispatchers.IO) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            fun read(key: String) = prefs.getString(key, "").orEmpty().split(',').filter { it in KNOWN_IDS }.distinct()
+            fun read(key: String) = prefs.getString(key, "").orEmpty().split(',').map { MERGED_IDS[it] ?: it }.filter { it in KNOWN_IDS }.distinct()
             read(KEY_PINNED) to read(KEY_RECENT)
         }
         pinned = p
@@ -122,6 +122,8 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     private companion object {
         const val PREFS = "tools_ui"
         const val KEY_PINNED = "pinned"
+        /** Tools that became part of another (2026-11-16): a pin or recent use carries over. */
+        val MERGED_IDS = mapOf("rotate" to "organize", "extract" to "organize", "pdf2excel" to "pdf2text")
         const val KEY_RECENT = "recent"
         const val MAX_RECENT = 4
         val KNOWN_IDS: Set<String> by lazy { (TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL).map { it.id }.toSet() }
@@ -144,9 +146,8 @@ internal fun rememberToolsMemory(): ToolsMemory {
 private val TOOL_KEYWORDS = mapOf(
     "merge" to "join combine put together concatenate",
     "split" to "separate divide cut apart",
-    "organize" to "reorder rearrange delete remove pages sort",
-    "rotate" to "turn flip sideways upside down orientation",
-    "extract" to "pull out select pages",
+    // Organise also rotates and extracts, so it answers for both.
+    "organize" to "reorder rearrange delete remove pages sort rotate turn flip sideways upside down orientation extract pull out select",
     "compress" to "shrink reduce smaller size email optimise optimize",
     "page_numbers" to "number footer header count paginate numbering",
     "sign" to "signature e-sign autograph initials",
@@ -156,8 +157,7 @@ private val TOOL_KEYWORDS = mapOf(
     "ocr" to "scan recognise read text searchable",
     "fill" to "form fields sign complete type",
     "pdf2img" to "export pictures jpg png save as images",
-    "pdf2text" to "txt copy words plain text word docx",
-    "pdf2excel" to "excel xlsx spreadsheet table sheet cells csv",
+    "pdf2text" to "txt copy words plain text word docx excel xlsx spreadsheet table sheet cells csv",
     "pdf2ppt" to "powerpoint pptx slides presentation deck",
     "protect" to "password encrypt lock secure",
     "unlock" to "remove password decrypt open",
@@ -308,8 +308,6 @@ internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
     "merge" to R.string.tools_desc_merge,
     "split" to R.string.tools_desc_split,
     "organize" to R.string.tools_desc_organize,
-    "rotate" to R.string.tools_desc_rotate,
-    "extract" to R.string.tools_desc_extract,
     "compress" to R.string.tools_desc_compress,
     "repair" to R.string.tools_desc_repair,
     "page_numbers" to R.string.tools_desc_page_numbers,
@@ -321,7 +319,6 @@ internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
     "fill" to R.string.tools_desc_fill,
     "pdf2img" to R.string.tools_desc_pdf2img,
     "pdf2text" to R.string.tools_desc_pdf2text,
-    "pdf2excel" to R.string.tools_desc_pdf2excel,
     "pdf2ppt" to R.string.tools_desc_pdf2ppt,
     "protect" to R.string.tools_desc_protect,
     "unlock" to R.string.tools_desc_unlock,

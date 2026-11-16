@@ -304,10 +304,11 @@ internal fun DocumentGridCard(
             .semantics { this.selected = selected }
             .padding(10.dp)
     ) {
+        // The page fills most of a page-shaped panel: at 78% of a squarer one the scan itself was small (UI pass 2026-11-16).
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(0.86f)
+                .aspectRatio(0.78f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
@@ -315,8 +316,7 @@ internal fun DocumentGridCard(
             PaperThumbnail(
                 document,
                 Modifier
-                    .fillMaxSize(0.78f)
-                    .padding(top = 6.dp)
+                    .fillMaxSize(0.9f)
                     .aspectRatio(0.72f, matchHeightConstraintsFirst = true),
                 THUMBNAIL_GRID
             )

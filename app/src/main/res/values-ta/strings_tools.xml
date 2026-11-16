@@ -124,15 +124,11 @@
     <string name="tools_section_convert">மாற்று</string>
     <string name="tools_section_secure">பாதுகாப்பு</string>
     <string name="tools_tile_organize">PDF ஒழுங்குபடுத்து</string>
-    <string name="tools_tile_rotate">சுழற்று</string>
-    <string name="tools_tile_extract">பக்கங்களைப் பிரித்தெடு</string>
     <string name="tools_card_fill">படிவத்தை நிரப்பு</string>
     <string name="tools_card_ocr">தேடக்கூடியதாக்கு</string>
     <string name="tools_card_compress">சுருக்கு</string>
     <string name="tools_card_merge">PDF இணை</string>
     <string name="tools_card_split">PDF பிரி</string>
-    <string name="tools_card_extract">பக்கங்களைப் பிரித்தெடு</string>
-    <string name="tools_card_rotate">பக்கங்களைச் சுழற்று</string>
     <string name="tools_card_organize">PDF ஒழுங்குபடுத்து</string>
     <string name="tools_card_pdf2img">PDF-ஐப் படங்களாக்கு</string>
     <string name="tools_card_protect">பாதுகா</string>
@@ -474,7 +470,6 @@
         <item quantity="one">கோப்பின் அமைப்பை சரிசெய்ய முடியவில்லை, எனவே %1$d பக்கம் படமாக உருவாக்கப்பட்டது. அதன் உரையைத் தேர்ந்தெடுக்க முடியாது.</item>
         <item quantity="other">கோப்பின் அமைப்பை சரிசெய்ய முடியவில்லை, எனவே %1$d பக்கங்கள் படங்களாக உருவாக்கப்பட்டன. அவற்றின் உரையைத் தேர்ந்தெடுக்க முடியாது.</item>
     </plurals>
-    <string name="tools_card_pdf2excel">PDF-இலிருந்து Excel</string>
     <string name="tools_pdf2text_excel">Excel பணிப்புத்தகம் (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ஒவ்வொரு பக்கத்திற்கும் ஒரு தாள். சொற்கள் பக்கத்தில் இருக்கும் இடத்தைக் கொண்டு நெடுவரிசைகள் அமைக்கப்படுவதால் அட்டவணைகள் கலங்களாக வரும்.</string>
     <string name="tools_card_pdf2ppt">PDF-இலிருந்து PowerPoint</string>
@@ -501,9 +496,8 @@
     <!-- F140: one line under each tool on the Tools page -->
     <string name="tools_desc_merge">PDF-களை ஒன்றாக இணைக்கவும்</string>
     <string name="tools_desc_split">பக்கங்களைத் தனிக் கோப்புகளாகப் பிரிக்கவும்</string>
-    <string name="tools_desc_organize">பக்கங்களை வரிசைப்படுத்து, சேர், நீக்கு</string>
-    <string name="tools_desc_rotate">பக்கங்களைச் சரியாகச் சுழற்றவும்</string>
-    <string name="tools_desc_extract">தேர்ந்த பக்கங்களை PDF ஆகச் சேமிக்கவும்</string>
+    <string name="tools_mode_arrange">வரிசைப்படுத்து</string>
+    <string name="tools_desc_organize">பக்கங்களை வரிசைப்படுத்து, சுழற்று, பிரித்தெடு, நீக்கு</string>
     <string name="tools_desc_compress">PDF அளவைக் குறைக்கவும்</string>
     <string name="tools_desc_repair">சேதமான PDF-ஐ மீட்கவும்</string>
     <string name="tools_desc_page_numbers">ஒவ்வொரு பக்கத்துக்கும் எண் இடவும்</string>
@@ -514,8 +508,7 @@
     <string name="tools_desc_ocr">ஸ்கேன் உரையைத் தேடக்கூடியதாக்கவும்</string>
     <string name="tools_desc_fill">PDF படிவங்களை நிரப்பவும்</string>
     <string name="tools_desc_pdf2img">பக்கங்களைப் படங்களாகச் சேமிக்கவும்</string>
-    <string name="tools_desc_pdf2text">Word அல்லது வெற்று உரை பெறவும்</string>
-    <string name="tools_desc_pdf2excel">அட்டவணைகளைத் தாளுக்கு எடுக்கவும்</string>
+    <string name="tools_desc_pdf2text">Word, Excel அல்லது வெற்று உரை பெறவும்</string>
     <string name="tools_desc_pdf2ppt">ஒவ்வொரு பக்கமும் ஒரு ஸ்லைடு</string>
     <string name="tools_desc_protect">கடவுச்சொல்லால் பூட்டவும்</string>
     <string name="tools_desc_unlock">கடவுச்சொல்லை நீக்கவும்</string>

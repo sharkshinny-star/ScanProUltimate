@@ -124,15 +124,11 @@
     <string name="tools_section_convert">మార్చండి</string>
     <string name="tools_section_secure">భద్రత</string>
     <string name="tools_tile_organize">PDF క్రమపరచండి</string>
-    <string name="tools_tile_rotate">తిప్పండి</string>
-    <string name="tools_tile_extract">పేజీలు తీయండి</string>
     <string name="tools_card_fill">ఫారమ్ నింపండి</string>
     <string name="tools_card_ocr">సెర్చ్ చేయగలిగేలా చేయండి</string>
     <string name="tools_card_compress">కంప్రెస్</string>
     <string name="tools_card_merge">PDF కలపండి</string>
     <string name="tools_card_split">PDF విభజించండి</string>
-    <string name="tools_card_extract">పేజీలు తీయండి</string>
-    <string name="tools_card_rotate">పేజీలు తిప్పండి</string>
     <string name="tools_card_organize">PDF క్రమపరచండి</string>
     <string name="tools_card_pdf2img">PDF నుండి చిత్రాలు</string>
     <string name="tools_card_protect">రక్షించండి</string>
@@ -474,7 +470,6 @@
         <item quantity="one">ఫైల్ నిర్మాణాన్ని మరమ్మతు చేయలేకపోయాం, కాబట్టి %1$d పేజీని చిత్రంగా నిర్మించాం. దాని టెక్స్ట్‌ను ఎంచుకోలేరు.</item>
         <item quantity="other">ఫైల్ నిర్మాణాన్ని మరమ్మతు చేయలేకపోయాం, కాబట్టి %1$d పేజీలను చిత్రాలుగా నిర్మించాం. వాటి టెక్స్ట్‌ను ఎంచుకోలేరు.</item>
     </plurals>
-    <string name="tools_card_pdf2excel">PDF నుండి Excel</string>
     <string name="tools_pdf2text_excel">Excel వర్క్‌బుక్ (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ప్రతి పేజీకి ఒక షీట్. పదాలు పేజీలో ఉన్న చోటు నుండి నిలువు వరుసలు నిర్మించబడతాయి, కాబట్టి పట్టికలు సెల్‌లుగా వస్తాయి.</string>
     <string name="tools_card_pdf2ppt">PDF నుండి PowerPoint</string>
@@ -501,9 +496,8 @@
     <!-- F140: one line under each tool on the Tools page -->
     <string name="tools_desc_merge">PDFలను ఒకటిగా కలపండి</string>
     <string name="tools_desc_split">పేజీలను వేర్వేరు ఫైళ్లుగా విభజించండి</string>
-    <string name="tools_desc_organize">పేజీల క్రమం మార్చండి, జోడించండి, తొలగించండి</string>
-    <string name="tools_desc_rotate">పేజీలను సరిగ్గా తిప్పండి</string>
-    <string name="tools_desc_extract">ఎంచుకున్న పేజీలను PDFగా సేవ్ చేయండి</string>
+    <string name="tools_mode_arrange">క్రమం మార్చు</string>
+    <string name="tools_desc_organize">పేజీల క్రమం మార్చండి, తిప్పండి, తీయండి, తొలగించండి</string>
     <string name="tools_desc_compress">PDF పరిమాణాన్ని తగ్గించండి</string>
     <string name="tools_desc_repair">పాడైన PDFని సరిచేయండి</string>
     <string name="tools_desc_page_numbers">ప్రతి పేజీకి సంఖ్య వేయండి</string>
@@ -514,8 +508,7 @@
     <string name="tools_desc_ocr">స్కాన్ టెక్స్ట్‌ను శోధించదగినదిగా చేయండి</string>
     <string name="tools_desc_fill">PDF ఫారమ్‌లను నింపండి</string>
     <string name="tools_desc_pdf2img">పేజీలను చిత్రాలుగా సేవ్ చేయండి</string>
-    <string name="tools_desc_pdf2text">Word లేదా సాధారణ టెక్స్ట్ పొందండి</string>
-    <string name="tools_desc_pdf2excel">పట్టికలను షీట్‌లోకి తీయండి</string>
+    <string name="tools_desc_pdf2text">Word, Excel లేదా సాధారణ టెక్స్ట్ పొందండి</string>
     <string name="tools_desc_pdf2ppt">ప్రతి పేజీ ఒక స్లైడ్</string>
     <string name="tools_desc_protect">పాస్‌వర్డ్‌తో లాక్ చేయండి</string>
     <string name="tools_desc_unlock">పాస్‌వర్డ్ తొలగించండి</string>

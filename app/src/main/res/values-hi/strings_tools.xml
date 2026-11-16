@@ -124,15 +124,11 @@
     <string name="tools_section_convert">बदलें</string>
     <string name="tools_section_secure">सुरक्षा</string>
     <string name="tools_tile_organize">PDF व्यवस्थित करें</string>
-    <string name="tools_tile_rotate">घुमाएं</string>
-    <string name="tools_tile_extract">पेज निकालें</string>
     <string name="tools_card_fill">फ़ॉर्म भरें</string>
     <string name="tools_card_ocr">खोजने लायक बनाएं</string>
     <string name="tools_card_compress">कंप्रेस करें</string>
     <string name="tools_card_merge">PDF जोड़ें</string>
     <string name="tools_card_split">PDF बांटें</string>
-    <string name="tools_card_extract">पेज निकालें</string>
-    <string name="tools_card_rotate">पेज घुमाएं</string>
     <string name="tools_card_organize">PDF व्यवस्थित करें</string>
     <string name="tools_card_pdf2img">PDF से इमेज</string>
     <string name="tools_card_protect">सुरक्षित करें</string>
@@ -474,7 +470,6 @@
         <item quantity="one">फ़ाइल की संरचना ठीक नहीं हो सकी, इसलिए %1$d पेज को चित्र के रूप में बनाया गया। उसका टेक्स्ट अब चुना नहीं जा सकता।</item>
         <item quantity="other">फ़ाइल की संरचना ठीक नहीं हो सकी, इसलिए %1$d पेज चित्र के रूप में बनाए गए। उनका टेक्स्ट अब चुना नहीं जा सकता।</item>
     </plurals>
-    <string name="tools_card_pdf2excel">PDF से Excel</string>
     <string name="tools_pdf2text_excel">Excel वर्कबुक (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">हर पेज के लिए एक शीट। शब्द पेज पर जहाँ हैं उसी से कॉलम बनते हैं, इसलिए तालिकाएँ सेल में आती हैं।</string>
     <string name="tools_card_pdf2ppt">PDF से PowerPoint</string>
@@ -501,9 +496,8 @@
     <!-- F140: one line under each tool on the Tools page -->
     <string name="tools_desc_merge">PDF को एक में जोड़ें</string>
     <string name="tools_desc_split">पेजों को अलग फ़ाइलों में बाँटें</string>
-    <string name="tools_desc_organize">पेज का क्रम बदलें, जोड़ें या हटाएँ</string>
-    <string name="tools_desc_rotate">पेज सही दिशा में घुमाएँ</string>
-    <string name="tools_desc_extract">चुने हुए पेज PDF में सहेजें</string>
+    <string name="tools_mode_arrange">क्रम बदलें</string>
+    <string name="tools_desc_organize">पेज का क्रम बदलें, घुमाएं, निकालें या हटाएँ</string>
     <string name="tools_desc_compress">PDF का आकार छोटा करें</string>
     <string name="tools_desc_repair">खराब PDF ठीक करें</string>
     <string name="tools_desc_page_numbers">हर पेज पर नंबर डालें</string>
@@ -514,8 +508,7 @@
     <string name="tools_desc_ocr">स्कैन किया टेक्स्ट खोजने योग्य बनाएँ</string>
     <string name="tools_desc_fill">PDF फ़ॉर्म भरें</string>
     <string name="tools_desc_pdf2img">पेज इमेज के रूप में सहेजें</string>
-    <string name="tools_desc_pdf2text">Word या सादा टेक्स्ट पाएँ</string>
-    <string name="tools_desc_pdf2excel">टेबल को शीट में निकालें</string>
+    <string name="tools_desc_pdf2text">Word, Excel या सादा टेक्स्ट पाएँ</string>
     <string name="tools_desc_pdf2ppt">हर पेज एक स्लाइड</string>
     <string name="tools_desc_protect">पासवर्ड से लॉक करें</string>
     <string name="tools_desc_unlock">पासवर्ड हटाएँ</string>

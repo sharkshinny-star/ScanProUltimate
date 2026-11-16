@@ -224,8 +224,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("merge", R.string.tools_card_merge, Icons.Default.Merge, TileTone.Indigo),
             PdfToolCard("split", R.string.tools_card_split, Icons.AutoMirrored.Filled.CallSplit, TileTone.Indigo),
             PdfToolCard("organize", R.string.tools_card_organize, Icons.Default.Description, TileTone.Sky, label = R.string.tools_tile_organize),
-            PdfToolCard("rotate", R.string.tools_card_rotate, Icons.AutoMirrored.Filled.RotateRight, TileTone.Sky, label = R.string.tools_tile_rotate),
-            PdfToolCard("extract", R.string.tools_card_extract, Icons.AutoMirrored.Filled.DriveFileMove, TileTone.Indigo, label = R.string.tools_tile_extract),
+            // Rotate pages and Extract pages are modes of Organise (one screen, switched at its top), not tiles of their own.
             PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber),
             PdfToolCard("repair", R.string.tools_card_repair, Icons.Default.Build, TileTone.Amber),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
@@ -241,7 +240,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
             PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral),
             PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.AutoMirrored.Filled.Article, TileTone.Teal, label = R.string.tools_tile_pdf2text),
-            PdfToolCard("pdf2excel", R.string.tools_card_pdf2excel, Icons.Default.TableChart, TileTone.Teal),
+            // Excel is one of the formats on PDF to Word, Excel or text, so it has no tile of its own.
             PdfToolCard("pdf2ppt", R.string.tools_card_pdf2ppt, Icons.Default.Slideshow, TileTone.Coral)
         )
     ),
@@ -336,6 +335,8 @@ fun PdfToolsScreen(
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
+    // Arrange, Rotate or Extract: one Organise screen, switched at its top.
+    var organizerMode by rememberSaveable { mutableStateOf("organize") }
     var showWatermarkDialog by rememberSaveable { mutableStateOf(false) }
     var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -476,7 +477,7 @@ fun PdfToolsScreen(
             "unlock" -> viewModel.inspectForUnlock(uri)
             "repair" -> viewModel.repair(uri)
             "split" -> showSplitDialog = true
-            "organize", "extract", "rotate" -> showOrganizerSheet = true
+            "organize", "extract", "rotate" -> { organizerMode = tool; showOrganizerSheet = true }
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
@@ -980,11 +981,12 @@ fun PdfToolsScreen(
             if (showOrganizerSheet && uri != null && tool != null) {
                 PdfPageOrganizerSheet(
                     uri = uri,
-                    mode = tool,
+                    mode = organizerMode,
+                    onModeChange = { organizerMode = it },
                     onClose = { showOrganizerSheet = false },
                     onApply = { pageSpecs, extractedIndices, rotationsMap ->
                         showOrganizerSheet = false
-                        viewModel.organize(tool, uri, pageSpecs, extractedIndices, rotationsMap)
+                        viewModel.organize(organizerMode, uri, pageSpecs, extractedIndices, rotationsMap)
                     },
                     onInsertPages = { kept -> insertBase = kept.flatMap { listOf(it.originalIndex, it.rotationDegrees) } }
                 )
@@ -2098,6 +2100,8 @@ private fun SplitDialog(
 private fun PdfPageOrganizerSheet(
     uri: Uri,
     mode: String,
+    /** Switches between Arrange, Rotate and Extract; null hides the switch. */
+    onModeChange: ((String) -> Unit)? = null,
     onClose: () -> Unit,
     onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit,
     /** Organise only: puts pages from another PDF into the pages as arranged now. */
@@ -2108,7 +2112,7 @@ private fun PdfPageOrganizerSheet(
     val defaultSelected = mode != "extract"
     // Page order, rotations and selections survive rotation and window changes; thumbnails are re-rendered on demand.
     val pages = rememberSaveable(
-        uri, mode,
+        uri,
         saver = androidx.compose.runtime.saveable.listSaver(
             save = { list -> list.flatMap { listOf(it.index, it.rotation, if (it.selected) 1 else 0) } },
             restore = { flat -> mutableStateListOf<ThumbnailPageModel>().apply { flat.chunked(3).forEach { (i, r, sel) -> add(ThumbnailPageModel(i, r, sel == 1)) } } }
@@ -2271,6 +2275,21 @@ private fun PdfPageOrganizerSheet(
             onDiscard = { confirmClose = false; onClose() }
         )
     }
+    // Each mode starts from the PDF as it is: page order, no turns, and Extract with nothing chosen yet.
+    fun switchMode(target: String) {
+        val reset = pages.sortedBy { it.index }.map { it.copy(rotation = 0, selected = target != "extract") }
+        pages.clear()
+        pages.addAll(reset)
+        undoStack.clear()
+        onModeChange?.invoke(target)
+    }
+    var pendingMode by rememberSaveable { mutableStateOf<String?>(null) }
+    pendingMode?.let { target ->
+        com.example.scanpro.feature.document.DiscardEditsDialog(
+            onKeepEditing = { pendingMode = null },
+            onDiscard = { pendingMode = null; switchMode(target) }
+        )
+    }
 
     // Shown inside the Tools tab, which already keeps clear of the status bar and the bottom bar: taking those insets
     // again here left a dark band under the pages and a gap above the title.
@@ -2375,6 +2394,22 @@ private fun PdfPageOrganizerSheet(
                 loadError != null -> Text(loadError!!, modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error)
                 isLoading -> FileLoadingState(stringResource(R.string.tools_organizer_opening), Modifier.fillMaxSize())
                 else -> Column(Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
+                    if (onModeChange != null) {
+                        SegmentedChoice(
+                            options = listOf(
+                                "organize" to stringResource(R.string.tools_mode_arrange),
+                                "rotate" to stringResource(R.string.doc_rotate),
+                                "extract" to stringResource(R.string.doc_extract)
+                            ),
+                            selected = mode,
+                            onSelect = { target ->
+                                if (target != mode) {
+                                    if (undoStack.isNotEmpty()) pendingMode = target else switchMode(target)
+                                }
+                            },
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                     when {
                         extractsEverything -> OrganizerBanner(stringResource(R.string.tools_extract_all_selected), warning = true)
                         mode == "organize" -> OrganizerBanner(stringResource(R.string.tools_organizer_drag_hint), warning = false)

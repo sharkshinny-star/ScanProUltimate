@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -675,7 +676,14 @@ internal fun DocumentDetailScreen(
                             item { ActionChip(Icons.AutoMirrored.Filled.BrandingWatermark, stringResource(R.string.doc_watermark), canMark) { watermarkOpen = true } }
                         }
                     }
-                    itemsIndexed(pages, key = { _, page -> page.id }, contentType = { _, _ -> "page_cell" }) { index, page ->
+                    // One page gets the whole row, larger and centred, instead of half the width beside an empty space.
+                    itemsIndexed(
+                        pages,
+                        key = { _, page -> page.id },
+                        contentType = { _, _ -> "page_cell" },
+                        span = { _, _ -> GridItemSpan(if (pages.size == 1) maxLineSpan else 1) }
+                    ) { index, page ->
+                        androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().animateItem(), contentAlignment = Alignment.TopCenter) {
                         PageCell(
                             page = page,
                             index = index,
@@ -686,8 +694,9 @@ internal fun DocumentDetailScreen(
                             onOptions = { selectedPageId = page.id; pageSheetOpen = true },
                             onMoveEarlier = if (index > 0) ({ onMove(page.id, -1) }) else null,
                             onMoveLater = if (index < pages.lastIndex) ({ onMove(page.id, 1) }) else null,
-                            modifier = Modifier.animateItem()
+                            modifier = if (pages.size == 1) Modifier.fillMaxWidth(0.72f).widthIn(max = 420.dp) else Modifier.fillMaxWidth()
                         )
+                        }
                     }
                     item(key = "organise", contentType = "organise", span = { GridItemSpan(maxLineSpan) }) {
                         FlowRow(

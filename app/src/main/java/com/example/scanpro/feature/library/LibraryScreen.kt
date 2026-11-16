@@ -1160,7 +1160,7 @@ private fun HomeDashboard(
                                 Box(m, contentAlignment = Alignment.Center) {
                                     PaperThumbnail(
                                         doc,
-                                        Modifier.fillMaxHeight(0.86f).aspectRatio(0.74f),
+                                        Modifier.fillMaxHeight(0.94f).aspectRatio(0.74f),
                                         com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM,
                                         corner = 6.dp
                                     )

@@ -2,7 +2,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- PDF to Word or text (feature/tools, imaging/PdfToTextEngine) and Organise: insert pages (imaging/InsertPagesEngine) -->
 
-    <string name="tools_card_pdf2text">PDF to Word or text</string>
+    <string name="tools_card_pdf2text">PDF to Word, Excel or text</string>
     <string name="tools_tile_pdf2text">PDF to text</string>
     <string name="tools_pdf2text_title">PDF to Word, Excel or text</string>
     <string name="tools_pdf2text_body">Turns this PDF into an editable Word document, an Excel workbook or a plain text file. Pages that have text are copied as they are; scanned pages are read on this phone.</string>

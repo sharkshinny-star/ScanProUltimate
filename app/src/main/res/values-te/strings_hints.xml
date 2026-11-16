@@ -10,9 +10,7 @@
     <string name="hint_tool_step_result">ఫలితాన్ని సేవ్ చేయండి లేదా షేర్ చేయండి. అది %1$s‌లో కూడా ఉంటుంది.</string>
     <string name="hint_tool_merge">రెండు లేదా అంతకంటే ఎక్కువ PDFలను మీరు ఎంచుకున్న క్రమంలో ఒకే ఫైల్‌గా కలపండి.</string>
     <string name="hint_tool_split">PDFను చిన్న ఫైల్స్‌గా విభజించండి: ప్రతి పేజీ విడిగా, పేజీ పరిధుల ప్రకారం లేదా కొన్ని పేజీలకు ఒకసారి.</string>
-    <string name="hint_tool_organize">పేజీలను కొత్త క్రమంలో అమర్చండి, అవసరం లేనివాటిని తీసివేయండి.</string>
-    <string name="hint_tool_rotate">పక్కకు లేదా తలకిందులుగా స్కాన్ అయిన పేజీలను తిప్పండి.</string>
-    <string name="hint_tool_extract">మీకు కావలసిన పేజీలను ఎంచుకుని కొత్త PDFగా సేవ్ చేయండి.</string>
+    <string name="hint_tool_organize">పేజీలను కొత్త క్రమంలో అమర్చండి, అవసరం లేనివాటిని తీసివేయండి. పక్కకు లేదా తలకిందులుగా స్కాన్ అయిన పేజీలను తిప్పండి. మీకు కావలసిన పేజీలను ఎంచుకుని కొత్త PDFగా సేవ్ చేయండి.</string>
     <string name="hint_tool_compress">ఈమెయిల్, మెసేజ్‌ల కోసం PDFను చిన్నదిగా చేయండి. ఎంత చిన్నదిగా చేయాలో ఎంచుకోండి.</string>
     <string name="hint_tool_repair">తెరుచుకోని లేదా లోపాలు చూపే PDFను సరిచేయడానికి ప్రయత్నించి, శుభ్రమైన కాపీని సేవ్ చేయండి.</string>
     <string name="hint_tool_page_numbers">PDFలోని ప్రతి పేజీకి పేజీ నంబర్లు జోడించండి.</string>
@@ -23,8 +21,7 @@
     <string name="hint_tool_ocr">స్కాన్ చేసిన పేజీలలోని టెక్స్ట్‌ను మీ ఫోన్‌లోనే చదవండి, అప్పుడు మీరు దాన్ని సెర్చ్ చేయవచ్చు, ఎంచుకోవచ్చు, కాపీ చేయవచ్చు.</string>
     <string name="hint_tool_fill">PDF ఫారమ్‌లోని ఫీల్డ్‌లలో టైప్ చేసి, నింపిన కాపీని సేవ్ చేయండి.</string>
     <string name="hint_tool_pdf2img">PDFలోని ప్రతి పేజీని చిత్రంగా సేవ్ చేయండి.</string>
-    <string name="hint_tool_pdf2text">PDFలోని టెక్స్ట్‌ను Word లేదా సాధారణ టెక్స్ట్ ఫైల్‌లోకి కాపీ చేయండి.</string>
-    <string name="hint_tool_pdf2excel">PDFలోని పట్టికలను మీరు ఎడిట్ చేయగల స్ప్రెడ్‌షీట్‌గా మార్చండి.</string>
+    <string name="hint_tool_pdf2text">PDFలోని టెక్స్ట్‌ను Word, Excel లేదా సాధారణ టెక్స్ట్ ఫైల్‌లోకి కాపీ చేయండి.</string>
     <string name="hint_tool_pdf2ppt">PDF నుండి PowerPoint ప్రెజెంటేషన్ తయారు చేయండి, ప్రతి పేజీకి ఒక స్లైడ్.</string>
     <string name="hint_tool_protect">PDFను పాస్‌వర్డ్‌తో లాక్ చేయండి, అది తెలిసినవారు మాత్రమే తెరవగలరు.</string>
     <string name="hint_tool_unlock">మీకు తెరిచే అనుమతి ఉన్న PDF నుండి పాస్‌వర్డ్ లేదా ఎడిటింగ్ పరిమితులను తీసివేయండి.</string>

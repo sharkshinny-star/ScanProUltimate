@@ -450,7 +450,7 @@ fun SettingsScreen(
                         }
                     } else {
                         StorageCard(documentCount, trashCount, storageBytes, reclaimable, busy, freeingUp, onFreeUpSpace, onDismissFreeSpace, onOpenFiles, onOpenRecycleBin)
-                        SettingsPagesCard(trashRetentionDays, onOpen = { page = it })
+                        SettingsPagesCard(trashRetentionDays, scanningSummary(defaultScanMode, pdfQuality, defaultOcrScript), onOpen = { page = it })
                         AboutFooter()
                     }
                 } else {
@@ -964,9 +964,17 @@ internal enum class SettingsPage(@StringRes val title: Int, val icon: ImageVecto
 /** The page being drawn; null on the main page. */
 internal val LocalSettingsPage = staticCompositionLocalOf<SettingsPage?> { null }
 
+/** "Document · Balanced · Latin": what the Scanning page is set to, which reads better than three cut-off setting names. */
+@Composable
+private fun scanningSummary(scanMode: String, quality: PdfQuality, script: OcrScript): String {
+    val mode = com.example.scanpro.data.ScanMode.entries.firstOrNull { it.name == scanMode }?.let { stringResource(it.labelRes) }
+        ?: if (scanMode == "QR") stringResource(R.string.scan_qr_code) else stringResource(com.example.scanpro.data.ScanMode.DOCUMENT.labelRes)
+    return listOf(mode, stringResource(quality.labelRes), stringResource(script.labelRes)).joinToString(" · ")
+}
+
 /** The main page's list of pages: one row each, title and a one-line summary. */
 @Composable
-private fun SettingsPagesCard(trashRetentionDays: Int, onOpen: (SettingsPage) -> Unit) {
+private fun SettingsPagesCard(trashRetentionDays: Int, scanningSummary: String, onOpen: (SettingsPage) -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -981,9 +989,11 @@ private fun SettingsPagesCard(trashRetentionDays: Int, onOpen: (SettingsPage) ->
                     title = stringResource(page.title),
                     // The Recycle bin page holds one setting, whose name alone reads as half a sentence
                     // ("Keep deleted documents for"): say what is set instead.
-                    subtitle = if (page == SettingsPage.RECYCLE_BIN) {
-                        pluralStringResource(R.plurals.core_trash_auto_deletes_days, trashRetentionDays, trashRetentionDays)
-                    } else page.summary.map { stringResource(it) }.joinToString(" · "),
+                    subtitle = when (page) {
+                        SettingsPage.RECYCLE_BIN -> pluralStringResource(R.plurals.core_trash_auto_deletes_days, trashRetentionDays, trashRetentionDays)
+                        SettingsPage.SCANNING -> scanningSummary
+                        else -> page.summary.map { stringResource(it) }.joinToString(" · ")
+                    },
                     subtitleMaxLines = 1,
                     trailing = { Chevron() },
                     onClick = { onOpen(page) }

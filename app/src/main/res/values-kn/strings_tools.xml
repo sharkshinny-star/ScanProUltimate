@@ -124,15 +124,11 @@
     <string name="tools_section_convert">ಪರಿವರ್ತಿಸಿ</string>
     <string name="tools_section_secure">ಭದ್ರತೆ</string>
     <string name="tools_tile_organize">PDF ಜೋಡಿಸಿ</string>
-    <string name="tools_tile_rotate">ತಿರುಗಿಸಿ</string>
-    <string name="tools_tile_extract">ಪುಟಗಳನ್ನು ತೆಗೆಯಿರಿ</string>
     <string name="tools_card_fill">ಫಾರ್ಮ್ ತುಂಬಿಸಿ</string>
     <string name="tools_card_ocr">ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ</string>
     <string name="tools_card_compress">ಕಂಪ್ರೆಸ್</string>
     <string name="tools_card_merge">PDF ಸೇರಿಸಿ</string>
     <string name="tools_card_split">PDF ವಿಭಜಿಸಿ</string>
-    <string name="tools_card_extract">ಪುಟಗಳನ್ನು ತೆಗೆಯಿರಿ</string>
-    <string name="tools_card_rotate">ಪುಟಗಳನ್ನು ತಿರುಗಿಸಿ</string>
     <string name="tools_card_organize">PDF ಜೋಡಿಸಿ</string>
     <string name="tools_card_pdf2img">PDF ನಿಂದ ಚಿತ್ರಗಳು</string>
     <string name="tools_card_protect">ರಕ್ಷಿಸಿ</string>
@@ -474,7 +470,6 @@
         <item quantity="one">ಫೈಲ್ ರಚನೆಯನ್ನು ದುರಸ್ತಿ ಮಾಡಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ %1$d ಪುಟವನ್ನು ಚಿತ್ರವಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ. ಅದರ ಪಠ್ಯವನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗದು.</item>
         <item quantity="other">ಫೈಲ್ ರಚನೆಯನ್ನು ದುರಸ್ತಿ ಮಾಡಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ %1$d ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ನಿರ್ಮಿಸಲಾಗಿದೆ. ಅವುಗಳ ಪಠ್ಯವನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗದು.</item>
     </plurals>
-    <string name="tools_card_pdf2excel">PDF ನಿಂದ Excel</string>
     <string name="tools_pdf2text_excel">Excel ವರ್ಕ್‌ಬುಕ್ (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಶೀಟ್. ಪದಗಳು ಪುಟದಲ್ಲಿರುವ ಸ್ಥಳದಿಂದ ಕಾಲಮ್‌ಗಳನ್ನು ಮರುನಿರ್ಮಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಕೋಷ್ಟಕಗಳು ಸೆಲ್‌ಗಳಾಗಿ ಬರುತ್ತವೆ.</string>
     <string name="tools_card_pdf2ppt">PDF ನಿಂದ PowerPoint</string>
@@ -501,9 +496,8 @@
     <!-- F140: one line under each tool on the Tools page -->
     <string name="tools_desc_merge">PDFಗಳನ್ನು ಒಂದಾಗಿ ಸೇರಿಸಿ</string>
     <string name="tools_desc_split">ಪುಟಗಳನ್ನು ಬೇರೆ ಫೈಲ್‌ಗಳಾಗಿ ವಿಭಜಿಸಿ</string>
-    <string name="tools_desc_organize">ಪುಟಗಳ ಕ್ರಮ ಬದಲಿಸಿ, ಸೇರಿಸಿ, ಅಳಿಸಿ</string>
-    <string name="tools_desc_rotate">ಪುಟಗಳನ್ನು ಸರಿಯಾಗಿ ತಿರುಗಿಸಿ</string>
-    <string name="tools_desc_extract">ಆಯ್ದ ಪುಟಗಳನ್ನು PDF ಆಗಿ ಉಳಿಸಿ</string>
+    <string name="tools_mode_arrange">ಕ್ರಮ ಬದಲಿಸಿ</string>
+    <string name="tools_desc_organize">ಪುಟಗಳ ಕ್ರಮ ಬದಲಿಸಿ, ತಿರುಗಿಸಿ, ತೆಗೆಯಿರಿ, ಅಳಿಸಿ</string>
     <string name="tools_desc_compress">PDF ಗಾತ್ರ ಕಡಿಮೆ ಮಾಡಿ</string>
     <string name="tools_desc_repair">ಹಾಳಾದ PDF ಸರಿಪಡಿಸಿ</string>
     <string name="tools_desc_page_numbers">ಪ್ರತಿ ಪುಟಕ್ಕೆ ಸಂಖ್ಯೆ ಹಾಕಿ</string>
@@ -514,8 +508,7 @@
     <string name="tools_desc_ocr">ಸ್ಕ್ಯಾನ್ ಪಠ್ಯವನ್ನು ಹುಡುಕುವಂತೆ ಮಾಡಿ</string>
     <string name="tools_desc_fill">PDF ಫಾರ್ಮ್‌ಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ</string>
     <string name="tools_desc_pdf2img">ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಉಳಿಸಿ</string>
-    <string name="tools_desc_pdf2text">Word ಅಥವಾ ಸರಳ ಪಠ್ಯ ಪಡೆಯಿರಿ</string>
-    <string name="tools_desc_pdf2excel">ಕೋಷ್ಟಕಗಳನ್ನು ಶೀಟ್‌ಗೆ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_desc_pdf2text">Word, Excel ಅಥವಾ ಸರಳ ಪಠ್ಯ ಪಡೆಯಿರಿ</string>
     <string name="tools_desc_pdf2ppt">ಪ್ರತಿ ಪುಟ ಒಂದು ಸ್ಲೈಡ್</string>
     <string name="tools_desc_protect">ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಲಾಕ್ ಮಾಡಿ</string>
     <string name="tools_desc_unlock">ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆದುಹಾಕಿ</string>
