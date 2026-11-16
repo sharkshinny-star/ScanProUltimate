@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">ಪುಟಗಳನ್ನು ಹೊರತೆಗೆಯಿರಿ</string>
+
+    <string name="tools_card_blank_pages">ಖಾಲಿ ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</string>
+    <string name="tools_tile_blank_pages">ಖಾಲಿ ಪುಟಗಳು</string>
+    <string name="tools_desc_blank_pages">ಖಾಲಿ ಪುಟಗಳನ್ನು ಹುಡುಕಿ ಅಳಿಸಿ</string>
+    <string name="tools_card_greyscale">ಗ್ರೇಸ್ಕೇಲ್ PDF</string>
+    <string name="tools_tile_greyscale">ಗ್ರೇಸ್ಕೇಲ್</string>
+    <string name="tools_desc_greyscale">ಬಣ್ಣದ ಪುಟಗಳನ್ನು ಬೂದು ಮಾಡಿ</string>
+    <string name="tools_card_flatten">PDF ಫ್ಲ್ಯಾಟನ್ ಮಾಡಿ</string>
+    <string name="tools_tile_flatten">ಫ್ಲ್ಯಾಟನ್</string>
+    <string name="tools_desc_flatten">ಫಾರ್ಮ್ ಮತ್ತು ಕಾಮೆಂಟ್‌ಗಳನ್ನು ಸ್ಥಿರಗೊಳಿಸಿ</string>
+    <string name="tools_card_extract_images">ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಿರಿ</string>
+    <string name="tools_desc_extract_images">PDF ಒಳಗಿನ ಚಿತ್ರಗಳನ್ನು ಉಳಿಸಿ</string>
+    <string name="tools_card_pdf_info">PDF ಮಾಹಿತಿ ಮತ್ತು ಮೆಟಾಡೇಟಾ</string>
+    <string name="tools_tile_pdf_info">ಮಾಹಿತಿ ಮತ್ತು ಮೆಟಾಡೇಟಾ</string>
+    <string name="tools_desc_pdf_info">ಮರೆಯಾದ ವಿವರಗಳನ್ನು ನೋಡಿ, ಬದಲಿಸಿ ಅಥವಾ ತೆಗೆದುಹಾಕಿ</string>
+
+    <string name="tools_new_progress_page">ಪುಟ %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">ಖಾಲಿ ಪುಟಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_blank_progress_removing">ಖಾಲಿ ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_blank_err_failed">ಈ PDF ನಲ್ಲಿ ಖಾಲಿ ಪುಟಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_blank_err_all">PDF ನಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪುಟ ಉಳಿಯಬೇಕು.</string>
+    <string name="tools_blank_none_title">ಖಾಲಿ ಪುಟಗಳಿಲ್ಲ</string>
+    <string name="tools_blank_none_body">ಈ PDF ನ ಪ್ರತಿ ಪುಟದಲ್ಲೂ ಏನಾದರೂ ಇದೆ, ಆದ್ದರಿಂದ ತೆಗೆದುಹಾಕಲು ಏನೂ ಇಲ್ಲ.</string>
+    <string name="tools_blank_found_title">ಖಾಲಿ ಪುಟಗಳು ಸಿಕ್ಕಿವೆ</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತದೆ: ಪುಟ %3$s. ಅದನ್ನು ಹೊಸ ಪ್ರತಿಯಲ್ಲಿ ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</item>
+        <item quantity="other">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತವೆ: ಪುಟಗಳು %3$s. ಅವುಗಳನ್ನು ಹೊಸ ಪ್ರತಿಯಲ್ಲಿ ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">ಎಲ್ಲ ಪುಟಗಳೂ ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತವೆ. PDF ಗೆ ಕನಿಷ್ಠ ಒಂದು ಪುಟ ಬೇಕು, ಆದ್ದರಿಂದ ಏನನ್ನೂ ತೆಗೆದುಹಾಕಲಾಗುವುದಿಲ್ಲ.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d ಪುಟ ತೆಗೆದುಹಾಕಿ</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d ಖಾಲಿ ಪುಟ ತೆಗೆದುಹಾಕಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಖಾಲಿ ಪುಟಗಳನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">ಪ್ರತಿ ಪುಟವನ್ನು %1$d dpi ನಲ್ಲಿ ಬೂದು ಛಾಯೆಗಳಲ್ಲಿ ಮತ್ತೆ ಚಿತ್ರಿಸಲಾಗುತ್ತದೆ. ಪಠ್ಯವು ಪುಟದ ಚಿತ್ರದ ಭಾಗವಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಅದನ್ನು ಹುಡುಕಲು ಅಥವಾ ನಕಲಿಸಲು ನಂತರ \"ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ\" ಬಳಸಿ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_grey_confirm_action">ಗ್ರೇಸ್ಕೇಲ್ ಮಾಡಿ</string>
+    <string name="tools_grey_progress">ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_grey_err_failed">ಈ PDF ಅನ್ನು ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d ಪುಟವನ್ನು ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ಗ್ರೇಸ್ಕೇಲ್‌ಗೆ ಪರಿವರ್ತಿಸಲಾಗಿದೆ</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳು, ಕಾಮೆಂಟ್‌ಗಳು, ಹೈಲೈಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳನ್ನು ಪುಟಗಳಲ್ಲೇ ಚಿತ್ರಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಅವುಗಳನ್ನು ಇನ್ನು ಬದಲಿಸಲು ಅಥವಾ ತೆಗೆದುಹಾಕಲು ಆಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ಗಳು ಕೆಲಸ ಮಾಡುತ್ತವೆ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_flatten_confirm_action">ಫ್ಲ್ಯಾಟನ್ ಮಾಡಿ</string>
+    <string name="tools_flatten_progress">ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_flatten_err_failed">ಈ PDF ಅನ್ನು ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_flatten_nothing">ಈ PDF ನಲ್ಲಿ ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲು ಯಾವುದೇ ಫಾರ್ಮ್ ಫೀಲ್ಡ್ ಅಥವಾ ಕಾಮೆಂಟ್ ಇಲ್ಲ.</string>
+    <string name="tools_flatten_done">ಫ್ಲ್ಯಾಟನ್ ಆಯಿತು. ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳು: %1$d, ಕಾಮೆಂಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳು: %2$d</string>
+
+    <string name="tools_ximg_progress">ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_ximg_err_failed">ಈ PDF ನಿಂದ ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_ximg_err_none">ಈ PDF ನಲ್ಲಿ ಉಳಿಸಬಹುದಾದ ಚಿತ್ರಗಳಿಲ್ಲ. ಪೂರ್ಣ ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಉಳಿಸಲು \"PDF ನಿಂದ ಚಿತ್ರಗಳು\" ಬಳಸಿ.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d ಚಿತ್ರವನ್ನು ಹೊರತೆಗೆಯಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಚಿತ್ರಗಳನ್ನು ಹೊರತೆಗೆಯಲಾಗಿದೆ</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF ವಿವರಗಳನ್ನು ಓದಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_info_err_failed">ಈ PDF ನ ವಿವರಗಳನ್ನು ಓದಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_info_pages">ಪುಟಗಳು</string>
+    <string name="tools_info_version">PDF ಆವೃತ್ತಿ</string>
+    <string name="tools_info_size">ಫೈಲ್ ಗಾತ್ರ</string>
+    <string name="tools_info_created">ರಚಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_modified">ಬದಲಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_creator">ಇದರಿಂದ ರಚಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_producer">ತಯಾರಕ</string>
+    <string name="tools_info_not_set">ಹೊಂದಿಸಿಲ್ಲ</string>
+    <string name="tools_info_edit_heading">ನೀವು ಬದಲಿಸಬಹುದಾದ ವಿವರಗಳು</string>
+    <string name="tools_info_field_title">ಶೀರ್ಷಿಕೆ</string>
+    <string name="tools_info_field_author">ಲೇಖಕ</string>
+    <string name="tools_info_field_subject">ವಿಷಯ</string>
+    <string name="tools_info_field_keywords">ಕೀವರ್ಡ್‌ಗಳು</string>
+    <string name="tools_info_save">ಪ್ರತಿ ಉಳಿಸಿ</string>
+    <string name="tools_info_remove_all">ಎಲ್ಲ ಮೆಟಾಡೇಟಾ ತೆಗೆದುಹಾಕಿ</string>
+    <string name="tools_info_remove_all_hint">ಗೌಪ್ಯತೆಗಾಗಿ: ಶೀರ್ಷಿಕೆ, ಲೇಖಕ, ಆ್ಯಪ್‌ಗಳು, ದಿನಾಂಕಗಳು ಮತ್ತು ಇತರ ಮರೆಯಾದ ವಿವರಗಳನ್ನು ಹೊಸ ಪ್ರತಿಯಲ್ಲಿ ತೆಗೆದುಹಾಕುತ್ತದೆ.</string>
+    <string name="tools_info_xmp_note">ಈ PDF ತನ್ನ ವಿವರಗಳ ಎರಡನೇ (XMP) ಪ್ರತಿಯನ್ನೂ ಹೊಂದಿದೆ. ಉಳಿಸಿದಾಗ ಅದನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಎಲ್ಲ ರೀಡರ್‌ಗಳು ಒಂದೇ ವಿವರಗಳನ್ನು ತೋರಿಸುತ್ತವೆ.</string>
+    <string name="tools_info_saving">ವಿವರಗಳನ್ನು ಉಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_info_save_failed">ಹೊಸ ವಿವರಗಳನ್ನು ಉಳಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_info_saved">ವಿವರಗಳನ್ನು ನವೀಕರಿಸಲಾಗಿದೆ</string>
+    <string name="tools_info_removed">ಎಲ್ಲ ಮೆಟಾಡೇಟಾವನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ</string>
+
+    <string name="hint_tool_blank_pages">ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ PDF ನ ಖಾಲಿ ಪುಟಗಳನ್ನು ಹುಡುಕಿ, ಪಟ್ಟಿಯನ್ನು ಪರಿಶೀಲಿಸಿದ ನಂತರ ತೆಗೆದುಹಾಕಿ.</string>
+    <string name="hint_tool_greyscale">ಕಡಿಮೆ ವೆಚ್ಚದ ಮುದ್ರಣ ಅಥವಾ ಚಿಕ್ಕ ಫೈಲ್‌ಗಾಗಿ ಬಣ್ಣದ PDF ಅನ್ನು ಬೂದು ಛಾಯೆಗಳಿಗೆ ಬದಲಿಸಿ.</string>
+    <string name="hint_tool_flatten">ಫಾರ್ಮ್ ಉತ್ತರಗಳು, ಕಾಮೆಂಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳನ್ನು ಪುಟಗಳಲ್ಲೇ ಚಿತ್ರಿಸಿ, ಯಾರೂ ಬದಲಿಸಲಾಗದಂತೆ.</string>
+    <string name="hint_tool_extract_images">PDF ಒಳಗಿನ ಪ್ರತಿ ಚಿತ್ರವನ್ನು ಪ್ರತ್ಯೇಕ ಚಿತ್ರ ಫೈಲ್ ಆಗಿ ಉಳಿಸಿ.</string>
+    <string name="hint_tool_pdf_info">PDF ನ ಮರೆಯಾದ ವಿವರಗಳನ್ನು ನೋಡಿ, ಶೀರ್ಷಿಕೆ ಅಥವಾ ಲೇಖಕರನ್ನು ಬದಲಿಸಿ, ಅಥವಾ ಗೌಪ್ಯತೆಗಾಗಿ ಎಲ್ಲವನ್ನೂ ತೆಗೆದುಹಾಕಿ.</string>
+</resources>
