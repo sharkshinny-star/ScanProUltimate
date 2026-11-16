@@ -260,11 +260,35 @@ fun FileLoadingAnimation(modifier: Modifier = Modifier, size: Dp = 72.dp, onDark
                     )
                 }
             }
+            // A faint second line trails the beam, so the sweep reads as motion even in a glance.
+            if (motion && beamAlpha > 0f) {
+                val trailY = beamTop + (beamBottom - beamTop) * smoothStep(((p - 0.045f) / 0.7f).coerceIn(0f, 1f))
+                if (trailY < beamY - s * 0.01f) {
+                    drawLine(
+                        color = palette.beam.copy(alpha = 0.25f * beamAlpha),
+                        start = Offset(page.left, trailY),
+                        end = Offset(page.right, trailY),
+                        strokeWidth = page.width * 0.028f,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
             drawScanBeam(page, sheet, beamY, palette.beam, beamAlpha, movingDown = true)
 
-            // Brackets breathe a little with the float.
-            val inset = s * (0.07f + 0.012f * bob)
-            drawBrackets(Rect(inset, inset, s - inset, s - inset), palette.bracket, arm = s * 0.13f, width = s * 0.035f)
+            // Brackets breathe with the float and flash mint for a beat as each pass completes,
+            // answering the scan the way the real capture brackets do.
+            val done = if (motion) {
+                val rise = smoothStep(((p - 0.66f) / 0.08f).coerceIn(0f, 1f))
+                val fall = 1f - smoothStep(((p - 0.8f) / 0.12f).coerceIn(0f, 1f))
+                rise * fall
+            } else 0f
+            val inset = s * (0.07f + 0.012f * bob - 0.008f * done)
+            drawBrackets(
+                Rect(inset, inset, s - inset, s - inset),
+                lerp(palette.bracket, palette.beam, done),
+                arm = s * (0.13f + 0.012f * done),
+                width = s * 0.035f
+            )
         }
     }
 }

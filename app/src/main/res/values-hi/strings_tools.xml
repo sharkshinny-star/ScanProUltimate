@@ -524,4 +524,13 @@
     <string name="tools_desc_convert_img">JPG, PNG या WebP</string>
     <string name="tools_desc_resize_img">फ़ोटो का माप बदलें</string>
     <string name="tools_desc_viewer">पढ़ें, खोजें, पेज पर जाएँ</string>
+    <string name="default_pdf_card_title">PDF ScanPro से खोलें</string>
+    <string name="default_pdf_card_body">ScanPro को अपना PDF ऐप बनाएँ: डिफ़ॉल्ट बनाएँ पर टैप करें, ScanPro चुनें, फिर हमेशा चुनें।</string>
+    <string name="default_pdf_card_action">डिफ़ॉल्ट बनाएँ</string>
+    <string name="default_pdf_sample_line">अब PDF ScanPro से खुलती हैं। आनंद लें!</string>
+    <string name="default_pdf_settings_title">डिफ़ॉल्ट PDF ऐप</string>
+    <string name="default_pdf_state_ours">आपकी PDF पहले से ScanPro से खुलती हैं</string>
+    <string name="default_pdf_state_unset">टैप करें, ScanPro चुनें, फिर हमेशा चुनें</string>
+    <string name="default_pdf_state_other">अभी PDF %1$s से खुलती हैं; उसकी सेटिंग्स में यह हटाने के लिए टैप करें</string>
+    <string name="default_pdf_confirmed">ScanPro अब आपका PDF ऐप है</string>
 </resources>

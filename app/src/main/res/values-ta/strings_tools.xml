@@ -524,4 +524,13 @@
     <string name="tools_desc_convert_img">JPG, PNG அல்லது WebP</string>
     <string name="tools_desc_resize_img">புகைப்பட அளவுகளை மாற்றவும்</string>
     <string name="tools_desc_viewer">படி, தேடு, பக்கத்துக்குச் செல்</string>
+    <string name="default_pdf_card_title">PDF-களை ScanPro-வில் திறக்கவும்</string>
+    <string name="default_pdf_card_body">ScanPro-வை உங்கள் PDF ஆப்பாக்குங்கள்: இயல்பாக அமை என்பதைத் தட்டி, ScanPro-வைத் தேர்ந்து, பிறகு எப்போதும் என்பதைத் தேர்வு செய்யுங்கள்.</string>
+    <string name="default_pdf_card_action">இயல்பாக அமை</string>
+    <string name="default_pdf_sample_line">இனி PDF-கள் ScanPro-வில் திறக்கும். மகிழுங்கள்!</string>
+    <string name="default_pdf_settings_title">இயல்பு PDF ஆப்</string>
+    <string name="default_pdf_state_ours">உங்கள் PDF-கள் ஏற்கனவே ScanPro-வில் திறக்கின்றன</string>
+    <string name="default_pdf_state_unset">தட்டி, ScanPro-வைத் தேர்ந்து, பிறகு எப்போதும் என்பதைத் தேர்வு செய்யுங்கள்</string>
+    <string name="default_pdf_state_other">இப்போது PDF-களை %1$s திறக்கிறது; அதன் அமைப்புகளில் அதை நீக்கத் தட்டவும்</string>
+    <string name="default_pdf_confirmed">ScanPro இப்போது உங்கள் PDF ஆப்</string>
 </resources>

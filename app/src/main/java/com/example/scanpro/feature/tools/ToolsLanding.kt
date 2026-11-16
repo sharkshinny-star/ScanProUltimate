@@ -35,6 +35,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -72,6 +74,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.TileTone
+import androidx.compose.material3.Surface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -491,6 +495,50 @@ private fun SearchResultRow(hit: SearchHit, onClick: () -> Unit) {
 }
 
 /**
+ * Asks once to make ScanPro the app PDFs open with, at the top of Tools (the app's PDF hub): Android has no
+ * way to request it, so the card opens ScanPro's own sample PDF and the system's "Open with" sheet does the
+ * asking. Gone for good after either button, and never shown when ScanPro already is the default.
+ */
+@Composable
+private fun DefaultPdfCard() {
+    val context = LocalContext.current
+    var due by remember {
+        mutableStateOf(
+            com.example.scanpro.data.FirstRunHints.isDue(context, DEFAULT_PDF_HINT) &&
+                com.example.scanpro.core.ui.DefaultPdfApp.status(context).state != com.example.scanpro.core.ui.DefaultPdfApp.State.OURS
+        )
+    }
+    if (!due) return
+    val dismiss = {
+        com.example.scanpro.data.FirstRunHints.markSeen(context, DEFAULT_PDF_HINT)
+        due = false
+    }
+    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+        Row(Modifier.padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.Top) {
+            IconTile(Icons.Default.PictureAsPdf, TileTone.Coral, size = 40.dp, corner = 12.dp, iconSize = 22.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.default_pdf_card_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.default_pdf_card_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.material3.TextButton(onClick = { dismiss(); com.example.scanpro.core.ui.DefaultPdfApp.ask(context) }) {
+                    Text(stringResource(R.string.default_pdf_card_action), fontWeight = FontWeight.Bold)
+                }
+            }
+            IconButton(onClick = dismiss) {
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_cancel), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+/** FirstRunHints key for [DefaultPdfCard]. */
+private const val DEFAULT_PDF_HINT = "default_pdf_ask"
+
+/**
  * The body of the Tools landing, as list items: search results while a query is typed; otherwise pinned tools, the
  * last few used, and the categories (all of them, or the one chosen). The caller owns the list and the other items.
  */
@@ -522,6 +570,10 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
             }
         }
         return
+    }
+
+    if (category == ALL_CATEGORIES) {
+        item(key = "default-pdf", contentType = "default-pdf") { DefaultPdfCard() }
     }
 
     val everyTool = TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL

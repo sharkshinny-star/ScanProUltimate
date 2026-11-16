@@ -559,4 +559,14 @@
     <string name="tools_desc_convert_img">JPG, PNG or WebP</string>
     <string name="tools_desc_resize_img">Change photo dimensions</string>
     <string name="tools_desc_viewer">Read, search and jump to pages</string>
+    <!-- Making ScanPro the app Android opens PDFs with. -->
+    <string name="default_pdf_card_title">Open PDFs with ScanPro</string>
+    <string name="default_pdf_card_body">Make ScanPro your PDF app: tap Set as default, pick ScanPro, then choose Always.</string>
+    <string name="default_pdf_card_action">Set as default</string>
+    <string name="default_pdf_sample_line">PDFs now open with ScanPro. Enjoy!</string>
+    <string name="default_pdf_settings_title">Default PDF app</string>
+    <string name="default_pdf_state_ours">ScanPro opens your PDFs already</string>
+    <string name="default_pdf_state_unset">Tap, pick ScanPro, then choose Always</string>
+    <string name="default_pdf_state_other">%1$s opens PDFs now; tap to clear that in its settings</string>
+    <string name="default_pdf_confirmed">ScanPro is now your PDF app</string>
 </resources>

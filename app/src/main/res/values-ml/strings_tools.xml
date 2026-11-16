@@ -524,4 +524,13 @@
     <string name="tools_desc_convert_img">JPG, PNG അല്ലെങ്കിൽ WebP</string>
     <string name="tools_desc_resize_img">ഫോട്ടോ അളവുകൾ മാറ്റുക</string>
     <string name="tools_desc_viewer">വായിക്കുക, തിരയുക, പേജിലേക്ക് പോകുക</string>
+    <string name="default_pdf_card_title">PDF-കൾ ScanPro-യിൽ തുറക്കൂ</string>
+    <string name="default_pdf_card_body">ScanPro-യെ നിങ്ങളുടെ PDF ആപ്പാക്കൂ: ഡിഫോൾട്ടാക്കുക ടാപ്പ് ചെയ്ത്, ScanPro തിരഞ്ഞെടുത്ത്, പിന്നെ എപ്പോഴും തിരഞ്ഞെടുക്കൂ.</string>
+    <string name="default_pdf_card_action">ഡിഫോൾട്ടാക്കുക</string>
+    <string name="default_pdf_sample_line">ഇനി PDF-കൾ ScanPro-യിൽ തുറക്കും. ആസ്വദിക്കൂ!</string>
+    <string name="default_pdf_settings_title">ഡിഫോൾട്ട് PDF ആപ്പ്</string>
+    <string name="default_pdf_state_ours">നിങ്ങളുടെ PDF-കൾ ഇപ്പോഴേ ScanPro-യിൽ തുറക്കുന്നു</string>
+    <string name="default_pdf_state_unset">ടാപ്പ് ചെയ്ത്, ScanPro തിരഞ്ഞെടുത്ത്, പിന്നെ എപ്പോഴും തിരഞ്ഞെടുക്കൂ</string>
+    <string name="default_pdf_state_other">ഇപ്പോൾ PDF-കൾ %1$s തുറക്കുന്നു; അതിന്റെ ക്രമീകരണങ്ങളിൽ അതു മാറ്റാൻ ടാപ്പ് ചെയ്യൂ</string>
+    <string name="default_pdf_confirmed">ScanPro ഇപ്പോൾ നിങ്ങളുടെ PDF ആപ്പാണ്</string>
 </resources>

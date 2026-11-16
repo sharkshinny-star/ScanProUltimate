@@ -524,4 +524,13 @@
     <string name="tools_desc_convert_img">JPG, PNG లేదా WebP</string>
     <string name="tools_desc_resize_img">ఫోటో కొలతలు మార్చండి</string>
     <string name="tools_desc_viewer">చదవండి, వెతకండి, పేజీకి వెళ్లండి</string>
+    <string name="default_pdf_card_title">PDF-లను ScanPro లో తెరవండి</string>
+    <string name="default_pdf_card_body">ScanPro ని మీ PDF యాప్ చేయండి: డిఫాల్ట్‌గా సెట్ చేయి నొక్కి, ScanPro ఎంచుకుని, ఆపై ఎల్లప్పుడూ ఎంచుకోండి.</string>
+    <string name="default_pdf_card_action">డిఫాల్ట్‌గా సెట్ చేయి</string>
+    <string name="default_pdf_sample_line">ఇప్పుడు PDF-లు ScanPro లో తెరుచుకుంటాయి. ఆనందించండి!</string>
+    <string name="default_pdf_settings_title">డిఫాల్ట్ PDF యాప్</string>
+    <string name="default_pdf_state_ours">మీ PDF-లు ఇప్పటికే ScanPro లో తెరుచుకుంటాయి</string>
+    <string name="default_pdf_state_unset">నొక్కి, ScanPro ఎంచుకుని, ఆపై ఎల్లప్పుడూ ఎంచుకోండి</string>
+    <string name="default_pdf_state_other">ఇప్పుడు PDF-లను %1$s తెరుస్తోంది; దాని సెట్టింగ్స్‌లో దాన్ని తీసేయడానికి నొక్కండి</string>
+    <string name="default_pdf_confirmed">ScanPro ఇప్పుడు మీ PDF యాప్</string>
 </resources>

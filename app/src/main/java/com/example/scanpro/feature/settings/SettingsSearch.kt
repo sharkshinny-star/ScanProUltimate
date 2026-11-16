@@ -103,7 +103,7 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_smart_titles_title, R.string.settings_smart_titles_body, R.string.settings_section_scanning),
     SettingEntry(R.string.settings_name_pattern_title, R.string.settings_name_pattern_body, R.string.settings_section_scanning),
     SettingEntry(R.string.settings_ocr_language_title, null, R.string.settings_section_scanning),
-    SettingEntry(R.string.settings_trash_retention_title, R.string.settings_trash_retention_subtitle, R.string.settings_section_recycle_bin),
+    SettingEntry(R.string.settings_trash_retention_title, R.string.settings_trash_retention_subtitle, R.string.settings_section_backup),
     SettingEntry(R.string.settings_app_lock_title, R.string.settings_app_lock_body, R.string.settings_section_privacy),
     SettingEntry(R.string.settings_privacy_title, R.string.settings_privacy_subtitle, R.string.settings_section_privacy),
     SettingEntry(R.string.settings_privacy_policy, null, R.string.settings_section_privacy),
@@ -112,12 +112,12 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_notify_failures_title, R.string.settings_notify_failures_body, R.string.settings_section_notifications),
     SettingEntry(R.string.settings_notify_trash_title, R.string.settings_notify_trash_body, R.string.settings_section_notifications),
     SettingEntry(R.string.settings_notify_backup_title, R.string.settings_notify_backup_body, R.string.settings_section_notifications),
+    SettingEntry(R.string.settings_notify_water_title, R.string.settings_notify_water_body, R.string.settings_section_notifications),
     SettingEntry(R.string.settings_whats_new_title, R.string.settings_whats_new_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_show_intros_title, R.string.settings_show_intros_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_rate_title, R.string.settings_rate_subtitle, R.string.settings_section_support),
-    SettingEntry(R.string.settings_feedback, R.string.settings_feedback_subtitle, R.string.settings_section_support),
-    SettingEntry(R.string.settings_report_issue_title, R.string.settings_report_issue_subtitle, R.string.settings_section_support),
-    SettingEntry(R.string.settings_request_features, null, R.string.settings_section_support),
+    SettingEntry(R.string.settings_contact_title, R.string.settings_contact_subtitle, R.string.settings_section_support),
+    SettingEntry(R.string.default_pdf_settings_title, R.string.default_pdf_card_title, R.string.settings_section_support),
     SettingEntry(R.string.settings_share_with_friends, R.string.settings_share_subtitle, R.string.settings_section_support)
 )
 

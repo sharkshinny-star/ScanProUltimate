@@ -263,4 +263,6 @@
     <string name="home_recent_files">അടുത്തിടെയുള്ള ഫയലുകൾ</string>
     <string name="home_recent_opened">തുറന്നവ</string>
     <string name="home_recent_scans">സ്കാനുകൾ</string>
+    <string name="settings_contact_title">ഞങ്ങളെ ബന്ധപ്പെടൂ</string>
+    <string name="settings_contact_subtitle">അഭിപ്രായം, പ്രശ്നങ്ങൾ, ഫീച്ചർ നിർദ്ദേശങ്ങൾ</string>
 </resources>

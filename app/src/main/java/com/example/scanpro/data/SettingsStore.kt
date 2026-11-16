@@ -271,6 +271,7 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     private val keyNotifyFailures = booleanPreferencesKey("notify_failures")
     private val keyNotifyTrash = booleanPreferencesKey("notify_trash")
     private val keyNotifyBackup = booleanPreferencesKey("notify_backup")
+    private val keyHydrationReminders = booleanPreferencesKey("notify_drink_water")
     private val keyLastBackupAt = longPreferencesKey("last_backup_at")
     private val keyLastBackupReminderAt = longPreferencesKey("last_backup_reminder_at")
 
@@ -282,6 +283,12 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     val notifyTrash: Flow<Boolean> = preferences.map { it[keyNotifyTrash] ?: false }
     /** A reminder when no backup was made for a month. Off until the user asks for it. */
     val notifyBackup: Flow<Boolean> = preferences.map { it[keyNotifyBackup] ?: false }
+    /**
+     * Drink-water reminders, three a day ([com.example.scanpro.core.notifications.HydrationSchedule]). On by default
+     * (owner request, 2026-11-16); the notice itself carries a "Turn off" button.
+     */
+    val hydrationReminders: Flow<Boolean> = preferences.map { it[keyHydrationReminders] ?: true }
+    suspend fun setHydrationReminders(value: Boolean) { context.scanProSettings.edit { it[keyHydrationReminders] = value } }
     /** When the last backup was written (0 when never), and when the last reminder about it was shown. */
     val lastBackupAt: Flow<Long> = preferences.map { it[keyLastBackupAt] ?: 0L }
     val lastBackupReminderAt: Flow<Long> = preferences.map { it[keyLastBackupReminderAt] ?: 0L }

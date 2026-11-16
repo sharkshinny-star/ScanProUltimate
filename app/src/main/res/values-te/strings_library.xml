@@ -263,4 +263,6 @@
     <string name="home_recent_files">ఇటీవలి ఫైల్‌లు</string>
     <string name="home_recent_opened">తెరిచినవి</string>
     <string name="home_recent_scans">స్కాన్‌లు</string>
+    <string name="settings_contact_title">మమ్మల్ని సంప్రదించండి</string>
+    <string name="settings_contact_subtitle">అభిప్రాయం, సమస్యలు మరియు ఫీచర్ సూచనలు</string>
 </resources>

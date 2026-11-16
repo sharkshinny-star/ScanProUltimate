@@ -74,6 +74,7 @@ import androidx.compose.material.icons.rounded.TipsAndUpdates
 import androidx.compose.material.icons.rounded.Title
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Wallpaper
+import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -176,6 +177,7 @@ fun SettingsRoute(
     val notifyFailures by viewModel.notifyFailures.collectAsStateWithLifecycle()
     val notifyTrash by viewModel.notifyTrash.collectAsStateWithLifecycle()
     val notifyBackup by viewModel.notifyBackup.collectAsStateWithLifecycle()
+    val notifyWater by viewModel.notifyWater.collectAsStateWithLifecycle()
     // Re-read on every return to the screen: the permission or the system switch may have changed meanwhile.
     var canNotify by remember { mutableStateOf(viewModel.canPostNotifications()) }
     LifecycleResumeEffect(Unit) {
@@ -190,10 +192,12 @@ fun SettingsRoute(
             failures = notifyFailures,
             trash = notifyTrash,
             backup = notifyBackup,
+            water = notifyWater,
             onFinishedChange = viewModel::setNotifyFinished,
             onFailuresChange = viewModel::setNotifyFailures,
             onTrashChange = viewModel::setNotifyTrash,
             onBackupChange = viewModel::setNotifyBackup,
+            onWaterChange = viewModel::setNotifyWater,
             onPermissionResult = { canNotify = viewModel.canPostNotifications() },
             systemSettingsIntent = viewModel::notificationSettingsIntent
         ),
@@ -487,6 +491,30 @@ fun SettingsScreen(
                         enabled = !busy,
                         onClick = onRecoverLibrary
                     )
+                    InsetDivider()
+                    // The recycle bin's one setting lives here with the other data housekeeping (its own page was
+                    // a whole page for a single row).
+                    var retentionMenuOpen by remember { mutableStateOf(false) }
+                    SettingsRow(
+                        icon = Icons.Rounded.Delete,
+                        tone = TileTone.Slate,
+                        title = stringResource(R.string.settings_trash_retention_title),
+                        subtitle = stringResource(R.string.settings_trash_retention_subtitle),
+                        trailing = {
+                            Box {
+                                Text(pluralStringResource(R.plurals.settings_trash_retention_days, trashRetentionDays, trashRetentionDays), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                androidx.compose.material3.DropdownMenu(expanded = retentionMenuOpen, onDismissRequest = { retentionMenuOpen = false }) {
+                                    TRASH_RETENTION_CHOICES.forEach { days ->
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text(pluralStringResource(R.plurals.settings_trash_retention_days, days, days)) },
+                                            onClick = { retentionMenuOpen = false; onTrashRetentionChange(days) }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { retentionMenuOpen = true }
+                    )
                 }
 
                 SettingsSection(SettingsPage.APPEARANCE) {
@@ -689,30 +717,6 @@ fun SettingsScreen(
                     )
                 }
 
-                SettingsSection(SettingsPage.RECYCLE_BIN) {
-                    var retentionMenuOpen by remember { mutableStateOf(false) }
-                    SettingsRow(
-                        icon = Icons.Rounded.Delete,
-                        tone = TileTone.Slate,
-                        title = stringResource(R.string.settings_trash_retention_title),
-                        subtitle = stringResource(R.string.settings_trash_retention_subtitle),
-                        trailing = {
-                            Box {
-                                Text(pluralStringResource(R.plurals.settings_trash_retention_days, trashRetentionDays, trashRetentionDays), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                                androidx.compose.material3.DropdownMenu(expanded = retentionMenuOpen, onDismissRequest = { retentionMenuOpen = false }) {
-                                    TRASH_RETENTION_CHOICES.forEach { days ->
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text(pluralStringResource(R.plurals.settings_trash_retention_days, days, days)) },
-                                            onClick = { retentionMenuOpen = false; onTrashRetentionChange(days) }
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        onClick = { retentionMenuOpen = true }
-                    )
-                }
-
                 SettingsSection(SettingsPage.PRIVACY) {
                     SettingsRow(
                         icon = Icons.Rounded.Fingerprint,
@@ -788,31 +792,25 @@ fun SettingsScreen(
                         onClick = { openPlayStoreListing(context) }
                     )
                     InsetDivider()
+                    // One row for the three ways to write in (feedback, an issue, a feature idea): three near-identical
+                    // rows crowded the page (owner request, 2026-11-16).
+                    var contactOpen by remember { mutableStateOf(false) }
                     SettingsRow(
                         icon = Icons.Rounded.Feedback,
                         tone = TileTone.Teal,
-                        title = stringResource(R.string.settings_feedback),
-                        subtitle = stringResource(R.string.settings_feedback_subtitle),
+                        title = stringResource(R.string.settings_contact_title),
+                        subtitle = stringResource(R.string.settings_contact_subtitle),
                         trailing = { Chevron() },
-                        onClick = { contact(SupportTopic.FEEDBACK) }
+                        onClick = { contactOpen = true }
                     )
+                    if (contactOpen) {
+                        ContactDialog(onDismiss = { contactOpen = false }) { topic ->
+                            contactOpen = false
+                            contact(topic)
+                        }
+                    }
                     InsetDivider()
-                    SettingsRow(
-                        icon = Icons.Rounded.BugReport,
-                        tone = TileTone.Rose,
-                        title = stringResource(R.string.settings_report_issue_title),
-                        subtitle = stringResource(R.string.settings_report_issue_subtitle),
-                        trailing = { Chevron() },
-                        onClick = { contact(SupportTopic.ISSUE) }
-                    )
-                    InsetDivider()
-                    SettingsRow(
-                        icon = Icons.Rounded.Lightbulb,
-                        tone = TileTone.Violet,
-                        title = stringResource(R.string.settings_request_features),
-                        trailing = { Chevron() },
-                        onClick = { contact(SupportTopic.FEATURE) }
-                    )
+                    DefaultPdfRow(snackbarHostState)
                     InsetDivider()
                     SettingsRow(
                         icon = Icons.Rounded.Share,
@@ -950,13 +948,11 @@ internal enum class SettingsPage(@StringRes val title: Int, val icon: ImageVecto
     APPEARANCE(R.string.settings_section_appearance, Icons.Rounded.Palette, TileTone.Violet,
         listOf(R.string.settings_theme_title, R.string.settings_palette_title, R.string.settings_app_language)),
     BACKUP(R.string.settings_section_backup, Icons.Rounded.Backup, TileTone.Teal,
-        listOf(R.string.settings_backup_all, R.string.settings_restore_backup)),
+        listOf(R.string.settings_backup_all, R.string.settings_restore_backup, R.string.settings_section_recycle_bin)),
     PRIVACY(R.string.settings_section_privacy, Icons.Rounded.Fingerprint, TileTone.Rose,
         listOf(R.string.settings_app_lock_title, R.string.settings_privacy_title)),
     NOTIFICATIONS(R.string.settings_section_notifications, Icons.Rounded.Notifications, TileTone.Amber,
-        listOf(R.string.settings_notify_finished_title, R.string.settings_notify_backup_title)),
-    RECYCLE_BIN(R.string.settings_section_recycle_bin, Icons.Rounded.Delete, TileTone.Slate,
-        listOf(R.string.settings_trash_retention_title)),
+        listOf(R.string.settings_notify_finished_title, R.string.settings_notify_water_title)),
     SUPPORT(R.string.settings_section_support, Icons.Rounded.Feedback, TileTone.Sky,
         listOf(R.string.settings_whats_new_title, R.string.settings_report_issue_title, R.string.settings_rate_title))
 }
@@ -1075,10 +1071,12 @@ data class NotificationSettings(
     val failures: Boolean = true,
     val trash: Boolean = false,
     val backup: Boolean = false,
+    val water: Boolean = false,
     val onFinishedChange: (Boolean) -> Unit = {},
     val onFailuresChange: (Boolean) -> Unit = {},
     val onTrashChange: (Boolean) -> Unit = {},
     val onBackupChange: (Boolean) -> Unit = {},
+    val onWaterChange: (Boolean) -> Unit = {},
     val onPermissionResult: () -> Unit = {},
     val systemSettingsIntent: (() -> Intent)? = null
 )
@@ -1152,6 +1150,16 @@ private fun NotificationsSection(state: NotificationSettings) {
             checked = state.backup,
             onCheckedChange = enabling(state.onBackupChange)
         )
+        InsetDivider()
+        // Three a day (one hour into the day, then two hours on, then three): see HydrationSchedule.
+        SettingsRow(
+            icon = Icons.Rounded.WaterDrop,
+            tone = TileTone.Sky,
+            title = stringResource(R.string.settings_notify_water_title),
+            subtitle = stringResource(R.string.settings_notify_water_body),
+            checked = state.water,
+            onCheckedChange = enabling(state.onWaterChange)
+        )
         if (state.systemSettingsIntent != null) {
             InsetDivider()
             SettingsRow(
@@ -1164,6 +1172,69 @@ private fun NotificationsSection(state: NotificationSettings) {
             )
         }
     }
+}
+
+/** The one Contact row's choices: feedback, an issue, or a feature idea. */
+@Composable
+private fun ContactDialog(onDismiss: () -> Unit, onPick: (SupportTopic) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_contact_title)) },
+        text = {
+            Column {
+                SettingsRow(icon = Icons.Rounded.Feedback, tone = TileTone.Teal, title = stringResource(R.string.settings_feedback),
+                    subtitle = stringResource(R.string.settings_feedback_subtitle), onClick = { onPick(SupportTopic.FEEDBACK) })
+                SettingsRow(icon = Icons.Rounded.BugReport, tone = TileTone.Rose, title = stringResource(R.string.settings_report_issue_title),
+                    subtitle = stringResource(R.string.settings_report_issue_subtitle), onClick = { onPick(SupportTopic.ISSUE) })
+                SettingsRow(icon = Icons.Rounded.Lightbulb, tone = TileTone.Violet, title = stringResource(R.string.settings_request_features),
+                    onClick = { onPick(SupportTopic.FEATURE) })
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+    )
+}
+
+/**
+ * Making ScanPro the app PDFs open with. Android offers no way to ask directly: the row opens ScanPro's own sample
+ * PDF so the system's "Open with" sheet appears; when another app holds the default, its settings page (the only
+ * place the default can be cleared) opens instead.
+ */
+@Composable
+private fun DefaultPdfRow(snackbarHostState: SnackbarHostState) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // Looked up again on every return to the screen: the choice is made outside the app.
+    var status by remember { mutableStateOf<com.example.scanpro.core.ui.DefaultPdfApp.Status?>(null) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        status = com.example.scanpro.core.ui.DefaultPdfApp.status(context)
+        onPauseOrDispose { }
+    }
+    val state = status?.state
+    val alreadyOurs = stringResource(R.string.default_pdf_state_ours)
+    SettingsRow(
+        icon = Icons.Rounded.PictureAsPdf,
+        tone = TileTone.Coral,
+        title = stringResource(R.string.default_pdf_settings_title),
+        subtitle = when (state) {
+            com.example.scanpro.core.ui.DefaultPdfApp.State.OURS -> alreadyOurs
+            com.example.scanpro.core.ui.DefaultPdfApp.State.OTHER ->
+                stringResource(R.string.default_pdf_state_other, status?.otherLabel ?: status?.otherPackage.orEmpty())
+            else -> stringResource(R.string.default_pdf_state_unset)
+        },
+        trailing = { Chevron() },
+        onClick = {
+            when (val now = status ?: com.example.scanpro.core.ui.DefaultPdfApp.status(context)) {
+                is com.example.scanpro.core.ui.DefaultPdfApp.Status -> when (now.state) {
+                    com.example.scanpro.core.ui.DefaultPdfApp.State.OURS ->
+                        scope.launch { snackbarHostState.showSnackbar(alreadyOurs) }
+                    com.example.scanpro.core.ui.DefaultPdfApp.State.OTHER ->
+                        now.otherPackage?.let { runCatching { context.startActivity(com.example.scanpro.core.ui.DefaultPdfApp.otherAppSettingsIntent(it)) } }
+                    com.example.scanpro.core.ui.DefaultPdfApp.State.UNSET ->
+                        com.example.scanpro.core.ui.DefaultPdfApp.ask(context)
+                }
+            }
+        }
+    )
 }
 
 @Composable

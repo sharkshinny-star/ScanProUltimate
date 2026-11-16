@@ -32,4 +32,13 @@
     <string name="settings_notify_backup_body">ಒಂದು ತಿಂಗಳಿಂದ ನೀವು ಬ್ಯಾಕಪ್ ಮಾಡದಿದ್ದಾಗ</string>
     <string name="settings_notifications_system_title">ಸಿಸ್ಟಂ ಅಧಿಸೂಚನೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
     <string name="settings_notifications_system_body">ಪ್ರತಿ ರೀತಿಯ ಸೂಚನೆಗೆ ಶಬ್ದಗಳು, ಲಾಕ್ ಸ್ಕ್ರೀನ್ ಮತ್ತು ಇನ್ನಷ್ಟು</string>
+    <string name="settings_notify_water_title">ನೀರು ಕುಡಿಯುವ ಜ್ಞಾಪನೆಗಳು</string>
+    <string name="settings_notify_water_body">ದಿನಕ್ಕೆ ಮೂರು ಬಾರಿ ಒಂದು ಲೋಟ ನೀರು ಕುಡಿಯಲು ಮೃದುವಾದ ನೆನಪು</string>
+    <string name="notify_channel_water">ನೀರು ಕುಡಿಯಿರಿ</string>
+    <string name="notify_channel_water_description">ನೀವು ಆನ್ ಇಟ್ಟರೆ, ದಿನಕ್ಕೆ ಮೂರು ಬಾರಿ ನೀರು ಕುಡಿಯುವ ಜ್ಞಾಪನೆ</string>
+    <string name="notify_water_title">ಒಂದು ಲೋಟ ನೀರಿನ ಸಮಯ</string>
+    <string name="notify_water_body_morning">ಈಗ ಒಂದು ಗುಟುಕು ಬೆಳಗ್ಗೆಯನ್ನು ಚುರುಕಾಗಿಡುತ್ತದೆ. 💧</string>
+    <string name="notify_water_body_midday">ಮಧ್ಯಾಹ್ನವಾಯಿತು — ವಿರಾಮದ ಜೊತೆ ಒಂದು ಲೋಟ ನೀರು ಕುಡಿಯಿರಿ.</string>
+    <string name="notify_water_body_afternoon">ಇಂದಿನ ಕೊನೆಯ ನೆನಪು: ಇನ್ನೊಂದು ಲೋಟ ನಿಮ್ಮನ್ನು ಚೈತನ್ಯದಿಂದ ಇಡುತ್ತದೆ.</string>
+    <string name="notify_water_turn_off">ಆಫ್ ಮಾಡಿ</string>
 </resources>

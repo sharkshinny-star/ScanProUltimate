@@ -41,6 +41,17 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-16, F157, cloud Linux container, JDK via Gradle toolchain)
+
+- Full `:app:testDebugUnitTest`: BUILD SUCCESSFUL; 756 tests, 0 failed, 0 errors, 30 skipped (counted from the result
+  XML; includes the new `HydrationScheduleTest`, 5 tests). `:app:compileDebugKotlin`: clean.
+- `:app:lintDebug`: BUILD SUCCESSFUL (3m 10s); 0 errors, 75 warnings (72 before this session; the new ones are in the new files' TODO-free but warning-prone areas, none blocking). One `:app:assembleRelease` (sideload build, right before the push):
+  BUILD SUCCESSFUL (4m 32s); APK 38,609,727 bytes (36.8 MiB), unsigned as configured. `bundleRelease` NOT run.
+- Environment: fresh container; SDK installed at `/opt/android-sdk` (cmdline-tools 13114758, platform android-37.0,
+  build-tools 37.0.0); Maven Central returned HTTP 429 again, fixed with the documented
+  `~/.gradle/init.d/central-mirror.gradle` (local only, never committed).
+- NOT run: instrumented tests, any device or emulator; nothing was seen on a phone.
+
 ## Latest results (2026-11-15, F156 on `d408169`, macOS, Android Studio Preview JDK)
 
 - Full `:app:testDebugUnitTest`: exit 0; 748 tests, 0 failed, 0 errors, 65 skipped (counted from the result XML).

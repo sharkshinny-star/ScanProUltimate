@@ -85,6 +85,8 @@
     <string name="trash_empty_dialog_message">This will permanently delete all files in the Recycle Bin. This action cannot be undone.</string>
 
     <!-- Settings screen -->
+    <string name="settings_contact_title">Contact us</string>
+    <string name="settings_contact_subtitle">Feedback, problems and feature ideas</string>
     <string name="settings_feedback">Give feedback</string>
     <string name="settings_request_features">Suggest a feature</string>
     <string name="settings_pdf_quality_title">Default PDF quality</string>

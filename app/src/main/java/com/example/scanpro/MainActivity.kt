@@ -455,6 +455,12 @@ class MainActivity : FragmentActivity() {
             }
             Intent.ACTION_VIEW -> {
                 val uri = intent.data
+                // The sample PDF the "Set as default" flow opened (DefaultPdfApp): landing here means the
+                // person picked ScanPro, so say it worked; there is nothing in the sample to import.
+                if (com.example.scanpro.core.ui.DefaultPdfApp.isProbe(this, uri)) {
+                    viewModel.showMessage(getString(R.string.default_pdf_confirmed))
+                    return
+                }
                 if (uri != null && isAllowedExternalUri(uri)) {
                     if (type == "application/pdf" || uri.toString().endsWith(".pdf", ignoreCase = true)) {
                         appViewModel.submitExternalImport { appViewModel.importPdf(uri) }
