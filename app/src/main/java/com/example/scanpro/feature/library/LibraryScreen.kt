@@ -66,7 +66,9 @@ import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.TravelExplore
 import androidx.compose.material3.Button
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -159,8 +161,18 @@ fun LibraryRoute(
     onOpenTools: () -> Unit = {},
     onKeptScans: () -> Unit = {},
     onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> },
+    /** The full "Files on this phone" list (Home's See all, the Files menu). */
+    onPhonePdfs: () -> Unit = {},
+    /** Copies a PDF from the phone into the library. */
+    onImportPdfUri: (android.net.Uri) -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
+    val promptContext = LocalContext.current
+    var phonePdfsCardDismissed by remember { mutableStateOf(com.example.scanpro.data.FilesAccessPrompts.phonePdfsCardDismissed(promptContext)) }
+    var homeFilesCardDismissed by remember { mutableStateOf(com.example.scanpro.data.FilesAccessPrompts.homeFilesCardDismissed(promptContext)) }
+    val phoneFileActions = remember(onOpenPdfViewer, onImportPdfUri, onOpenTools) {
+        com.example.scanpro.feature.phonepdfs.PhoneFileActions(onOpenPdf = onOpenPdfViewer, onAddToScanPro = onImportPdfUri, onOpenTools = onOpenTools)
+    }
     val homeRecentPdfs by viewModel.recentPdfs.collectAsStateWithLifecycle()
     val homeToolResults by viewModel.toolResults.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -263,6 +275,39 @@ fun LibraryRoute(
                 TipAction.Search -> onSearch()
                 TipAction.Settings -> onTab(ScanProDestinations.SETTINGS)
             }
+        },
+        onPhonePdfs = onPhonePdfs,
+        // Files on this phone (F160): Home's section, the card above My documents and the On this phone pane.
+        homePhoneFiles = if (mode != ScanProDestinations.HOME) null else {
+            {
+                com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
+                    actions = phoneFileActions,
+                    onSeeAll = onPhonePdfs,
+                    cardDismissed = homeFilesCardDismissed,
+                    onDismissCard = {
+                        com.example.scanpro.data.FilesAccessPrompts.dismissHomeFilesCard(context)
+                        homeFilesCardDismissed = true
+                    }
+                )
+            }
+        },
+        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed) null else {
+            {
+                com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
+                    actions = phoneFileActions,
+                    onSeeAll = onPhonePdfs,
+                    cardDismissed = false,
+                    onDismissCard = {
+                        com.example.scanpro.data.FilesAccessPrompts.dismissPhonePdfsCard(context)
+                        phonePdfsCardDismissed = true
+                    },
+                    showFiles = false,
+                    modifier = Modifier.padding(vertical = 6.dp)
+                )
+            }
+        },
+        phoneFilesPane = if (mode != ScanProDestinations.FILES) null else {
+            { com.example.scanpro.feature.phonepdfs.PhoneFilesPane(actions = phoneFileActions, onNotNow = null) }
         }
     )
 }
@@ -328,10 +373,19 @@ internal fun LibraryScreen(
     onTipAction: (TipAction) -> Unit = {},
     recentPdfs: List<com.example.scanpro.data.RecentPdf> = emptyList(),
     toolResults: List<com.example.scanpro.data.ToolResultFile> = emptyList(),
-    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> }
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> },
+    /** Files > Files on this phone: the full list, from the Files menu and Home's See all. */
+    onPhonePdfs: () -> Unit = {},
+    /** Home: Files on this phone (access card or newest files). */
+    homePhoneFiles: (@Composable () -> Unit)? = null,
+    /** Files > My documents: the access card, until granted or closed. */
+    filesAccessCard: (@Composable () -> Unit)? = null,
+    /** Files > On this phone. Null hides the My documents / On this phone switch. */
+    phoneFilesPane: (@Composable () -> Unit)? = null
 ) {
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
+    var phoneFilesTab by rememberSaveable { mutableStateOf(false) }
     // Files keeps the saved layout; Search is always a list. The saved sort orders both.
     val gridMode = mode == ScanProDestinations.FILES && savedGrid
     var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
@@ -567,6 +621,11 @@ internal fun LibraryScreen(
                                         enabled = !busy,
                                         onClick = { moreMenuOpen = false; onImportPdf() }
                                     )
+                                    if (mode == ScanProDestinations.FILES) DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.phone_pdfs_title)) },
+                                        leadingIcon = { Icon(Icons.Rounded.TravelExplore, contentDescription = null) },
+                                        onClick = { moreMenuOpen = false; onPhonePdfs() }
+                                    )
                                     if (mode == ScanProDestinations.FILES && folder.isNotBlank()) {
                                         val folderLocked = com.example.scanpro.core.security.FolderLock.key(folder) in lockedFolders
                                         DropdownMenuItem(
@@ -635,10 +694,30 @@ internal fun LibraryScreen(
                     onTipAction = onTipAction,
                     recentPdfs = recentPdfs,
                     toolResults = toolResults,
-                    onOpenPdfViewer = onOpenPdfViewer
+                    onOpenPdfViewer = onOpenPdfViewer,
+                    phoneFiles = homePhoneFiles
                 )
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
+                    // Files: ScanPro's own documents, or every file on the phone (F160).
+                    if (phoneFilesPane != null && !selecting) {
+                        androidx.compose.material3.SingleChoiceSegmentedButtonRow(
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                        ) {
+                            listOf(R.string.phone_files_tab_mine, R.string.phone_files_tab_phone).forEachIndexed { index, label ->
+                                SegmentedButton(
+                                    selected = phoneFilesTab == (index == 1),
+                                    onClick = { phoneFilesTab = index == 1 },
+                                    shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 2),
+                                    label = { Text(stringResource(label), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                                )
+                            }
+                        }
+                    }
+                    if (phoneFilesPane != null && phoneFilesTab && !selecting) {
+                        phoneFilesPane()
+                        return@Column
+                    }
                     if (isSearch) {
                         SearchField(
                             query = query,
@@ -660,6 +739,8 @@ internal fun LibraryScreen(
                             }
                         }
                     }
+
+                    if (filesAccessCard != null && !isSearch && folder.isBlank() && !selecting) filesAccessCard()
 
                     // Folder/favourite filters only earn their space once there is something to filter.
                     var tagSheetOpen by rememberSaveable { mutableStateOf(false) }
@@ -1040,7 +1121,8 @@ private fun HomeDashboard(
     onTipAction: (TipAction) -> Unit = {},
     recentPdfs: List<com.example.scanpro.data.RecentPdf> = emptyList(),
     toolResults: List<com.example.scanpro.data.ToolResultFile> = emptyList(),
-    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> }
+    onOpenPdfViewer: (android.net.Uri, String) -> Unit = { _, _ -> },
+    phoneFiles: (@Composable () -> Unit)? = null
 ) {
     val recent = overview.recent
     val documentCount = overview.documentCount
@@ -1186,6 +1268,10 @@ private fun HomeDashboard(
                 }
                 com.example.scanpro.feature.tools.HomeRecentRow(items)
             }
+        }
+        // Files on this phone (F160): the access card until granted or closed, then the newest files with See all.
+        if (phoneFiles != null) {
+            item(key = "phone_files", contentType = "phone_files") { phoneFiles() }
         }
         if (showTips) {
             item(key = "tips", contentType = "tips") {

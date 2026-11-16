@@ -18,7 +18,19 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- No broad storage permission. Photo Picker / SAF and app-private storage are used. -->
+    <!-- Scans, imports and exports use the Photo Picker, the system file picker (SAF) and app-private storage.
+         The two permissions below serve one optional feature only: "Files on this phone" (Home and Files), which
+         lists and opens the PDFs, images, Office and text files in shared storage, read only; nothing is uploaded.
+         Neither is requested at launch: the user reads an explainer card and then grants it on the system "All files
+         access" page (Android 11+) or in the usual permission dialog (Android 7-10). Google Play needs a permission declaration for MANAGE_EXTERNAL_STORAGE.
+         requestLegacyExternalStorage (on the application) is read by Android 10 only, where READ_EXTERNAL_STORAGE
+         would otherwise show media files but no PDFs; later versions ignore it. -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
 
     <application
         android:name=".ScanProApplication"
@@ -32,6 +44,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ScanPro"
         android:enableOnBackInvokedCallback="true"
+        android:requestLegacyExternalStorage="true"
         android:localeConfig="@xml/locales_config"
         tools:targetApi="33">
 

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files on this phone (All files access), the default PDF viewer sheet and the import tip. -->
+<resources>
+    <string name="phone_pdfs_title">Files on this phone</string>
+    <string name="phone_files_card_title">See all your files here</string>
+    <string name="phone_pdfs_card_body">Find PDFs, photos and Office files from Downloads, chat apps and other folders. Nothing leaves your phone, and it\'s optional.</string>
+    <string name="phone_pdfs_card_hide">Hide this card</string>
+    <string name="phone_files_tab_mine">My documents</string>
+    <string name="phone_files_tab_phone">On this phone</string>
+    <string name="phone_pdfs_explainer_title">See every file on your phone</string>
+    <string name="phone_pdfs_explainer_why">ScanPro needs All files access to find and open PDFs, photos and Office files anywhere on your phone, such as Downloads or files you received in chat apps.</string>
+    <string name="phone_pdfs_explainer_private">Nothing leaves your phone. ScanPro only reads your files and never changes or deletes them unless you ask it to.</string>
+    <string name="phone_pdfs_explainer_optional">This is optional. Scanning, your documents and every tool work without it.</string>
+    <string name="phone_pdfs_explainer_steps">On the next screen, turn on \"Allow access to manage all files\" for ScanPro, then come back.</string>
+    <string name="phone_pdfs_explainer_steps_dialog">Android will ask whether ScanPro may read your files.</string>
+    <string name="phone_pdfs_allow">Allow access</string>
+    <string name="phone_pdfs_not_now">Not now</string>
+    <string name="phone_pdfs_settings_failed">Couldn\'t open the settings page. Allow All files access for ScanPro in Settings &gt; Apps.</string>
+    <string name="phone_pdfs_refresh">Refresh</string>
+    <string name="phone_pdfs_search_hint">Search files</string>
+    <string name="phone_pdfs_clear_search">Clear search</string>
+    <string name="phone_files_filter_all">All</string>
+    <string name="phone_files_filter_pdf">PDF</string>
+    <string name="phone_files_filter_images">Images</string>
+    <string name="phone_files_filter_word">Word</string>
+    <string name="phone_files_filter_excel">Excel</string>
+    <string name="phone_files_filter_powerpoint">PowerPoint</string>
+    <string name="phone_files_filter_text">Text</string>
+    <string name="phone_pdfs_sort_name">Name</string>
+    <string name="phone_pdfs_sort_date">Date</string>
+    <string name="phone_pdfs_sort_size">Size</string>
+    <string name="phone_pdfs_sort_ascending">Ascending</string>
+    <string name="phone_pdfs_sort_descending">Descending</string>
+    <plurals name="phone_files_count">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+    <plurals name="phone_files_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="phone_pdfs_loading">Looking for files…</string>
+    <string name="phone_pdfs_empty">No files found on this phone.</string>
+    <string name="phone_pdfs_no_match">No files match \"%1$s\".</string>
+    <string name="phone_pdfs_more">More options for %1$s</string>
+    <string name="phone_pdfs_open">Open</string>
+    <string name="phone_pdfs_add">Add to ScanPro</string>
+    <string name="phone_pdfs_share">Share</string>
+    <string name="phone_files_open_with">Open with</string>
+    <string name="phone_files_convert">Convert to PDF</string>
+    <string name="phone_files_merge">Merge</string>
+    <string name="phone_files_images_to_pdf">Images to PDF</string>
+    <string name="phone_files_clear_selection">Clear selection</string>
+    <string name="phone_files_close">Close</string>
+    <string name="phone_files_no_app">No app on this phone can open this file.</string>
+
+    <string name="default_viewer_title">Set ScanPro as your default PDF viewer</string>
+    <string name="default_viewer_body">Open PDFs from other apps straight in ScanPro, with its viewer and tools.</string>
+    <string name="default_viewer_hint">When Android asks which app should open a PDF, choose ScanPro and tap Always.</string>
+    <string name="default_viewer_set">Set as default</string>
+    <string name="default_viewer_not_now">Not now</string>
+    <string name="default_viewer_settings_failed">Couldn\'t open the settings page.</string>
+
+    <string name="import_tip_title">How to import files?</string>
+    <string name="import_tip_body">Tap to select a file, long-press to select several, then tap Select at the top right to import.</string>
+    <string name="import_tip_cancel">Cancel</string>
+    <string name="import_tip_import">Import</string>
+</resources>
