@@ -98,7 +98,14 @@ class DocumentViewModel @Inject constructor(
         .map { it == id }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), operations.scanSaved.value == id)
 
-    fun dismissScanSaved() = operations.clearScanSaved(id)
+    /**
+     * The "Scan saved" sheet closed. If the feedback schedule is due, "Rate your experience" follows once the user is
+     * back on a calm screen (ScanProApp decides when; an action that opened the camera keeps it waiting).
+     */
+    fun dismissScanSaved() {
+        operations.clearScanSaved(id)
+        if (com.example.scanpro.data.FeedbackPrompts.isDue(context)) operations.requestFeedbackPrompt()
+    }
 
     /** Whether this document has edits to undo or redo in this session. */
     val undoState: StateFlow<UndoState> = repository.undoState

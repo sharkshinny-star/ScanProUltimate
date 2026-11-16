@@ -18,8 +18,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.example.scanpro.R
-import com.example.scanpro.core.ui.SupportTopic
-import com.example.scanpro.core.ui.contactSupport
+import com.example.scanpro.feature.feedback.FeedbackFormKind
+import com.example.scanpro.feature.feedback.FeedbackFormSheet
+import com.example.scanpro.feature.feedback.RateExperienceSheet
 import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.core.ui.sharePlayStoreListing
 import com.example.scanpro.data.FirstRunHints
@@ -36,11 +37,17 @@ internal fun SupportPage(snackbarHostState: SnackbarHostState) = SettingsPageCol
     if (whatsNewOpen) {
         WhatsNewSheet(onPickColours = { whatsNewOpen = false }, onDismiss = { whatsNewOpen = false })
     }
-    val contact: (SupportTopic) -> Unit = { topic ->
-        scope.launch {
-            val delivery = contactSupport(context, topic)
-            snackbarHostState.showSnackbar(delivery.confirmation(context))
-        }
+    // Give feedback opens "Rate your experience"; Report an issue and Suggest a feature open the form. Each ends in
+    // the user's email app with the message filled in.
+    var rateOpen by rememberSaveable { mutableStateOf(false) }
+    var form by rememberSaveable { mutableStateOf<FeedbackFormKind?>(null) }
+    if (rateOpen) RateExperienceSheet(onClose = { rateOpen = false })
+    form?.let { kind ->
+        FeedbackFormSheet(
+            kind = kind,
+            onSent = { delivery -> scope.launch { snackbarHostState.showSnackbar(delivery.confirmation(context)) } },
+            onClose = { form = null }
+        )
     }
 
     SettingsGroup(header = stringResource(R.string.settings_group_help)) {
@@ -69,18 +76,18 @@ internal fun SupportPage(snackbarHostState: SnackbarHostState) = SettingsPageCol
             title = stringResource(R.string.settings_feedback),
             icon = Icons.Rounded.Feedback,
             summary = stringResource(R.string.settings_feedback_subtitle),
-            onClick = { contact(SupportTopic.FEEDBACK) }
+            onClick = { rateOpen = true }
         )
         SettingsRow(
             title = stringResource(R.string.settings_report_issue_title),
             icon = Icons.Rounded.BugReport,
             summary = stringResource(R.string.settings_report_issue_subtitle),
-            onClick = { contact(SupportTopic.ISSUE) }
+            onClick = { form = FeedbackFormKind.ISSUE }
         )
         SettingsRow(
             title = stringResource(R.string.settings_request_features),
             icon = Icons.Rounded.Lightbulb,
-            onClick = { contact(SupportTopic.FEATURE) }
+            onClick = { form = FeedbackFormKind.FEATURE }
         )
     }
 

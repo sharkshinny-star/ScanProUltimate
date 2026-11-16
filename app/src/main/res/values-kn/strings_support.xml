@@ -24,30 +24,4 @@
     <string name="print_err_failed">PDF ಪ್ರಿಂಟ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ</string>
     <string name="backup_warning_unredacted_document">ಈ ಡಾಕ್ಯುಮೆಂಟ್‌ನಲ್ಲಿ ಮರೆಮಾಡಿದ ಅಥವಾ ಅಳಿಸಿದ ಭಾಗಗಳಿವೆ. ಬ್ಯಾಕಪ್‌ನಲ್ಲಿ ಮೂಲ ಫೋಟೋಗಳು ಇರುತ್ತವೆ, ಹಾಗಾಗಿ ಬ್ಯಾಕಪ್ ಮತ್ತು ಅದರ ಪಾಸ್‌ವರ್ಡ್ ಇರುವ ಯಾರಾದರೂ ಮರೆಮಾಡಿದ್ದನ್ನು ನೋಡಬಹುದು. ಮರೆಮಾಡಿದ ಪ್ರತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳಲು, ಬದಲಿಗೆ PDF ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಿ.</string>
     <string name="backup_warning_unredacted_all">ಬ್ಯಾಕಪ್‌ಗಳಲ್ಲಿ ಪ್ರತಿ ಪುಟದ ಮೂಲ ಫೋಟೋ ಇರುತ್ತದೆ, ನೀವು ಮರೆಮಾಡಿದ ಅಥವಾ ಅಳಿಸಿದ ಭಾಗಗಳೂ ಸೇರಿ. ಬ್ಯಾಕಪ್ ಮತ್ತು ಅದರ ಪಾಸ್‌ವರ್ಡ್ ಇರುವ ಯಾರಾದರೂ ಮರೆಮಾಡಿದ್ದನ್ನು ನೋಡಬಹುದು. ಮರೆಮಾಡಿದ ಪ್ರತಿಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಲು, ಬದಲಿಗೆ PDF ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಿ.</string>
-    <string name="rate_title">ScanPro ನಿಮಗೆ ಹೇಗೆ ಅನಿಸುತ್ತಿದೆ?</string>
-    <string name="rate_body">ನಿಮ್ಮ ರೇಟಿಂಗ್ ಪ್ರತಿ ಸ್ಕ್ಯಾನ್ ಅನ್ನು ಉತ್ತಮಗೊಳಿಸಲು ನಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತದೆ.</string>
-    <string name="rate_tap_a_star">ಒಂದು ಸ್ಟಾರ್ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
-    <string name="rate_label_1">ಕಳಪೆ</string>
-    <string name="rate_label_2">ಪರವಾಗಿಲ್ಲ</string>
-    <string name="rate_label_3">ಚೆನ್ನಾಗಿದೆ</string>
-    <string name="rate_label_4">ತುಂಬಾ ಚೆನ್ನಾಗಿದೆ</string>
-    <string name="rate_label_5">ಅದ್ಭುತ!</string>
-    <string name="rate_title_1">ನಿಮ್ಮನ್ನು ನಿರಾಶೆಗೊಳಿಸಿದ್ದಕ್ಕೆ ಕ್ಷಮಿಸಿ</string>
-    <string name="rate_body_1">ಏನು ತಪ್ಪಾಯಿತು ಎಂದು ತಿಳಿಸಿ, ನಾವು ಸರಿಪಡಿಸುತ್ತೇವೆ.</string>
-    <string name="rate_title_2">ನಾವು ಇನ್ನೂ ಉತ್ತಮವಾಗಿ ಮಾಡಬಹುದು</string>
-    <string name="rate_body_2">ಏನು ಸರಿಪಡಿಸಬೇಕೆಂದು ತಿಳಿಸಿ.</string>
-    <string name="rate_title_3">ಪ್ರತಿಕ್ರಿಯೆಗೆ ಧನ್ಯವಾದಗಳು</string>
-    <string name="rate_body_3">ಏನನ್ನು ಸುಧಾರಿಸಬೇಕೆಂದು ಒಂದು ಸಾಲು ಬರೆದರೂ ತುಂಬಾ ಸಹಾಯವಾಗುತ್ತದೆ.</string>
-    <string name="rate_title_4">ನಿಮಗೆ ಇಷ್ಟವಾಗಿದ್ದಕ್ಕೆ ಖುಷಿ!</string>
-    <string name="rate_body_4">ಒಂದು ಚಿಕ್ಕ ರಿವ್ಯೂ ಇತರರಿಗೆ ScanPro ಹುಡುಕಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ.</string>
-    <string name="rate_title_5">ನೀವು ನಮ್ಮ ದಿನ ಸುಂದರಗೊಳಿಸಿದಿರಿ!</string>
-    <string name="rate_body_5">ಒಂದು ಚಿಕ್ಕ ರಿವ್ಯೂ ಮೂಲಕ ಪ್ರೀತಿ ಹಂಚಿಕೊಳ್ಳಿ.</string>
-    <string name="rate_not_now">ಈಗ ಬೇಡ</string>
-    <string name="rate_on_google_play">Google Play ನಲ್ಲಿ ರೇಟ್ ಮಾಡಿ</string>
-    <string name="rate_send_feedback">ಪ್ರತಿಕ್ರಿಯೆ ಕಳುಹಿಸಿ</string>
-    <string name="rate_stars_content_description">ರೇಟಿಂಗ್, ಒಂದರಿಂದ ಐದು ಸ್ಟಾರ್</string>
-    <plurals name="rate_star">
-        <item quantity="one">%1$d ಸ್ಟಾರ್</item>
-        <item quantity="other">%1$d ಸ್ಟಾರ್‌ಗಳು</item>
-    </plurals>
 </resources>
