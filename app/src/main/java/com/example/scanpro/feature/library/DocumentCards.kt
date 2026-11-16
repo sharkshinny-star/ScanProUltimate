@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -88,7 +89,12 @@ internal fun PaperThumbnail(document: DocumentSummary, modifier: Modifier = Modi
         modifier
             .shadow(6.dp, shape, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f))
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            // Paper white in the light theme. In the dark theme the lowest surface is near black, and a page that does
+            // not fill the frame (a landscape photo, a receipt) sat in a black slab; a raised grey reads as a sheet.
+            .background(
+                if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) MaterialTheme.colorScheme.surfaceContainerHighest
+                else MaterialTheme.colorScheme.surfaceContainerLowest
+            )
             .border(BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)), shape)
     ) {
         PageThumbnail(
@@ -331,8 +337,8 @@ internal fun DocumentGridCard(
                 document.title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                minLines = 2,
+                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
+                minLines = com.example.scanpro.core.ui.cardTitleLines(),
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(top = 12.dp)
             )

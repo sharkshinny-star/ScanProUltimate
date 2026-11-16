@@ -429,3 +429,12 @@ fun openPlayStoreListing(context: Context) {
         }
     }
 }
+
+/**
+ * Lines a document name may take on a card: two, or three once the system text size is large. At 1.5x text a card
+ * half or a third of the screen wide fits about nine characters a line, so two lines of "Scan 2026-11-16 16-13" ended
+ * at "Scan 2026-11-1…" and every scan of the month read the same (seen on the emulator, 2026-11-16).
+ */
+@androidx.compose.runtime.Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun cardTitleLines(): Int = if (androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.3f) 3 else 2

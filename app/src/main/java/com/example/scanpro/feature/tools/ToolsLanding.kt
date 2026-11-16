@@ -391,7 +391,7 @@ private fun ToolCard(
                 description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -480,7 +480,7 @@ private fun SearchResultRow(hit: SearchHit, onClick: () -> Unit) {
                 TOOL_DESCRIPTIONS[hit.tool.id]?.let { stringResource(it) } ?: stringResource(hit.sectionTitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
                 overflow = TextOverflow.Ellipsis
             )
         }
