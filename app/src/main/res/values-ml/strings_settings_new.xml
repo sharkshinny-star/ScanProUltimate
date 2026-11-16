@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_shortcuts">കുറുക്കുവഴികളും ഡിഫോൾട്ട് ആപ്പും</string>
+    <string name="settings_shortcuts_summary">ഡിഫോൾട്ട് PDF ആപ്പ് · വിജറ്റ് · സ്കാൻ കുറുക്കുവഴി</string>
+
+    <string name="settings_open_by_default_title">PDF-കൾ എപ്പോഴും ScanPro-യിൽ തുറക്കുക</string>
+    <string name="settings_open_by_default_subtitle">Android ക്രമീകരണങ്ങളിൽ PDF ഫയലുകൾക്കായി ScanPro തിരഞ്ഞെടുക്കുക</string>
+    <string name="settings_open_by_default_body">PDF ഫയലുകൾ ഏത് ആപ്പ് തുറക്കണമെന്ന് Android ആണ് തീരുമാനിക്കുന്നത്. അടുത്ത തവണ PDF തുറക്കുമ്പോൾ ScanPro തിരഞ്ഞെടുത്ത് എപ്പോഴും ടാപ്പ് ചെയ്യുക.\n\nമറ്റൊരു ആപ്പ് നേരിട്ട് PDF തുറക്കുന്നുണ്ടെങ്കിൽ, ആദ്യം Android ക്രമീകരണങ്ങളിൽ ആ ആപ്പിന്റെ ഡിഫോൾട്ടുകൾ മായ്ക്കുക. താഴെയുള്ള ബട്ടൺ അവിടെ ScanPro-യുടെ സ്വന്തം പേജ് തുറക്കുന്നു.</string>
+    <string name="settings_open_android_settings">Android ക്രമീകരണങ്ങൾ തുറക്കുക</string>
+    <string name="settings_android_settings_unavailable">ഈ ഫോണിൽ Android ക്രമീകരണങ്ങൾ തുറക്കാനായില്ല</string>
+
+    <string name="settings_group_home_screen">ഹോം സ്ക്രീൻ</string>
+    <string name="settings_widget_title">ഹോം സ്ക്രീൻ വിജറ്റ് ചേർക്കുക</string>
+    <string name="settings_widget_subtitle">ഒറ്റ ടാപ്പിൽ സ്കാൻ അല്ലെങ്കിൽ ID കാർഡ് സ്കാൻ ആരംഭിക്കുക</string>
+    <string name="settings_scan_shortcut_title">ഹോം സ്ക്രീനിൽ സ്കാൻ കുറുക്കുവഴി ചേർക്കുക</string>
+    <string name="settings_scan_shortcut_subtitle">നേരിട്ട് ക്യാമറ തുറക്കുന്ന ഒരു ഐക്കൺ</string>
+    <string name="settings_pin_not_accepted">നിങ്ങളുടെ ഹോം സ്ക്രീൻ ഇത് സ്വീകരിച്ചില്ല. ഹോം സ്ക്രീനിൽ നിന്ന് ചേർക്കാൻ ശ്രമിക്കുക.</string>
+
+    <string name="settings_group_camera">ക്യാമറ</string>
+    <string name="settings_group_saving">സംരക്ഷിക്കൽ</string>
+    <string name="settings_group_advanced">വിപുലമായത്</string>
+    <string name="settings_group_help">സഹായം</string>
+    <string name="settings_group_contact">ബന്ധപ്പെടുക</string>
+    <string name="settings_group_spread">മറ്റുള്ളവരോട് പറയുക</string>
+    <string name="settings_group_legal">നിയമപരം</string>
+    <string name="settings_group_notify_about">ഇവയെക്കുറിച്ച് അറിയിക്കുക</string>
+
+    <string name="settings_recycle_bin_open">റീസൈക്കിൾ ബിൻ തുറക്കുക</string>
+    <string name="settings_recycle_bin_empty">ശൂന്യം</string>
+    <plurals name="settings_recycle_bin_count">
+        <item quantity="one">%d ഡോക്യുമെന്റ്</item>
+        <item quantity="other">%d ഡോക്യുമെന്റുകൾ</item>
+    </plurals>
+    <string name="settings_recycle_bin_summary">%1$s · %2$s സൂക്ഷിക്കും</string>
+    <string name="settings_library_summary">%1$s · %2$s ഉപയോഗിച്ചു</string>
+    <plurals name="settings_library_documents">
+        <item quantity="one">%d ഡോക്യുമെന്റ്</item>
+        <item quantity="other">%d ഡോക്യുമെന്റുകൾ</item>
+    </plurals>
+</resources>

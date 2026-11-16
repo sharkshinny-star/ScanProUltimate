@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_shortcuts">షార్ట్‌కట్‌లు &amp; డిఫాల్ట్ యాప్</string>
+    <string name="settings_shortcuts_summary">డిఫాల్ట్ PDF యాప్ · విడ్జెట్ · స్కాన్ షార్ట్‌కట్</string>
+
+    <string name="settings_open_by_default_title">PDFలను ఎల్లప్పుడూ ScanProలో తెరవండి</string>
+    <string name="settings_open_by_default_subtitle">Android సెట్టింగ్‌లలో PDF ఫైల్‌ల కోసం ScanProను ఎంచుకోండి</string>
+    <string name="settings_open_by_default_body">PDF ఫైల్‌లను ఏ యాప్ తెరవాలో Android నిర్ణయిస్తుంది. తదుపరిసారి PDF తెరిచేటప్పుడు ScanProను ఎంచుకుని ఎల్లప్పుడూ నొక్కండి.\n\nవేరే యాప్ నేరుగా PDFలను తెరుస్తుంటే, ముందుగా Android సెట్టింగ్‌లలో ఆ యాప్ డిఫాల్ట్‌లను క్లియర్ చేయండి. కింది బటన్ అక్కడ ScanPro సొంత పేజీని తెరుస్తుంది.</string>
+    <string name="settings_open_android_settings">Android సెట్టింగ్‌లను తెరవండి</string>
+    <string name="settings_android_settings_unavailable">ఈ ఫోన్‌లో Android సెట్టింగ్‌లను తెరవలేకపోయాము</string>
+
+    <string name="settings_group_home_screen">హోమ్ స్క్రీన్</string>
+    <string name="settings_widget_title">హోమ్ స్క్రీన్ విడ్జెట్‌ను జోడించండి</string>
+    <string name="settings_widget_subtitle">ఒక్క ట్యాప్‌తో స్కాన్ లేదా ID కార్డ్ స్కాన్ ప్రారంభించండి</string>
+    <string name="settings_scan_shortcut_title">హోమ్ స్క్రీన్‌కు స్కాన్ షార్ట్‌కట్ జోడించండి</string>
+    <string name="settings_scan_shortcut_subtitle">నేరుగా కెమెరాను తెరిచే ఐకాన్</string>
+    <string name="settings_pin_not_accepted">మీ హోమ్ స్క్రీన్ దీన్ని అంగీకరించలేదు. హోమ్ స్క్రీన్ నుండే జోడించి చూడండి.</string>
+
+    <string name="settings_group_camera">కెమెరా</string>
+    <string name="settings_group_saving">సేవ్ చేయడం</string>
+    <string name="settings_group_advanced">అధునాతనం</string>
+    <string name="settings_group_help">సహాయం</string>
+    <string name="settings_group_contact">సంప్రదించండి</string>
+    <string name="settings_group_spread">ఇతరులకు చెప్పండి</string>
+    <string name="settings_group_legal">చట్టపరమైనవి</string>
+    <string name="settings_group_notify_about">వీటి గురించి తెలియజేయండి</string>
+
+    <string name="settings_recycle_bin_open">రీసైకిల్ బిన్ తెరవండి</string>
+    <string name="settings_recycle_bin_empty">ఖాళీ</string>
+    <plurals name="settings_recycle_bin_count">
+        <item quantity="one">%d డాక్యుమెంట్</item>
+        <item quantity="other">%d డాక్యుమెంట్‌లు</item>
+    </plurals>
+    <string name="settings_recycle_bin_summary">%1$s · %2$s ఉంచబడతాయి</string>
+    <string name="settings_library_summary">%1$s · %2$s వాడబడింది</string>
+    <plurals name="settings_library_documents">
+        <item quantity="one">%d డాక్యుమెంట్</item>
+        <item quantity="other">%d డాక్యుమెంట్‌లు</item>
+    </plurals>
+</resources>

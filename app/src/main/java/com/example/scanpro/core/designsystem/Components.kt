@@ -153,6 +153,8 @@ fun TextInputDialog(
     confirmLabel: String = stringResource(R.string.common_save),
     maxLines: Int = 1,
     allowBlank: Boolean = false,
+    /** An optional explanation above the field. */
+    message: String? = null,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
@@ -171,6 +173,9 @@ fun TextInputDialog(
             LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
             // Scrolls, so the field stays reachable with a big font, in landscape or above the keyboard.
             androidx.compose.foundation.layout.Column(Modifier.verticalScroll(rememberScrollState())) {
+                if (message != null) {
+                    Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+                }
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it },
