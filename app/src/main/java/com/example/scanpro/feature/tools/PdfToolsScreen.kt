@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Merge
+import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -133,6 +135,10 @@ fun PdfToolsScreen(
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
     var showWatermarkDialog by rememberSaveable { mutableStateOf(false) }
     var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
+    var showGreyscaleDialog by rememberSaveable { mutableStateOf(false) }
+    var showFlattenDialog by rememberSaveable { mutableStateOf(false) }
+    val blankPagesFound by viewModel.blankPages.collectAsStateWithLifecycle()
+    val pdfInfo by viewModel.pdfInfo.collectAsStateWithLifecycle()
 
     var activeCropSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
     var activeCropUri by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -288,6 +294,11 @@ fun PdfToolsScreen(
             "pdf2text" -> { pdfTextFormat = TextExportFormat.WORD; showPdfToTextDialog = true }
             "pdf2excel" -> { pdfTextFormat = TextExportFormat.EXCEL; showPdfToTextDialog = true }
             "pdf2ppt" -> viewModel.pdfToPowerPoint(uri)
+            "blank_pages" -> viewModel.findBlankPages(uri)
+            "greyscale" -> showGreyscaleDialog = true
+            "flatten" -> showFlattenDialog = true
+            "extract_images" -> viewModel.extractImages(uri)
+            "pdf_info" -> viewModel.openPdfInfo(uri)
         }
     }
     fun startTool(tool: String, uri: Uri) {
@@ -772,6 +783,44 @@ fun PdfToolsScreen(
                 )
             }
 
+            blankPagesFound?.let { found ->
+                BlankPagesDialog(found = found, onDismiss = viewModel::clearBlankPages, onRemove = { viewModel.removeBlankPages(found) })
+            }
+
+            if (showGreyscaleDialog && uri != null) {
+                ToolConfirmDialog(
+                    icon = Icons.Default.Contrast,
+                    title = stringResource(R.string.tools_card_greyscale),
+                    body = stringResource(R.string.tools_grey_confirm_body, com.example.scanpro.imaging.PdfCleanupTools.GREYSCALE_DPI),
+                    confirmLabel = stringResource(R.string.tools_grey_confirm_action),
+                    onDismiss = { showGreyscaleDialog = false },
+                    onConfirm = { showGreyscaleDialog = false; viewModel.greyscale(uri) }
+                )
+            }
+
+            if (showFlattenDialog && uri != null) {
+                ToolConfirmDialog(
+                    icon = Icons.Default.Layers,
+                    title = stringResource(R.string.tools_card_flatten),
+                    body = stringResource(R.string.tools_flatten_confirm_body),
+                    confirmLabel = stringResource(R.string.tools_flatten_confirm_action),
+                    onDismiss = { showFlattenDialog = false },
+                    onConfirm = { showFlattenDialog = false; viewModel.flatten(uri) }
+                )
+            }
+
+            pdfInfo?.let { session ->
+                // Keyed by the file, so the fields start from its details and not from the last PDF's edits.
+                key(session.uri) {
+                    PdfInfoDialog(
+                        info = session.info,
+                        onDismiss = viewModel::closePdfInfo,
+                        onSave = { edit -> viewModel.saveMetadata(session.uri, edit, removeAll = false) },
+                        onRemoveAll = { viewModel.saveMetadata(session.uri, null, removeAll = true) }
+                    )
+                }
+            }
+
             if (showSplitDialog && uri != null) {
                 SplitDialog(
                     uri = uri,
@@ -938,7 +987,8 @@ private const val RESULTS_SHOWN = 5
 /** Tools that work on one picked file, so a failed run can be tried again with the same file. */
 private val RETRYABLE_TOOLS = setOf(
     "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
-    "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel", "pdf2ppt"
+    "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel", "pdf2ppt",
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
 )
 
 /** Tools that start from several files or from a document that is not a PDF: after a failure they can only be picked again. */
@@ -949,7 +999,8 @@ private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img"
  * copy is used. Sign and PDF to Word/Excel/text ask for themselves; Unlock, Protect and Repair deal with protection.
  */
 private val OPENS_PAGES = setOf(
-    "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark", "pdf2ppt"
+    "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark", "pdf2ppt",
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
 )
 
 internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {

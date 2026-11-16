@@ -26,6 +26,11 @@ import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Collections
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,6 +61,9 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("extract", R.string.tools_card_extract, Icons.AutoMirrored.Filled.DriveFileMove, TileTone.Indigo, label = R.string.tools_tile_extract),
             PdfToolCard("compress", R.string.tools_card_compress, Icons.Default.Compress, TileTone.Amber),
             PdfToolCard("repair", R.string.tools_card_repair, Icons.Default.Build, TileTone.Amber),
+            PdfToolCard("blank_pages", R.string.tools_card_blank_pages, Icons.Default.DeleteSweep, TileTone.Sky, label = R.string.tools_tile_blank_pages),
+            PdfToolCard("greyscale", R.string.tools_card_greyscale, Icons.Default.Contrast, TileTone.Slate, label = R.string.tools_tile_greyscale),
+            PdfToolCard("flatten", R.string.tools_card_flatten, Icons.Default.Layers, TileTone.Violet, label = R.string.tools_tile_flatten),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
             PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark),
             PdfToolCard("sign", R.string.tools_card_sign, Icons.Default.Draw, TileTone.Violet)
@@ -70,13 +78,15 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("pdf2img", R.string.tools_card_pdf2img, Icons.Default.PictureAsPdf, TileTone.Coral),
             PdfToolCard("pdf2text", R.string.tools_card_pdf2text, Icons.AutoMirrored.Filled.Article, TileTone.Teal, label = R.string.tools_tile_pdf2text),
             PdfToolCard("pdf2excel", R.string.tools_card_pdf2excel, Icons.Default.TableChart, TileTone.Teal),
-            PdfToolCard("pdf2ppt", R.string.tools_card_pdf2ppt, Icons.Default.Slideshow, TileTone.Coral)
+            PdfToolCard("pdf2ppt", R.string.tools_card_pdf2ppt, Icons.Default.Slideshow, TileTone.Coral),
+            PdfToolCard("extract_images", R.string.tools_card_extract_images, Icons.Default.Collections, TileTone.Coral)
         )
     ),
     ToolSection(
         "secure", R.string.tools_section_secure, listOf(
             PdfToolCard("protect", R.string.tools_card_protect, Icons.Default.Lock, TileTone.Rose),
-            PdfToolCard("unlock", R.string.tools_card_unlock, Icons.Default.LockOpen, TileTone.Rose)
+            PdfToolCard("unlock", R.string.tools_card_unlock, Icons.Default.LockOpen, TileTone.Rose),
+            PdfToolCard("pdf_info", R.string.tools_card_pdf_info, Icons.Default.Info, TileTone.Slate, label = R.string.tools_tile_pdf_info)
         )
     ),
     ToolSection(

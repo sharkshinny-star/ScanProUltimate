@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">పేజీలను సంగ్రహించండి</string>
+
+    <string name="tools_card_blank_pages">ఖాళీ పేజీలను తీసివేయండి</string>
+    <string name="tools_tile_blank_pages">ఖాళీ పేజీలు</string>
+    <string name="tools_desc_blank_pages">ఖాళీ పేజీలను కనుగొని తొలగించండి</string>
+    <string name="tools_card_greyscale">గ్రేస్కేల్ PDF</string>
+    <string name="tools_tile_greyscale">గ్రేస్కేల్</string>
+    <string name="tools_desc_greyscale">రంగు పేజీలను బూడిద రంగులోకి మార్చండి</string>
+    <string name="tools_card_flatten">PDF ఫ్లాటెన్ చేయండి</string>
+    <string name="tools_tile_flatten">ఫ్లాటెన్</string>
+    <string name="tools_desc_flatten">ఫారమ్‌లు, వ్యాఖ్యలను స్థిరంగా చేయండి</string>
+    <string name="tools_card_extract_images">చిత్రాలను సంగ్రహించండి</string>
+    <string name="tools_desc_extract_images">PDF లోపలి చిత్రాలను సేవ్ చేయండి</string>
+    <string name="tools_card_pdf_info">PDF సమాచారం మరియు మెటాడేటా</string>
+    <string name="tools_tile_pdf_info">సమాచారం &amp; మెటాడేటా</string>
+    <string name="tools_desc_pdf_info">దాచిన వివరాలను చూడండి, మార్చండి లేదా తీసివేయండి</string>
+
+    <string name="tools_new_progress_page">పేజీ %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">ఖాళీ పేజీల కోసం వెతుకుతోంది…</string>
+    <string name="tools_blank_progress_removing">ఖాళీ పేజీలను తీసివేస్తోంది…</string>
+    <string name="tools_blank_err_failed">ఈ PDFలో ఖాళీ పేజీలను తనిఖీ చేయలేకపోయాము.</string>
+    <string name="tools_blank_err_all">PDFలో కనీసం ఒక పేజీ ఉండాలి.</string>
+    <string name="tools_blank_none_title">ఖాళీ పేజీలు లేవు</string>
+    <string name="tools_blank_none_body">ఈ PDFలోని ప్రతి పేజీలో ఏదో ఉంది, కాబట్టి తీసివేయడానికి ఏమీ లేదు.</string>
+    <string name="tools_blank_found_title">ఖాళీ పేజీలు కనుగొనబడ్డాయి</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d పేజీల్లో %1$d ఖాళీగా కనిపిస్తోంది: పేజీ %3$s. కొత్త కాపీలో దాన్ని తీసివేస్తాము; అసలు ఫైల్ అలాగే ఉంటుంది.</item>
+        <item quantity="other">%2$d పేజీల్లో %1$d ఖాళీగా కనిపిస్తున్నాయి: పేజీలు %3$s. కొత్త కాపీలో వాటిని తీసివేస్తాము; అసలు ఫైల్ అలాగే ఉంటుంది.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">అన్ని పేజీలూ ఖాళీగా కనిపిస్తున్నాయి. PDFకి కనీసం ఒక పేజీ అవసరం, కాబట్టి ఏదీ తీసివేయలేము.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d పేజీని తీసివేయండి</item>
+        <item quantity="other">%1$d పేజీలను తీసివేయండి</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d ఖాళీ పేజీ తీసివేయబడింది</item>
+        <item quantity="other">%1$d ఖాళీ పేజీలు తీసివేయబడ్డాయి</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">ప్రతి పేజీని %1$d dpi వద్ద బూడిద రంగు ఛాయల్లో మళ్లీ గీస్తాము. టెక్స్ట్ పేజీ చిత్రంలో భాగమవుతుంది, కాబట్టి దాన్ని వెతకడానికి లేదా కాపీ చేయడానికి తర్వాత \"వెతకదగినదిగా చేయండి\" ఉపయోగించండి. అసలు ఫైల్ మారదు.</string>
+    <string name="tools_grey_confirm_action">గ్రేస్కేల్ చేయండి</string>
+    <string name="tools_grey_progress">గ్రేస్కేల్‌కు మారుస్తోంది…</string>
+    <string name="tools_grey_err_failed">ఈ PDFని గ్రేస్కేల్‌కు మార్చలేకపోయాము.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d పేజీని గ్రేస్కేల్‌కు మార్చాము</item>
+        <item quantity="other">%1$d పేజీలను గ్రేస్కేల్‌కు మార్చాము</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">ఫారమ్ ఫీల్డ్‌లు, వ్యాఖ్యలు, హైలైట్‌లు మరియు స్టాంప్‌లను పేజీల్లోనే గీస్తాము, కాబట్టి వాటిని ఇకపై మార్చలేరు లేదా తీసివేయలేరు. లింక్‌లు పని చేస్తూనే ఉంటాయి. అసలు ఫైల్ మారదు.</string>
+    <string name="tools_flatten_confirm_action">ఫ్లాటెన్ చేయండి</string>
+    <string name="tools_flatten_progress">ఫ్లాటెన్ చేస్తోంది…</string>
+    <string name="tools_flatten_err_failed">ఈ PDFని ఫ్లాటెన్ చేయలేకపోయాము.</string>
+    <string name="tools_flatten_nothing">ఈ PDFలో ఫ్లాటెన్ చేయడానికి ఫారమ్ ఫీల్డ్‌లు లేదా వ్యాఖ్యలు లేవు.</string>
+    <string name="tools_flatten_done">ఫ్లాటెన్ అయింది. ఫారమ్ ఫీల్డ్‌లు: %1$d, వ్యాఖ్యలు మరియు స్టాంప్‌లు: %2$d</string>
+
+    <string name="tools_ximg_progress">చిత్రాలను సంగ్రహిస్తోంది…</string>
+    <string name="tools_ximg_err_failed">ఈ PDF నుండి చిత్రాలను సంగ్రహించలేకపోయాము.</string>
+    <string name="tools_ximg_err_none">ఈ PDFలో సేవ్ చేయదగిన చిత్రాలు లేవు. పూర్తి పేజీలను చిత్రాలుగా సేవ్ చేయడానికి \"PDF నుండి చిత్రాలు\" ఉపయోగించండి.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d చిత్రం సంగ్రహించబడింది</item>
+        <item quantity="other">%1$d చిత్రాలు సంగ్రహించబడ్డాయి</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF వివరాలను చదువుతోంది…</string>
+    <string name="tools_info_err_failed">ఈ PDF వివరాలను చదవలేకపోయాము.</string>
+    <string name="tools_info_pages">పేజీలు</string>
+    <string name="tools_info_version">PDF వెర్షన్</string>
+    <string name="tools_info_size">ఫైల్ పరిమాణం</string>
+    <string name="tools_info_created">సృష్టించబడింది</string>
+    <string name="tools_info_modified">మార్చబడింది</string>
+    <string name="tools_info_creator">సృష్టించిన యాప్</string>
+    <string name="tools_info_producer">తయారీదారు</string>
+    <string name="tools_info_not_set">సెట్ చేయలేదు</string>
+    <string name="tools_info_edit_heading">మీరు మార్చగల వివరాలు</string>
+    <string name="tools_info_field_title">శీర్షిక</string>
+    <string name="tools_info_field_author">రచయిత</string>
+    <string name="tools_info_field_subject">విషయం</string>
+    <string name="tools_info_field_keywords">కీవర్డ్‌లు</string>
+    <string name="tools_info_save">కాపీని సేవ్ చేయండి</string>
+    <string name="tools_info_remove_all">మొత్తం మెటాడేటాను తీసివేయండి</string>
+    <string name="tools_info_remove_all_hint">గోప్యత కోసం: శీర్షిక, రచయిత, యాప్‌లు, తేదీలు మరియు ఇతర దాచిన వివరాలను కొత్త కాపీలో తీసివేస్తుంది.</string>
+    <string name="tools_info_xmp_note">ఈ PDFలో దాని వివరాల రెండవ (XMP) కాపీ కూడా ఉంది. సేవ్ చేసినప్పుడు అది తీసివేయబడుతుంది, కాబట్టి అన్ని రీడర్‌లు ఒకే వివరాలను చూపుతాయి.</string>
+    <string name="tools_info_saving">వివరాలను సేవ్ చేస్తోంది…</string>
+    <string name="tools_info_save_failed">కొత్త వివరాలను సేవ్ చేయలేకపోయాము.</string>
+    <string name="tools_info_saved">వివరాలు నవీకరించబడ్డాయి</string>
+    <string name="tools_info_removed">మొత్తం మెటాడేటా తీసివేయబడింది</string>
+</resources>

@@ -75,6 +75,36 @@ class ToolsScreenshotTest(private val dark: Boolean) {
     @Test
     fun organiserRotate() = shoot("22-organiser-rotate") { Organiser("rotate", "Rotate pages", "Save PDF") }
 
+    @Test
+    fun landing() = shoot("23-tools-landing") { PdfToolsScreen(recentPdfs = emptyList()) }
+
+    @Test
+    fun pdfInfo() = shoot("24-tools-pdf-info") {
+        // The dialog's content on a page of its own: under Robolectric a text field inside a Dialog never lets
+        // Compose go idle, so the dialog window itself cannot be captured here.
+        val info = com.example.scanpro.imaging.PdfInfo(
+            title = "Quarterly report", author = "A. Author", creator = "Writer 7", producer = "Some PDF Library 2.1",
+            created = 1_700_000_000_000L, pageCount = 12, version = "1.7", sizeBytes = 1_234_567, hasXmp = true
+        )
+        Surface(Modifier.fillMaxSize()) {
+            com.example.scanpro.feature.tools.PdfInfoContent(
+                info = info, title = info.title, author = info.author, subject = "", keywords = "",
+                onTitle = {}, onAuthor = {}, onSubject = {}, onKeywords = {}, onRemoveAll = {},
+                modifier = Modifier.padding(24.dp)
+            )
+        }
+    }
+
+    @Test
+    fun blankPages() = shoot("25-tools-blank-pages") {
+        PdfToolsScreen(recentPdfs = emptyList(), overlayContent = {
+            com.example.scanpro.feature.tools.BlankPagesDialog(
+                found = com.example.scanpro.feature.tools.BlankPagesFound(android.net.Uri.EMPTY, 12, listOf(2, 6, 11)),
+                onDismiss = {}, onRemove = {}
+            )
+        })
+    }
+
     /** The organiser as the Tools tab shows it: the editor owns the screen, so no landing title or bottom bar. */
     @Composable
     private fun Organiser(mode: String, title: String, save: String) {
