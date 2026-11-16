@@ -242,10 +242,6 @@
     <string name="scan_error_camera_stopped">The camera stopped working. Try again or use the compatibility scanner.</string>
     <string name="scan_flash_state">Flash: %1$s</string>
     <string name="scan_zoom_level">Zoom %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">%1$d page in batch</item>
-        <item quantity="other">%1$d pages in batch</item>
-    </plurals>
     <string name="scan_flash_off">off</string>
     <string name="scan_flash_auto">auto</string>
     <string name="scan_flash_on">on</string>

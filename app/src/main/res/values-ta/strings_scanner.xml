@@ -218,10 +218,6 @@
     <string name="scan_error_camera_stopped">கேமரா வேலை செய்வதை நிறுத்திவிட்டது. மீண்டும் முயலுங்கள் அல்லது இணக்க ஸ்கேனரைப் பயன்படுத்துங்கள்.</string>
     <string name="scan_flash_state">ஃபிளாஷ்: %1$s</string>
     <string name="scan_zoom_level">ஜூம் %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">தொகுப்பில் %1$d பக்கம்</item>
-        <item quantity="other">தொகுப்பில் %1$d பக்கங்கள்</item>
-    </plurals>
     <string name="scan_flash_off">ஆஃப்</string>
     <string name="scan_flash_auto">ஆட்டோ</string>
     <string name="scan_flash_on">ஆன்</string>

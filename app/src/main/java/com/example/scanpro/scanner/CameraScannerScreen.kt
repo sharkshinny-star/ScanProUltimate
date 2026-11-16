@@ -5,7 +5,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
@@ -1453,22 +1452,8 @@ fun CameraScannerScreen(
             Surface(shape = CircleShape, color = CameraGlass) {
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White) }
             }
-            if (pages.isNotEmpty()) {
-                // Takes only the room the buttons leave and shortens with an ellipsis: with the HD and flash buttons the
-                // bar is full on a 320 dp phone, where the counter would otherwise wrap or run under a button.
-                Box(Modifier.weight(1f).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        pluralStringResource(R.plurals.scan_pages_in_batch, pages.size, pages.size),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
+            // The page count is on the Done button and on the page strip; it is not repeated here.
+            Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 // HD capture switch: lit mint while on. A scanner has no use for it on a barcode.
                 if (!barcodeMode) {

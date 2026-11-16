@@ -218,10 +218,6 @@
     <string name="scan_error_camera_stopped">కెమెరా పనిచేయడం ఆగిపోయింది. మళ్లీ ప్రయత్నించండి లేదా కంపాటిబిలిటీ స్కానర్ వాడండి.</string>
     <string name="scan_flash_state">ఫ్లాష్: %1$s</string>
     <string name="scan_zoom_level">జూమ్ %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">బ్యాచ్‌లో %1$d పేజీ</item>
-        <item quantity="other">బ్యాచ్‌లో %1$d పేజీలు</item>
-    </plurals>
     <string name="scan_flash_off">ఆఫ్</string>
     <string name="scan_flash_auto">ఆటో</string>
     <string name="scan_flash_on">ఆన్</string>
