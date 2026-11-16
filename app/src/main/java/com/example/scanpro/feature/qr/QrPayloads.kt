@@ -98,4 +98,111 @@ object QrPayloads {
         if (note.isNotBlank()) query.add("tn=" + percentEncode(note.trim()))
         return "upi://pay?" + query.joinToString("&")
     }
+    /** A text message: SMSTO:number:message, the form phone scanners read. The number is cleaned as in [phone]. */
+    fun sms(number: String, message: String): String? {
+        val digits = number.filter { it.isDigit() || it == '+' }
+        if (digits.none { it.isDigit() }) return null
+        return "SMSTO:$digits:" + message.trim()
+    }
+
+    /** A coordinate typed by hand: a decimal number, a comma also accepted as the decimal mark; null when not a number. */
+    fun parseCoordinate(value: String): Double? {
+        val text = value.trim().replace(',', '.')
+        if (!Regex("^[+-]?\\d{1,3}(\\.\\d+)?$").matches(text)) return null
+        return text.toDoubleOrNull()
+    }
+
+    fun isValidLatitude(value: String): Boolean = parseCoordinate(value)?.let { it in -90.0..90.0 } == true
+    fun isValidLongitude(value: String): Boolean = parseCoordinate(value)?.let { it in -180.0..180.0 } == true
+
+    /** A map location: geo:latitude,longitude, with a place name as the query when one is given. */
+    fun geo(latitude: String, longitude: String, label: String = ""): String? {
+        if (!isValidLatitude(latitude) || !isValidLongitude(longitude)) return null
+        val lat = parseCoordinate(latitude)!!.toPlainCoordinate()
+        val lng = parseCoordinate(longitude)!!.toPlainCoordinate()
+        val name = label.trim()
+        return "geo:$lat,$lng" + if (name.isEmpty()) "" else "?q=$lat,$lng(" + percentEncode(name) + ")"
+    }
+
+    private fun Double.toPlainCoordinate(): String = java.math.BigDecimal(this.toString()).stripTrailingZeros().toPlainString()
+
+    /** A date typed as YYYY-MM-DD, as the eight digits iCalendar wants; null when it is not a real date. */
+    fun icalDate(value: String): String? {
+        val match = Regex("^(\\d{4})-(\\d{1,2})-(\\d{1,2})$").matchEntire(value.trim()) ?: return null
+        val (y, m, d) = match.destructured
+        val year = y.toInt()
+        val month = m.toInt()
+        val day = d.toInt()
+        if (month !in 1..12 || day < 1 || day > daysIn(year, month)) return null
+        return "%04d%02d%02d".format(java.util.Locale.ROOT, year, month, day)
+    }
+
+    /** A time typed as HH:MM, HH.MM or HHMM (24-hour; number pads have no colon), as HHMMSS; null when it is not a real time. */
+    fun icalTime(value: String): String? {
+        val match = Regex("^(\\d{1,2})[:.]?(\\d{2})$").matchEntire(value.trim()) ?: return null
+        val hour = match.groupValues[1].toInt()
+        val minute = match.groupValues[2].toInt()
+        if (hour > 23 || minute > 59) return null
+        return "%02d%02d00".format(java.util.Locale.ROOT, hour, minute)
+    }
+
+    private fun daysIn(year: Int, month: Int): Int = when (month) {
+        2 -> if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) 29 else 28
+        4, 6, 9, 11 -> 30
+        else -> 31
+    }
+
+    /** Backslash, semicolon, comma and line breaks are escaped, as iCalendar text values need. */
+    fun escapeIcal(value: String): String = escapeVCard(value)
+
+    /**
+     * A calendar event (an iCalendar VEVENT). The title and start date are required. With no start time it is an
+     * all-day event; times are the phone's local time. The end is optional but must not be before the start.
+     */
+    fun event(
+        title: String,
+        startDate: String,
+        startTime: String,
+        endDate: String,
+        endTime: String,
+        location: String,
+        description: String
+    ): String? {
+        val summary = title.trim()
+        if (summary.isEmpty()) return null
+        val start = eventStamp(startDate, startTime) ?: return null
+        val end = if (endDate.isBlank() && endTime.isBlank()) {
+            null
+        } else {
+            // An end time alone means the same day as the start.
+            eventStamp(endDate.ifBlank { startDate }, endTime) ?: return null
+        }
+        if (end != null && (end.length != start.length || end < start)) return null
+        val lines = ArrayList<String>()
+        lines.add("BEGIN:VEVENT")
+        lines.add("SUMMARY:" + escapeIcal(summary))
+        lines.add(if (start.length == 8) "DTSTART;VALUE=DATE:$start" else "DTSTART:$start")
+        if (end != null) lines.add(if (end.length == 8) "DTEND;VALUE=DATE:$end" else "DTEND:$end")
+        if (location.isNotBlank()) lines.add("LOCATION:" + escapeIcal(location.trim()))
+        if (description.isNotBlank()) lines.add("DESCRIPTION:" + escapeIcal(description.trim()))
+        lines.add("END:VEVENT")
+        return lines.joinToString("\r\n")
+    }
+
+    /** True when the end typed for an event is before its start (both valid); for the form's error. */
+    fun eventEndsBeforeStart(startDate: String, startTime: String, endDate: String, endTime: String): Boolean {
+        if (endDate.isBlank() && endTime.isBlank()) return false
+        val start = eventStamp(startDate, startTime) ?: return false
+        val end = eventStamp(endDate.ifBlank { startDate }, endTime) ?: return false
+        return end.length == start.length && end < start
+    }
+
+    private fun eventStamp(date: String, time: String): String? {
+        val day = icalDate(date) ?: return null
+        if (time.isBlank()) return day
+        return day + "T" + (icalTime(time) ?: return null)
+    }
+
+    /** A rough check that [value] looks like an email address (one @, a dot after it, no spaces); for the form's hint. */
+    fun looksLikeEmail(value: String): Boolean = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$").matches(value.trim())
 }

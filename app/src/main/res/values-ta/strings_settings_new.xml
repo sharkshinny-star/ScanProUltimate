@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_section_shortcuts">ஷார்ட்கட்கள் &amp; இயல்பு ஆப்ஸ்</string>
+    <string name="settings_shortcuts_summary">இயல்பு PDF ஆப்ஸ் · விட்ஜெட் · ஸ்கேன் ஷார்ட்கட்</string>
+
+    <string name="settings_open_by_default_title">PDFகளை எப்போதும் ScanPro-வில் திற</string>
+    <string name="settings_open_by_default_subtitle">Android அமைப்புகளில் PDF கோப்புகளுக்கு ScanPro-வைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="settings_open_by_default_body">PDF கோப்புகளை எந்த ஆப்ஸ் திறக்க வேண்டும் என்பதை Android முடிவு செய்கிறது. அடுத்த முறை PDF திறக்கும்போது ScanPro-வைத் தேர்ந்தெடுத்து எப்போதும் என்பதைத் தட்டவும்.\n\nவேறு ஆப்ஸ் நேரடியாக PDF திறந்தால், முதலில் Android அமைப்புகளில் அந்த ஆப்ஸின் இயல்புகளை அழிக்கவும். கீழே உள்ள பொத்தான் அங்கு ScanPro-வின் சொந்தப் பக்கத்தைத் திறக்கும்.</string>
+    <string name="settings_open_android_settings">Android அமைப்புகளைத் திற</string>
+    <string name="settings_android_settings_unavailable">இந்த ஃபோனில் Android அமைப்புகளைத் திறக்க முடியவில்லை</string>
+
+    <string name="settings_group_home_screen">முகப்புத் திரை</string>
+    <string name="settings_widget_title">முகப்புத் திரை விட்ஜெட்டைச் சேர்</string>
+    <string name="settings_widget_subtitle">ஒரே தட்டலில் ஸ்கேன் அல்லது ID கார்டு ஸ்கேன் தொடங்கவும்</string>
+    <string name="settings_scan_shortcut_title">முகப்புத் திரையில் ஸ்கேன் ஷார்ட்கட்டைச் சேர்</string>
+    <string name="settings_scan_shortcut_subtitle">நேரடியாக கேமராவைத் திறக்கும் ஐகான்</string>
+    <string name="settings_pin_not_accepted">உங்கள் முகப்புத் திரை இதை ஏற்கவில்லை. முகப்புத் திரையிலிருந்தே சேர்த்துப் பாருங்கள்.</string>
+
+    <string name="settings_group_camera">கேமரா</string>
+    <string name="settings_group_saving">சேமித்தல்</string>
+    <string name="settings_group_advanced">மேம்பட்டவை</string>
+    <string name="settings_group_help">உதவி</string>
+    <string name="settings_group_contact">தொடர்புகொள்ளுங்கள்</string>
+    <string name="settings_group_spread">மற்றவர்களிடம் சொல்லுங்கள்</string>
+    <string name="settings_group_legal">சட்டம்</string>
+    <string name="settings_group_notify_about">இவை பற்றி அறிவி</string>
+
+    <string name="settings_recycle_bin_open">மறுசுழற்சித் தொட்டியைத் திற</string>
+    <string name="settings_recycle_bin_empty">காலி</string>
+    <plurals name="settings_recycle_bin_count">
+        <item quantity="one">%d ஆவணம்</item>
+        <item quantity="other">%d ஆவணங்கள்</item>
+    </plurals>
+    <string name="settings_recycle_bin_summary">%1$s · %2$s வைக்கப்படும்</string>
+    <string name="settings_library_summary">%1$s · %2$s பயன்பாட்டில்</string>
+    <plurals name="settings_library_documents">
+        <item quantity="one">%d ஆவணம்</item>
+        <item quantity="other">%d ஆவணங்கள்</item>
+    </plurals>
+</resources>

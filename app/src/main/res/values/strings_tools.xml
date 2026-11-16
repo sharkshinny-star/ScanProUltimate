@@ -157,6 +157,12 @@
     <string name="tools_card_merge">Merge PDF</string>
     <string name="tools_card_split">Split PDF</string>
     <string name="tools_card_organize">Organise PDF</string>
+    <!-- Search-only tools (no tile): Rotate and Extract open Organise in that mode; PDF to Excel is a format of PDF to Word, Excel or text. -->
+    <string name="tools_tile_rotate">Rotate</string>
+    <string name="tools_tile_extract">Extract Pages</string>
+    <string name="tools_card_extract">Extract Pages</string>
+    <string name="tools_card_rotate">Rotate pages</string>
+    <string name="tools_card_pdf2excel">PDF to Excel</string>
     <string name="tools_card_pdf2img">PDF to images</string>
     <string name="tools_card_protect">Protect</string>
     <string name="tools_card_unlock">Unlock</string>
@@ -507,11 +513,6 @@
     </plurals>
     <string name="tools_pdf2text_excel">Excel workbook (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">One sheet per page. Columns are rebuilt from where the words sit on the page, so tables come out as cells.</string>
-    <string name="tools_card_pdf2ppt">PDF to PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">Made %1$d slide, a picture of the page.</item>
-        <item quantity="other">Made %1$d slides, one picture per page.</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">That didn\'t work</string>
     <string name="tools_failure_try_again">Try again</string>
@@ -533,6 +534,8 @@
     <string name="tools_desc_split">Separate pages into files</string>
     <string name="tools_mode_arrange">Arrange</string>
     <string name="tools_desc_organize">Reorder, rotate, extract or delete pages</string>
+    <string name="tools_desc_rotate">Turn pages the right way up</string>
+    <string name="tools_desc_extract">Save chosen pages as a PDF</string>
     <string name="tools_desc_compress">Make a PDF smaller</string>
     <string name="tools_desc_repair">Recover a damaged PDF</string>
     <string name="tools_desc_page_numbers">Number every page</string>
@@ -544,7 +547,7 @@
     <string name="tools_desc_fill">Fill in PDF forms</string>
     <string name="tools_desc_pdf2img">Save pages as images</string>
     <string name="tools_desc_pdf2text">Get Word, Excel or plain text</string>
-    <string name="tools_desc_pdf2ppt">One slide per page</string>
+    <string name="tools_desc_pdf2excel">Pull tables into a sheet</string>
     <string name="tools_desc_protect">Lock with a password</string>
     <string name="tools_desc_unlock">Remove a password</string>
     <string name="tools_desc_crop_img">Trim the edges of photos</string>

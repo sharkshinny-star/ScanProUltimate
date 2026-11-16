@@ -251,21 +251,7 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         }
     }
 
-    private val keyCompletedScans = intPreferencesKey("completed_scans")
-    private val keyFeedbackPromptShown = booleanPreferencesKey("feedback_prompt_shown")
-
-    /** Camera scans saved as documents, for deciding when to ask about the experience. */
-    val completedScans: Flow<Int> = preferences.map { it[keyCompletedScans] ?: 0 }
-    /** True once the rating sheet has been shown; it is shown only once. */
-    val feedbackPromptShown: Flow<Boolean> = preferences.map { it[keyFeedbackPromptShown] ?: false }
-
-    suspend fun recordCompletedScan() {
-        context.scanProSettings.edit { it[keyCompletedScans] = (it[keyCompletedScans] ?: 0) + 1 }
-    }
-
-    suspend fun setFeedbackPromptShown() {
-        context.scanProSettings.edit { it[keyFeedbackPromptShown] = true }
-    }
+    // "completed_scans" and "feedback_prompt_shown" were the one-time rating sheet's; FeedbackPrompts replaced them.
 
     private val keyNotifyFinished = booleanPreferencesKey("notify_finished")
     private val keyNotifyFailures = booleanPreferencesKey("notify_failures")

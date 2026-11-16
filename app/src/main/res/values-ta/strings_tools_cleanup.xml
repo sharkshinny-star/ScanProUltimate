@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tools landing clean-up (2026-11-16): Image tools tile, Beta badge, Repair from the failure dialog. -->
+<resources>
+    <string name="tools_card_image_tools">படக் கருவிகள்</string>
+    <string name="tools_desc_image_tools">புகைப்படங்களை வெட்டவும், சுருக்கவும், மாற்றவும் அல்லது அளவை மாற்றவும்</string>
+    <string name="tools_badge_beta">பீட்டா</string>
+    <string name="tools_failure_repair">இந்த PDF-ஐ சரிசெய்</string>
+</resources>

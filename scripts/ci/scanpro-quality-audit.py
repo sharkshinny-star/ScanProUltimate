@@ -27,8 +27,9 @@ TOOLS = ROOT / "app/src/main/java/com/example/scanpro/feature/tools"
 MANIFEST = ROOT / "app/src/main/AndroidManifest.xml"
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 TOOLS_NS = "{http://schemas.android.com/tools}"
+# MANAGE_EXTERNAL_STORAGE was allowed by the owner on 2026-11-16 for the optional, read-only "All PDFs on this phone"
+# list; READ_EXTERNAL_STORAGE must stay capped at Android 10 (maxSdkVersion 29), checked below.
 FORBIDDEN_PERMISSIONS = {
-    "android.permission.MANAGE_EXTERNAL_STORAGE",
     "android.permission.WRITE_EXTERNAL_STORAGE",
     "android.permission.QUERY_ALL_PACKAGES",
 }
@@ -82,6 +83,9 @@ def audit() -> tuple[list[str], list[str]]:
             removed = element.get(f"{TOOLS_NS}node") == "remove"
             if name in FORBIDDEN_PERMISSIONS and not removed:
                 errors.append(f"Manifest asks for {name}: needs a security review and an owner decision")
+            max_sdk = element.get(f"{ANDROID_NS}maxSdkVersion")
+            if name == "android.permission.READ_EXTERNAL_STORAGE" and not removed and (max_sdk is None or int(max_sdk) > 29):
+                errors.append("READ_EXTERNAL_STORAGE must have android:maxSdkVersion=\"29\" or lower")
     else:
         errors.append("AndroidManifest.xml not found")
 

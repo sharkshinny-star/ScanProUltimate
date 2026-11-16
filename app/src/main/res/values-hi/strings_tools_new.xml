@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_organizer_extract_short_title">पेज निकालें</string>
+
+    <string name="tools_card_blank_pages">खाली पेज हटाएँ</string>
+    <string name="tools_tile_blank_pages">खाली पेज</string>
+    <string name="tools_desc_blank_pages">खाली पेज ढूँढें और हटाएँ</string>
+    <string name="tools_card_greyscale">ग्रेस्केल PDF</string>
+    <string name="tools_tile_greyscale">ग्रेस्केल</string>
+    <string name="tools_desc_greyscale">रंगीन पेजों को ग्रे बनाएँ</string>
+    <string name="tools_card_flatten">PDF फ़्लैटन करें</string>
+    <string name="tools_tile_flatten">फ़्लैटन</string>
+    <string name="tools_desc_flatten">फ़ॉर्म और टिप्पणियाँ स्थायी करें</string>
+    <string name="tools_card_extract_images">इमेज निकालें</string>
+    <string name="tools_desc_extract_images">PDF के अंदर की तस्वीरें सहेजें</string>
+    <string name="tools_card_pdf_info">PDF जानकारी और मेटाडेटा</string>
+    <string name="tools_tile_pdf_info">जानकारी और मेटाडेटा</string>
+    <string name="tools_desc_pdf_info">छिपी जानकारी देखें, बदलें या हटाएँ</string>
+
+    <string name="tools_new_progress_page">पेज %1$d / %2$d</string>
+
+    <string name="tools_blank_progress_scanning">खाली पेज ढूँढे जा रहे हैं…</string>
+    <string name="tools_blank_progress_removing">खाली पेज हटाए जा रहे हैं…</string>
+    <string name="tools_blank_err_failed">इस PDF में खाली पेज जाँचे नहीं जा सके।</string>
+    <string name="tools_blank_err_all">PDF में कम से कम एक पेज रहना चाहिए।</string>
+    <string name="tools_blank_none_title">कोई खाली पेज नहीं</string>
+    <string name="tools_blank_none_body">इस PDF के हर पेज पर कुछ है, इसलिए हटाने को कुछ नहीं है।</string>
+    <string name="tools_blank_found_title">खाली पेज मिले</string>
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%2$d में से %1$d पेज खाली लगता है: पेज %3$s। इसे एक नई कॉपी में हटाया जाएगा; मूल फ़ाइल वैसी ही रहेगी।</item>
+        <item quantity="other">%2$d में से %1$d पेज खाली लगते हैं: पेज %3$s। इन्हें एक नई कॉपी में हटाया जाएगा; मूल फ़ाइल वैसी ही रहेगी।</item>
+    </plurals>
+    <string name="tools_blank_all_blank">हर पेज खाली लगता है। PDF में कम से कम एक पेज चाहिए, इसलिए कुछ नहीं हटाया जा सकता।</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">%1$d पेज हटाएँ</item>
+        <item quantity="other">%1$d पेज हटाएँ</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">%1$d खाली पेज हटाया गया</item>
+        <item quantity="other">%1$d खाली पेज हटाए गए</item>
+    </plurals>
+
+    <string name="tools_grey_confirm_body">हर पेज को %1$d dpi पर ग्रे रंगों में फिर से बनाया जाता है। टेक्स्ट पेज की इमेज का हिस्सा बन जाता है, इसलिए उसे खोजने या कॉपी करने के लिए बाद में \"खोजने योग्य बनाएँ\" का उपयोग करें। मूल फ़ाइल नहीं बदलती।</string>
+    <string name="tools_grey_confirm_action">ग्रेस्केल बनाएँ</string>
+    <string name="tools_grey_progress">ग्रेस्केल में बदला जा रहा है…</string>
+    <string name="tools_grey_err_failed">इस PDF को ग्रेस्केल में नहीं बदला जा सका।</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">%1$d पेज ग्रेस्केल में बदला गया</item>
+        <item quantity="other">%1$d पेज ग्रेस्केल में बदले गए</item>
+    </plurals>
+
+    <string name="tools_flatten_confirm_body">फ़ॉर्म फ़ील्ड, टिप्पणियाँ, हाइलाइट और स्टैम्प पेजों में बना दिए जाते हैं, ताकि उन्हें बदला या हटाया न जा सके। लिंक काम करते रहेंगे। मूल फ़ाइल नहीं बदलती।</string>
+    <string name="tools_flatten_confirm_action">फ़्लैटन करें</string>
+    <string name="tools_flatten_progress">फ़्लैटन किया जा रहा है…</string>
+    <string name="tools_flatten_err_failed">इस PDF को फ़्लैटन नहीं किया जा सका।</string>
+    <string name="tools_flatten_nothing">इस PDF में फ़्लैटन करने के लिए कोई फ़ॉर्म फ़ील्ड या टिप्पणी नहीं है।</string>
+    <string name="tools_flatten_done">फ़्लैटन हो गया। फ़ॉर्म फ़ील्ड: %1$d, टिप्पणियाँ और स्टैम्प: %2$d</string>
+
+    <string name="tools_ximg_progress">इमेज निकाली जा रही हैं…</string>
+    <string name="tools_ximg_err_failed">इस PDF से इमेज नहीं निकाली जा सकीं।</string>
+    <string name="tools_ximg_err_none">इस PDF में सहेजने योग्य कोई इमेज नहीं है। पूरे पेज तस्वीरों के रूप में सहेजने के लिए \"PDF से इमेज\" का उपयोग करें।</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">%1$d इमेज निकाली गई</item>
+        <item quantity="other">%1$d इमेज निकाली गईं</item>
+    </plurals>
+
+    <string name="tools_info_progress">PDF की जानकारी पढ़ी जा रही है…</string>
+    <string name="tools_info_err_failed">इस PDF की जानकारी पढ़ी नहीं जा सकी।</string>
+    <string name="tools_info_pages">पेज</string>
+    <string name="tools_info_version">PDF संस्करण</string>
+    <string name="tools_info_size">फ़ाइल का आकार</string>
+    <string name="tools_info_created">बनाया गया</string>
+    <string name="tools_info_modified">बदला गया</string>
+    <string name="tools_info_creator">किससे बनाया गया</string>
+    <string name="tools_info_producer">निर्माता</string>
+    <string name="tools_info_not_set">सेट नहीं</string>
+    <string name="tools_info_edit_heading">बदली जा सकने वाली जानकारी</string>
+    <string name="tools_info_field_title">शीर्षक</string>
+    <string name="tools_info_field_author">लेखक</string>
+    <string name="tools_info_field_subject">विषय</string>
+    <string name="tools_info_field_keywords">कीवर्ड</string>
+    <string name="tools_info_save">कॉपी सहेजें</string>
+    <string name="tools_info_remove_all">सारा मेटाडेटा हटाएँ</string>
+    <string name="tools_info_remove_all_hint">निजता के लिए: शीर्षक, लेखक, ऐप, तारीखें और अन्य छिपी जानकारी एक नई कॉपी में हटा देता है।</string>
+    <string name="tools_info_xmp_note">इस PDF में इसकी जानकारी की एक दूसरी (XMP) कॉपी भी है। सहेजने पर यह हटा दी जाती है, ताकि हर रीडर एक जैसी जानकारी दिखाए।</string>
+    <string name="tools_info_saving">जानकारी सहेजी जा रही है…</string>
+    <string name="tools_info_save_failed">नई जानकारी सहेजी नहीं जा सकी।</string>
+    <string name="tools_info_saved">जानकारी अपडेट हो गई</string>
+    <string name="tools_info_removed">सारा मेटाडेटा हटा दिया गया</string>
+
+    <string name="hint_tool_blank_pages">स्कैन किए गए PDF के खाली पेज ढूँढें और सूची जाँचने के बाद उन्हें हटाएँ।</string>
+    <string name="hint_tool_greyscale">सस्ती छपाई या छोटी फ़ाइल के लिए रंगीन PDF को ग्रे रंगों में बदलें।</string>
+    <string name="hint_tool_flatten">फ़ॉर्म के जवाब, टिप्पणियाँ और स्टैम्प पेजों में बना दें, ताकि कोई उन्हें बदल न सके।</string>
+    <string name="hint_tool_extract_images">PDF के अंदर की हर तस्वीर को अलग इमेज फ़ाइल के रूप में सहेजें।</string>
+    <string name="hint_tool_pdf_info">PDF की छिपी जानकारी देखें, शीर्षक या लेखक बदलें, या निजता के लिए सब हटा दें।</string>
+</resources>

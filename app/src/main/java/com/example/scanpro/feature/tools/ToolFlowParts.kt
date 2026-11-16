@@ -8,6 +8,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -139,7 +141,8 @@ internal fun ToolFailureDialog(
     message: String,
     onRetry: (() -> Unit)?,
     onChooseAnother: (() -> Unit)?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onRepair: (() -> Unit)? = null
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -148,6 +151,12 @@ internal fun ToolFailureDialog(
         text = {
             Column {
                 Text(message, style = MaterialTheme.typography.bodyMedium)
+                if (onRepair != null) {
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = onRepair, modifier = Modifier.align(Alignment.End)) {
+                        Text(stringResource(R.string.tools_failure_repair))
+                    }
+                }
                 if (onChooseAnother != null) {
                     Spacer(Modifier.height(8.dp))
                     TextButton(onClick = onChooseAnother, modifier = Modifier.align(Alignment.End)) {
@@ -213,4 +222,31 @@ internal fun NextToolsRow(tools: List<PdfToolCard>, onPick: (PdfToolCard) -> Uni
             }
         }
     }
+}
+
+/** "Image tools": the four picture tools behind one tile, as a short list to pick from. */
+@Composable
+internal fun ImageToolsChooser(onPick: (PdfToolCard) -> Unit, onDismiss: () -> Unit) {
+    val tools = TOOL_SECTIONS.firstOrNull { it.id == "image" }?.tools.orEmpty()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tools_card_image_tools)) },
+        text = {
+            Column {
+                tools.forEach { tool ->
+                    androidx.compose.material3.ListItem(
+                        headlineContent = { Text(stringResource(tool.title)) },
+                        supportingContent = TOOL_DESCRIPTIONS[tool.id]?.let { res -> { Text(stringResource(res)) } },
+                        leadingContent = { com.example.scanpro.core.designsystem.IconTile(tool.icon, tool.tone, size = 40.dp, corner = 12.dp, iconSize = 20.dp) },
+                        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable { onPick(tool) }
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+    )
 }

@@ -1,42 +1,63 @@
 package com.example.scanpro.feature.qr
 
 import android.graphics.Bitmap
-import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import com.google.zxing.MultiFormatWriter
 
-/** A square QR picture: [size] x [size] opaque ARGB pixels, black modules on white. */
-class QrImage(val size: Int, val pixels: IntArray)
+/** A code picture: [width] x [height] opaque ARGB pixels. QR codes are square; linear barcodes are half as tall as wide. */
+class QrImage(val width: Int, val height: Int, val pixels: IntArray) {
+    constructor(size: Int, pixels: IntArray) : this(size, size, pixels)
 
-/** Draws QR codes with ZXing's encoder: black on white, error correction M, a 4-module quiet zone, no network. */
+    /** The width, which is also the height of a QR code. */
+    val size: Int get() = width
+}
+
+/** Draws codes with ZXing's encoders, entirely on the device: a 4-module quiet zone, colours and correction from a [CodeStyle]. */
 object QrEncoder {
     const val SIZE = 1024
     private const val QUIET_ZONE_MODULES = 4
-    private const val BLACK = -0x1000000 // 0xFF000000
-    private const val WHITE = -0x1 // 0xFFFFFFFF
 
-    /** The code for [content] at [size] pixels, or null when it is empty or too long for one QR code. */
-    fun encode(content: String, size: Int = SIZE): QrImage? {
+    /** The QR code for [content] at [size] pixels, black on white with error correction M; null when empty or too long. */
+    fun encode(content: String, size: Int = SIZE): QrImage? = encode(content, CodeFormat.QR, CodeStyle(size = size))
+
+    /**
+     * [content] drawn as [format] in [style]; null when it is empty, too long, or not valid for the format (EAN-13
+     * needs 12 or 13 digits with a right check digit; Code 128 printable ASCII). Run it off the main thread: a
+     * 2048-pixel code takes a moment.
+     */
+    fun encode(content: String, format: CodeFormat, style: CodeStyle = CodeStyle()): QrImage? {
         if (content.isEmpty()) return null
+        val checked = when (format) {
+            CodeFormat.QR -> content
+            CodeFormat.EAN_13 -> BarcodeChecks.ean13(content)
+            CodeFormat.CODE_128 -> BarcodeChecks.code128(content)
+        } ?: return null
+        val width = style.size
+        val height = if (format.isLinear) style.size / 2 else style.size
         val hints = HashMap<EncodeHintType, Any>()
-        hints[EncodeHintType.ERROR_CORRECTION] = ErrorCorrectionLevel.M
-        hints[EncodeHintType.MARGIN] = QUIET_ZONE_MODULES
-        // Plain ASCII needs no character-set marker; anything else is written as UTF-8, which phones read.
-        if (content.any { it.code > 127 }) hints[EncodeHintType.CHARACTER_SET] = "UTF-8"
-        val matrix = runCatching { QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints) }.getOrNull() ?: return null
-        val width = matrix.width
-        val height = matrix.height
-        val pixels = IntArray(width * height)
-        for (y in 0 until height) {
-            val row = y * width
-            for (x in 0 until width) {
-                pixels[row + x] = if (matrix.get(x, y)) BLACK else WHITE
+        if (format == CodeFormat.QR) {
+            hints[EncodeHintType.ERROR_CORRECTION] = style.correction.zxing
+            hints[EncodeHintType.MARGIN] = QUIET_ZONE_MODULES
+            // Plain ASCII needs no character-set marker; anything else is written as UTF-8, which phones read.
+            if (checked.any { it.code > 127 }) hints[EncodeHintType.CHARACTER_SET] = "UTF-8"
+        }
+        val matrix = runCatching { MultiFormatWriter().encode(checked, format.zxing, width, height, hints) }.getOrNull() ?: return null
+        val w = matrix.width
+        val h = matrix.height
+        val pixels = IntArray(w * h)
+        val foreground = style.foreground or OPAQUE
+        val background = style.background or OPAQUE
+        for (y in 0 until h) {
+            val row = y * w
+            for (x in 0 until w) {
+                pixels[row + x] = if (matrix.get(x, y)) foreground else background
             }
         }
-        return QrImage(width, pixels)
+        return QrImage(w, h, pixels)
     }
+
+    private const val OPAQUE = -0x1000000
 }
 
 /** The picture as an Android bitmap, for showing and sharing. */
-fun QrImage.toBitmap(): Bitmap = Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888)
+fun QrImage.toBitmap(): Bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)

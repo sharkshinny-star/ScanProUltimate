@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Organise pages, Extract mode: the short title in the bar. -->
+    <string name="tools_organizer_extract_short_title">Extract pages</string>
+
+    <!-- New tools: names on the cards, short tile labels and the one line under each. -->
+    <string name="tools_card_blank_pages">Remove blank pages</string>
+    <string name="tools_tile_blank_pages">Blank pages</string>
+    <string name="tools_desc_blank_pages">Find and delete empty pages</string>
+    <string name="tools_card_greyscale">Greyscale PDF</string>
+    <string name="tools_tile_greyscale">Greyscale</string>
+    <string name="tools_desc_greyscale">Turn colour pages grey</string>
+    <string name="tools_card_flatten">Flatten PDF</string>
+    <string name="tools_tile_flatten">Flatten</string>
+    <string name="tools_desc_flatten">Lock forms and comments in place</string>
+    <string name="tools_card_extract_images">Extract images</string>
+    <string name="tools_desc_extract_images">Save the pictures inside a PDF</string>
+    <string name="tools_card_pdf_info">PDF info and metadata</string>
+    <string name="tools_tile_pdf_info">Info &amp; metadata</string>
+    <string name="tools_desc_pdf_info">See, edit or remove hidden details</string>
+
+    <!-- Progress line shared by the new tools: "Page 3 of 12". -->
+    <string name="tools_new_progress_page">Page %1$d of %2$d</string>
+
+    <!-- Remove blank pages -->
+    <string name="tools_blank_progress_scanning">Looking for blank pages…</string>
+    <string name="tools_blank_progress_removing">Removing blank pages…</string>
+    <string name="tools_blank_err_failed">Couldn\'t check this PDF for blank pages.</string>
+    <string name="tools_blank_err_all">A PDF must keep at least one page.</string>
+    <string name="tools_blank_none_title">No blank pages</string>
+    <string name="tools_blank_none_body">Every page of this PDF has something on it, so there is nothing to remove.</string>
+    <string name="tools_blank_found_title">Blank pages found</string>
+    <!-- %1$d blank pages, %2$d pages in all, %3$s the page numbers ("3, 7, 12"). -->
+    <plurals name="tools_blank_found_body">
+        <item quantity="one">%1$d of %2$d pages looks blank: page %3$s. It is removed in a new copy; the original stays as it is.</item>
+        <item quantity="other">%1$d of %2$d pages look blank: pages %3$s. They are removed in a new copy; the original stays as it is.</item>
+    </plurals>
+    <string name="tools_blank_all_blank">Every page looks blank. A PDF needs at least one page, so nothing can be removed.</string>
+    <plurals name="tools_blank_remove_action">
+        <item quantity="one">Remove %1$d page</item>
+        <item quantity="other">Remove %1$d pages</item>
+    </plurals>
+    <plurals name="tools_blank_done">
+        <item quantity="one">Removed %1$d blank page</item>
+        <item quantity="other">Removed %1$d blank pages</item>
+    </plurals>
+
+    <!-- Greyscale PDF -->
+    <string name="tools_grey_confirm_body" tools:ignore="PluralsCandidate">Every page is redrawn in shades of grey at %1$d dpi. Text becomes part of the page image, so use Make searchable afterwards if you need to search or copy it. The original is not changed.</string>
+    <string name="tools_grey_confirm_action">Make greyscale</string>
+    <string name="tools_grey_progress">Converting to greyscale…</string>
+    <string name="tools_grey_err_failed">Couldn\'t convert this PDF to greyscale.</string>
+    <plurals name="tools_grey_done">
+        <item quantity="one">Converted %1$d page to greyscale</item>
+        <item quantity="other">Converted %1$d pages to greyscale</item>
+    </plurals>
+
+    <!-- Flatten PDF -->
+    <string name="tools_flatten_confirm_body">Form fields, comments, highlights and stamps are drawn into the pages, so they can no longer be changed or removed. Links keep working. The original is not changed.</string>
+    <string name="tools_flatten_confirm_action">Flatten</string>
+    <string name="tools_flatten_progress">Flattening…</string>
+    <string name="tools_flatten_err_failed">Couldn\'t flatten this PDF.</string>
+    <string name="tools_flatten_nothing">This PDF has no form fields or comments to flatten.</string>
+    <!-- %1$d form fields, %2$d comments, highlights and stamps. -->
+    <string name="tools_flatten_done">Flattened. Form fields: %1$d, comments and stamps: %2$d</string>
+
+    <!-- Extract images -->
+    <string name="tools_ximg_progress">Extracting images…</string>
+    <string name="tools_ximg_err_failed">Couldn\'t extract the images from this PDF.</string>
+    <string name="tools_ximg_err_none">This PDF has no images that can be saved. To save whole pages as pictures, use PDF to images.</string>
+    <plurals name="tools_ximg_done">
+        <item quantity="one">Extracted %1$d image</item>
+        <item quantity="other">Extracted %1$d images</item>
+    </plurals>
+
+    <!-- PDF info and metadata -->
+    <string name="tools_info_progress">Reading PDF details…</string>
+    <string name="tools_info_err_failed">Couldn\'t read this PDF\'s details.</string>
+    <string name="tools_info_pages">Pages</string>
+    <string name="tools_info_version">PDF version</string>
+    <string name="tools_info_size">File size</string>
+    <string name="tools_info_created">Created</string>
+    <string name="tools_info_modified">Modified</string>
+    <string name="tools_info_creator">Created with</string>
+    <string name="tools_info_producer">Produced by</string>
+    <string name="tools_info_not_set">Not set</string>
+    <string name="tools_info_edit_heading">Details you can edit</string>
+    <string name="tools_info_field_title">Title</string>
+    <string name="tools_info_field_author">Author</string>
+    <string name="tools_info_field_subject">Subject</string>
+    <string name="tools_info_field_keywords">Keywords</string>
+    <string name="tools_info_save">Save copy</string>
+    <string name="tools_info_remove_all">Remove all metadata</string>
+    <string name="tools_info_remove_all_hint">For privacy: removes the title, author, apps, dates and other hidden details, in a new copy.</string>
+    <string name="tools_info_xmp_note">This PDF also keeps a second (XMP) copy of its details. It is removed when you save, so every reader shows the same details.</string>
+    <string name="tools_info_saving">Saving details…</string>
+    <string name="tools_info_save_failed">Couldn\'t save the new details.</string>
+    <string name="tools_info_saved">Details updated</string>
+    <string name="tools_info_removed">All metadata removed</string>
+
+    <!-- First-use introductions of the new tools. -->
+    <string name="hint_tool_blank_pages">Find the empty pages in a scanned PDF and remove them, after you check the list.</string>
+    <string name="hint_tool_greyscale">Turn a colour PDF into shades of grey, for cheaper printing or a smaller file.</string>
+    <string name="hint_tool_flatten">Draw form answers, comments and stamps into the pages so nobody can change them.</string>
+    <string name="hint_tool_extract_images">Save every picture inside a PDF as its own image file.</string>
+    <string name="hint_tool_pdf_info">See a PDF\'s hidden details, edit the title or author, or remove them all for privacy.</string>
+</resources>

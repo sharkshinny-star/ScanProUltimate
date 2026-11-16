@@ -78,6 +78,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.DynamicFeed
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FlashAuto
@@ -106,6 +107,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -153,6 +155,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -524,18 +527,41 @@ fun CameraScannerScreen(
     // Several codes found in a picture from the gallery: the person picks one from a list.
     var pictureCodes by remember { mutableStateOf<List<ScannedCode>>(emptyList()) }
     var barcodeUnavailable by remember { mutableStateOf(false) }
+    // QR mode's batch scan collects every new code without opening it; beep and vibrate are the person's choice.
+    var qrBatch by remember { mutableStateOf(prefs.getBoolean("qr_batch", false)) }
+    var qrBeep by remember { mutableStateOf(prefs.getBoolean("qr_beep", false)) }
+    var qrVibrate by remember { mutableStateOf(prefs.getBoolean("qr_vibrate", true)) }
+    val batchCodes = remember { mutableStateListOf<ScannedCode>() }
+    var showBatch by remember { mutableStateOf(false) }
+    val beeper = remember { CodeBeeper() }
+    DisposableEffect(beeper) { onDispose { beeper.release() } }
+    val codeFeedback = {
+        if (qrVibrate) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (qrBeep) beeper.beep()
+    }
+    /** Adds the codes not yet in the batch; true when any was new. */
+    val collect = { codes: List<ScannedCode> ->
+        val fresh = codes.filter { code -> batchCodes.none { it.raw == code.raw } }.distinctBy { it.raw }
+        fresh.forEach { batchCodes.add(it); qrScans.record(it) }
+        if (fresh.isNotEmpty()) codeFeedback()
+        fresh.isNotEmpty()
+    }
     val barcodeAnalyzer = remember {
         BarcodeFrameAnalyzer(
             context = context.applicationContext,
             onCodes = { frame ->
-                if (frame.codes.size >= 2 || outlinedFrame != null) {
+                if (qrBatch) {
+                    // Keep reading: a repeat of a collected code is ignored, a new one is added with a beep or buzz.
+                    collect(frame.codes.map { it.code })
+                    false
+                } else if (frame.codes.size >= 2 || outlinedFrame != null) {
                     // Keep looking: the outlines follow the codes until one is tapped.
                     outlinedFrame = frame
                     false
                 } else {
                     // A single code opens straight away, as it always has; returning true pauses the reader meanwhile.
                     val only = frame.codes.first().code
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    codeFeedback()
                     foundCode = only
                     qrScans.record(only)
                     true
@@ -548,7 +574,11 @@ fun CameraScannerScreen(
     // QR mode's gallery button: read a code from a screenshot or photo, like Lens.
     val codePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) barcodeAnalyzer.scanImage(uri) { codes ->
-            if (codes.size == 1) {
+            if (qrBatch && codes.isNotEmpty()) {
+                collect(codes)
+                barcodeAnalyzer.resume()
+                showBatch = true
+            } else if (codes.size == 1) {
                 foundCode = codes.first()
                 qrScans.record(codes.first())
             } else if (codes.size > 1) {
@@ -1318,6 +1348,7 @@ fun CameraScannerScreen(
                 hint = stringResource(
                     when {
                         barcodeUnavailable -> R.string.scan_qr_downloading
+                        qrBatch -> R.string.qrscan_batch_on
                         outlinedFrame != null -> R.string.qr_pick_one_hint
                         else -> R.string.scan_qr_point
                     }
@@ -1326,10 +1357,10 @@ fun CameraScannerScreen(
             )
         }
         outlinedFrame?.let { frame ->
-            if (barcodeMode && foundCode == null) {
+            if (barcodeMode && foundCode == null && !qrBatch) {
                 QrCodeOutlines(frame) { picked ->
                     barcodeAnalyzer.pause()
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    codeFeedback()
                     outlinedFrame = null
                     foundCode = picked
                     qrScans.record(picked)
@@ -1343,6 +1374,21 @@ fun CameraScannerScreen(
                 barcodeAnalyzer.resume()
             }
             BarcodeResultSheet(code, onScanAgain = scanAgain, onDismiss = scanAgain)
+        }
+        if (showBatch && barcodeMode && foundCode == null) {
+            QrBatchSheet(
+                codes = batchCodes,
+                onPick = { picked ->
+                    showBatch = false
+                    barcodeAnalyzer.pause()
+                    foundCode = picked
+                },
+                onClear = {
+                    batchCodes.clear()
+                    showBatch = false
+                },
+                onDismiss = { showBatch = false }
+            )
         }
         if (pictureCodes.isNotEmpty()) {
             QrCodeChooserSheet(
@@ -1560,6 +1606,15 @@ fun CameraScannerScreen(
                         }
                         if (!barcodeMode) {
                             SwitchItem(R.string.scan_hd_capture, hdCapture) { hdCapture = !hdCapture; prefs.edit { putBoolean("hd", hdCapture) } }
+                        }
+                        if (barcodeMode) {
+                            SwitchItem(R.string.qrscan_batch, qrBatch) { qrBatch = !qrBatch; outlinedFrame = null; prefs.edit { putBoolean("qr_batch", qrBatch) } }
+                            SwitchItem(R.string.qrscan_beep, qrBeep) {
+                                qrBeep = !qrBeep
+                                prefs.edit { putBoolean("qr_beep", qrBeep) }
+                                if (qrBeep) beeper.beep() // a sample, so the person hears what they turned on
+                            }
+                            SwitchItem(R.string.qrscan_vibrate, qrVibrate) { qrVibrate = !qrVibrate; prefs.edit { putBoolean("qr_vibrate", qrVibrate) } }
                         }
                         SwitchItem(R.string.scan_show_grid, showGrid) { showGrid = !showGrid; prefs.edit { putBoolean("grid", showGrid) } }
                         SwitchItem(R.string.scan_show_level, showLevel) { showLevel = !showLevel; prefs.edit { putBoolean("level", showLevel) } }
@@ -1796,7 +1851,31 @@ fun CameraScannerScreen(
                     }
                 }
                 // QR codes are read live, so there is no shutter in QR mode: just the viewfinder, like Lens.
-                if (barcodeMode) Spacer(Modifier.size(72.dp)) else {
+                if (barcodeMode) {
+                    // Batch scan on or off, where the shutter sits in the other modes (codes are read live, no shutter).
+                    val batchLabel = stringResource(R.string.qrscan_batch)
+                    Surface(
+                        onClick = {
+                            qrBatch = !qrBatch
+                            outlinedFrame = null
+                            prefs.edit { putBoolean("qr_batch", qrBatch) }
+                        },
+                        shape = CircleShape,
+                        color = if (qrBatch) TorchOn else Color.White.copy(alpha = 0.12f),
+                        contentColor = if (qrBatch) Color(0xFF2B2000) else Color.White,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .semantics {
+                                contentDescription = batchLabel
+                                stateDescription = if (qrBatch) onLabel else offLabel
+                                role = Role.Switch
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.DynamicFeed, contentDescription = null, modifier = Modifier.size(30.dp))
+                        }
+                    }
+                } else {
                 val shutterScale by androidx.compose.animation.core.animateFloatAsState(if (capturing) 0.86f else 1f, spring(stiffness = 900f), label = "shutter")
                 Box(
                     Modifier
@@ -1876,6 +1955,21 @@ fun CameraScannerScreen(
                                 maxLines = 1,
                                 softWrap = false
                             )
+                        }
+                    } else if (barcodeMode && qrBatch && batchCodes.isNotEmpty()) {
+                        // The collected codes; tapping the count opens the list.
+                        val countLabel = stringResource(R.string.qrscan_batch_count, batchCodes.size)
+                        BottomPill(
+                            onClick = { showBatch = true },
+                            color = TorchOn,
+                            contentColor = Color(0xFF2B2000),
+                            modifier = Modifier.semantics { contentDescription = countLabel }
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.QrCode, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("${batchCodes.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }

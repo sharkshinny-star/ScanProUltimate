@@ -91,7 +91,9 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     suspend fun load() {
         val (p, r) = withContext(Dispatchers.IO) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            fun read(key: String) = prefs.getString(key, "").orEmpty().split(',').map { MERGED_IDS[it] ?: it }.filter { it in KNOWN_IDS }.distinct()
+            // Rotate, Extract and PDF to Excel lost their tiles but stay in the catalogue as search-only tools, so an
+            // existing pin or recent use of them still resolves.
+            fun read(key: String) = prefs.getString(key, "").orEmpty().split(',').filter { it in KNOWN_IDS }.distinct()
             read(KEY_PINNED) to read(KEY_RECENT)
         }
         pinned = p
@@ -122,8 +124,6 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     private companion object {
         const val PREFS = "tools_ui"
         const val KEY_PINNED = "pinned"
-        /** Tools that became part of another (2026-11-16): a pin or recent use carries over. */
-        val MERGED_IDS = mapOf("rotate" to "organize", "extract" to "organize", "pdf2excel" to "pdf2text")
         const val KEY_RECENT = "recent"
         const val MAX_RECENT = 4
         val KNOWN_IDS: Set<String> by lazy { (TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL).map { it.id }.toSet() }
@@ -148,6 +148,9 @@ private val TOOL_KEYWORDS = mapOf(
     "split" to "separate divide cut apart",
     // Organise also rotates and extracts, so it answers for both.
     "organize" to "reorder rearrange delete remove pages sort rotate turn flip sideways upside down orientation extract pull out select",
+    "image_tools" to "photo picture jpg png crop compress convert resize",
+    "rotate" to "turn flip sideways upside down orientation",
+    "extract" to "pull out select pages",
     "compress" to "shrink reduce smaller size email optimise optimize",
     "page_numbers" to "number footer header count paginate numbering",
     "sign" to "signature e-sign autograph initials",
@@ -157,11 +160,17 @@ private val TOOL_KEYWORDS = mapOf(
     "ocr" to "scan recognise read text searchable",
     "fill" to "form fields sign complete type",
     "pdf2img" to "export pictures jpg png save as images",
+    // Excel is a format of PDF to Word, Excel or text, so it answers for it too.
     "pdf2text" to "txt copy words plain text word docx excel xlsx spreadsheet table sheet cells csv",
-    "pdf2ppt" to "powerpoint pptx slides presentation deck",
+    "pdf2excel" to "excel xlsx spreadsheet table sheet cells csv",
     "protect" to "password encrypt lock secure",
     "unlock" to "remove password decrypt open",
     "repair" to "fix broken damaged corrupt will not open recover",
+    "blank_pages" to "empty white delete remove clean up scan",
+    "greyscale" to "grayscale black white monochrome grey gray colour color print ink",
+    "flatten" to "lock form fields annotations comments stamps uneditable merge layers",
+    "extract_images" to "pictures photos jpg png save get images",
+    "pdf_info" to "metadata properties details title author privacy remove clean exif producer",
     "crop_img" to "trim cut photo",
     "compress_img" to "shrink reduce photo kb mb size",
     "convert_img" to "jpg jpeg png webp format change",
@@ -241,7 +250,7 @@ internal fun ToolCategoryChips(selected: String, onSelect: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         FilterChip(selected = selected == ALL_CATEGORIES, onClick = { onSelect(ALL_CATEGORIES) }, label = { Text(stringResource(R.string.tools_category_all)) })
-        TOOL_SECTIONS.forEach { section ->
+        TOOL_SECTIONS.filter { it.tiles.isNotEmpty() }.forEach { section ->
             FilterChip(selected = selected == section.id, onClick = { onSelect(section.id) }, label = { Text(stringResource(section.title)) })
         }
     }
@@ -308,8 +317,16 @@ internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
     "merge" to R.string.tools_desc_merge,
     "split" to R.string.tools_desc_split,
     "organize" to R.string.tools_desc_organize,
+    "image_tools" to R.string.tools_desc_image_tools,
+    "rotate" to R.string.tools_desc_rotate,
+    "extract" to R.string.tools_desc_extract,
     "compress" to R.string.tools_desc_compress,
     "repair" to R.string.tools_desc_repair,
+    "blank_pages" to R.string.tools_desc_blank_pages,
+    "greyscale" to R.string.tools_desc_greyscale,
+    "flatten" to R.string.tools_desc_flatten,
+    "extract_images" to R.string.tools_desc_extract_images,
+    "pdf_info" to R.string.tools_desc_pdf_info,
     "page_numbers" to R.string.tools_desc_page_numbers,
     "watermark" to R.string.tools_desc_watermark,
     "sign" to R.string.tools_desc_sign,
@@ -319,7 +336,7 @@ internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
     "fill" to R.string.tools_desc_fill,
     "pdf2img" to R.string.tools_desc_pdf2img,
     "pdf2text" to R.string.tools_desc_pdf2text,
-    "pdf2ppt" to R.string.tools_desc_pdf2ppt,
+    "pdf2excel" to R.string.tools_desc_pdf2excel,
     "protect" to R.string.tools_desc_protect,
     "unlock" to R.string.tools_desc_unlock,
     "crop_img" to R.string.tools_desc_crop_img,
@@ -398,6 +415,7 @@ private fun ToolCard(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             IconTile(tool.icon, tool.tone, size = 42.dp, corner = 13.dp, iconSize = 22.dp)
             Spacer(Modifier.weight(1f))
+            if (tool.beta) BetaBadge()
             if (pinned) {
                 Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
             }
@@ -579,11 +597,11 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
 
     // F140: a heading and then one list item per row of cards, so only the rows on screen are composed when the tab opens
     // (the whole section used to be one item).
-    TOOL_SECTIONS.filter { category == ALL_CATEGORIES || it.id == category }.forEach { section ->
+    TOOL_SECTIONS.filter { it.tiles.isNotEmpty() && (category == ALL_CATEGORIES || it.id == category) }.forEach { section ->
         item(key = "section-${section.id}", contentType = "tools-header") {
-            SectionTitle(stringResource(section.title), count = section.tools.size)
+            SectionTitle(stringResource(section.title), count = section.tiles.size)
         }
-        section.tools.chunked(perRow).forEachIndexed { index, row ->
+        section.tiles.chunked(perRow).forEachIndexed { index, row ->
             item(key = "section-${section.id}-$index", contentType = "tools-row") {
                 ToolCardRow(row, perRow, memory, onLaunch)
             }
@@ -607,5 +625,23 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
                 }
             }
         }
+    }
+}
+
+/** Small "Beta" label on a tool whose results depend a lot on the PDF it is given. */
+@Composable
+internal fun BetaBadge(modifier: Modifier = Modifier) {
+    androidx.compose.material3.Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+    ) {
+        Text(
+            stringResource(R.string.tools_badge_beta),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+        )
     }
 }

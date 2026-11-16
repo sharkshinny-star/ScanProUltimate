@@ -41,6 +41,14 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-17, merge of the remote `8cd38b6` into `dec927e`, uncommitted merge tree, macOS)
+
+- Full `:app:testDebugUnitTest` (untracked local `PageAreaDecodeTest.kt` set aside: it does not compile against `ImageProcessor.decodePageArea`): 894 tests, 117 skipped, 3 failed. Two in the untracked local `PageAreaTest.kt` (not part of either branch); one in `FirstRunHintsTest.everyToolTileHasAnIntroduction`, caused by the merge and fixed (Rotate, Extract and PDF to Excel use the Organise and PDF to Word, Excel or text introductions).
+- After that fix: `FirstRunHintsTest` 5/5 and `ToolCatalogueTest` 4/4 pass. The full suite was NOT re-run after it.
+- `ToolsScreenshotTest` run on its own: 12 of 12 fail on this Mac with Robolectric native-graphics errors (`RenderNode` `UnsatisfiedLinkError`, `FileSystemAlreadyExistsException`); skipped in the full run; not a merge result.
+- The remote tip `8cd38b6` did not compile on its own (`ratingDue`, `settings.completedScans`); fixed in the merge.
+- NOT run: lint, release builds, any device or emulator. Not committed, not pushed.
+
 ## Latest results (2026-11-16, F164 on `8402c17`, macOS + Android 17 emulator + CPH2569 install)
 
 - Full `:app:testDebugUnitTest`: exit 0; 763 tests, 0 failed, 65 skipped.
@@ -88,6 +96,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Full `:app:testDebugUnitTest`: exit 0; 752 tests, 0 failed, 0 errors, 65 skipped.
 - `:app:installDebug` on AVD `ScanProUX` (Android 17): crop editor opened on a page turned 90° shows it turned with the outline in place; Right turns picture and outline together; Done keeps the crop; Tools shows the sentence-case names; logcat 0 ScanPro crashes, 0 ANRs.
 - NOT run on this tree: `:app:lintDebug`, `bundleRelease`, sideload build, a real phone. Not pushed (no GitHub credentials on this Mac).
+## Latest results (2026-11-16, remote branch F165–F167 (written as F157–F159) merged on `691da1b`, Linux cloud container)
+
+- Full `:app:testDebugUnitTest :app:lintDebug` (`--no-daemon`): exit 0; 821 tests, 0 failed, 56 skipped (counted from the result XML); lint 0 errors, 75 warnings.
+- `:app:bundleRelease`: passed; AAB 49,454,029 bytes (47.2 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device or emulator (none available).
+- SDK set up by hand in `/opt/android-sdk` (cmdline-tools 13114758; platform 37.0 and Build-Tools 36 unzipped from `dl.google.com` because `sdkmanager` downloads were reset). Maven Central returned HTTP 429 through the proxy on a cold cache; `--max-workers=1` and retrying worked.
 
 ## Latest results (2026-11-15, F156 on `d408169`, macOS, Android Studio Preview JDK)
 

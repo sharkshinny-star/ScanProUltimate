@@ -130,6 +130,12 @@
     <string name="tools_card_merge">PDF కలపండి</string>
     <string name="tools_card_split">PDF విభజించండి</string>
     <string name="tools_card_organize">PDF క్రమపరచండి</string>
+    <!-- Search-only tools (no tile): Rotate and Extract open Organise in that mode; PDF to Excel is a format of PDF to Word, Excel or text. -->
+    <string name="tools_tile_rotate">తిప్పండి</string>
+    <string name="tools_tile_extract">పేజీలు తీయండి</string>
+    <string name="tools_card_extract">పేజీలు తీయండి</string>
+    <string name="tools_card_rotate">పేజీలు తిప్పండి</string>
+    <string name="tools_card_pdf2excel">PDF నుండి Excel</string>
     <string name="tools_card_pdf2img">PDF నుండి చిత్రాలు</string>
     <string name="tools_card_protect">రక్షించండి</string>
     <string name="tools_card_unlock">అన్‌లాక్</string>
@@ -472,11 +478,6 @@
     </plurals>
     <string name="tools_pdf2text_excel">Excel వర్క్‌బుక్ (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">ప్రతి పేజీకి ఒక షీట్. పదాలు పేజీలో ఉన్న చోటు నుండి నిలువు వరుసలు నిర్మించబడతాయి, కాబట్టి పట్టికలు సెల్‌లుగా వస్తాయి.</string>
-    <string name="tools_card_pdf2ppt">PDF నుండి PowerPoint</string>
-    <plurals name="tools_result_pdf2ppt">
-        <item quantity="one">%1$d స్లైడ్ తయారైంది, పేజీ చిత్రం.</item>
-        <item quantity="other">%1$d స్లైడ్‌లు తయారయ్యాయి, ప్రతి పేజీకి ఒక చిత్రం.</item>
-    </plurals>
     <string name="tools_progress_percent">%1$d%%</string>
     <string name="tools_failure_title">ఇది జరగలేదు</string>
     <string name="tools_failure_try_again">మళ్లీ ప్రయత్నించండి</string>
@@ -498,6 +499,8 @@
     <string name="tools_desc_split">పేజీలను వేర్వేరు ఫైళ్లుగా విభజించండి</string>
     <string name="tools_mode_arrange">క్రమం మార్చు</string>
     <string name="tools_desc_organize">పేజీల క్రమం మార్చండి, తిప్పండి, తీయండి, తొలగించండి</string>
+    <string name="tools_desc_rotate">పేజీలను సరిగ్గా తిప్పండి</string>
+    <string name="tools_desc_extract">ఎంచుకున్న పేజీలను PDFగా సేవ్ చేయండి</string>
     <string name="tools_desc_compress">PDF పరిమాణాన్ని తగ్గించండి</string>
     <string name="tools_desc_repair">పాడైన PDFని సరిచేయండి</string>
     <string name="tools_desc_page_numbers">ప్రతి పేజీకి సంఖ్య వేయండి</string>
@@ -509,7 +512,7 @@
     <string name="tools_desc_fill">PDF ఫారమ్‌లను నింపండి</string>
     <string name="tools_desc_pdf2img">పేజీలను చిత్రాలుగా సేవ్ చేయండి</string>
     <string name="tools_desc_pdf2text">Word, Excel లేదా సాధారణ టెక్స్ట్ పొందండి</string>
-    <string name="tools_desc_pdf2ppt">ప్రతి పేజీ ఒక స్లైడ్</string>
+    <string name="tools_desc_pdf2excel">పట్టికలను షీట్‌లోకి తీయండి</string>
     <string name="tools_desc_protect">పాస్‌వర్డ్‌తో లాక్ చేయండి</string>
     <string name="tools_desc_unlock">పాస్‌వర్డ్ తొలగించండి</string>
     <string name="tools_desc_crop_img">ఫోటో అంచులను కత్తిరించండి</string>

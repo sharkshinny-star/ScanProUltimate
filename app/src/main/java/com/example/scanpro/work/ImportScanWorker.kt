@@ -100,7 +100,7 @@ class ImportScanWorker @AssistedInject constructor(
             return Result.success()
         }
 
-        settings.recordCompletedScan()
+        com.example.scanpro.data.FeedbackPrompts.recordCompletedScan(applicationContext)
         // Text scans copy their text instead; every other scan offers share/save straight away.
         if (mode == ScanMode.TEXT) copyRecognizedText(document) else operations.offerScanSaved(document.id)
         // Opens the document only if the user is still on a top-level screen; see ScanProApp.

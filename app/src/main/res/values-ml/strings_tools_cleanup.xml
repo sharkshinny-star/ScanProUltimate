@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tools landing clean-up (2026-11-16): Image tools tile, Beta badge, Repair from the failure dialog. -->
+<resources>
+    <string name="tools_card_image_tools">ചിത്ര ഉപകരണങ്ങൾ</string>
+    <string name="tools_desc_image_tools">ഫോട്ടോകൾ മുറിക്കുക, ചുരുക്കുക, മാറ്റുക അല്ലെങ്കിൽ വലുപ്പം മാറ്റുക</string>
+    <string name="tools_badge_beta">ബീറ്റ</string>
+    <string name="tools_failure_repair">ഈ PDF ശരിയാക്കുക</string>
+</resources>
