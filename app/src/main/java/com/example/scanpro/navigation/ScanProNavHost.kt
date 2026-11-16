@@ -2,6 +2,8 @@ package com.example.scanpro.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -225,8 +227,9 @@ fun ScanProNavHost(
 
 private const val PushDuration = 280
 private const val TabFadeDuration = 150
-private const val SheetEnterDuration = 220
-private const val SheetExitDuration = 200
+/** How long the camera takes to appear; the camera screen waits this long before binding the camera (see there). */
+internal const val CameraEnterDuration = 180
+private const val CameraExitDuration = 150
 
 private fun NavBackStackEntry.isTopLevel() = destination.route in ScanProDestinations.topLevel
 private fun NavBackStackEntry.isSheetLike() = destination.route?.startsWith("camera") == true
@@ -248,8 +251,12 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs() = in
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Boolean): EnterTransition = when {
     betweenTabs() -> if (pop) EnterTransition.None else fadeIn(tween(TabFadeDuration, easing = LinearOutSlowInEasing))
     // Sheet rising from bottom: opaque slide up over the stationary caller screen with maximum initial velocity on frame 1.
+    // The camera grows a little and fades in over the caller. It used to slide up the whole screen: a full-height
+    // slide shows every late frame as a jump, and the camera's first frames are its heaviest. A short fade with a small
+    // scale covers the same distance in pixels of almost nothing, so a late frame is not seen.
     !pop && targetState.isSheetLike() ->
-        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(SheetEnterDuration, easing = LinearOutSlowInEasing))
+        fadeIn(tween(CameraEnterDuration, easing = LinearOutSlowInEasing)) +
+            scaleIn(tween(CameraEnterDuration, easing = LinearOutSlowInEasing), initialScale = 0.94f)
     // Sheet popping back to caller: caller is already rendered and stationary underneath.
     pop && initialState.isSheetLike() -> EnterTransition.None
     // The screen underneath comes back from a quarter of the way across, opaque.
@@ -265,7 +272,8 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(pop: Boole
     !pop && targetState.isSheetLike() -> ExitTransition.None
     // Sheet popping: drops immediately off-screen accelerating downward with zero hesitation.
     pop && initialState.isSheetLike() ->
-        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(SheetExitDuration, easing = FastOutLinearInEasing))
+        fadeOut(tween(CameraExitDuration, easing = FastOutLinearInEasing)) +
+            scaleOut(tween(CameraExitDuration, easing = FastOutLinearInEasing), targetScale = 0.96f)
     pop -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it })
     else -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(PushDuration, easing = FastOutSlowInEasing), targetOffset = { it / 4 })
 }

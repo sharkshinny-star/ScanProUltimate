@@ -55,7 +55,9 @@ class IntroductionsScreenshotTest {
                 ToolIntroDialog(tool, toolIntro(id)!!, onContinue = { events += "continue" }, onCancel = { events += "cancel" })
             }
         }
-        compose.onNodeWithText(text(R.string.hint_tool_step_pick_pdfs)).assertExists()
+        // One short line under the picture: the step list was dropped (owner: shorter text).
+        compose.onNodeWithText(text(tool.title)).assertExists()
+        compose.onNodeWithText(text(R.string.hint_tool_step_pick_pdfs)).assertDoesNotExist()
         captureDialog("intro_tool_${id}_${if (dark) "dark" else "light"}")
         return events
     }
@@ -77,15 +79,27 @@ class IntroductionsScreenshotTest {
     }
 
     @Test
-    fun cameraIdCardIntroductionKeepsDontRemindChoice() {
-        var result: Boolean? = null
-        compose.setContent { ScanProTheme { ScanIntroDialog(ScanMode.ID_CARD) { result = it } } }
+    fun cameraIdCardIntroductionStartsWithOneTapAndShowsOneSentence() {
+        var started = false
+        compose.setContent { ScanProTheme { ScanIntroDialog(ScanMode.ID_CARD) { started = true } } }
         compose.onNodeWithText(text(R.string.scan_idcard_intro_title)).assertExists()
+        // The first sentence only, and no "Don't remind me again" box: the introduction shows once by itself.
+        compose.onNodeWithText(com.example.scanpro.core.designsystem.firstSentence(text(R.string.scan_idcard_intro_body))).assertExists()
+        compose.onNodeWithText(text(R.string.scan_idcard_intro_body)).assertDoesNotExist()
         captureDialog("intro_camera_idcard_light")
-        compose.onNodeWithText(text(R.string.scan_book_intro_dont_remind)).performClick()
         compose.onNodeWithText(text(R.string.scan_book_intro_start)).performClick()
         compose.waitForIdle()
-        assertEquals(true, result)
+        assertEquals(true, started)
+    }
+
+    @Test
+    fun firstSentenceEndsAtTheFirstFullStopInEveryScript() {
+        val first = { text: String -> com.example.scanpro.core.designsystem.firstSentence(text) }
+        assertEquals("Lay the page flat.", first("Lay the page flat. ScanPro finds the edges."))
+        assertEquals("पेज को समतल रखें।", first("पेज को समतल रखें। ScanPro किनारे ढूँढता है।"))
+        assertEquals("Version 4.2 is here.", first("Version 4.2 is here. More below."))
+        assertEquals("No full stop", first("No full stop"))
+        assertEquals("One sentence.", first("One sentence."))
     }
 
     @Test

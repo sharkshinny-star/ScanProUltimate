@@ -58,12 +58,6 @@ internal fun ToolIntroDialog(tool: PdfToolCard, intro: ToolIntro, onContinue: ()
     IllustratedDialog(
         title = stringResource(tool.title),
         body = stringResource(intro.description),
-        eyebrow = stringResource(R.string.hint_how_it_works),
-        steps = listOf(
-            stringResource(intro.pickStep),
-            stringResource(R.string.hint_tool_step_options),
-            stringResource(R.string.hint_tool_step_result, stringResource(R.string.tools_results_title))
-        ),
         illustration = { ToolFlowIllustration(tool.icon, tool.tone, intro.input, Modifier.fillMaxSize()) },
         confirmText = stringResource(R.string.common_continue),
         onConfirm = onContinue,

@@ -314,8 +314,9 @@ fun CameraScannerScreen(
     // which fast save trusts like the ID composite (they are cut out already).
     var bookLayout by rememberSaveable { mutableIntStateOf(1) }
     var bookHalves by rememberSaveable { mutableStateOf(listOf<String>()) }
-    // First-use explainer for Document, ID Card and Book modes: shown once per mode per camera session until
-    // "Don't remind me again" is ticked for that mode.
+    // First-use explainer for Document, ID Card and Book modes: shown once per mode, ever. It used to come back in
+    // every camera session until a "Don't remind me again" box was ticked (owner, 2026-11-16: "should show only first
+    // time"). Settings > Show introductions again brings them back.
     var introShownFor by rememberSaveable { mutableStateOf(listOf<String>()) }
     var introMode by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(scanMode, permissionGranted) {
@@ -325,14 +326,13 @@ fun CameraScannerScreen(
         if (key != null && scanMode.name !in introShownFor && !prefs.getBoolean(key, false)) {
             introShownFor = introShownFor + scanMode.name
             introMode = scanMode.name
+            // Remembered as soon as it is shown, so leaving the app or the camera with it open does not bring it back.
+            prefs.edit { putBoolean(key, true) }
         }
     }
     introMode?.let { name ->
         val mode = ScanMode.entries.firstOrNull { it.name == name }
-        if (mode == null) introMode = null else ScanIntroDialog(mode, onStart = { dontRemind ->
-            if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
-            introMode = null
-        })
+        if (mode == null) introMode = null else ScanIntroDialog(mode, onStart = { introMode = null })
     }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
     // than saving at once, whatever "Check pages before saving" says.
@@ -877,6 +877,9 @@ fun CameraScannerScreen(
 
     // Re-keyed on `reviewing`: the camera is released while the review step is up, so the preview and
     // OpenCV analysis stop costing battery behind a screen that doesn't show them, and bound again after.
+    // Saved, so a rotation (no transition) does not wait again.
+    var enterSettled by rememberSaveable { mutableStateOf(false) }
+    val motionEnabled = com.example.scanpro.core.designsystem.rememberMotionEnabled()
     LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, retryTrigger, hdCapture) {
         if (!permissionGranted) return@LaunchedEffect
         if (reviewing) {
@@ -886,7 +889,14 @@ fun CameraScannerScreen(
             boundUseCases = emptyList()
             return@LaunchedEffect
         }
+        // Asking for the provider starts CameraX off the main thread straight away.
         val future = ProcessCameraProvider.getInstance(context)
+        // Binding the camera holds the main thread for several frames. Done while the screen was still animating in,
+        // it made the opening stutter (owner, 2026-11-16), so the first bind waits for the transition to finish.
+        if (!enterSettled) {
+            if (motionEnabled) delay(com.example.scanpro.navigation.CameraEnterDuration + 20L)
+            enterSettled = true
+        }
         future.addListener({
             // The screen may have been left before the camera provider became ready.
             if (disposed.get()) return@addListener
@@ -2374,8 +2384,7 @@ internal fun resetScanIntros(context: android.content.Context) {
  * spine, with the mode's icon in the corner.
  */
 @Composable
-internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> Unit) {
-    var dontRemind by rememberSaveable { mutableStateOf(false) }
+internal fun ScanIntroDialog(mode: ScanMode, onStart: () -> Unit) {
     val (icon, title, body) = when (mode) {
         ScanMode.BOOK -> Triple(Icons.AutoMirrored.Rounded.MenuBook, R.string.scan_book_intro_title, R.string.scan_book_intro_body)
         ScanMode.ID_CARD -> Triple(Icons.Rounded.Badge, R.string.scan_idcard_intro_title, R.string.scan_idcard_intro_body)
@@ -2397,23 +2406,9 @@ internal fun ScanIntroDialog(mode: ScanMode, onStart: (dontRemind: Boolean) -> U
             ScanMode.ID_CARD -> com.example.scanpro.core.designsystem.TileTone.Teal
             else -> com.example.scanpro.core.designsystem.TileTone.Indigo
         },
-        extra = {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .toggleable(value = dontRemind, role = Role.Checkbox) { dontRemind = it }
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.Checkbox(checked = dontRemind, onCheckedChange = null)
-                Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
-            }
-        },
         confirmText = stringResource(R.string.scan_book_intro_start),
-        onConfirm = { onStart(dontRemind) },
-        onDismiss = { onStart(dontRemind) }
+        onConfirm = onStart,
+        onDismiss = onStart
     )
 }
 

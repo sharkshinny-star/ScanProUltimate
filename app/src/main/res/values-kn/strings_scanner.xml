@@ -172,7 +172,6 @@
     <string name="scan_doc_intro_title">ದಾಖಲೆ ಸ್ಕ್ಯಾನ್</string>
     <string name="scan_doc_intro_body">ಪುಟವನ್ನು ಉತ್ತಮ ಬೆಳಕಿನಲ್ಲಿ ಸಮತಟ್ಟಾಗಿ ಇಟ್ಟು ಫೋನ್ ಸ್ಥಿರವಾಗಿ ಹಿಡಿಯಿರಿ. ScanPro ಅಂಚುಗಳನ್ನು ಗುರುತಿಸಿ ಪುಟವನ್ನು ನೇರಗೊಳಿಸಿ ಸ್ವಚ್ಛಗೊಳಿಸುತ್ತದೆ. ಶಟರ್ ಒತ್ತಿ, ಅಥವಾ ಆಟೋ ಕ್ಯಾಪ್ಚರ್ ಆನ್ ಮಾಡಿ ಅಲುಗಾಡದೆ ಇರಿ. ಇನ್ನಷ್ಟು ಪುಟ ಸೇರಿಸಿ, ನಂತರ ಮುಗಿದಿದೆ ಒತ್ತಿ.</string>
     <string name="scan_book_intro_start">ಈಗ ಪ್ರಾರಂಭಿಸಿ</string>
-    <string name="scan_book_intro_dont_remind">ಮತ್ತೆ ನೆನಪಿಸಬೇಡಿ</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">ಹರಡಿದ ಪುಟವನ್ನು %1$d ಮತ್ತು %2$d ಪುಟಗಳಾಗಿ ವಿಭಜಿಸಲಾಗಿದೆ</string>
     <string name="scan_take_photo">ಫೋಟೋ ತೆಗೆಯಿರಿ</string>
     <string name="scan_import_photos">ಫೋಟೋ ಇಂಪೋರ್ಟ್ ಮಾಡಿ</string>
