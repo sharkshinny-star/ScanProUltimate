@@ -43,7 +43,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 ## Latest results (2026-11-17, merge of F165 with the parallel session's F164, Linux cloud container)
 
-- On the merge commit: full `:app:testDebugUnitTest`: 892 tests, 0 failed, 82 skipped (result XML). Lint was started on the merged tree and is not recorded here (see below).
+- On the merge commit: full `:app:testDebugUnitTest`: 892 tests, 0 failed, 82 skipped (result XML). After the progress-overlay change: `:app:lintDebug` 0 errors, 91 warnings (it first found `StateFlowValueCalledInComposition` in the change, fixed with `PdfToolsViewModel.toolRunning`); `feature.tools.*` tests pass (44 classes' worth: 13+5+4+4+3+3). The full suite was not re-run after that change.
 
 ## Latest results (2026-11-17, F165 camera smoothness (before merge with F164 of the parallel session), Linux cloud container)
 

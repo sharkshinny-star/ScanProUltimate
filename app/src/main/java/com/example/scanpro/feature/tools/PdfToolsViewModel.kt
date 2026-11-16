@@ -55,6 +55,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -69,6 +73,8 @@ data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Ma
 }
 
 /** What the Tools screen shows while and after a tool runs. */
+private const val REPORT_INTERVAL_MS = 66L
+
 data class ToolProgress(val title: String, val subtitle: String? = null, val current: Int = 0, val total: Int = 0)
 
 /**
@@ -152,6 +158,11 @@ class PdfToolsViewModel @Inject constructor(
 
     private val _progress = MutableStateFlow<ToolProgress?>(null)
     val progress: StateFlow<ToolProgress?> = _progress.asStateFlow()
+    /** Only whether a tool is running: changes on start and stop, not on every progress tick. */
+    val toolRunning: StateFlow<Boolean> = _progress
+        .map { it != null }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _result = MutableStateFlow<PdfToolResult?>(null)
     val result: StateFlow<PdfToolResult?> = _result.asStateFlow()
@@ -204,7 +215,16 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
+    private var lastReportAt = 0L
+
+    /**
+     * A tool reports every page (some, every few kilobytes). The overlay cannot show more than about fifteen changes a
+     * second, so in between the report is dropped; the last one (current reaches total) always goes through.
+     */
     private fun report(current: Int, total: Int, subtitle: String) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (current < total && now - lastReportAt < REPORT_INTERVAL_MS) return
+        lastReportAt = now
         _progress.update { it?.copy(subtitle = subtitle, current = current, total = total) }
     }
 
