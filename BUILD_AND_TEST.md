@@ -41,6 +41,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-17, merged branch at `dc9de26`: the owner's machine's F157-F164 plus F160-F166 from the cloud session, Linux cloud container)
+
+- Full `:app:testDebugUnitTest :app:lintDebug` on `199aa03`: 907 tests, 1 failed, 82 skipped (result XML); lint 0 errors, 95 warnings. The one failure, `IntroductionsScreenshotTest.cameraIdCardIntroductionStartsWithOneTapAndShowsOneSentence`, read the old ID-card text; fixed in `dc9de26` and `IntroductionsScreenshotTest` re-run on its own: 15 of 15 pass. The full suite was NOT re-run after that fix.
+- `:app:bundleRelease` on `dc9de26`: passed; `app-release.aab` 49,759,793 bytes (47.5 MiB), R8 on, unsigned as configured (no signing variables set, so it cannot be uploaded or installed until signed with the owner's key).
+- Before `199aa03` the merged branch did not compile (`ratingDue`, `completedScans`, `dontRemind`); fixed there.
+- NOT run: sideload `assembleRelease`, 16 KB alignment check, instrumented tests, any device or emulator. Smoothness is unmeasured (R55); the camera now has both the owner's fade-and-scale opening and the delayed first bind (F165), untested together on a phone.
+
 ## Latest results (2026-11-16, F157–F159 merged on `691da1b`, Linux cloud container)
 
 - Full `:app:testDebugUnitTest :app:lintDebug` (`--no-daemon`): exit 0; 821 tests, 0 failed, 56 skipped (counted from the result XML); lint 0 errors, 75 warnings.
