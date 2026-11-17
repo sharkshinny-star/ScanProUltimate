@@ -32,6 +32,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 ## 2. Completed work (newest first)
 
+- **F166** (2026-11-17): frame delays in other tools: shared low-priority `BackgroundWork` pools for thumbnails, page renders and tool jobs (was `Dispatchers.IO`), split preview caches, aurora backdrop read in draw. Found by code reading, not measured; see R55.
 - **F165** (2026-11-17): camera open/close smoothness from the owner's screen recording: CameraX warm-up at launch, first bind after the slide-up, viewfinder fade-in, analysis stopped on leaving, back gesture uses the app's slide (no shrinking card), steadier hint pill (`GuidanceHold`). Unverified on a device (R55).
 - **F164** (2026-11-16, this session, cloud container, merged with the second round's work): (1) **Drink-water
   reminders**: `core/notifications/HydrationSchedule.kt` (new, tested: 10:00, 12:00, 15:00 — one hour after the day

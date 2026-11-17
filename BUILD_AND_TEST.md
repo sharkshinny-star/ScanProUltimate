@@ -41,6 +41,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-17, F166 background pools, Linux cloud container)
+
+- `:app:compileDebugKotlin`: 0 errors. `BackgroundWorkTest` 3 of 3 passed (one run caught a deadlock in the test itself, fixed). An earlier filtered run of the tools, Pdf and Engine tests was stopped by hand (hung on that test) and not repeated.
+- NOT run: the full `:app:testDebugUnitTest`, `:app:lintDebug`, a release build, any device. The full run was killed by a container restart; the last full results (892 tests, 0 failed; lint 0 errors) are for the tree before F166.
+
 ## Latest results (2026-11-17, merge of F165 with the parallel session's F164, Linux cloud container)
 
 - On the merge commit: full `:app:testDebugUnitTest`: 892 tests, 0 failed, 82 skipped (result XML). After the progress-overlay change: `:app:lintDebug` 0 errors, 91 warnings (it first found `StateFlowValueCalledInComposition` in the change, fixed with `PdfToolsViewModel.toolRunning`); `feature.tools.*` tests pass (44 classes' worth: 13+5+4+4+3+3). The full suite was not re-run after that change.
