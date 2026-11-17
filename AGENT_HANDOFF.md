@@ -245,6 +245,8 @@ Ranked; IDs match `AUDIT_FINDINGS.md`.
 
 ## 4. Next steps
 
+- **Owner / device agent:** run `SMOOTHNESS_CHECK.md` on a release build and fill its table; file the Play "All files access" declaration using the draft in `PLAY_ALL_FILES_ACCESS.md` (not filed; blocks release).
+
 - **Device checks for F134 to F136 (R44)** and a speaker's read of the new strings. CI is green (run 120).
 - **Item 7 (undo history across sessions):** design note written, not built: `UNDO_PERSISTENCE_DESIGN.md`. Needs the owner's answers to its three questions first.
 
