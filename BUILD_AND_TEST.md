@@ -44,7 +44,9 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 ## Latest results (2026-11-17, F168 hard-shadow detection, Linux cloud container)
 
 - Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`; the app's `DocumentEdgeDetector.kt`, `LineQuadFinder.kt`, `QuadGeometry.kt`, `PageQuality.kt` and `ScanAlignment.kt` compiled unchanged with Kotlin 2.0.21 against stubs and OpenCV 4.9): 12 benchmark scenes all found, mean IoU 0.975 (0.921 before), worst corner error 1.33% (10.86% before, `hard_shadow_across_page`, now 0.10%); 13 of 16 shadow variants under 2% (9 before); 4 no-page scenes unchanged; median detection time 12.8 ms (13.0 ms before).
-- Gradle Android build NOT run: AGP stopped at the SDK licence check (platform 37 and Build-Tools unzipped by hand, licences not accepted in this container). CI on push is the first compile of the app and the unit tests. `ScanDetectionBenchmarkTest` (changed: three asserted shadow scenes) is not compiled by CI and was not run on a device (R56).
+- Gradle on `6565874` (SDK licences accepted at the owner's request, `sdkmanager` 16111833, platform `android-37.0`, Build-Tools 36.0.0): `:app:testDebugUnitTest` 907 tests, 0 failed, 82 skipped (result XML); `:app:lintDebug` 0 errors, 96 warnings (none in the changed files); `:app:compileDebugAndroidTestKotlin` passed (includes the changed `ScanDetectionBenchmarkTest`); `:app:bundleRelease` passed, `app-release.aab` 49,769,387 bytes (47.5 MiB, +9.6 KB), unsigned as configured.
+- A first combined run with `--max-workers=2` had its Gradle daemon killed for lack of memory during R8 (a leftover benchmark daemon held memory); split into two runs with `--max-workers=1`, both passed.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device (R56).
 
 ## Latest results (2026-11-17, merged branch at `dc9de26`: the owner's machine's F157-F164 plus F160-F166 from the cloud session, Linux cloud container)
 
