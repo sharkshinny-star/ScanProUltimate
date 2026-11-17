@@ -1,0 +1,2 @@
+package com.example.scanpro
+object R { object string { const val scan_guidance_align_page=1; const val scan_guidance_glare=2; const val scan_guidance_hold_steady=3; const val scan_guidance_more_light=4; const val scan_guidance_move_closer=5; const val scan_guidance_point_at_document=6; const val scan_guidance_ready=7; const val scan_guidance_same_page=8; const val scan_quality_blank=9; const val scan_quality_blurry=10; const val scan_quality_dark=11; const val scan_quality_glare=12 } }

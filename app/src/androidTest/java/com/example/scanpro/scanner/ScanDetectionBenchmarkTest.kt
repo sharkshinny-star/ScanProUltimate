@@ -60,9 +60,12 @@ class ScanDetectionBenchmarkTest {
         }
         report.lines().forEach { Log.i(TAG, it) }
 
-        // A floor for the cases that work: plain pages, and the faint-edge pages the faint-edge source (F126) fixed.
-        // The hard-shadow scene is a known failure and is deliberately not asserted.
-        listOf("clean_a4_desk", "strong_perspective", "receipt_dark_desk", "low_contrast_grey_desk", "white_page_white_table").forEach { name ->
+        // A floor for the cases that work: plain pages, the faint-edge pages the faint-edge source (F126) fixed, and
+        // the hard shadows the straight-edge search (F168) fixed.
+        listOf(
+            "clean_a4_desk", "strong_perspective", "receipt_dark_desk", "low_contrast_grey_desk", "white_page_white_table",
+            "hard_shadow_across_page", "shadow_band_lower_half", "shadow_on_tilted_page"
+        ).forEach { name ->
             val r = results.first { it.name == name }
             assertTrue("$name: no page found", r.found)
             assertTrue("$name: corner error ${r.cornerErrorPct}% is above 4%", r.cornerErrorPct < 4.0)
@@ -128,7 +131,10 @@ class ScanDetectionBenchmarkTest {
         scene("low_contrast_grey_desk", Desk.GREY, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), pageColor = Color.rgb(226, 226, 222)),
         scene("white_page_white_table", Desk.WHITE, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), pageColor = Color.rgb(250, 250, 248)),
         scene("busy_patterned_mat", Desk.MAT, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f)),
-        scene("hard_shadow_across_page", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = true),
+        scene("hard_shadow_across_page", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(0f, 200f, 400f, 130f)),
+        // F168: a shadow across the lower half, and one across a page seen at a strong angle.
+        scene("shadow_band_lower_half", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(0f, 250f, 60f, 320f)),
+        scene("shadow_on_tilted_page", Desk.WOOD, quad(420f, 90f, 860f, 120f, 1010f, 880f, 250f, 840f), shadow = ShadowBand(100f, 150f, 380f, 200f)),
         scene("noisy_and_soft", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), noisy = true),
         scene("book_spread", Desk.WOOD, quad(190f, 170f, 1090f, 150f, 1110f, 800f, 170f, 820f), spread = true),
         scene("dim_light", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), dim = true)
@@ -145,13 +151,16 @@ class ScanDetectionBenchmarkTest {
 
     private enum class Desk { WOOD, DARK, GREY, WHITE, MAT }
 
+    /** A hard shadow band across the page: it starts [dx], [dy] from the top-left corner and runs along ([vx], [vy]). */
+    private class ShadowBand(val dx: Float, val dy: Float, val vx: Float, val vy: Float)
+
     private fun scene(
         name: String,
         desk: Desk,
         truth: List<PointF>,
         pageColor: Int = Color.rgb(248, 247, 242),
         receipt: Boolean = false,
-        shadow: Boolean = false,
+        shadow: ShadowBand? = null,
         noisy: Boolean = false,
         spread: Boolean = false,
         dim: Boolean = false
@@ -180,12 +189,14 @@ class ScanDetectionBenchmarkTest {
         canvas.drawBitmap(flat, matrix, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
         flat.recycle()
 
-        if (shadow) {
-            // A hard diagonal shadow, such as a hand or a phone casts, across the page only.
+        if (shadow != null) {
+            // A hard shadow, such as a hand or a phone casts, across the page only.
             canvas.save()
             canvas.clipPath(outline)
+            val x0 = truth[0].x + shadow.dx
+            val y0 = truth[0].y + shadow.dy
             val band = Paint().apply {
-                shader = LinearGradient(truth[0].x, truth[0].y + 200f, truth[0].x + 400f, truth[0].y + 330f, intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(150, 20, 20, 25), Color.argb(150, 20, 20, 25), Color.argb(0, 0, 0, 0)), floatArrayOf(0f, 0.15f, 0.85f, 1f), Shader.TileMode.CLAMP)
+                shader = LinearGradient(x0, y0, x0 + shadow.vx, y0 + shadow.vy, intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(150, 20, 20, 25), Color.argb(150, 20, 20, 25), Color.argb(0, 0, 0, 0)), floatArrayOf(0f, 0.15f, 0.85f, 1f), Shader.TileMode.CLAMP)
             }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), band)
             canvas.restore()

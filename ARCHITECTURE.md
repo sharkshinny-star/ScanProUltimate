@@ -412,6 +412,7 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 
 ## Scanning quality, conversions and tool feedback (F124-F133)
 
+- `scanner/LineQuadFinder.kt` (F168): when no closed outline is confident (score below 0.55), `DocumentEdgeDetector` rebuilds the page from straight runs of the Canny map's curves, kept only if the edge runs along most of the perimeter and stops at the corners. Measured with `scripts/scan-bench/`, a desktop Gradle project (not part of the app build) that compiles the detector sources unchanged against stubs and desktop OpenCV (`org.openpnp:opencv` 4.9, bench only).
 - `scanner/DocumentEdgeDetector.kt`: a sixth candidate source for faint page edges (Canny with low limits on a widely blurred copy). Measured by `androidTest/.../scanner/ScanDetectionBenchmarkTest.kt`: 12 generated scenes with exact corners, run on a phone with `am instrument` (never Gradle's connected tests, which uninstall the app).
 - `scanner/CameraScannerScreen.kt`: values that change every analysis frame (outline, shutter ring, guidance) are read while drawing or from a coroutine, not during composition, so the camera screen does not recompose per frame.
 - `imaging/PdfRepairEngine.kt`: Repair PDF (forgiving re-parse and rewrite, else rebuild readable pages as pictures).

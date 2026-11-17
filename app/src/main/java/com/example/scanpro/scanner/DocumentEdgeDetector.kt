@@ -81,6 +81,10 @@ object DocumentEdgeDetector {
     /** Canny limits for the faint-edge source, on a widely blurred copy where a 12-level step peaks near 5. */
     private const val FAINT_CANNY_LOW = 2.5
     private const val FAINT_CANNY_HIGH = 7.0
+    /** Weight of an outline rebuilt from straight edges ([LineQuadFinder]), before its edge support. */
+    private const val LINE_WEIGHT = 0.95
+    /** The straight-edge search runs only when the best closed outline scores below this. */
+    private const val LINE_SEARCH_BELOW = 0.55f
 
     fun detect(grayInput: Mat): DocumentDetection {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
@@ -162,6 +166,37 @@ object DocumentEdgeDetector {
             // The thin Canny map keeps a page separate from a neighbouring object it nearly touches, which
             // the heavily closed maps would fuse into one blob; it is searched with every contour, not just outer ones.
             Imgproc.morphologyEx(edgesCanny, thinEdges, Imgproc.MORPH_CLOSE, kernel)
+
+            /** The shared page score for four corners, or null when they cannot be a page. */
+            fun scoreOf(points: Array<Point>, weight: Double): Pair<List<Point>, Double>? {
+                val ordered = order(points)
+                val geometry = ordered.map { QuadGeometry.P(it.x, it.y) }
+                if (!QuadGeometry.isPlausiblePage(geometry)) return null
+                val polygon = MatOfPoint(*ordered.toTypedArray())
+                try {
+                    val polygonArea = abs(Imgproc.contourArea(polygon))
+                    val areaRatio = (polygonArea / frameArea).coerceIn(0.0, 1.0)
+                    val rect = Imgproc.boundingRect(polygon)
+                    val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
+                    var score = areaRatio * 0.46 + rectangularity * 0.22 + edgeBalance(ordered) * 0.14 +
+                        QuadGeometry.angleScore(geometry) * 0.18
+                    // An outline that is just the camera frame is the background, not a page.
+                    val margin = 0.012 * max(frameWidth, frameHeight)
+                    val onBorder = ordered.count {
+                        it.x < margin || it.y < margin || it.x > frameWidth - margin || it.y > frameHeight - margin
+                    }
+                    if (areaRatio > 0.9 && onBorder >= 3) score *= 0.3
+                    return ordered to score * weight
+                } finally {
+                    polygon.release()
+                }
+            }
+            fun consider(points: Array<Point>, weight: Double) {
+                val (ordered, score) = scoreOf(points, weight) ?: return
+                val current = best
+                if (current == null || score.toFloat() > current.score) best = Candidate(ordered, score.toFloat())
+            }
+
             val sources = listOf(
                 Triple(cannyClosed, 1.0, Imgproc.RETR_EXTERNAL),
                 Triple(thinEdges, 0.98, Imgproc.RETR_LIST),
@@ -179,38 +214,22 @@ object DocumentEdgeDetector {
                     contours.forEach { contour ->
                         if (abs(Imgproc.contourArea(contour)) < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
                         val (points, solidity) = pageCorners(contour, frameArea) ?: return@forEach
-                        val ordered = order(points)
-                        val geometry = ordered.map { QuadGeometry.P(it.x, it.y) }
-                        if (!QuadGeometry.isPlausiblePage(geometry)) return@forEach
-
-                        val polygon = MatOfPoint(*ordered.toTypedArray())
-                        try {
-                            val polygonArea = abs(Imgproc.contourArea(polygon))
-                            val areaRatio = (polygonArea / frameArea).coerceIn(0.0, 1.0)
-                            val rect = Imgproc.boundingRect(polygon)
-                            val rectangularity = if (rect.area() <= 0) 0.0 else (polygonArea / rect.area()).coerceIn(0.0, 1.0)
-                            var score = areaRatio * 0.46 + rectangularity * 0.22 + edgeBalance(ordered) * 0.14 +
-                                QuadGeometry.angleScore(geometry) * 0.18
-                            // An outline that is just the camera frame is the background, not a page.
-                            val margin = 0.012 * max(frameWidth, frameHeight)
-                            val onBorder = ordered.count {
-                                it.x < margin || it.y < margin || it.x > frameWidth - margin || it.y > frameHeight - margin
-                            }
-                            if (areaRatio > 0.9 && onBorder >= 3) score *= 0.3
-                            // Several objects fused into one blob have a dented outline; a page is nearly solid.
-                            score *= weight * solidity * solidity * solidity
-
-                            val current = best
-                            if (current == null || score.toFloat() > current.score) {
-                                best = Candidate(ordered, score.toFloat())
-                            }
-                        } finally {
-                            polygon.release()
-                        }
+                        // Several objects fused into one blob have a dented outline; a page is nearly solid.
+                        consider(points, weight * solidity * solidity * solidity)
                     }
                 } finally {
                     contours.forEach(MatOfPoint::release)
                     sourceHierarchy.release()
+                }
+            }
+
+            // F168: an outline broken by a hard shadow never closes, so no contour above traces it, and the best
+            // outline is then only the lit part of the page, or nothing. Rebuild the page from its straight sides,
+            // weighted by how much of the perimeter really has an edge. Only when no confident outline closed: a
+            // clean page keeps exactly the result, and the time, it had before.
+            if ((best?.score ?: 0f) < LINE_SEARCH_BELOW) {
+                LineQuadFinder.find(edgesCanny, frameArea * MIN_DOCUMENT_AREA_RATIO).forEach { line ->
+                    consider(line.points, LINE_WEIGHT * line.support)
                 }
             }
 

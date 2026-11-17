@@ -43,7 +43,7 @@ do on the owner's behalf. iLovePDF's home screen lists files from the phone, so 
 | Camera screen redrew in full on every analysis frame | Fixed in F125 |
 | Start-up did eager disk reads on the main thread | Reduced in F124 |
 | Three zoom buttons sat over the page being framed | Fixed in F125 |
-| A hard shadow across the page breaks detection (10.8% error) | **Open** |
+| A hard shadow across the page breaks detection (10.8% error) | Fixed in F168 (0.10% on the desktop benchmark; device run pending, R56) |
 | Control panel covers the lower preview, more with each page | **Open** |
 | Two Save buttons on the review screen | Open, documented as deliberate |
 
@@ -61,7 +61,7 @@ corner error as a percent of the frame diagonal, IoU against the true page, dete
 | clean, perspective, rotated, near edge, receipt, mat, book, dim, noisy | 0.16 to 0.23 / 0.97 to 0.99 | unchanged |
 | low_contrast_grey_desk | 24.29 / 0.328 | 1.48 / 0.907 |
 | white_page_white_table | 6.13 / 0.642 | 1.59 / 0.915 |
-| hard_shadow_across_page | 10.77 / 0.354 | 10.77 / 0.354 (open) |
+| hard_shadow_across_page | 10.77 / 0.354 | 10.77 / 0.354 (fixed in F168: 0.10 / 0.991 on the desktop benchmark) |
 | Mean IoU | 0.849 | 0.920 |
 
 Limits: synthetic scenes are flat colours with no lens blur, rolling shutter or real paper texture. They prove the geometry and
@@ -72,7 +72,7 @@ lighting cases; they do not replace real photographs.
 1. **Real-photo corpus and a fair competitor run** (high impact, medium effort, low risk). Print the test pages once (A4 text, small
    text, receipt, handwriting, a book) and photograph them on a fixed rig; run each app on the same photos by import where the app lets
    you without an account. Without this, claims about being better than the competitors are unsupported.
-2. **Hard-shadow detection** (high impact, medium effort, medium risk). The page edge disappears where a shadow is as dark as the
+2. **Hard-shadow detection**: done in F168 by fitting lines to the visible edge segments; still failing: a shadow over most of one side. The page edge disappears where a shadow is as dark as the
    surface. Options to measure with the benchmark: combine partial outlines into one quad, or fit lines to the visible edge segments.
 3. **Enhancement and readability benchmark** (high impact, medium effort, low risk). Score each filter on the generated pages: text
    contrast, halo around letters, background evenness, colour accuracy, and OCR word accuracy. Then tune, instead of judging by eye.

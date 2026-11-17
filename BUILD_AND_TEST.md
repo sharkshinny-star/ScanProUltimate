@@ -41,6 +41,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-17, F168 hard-shadow detection, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`; the app's `DocumentEdgeDetector.kt`, `LineQuadFinder.kt`, `QuadGeometry.kt`, `PageQuality.kt` and `ScanAlignment.kt` compiled unchanged with Kotlin 2.0.21 against stubs and OpenCV 4.9): 12 benchmark scenes all found, mean IoU 0.975 (0.921 before), worst corner error 1.33% (10.86% before, `hard_shadow_across_page`, now 0.10%); 13 of 16 shadow variants under 2% (9 before); 4 no-page scenes unchanged; median detection time 12.8 ms (13.0 ms before).
+- Gradle Android build NOT run: AGP stopped at the SDK licence check (platform 37 and Build-Tools unzipped by hand, licences not accepted in this container). CI on push is the first compile of the app and the unit tests. `ScanDetectionBenchmarkTest` (changed: three asserted shadow scenes) is not compiled by CI and was not run on a device (R56).
+
 ## Latest results (2026-11-17, merged branch at `dc9de26`: the owner's machine's F157-F164 plus F160-F166 from the cloud session, Linux cloud container)
 
 - Full `:app:testDebugUnitTest :app:lintDebug` on `199aa03`: 907 tests, 1 failed, 82 skipped (result XML); lint 0 errors, 95 warnings. The one failure, `IntroductionsScreenshotTest.cameraIdCardIntroductionStartsWithOneTapAndShowsOneSentence`, read the old ID-card text; fixed in `dc9de26` and `IntroductionsScreenshotTest` re-run on its own: 15 of 15 pass. The full suite was NOT re-run after that fix.
