@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.phonepdfs
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -20,7 +21,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -46,7 +46,7 @@ object PhoneThumbnails {
         cache.get(key)?.let { return it }
         if (synchronized(failed) { key in failed }) return null
         return permits.withPermit {
-            withContext(Dispatchers.IO) {
+            withContext(BackgroundWork.thumbnails) {
                 cache.get(key) ?: runCatching {
                     when (file.kind) {
                         PhoneFileKind.IMAGE -> image(context, file, px)

@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.viewer
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import androidx.compose.ui.layout.onSizeChanged
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -827,7 +828,7 @@ private fun PdfPageItem(
             isPageLoading = false
             return@LaunchedEffect
         }
-        withContext(Dispatchers.IO) {
+        withContext(BackgroundWork.thumbnails) {
             try {
                 isPageLoading = bitmap == null
                 // One page at a time: PdfRenderer throws if a second page is opened before the first is closed,
@@ -857,7 +858,7 @@ private fun PdfPageItem(
             sharp = null
             return@LaunchedEffect
         }
-        sharp = withContext(Dispatchers.IO) {
+        sharp = withContext(BackgroundWork.thumbnails) {
             runCatching { renderPage(renderer, renderLock, pageIndex, targetW) {} }.getOrNull()
         }
     }

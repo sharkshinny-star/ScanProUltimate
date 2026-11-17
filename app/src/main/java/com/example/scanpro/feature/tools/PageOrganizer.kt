@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -100,7 +101,6 @@ import com.example.scanpro.core.designsystem.DarkChrome
 import androidx.compose.runtime.produceState
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfPreviewSession
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -387,7 +387,7 @@ internal fun PdfPageOrganizerSheet(
                         // Rendered only while the card is on screen.
                         val thumbnail by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, session, item.index) {
                             val preview = session ?: return@produceState
-                            value = withContext(Dispatchers.IO) { preview.render(item.index, 360) }
+                            value = withContext(BackgroundWork.thumbnails) { preview.render(item.index, 360) }
                         }
                         OrganizerPageCard(
                             item = item,
@@ -655,7 +655,7 @@ private fun PdfPagePreviewDialog(
 ) {
     val fullBitmap by androidx.compose.runtime.produceState<Bitmap?>(initialValue = null, page.index, session) {
         val preview = session ?: return@produceState
-        value = withContext(Dispatchers.IO) { preview.render(page.index, 1400) }
+        value = withContext(BackgroundWork.thumbnails) { preview.render(page.index, 1400) }
     }
     Dialog(
         onDismissRequest = onDismiss,

@@ -1,12 +1,12 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.net.Uri
 import com.example.scanpro.R
 import com.example.scanpro.core.text.AppStrings
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDDocumentInformation
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Calendar
@@ -78,7 +78,7 @@ object PdfMetadataEngine {
         doc.documentCatalog.metadata = null
     }
 
-    suspend fun read(context: Context, inputUri: Uri): PdfInfo = withContext(Dispatchers.IO) {
+    suspend fun read(context: Context, inputUri: Uri): PdfInfo = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "info_in_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(temp).use { readInfo(it, temp.length()) }
@@ -93,7 +93,7 @@ object PdfMetadataEngine {
         edit: PdfMetadataEdit?,
         removeAll: Boolean,
         outputFile: File
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "info_out_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(temp).use { doc ->

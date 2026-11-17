@@ -51,7 +51,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.imaging.ThumbnailStore
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.compose.ui.res.pluralStringResource
@@ -109,7 +108,7 @@ fun PageThumbnail(
             value = null
             return@produceState
         }
-        value = withContext(Dispatchers.IO) {
+        value = withContext(com.example.scanpro.core.concurrent.BackgroundWork.thumbnails) {
             val cacheKey = "$requestKey|${File(path).lastModified()}"
             // Misses fall through to the on-disk previews before the full-size page is decoded.
             (thumbnailCache.get(cacheKey) ?: ThumbnailStore.load(appContext, path, maxDimension)?.also {

@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -9,7 +10,6 @@ import android.os.ParcelFileDescriptor
 import androidx.core.graphics.createBitmap
 import com.example.scanpro.data.OcrScript
 import com.tom_roush.pdfbox.text.PDFTextStripper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -49,7 +49,7 @@ object PdfOcrEngine {
         ocr: OcrEngine,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfOcrOutcome = withContext(Dispatchers.IO) {
+    ): PdfOcrOutcome = withContext(BackgroundWork.tools) {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "ocr_in_${UUID.randomUUID()}.pdf")
         val pageImage = File(context.cacheDir, "ocr_page_${UUID.randomUUID()}.jpg")
         try {

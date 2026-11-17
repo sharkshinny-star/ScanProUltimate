@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.net.Uri
 import com.tom_roush.pdfbox.cos.COSName
@@ -10,7 +11,6 @@ import com.tom_roush.pdfbox.pdmodel.interactive.form.PDField
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDListBox
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDRadioButton
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDTextField
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
@@ -90,7 +90,7 @@ object FormFieldRules {
 object PdfFormEngine {
 
     /** Every fillable field, in the form's order. An empty list means the PDF has nothing to fill. */
-    suspend fun readFields(context: Context, inputUri: Uri): List<FormField> = withContext(Dispatchers.IO) {
+    suspend fun readFields(context: Context, inputUri: Uri): List<FormField> = withContext(BackgroundWork.tools) {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "form_read_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(input).use { document ->
@@ -113,7 +113,7 @@ object PdfFormEngine {
         values: Map<String, String>,
         flatten: Boolean,
         outputFile: File
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "form_fill_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(input).use { document ->

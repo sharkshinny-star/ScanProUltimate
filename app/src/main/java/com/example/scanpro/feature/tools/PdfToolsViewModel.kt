@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import kotlinx.coroutines.withContext
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.imaging.HtmlToPdf
@@ -248,7 +249,7 @@ class PdfToolsViewModel @Inject constructor(
                 // The result moves out of the one-day cache into Your results inside keepAlive: a large output is still
                 // being copied after the progress reaches 100%, and that copy must survive the user switching apps too.
                 val result = operations.keepAlive(label) {
-                    withContext(Dispatchers.IO) { work()?.let { it.copy(outputFile = results.keep(it.outputFile)) } }
+                    withContext(BackgroundWork.tools) { work()?.let { it.copy(outputFile = results.keep(it.outputFile)) } }
                 }
                 _result.value = result
                 // The unlocked copy a tool read from has served its purpose once the result is kept.
