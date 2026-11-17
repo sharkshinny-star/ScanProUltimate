@@ -124,13 +124,13 @@ class IntroductionsScreenshotTest {
     fun cameraDocumentIntroductionTryNowRunsTheSample() {
         val events = mutableListOf<String>()
         compose.setContent {
-            ScanProTheme { ScanIntroDialog(ScanMode.DOCUMENT, onTry = { events += "try:$it" }) { events += "start:$it" } }
+            ScanProTheme { ScanIntroDialog(ScanMode.DOCUMENT, onTry = { events += "try" }) { events += "start" } }
         }
         compose.onNodeWithText(text(R.string.intro_doc_title)).assertExists()
         captureDialog("intro_camera_document_light")
         compose.onNodeWithText(text(R.string.intro_doc_try)).performClick()
         compose.waitForIdle()
-        assertEquals(listOf("try:false"), events)
+        assertEquals(listOf("try"), events)
     }
 
     @Test
@@ -138,14 +138,13 @@ class IntroductionsScreenshotTest {
         val events = mutableListOf<String>()
         compose.setContent {
             ScanProTheme(themeMode = ThemeMode.DARK) {
-                ScanIntroDialog(ScanMode.DOCUMENT, onTry = { events += "try" }) { events += "start:$it" }
+                ScanIntroDialog(ScanMode.DOCUMENT, onTry = { events += "try" }) { events += "start" }
             }
         }
         captureDialog("intro_camera_document_dark")
-        compose.onNodeWithText(text(R.string.scan_book_intro_dont_remind)).performClick()
         compose.onNodeWithText(text(R.string.hint_skip)).performClick()
         compose.waitForIdle()
-        assertEquals(listOf("start:true"), events)
+        assertEquals(listOf("start"), events)
     }
 
     @Test

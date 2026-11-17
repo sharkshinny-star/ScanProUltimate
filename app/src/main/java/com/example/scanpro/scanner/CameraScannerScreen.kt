@@ -360,8 +360,7 @@ fun CameraScannerScreen(
         } else {
             ScanIntroDialog(
                 mode,
-                onTry = { dontRemind ->
-                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+                onTry = {
                     introMode = null
                     trySample = true
                 },
@@ -2644,10 +2643,10 @@ internal fun resetScanIntros(context: android.content.Context) {
  * What a scan mode does, for someone using it for the first time (F146, rebuilt 2026-11-16 with clear pictures). Document
  * mode is "How to scan": the built-in sample page on a desk, with Skip and Try now ([onTry] runs the sample through the
  * normal review); without [onTry] the main button is Start now. ID card shows a card's front and back; Book an open
- * book with the A / B halves the viewfinder shows. "Don't remind me again" is passed to whichever button closes it.
+ * book with the A / B halves the viewfinder shows. Each shows once (remembered the moment it appears), with no tick box.
  */
 @Composable
-internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Unit)? = null, onStart: () -> Unit) {
+internal fun ScanIntroDialog(mode: ScanMode, onTry: (() -> Unit)? = null, onStart: () -> Unit) {
     val sample = mode != ScanMode.BOOK && mode != ScanMode.ID_CARD
     val (title, body) = when (mode) {
         ScanMode.BOOK -> R.string.scan_book_intro_title to R.string.intro_book_body
@@ -2668,23 +2667,11 @@ internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Un
                 else -> com.example.scanpro.core.designsystem.SampleDocumentArt(art)
             }
         },
-        extra = {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .toggleable(value = dontRemind, role = Role.Checkbox) { dontRemind = it }
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.Checkbox(checked = dontRemind, onCheckedChange = null)
-                Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
-            }
-        },
-        confirmText = stringResource(R.string.scan_book_intro_start),
-        onConfirm = { onStart(dontRemind) },
-        onDismiss = { onStart(dontRemind) }
+        confirmText = stringResource(if (sample && onTry != null) R.string.intro_doc_try else R.string.scan_book_intro_start),
+        onConfirm = { if (sample && onTry != null) onTry() else onStart() },
+        dismissText = if (sample && onTry != null) stringResource(R.string.hint_skip) else null,
+        buttonsInRow = sample && onTry != null,
+        onDismiss = onStart
     )
 }
 
