@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
  * issue" and "Suggest a feature" emails; the two links open from Settings and are hidden while blank.
  */
 object SupportLinks {
-    const val EMAIL = "bharath@zoko.io"
+    const val EMAIL = "sharkshinny@gmail.com"
     const val PRIVACY_POLICY_URL = ""
     const val TERMS_OF_USE_URL = ""
 }
