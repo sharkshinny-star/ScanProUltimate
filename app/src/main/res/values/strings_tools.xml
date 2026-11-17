@@ -151,16 +151,18 @@
     <string name="tools_section_convert">Convert</string>
     <string name="tools_section_secure">Secure</string>
     <string name="tools_tile_organize">Organise PDF</string>
-    <string name="tools_tile_rotate">Rotate</string>
-    <string name="tools_tile_extract">Extract Pages</string>
     <string name="tools_card_fill">Fill form</string>
     <string name="tools_card_ocr">Make searchable</string>
     <string name="tools_card_compress">Compress</string>
     <string name="tools_card_merge">Merge PDF</string>
     <string name="tools_card_split">Split PDF</string>
+    <string name="tools_card_organize">Organise PDF</string>
+    <!-- Search-only tools (no tile): Rotate and Extract open Organise in that mode; PDF to Excel is a format of PDF to Word, Excel or text. -->
+    <string name="tools_tile_rotate">Rotate</string>
+    <string name="tools_tile_extract">Extract Pages</string>
     <string name="tools_card_extract">Extract Pages</string>
     <string name="tools_card_rotate">Rotate pages</string>
-    <string name="tools_card_organize">Organise PDF</string>
+    <string name="tools_card_pdf2excel">PDF to Excel</string>
     <string name="tools_card_pdf2img">PDF to images</string>
     <string name="tools_card_protect">Protect</string>
     <string name="tools_card_unlock">Unlock</string>
@@ -296,7 +298,7 @@
     <string name="tools_office_note_file_truncated">The file was too large; only the first %1$s cells are shown.</string>
 
     <!-- Image Tools -->
-    <string name="tools_section_image">Image Tools</string>
+    <string name="tools_section_image">Image tools</string>
     <string name="tools_card_compress_img">Compress Image</string>
     <string name="tools_tile_compress_img">Compress</string>
     <string name="tools_card_convert_img">Convert Image</string>
@@ -413,9 +415,9 @@
     <string name="tools_err_watermark">Could not apply watermark to PDF</string>
 
     <!-- Page Numbers Tool -->
-    <string name="tools_card_page_numbers">Page Numbers</string>
+    <string name="tools_card_page_numbers">Page numbers</string>
     <string name="tools_tile_page_numbers">Numbers</string>
-    <string name="tools_page_numbers_title">Add Page Numbers</string>
+    <string name="tools_page_numbers_title">Add page numbers</string>
     <string name="tools_page_numbers_position_label">Position</string>
     <string name="tools_page_numbers_pos_bottom_center">Bottom Centre</string>
     <string name="tools_page_numbers_pos_bottom_right">Bottom Right</string>
@@ -428,7 +430,7 @@
     <string name="tools_page_numbers_fmt_dash">- 1 -</string>
     <string name="tools_page_numbers_fmt_simple">1</string>
     <string name="tools_page_numbers_skip_cover">Skip first page (cover)</string>
-    <string name="tools_page_numbers_action">Add Page Numbers</string>
+    <string name="tools_page_numbers_action">Add page numbers</string>
     <string name="tools_progress_page_numbers">Adding page numbers to PDF…</string>
     <string name="tools_page_numbers_success">Page numbers added to %1$d pages</string>
     <string name="tools_err_page_numbers">Could not add page numbers to PDF</string>
@@ -509,7 +511,6 @@
         <item quantity="one">The file structure could not be repaired, so %1$d page was rebuilt as a picture. Its text is no longer selectable.</item>
         <item quantity="other">The file structure could not be repaired, so %1$d pages were rebuilt as pictures. Their text is no longer selectable.</item>
     </plurals>
-    <string name="tools_card_pdf2excel">PDF to Excel</string>
     <string name="tools_pdf2text_excel">Excel workbook (.xlsx)</string>
     <string name="tools_pdf2text_excel_note">One sheet per page. Columns are rebuilt from where the words sit on the page, so tables come out as cells.</string>
     <string name="tools_progress_percent">%1$d%%</string>
@@ -531,6 +532,7 @@
     <!-- F140: one line under each tool on the Tools page -->
     <string name="tools_desc_merge">Combine PDFs into one</string>
     <string name="tools_desc_split">Separate pages into files</string>
+    <string name="tools_mode_arrange">Arrange</string>
     <string name="tools_desc_organize">Reorder, rotate, extract or delete pages</string>
     <string name="tools_desc_rotate">Turn pages the right way up</string>
     <string name="tools_desc_extract">Save chosen pages as a PDF</string>
@@ -544,7 +546,7 @@
     <string name="tools_desc_ocr">Make scanned text searchable</string>
     <string name="tools_desc_fill">Fill in PDF forms</string>
     <string name="tools_desc_pdf2img">Save pages as images</string>
-    <string name="tools_desc_pdf2text">Get Word or plain text</string>
+    <string name="tools_desc_pdf2text">Get Word, Excel or plain text</string>
     <string name="tools_desc_pdf2excel">Pull tables into a sheet</string>
     <string name="tools_desc_protect">Lock with a password</string>
     <string name="tools_desc_unlock">Remove a password</string>

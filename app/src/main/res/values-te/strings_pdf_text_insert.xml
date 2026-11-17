@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="tools_card_pdf2text">PDF నుండి Word లేదా టెక్స్ట్</string>
+    <string name="tools_card_pdf2text">PDF నుండి Word, Excel లేదా టెక్స్ట్</string>
     <string name="tools_tile_pdf2text">PDF నుండి టెక్స్ట్</string>
     <string name="tools_pdf2text_title">PDF నుండి Word, Excel లేదా టెక్స్ట్</string>
     <string name="tools_pdf2text_body">ఈ PDF ను సవరించగల Word పత్రం, Excel వర్క్‌బుక్ లేదా సాదా టెక్స్ట్ ఫైల్‌గా మారుస్తుంది. టెక్స్ట్ ఉన్న పేజీలు అలాగే కాపీ అవుతాయి; స్కాన్ చేసిన పేజీలు ఈ ఫోన్‌లోనే చదవబడతాయి.</string>

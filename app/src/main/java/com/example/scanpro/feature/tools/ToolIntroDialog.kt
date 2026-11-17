@@ -27,9 +27,8 @@ internal class ToolIntro(@StringRes val description: Int, val input: HintInput) 
 internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "merge" -> ToolIntro(R.string.hint_tool_merge, HintInput.Pdfs)
     "split" -> ToolIntro(R.string.hint_tool_split, HintInput.Pdf)
-    "organize" -> ToolIntro(R.string.hint_tool_organize, HintInput.Pdf)
-    "rotate" -> ToolIntro(R.string.hint_tool_rotate, HintInput.Pdf)
-    "extract" -> ToolIntro(R.string.hint_tool_extract, HintInput.Pdf)
+    // Rotate and Extract are modes of Organise (search-only, no tile): its joined introduction covers them.
+    "organize", "rotate", "extract" -> ToolIntro(R.string.hint_tool_organize, HintInput.Pdf)
     "compress" -> ToolIntro(R.string.hint_tool_compress, HintInput.Pdf)
     "repair" -> ToolIntro(R.string.hint_tool_repair, HintInput.Pdf)
     "page_numbers" -> ToolIntro(R.string.hint_tool_page_numbers, HintInput.Pdf)
@@ -42,6 +41,7 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "pdf2img" -> ToolIntro(R.string.hint_tool_pdf2img, HintInput.Pdf)
     "pdf2text" -> ToolIntro(R.string.hint_tool_pdf2text, HintInput.Pdf)
     "pdf2excel" -> ToolIntro(R.string.hint_tool_pdf2excel, HintInput.Pdf)
+    "pdf2ppt" -> ToolIntro(R.string.hint_tool_pdf2ppt, HintInput.Pdf)
     "protect" -> ToolIntro(R.string.hint_tool_protect, HintInput.Pdf)
     "unlock" -> ToolIntro(R.string.hint_tool_unlock, HintInput.Pdf)
     "crop_img" -> ToolIntro(R.string.hint_tool_crop_img, HintInput.Image)
@@ -65,12 +65,6 @@ internal fun ToolIntroDialog(tool: PdfToolCard, intro: ToolIntro, onContinue: ()
     IllustratedDialog(
         title = stringResource(tool.title),
         body = stringResource(intro.description),
-        eyebrow = stringResource(R.string.hint_how_it_works),
-        steps = listOf(
-            stringResource(intro.pickStep),
-            stringResource(R.string.hint_tool_step_options),
-            stringResource(R.string.hint_tool_step_result, stringResource(R.string.tools_results_title))
-        ),
         illustration = { ToolFlowIllustration(tool.icon, tool.tone, intro.input, Modifier.fillMaxSize()) },
         confirmText = stringResource(R.string.common_continue),
         onConfirm = onContinue,

@@ -167,7 +167,7 @@ private fun HomeRecentCard(item: HomeRecentItem) {
             item.title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
+            maxLines = com.example.scanpro.core.ui.cardTitleLines(),
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 2.dp)
         )

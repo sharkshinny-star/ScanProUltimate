@@ -331,12 +331,11 @@ fun ScanProApp(
                 // "Set ScanPro as your default PDF viewer": once, on Home, after the first scan or the first PDF opened
                 // in the viewer, and never in the same visit as the welcome, the tour, What's new or the rating sheet.
                 var promptShownThisSession by rememberSaveable { mutableStateOf(false) }
-                LaunchedEffect(feedbackPrompt, whatsNewDue, tourAllowed) {
-                    if (feedbackPrompt || whatsNewDue || tourAllowed) promptShownThisSession = true
+                LaunchedEffect(ratingDue, whatsNewDue, tourAllowed) {
+                    if (ratingDue || whatsNewDue || tourAllowed) promptShownThisSession = true
                 }
                 var defaultViewerShown by remember { mutableStateOf(FilesAccessPrompts.defaultViewerShown(context)) }
-                // The feedback schedule counts saved scans (data/FeedbackSchedule.kt); read again when the screen changes.
-                val completedScans = remember(currentRoute) { com.example.scanpro.data.FeedbackPrompts.load(context).completedScans }
+                val completedScans by viewModel.completedScans.collectAsStateWithLifecycle()
                 // Looked up again whenever the screen changes: a PDF may just have been opened, or ScanPro made the default.
                 val pdfOpened = remember(currentRoute) { FilesAccessPrompts.pdfOpened(context) }
                 val alreadyDefault = remember(currentRoute, defaultViewerShown) { !defaultViewerShown && isDefaultPdfViewer(context) }
@@ -347,7 +346,7 @@ fun ScanProApp(
                         completedScans = completedScans,
                         alreadyDefault = alreadyDefault,
                         onHome = currentRoute == ScanProDestinations.HOME,
-                        otherPromptDue = welcomeShowing || whatsNewDue || feedbackPrompt || tourDue || importTipOpen || !launchSettled,
+                        otherPromptDue = welcomeShowing || whatsNewDue || ratingDue || tourDue || importTipOpen || !launchSettled,
                         promptShownThisSession = promptShownThisSession
                     )
                 )

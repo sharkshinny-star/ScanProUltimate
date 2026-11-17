@@ -172,7 +172,6 @@
     <string name="scan_doc_intro_title">രേഖ സ്കാൻ ചെയ്യൽ</string>
     <string name="scan_doc_intro_body">പേജ് നല്ല വെളിച്ചത്തിൽ പരത്തിവച്ച് ഫോൺ ഉറപ്പിച്ചു പിടിക്കുക. ScanPro അരികുകൾ കണ്ടെത്തി പേജ് നേരെയാക്കി വൃത്തിയാക്കും. ഷട്ടർ അമർത്തുക, അല്ലെങ്കിൽ ഓട്ടോ ക്യാപ്ചർ ഓണാക്കി അനങ്ങാതെ നിൽക്കുക. കൂടുതൽ പേജുകൾ ചേർത്ത് പൂർത്തിയായി അമർത്തുക.</string>
     <string name="scan_book_intro_start">ഇപ്പോൾ ആരംഭിക്കുക</string>
-    <string name="scan_book_intro_dont_remind">ഇനി ഓർമ്മിപ്പിക്കരുത്</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">സ്പ്രെഡ് %1$d, %2$d പേജുകളായി വിഭജിച്ചു</string>
     <string name="scan_take_photo">ഫോട്ടോ എടുക്കുക</string>
     <string name="scan_import_photos">ഫോട്ടോകൾ ഇംപോർട്ട് ചെയ്യുക</string>
@@ -218,10 +217,6 @@
     <string name="scan_error_camera_stopped">ക്യാമറ പ്രവർത്തനം നിർത്തി. വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ കോംപാറ്റിബിലിറ്റി സ്കാനർ ഉപയോഗിക്കുക.</string>
     <string name="scan_flash_state">ഫ്ലാഷ്: %1$s</string>
     <string name="scan_zoom_level">സൂം %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">ബാച്ചിൽ %1$d പേജ്</item>
-        <item quantity="other">ബാച്ചിൽ %1$d പേജുകൾ</item>
-    </plurals>
     <string name="scan_flash_off">ഓഫ്</string>
     <string name="scan_flash_auto">ഓട്ടോ</string>
     <string name="scan_flash_on">ഓൺ</string>

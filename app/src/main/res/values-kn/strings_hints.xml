@@ -10,9 +10,7 @@
     <string name="hint_tool_step_result">ಫಲಿತಾಂಶವನ್ನು ಉಳಿಸಿ ಅಥವಾ ಹಂಚಿಕೊಳ್ಳಿ. ಅದು %1$s ನಲ್ಲಿಯೂ ಇರುತ್ತದೆ.</string>
     <string name="hint_tool_merge">ಎರಡು ಅಥವಾ ಹೆಚ್ಚು PDF ಗಳನ್ನು ನೀವು ಆರಿಸಿದ ಕ್ರಮದಲ್ಲಿ ಒಂದೇ ಫೈಲ್ ಆಗಿ ಸೇರಿಸಿ.</string>
     <string name="hint_tool_split">PDF ಅನ್ನು ಸಣ್ಣ ಫೈಲ್‌ಗಳಾಗಿ ವಿಭಜಿಸಿ: ಪ್ರತಿ ಪುಟ ಪ್ರತ್ಯೇಕವಾಗಿ, ಪುಟ ಶ್ರೇಣಿಗಳ ಪ್ರಕಾರ ಅಥವಾ ಕೆಲವು ಪುಟಗಳಿಗೊಮ್ಮೆ.</string>
-    <string name="hint_tool_organize">ಪುಟಗಳನ್ನು ಹೊಸ ಕ್ರಮದಲ್ಲಿ ಜೋಡಿಸಿ ಮತ್ತು ಬೇಡವಾದವುಗಳನ್ನು ತೆಗೆದುಹಾಕಿ.</string>
-    <string name="hint_tool_rotate">ಓರೆಯಾಗಿ ಅಥವಾ ತಲೆಕೆಳಗಾಗಿ ಸ್ಕ್ಯಾನ್ ಆದ ಪುಟಗಳನ್ನು ತಿರುಗಿಸಿ.</string>
-    <string name="hint_tool_extract">ನಿಮಗೆ ಬೇಕಾದ ಪುಟಗಳನ್ನು ಆರಿಸಿ ಮತ್ತು ಹೊಸ PDF ಆಗಿ ಉಳಿಸಿ.</string>
+    <string name="hint_tool_organize">ಪುಟಗಳನ್ನು ಹೊಸ ಕ್ರಮದಲ್ಲಿ ಜೋಡಿಸಿ ಮತ್ತು ಬೇಡವಾದವುಗಳನ್ನು ತೆಗೆದುಹಾಕಿ. ಓರೆಯಾಗಿ ಅಥವಾ ತಲೆಕೆಳಗಾಗಿ ಸ್ಕ್ಯಾನ್ ಆದ ಪುಟಗಳನ್ನು ತಿರುಗಿಸಿ. ನಿಮಗೆ ಬೇಕಾದ ಪುಟಗಳನ್ನು ಆರಿಸಿ ಮತ್ತು ಹೊಸ PDF ಆಗಿ ಉಳಿಸಿ.</string>
     <string name="hint_tool_compress">ಇಮೇಲ್ ಮತ್ತು ಸಂದೇಶಗಳಿಗಾಗಿ PDF ಅನ್ನು ಚಿಕ್ಕದಾಗಿಸಿ. ಎಷ್ಟು ಚಿಕ್ಕದಾಗಿಸಬೇಕು ಎಂದು ಆರಿಸಿ.</string>
     <string name="hint_tool_repair">ತೆರೆಯದ ಅಥವಾ ದೋಷ ತೋರಿಸುವ PDF ಅನ್ನು ಸರಿಪಡಿಸಲು ಪ್ರಯತ್ನಿಸಿ ಮತ್ತು ಸ್ವಚ್ಛ ಪ್ರತಿಯನ್ನು ಉಳಿಸಿ.</string>
     <string name="hint_tool_page_numbers">PDF ನ ಪ್ರತಿ ಪುಟಕ್ಕೂ ಪುಟ ಸಂಖ್ಯೆಗಳನ್ನು ಸೇರಿಸಿ.</string>
@@ -25,6 +23,7 @@
     <string name="hint_tool_pdf2img">PDF ನ ಪ್ರತಿ ಪುಟವನ್ನು ಚಿತ್ರವಾಗಿ ಉಳಿಸಿ.</string>
     <string name="hint_tool_pdf2text">PDF ನ ಪಠ್ಯವನ್ನು Word ಅಥವಾ ಸರಳ ಪಠ್ಯ ಫೈಲ್‌ಗೆ ನಕಲಿಸಿ.</string>
     <string name="hint_tool_pdf2excel">PDF ನಲ್ಲಿರುವ ಕೋಷ್ಟಕಗಳನ್ನು ನೀವು ಸಂಪಾದಿಸಬಹುದಾದ ಸ್ಪ್ರೆಡ್‌ಶೀಟ್ ಆಗಿ ಮಾಡಿ.</string>
+    <string name="hint_tool_pdf2ppt">PDF ನಿಂದ PowerPoint ಪ್ರೆಸೆಂಟೇಶನ್ ಮಾಡಿ, ಪ್ರತಿ ಪುಟಕ್ಕೆ ಒಂದು ಸ್ಲೈಡ್.</string>
     <string name="hint_tool_protect">PDF ಅನ್ನು ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ಲಾಕ್ ಮಾಡಿ, ಅದನ್ನು ತಿಳಿದವರು ಮಾತ್ರ ತೆರೆಯಬಹುದು.</string>
     <string name="hint_tool_unlock">ನಿಮಗೆ ತೆರೆಯಲು ಅನುಮತಿ ಇರುವ PDF ನಿಂದ ಪಾಸ್‌ವರ್ಡ್ ಅಥವಾ ಸಂಪಾದನೆಯ ನಿರ್ಬಂಧಗಳನ್ನು ತೆಗೆದುಹಾಕಿ.</string>
     <string name="hint_tool_crop_img">ಚಿತ್ರವನ್ನು ಕತ್ತರಿಸಿ ನಿಮಗೆ ಬೇಕಾದ ಭಾಗವನ್ನು ಮಾತ್ರ ಉಳಿಸಿಕೊಳ್ಳಿ.</string>

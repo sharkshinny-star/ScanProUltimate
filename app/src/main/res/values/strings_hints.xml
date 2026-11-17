@@ -12,9 +12,7 @@
     <string name="hint_tool_step_result">Save or share the result. It is also kept in %1$s.</string>
     <string name="hint_tool_merge">Combine two or more PDFs into one file, in the order you choose.</string>
     <string name="hint_tool_split">Break a PDF into smaller files: every page on its own, by page ranges or every few pages.</string>
-    <string name="hint_tool_organize">Put the pages in a new order and remove the ones you don\'t need.</string>
-    <string name="hint_tool_rotate">Turn pages that were scanned sideways or upside down.</string>
-    <string name="hint_tool_extract">Pick the pages you need and save them as a new PDF.</string>
+    <string name="hint_tool_organize">Put the pages in a new order and remove the ones you don\'t need. Turn pages that were scanned sideways or upside down. Pick the pages you need and save them as a new PDF.</string>
     <string name="hint_tool_compress">Make a PDF smaller for email and messaging. Choose how much to shrink it.</string>
     <string name="hint_tool_repair">Try to fix a PDF that won\'t open or shows errors, and save a clean copy.</string>
     <string name="hint_tool_page_numbers">Add page numbers to every page of a PDF.</string>
@@ -27,6 +25,7 @@
     <string name="hint_tool_pdf2img">Save each page of a PDF as an image.</string>
     <string name="hint_tool_pdf2text">Copy the text out of a PDF into a Word or plain text file.</string>
     <string name="hint_tool_pdf2excel">Turn the tables in a PDF into a spreadsheet you can edit.</string>
+    <string name="hint_tool_pdf2ppt">Make a PowerPoint presentation from a PDF, one slide per page.</string>
     <string name="hint_tool_protect">Lock a PDF with a password, so only people who know it can open it.</string>
     <string name="hint_tool_unlock">Remove the password or editing restrictions from a PDF you are allowed to open.</string>
     <string name="hint_tool_crop_img">Trim an image down to just the part you need.</string>

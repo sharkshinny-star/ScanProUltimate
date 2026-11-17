@@ -172,7 +172,6 @@
     <string name="scan_doc_intro_title">दस्तावेज़ स्कैन करना</string>
     <string name="scan_doc_intro_body">पेज को अच्छी रोशनी में सीधा रखें और फ़ोन स्थिर रखें। ScanPro किनारे पहचानकर पेज सीधा करता और साफ़ करता है। शटर दबाएँ, या ऑटो कैप्चर चालू रखकर स्थिर रहें। और पेज जोड़ें, फिर पूर्ण पर टैप करें।</string>
     <string name="scan_book_intro_start">अभी शुरू करें</string>
-    <string name="scan_book_intro_dont_remind">मुझे दोबारा याद न दिलाएँ</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">फैले पन्ने को पेज %1$d और %2$d में बाँटा</string>
     <string name="scan_take_photo">फ़ोटो लें</string>
     <string name="scan_import_photos">फ़ोटो इंपोर्ट करें</string>
@@ -218,10 +217,6 @@
     <string name="scan_error_camera_stopped">कैमरे ने काम करना बंद कर दिया। फिर से कोशिश करें या कम्पैटिबिलिटी स्कैनर इस्तेमाल करें।</string>
     <string name="scan_flash_state">फ़्लैश: %1$s</string>
     <string name="scan_zoom_level">ज़ूम %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">बैच में %1$d पेज</item>
-        <item quantity="other">बैच में %1$d पेज</item>
-    </plurals>
     <string name="scan_flash_off">बंद</string>
     <string name="scan_flash_auto">ऑटो</string>
     <string name="scan_flash_on">चालू</string>

@@ -10,6 +10,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -277,7 +280,7 @@ fun LibraryRoute(
             }
         },
         onPhonePdfs = onPhonePdfs,
-        // Files on this phone (F160): Home's section, the card above My documents and the On this phone pane.
+        // Files on this phone (F168): Home's section, the card above My documents and the On this phone pane.
         homePhoneFiles = if (mode != ScanProDestinations.HOME) null else {
             {
                 com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
@@ -699,7 +702,7 @@ internal fun LibraryScreen(
                 )
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
-                    // Files: ScanPro's own documents, or every file on the phone (F160).
+                    // Files: ScanPro's own documents, or every file on the phone (F168).
                     if (phoneFilesPane != null && !selecting) {
                         androidx.compose.material3.SingleChoiceSegmentedButtonRow(
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
@@ -1169,19 +1172,24 @@ private fun HomeDashboard(
                 KeptScansBanner(count = keptScanCount, onClick = onKeptScans, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
-        // The promo card is the empty state only: once there are documents, the camera button is the call to action.
-        if (documentCount == 0) {
-            item(key = "hero", contentType = "hero") {
-                ScanHeroCard(onStartScan = onStartScan, enabled = !busy, modifier = Modifier.padding(horizontal = 16.dp))
-            }
+        // Home redesign (2026-11-16): scanning is what the app is for, so the brand card that starts a scan is always
+        // the first thing on Home, with every scan mode one tap away inside it. It used to appear only while the library
+        // was empty, which left returning users a page of pale tiles. Once there are documents it is the compact form.
+        item(key = "hero", contentType = "hero") {
+            ScanHeroCard(
+                onStartScan = onStartScan,
+                enabled = !busy,
+                compact = documentCount > 0,
+                onQuickScan = onQuickScan,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
         item(key = "quick_actions", contentType = "quick_actions") {
-            // Four shortcuts, one row. Text, QR, Receipt and Photos live in the camera's mode strip and the Files menu.
+            // What is not a scan: bringing files in, and the PDF tools. The scan modes moved into the card above.
             QuickActions(
                 enabled = !busy,
                 actions = listOf(
-                    QuickAction(Icons.Rounded.Badge, stringResource(R.string.lib_quick_id_card), TileTone.Indigo) { onQuickScan(ScanMode.ID_CARD.name) },
-                    QuickAction(Icons.AutoMirrored.Rounded.MenuBook, stringResource(R.string.lib_quick_book), TileTone.Amber) { onQuickScan(ScanMode.BOOK.name) },
+                    QuickAction(Icons.Rounded.Image, stringResource(R.string.lib_menu_import_photos), TileTone.Indigo) { onImportImages() },
                     QuickAction(Icons.Rounded.PictureAsPdf, stringResource(R.string.lib_menu_import_pdf), TileTone.Coral) { onImportPdf() },
                     QuickAction(Icons.Rounded.Handyman, stringResource(R.string.lib_quick_pdf_tools), TileTone.Slate) { onOpenTools() }
                 ),
@@ -1242,7 +1250,7 @@ private fun HomeDashboard(
                                 Box(m, contentAlignment = Alignment.Center) {
                                     PaperThumbnail(
                                         doc,
-                                        Modifier.fillMaxHeight(0.86f).aspectRatio(0.74f),
+                                        Modifier.fillMaxHeight(0.94f).aspectRatio(0.74f),
                                         com.example.scanpro.core.designsystem.THUMBNAIL_MEDIUM,
                                         corner = 6.dp
                                     )
@@ -1269,7 +1277,7 @@ private fun HomeDashboard(
                 com.example.scanpro.feature.tools.HomeRecentRow(items)
             }
         }
-        // Files on this phone (F160): the access card until granted or closed, then the newest files with See all.
+        // Files on this phone (F168): the access card until granted or closed, then the newest files with See all.
         if (phoneFiles != null) {
             item(key = "phone_files", contentType = "phone_files") { phoneFiles() }
         }
@@ -1358,7 +1366,15 @@ private fun PrivacyLine(modifier: Modifier = Modifier) {
 
 /** The hero: primary entry point on the home screen, on the brand gradient with the mark as a motif. */
 @Composable
-private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
+private fun ScanHeroCard(
+    onStartScan: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    /** With documents in the library: no eyebrow or tagline, just the headline, the button and the modes. */
+    compact: Boolean = false,
+    /** Opens the camera in a mode (a [ScanMode] name or "QR"); null leaves the mode pills out. */
+    onQuickScan: ((String) -> Unit)? = null
+) {
     val brand = ScanProTheme.colors
     // A scan beam sweeps down the page glyph and back, like the scanner finding a page. Read while drawing,
     // so it never recomposes the card; still when animations are off.
@@ -1394,9 +1410,11 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     // Kept to the right third so the faint glyph (and its scan line) never runs behind the text.
                     // Capped by the width too: a large font makes the card taller, and a glyph sized by height alone
                     // then grew leftwards behind the text and the button.
-                    val glyph = minOf(size.height * 1.05f, size.width * 0.75f)
+                    // The glyph keeps to the part of the card above the mode pills, so its scan line never runs behind them.
+                    val glyphArea = size.height - if (onQuickScan != null) 64.dp.toPx() else 0f
+                    val glyph = minOf(glyphArea * 1.05f, size.width * 0.75f)
                     val left = size.width - glyph * 0.62f
-                    val top = (size.height - glyph) / 2f
+                    val top = (glyphArea - glyph) / 2f
                     translate(left = left, top = top) {
                         drawScanGlyph(
                             glyph,
@@ -1430,23 +1448,29 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                     }
                 }
             }
-            .padding(horizontal = 18.dp, vertical = 14.dp)
+            .padding(vertical = 16.dp)
     ) {
-        Column(Modifier.fillMaxWidth(0.68f)) {
-            Eyebrow(stringResource(R.string.lib_hero_eyebrow), color = brand.onGradientMuted)
-            Spacer(Modifier.height(4.dp))
+      Column(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth(0.68f).padding(horizontal = 18.dp)) {
+            if (!compact) {
+                Eyebrow(stringResource(R.string.lib_hero_eyebrow), color = brand.onGradientMuted)
+                Spacer(Modifier.height(4.dp))
+            }
             Text(
                 stringResource(R.string.lib_hero_title),
-                style = MaterialTheme.typography.titleLarge,
+                style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
                 color = brand.onGradient
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(R.string.lib_hero_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = brand.onGradientMuted
-            )
-            Spacer(Modifier.height(10.dp))
+            if (!compact) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.lib_hero_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = brand.onGradientMuted
+                )
+            }
+            Spacer(Modifier.height(12.dp))
             val btnInteraction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
             val btnPressed by btnInteraction.collectIsPressedAsState()
             val btnScale by androidx.compose.animation.core.animateFloatAsState(
@@ -1485,6 +1509,43 @@ private fun ScanHeroCard(onStartScan: () -> Unit, enabled: Boolean, modifier: Mo
                 )
             }
         }
+        if (onQuickScan != null) {
+            Spacer(Modifier.height(14.dp))
+            // Every other way to scan, as frosted pills on the gradient. The row runs edge to edge and scrolls, with the
+            // last pill cut by the card's edge so it is plain there are more.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(androidx.compose.foundation.rememberScrollState())
+                    .padding(horizontal = 18.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val modes = listOf(
+                    ScanMode.ID_CARD.name to stringResource(ScanMode.ID_CARD.labelRes),
+                    ScanMode.RECEIPT.name to stringResource(ScanMode.RECEIPT.labelRes),
+                    ScanMode.BOOK.name to stringResource(ScanMode.BOOK.labelRes),
+                    com.example.scanpro.navigation.ScanProDestinations.CAMERA_QR to stringResource(R.string.scan_qr_code),
+                    ScanMode.WHITEBOARD.name to stringResource(ScanMode.WHITEBOARD.labelRes)
+                )
+                modes.forEach { (mode, label) ->
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = brand.onGradient,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = if (enabled) 0.18f else 0.08f))
+                            .border(1.dp, Color.White.copy(alpha = 0.28f), CircleShape)
+                            .clickable(enabled = enabled, role = Role.Button) { onQuickScan(mode) }
+                            .heightIn(min = 40.dp)
+                            .padding(horizontal = 16.dp)
+                            .wrapContentHeight(Alignment.CenterVertically)
+                    )
+                }
+            }
+        }
+      }
     }
 }
 
@@ -1494,7 +1555,7 @@ private class QuickAction(val icon: ImageVector, val label: String, val tone: Ti
 @Composable
 private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier: Modifier = Modifier) {
     // All on screen in rows of four (eight on wide windows): a sideways-scrolling row hid shortcuts with no hint.
-    val perRow = if (com.example.scanpro.navigation.isWideWindow()) 8 else 4
+    val perRow = minOf(if (com.example.scanpro.navigation.isWideWindow()) 8 else 4, actions.size.coerceAtLeast(1))
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         actions.chunked(perRow).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -1,6 +1,7 @@
 package com.example.scanpro.core.designsystem
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -93,6 +94,70 @@ fun IllustratedDialogFrame(onDismiss: () -> Unit, content: @Composable ColumnSco
     }
 }
 
+/**
+ * Gives a flat illustration depth (owner request, 2026-11-16): it is tilted back in perspective like an object lying on
+ * a table seen from above, floats and turns slowly, and casts a soft shadow on the panel that tightens as it rises.
+ * All of it is one graphics layer and one oval, read while drawing, so nothing recomposes; still when animations are off.
+ */
+@Composable
+private fun BoxScope.Stage3D(content: @Composable BoxScope.() -> Unit) {
+    val motion = rememberMotionEnabled()
+    val drift = if (motion) {
+        androidx.compose.animation.core.rememberInfiniteTransition(label = "stage3d").animateFloat(
+            initialValue = -1f,
+            targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                tween(3_600, easing = FastOutSlowInEasing),
+                androidx.compose.animation.core.RepeatMode.Reverse
+            ),
+            label = "drift"
+        )
+    } else null
+    val shadowColour = if (isDarkTheme()) Color.Black.copy(alpha = 0.55f) else Color(0xFF1B1F3A).copy(alpha = 0.22f)
+    Box(
+        Modifier
+            .matchParentSize()
+            .drawBehind {
+                val t = drift?.value ?: 0f
+                // The shadow sits on the "table" under the object: smaller and darker when it is low, wider when it lifts.
+                val lift = (t + 1f) / 2f
+                val w = size.width * (0.46f + 0.08f * lift)
+                val h = size.height * 0.10f
+                val centre = Offset(size.width / 2f + size.width * 0.03f * t, size.height * 0.90f)
+                drawOval(
+                    Brush.radialGradient(
+                        listOf(shadowColour.copy(alpha = shadowColour.alpha * (1f - 0.35f * lift)), Color.Transparent),
+                        center = centre,
+                        radius = w / 2f
+                    ),
+                    topLeft = Offset(centre.x - w / 2f, centre.y - h / 2f),
+                    size = androidx.compose.ui.geometry.Size(w, h)
+                )
+            }
+            .graphicsLayer {
+                val t = drift?.value ?: 0f
+                cameraDistance = 7f * density
+                rotationX = 20f + 3f * t
+                rotationY = -12f * t
+                rotationZ = -2f
+                translationY = -(6.dp.toPx()) * ((t + 1f) / 2f) - 4.dp.toPx()
+                scaleX = 0.92f
+                scaleY = 0.92f
+            },
+        contentAlignment = Alignment.Center,
+        content = content
+    )
+}
+
+/**
+ * The first sentence of [text], for popups that say one thing (owner request: shorter text). Works in every app
+ * language: Latin full stops and the Devanagari danda both end a sentence; a text with neither is returned whole.
+ */
+fun firstSentence(text: String): String {
+    val end = Regex("""[.!?।](\s|$)""").find(text) ?: return text
+    return text.substring(0, end.range.first + 1)
+}
+
 /** True inside an [IllustratedDialogFrame] that has less than 560 dp of height to work with. */
 private val LocalShortDialog = staticCompositionLocalOf { false }
 
@@ -132,7 +197,7 @@ fun IllustrationPanel(
             },
         contentAlignment = Alignment.Center
     ) {
-        content()
+        Stage3D(content)
         if (badgeIcon != null) {
             IconTile(
                 badgeIcon,
@@ -188,7 +253,7 @@ fun IllustratedDialog(
                 modifier = Modifier.semantics { heading() }
             )
             Spacer(Modifier.height(8.dp))
-            Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(firstSentence(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (steps.isNotEmpty()) {
                 Spacer(Modifier.height(14.dp))
                 HintSteps(steps, entered)

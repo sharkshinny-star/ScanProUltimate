@@ -135,6 +135,8 @@ fun PdfToolsScreen(
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
+    // Arrange, Rotate or Extract: one Organise screen, switched at its top.
+    var organizerMode by rememberSaveable { mutableStateOf("organize") }
     var showWatermarkDialog by rememberSaveable { mutableStateOf(false) }
     var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
     var showGreyscaleDialog by rememberSaveable { mutableStateOf(false) }
@@ -277,7 +279,7 @@ fun PdfToolsScreen(
             "unlock" -> viewModel.inspectForUnlock(uri)
             "repair" -> viewModel.repair(uri)
             "split" -> showSplitDialog = true
-            "organize", "extract", "rotate" -> showOrganizerSheet = true
+            "organize", "extract", "rotate" -> { organizerMode = tool; showOrganizerSheet = true }
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
             "fill" -> viewModel.openForm(uri)
             "ocr" -> showOcrDialog = true
@@ -345,7 +347,7 @@ fun PdfToolsScreen(
             imagesToOrder = uris
         }
     }
-    // Files on this phone handed files over (F160): the same flow as picking them here.
+    // Files on this phone handed files over (F168): the same flow as picking them here.
     val handoff by com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.pending.collectAsStateWithLifecycle()
     LaunchedEffect(handoff) {
         val request = handoff ?: return@LaunchedEffect
@@ -855,11 +857,12 @@ fun PdfToolsScreen(
             if (showOrganizerSheet && uri != null && tool != null) {
                 PdfPageOrganizerSheet(
                     uri = uri,
-                    mode = tool,
+                    mode = organizerMode,
+                    onModeChange = { organizerMode = it },
                     onClose = { showOrganizerSheet = false },
                     onApply = { pageSpecs, extractedIndices, rotationsMap ->
                         showOrganizerSheet = false
-                        viewModel.organize(tool, uri, pageSpecs, extractedIndices, rotationsMap)
+                        viewModel.organize(organizerMode, uri, pageSpecs, extractedIndices, rotationsMap)
                     },
                     onInsertPages = { kept -> insertBase = kept.flatMap { listOf(it.originalIndex, it.rotationDegrees) } }
                 )
@@ -938,7 +941,15 @@ fun PdfToolsScreen(
                 .padding(padding),
             contentAlignment = Alignment.TopCenter
         ) {
-            val toolColumns = if (com.example.scanpro.navigation.isWideWindow()) 4 else 2
+            // Tools redesign (2026-11-16): three compact tiles to a row on a phone (six on a wide window), so a section
+            // fits on one screen instead of three. Two wide cards with their descriptions remain for large text, where
+            // three columns would cut the names.
+            val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.3f
+            val toolColumns = when {
+                com.example.scanpro.navigation.isWideWindow() -> if (largeText) 4 else 6
+                largeText -> 2
+                else -> 3
+            }
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),

@@ -172,7 +172,6 @@
     <string name="scan_doc_intro_title">ஆவணத்தை ஸ்கேன் செய்தல்</string>
     <string name="scan_doc_intro_body">பக்கத்தை நல்ல வெளிச்சத்தில் தட்டையாக வைத்து, போனை நிலையாகப் பிடியுங்கள். ScanPro ஓரங்களைக் கண்டறிந்து பக்கத்தை நேராக்கித் தூய்மையாக்கும். ஷட்டரைத் தட்டுங்கள், அல்லது தானியங்கிப் பிடிப்பை இயக்கி அசையாமல் இருங்கள். மேலும் பக்கங்களைச் சேர்த்து, முடிந்தது என்பதைத் தட்டுங்கள்.</string>
     <string name="scan_book_intro_start">இப்போது தொடங்கு</string>
-    <string name="scan_book_intro_dont_remind">மீண்டும் நினைவூட்ட வேண்டாம்</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">விரிப்பு %1$d மற்றும் %2$d பக்கங்களாகப் பிரிக்கப்பட்டது</string>
     <string name="scan_take_photo">ஃபோட்டோ எடு</string>
     <string name="scan_import_photos">ஃபோட்டோக்களை இறக்குமதி செய்</string>
@@ -218,10 +217,6 @@
     <string name="scan_error_camera_stopped">கேமரா வேலை செய்வதை நிறுத்திவிட்டது. மீண்டும் முயலுங்கள் அல்லது இணக்க ஸ்கேனரைப் பயன்படுத்துங்கள்.</string>
     <string name="scan_flash_state">ஃபிளாஷ்: %1$s</string>
     <string name="scan_zoom_level">ஜூம் %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">தொகுப்பில் %1$d பக்கம்</item>
-        <item quantity="other">தொகுப்பில் %1$d பக்கங்கள்</item>
-    </plurals>
     <string name="scan_flash_off">ஆஃப்</string>
     <string name="scan_flash_auto">ஆட்டோ</string>
     <string name="scan_flash_on">ஆன்</string>

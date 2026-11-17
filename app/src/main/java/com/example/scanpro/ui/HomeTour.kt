@@ -82,10 +82,10 @@ internal fun HomeTourDialog(onDone: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     // Room for three lines on every page, so the card doesn't change height as the pages are swiped.
                     Text(
-                        stringResource(page.body, stringResource(page.tab)),
+                        com.example.scanpro.core.designsystem.firstSentence(stringResource(page.body, stringResource(page.tab))),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        minLines = 3
+                        minLines = 2
                     )
                 }
             }

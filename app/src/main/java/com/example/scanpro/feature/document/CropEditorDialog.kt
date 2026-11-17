@@ -89,6 +89,7 @@ import com.example.scanpro.core.designsystem.ScanProTheme
 import androidx.compose.ui.text.font.FontWeight
 import com.example.scanpro.scanner.DocumentEdgeDetector
 import com.example.scanpro.scanner.translateEdge
+import com.example.scanpro.scanner.turnQuad
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -112,14 +113,28 @@ fun CropEditorDialog(
     pageIndex: Int = 0,
     pageCount: Int = 1,
     /** Moves to the page `delta` away, with the crop of the page being left; the editor stays open. */
-    onPage: ((delta: Int, crop: CropQuad) -> Unit)? = null
+    onPage: ((delta: Int, crop: CropQuad) -> Unit)? = null,
+    /**
+     * Quarter turns clockwise the page is shown with (its `rotationDegrees / 90`). The outline is stored on the
+     * unturned photo; the editor shows the photo turned, the way the page looks, and works on a turned outline (R51).
+     */
+    turns: Int = 0
 ) {
-    // Held above the dialog and saved, so a rotation keeps the outline the user has drawn.
-    var crop by rememberSaveable(initial, saver = CropStateSaver) { mutableStateOf(initial) }
+    val shownInitial = remember(initial, turns) { turnQuad(initial, turns) }
+    // Held above the dialog and saved, so a rotation keeps the outline the user has drawn. In the turned photo's terms.
+    var crop by rememberSaveable(initial, sourcePath, saver = CropStateSaver) { mutableStateOf(shownInitial) }
+    var shownTurns by rememberSaveable(initial, sourcePath) { mutableIntStateOf(turns) }
+    if (shownTurns != turns) {
+        // Rotate was tapped: the outline being drawn turns with the picture.
+        crop = turnQuad(crop, turns - shownTurns)
+        shownTurns = turns
+    }
+    // Back to the unturned photo. An untouched outline is handed back exactly as it came, so it is not taken for an edit.
+    fun toSource(shown: CropQuad) = if (shown == shownInitial) initial else turnQuad(shown, -turns)
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var panelHeightPx by remember { mutableIntStateOf(0) }
     // Back and the arrow ask first once the outline differs from where it started.
-    val close = { if (crop != initial) confirmDiscard = true else onDismiss() }
+    val close = { if (crop != shownInitial) confirmDiscard = true else onDismiss() }
     Dialog(
         onDismissRequest = close,
         properties = DialogProperties(
@@ -136,7 +151,7 @@ fun CropEditorDialog(
             dialogWindow?.let { androidx.core.view.WindowCompat.getInsetsController(it, it.decorView).isAppearanceLightStatusBars = false }
         }
         var loadFailed by rememberSaveable(sourcePath, fallbackPath) { mutableStateOf(false) }
-        val bitmap by produceState<Bitmap?>(initialValue = null, sourcePath, fallbackPath) {
+        val unturned by produceState<Bitmap?>(initialValue = null, sourcePath, fallbackPath) {
             loadFailed = false
             value = withContext(Dispatchers.IO) {
                 val candidates = buildList {
@@ -169,6 +184,15 @@ fun CropEditorDialog(
                 }
                 result
             }
+        }
+        // Turned here rather than on reload, so the picture and the outline turn in the same frame.
+        val bitmap = remember(unturned, turns) {
+            val base = unturned
+            val quarter = ((turns % 4) + 4) % 4
+            if (base == null || quarter == 0) base
+            else runCatching {
+                Bitmap.createBitmap(base, 0, 0, base.width, base.height, android.graphics.Matrix().apply { postRotate(90f * quarter) }, true)
+            }.getOrDefault(base)
         }
         val scope = rememberCoroutineScope()
         val latestCrop by rememberUpdatedState(crop)
@@ -418,15 +442,15 @@ fun CropEditorDialog(
                     .navigationBarsPadding()
                     .padding(vertical = 12.dp)
             ) {
-                // Page Navigation Bar (e.g. 1/1 + Add Page)
-                FlowRow(
+                // Page navigation and Add page; nothing to show for a single page with no Add page.
+                if (pageCount > 1 || onAddPage != null) FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                     itemVerticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
+                    if (pageCount > 1) Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = Color.White.copy(alpha = 0.12f)
                     ) {
@@ -440,14 +464,14 @@ fun CropEditorDialog(
                                 Icons.AutoMirrored.Filled.NavigateBefore,
                                 contentDescription = stringResource(R.string.scan_review_previous_page),
                                 tint = if (hasPrevious) DarkChrome.text else DarkChrome.disabledText,
-                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasPrevious, role = Role.Button) { onPage?.invoke(-1, crop) }.padding(12.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasPrevious, role = Role.Button) { onPage?.invoke(-1, toSource(crop)) }.padding(12.dp)
                             )
                             Text(stringResource(R.string.doc_crop_page_x_of_y, pageIndex + 1, pageCount), color = DarkChrome.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp))
                             Icon(
                                 Icons.AutoMirrored.Filled.NavigateNext,
                                 contentDescription = stringResource(R.string.scan_review_next_page),
                                 tint = if (hasNext) DarkChrome.text else DarkChrome.disabledText,
-                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasNext, role = Role.Button) { onPage?.invoke(1, crop) }.padding(12.dp)
+                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable(enabled = hasNext, role = Role.Button) { onPage?.invoke(1, toSource(crop)) }.padding(12.dp)
                             )
                         }
                     }
@@ -529,12 +553,11 @@ fun CropEditorDialog(
                         crop = CropQuad(NormalizedPoint(0f, 0f), NormalizedPoint(1f, 0f), NormalizedPoint(1f, 1f), NormalizedPoint(0f, 1f))
                     }
 
-                    // The outline is drawn on the source photo, which a page rotation does not turn (it only changes
-                    // `rotationDegrees`), so the outline must stay as it is here.
                     if (onRotateLeft != null) DarkToolAction(RotateLeftIcon, stringResource(R.string.doc_rotate_left), onClick = onRotateLeft)
-                    if (onRotateRight != null) DarkToolAction(RotateRightIcon, stringResource(R.string.doc_rotate_right), onClick = onRotateRight)
+                    // "Right" only means something next to "Left"; alone, the button is "Rotate".
+                    if (onRotateRight != null) DarkToolAction(RotateRightIcon, stringResource(if (onRotateLeft != null) R.string.doc_rotate_right else R.string.doc_rotate), onClick = onRotateRight)
 
-                    AccentButton(stringResource(R.string.common_done), enabled = bitmap != null, onClick = { onConfirm(crop) })
+                    AccentButton(stringResource(R.string.common_done), enabled = bitmap != null, onClick = { onConfirm(toSource(crop)) })
                 }
             }
         }

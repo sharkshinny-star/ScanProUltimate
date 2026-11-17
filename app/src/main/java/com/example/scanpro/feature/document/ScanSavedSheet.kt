@@ -228,21 +228,14 @@ fun ScanSavedSheet(
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                 QuickAction(Icons.Default.PictureAsPdf, stringResource(R.string.doc_share_as_pdf), primary = true, enabled = !busy, modifier = Modifier.weight(1f), onClick = then(onSharePdf))
-                if (onCopy != null) {
-                    QuickAction(Icons.Default.ContentCopy, stringResource(R.string.doc_saved_copy_text), enabled = text.isNotBlank(), modifier = Modifier.weight(1f)) { onCopy(text) }
+                // Offered once there is text to copy. A page with no words never gets it, so it is not shown greyed
+                // with a line explaining why; it appears when the text has been read.
+                if (onCopy != null && text.isNotBlank()) {
+                    QuickAction(Icons.Default.ContentCopy, stringResource(R.string.doc_saved_copy_text), modifier = Modifier.weight(1f)) { onCopy(text) }
                 }
                 if (onAddPages != null) {
                     QuickAction(Icons.Default.AddAPhoto, stringResource(R.string.doc_saved_add_pages), enabled = !busy, modifier = Modifier.weight(1f), onClick = then { onAddPages() })
                 }
-            }
-            // A greyed Copy text says nothing by itself: this says when it unlocks (it stays off for a page with no text).
-            if (onCopy != null && text.isBlank()) {
-                Text(
-                    stringResource(R.string.doc_saved_copy_text_waiting),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, top = 6.dp)
-                )
             }
 
             // Folded away by default: five always-open rows made the moment after a scan read as a wall of
@@ -280,13 +273,13 @@ fun ScanSavedSheet(
             Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     SheetAction(Icons.Default.Image, TileTone.Sky, stringResource(R.string.doc_share_as_jpg), stringResource(R.string.doc_share_as_jpg_hint), !busy, then(onShareJpg))
-                    if (onShareWord != null) {
+                    if (onShareWord != null && text.isNotBlank()) {
                         InsetDivider()
-                        // Editable text is the recognised words, so it waits for them rather than sharing an empty file.
+                        // Editable text is the recognised words, so the row is there only once they are.
                         SheetAction(
                             Icons.Default.Description, TileTone.Indigo, stringResource(R.string.doc_share_as_word),
-                            stringResource(if (text.isBlank()) R.string.doc_share_as_word_waiting else R.string.doc_share_as_word_hint),
-                            !busy && text.isNotBlank(), then(onShareWord)
+                            stringResource(R.string.doc_share_as_word_hint),
+                            !busy, then(onShareWord)
                         )
                     }
                     InsetDivider()

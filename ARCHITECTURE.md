@@ -50,7 +50,9 @@ The primary scanner is `scanner/CameraScannerScreen.kt`.
 1. CameraX binds `Preview`, `ImageCapture`, and `ImageAnalysis` to the lifecycle.
 2. Analyser receives YUV frames and extracts the Y plane into a greyscale OpenCV `Mat`.
 3. Frames are rotated into display orientation.
-4. `DocumentEdgeDetector` bounds analysis to a long side of roughly 900 px.
+4. `DocumentEdgeDetector` bounds analysis to a long side of roughly 900 px (bilinear down to half size, area averaging below; F161).
+   `Steadiness` (in `OpenCvDocumentAnalyzer.kt`) decides when a page has held still: 350 ms and at least 4 frames, not a frame count.
+   `PageInspector` gives each captured photo one decode and one detection, shared by the crop outline and the quality notes.
 5. Gaussian smoothing + adaptive Canny + morphology produce edge candidates.
 6. Contours are approximated to convex quadrilaterals.
 7. Candidates are scored by area, rectangularity, and opposite-edge balance.
@@ -399,9 +401,9 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 - `data/ScanHistoryStore` (`@Singleton`): `filesDir/scan_history.json`, newest first, 200 entries, written on one worker thread through a temp file and rename; switch `scanHistoryEnabled` in `SettingsStore`. It holds raw text, so Wi-Fi passwords are stored unencrypted like the rest of the library (R20); the list shows the network name and search ignores the password.
 - `feature/qr/*`: history and generator screens with their view models, payload builders (`QrPayloads`) and the ZXing encoder (`QrEncoder`: error correction M, 4-module quiet zone, 1024 px). Dependency: `com.google.zxing:core:3.5.4` (Apache-2.0, pure Java, no network).
 - Destinations `QR_HISTORY` and `QR_GENERATOR` in `ScanProDestinations`, reached from the camera's QR mode.
-- F158: `QrForm` (form state and validation per kind), `CodeFormat`/`CodeStyle`/`QrCorrection` (`QrEncoder.encode` via ZXing `MultiFormatWriter`, EAN-13 and Code 128 too), WCAG contrast check, `ScanHistoryEntry.created` (JSON `made`), `ScanHistoryCsv`, `LinkSafety`. Strings in `strings_qr_new.xml`.
-- F159 (tools): `PdfToolsScreen.kt` keeps the screen and state; catalogue in `ToolCatalogue.kt`, organiser in `PageOrganizer.kt`, dialogs in `CompressPdfDialog.kt`, `PdfToolDialogs.kt`, `ImageToolDialogs.kt`, `CleanupToolDialogs.kt`. Engines `imaging/PdfCleanupTools.kt` (blank pages, greyscale, flatten, extract images) and `imaging/PdfMetadataEngine.kt`. Strings in `strings_tools_new.xml`.
-- F157 (settings): `SettingsScreen.kt` (route, bar, navigation, search), `SettingsMainPage.kt`, `SettingsComponents.kt`, one `Settings*Page.kt` per page incl. `SettingsShortcutsPage.kt`. Strings in `strings_settings_new.xml`.
+- F166: `QrForm` (form state and validation per kind), `CodeFormat`/`CodeStyle`/`QrCorrection` (`QrEncoder.encode` via ZXing `MultiFormatWriter`, EAN-13 and Code 128 too), WCAG contrast check, `ScanHistoryEntry.created` (JSON `made`), `ScanHistoryCsv`, `LinkSafety`. Strings in `strings_qr_new.xml`.
+- F167 (tools): `PdfToolsScreen.kt` keeps the screen and state; catalogue in `ToolCatalogue.kt`, organiser in `PageOrganizer.kt`, dialogs in `CompressPdfDialog.kt`, `PdfToolDialogs.kt`, `ImageToolDialogs.kt`, `CleanupToolDialogs.kt`. Engines `imaging/PdfCleanupTools.kt` (blank pages, greyscale, flatten, extract images) and `imaging/PdfMetadataEngine.kt`. Strings in `strings_tools_new.xml`.
+- F165 (settings): `SettingsScreen.kt` (route, bar, navigation, search), `SettingsMainPage.kt`, `SettingsComponents.kt`, one `Settings*Page.kt` per page incl. `SettingsShortcutsPage.kt`. Strings in `strings_settings_new.xml`.
 
 ### Sign PDF, PDF to text or Word, Insert pages (F135, F136)
 

@@ -10,9 +10,7 @@
     <string name="hint_tool_step_result">परिणाम को सेव या शेयर करें। यह %1$s में भी रखा जाता है।</string>
     <string name="hint_tool_merge">दो या ज़्यादा PDF को अपने चुने हुए क्रम में एक फ़ाइल में जोड़ें।</string>
     <string name="hint_tool_split">PDF को छोटी फ़ाइलों में बाँटें: हर पेज अलग, पेज रेंज के हिसाब से या हर कुछ पेज पर।</string>
-    <string name="hint_tool_organize">पेजों को नए क्रम में लगाएँ और जिनकी ज़रूरत नहीं है उन्हें हटाएँ।</string>
-    <string name="hint_tool_rotate">टेढ़े या उल्टे स्कैन हुए पेजों को घुमाकर सीधा करें।</string>
-    <string name="hint_tool_extract">जिन पेजों की ज़रूरत है उन्हें चुनें और नई PDF के रूप में सेव करें।</string>
+    <string name="hint_tool_organize">पेजों को नए क्रम में लगाएँ और जिनकी ज़रूरत नहीं है उन्हें हटाएँ। टेढ़े या उल्टे स्कैन हुए पेजों को घुमाकर सीधा करें। जिन पेजों की ज़रूरत है उन्हें चुनें और नई PDF के रूप में सेव करें।</string>
     <string name="hint_tool_compress">ईमेल और मैसेज के लिए PDF को छोटा करें। चुनें कि कितना छोटा करना है।</string>
     <string name="hint_tool_repair">जो PDF नहीं खुलती या गड़बड़ी दिखाती है, उसे ठीक करने की कोशिश करें और साफ़ कॉपी सेव करें।</string>
     <string name="hint_tool_page_numbers">PDF के हर पेज पर पेज नंबर जोड़ें।</string>
@@ -25,6 +23,7 @@
     <string name="hint_tool_pdf2img">PDF के हर पेज को इमेज के रूप में सेव करें।</string>
     <string name="hint_tool_pdf2text">PDF का टेक्स्ट Word या सादी टेक्स्ट फ़ाइल में कॉपी करें।</string>
     <string name="hint_tool_pdf2excel">PDF की तालिकाओं को ऐसी स्प्रेडशीट में बदलें जिसे आप एडिट कर सकें।</string>
+    <string name="hint_tool_pdf2ppt">PDF से PowerPoint प्रेज़ेंटेशन बनाएँ, हर पेज की एक स्लाइड।</string>
     <string name="hint_tool_protect">PDF पर पासवर्ड लगाएँ, ताकि सिर्फ़ उसे जानने वाले ही इसे खोल सकें।</string>
     <string name="hint_tool_unlock">जिस PDF को खोलने की आपको अनुमति है, उससे पासवर्ड या एडिटिंग की पाबंदियाँ हटाएँ।</string>
     <string name="hint_tool_crop_img">इमेज को काटकर सिर्फ़ ज़रूरी हिस्सा रखें।</string>

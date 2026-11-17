@@ -5,7 +5,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
@@ -234,6 +233,8 @@ fun CameraScannerScreen(
     val panelClearance = if (landscape) 244.dp else 0.dp
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    // One decode and one detection per photo, shared by the crop outline and the quality notes.
+    val inspector = remember(scope) { PageInspector(scope) }
     val haptic = LocalHapticFeedback.current
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
@@ -334,8 +335,9 @@ fun CameraScannerScreen(
     // which fast save trusts like the ID composite (they are cut out already).
     var bookLayout by rememberSaveable { mutableIntStateOf(1) }
     var bookHalves by rememberSaveable { mutableStateOf(listOf<String>()) }
-    // First-use explainer for Document, ID Card and Book modes: shown once per mode per camera session until
-    // "Don't remind me again" is ticked for that mode.
+    // First-use explainer for Document, ID Card and Book modes: shown once per mode, ever. It used to come back in
+    // every camera session until a "Don't remind me again" box was ticked (owner, 2026-11-16: "should show only first
+    // time"). Settings > Show introductions again brings them back.
     var introShownFor by rememberSaveable { mutableStateOf(listOf<String>()) }
     var introMode by rememberSaveable { mutableStateOf<String?>(null) }
     // "Try now" on the Document explainer: the built-in sample page goes through the normal review (crop, filters).
@@ -347,6 +349,8 @@ fun CameraScannerScreen(
         if (key != null && scanMode.name !in introShownFor && !prefs.getBoolean(key, false)) {
             introShownFor = introShownFor + scanMode.name
             introMode = scanMode.name
+            // Remembered as soon as it is shown, so leaving the app or the camera with it open does not bring it back.
+            prefs.edit { putBoolean(key, true) }
         }
     }
     introMode?.let { name ->
@@ -361,11 +365,7 @@ fun CameraScannerScreen(
                     introMode = null
                     trySample = true
                 },
-                onStart = { dontRemind ->
-                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
-                    introMode = null
-                }
-            )
+                onStart = { introMode = null })
         }
     }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
@@ -441,12 +441,11 @@ fun CameraScannerScreen(
     LaunchedEffect(pages.toList()) {
         val keys = pages.map { it.toString() }.toSet()
         quality.keys.retainAll(keys)
+        inspector.retain(pages.map { File(it.path.orEmpty()).absolutePath }.toSet())
         for (page in pages.toList()) {
             val key = page.toString()
             if (key in quality) continue
-            val issues = withContext(Dispatchers.Default) {
-                runCatching { OpenCvScanProcessor.assessQuality(File(page.path.orEmpty())) }.getOrDefault(emptySet())
-            }
+            val issues = inspector.of(File(page.path.orEmpty()))?.second ?: emptySet()
             if (pages.contains(page)) quality[key] = issues
         }
     }
@@ -534,7 +533,7 @@ fun CameraScannerScreen(
                 val previousResult = detection
                 if (previousResult == null || (previousResult.quad == null) != (result.quad == null) || previousResult.isDark != result.isDark ||
                     previousResult.isBlurry != result.isBlurry || previousResult.isReady != result.isReady ||
-                    previousResult.isSkewed != result.isSkewed ||
+                    previousResult.isSkewed != result.isSkewed || previousResult.isConvincingPage != result.isConvincingPage ||
                     PageQuality.isGlare(previousResult.glareShare) != PageQuality.isGlare(result.glareShare) ||
                     previousResult.frameWidth != result.frameWidth || previousResult.frameHeight != result.frameHeight
                 ) detection = result
@@ -655,7 +654,7 @@ fun CameraScannerScreen(
             // still be widened later; nothing here cuts pixels out of the photo.
             val crops = withContext(Dispatchers.Default) {
                 inputs.map { (uri, quad) ->
-                    quad ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
+                    quad ?: inspector.of(File(uri.path.orEmpty()))?.first ?: CropQuad.DEFAULT
                 }
             }
             // The navigation host accepts the scan only while this screen is resumed. If the user left the app
@@ -700,11 +699,14 @@ fun CameraScannerScreen(
                     var crop = quads[key]
                     var issue = quality[key]
                     if (i in trusted) issue = issue ?: emptySet()
-                    if (crop == null && issue == null) {
-                        runCatching { OpenCvScanProcessor.inspect(File(uri.path.orEmpty())) }.getOrNull()?.let { (c, q) -> crop = c; issue = q }
+                    if (crop == null || issue == null) {
+                        // Joins the background run already under way for this photo instead of starting another.
+                        val found = inspector.of(File(uri.path.orEmpty()))
+                        crop = crop ?: found?.first
+                        issue = issue ?: found?.second
                     }
-                    crops += crop ?: runCatching { OpenCvScanProcessor.detectCrop(File(uri.path.orEmpty())) }.getOrDefault(CropQuad.DEFAULT)
-                    issues += issue ?: runCatching { OpenCvScanProcessor.assessQuality(File(uri.path.orEmpty())) }.getOrDefault(emptySet())
+                    crops += crop ?: CropQuad.DEFAULT
+                    issues += issue ?: emptySet()
                 }
                 crops to issues
             }
@@ -859,19 +861,16 @@ fun CameraScannerScreen(
                     val idMode = scanMode == ScanMode.ID_CARD
                     val idRatio = idKind.heightRatio
                     scope.launch {
-                        val quad = withContext(Dispatchers.Default) {
+                        val guideCrop = if (!idMode) null else withContext(Dispatchers.Default) {
                             runCatching {
-                                if (idMode) {
-                                    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                                    android.graphics.BitmapFactory.decodeFile(raw.absolutePath, bounds)
-                                    val turned = androidx.exifinterface.media.ExifInterface(raw.absolutePath).rotationDegrees % 180 != 0
-                                    val (w, h) = if (turned) bounds.outHeight to bounds.outWidth else bounds.outWidth to bounds.outHeight
-                                    idCardCrop(viewW, viewH, w, h, density, idRatio) ?: OpenCvScanProcessor.detectCrop(raw)
-                                } else {
-                                    OpenCvScanProcessor.detectCrop(raw)
-                                }
+                                val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                                android.graphics.BitmapFactory.decodeFile(raw.absolutePath, bounds)
+                                val turned = androidx.exifinterface.media.ExifInterface(raw.absolutePath).rotationDegrees % 180 != 0
+                                val (w, h) = if (turned) bounds.outHeight to bounds.outWidth else bounds.outWidth to bounds.outHeight
+                                idCardCrop(viewW, viewH, w, h, density, idRatio)
                             }.getOrNull()
                         }
+                        val quad = guideCrop ?: inspector.of(raw)?.first
                         if (quad != null && quads[captured.toString()] == null && pages.contains(captured)) quads[captured.toString()] = quad
                         // Book mode, two pages: the spread is cut out and split at the spine into two pages (R29).
                         if (scanMode == ScanMode.BOOK && bookLayout != 0 && !replacing && quad != null && pages.contains(captured)) {
@@ -976,6 +975,9 @@ fun CameraScannerScreen(
 
     // Re-keyed on `reviewing`: the camera is released while the review step is up, so the preview and
     // OpenCV analysis stop costing battery behind a screen that doesn't show them, and bound again after.
+    // Saved, so a rotation (no transition) does not wait again.
+    var enterSettled by rememberSaveable { mutableStateOf(false) }
+    val motionEnabled = com.example.scanpro.core.designsystem.rememberMotionEnabled()
     LaunchedEffect(permissionGranted, lifecycleOwner, reviewing, retryTrigger, hdCapture) {
         if (!permissionGranted) return@LaunchedEffect
         if (reviewing) {
@@ -985,11 +987,13 @@ fun CameraScannerScreen(
             boundUseCases = emptyList()
             return@LaunchedEffect
         }
-        // The first bind (three use cases, up to 48 MP) runs on the main thread: started while the screen is still
-        // sliding up it froze the animation for about half a second. It waits for the slide to finish (nothing is
-        // lost: the viewfinder cannot show a picture before the camera opens anyway).
-        if (cameraProvider == null) delay(CAMERA_BIND_DELAY_MS)
         val future = ProcessCameraProvider.getInstance(context)
+        // Binding the camera holds the main thread for several frames. Done while the screen was still animating in,
+        // it made the opening stutter (owner, 2026-11-16), so the first bind waits for the transition to finish.
+        if (!enterSettled) {
+            if (motionEnabled) delay(com.example.scanpro.navigation.CameraEnterDuration + 20L)
+            enterSettled = true
+        }
         future.addListener({
             // The screen may have been left before the camera provider became ready.
             if (disposed.get()) return@addListener
@@ -1576,22 +1580,8 @@ fun CameraScannerScreen(
             Surface(shape = CircleShape, color = CameraGlass) {
                 IconButton(onClick = requestClose) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = Color.White) }
             }
-            if (pages.isNotEmpty()) {
-                // Takes only the room the buttons leave and shortens with an ellipsis: with the HD and flash buttons the
-                // bar is full on a 320 dp phone, where the counter would otherwise wrap or run under a button.
-                Box(Modifier.weight(1f).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        pluralStringResource(R.plurals.scan_pages_in_batch, pages.size, pages.size),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
+            // The page count is on the Done button and on the page strip; it is not repeated here.
+            Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 // HD capture switch: lit mint while on. A scanner has no use for it on a barcode.
                 if (!barcodeMode) {
@@ -2073,8 +2063,7 @@ fun CameraScannerScreen(
                                 stringResource(if (autoCapture) R.string.scan_detect_auto else R.string.scan_detect_manual),
                                 style = MaterialTheme.typography.labelLarge,
                                 maxLines = 1,
-                                softWrap = false,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                softWrap = false
                             )
                         }
                     } else if (barcodeMode && qrBatch && batchCodes.isNotEmpty()) {
@@ -2658,8 +2647,7 @@ internal fun resetScanIntros(context: android.content.Context) {
  * book with the A / B halves the viewfinder shows. "Don't remind me again" is passed to whichever button closes it.
  */
 @Composable
-internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Unit)? = null, onStart: (dontRemind: Boolean) -> Unit) {
-    var dontRemind by rememberSaveable { mutableStateOf(false) }
+internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Unit)? = null, onStart: () -> Unit) {
     val sample = mode != ScanMode.BOOK && mode != ScanMode.ID_CARD
     val (title, body) = when (mode) {
         ScanMode.BOOK -> R.string.scan_book_intro_title to R.string.intro_book_body
@@ -2681,14 +2669,6 @@ internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Un
             }
         },
         extra = {
-            if (sample) {
-                Text(
-                    stringResource(R.string.intro_doc_tip),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -2702,10 +2682,8 @@ internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Un
                 Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
             }
         },
-        confirmText = stringResource(if (sample && onTry != null) R.string.intro_doc_try else R.string.scan_book_intro_start),
-        onConfirm = { if (sample && onTry != null) onTry(dontRemind) else onStart(dontRemind) },
-        dismissText = if (sample && onTry != null) stringResource(R.string.hint_skip) else null,
-        buttonsInRow = sample && onTry != null,
+        confirmText = stringResource(R.string.scan_book_intro_start),
+        onConfirm = { onStart(dontRemind) },
         onDismiss = { onStart(dontRemind) }
     )
 }

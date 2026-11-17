@@ -102,6 +102,14 @@ class ScanSavedSheetTest {
     }
 
     @Test
+    fun aPageWithNoTextOffersNoCopyText() {
+        show(document(""), null)
+        compose.onAllNodesWithText(app.getString(R.string.doc_saved_copy_text)).assertCountEquals(0)
+        compose.onNodeWithText(app.getString(R.string.doc_share_as_pdf)).assertExists()
+        compose.onNodeWithText(app.getString(R.string.doc_saved_add_pages)).assertExists()
+    }
+
+    @Test
     fun scanAnotherAndAddPagesLeaveTheSheet() {
         show(document("Some letter text"), null)
         compose.onAllNodesWithText(app.getString(R.string.doc_saved_copy_total)).assertCountEquals(0)

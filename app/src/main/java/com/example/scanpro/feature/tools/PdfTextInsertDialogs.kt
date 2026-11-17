@@ -83,8 +83,8 @@ internal fun PdfToTextDialog(
     var format by rememberSaveable { mutableStateOf(initialFormat) }
     var script by rememberSaveable { mutableStateOf(initialOcrScript(context)) }
     ToolPage(
-        // Named after the tile it was opened from, not one title for three tools.
-        title = stringResource(if (initialFormat == TextExportFormat.EXCEL) R.string.tools_card_pdf2excel else R.string.tools_card_pdf2text),
+        // One tool for Word, Excel and plain text (the PDF to Excel tile was merged into it).
+        title = stringResource(R.string.tools_card_pdf2text),
         onClose = onDismiss,
         actionLabel = stringResource(
             when (format) {

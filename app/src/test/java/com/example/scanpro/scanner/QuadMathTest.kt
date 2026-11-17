@@ -123,4 +123,15 @@ class QuadMathTest {
         val (c, d) = translateEdge(NormalizedPoint(0.5f, 0.5f), NormalizedPoint(0.6f, 0.5f), Float.NaN, Float.NaN)
         assertEquals(0.5f, c.x, 1e-6f); assertEquals(0.6f, d.x, 1e-6f)
     }
+
+    @Test
+    fun `turning by quarter turns matches repeated clockwise rotation and undoes itself`() {
+        assertSame(skewed, turnQuad(skewed, 0))
+        assertSame(rotateQuad(skewed, clockwise = true), turnQuad(skewed, 1))
+        assertSame(rotateQuad(skewed, clockwise = false), turnQuad(skewed, -1))
+        assertSame(turnQuad(skewed, 1), turnQuad(skewed, 5))
+        for (n in 0..3) assertSame(skewed, turnQuad(turnQuad(skewed, n), -n))
+        // The same path gives the same floats, so an untouched outline compares equal after Rotate in the editor.
+        assertEquals(turnQuad(skewed, 2), turnQuad(turnQuad(skewed, 1), 1))
+    }
 }

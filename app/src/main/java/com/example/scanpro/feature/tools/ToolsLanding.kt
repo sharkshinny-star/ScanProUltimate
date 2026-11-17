@@ -91,6 +91,8 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     suspend fun load() {
         val (p, r) = withContext(Dispatchers.IO) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            // Rotate, Extract and PDF to Excel lost their tiles but stay in the catalogue as search-only tools, so an
+            // existing pin or recent use of them still resolves.
             fun read(key: String) = prefs.getString(key, "").orEmpty().split(',').filter { it in KNOWN_IDS }.distinct()
             read(KEY_PINNED) to read(KEY_RECENT)
         }
@@ -144,7 +146,8 @@ internal fun rememberToolsMemory(): ToolsMemory {
 private val TOOL_KEYWORDS = mapOf(
     "merge" to "join combine put together concatenate",
     "split" to "separate divide cut apart",
-    "organize" to "reorder rearrange delete remove pages sort rotate turn extract pull out",
+    // Organise also rotates and extracts, so it answers for both.
+    "organize" to "reorder rearrange delete remove pages sort rotate turn flip sideways upside down orientation extract pull out select",
     "image_tools" to "photo picture jpg png crop compress convert resize",
     "rotate" to "turn flip sideways upside down orientation",
     "extract" to "pull out select pages",
@@ -157,7 +160,8 @@ private val TOOL_KEYWORDS = mapOf(
     "ocr" to "scan recognise read text searchable",
     "fill" to "form fields sign complete type",
     "pdf2img" to "export pictures jpg png save as images",
-    "pdf2text" to "txt copy words plain text word docx",
+    // Excel is a format of PDF to Word, Excel or text, so it answers for it too.
+    "pdf2text" to "txt copy words plain text word docx excel xlsx spreadsheet table sheet cells csv",
     "pdf2excel" to "excel xlsx spreadsheet table sheet cells csv",
     "protect" to "password encrypt lock secure",
     "unlock" to "remove password decrypt open",
@@ -353,7 +357,9 @@ private fun ToolCard(
     pinned: Boolean,
     onClick: () -> Unit,
     onTogglePin: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Three or more to a row: the icon and the name, centred. What the tool does is still read out and searchable. */
+    compact: Boolean = false
 ) {
     val name = stringResource(tool.title)
     val description = TOOL_DESCRIPTIONS[tool.id]?.let { stringResource(it) }
@@ -381,8 +387,31 @@ private fun ToolCard(
                 contentDescription = if (description != null) "$name. $description" else name
                 customActions = listOf(CustomAccessibilityAction(pinLabel) { onTogglePin(); true })
             }
-            .padding(start = 14.dp, end = 12.dp, top = 14.dp, bottom = 14.dp)
+            .padding(start = if (compact) 8.dp else 14.dp, end = if (compact) 8.dp else 12.dp, top = 14.dp, bottom = if (compact) 12.dp else 14.dp),
+        horizontalAlignment = if (compact) Alignment.CenterHorizontally else Alignment.Start
     ) {
+        if (compact) {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                IconTile(tool.icon, tool.tone, size = 48.dp, corner = 15.dp, iconSize = 24.dp)
+                if (pinned) {
+                    Icon(
+                        Icons.Default.PushPin,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.TopEnd).size(14.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                name,
+                style = MaterialTheme.typography.labelLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            return@Column
+        }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             IconTile(tool.icon, tool.tone, size = 42.dp, corner = 13.dp, iconSize = 22.dp)
             Spacer(Modifier.weight(1f))
@@ -405,7 +434,7 @@ private fun ToolCard(
                 description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -433,7 +462,8 @@ private fun ToolCardRow(
                 pinned = memory.isPinned(tool.id),
                 onClick = { memory.used(tool.id); onLaunch(tool) },
                 onTogglePin = { memory.togglePin(tool.id) },
-                modifier = Modifier.weight(1f).fillMaxHeight()
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                compact = perRow >= 3
             )
         }
         // A short last row keeps its cards the same width as the rows above.
@@ -494,7 +524,7 @@ private fun SearchResultRow(hit: SearchHit, onClick: () -> Unit) {
                 TOOL_DESCRIPTIONS[hit.tool.id]?.let { stringResource(it) } ?: stringResource(hit.sectionTitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
                 overflow = TextOverflow.Ellipsis
             )
         }

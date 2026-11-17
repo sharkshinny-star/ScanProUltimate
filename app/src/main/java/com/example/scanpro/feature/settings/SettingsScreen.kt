@@ -312,7 +312,10 @@ fun SettingsScreen(
                                             canPostNotifications = notifications.canPost,
                                             reclaimable = reclaimable,
                                             busy = busy,
-                                            freeingUp = freeingUp
+                                            freeingUp = freeingUp,
+                                            defaultScanMode = defaultScanMode,
+                                            pdfQuality = pdfQuality,
+                                            defaultOcrScript = defaultOcrScript
                                         ),
                                         onOpenPage = { page = it },
                                         onOpenFiles = onOpenFiles,

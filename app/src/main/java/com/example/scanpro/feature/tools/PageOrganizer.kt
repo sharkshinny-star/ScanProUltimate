@@ -116,6 +116,8 @@ internal data class ThumbnailPageModel(
 internal fun PdfPageOrganizerSheet(
     uri: Uri,
     mode: String,
+    /** Switches between Arrange, Rotate and Extract; null hides the switch. */
+    onModeChange: ((String) -> Unit)? = null,
     onClose: () -> Unit,
     onApply: (pageSpecs: List<PageSpec>, extractedIndices: List<Int>, rotationsMap: Map<Int, Int>) -> Unit,
     /** Organise only: puts pages from another PDF into the pages as arranged now. */
@@ -126,7 +128,7 @@ internal fun PdfPageOrganizerSheet(
     val defaultSelected = mode != "extract"
     // Page order, rotations and selections survive rotation and window changes; thumbnails are re-rendered on demand.
     val pages = rememberSaveable(
-        uri, mode,
+        uri,
         saver = androidx.compose.runtime.saveable.listSaver(
             save = { list -> list.flatMap { listOf(it.index, it.rotation, if (it.selected) 1 else 0) } },
             restore = { flat -> mutableStateListOf<ThumbnailPageModel>().apply { flat.chunked(3).forEach { (i, r, sel) -> add(ThumbnailPageModel(i, r, sel == 1)) } } }
@@ -289,6 +291,21 @@ internal fun PdfPageOrganizerSheet(
             onDiscard = { confirmClose = false; onClose() }
         )
     }
+    // Each mode starts from the PDF as it is: page order, no turns, and Extract with nothing chosen yet.
+    fun switchMode(target: String) {
+        val reset = pages.sortedBy { it.index }.map { it.copy(rotation = 0, selected = target != "extract") }
+        pages.clear()
+        pages.addAll(reset)
+        undoStack.clear()
+        onModeChange?.invoke(target)
+    }
+    var pendingMode by rememberSaveable { mutableStateOf<String?>(null) }
+    pendingMode?.let { target ->
+        com.example.scanpro.feature.document.DiscardEditsDialog(
+            onKeepEditing = { pendingMode = null },
+            onDiscard = { pendingMode = null; switchMode(target) }
+        )
+    }
 
     // Shown inside the Tools tab, which hides its own title and bottom bar while this is open but still keeps clear of
     // the status and navigation bars: taking those insets again here left a dark band under the pages and a gap above.
@@ -370,6 +387,22 @@ internal fun PdfPageOrganizerSheet(
                 loadError != null -> Text(loadError!!, modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error)
                 isLoading -> FileLoadingState(stringResource(R.string.tools_organizer_opening), Modifier.fillMaxSize())
                 else -> Column(Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
+                    if (onModeChange != null) {
+                        SegmentedChoice(
+                            options = listOf(
+                                "organize" to stringResource(R.string.tools_mode_arrange),
+                                "rotate" to stringResource(R.string.doc_rotate),
+                                "extract" to stringResource(R.string.doc_extract)
+                            ),
+                            selected = mode,
+                            onSelect = { target ->
+                                if (target != mode) {
+                                    if (undoStack.isNotEmpty()) pendingMode = target else switchMode(target)
+                                }
+                            },
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                     when {
                         extractsEverything -> OrganizerBanner(stringResource(R.string.tools_extract_all_selected), warning = true)
                         mode == "organize" -> OrganizerBanner(stringResource(R.string.tools_organizer_drag_hint), warning = false)

@@ -46,6 +46,13 @@ internal fun translateEdge(a: NormalizedPoint, b: NormalizedPoint, dx: Float, dy
     return NormalizedPoint(a.x + mx, a.y + my) to NormalizedPoint(b.x + mx, b.y + my)
 }
 
+/** [crop] after [turns] quarter turns clockwise (negative: counter-clockwise); see [rotateQuad]. */
+internal fun turnQuad(crop: CropQuad, turns: Int): CropQuad {
+    var turned = crop
+    repeat(((turns % 4) + 4) % 4) { turned = rotateQuad(turned, clockwise = true) }
+    return turned
+}
+
 private fun bows(q: CropQuad) = listOf(q.topBow, q.bottomBow, q.leftBow, q.rightBow)
 
 /** "key|8 corner values" for a straight outline, plus 8 bend values when any edge is bent. */

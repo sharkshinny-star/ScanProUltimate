@@ -82,7 +82,11 @@ internal class SettingsOverview(
     /** PDFs from older versions that are far larger than needed; null when there are none. */
     val reclaimable: OversizedPdfs?,
     val busy: Boolean,
-    val freeingUp: Boolean
+    val freeingUp: Boolean,
+    /** What the Scanning page is set to, read back on its row. */
+    val defaultScanMode: String = com.example.scanpro.data.ScanMode.DOCUMENT.name,
+    val pdfQuality: com.example.scanpro.data.PdfQuality = com.example.scanpro.data.PdfQuality.BALANCED,
+    val defaultOcrScript: com.example.scanpro.data.OcrScript = com.example.scanpro.data.OcrScript.LATIN
 )
 
 /** The calm first page: the library on one row, then the pages in three groups, then the version. */
@@ -124,7 +128,16 @@ private fun pageSummary(page: SettingsPage, overview: SettingsOverview): String?
         pluralStringResource(R.plurals.settings_trash_retention_days, overview.trashRetentionDays, overview.trashRetentionDays)
     )
     SettingsPage.NOTIFICATIONS -> if (overview.canPostNotifications) null else stringResource(R.string.settings_notifications_off_title)
+    SettingsPage.SCANNING -> scanningSummary(overview.defaultScanMode, overview.pdfQuality, overview.defaultOcrScript)
     else -> null
+}
+
+/** "Document · Balanced · Latin": what the Scanning page is set to, which reads better than three cut-off setting names. */
+@Composable
+private fun scanningSummary(scanMode: String, quality: com.example.scanpro.data.PdfQuality, script: com.example.scanpro.data.OcrScript): String {
+    val mode = com.example.scanpro.data.ScanMode.entries.firstOrNull { it.name == scanMode }?.let { stringResource(it.labelRes) }
+        ?: if (scanMode == "QR") stringResource(R.string.scan_qr_code) else stringResource(com.example.scanpro.data.ScanMode.DOCUMENT.labelRes)
+    return listOf(mode, stringResource(quality.labelRes), stringResource(script.labelRes)).joinToString(" · ")
 }
 
 /** The library on one row (it opens Files), with the "free up space" offer under it when there is one. */

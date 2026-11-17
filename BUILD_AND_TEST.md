@@ -41,42 +41,6 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-## Latest results (2026-11-17, release bundle on `29b0464`)
-
-- `:app:bundleRelease`: passed; `app-release.aab` 49,748,884 bytes (47.4 MiB), R8 on, unsigned as configured (no signing variables set, so it cannot be uploaded or installed until signed with the owner's key). Source: the F166 tree plus the support-address change and docs; full tests and lint passed on the tree before the one-line address change (895 tests, 0 failed; lint 0 errors).
-- NOT run: sideload `assembleRelease`, 16 KB alignment check, any device or emulator.
-
-## Latest results (2026-11-17, F166 background pools, on `5c822df`, Linux cloud container)
-
-- Full `:app:testDebugUnitTest :app:lintDebug` (`--no-daemon`): exit 0; 895 tests, 0 failed, 82 skipped (opt-in screenshot tests; counted from the result XML); lint 0 errors, 91 warnings. Includes `BackgroundWorkTest` (3).
-- NOT run: a release build on this tree (the last one, before F165 and F166, was 47.4 MiB), instrumented tests, any device or emulator. Smoothness was not measured (R55).
-
-## Latest results (2026-11-17, merge of F165 with the parallel session's F164, Linux cloud container)
-
-- On the merge commit: full `:app:testDebugUnitTest`: 892 tests, 0 failed, 82 skipped (result XML). After the progress-overlay change: `:app:lintDebug` 0 errors, 91 warnings (it first found `StateFlowValueCalledInComposition` in the change, fixed with `PdfToolsViewModel.toolRunning`); `feature.tools.*` tests pass (44 classes' worth: 13+5+4+4+3+3). The full suite was not re-run after that change.
-
-## Latest results (2026-11-17, F165 camera smoothness (before merge with F164 of the parallel session), Linux cloud container)
-
-- Before the merge: full `:app:testDebugUnitTest :app:lintDebug`: exit 0; 887 tests, 0 failed, 82 skipped; lint 0 errors, 91 warnings. NOT run: release build this round, instrumented tests, any device.
-
-## Latest results (2026-11-16 third round, F164 before its merge with F157–F163, Linux cloud container)
-
-- On F164 alone (parent `dd48c75`): full `:app:testDebugUnitTest` BUILD SUCCESSFUL; 756 tests, 0 failed, 0 errors,
-  30 skipped (counted from the result XML; includes the new `HydrationScheduleTest`, 5 tests). `:app:lintDebug`:
-  0 errors, 75 warnings. One `:app:assembleRelease`: APK 38,609,727 bytes (36.8 MiB), unsigned as configured.
-- After the merge with `42be05e` (F157–F163), on the merge commit: full `:app:testDebugUnitTest` BUILD SUCCESSFUL;
-  889 tests, 0 failed, 0 errors, 82 skipped (result XML). Lint and a release build were NOT re-run on the merge.
-- Environment: fresh container; SDK at `/opt/android-sdk` (cmdline-tools 13114758, platform android-37.0,
-  build-tools 37.0.0); Maven Central 429 again → the documented `~/.gradle/init.d/central-mirror.gradle` (local only).
-- NOT run: instrumented tests, any device or emulator.
-
-## Latest results (2026-11-16 second round, F160–F163 on `edabdab`, Linux cloud container)
-
-- Full `:app:testDebugUnitTest :app:lintDebug`: exit 0; 884 tests, 0 failed, 82 skipped (opt-in screenshots); lint 0 errors, 91 warnings.
-- Screenshot renders run separately and looked at: `IntroductionsScreenshotTest` (14), `FeedbackScreenshotTest`, `FilesAccessScreenshotTest`. `IntroductionsScreenshotTest` and `PdfToolsFeaturesTest` hit the known Robolectric `FileSystemAlreadyExistsException` when filtered together with other classes; both pass alone and in the full suite.
-- `:app:bundleRelease`: passed; AAB 49,725,212 bytes (47.4 MiB), unsigned as configured.
-- NOT run: sideload `assembleRelease`, instrumented tests, any device or emulator.
-
 ## Latest results (2026-11-16, F157–F159 merged on `691da1b`, Linux cloud container)
 
 - Full `:app:testDebugUnitTest :app:lintDebug` (`--no-daemon`): exit 0; 821 tests, 0 failed, 56 skipped (counted from the result XML); lint 0 errors, 75 warnings.

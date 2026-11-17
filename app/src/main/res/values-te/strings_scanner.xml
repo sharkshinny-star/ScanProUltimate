@@ -172,7 +172,6 @@
     <string name="scan_doc_intro_title">పత్రం స్కాన్ చేయడం</string>
     <string name="scan_doc_intro_body">పేజీని మంచి వెలుతురులో చదునుగా ఉంచి, ఫోన్‌ను స్థిరంగా పట్టుకోండి. ScanPro అంచులను గుర్తించి పేజీని సరిచేసి శుభ్రం చేస్తుంది. షట్టర్ నొక్కండి, లేదా ఆటో క్యాప్చర్ ఆన్‌లో ఉంచి కదలకుండా ఉండండి. మరిన్ని పేజీలు జోడించి, పూర్తయింది నొక్కండి.</string>
     <string name="scan_book_intro_start">ఇప్పుడు ప్రారంభించండి</string>
-    <string name="scan_book_intro_dont_remind">మళ్లీ గుర్తు చేయవద్దు</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">స్ప్రెడ్ %1$d, %2$d పేజీలుగా విభజించబడింది</string>
     <string name="scan_take_photo">ఫోటో తీయండి</string>
     <string name="scan_import_photos">ఫోటోలు ఇంపోర్ట్ చేయండి</string>
@@ -218,10 +217,6 @@
     <string name="scan_error_camera_stopped">కెమెరా పనిచేయడం ఆగిపోయింది. మళ్లీ ప్రయత్నించండి లేదా కంపాటిబిలిటీ స్కానర్ వాడండి.</string>
     <string name="scan_flash_state">ఫ్లాష్: %1$s</string>
     <string name="scan_zoom_level">జూమ్ %1$s</string>
-    <plurals name="scan_pages_in_batch">
-        <item quantity="one">బ్యాచ్‌లో %1$d పేజీ</item>
-        <item quantity="other">బ్యాచ్‌లో %1$d పేజీలు</item>
-    </plurals>
     <string name="scan_flash_off">ఆఫ్</string>
     <string name="scan_flash_auto">ఆటో</string>
     <string name="scan_flash_on">ఆన్</string>

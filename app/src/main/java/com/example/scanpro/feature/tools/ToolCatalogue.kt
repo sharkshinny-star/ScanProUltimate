@@ -63,9 +63,10 @@ internal class ToolSection(val id: String, @StringRes val title: Int, val tools:
 /**
  * Tools with no tile on the landing (owner's clean-up, 2026-11-16): Organise pages already rotates and extracts,
  * Repair is offered from the failure dialog when a PDF can't be read, and the four image tools sit behind one
- * "Image tools" tile. All of them are still found by search.
+ * "Image tools" tile. PDF to Excel is one of the formats of PDF to Word, Excel or text (F160). All of them are still
+ * found by search; Rotate and Extract open Organise in that mode, with its Arrange/Rotate/Extract switch.
  */
-internal val SEARCH_ONLY_TOOL_IDS = setOf("rotate", "extract", "repair", "crop_img", "compress_img", "convert_img", "resize_img")
+internal val SEARCH_ONLY_TOOL_IDS = setOf("rotate", "extract", "repair", "pdf2excel", "crop_img", "compress_img", "convert_img", "resize_img")
 
 /** The one tile that opens a chooser of the image tools (crop, compress, convert, resize). */
 internal val IMAGE_TOOLS_TILE = PdfToolCard("image_tools", R.string.tools_card_image_tools, Icons.Default.PhotoLibrary, TileTone.Coral)

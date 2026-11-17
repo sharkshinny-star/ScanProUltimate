@@ -24,7 +24,7 @@ class OpenCvDocumentAnalyzer(
     private var failedFrames = 0
     private val main = Handler(Looper.getMainLooper())
     private var previousQuad: CropQuad? = null
-    private var stableFrames = 0
+    private val steadiness = Steadiness()
     private var lastAutoCaptureAt = 0L
     // Re-armed only when the page has really gone (lost for several frames) or a clearly different page
     // is in view, so a held page is captured once even if one frame is blurry.
@@ -89,13 +89,13 @@ class OpenCvDocumentAnalyzer(
             try {
                 val raw = DocumentEdgeDetector.detect(gray)
                 var result = raw.copy(guidance = steadyGuidance(raw.guidance))
-                val stable = updateStability(result)
-                val progress = (stableFrames.toFloat() / STEADY_FRAMES).coerceIn(0f, 1f)
+                // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
+                val now = android.os.SystemClock.elapsedRealtime()
+                val stable = updateStability(result, now)
+                val progress = steadiness.progress(now)
                 // Sharpness of the steady frames so far, so the shutter can wait for a sharp one.
                 if (stable) { recentBlur.addLast(result.blurScore); while (recentBlur.size > SharpnessGate.WINDOW) recentBlur.removeFirst() } else recentBlur.clear()
 
-                // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
-                val now = android.os.SystemClock.elapsedRealtime()
                 // Only frames with no page at all count as "the page left"; a blurry or dark frame of the same page doesn't.
                 lostFrames = if (result.quad != null) 0 else lostFrames + 1
                 if (!armed) {
@@ -122,7 +122,7 @@ class OpenCvDocumentAnalyzer(
                     capturedQuad = result.quad
                     capturedSignature = signature
                     lastAutoCaptureAt = now
-                    stableFrames = 0
+                    steadiness.reset()
                     recentBlur.clear()
                     main.post { if (!closed) onAutoCapture() }
                 }
@@ -164,24 +164,15 @@ class OpenCvDocumentAnalyzer(
         return shown
     }
 
-    private fun updateStability(result: DocumentDetection): Boolean {
+    private fun updateStability(result: DocumentDetection, now: Long): Boolean {
         val quad = result.quad
         val previous = previousQuad
+        previousQuad = quad
         if (quad == null || previous == null || !result.isReady) {
-            previousQuad = quad
-            stableFrames = 0
+            steadiness.reset()
             return false
         }
-
-        val movement = averageCornerMovement(previous, quad)
-        stableFrames = if (movement < 0.014f) stableFrames + 1 else 0
-        previousQuad = quad
-        return stableFrames >= STEADY_FRAMES
-    }
-
-    private companion object {
-        /** Frames the outline must hold still before the page counts as steady. */
-        const val STEADY_FRAMES = 7
+        return steadiness.onFrame(still = averageCornerMovement(previous, quad) < 0.014f, now = now)
     }
 
     private fun averageCornerMovement(a: CropQuad, b: CropQuad): Float {
@@ -193,6 +184,48 @@ class OpenCvDocumentAnalyzer(
         )
         return (pairs.sumOf { (p1, p2) -> hypot((p1.x - p2.x).toDouble(), (p1.y - p2.y).toDouble()) } / pairs.size)
             .toFloat()
+    }
+}
+
+/**
+ * How long the page outline has held still. The page counts as steady after [HOLD_MS] of still frames, and at least
+ * [MIN_FRAMES] of them. It used to be seven frames, however long those took: about a quarter of a second on a fast
+ * phone and over a second on a slow one, so the shutter felt twitchy on one and stuck on the other. Counting time
+ * gives every phone the same hold, and the frame floor keeps a slow phone from firing on a single lucky frame.
+ */
+internal class Steadiness {
+    private var stillSince = -1L
+    private var frames = 0
+
+    /** Records one analysed frame and says whether the page has now held still long enough. */
+    fun onFrame(still: Boolean, now: Long): Boolean {
+        if (!still) {
+            reset()
+            return false
+        }
+        if (frames == 0) stillSince = now
+        frames++
+        return isSteady(now)
+    }
+
+    fun reset() {
+        frames = 0
+        stillSince = -1L
+    }
+
+    /** 0..1 for the shutter ring: how far along the hold is. */
+    fun progress(now: Long): Float {
+        if (frames == 0) return 0f
+        val byTime = (now - stillSince).toFloat() / HOLD_MS
+        val byFrames = frames.toFloat() / MIN_FRAMES
+        return minOf(byTime, byFrames).coerceIn(0f, 1f)
+    }
+
+    private fun isSteady(now: Long) = frames >= MIN_FRAMES && now - stillSince >= HOLD_MS
+
+    companion object {
+        const val HOLD_MS = 350L
+        const val MIN_FRAMES = 4
     }
 }
 
