@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color as AndroidColor
@@ -202,7 +203,7 @@ internal fun ResultDialog(
         }
     )
     val heightPx = with(androidx.compose.ui.platform.LocalDensity.current) { 156.dp.roundToPx() }
-    val preview by produceState<ResultPreview?>(null, file) { value = withContext(Dispatchers.IO) { loadResultPreview(file, heightPx) } }
+    val preview by produceState<ResultPreview?>(null, file) { value = withContext(BackgroundWork.thumbnails) { loadResultPreview(file, heightPx) } }
 
     val isCompression = result.comparesSize && result.originalSizeBytes > 0 && result.outputSizeBytes > 0
     val savedBytes = if (isCompression) (result.originalSizeBytes - result.outputSizeBytes).coerceAtLeast(0L) else 0L

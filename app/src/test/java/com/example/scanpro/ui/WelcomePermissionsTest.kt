@@ -40,6 +40,11 @@ class WelcomePermissionsTest {
         compose.setContent {
             ScanProTheme(themeMode = ThemeMode.LIGHT) { WelcomeScreen(onGetStarted = { finished++ }) }
         }
+        // Three welcome pages: Next, Next, then Get started on the last.
+        repeat(2) {
+            compose.onNodeWithText(text(R.string.hint_next)).performClick()
+            compose.waitForIdle()
+        }
         compose.onNodeWithText(text(R.string.ui_welcome_get_started)).performClick()
         compose.waitForIdle()
     }

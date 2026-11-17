@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -29,7 +30,6 @@ import com.tom_roush.pdfbox.pdmodel.interactive.annotation.PDAnnotationPopup
 import com.tom_roush.pdfbox.pdmodel.interactive.annotation.PDAnnotationWidget
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import com.tom_roush.pdfbox.util.Matrix
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -124,7 +124,7 @@ object PdfCleanupTools {
         context: Context,
         inputUri: Uri,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): BlankScan = withContext(Dispatchers.IO) {
+    ): BlankScan = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "blank_in_${UUID.randomUUID()}.pdf")
         var bitmap: Bitmap? = null
         try {
@@ -168,7 +168,7 @@ object PdfCleanupTools {
         pages: Set<Int>,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "blank_rm_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(temp).use { doc ->
@@ -264,7 +264,7 @@ object PdfCleanupTools {
         inputUri: Uri,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "grey_in_${UUID.randomUUID()}.pdf")
         try {
             val total = ParcelFileDescriptor.open(temp, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
@@ -381,7 +381,7 @@ object PdfCleanupTools {
         inputUri: Uri,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "flatten_in_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.loadPdf(temp).use { doc ->
@@ -461,7 +461,7 @@ object PdfCleanupTools {
         inputUri: Uri,
         outputDir: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): List<File> = withContext(Dispatchers.IO) {
+    ): List<File> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "ximg_in_${UUID.randomUUID()}.pdf")
         val base = PdfToolsEngine.sourceBaseName(context, inputUri)

@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -14,7 +15,6 @@ import com.example.scanpro.core.text.userRequire
 import com.example.scanpro.core.ui.COPY_BUFFER
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.data.CropQuad
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -121,7 +121,7 @@ object ImageToolsEngine {
         config: ImageCompressConfig,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = PdfToolsEngine.copyUriToTemp(context, inputUri, "compress_img_${UUID.randomUUID()}.tmp")
         try {
@@ -285,7 +285,7 @@ object ImageToolsEngine {
         quality: Int = 100,
         outputLocation: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(inputUris.isNotEmpty(), R.string.tools_err_no_images)
         outputLocation.parentFile?.mkdirs()
 
@@ -353,7 +353,7 @@ object ImageToolsEngine {
         config: ImageResizeConfig,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val targetWidth = config.targetWidth
         val targetHeight = config.targetHeight
         userRequire(targetWidth in 10..8000 && targetHeight in 10..8000, R.string.tools_err_invalid_dimensions)
@@ -426,7 +426,7 @@ object ImageToolsEngine {
         outputFile: File,
         format: ImageExportFormat = ImageExportFormat.JPEG,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = PdfToolsEngine.copyUriToTemp(context, inputUri, "crop_in_${UUID.randomUUID()}.tmp")
         try {

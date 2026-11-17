@@ -23,7 +23,8 @@
     <string name="hint_tool_ocr">Read the text in scanned pages on your phone, so you can search, select and copy it.</string>
     <string name="hint_tool_fill">Type into the fields of a PDF form and save the filled-in copy.</string>
     <string name="hint_tool_pdf2img">Save each page of a PDF as an image.</string>
-    <string name="hint_tool_pdf2text">Copy the text out of a PDF into a Word, Excel or plain text file.</string>
+    <string name="hint_tool_pdf2text">Copy the text out of a PDF into a Word or plain text file.</string>
+    <string name="hint_tool_pdf2excel">Turn the tables in a PDF into a spreadsheet you can edit.</string>
     <string name="hint_tool_pdf2ppt">Make a PowerPoint presentation from a PDF, one slide per page.</string>
     <string name="hint_tool_protect">Lock a PDF with a password, so only people who know it can open it.</string>
     <string name="hint_tool_unlock">Remove the password or editing restrictions from a PDF you are allowed to open.</string>

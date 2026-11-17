@@ -21,7 +21,8 @@
     <string name="hint_tool_ocr">സ്കാൻ ചെയ്ത പേജുകളിലെ ടെക്സ്റ്റ് ഫോണിൽ തന്നെ വായിക്കുക, അപ്പോൾ നിങ്ങൾക്ക് അത് തിരയാനും തിരഞ്ഞെടുക്കാനും പകർത്താനും കഴിയും.</string>
     <string name="hint_tool_fill">ഒരു PDF ഫോമിലെ ഫീൽഡുകളിൽ ടൈപ്പ് ചെയ്ത് പൂരിപ്പിച്ച പകർപ്പ് സേവ് ചെയ്യുക.</string>
     <string name="hint_tool_pdf2img">PDF-ന്റെ ഓരോ പേജും ചിത്രമായി സേവ് ചെയ്യുക.</string>
-    <string name="hint_tool_pdf2text">PDF-ലെ ടെക്സ്റ്റ് ഒരു Word, Excel അല്ലെങ്കിൽ പ്ലെയിൻ ടെക്സ്റ്റ് ഫയലിലേക്ക് പകർത്തുക.</string>
+    <string name="hint_tool_pdf2text">PDF-ലെ ടെക്സ്റ്റ് ഒരു Word അല്ലെങ്കിൽ പ്ലെയിൻ ടെക്സ്റ്റ് ഫയലിലേക്ക് പകർത്തുക.</string>
+    <string name="hint_tool_pdf2excel">PDF-ലെ പട്ടികകൾ എഡിറ്റ് ചെയ്യാവുന്ന സ്പ്രെഡ്‌ഷീറ്റാക്കുക.</string>
     <string name="hint_tool_pdf2ppt">PDF-ൽ നിന്ന് PowerPoint പ്രസന്റേഷൻ ഉണ്ടാക്കുക, ഓരോ പേജിനും ഒരു സ്ലൈഡ്.</string>
     <string name="hint_tool_protect">PDF പാസ്‌വേഡ് ഉപയോഗിച്ച് ലോക്ക് ചെയ്യുക, അത് അറിയുന്നവർക്ക് മാത്രം തുറക്കാനാകും.</string>
     <string name="hint_tool_unlock">തുറക്കാൻ അനുവാദമുള്ള PDF-ൽ നിന്ന് പാസ്‌വേഡോ എഡിറ്റിംഗ് നിയന്ത്രണങ്ങളോ നീക്കം ചെയ്യുക.</string>

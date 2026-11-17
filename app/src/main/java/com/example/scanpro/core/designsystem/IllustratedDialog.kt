@@ -171,6 +171,7 @@ fun IllustrationPanel(
     modifier: Modifier = Modifier,
     badgeIcon: ImageVector? = null,
     badgeTone: TileTone = TileTone.Indigo,
+    height: Dp? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val brand = ScanProTheme.colors
@@ -179,7 +180,7 @@ fun IllustrationPanel(
     Box(
         modifier
             .fillMaxWidth()
-            .height(illustrationHeight())
+            .height(if (LocalShortDialog.current || height == null) illustrationHeight() else height)
             .drawBehind {
                 drawRect(
                     Brush.verticalGradient(
@@ -214,7 +215,7 @@ fun IllustrationPanel(
 }
 
 @Composable
-private fun illustrationHeight(): Dp = if (LocalShortDialog.current) 112.dp else 176.dp
+private fun illustrationHeight(): Dp = if (LocalShortDialog.current) 112.dp else 196.dp
 
 /**
  * A first-time introduction: [illustration] on its panel, an optional eyebrow, the title and a line or two of text,
@@ -234,10 +235,12 @@ fun IllustratedDialog(
     badgeIcon: ImageVector? = null,
     badgeTone: TileTone = TileTone.Indigo,
     dismissText: String? = null,
+    pictureHeight: Dp? = null,
+    buttonsInRow: Boolean = false,
     extra: (@Composable ColumnScope.() -> Unit)? = null
 ) {
     IllustratedDialogFrame(onDismiss = onDismiss) { entered ->
-        IllustrationPanel(badgeIcon = badgeIcon, badgeTone = badgeTone, content = illustration)
+        IllustrationPanel(badgeIcon = badgeIcon, badgeTone = badgeTone, height = pictureHeight, content = illustration)
         Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 6.dp, bottom = 16.dp)) {
             if (eyebrow != null) {
                 Eyebrow(eyebrow)
@@ -257,8 +260,17 @@ fun IllustratedDialog(
             }
             extra?.invoke(this)
             Spacer(Modifier.height(20.dp))
-            GradientButton(text = confirmText, onClick = onConfirm, modifier = Modifier.fillMaxWidth())
-            if (dismissText != null) {
+            if (buttonsInRow && dismissText != null) {
+                // Skip / Try now side by side, the main action on the end.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(52.dp)) { Text(dismissText) }
+                    Spacer(Modifier.width(12.dp))
+                    GradientButton(text = confirmText, onClick = onConfirm, modifier = Modifier.weight(1f))
+                }
+            } else {
+                GradientButton(text = confirmText, onClick = onConfirm, modifier = Modifier.fillMaxWidth())
+            }
+            if (dismissText != null && !buttonsInRow) {
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) { Text(dismissText) }
             }
         }

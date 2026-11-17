@@ -105,7 +105,9 @@ fun PdfToolsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val pdfDocumentTitle = stringResource(R.string.tools_pdf_document)
 
-    val progress by viewModel.progress.collectAsStateWithLifecycle()
+    // Whether a tool is running is all this screen needs: reading the progress itself here made the whole screen (and
+    // every dialog in it) recompose on each tick of every tool. The overlay below collects the ticks on its own.
+    val toolRunning by viewModel.toolRunning.collectAsStateWithLifecycle()
     val lastResult by viewModel.result.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val failure by viewModel.failure.collectAsStateWithLifecycle()
@@ -477,19 +479,11 @@ fun PdfToolsScreen(
             // Sign PDF fills the screen; the progress and result dialogs below are drawn over it.
             SignPdfScreen(
                 viewModel = signViewModel,
-                busy = progress != null,
+                busy = toolRunning,
                 onSign = { source, placements, name -> viewModel.signPdf(source, placements, name) }
             )
 
-            progress?.let { running ->
-                ProcessingOverlay(
-                    current = running.current,
-                    total = running.total,
-                    title = running.title,
-                    subtitle = running.subtitle,
-                    onCancel = viewModel::cancel
-                )
-            }
+            if (toolRunning) ToolProgressHost(viewModel.progress, onCancel = viewModel::cancel)
 
             activeCropSourcePath?.let { stagedPath ->
                 CropEditorDialog(

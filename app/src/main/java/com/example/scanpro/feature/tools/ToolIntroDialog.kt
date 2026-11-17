@@ -39,8 +39,9 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "ocr" -> ToolIntro(R.string.hint_tool_ocr, HintInput.Pdf)
     "fill" -> ToolIntro(R.string.hint_tool_fill, HintInput.Pdf)
     "pdf2img" -> ToolIntro(R.string.hint_tool_pdf2img, HintInput.Pdf)
-    // PDF to Excel is a format of PDF to Word, Excel or text (search-only, no tile).
-    "pdf2text", "pdf2excel" -> ToolIntro(R.string.hint_tool_pdf2text, HintInput.Pdf)
+    "pdf2text" -> ToolIntro(R.string.hint_tool_pdf2text, HintInput.Pdf)
+    "pdf2excel" -> ToolIntro(R.string.hint_tool_pdf2excel, HintInput.Pdf)
+    "pdf2ppt" -> ToolIntro(R.string.hint_tool_pdf2ppt, HintInput.Pdf)
     "protect" -> ToolIntro(R.string.hint_tool_protect, HintInput.Pdf)
     "unlock" -> ToolIntro(R.string.hint_tool_unlock, HintInput.Pdf)
     "crop_img" -> ToolIntro(R.string.hint_tool_crop_img, HintInput.Image)

@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -112,6 +113,7 @@ private suspend fun copyAttachment(context: Context, source: Uri, index: Int): F
 @Composable
 fun FeedbackFormSheet(kind: FeedbackFormKind, onSent: (SupportDelivery) -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var categories by rememberSaveable { mutableStateOf(emptyList<IssueCategory>()) }
@@ -152,11 +154,11 @@ fun FeedbackFormSheet(kind: FeedbackFormKind, onSent: (SupportDelivery) -> Unit,
             onSubmit = {
                 sending = true
                 scope.launch {
-                    val chosen = IssueCategory.entries.filter { it in categories }.joinToString { context.getString(it.label) }
+                    val chosen = IssueCategory.entries.filter { it in categories }.joinToString { resources.getString(it.label) }
                     val message = if (kind == FeedbackFormKind.ISSUE) {
                         SupportMessage(
-                            subject = context.getString(R.string.feedback_email_issue_subject, chosen),
-                            text = context.getString(R.string.feedback_email_categories, chosen) + "\n\n" + text.trim(),
+                            subject = resources.getString(R.string.feedback_email_issue_subject, chosen),
+                            text = resources.getString(R.string.feedback_email_categories, chosen) + "\n\n" + text.trim(),
                             attachments = attachments.map { it.uri }
                         )
                     } else {

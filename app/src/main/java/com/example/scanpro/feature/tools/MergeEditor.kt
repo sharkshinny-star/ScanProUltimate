@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -64,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.scanpro.R
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** What the Merge editor shows about one picked PDF; [pages] is null when the file is password protected or unreadable. */
@@ -206,7 +206,7 @@ private fun MergeFileCard(
     val moveDownLabel = stringResource(R.string.tools_order_move_down)
     val thumbPx = with(androidx.compose.ui.platform.LocalDensity.current) { 88.dp.roundToPx() }
     val info by produceState<MergeFileInfo?>(null, uri) {
-        value = withContext(Dispatchers.IO) { loadMergeInfo(context, uri, displayName(uri), thumbPx) }
+        value = withContext(BackgroundWork.thumbnails) { loadMergeInfo(context, uri, displayName(uri), thumbPx) }
     }
     Surface(
         shape = RoundedCornerShape(16.dp),

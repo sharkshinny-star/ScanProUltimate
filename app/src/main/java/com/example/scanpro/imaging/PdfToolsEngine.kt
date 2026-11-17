@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import com.example.scanpro.core.text.userRequire
 import com.example.scanpro.core.text.userError
 import com.example.scanpro.core.text.UserFacingPluralException
@@ -26,7 +27,6 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import com.tom_roush.pdfbox.util.Matrix
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -209,7 +209,7 @@ object PdfToolsEngine {
      * Tells whether a PDF needs a password to open (PASSWORD_REQUIRED), opens freely but has editing or
      * copying restrictions (RESTRICTED_ONLY), or has no protection at all (NONE).
      */
-    suspend fun inspectProtection(context: Context, inputUri: Uri): PdfProtection = withContext(Dispatchers.IO) {
+    suspend fun inspectProtection(context: Context, inputUri: Uri): PdfProtection = withContext(BackgroundWork.tools) {
         val tempFile = copyUriToTemp(context, inputUri, "inspect_${UUID.randomUUID()}.pdf")
         try {
             PdfSecurity.protection(tempFile)
@@ -244,7 +244,7 @@ object PdfToolsEngine {
      * can open; anything else (a protected file, or a provider that gives no seekable file) is settled by PDFBox, whose
      * answer does not depend on the Android version. A file neither can read is left to the tool, which explains it.
      */
-    suspend fun needsOpenPassword(context: Context, uri: Uri): Boolean = withContext(Dispatchers.IO) {
+    suspend fun needsOpenPassword(context: Context, uri: Uri): Boolean = withContext(BackgroundWork.tools) {
         val opens = runCatching {
             context.contentResolver.openFileDescriptor(uri, "r")?.use { PdfRenderer(it).close(); true }
         }.getOrNull() == true
@@ -255,7 +255,7 @@ object PdfToolsEngine {
      * Writes [uri] without its protection to [destination], opened with [password]. False when the password is wrong;
      * nothing is left behind then.
      */
-    suspend fun decryptCopy(context: Context, uri: Uri, password: String, destination: File): Boolean = withContext(Dispatchers.IO) {
+    suspend fun decryptCopy(context: Context, uri: Uri, password: String, destination: File): Boolean = withContext(BackgroundWork.tools) {
         val tempFile = copyUriToTemp(context, uri, "open_in_${UUID.randomUUID()}.pdf")
         try {
             PdfSecurity.unlock(tempFile, destination, password)
@@ -293,7 +293,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         passwords: Map<Uri, String> = emptyMap()
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(inputUris.size >= 2, R.string.tools_err_merge_two)
         outputFile.parentFile?.mkdirs()
 
@@ -356,7 +356,7 @@ object PdfToolsEngine {
         everyNPages: Int = 1,
         outputDir: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): List<File> = withContext(Dispatchers.IO) {
+    ): List<File> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "split_in_${UUID.randomUUID()}.pdf")
         val outputFiles = mutableListOf<File>()
@@ -432,7 +432,7 @@ object PdfToolsEngine {
         selectedPageIndices: List<Int>,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(selectedPageIndices.isNotEmpty(), R.string.tools_err_extract_none)
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "extract_in_${UUID.randomUUID()}.pdf")
@@ -473,7 +473,7 @@ object PdfToolsEngine {
         rotationsMap: Map<Int, Int>,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "rotate_in_${UUID.randomUUID()}.pdf")
 
@@ -511,7 +511,7 @@ object PdfToolsEngine {
         pageSpecs: List<PageSpec>,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(pageSpecs.isNotEmpty(), R.string.tools_err_keep_one_page)
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "organize_in_${UUID.randomUUID()}.pdf")
@@ -556,7 +556,7 @@ object PdfToolsEngine {
         quality: PdfQuality = PdfQuality.BALANCED,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(imageUris.isNotEmpty(), R.string.tools_err_no_images)
         outputFile.parentFile?.mkdirs()
 
@@ -633,7 +633,7 @@ object PdfToolsEngine {
         pages: List<Int>? = null,
         /** Render scale over the PDF's 72 dpi: 2 is about 150 dpi, 2.5 is sharp on screen, 4 is print quality. */
         scale: Float = 2.5f
-    ): List<File> = withContext(Dispatchers.IO) {
+    ): List<File> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "pdf2img_in_${UUID.randomUUID()}.pdf")
         val imageFiles = mutableListOf<File>()
@@ -703,7 +703,7 @@ object PdfToolsEngine {
         inputUri: Uri,
         password: String,
         outputFile: File
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val tempFile = copyUriToTemp(context, inputUri, "protect_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
@@ -730,7 +730,7 @@ object PdfToolsEngine {
         inputUri: Uri,
         password: String,
         outputFile: File
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         val tempFile = copyUriToTemp(context, inputUri, "unlock_in_${UUID.randomUUID()}.pdf")
         try {
             val originalSize = tempFile.length()
@@ -792,7 +792,7 @@ object PdfToolsEngine {
     }
 
     /** One file is returned as it is; several are bundled into a single zip so they can be shared together. */
-    suspend fun bundleOutputs(context: Context, files: List<File>, name: String): File = withContext(Dispatchers.IO) {
+    suspend fun bundleOutputs(context: Context, files: List<File>, name: String): File = withContext(BackgroundWork.tools) {
         if (files.size == 1) return@withContext files.first()
         val zip = outputLocation(context, "$name.zip")
         ZipOutputStream(FileOutputStream(zip).buffered()).use { out ->
@@ -829,7 +829,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         password: String = ""
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(config.text.isNotBlank(), R.string.tools_err_watermark)
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "wm_in_${UUID.randomUUID()}.pdf")
@@ -930,7 +930,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         password: String = ""
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "num_in_${UUID.randomUUID()}.pdf")
         try {
@@ -1009,7 +1009,7 @@ object PdfToolsEngine {
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         password: String = ""
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = copyUriToTemp(context, inputUri, "txt_in_${UUID.randomUUID()}.pdf")
         try {

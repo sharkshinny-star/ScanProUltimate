@@ -2,6 +2,7 @@
 
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
@@ -12,7 +13,6 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import com.tom_roush.pdfbox.text.PDFTextStripper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -68,7 +68,7 @@ object CompressPdfEngine {
         outputFile: File = PdfToolsEngine.outputLocation(context, "compressed_${UUID.randomUUID()}.pdf"),
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         customTargetBytes: Long? = null
-    ): CompressionResult = withContext(Dispatchers.IO) {
+    ): CompressionResult = withContext(BackgroundWork.tools) {
         val outputDir = outputFile.parentFile!!.apply { mkdirs() }
         val tempInput = File(outputDir, "temp_in_${UUID.randomUUID()}.pdf")
 

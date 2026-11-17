@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -25,10 +26,12 @@ data class NotificationSettings(
     val failures: Boolean = true,
     val trash: Boolean = false,
     val backup: Boolean = false,
+    val water: Boolean = true,
     val onFinishedChange: (Boolean) -> Unit = {},
     val onFailuresChange: (Boolean) -> Unit = {},
     val onTrashChange: (Boolean) -> Unit = {},
     val onBackupChange: (Boolean) -> Unit = {},
+    val onWaterChange: (Boolean) -> Unit = {},
     val onPermissionResult: () -> Unit = {},
     val systemSettingsIntent: (() -> Intent)? = null
 )
@@ -95,6 +98,14 @@ internal fun NotificationsPage(state: NotificationSettings) = SettingsPageColumn
             summary = stringResource(R.string.settings_notify_backup_body),
             checked = state.backup,
             onCheckedChange = enabling(state.onBackupChange)
+        )
+        // Three a day, with widening gaps (one hour after the day starts, then two, then three): HydrationSchedule.
+        SettingsSwitchRow(
+            title = stringResource(R.string.settings_notify_water_title),
+            icon = Icons.Rounded.WaterDrop,
+            summary = stringResource(R.string.settings_notify_water_body),
+            checked = state.water,
+            onCheckedChange = enabling(state.onWaterChange)
         )
     }
     if (state.systemSettingsIntent != null) {

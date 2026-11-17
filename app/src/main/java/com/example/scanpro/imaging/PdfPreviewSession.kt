@@ -30,13 +30,19 @@ class PdfPreviewSession private constructor(
     val pageCount: Int = renderer.pageCount
     private var closed = false
 
-    private val cache = object : LruCache<Int, Bitmap>(CACHE_BYTES) {
+    // Two caches: a full-size page (about 11 MB at 1400 px) used to push out about thirty thumbnails, so closing the
+    // preview meant rendering the whole grid again.
+    private val thumbnails = object : LruCache<Int, Bitmap>(THUMBNAIL_CACHE_BYTES) {
+        override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
+    }
+    private val large = object : LruCache<Int, Bitmap>(LARGE_CACHE_BYTES) {
         override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
     }
 
     /** The page at [width] pixels wide, from the cache when possible; null if it cannot be rendered. */
     @Synchronized
     fun render(index: Int, width: Int): Bitmap? {
+        val cache = if (width > LARGE_FROM_WIDTH) large else thumbnails
         cache.get(index)?.let { if (it.width == width) return it }
         if (closed || index !in 0 until pageCount) return null
         return runCatching {
@@ -63,14 +69,19 @@ class PdfPreviewSession private constructor(
         if (closed) return
         closed = true
         // Evicted bitmaps are left to the garbage collector: one may still be on screen for a frame.
-        cache.evictAll()
+        thumbnails.evictAll()
+        large.evictAll()
         runCatching { renderer.close() }
         runCatching { descriptor.close() }
         file.delete()
     }
 
     companion object {
-        private const val CACHE_BYTES = 24 * 1024 * 1024
+        private const val THUMBNAIL_CACHE_BYTES = 16 * 1024 * 1024
+        private const val LARGE_CACHE_BYTES = 14 * 1024 * 1024
+
+        /** Renders wider than this are full-page previews, not grid thumbnails. */
+        private const val LARGE_FROM_WIDTH = 600
 
         suspend fun open(context: Context, uri: Uri): PdfPreviewSession = withContext(Dispatchers.IO) {
             val copy = File(context.cacheDir, "thumb_${UUID.randomUUID()}.pdf")

@@ -28,6 +28,9 @@ import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
@@ -235,13 +238,38 @@ fun ScanSavedSheet(
                 }
             }
 
+            // Folded away by default: five always-open rows made the moment after a scan read as a wall of
+            // options, when most people only share the PDF or tap Done. One tap unfolds them, with the sheet's
+            // size easing rather than jumping.
             Spacer(Modifier.height(16.dp))
-            Text(
-                stringResource(R.string.doc_saved_more),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
-            )
+            var moreOpen by rememberSaveable(document.id) { mutableStateOf(false) }
+            val turn by androidx.compose.animation.core.animateFloatAsState(if (moreOpen) 180f else 0f, label = "moreChevron")
+            Surface(
+                onClick = { moreOpen = !moreOpen },
+                shape = RoundedCornerShape(14.dp),
+                color = androidx.compose.ui.graphics.Color.Transparent,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(Modifier.padding(start = 4.dp, top = 6.dp, bottom = 6.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.doc_saved_more),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.graphicsLayer { rotationZ = turn }
+                    )
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = moreOpen,
+                enter = androidx.compose.animation.expandVertically(spring(dampingRatio = 0.85f, stiffness = 420f)) + androidx.compose.animation.fadeIn(tween(160)),
+                exit = androidx.compose.animation.shrinkVertically(tween(180)) + androidx.compose.animation.fadeOut(tween(120))
+            ) {
             Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     SheetAction(Icons.Default.Image, TileTone.Sky, stringResource(R.string.doc_share_as_jpg), stringResource(R.string.doc_share_as_jpg_hint), !busy, then(onShareJpg))
@@ -261,6 +289,7 @@ fun ScanSavedSheet(
                     InsetDivider()
                     SheetAction(Icons.Default.Print, TileTone.Slate, stringResource(R.string.doc_print), null, !busy, then(onPrint))
                 }
+            }
             }
           }
             Spacer(Modifier.height(10.dp))

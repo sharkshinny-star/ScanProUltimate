@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.net.Uri
 import com.example.scanpro.R
@@ -10,7 +11,6 @@ import com.example.scanpro.core.text.userRequire
 import com.example.scanpro.data.MAX_PAGES
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -69,7 +69,7 @@ object InsertPagesEngine {
         outputFile: File,
         password: String? = null,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(baseSpecs.isNotEmpty(), R.string.tools_err_keep_one_page)
         userRequire(insertion.afterPosition in 0..baseSpecs.size, R.string.tools_err_insert_position)
         outputFile.parentFile?.mkdirs()

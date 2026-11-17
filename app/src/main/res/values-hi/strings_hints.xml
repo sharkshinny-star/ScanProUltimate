@@ -21,7 +21,8 @@
     <string name="hint_tool_ocr">स्कैन किए गए पेजों का टेक्स्ट फ़ोन पर ही पढ़ें, ताकि आप उसे खोज, चुन और कॉपी कर सकें।</string>
     <string name="hint_tool_fill">PDF फ़ॉर्म के खानों में टाइप करें और भरी हुई कॉपी सेव करें।</string>
     <string name="hint_tool_pdf2img">PDF के हर पेज को इमेज के रूप में सेव करें।</string>
-    <string name="hint_tool_pdf2text">PDF का टेक्स्ट Word, Excel या सादी टेक्स्ट फ़ाइल में कॉपी करें।</string>
+    <string name="hint_tool_pdf2text">PDF का टेक्स्ट Word या सादी टेक्स्ट फ़ाइल में कॉपी करें।</string>
+    <string name="hint_tool_pdf2excel">PDF की तालिकाओं को ऐसी स्प्रेडशीट में बदलें जिसे आप एडिट कर सकें।</string>
     <string name="hint_tool_pdf2ppt">PDF से PowerPoint प्रेज़ेंटेशन बनाएँ, हर पेज की एक स्लाइड।</string>
     <string name="hint_tool_protect">PDF पर पासवर्ड लगाएँ, ताकि सिर्फ़ उसे जानने वाले ही इसे खोल सकें।</string>
     <string name="hint_tool_unlock">जिस PDF को खोलने की आपको अनुमति है, उससे पासवर्ड या एडिटिंग की पाबंदियाँ हटाएँ।</string>

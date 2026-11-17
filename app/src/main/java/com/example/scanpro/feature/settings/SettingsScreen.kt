@@ -104,6 +104,7 @@ fun SettingsRoute(
     val notifyFailures by viewModel.notifyFailures.collectAsStateWithLifecycle()
     val notifyTrash by viewModel.notifyTrash.collectAsStateWithLifecycle()
     val notifyBackup by viewModel.notifyBackup.collectAsStateWithLifecycle()
+    val notifyWater by viewModel.notifyWater.collectAsStateWithLifecycle()
     // Re-read on every return to the screen: the permission or the system switch may have changed meanwhile.
     var canNotify by remember { mutableStateOf(viewModel.canPostNotifications()) }
     LifecycleResumeEffect(Unit) {
@@ -118,10 +119,12 @@ fun SettingsRoute(
             failures = notifyFailures,
             trash = notifyTrash,
             backup = notifyBackup,
+            water = notifyWater,
             onFinishedChange = viewModel::setNotifyFinished,
             onFailuresChange = viewModel::setNotifyFailures,
             onTrashChange = viewModel::setNotifyTrash,
             onBackupChange = viewModel::setNotifyBackup,
+            onWaterChange = viewModel::setNotifyWater,
             onPermissionResult = { canNotify = viewModel.canPostNotifications() },
             systemSettingsIntent = viewModel::notificationSettingsIntent
         ),

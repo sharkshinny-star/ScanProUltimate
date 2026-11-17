@@ -22,6 +22,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -124,5 +126,14 @@ internal fun ProcessingOverlay(
                 }
             }
         }
+    }
+}
+
+/** Draws the overlay for the running tool's progress, collecting the flow here so only this part redraws on each tick. */
+@Composable
+internal fun ToolProgressHost(progress: kotlinx.coroutines.flow.StateFlow<ToolProgress?>, onCancel: () -> Unit) {
+    val running by progress.collectAsStateWithLifecycle()
+    running?.let {
+        ProcessingOverlay(current = it.current, total = it.total, title = it.title, subtitle = it.subtitle, onCancel = onCancel)
     }
 }

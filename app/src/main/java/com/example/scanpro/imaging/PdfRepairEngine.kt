@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.net.Uri
 import com.example.scanpro.R
@@ -11,7 +12,6 @@ import com.example.scanpro.data.PdfQuality
 import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import java.io.File
 import java.util.UUID
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
@@ -30,7 +30,7 @@ object PdfRepairEngine {
         inputUri: Uri,
         outputFile: File,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfToolResult = withContext(Dispatchers.IO) {
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
         outputFile.parentFile?.mkdirs()
         val tempFile = PdfToolsEngine.copyUriToTemp(context, inputUri, "repair_in_${UUID.randomUUID()}.pdf")
         try {

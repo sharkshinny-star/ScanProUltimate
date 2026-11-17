@@ -225,13 +225,15 @@ fun AuroraBackground(modifier: Modifier = Modifier, animated: Boolean = remember
     val dark = MaterialTheme.colorScheme.onBackground.luminanceApprox() > 0.5f
     val strength = if (dark) 0.34f else 0.22f
     val transition = rememberInfiniteTransition(label = "aurora")
-    val animatedDrift by transition.animateFloat(
+    // Not read here (no `by`): read while drawing, so the drift redraws the backdrop without recomposing it and its content
+    // sixty times a second.
+    val animatedDrift = transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(14_000, easing = LinearEasing), RepeatMode.Reverse),
         label = "drift"
     )
-    val drift by rememberUpdatedState(if (animated) animatedDrift else 0.5f)
+    val stillAnimated by rememberUpdatedState(animated)
     Box(
         modifier
             .fillMaxSize()
@@ -240,7 +242,7 @@ fun AuroraBackground(modifier: Modifier = Modifier, animated: Boolean = remember
                 val w = size.width
                 val h = size.height
                 onDrawBehind {
-                    val d = drift
+                    val d = if (stillAnimated) animatedDrift.value else 0.5f
                     drawCircle(
                         brush = Brush.radialGradient(
                             listOf(brand.gradientEnd.copy(alpha = strength), Color.Transparent),

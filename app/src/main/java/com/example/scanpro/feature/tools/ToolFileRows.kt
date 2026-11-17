@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.tools
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import androidx.core.graphics.createBitmap
 import android.content.Context
 import android.graphics.Bitmap
@@ -63,7 +64,6 @@ import com.example.scanpro.R
 import com.example.scanpro.core.ui.formatBytes
 import com.example.scanpro.data.ToolResultFile
 import java.io.File
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
@@ -146,7 +146,7 @@ internal fun FileThumbnail(
     val heightPx = with(LocalDensity.current) { renderHeight.roundToPx() }
     val thumb by produceState<Thumb?>(ThumbCache.get(cacheKey)?.let { Thumb.Picture(it) }, cacheKey) {
         if (value != null) return@produceState
-        value = withContext(Dispatchers.IO) {
+        value = withContext(BackgroundWork.thumbnails) {
             loadThumb(context, source, extension, heightPx).also { if (it is Thumb.Picture) ThumbCache.put(cacheKey, it.bitmap) }
         }
     }

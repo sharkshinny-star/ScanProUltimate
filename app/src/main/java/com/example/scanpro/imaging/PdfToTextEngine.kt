@@ -1,5 +1,6 @@
 package com.example.scanpro.imaging
 
+import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
@@ -14,7 +15,6 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import com.tom_roush.pdfbox.text.TextPosition
 import com.example.scanpro.intelligence.OcrLayout
 import com.example.scanpro.data.OcrWord
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -143,7 +143,7 @@ object PdfToTextEngine {
         outputFile: File,
         password: String? = null,
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
-    ): PdfTextOutcome = withContext(Dispatchers.IO) {
+    ): PdfTextOutcome = withContext(BackgroundWork.tools) {
         val input = PdfToolsEngine.copyUriToTemp(context, inputUri, "pdftext_in_${UUID.randomUUID()}.pdf")
         // PdfRenderer cannot draw a protected file, so pages that need reading are drawn from an unprotected copy.
         val plainCopy = File(context.cacheDir, "pdftext_plain_${UUID.randomUUID()}.pdf")
