@@ -95,8 +95,8 @@ class IntroductionsScreenshotTest {
         compose.setContent { ScanProTheme { ScanIntroDialog(ScanMode.ID_CARD) { started = true } } }
         compose.onNodeWithText(text(R.string.scan_idcard_intro_title)).assertExists()
         // The first sentence only, and no "Don't remind me again" box: the introduction shows once by itself.
-        compose.onNodeWithText(com.example.scanpro.core.designsystem.firstSentence(text(R.string.scan_idcard_intro_body))).assertExists()
-        compose.onNodeWithText(text(R.string.scan_idcard_intro_body)).assertDoesNotExist()
+        compose.onNodeWithText(com.example.scanpro.core.designsystem.firstSentence(text(R.string.intro_idcard_body))).assertExists()
+        compose.onNodeWithText(text(R.string.intro_idcard_body)).assertDoesNotExist()
         captureDialog("intro_camera_idcard_light")
         compose.onNodeWithText(text(R.string.scan_book_intro_start)).performClick()
         compose.waitForIdle()
