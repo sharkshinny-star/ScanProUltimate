@@ -47,7 +47,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
-## Latest results (2026-11-18, F194 Edit PDF text, commit PENDING_F194, Linux cloud container)
+## Latest results (2026-11-18, F194 Edit PDF text, commit ab4512e, Linux cloud container)
 
 - `PdfTextEditorTest` on the desktop JVM with Apache PDFBox 2.0.27 (the app's `PdfTextEditor.kt` with `com.tom_roush.pdfbox` renamed to `org.apache.pdfbox`; a throwaway Gradle project): 7 run, 7 passed. The pdfbox-android 2.0.27 AAR was checked with `javap` for every overridden or called method (`showGlyph` with the unicode argument, `showForm`, `processOperator`, `PDFStreamParser(PDContentStream)`, `ContentStreamWriter`, `PDVectorFont.hasGlyph`, `PDColor.toRGB`).
 - `scanpro-quality-audit.py`: PASS (34 new strings and plurals, six languages; also the Protect PDF strings another session left untranslated).
