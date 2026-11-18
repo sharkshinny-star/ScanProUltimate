@@ -45,7 +45,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The edit and secure tools (F194): Redact's search (case, accents, line breaks, hyphenation, rotated pages, comments)
+ * The edit and secure tools (F212): Redact's search (case, accents, line breaks, hyphenation, rotated pages, comments)
  * and, above all, that a redacted file holds nothing of the redacted words anywhere, not in the text, not in an unused
  * resource, a link's target page or a comment; Flatten's preview; Header and footer's shrink-to-fit; the password
  * strength sum.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Edit and secure tools (F194): Redact, Redact areas, Flatten, Crop, Header and footer, Watermark, Greyscale, Invert, Protect, Sign -->
+    <!-- Edit and secure tools (F212): Redact, Redact areas, Flatten, Crop, Header and footer, Watermark, Greyscale, Invert, Protect, Sign -->
     <string name="edit_err_cannot_read">This PDF can\'t be read. If it needs a password, unlock it first.</string>
     <string name="edit_section_what_happens">What happens</string>
     <string name="edit_section_found">Found in this PDF</string>

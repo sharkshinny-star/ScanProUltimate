@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Edit and secure tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Edit and secure tools (F212). Machine translation, not yet reviewed by a speaker. -->
     <string name="edit_err_cannot_read">ఈ PDFని చదవలేకపోయాము. దానికి పాస్‌వర్డ్ ఉంటే, ముందుగా దాన్ని అన్‌లాక్ చేయండి.</string>
     <string name="edit_section_what_happens">ఏమి జరుగుతుంది</string>
     <string name="edit_section_found">ఈ PDFలో కనిపించినవి</string>

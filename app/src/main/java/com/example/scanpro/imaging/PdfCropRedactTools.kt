@@ -289,7 +289,7 @@ object PdfCropTools {
 }
 
 /**
- * Redact text (F172, rebuilt F194): every occurrence of the given words is blacked out, and each page with a match is
+ * Redact text (F172, rebuilt F212): every occurrence of the given words is blacked out, and each page with a match is
  * redrawn as a picture, so the words are gone from the file rather than hidden under a box. Pages without a match keep
  * their text layer, but are copied without anything that could still lead back to a redacted page: references to the
  * original pages (links, comment and form-field parents) point at the new pages, and pictures or forms a page lists but

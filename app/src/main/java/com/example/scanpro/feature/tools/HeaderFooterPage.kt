@@ -65,7 +65,7 @@ private fun placeLine(raw: String, top: Boolean, config: PdfHeaderFooterTools.He
 }
 
 /**
- * Header and footer (F173, page F194): the first page with the header and footer drawn at their real place and size
+ * Header and footer (F173, page F212): the first page with the header and footer drawn at their real place and size
  * ({page} and {total} filled in, long text shrunk to fit as the tool does), quick patterns for page numbers, a text
  * size, and the button held back with the reason when there is nothing to add.
  */

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Edit and secure tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Edit and secure tools (F212). Machine translation, not yet reviewed by a speaker. -->
     <string name="edit_err_cannot_read">ಈ PDF ಅನ್ನು ಓದಲಾಗುತ್ತಿಲ್ಲ. ಇದಕ್ಕೆ ಪಾಸ್‌ವರ್ಡ್ ಇದ್ದರೆ, ಮೊದಲು ಅನ್‌ಲಾಕ್ ಮಾಡಿ.</string>
     <string name="edit_section_what_happens">ಏನಾಗುತ್ತದೆ</string>
     <string name="edit_section_found">ಈ PDF ನಲ್ಲಿ ಸಿಕ್ಕಿದ್ದು</string>

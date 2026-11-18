@@ -53,7 +53,7 @@ private class FoundContent(val box: RectF?)
 private val MARGIN_PRESETS = listOf(5, 10, 15, 20)
 
 /**
- * Crop PDF pages (F172, page F194): the first page with the crop frame drawn where it will fall (auto-trim finds the
+ * Crop PDF pages (F172, page F212): the first page with the crop frame drawn where it will fall (auto-trim finds the
  * content exactly as the tool does), the page size before and after in millimetres, and the button held back with the
  * reason when the margins would leave less than the tool accepts.
  */
@@ -208,7 +208,7 @@ private class RedactLoad(val index: PdfRedactTools.TextIndex?)
 private class RedactCount(val terms: List<String>, val matchCase: Boolean, val search: PdfRedactTools.RedactSearch)
 
 /**
- * Redact text (F172, page F194). The document's text is read once when the page opens; every change to the words is
+ * Redact text (F172, page F212). The document's text is read once when the page opens; every change to the words is
  * then searched at once (after a short pause in typing), so the page shows, before anything runs, how many places
  * match on how many pages, each word's own count, the first page with its matches blacked out, and the size the
  * file will have once those pages are pictures. The search is the one the tool runs, so what is counted is what goes.

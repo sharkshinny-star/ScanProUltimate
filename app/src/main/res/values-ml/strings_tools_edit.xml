@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Edit and secure tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Edit and secure tools (F212). Machine translation, not yet reviewed by a speaker. -->
     <string name="edit_err_cannot_read">ഈ PDF വായിക്കാൻ കഴിയുന്നില്ല. ഇതിന് പാസ്‌വേഡ് ഉണ്ടെങ്കിൽ, ആദ്യം അൺലോക്ക് ചെയ്യുക.</string>
     <string name="edit_section_what_happens">എന്ത് സംഭവിക്കും</string>
     <string name="edit_section_found">ഈ PDF-ൽ കണ്ടെത്തിയത്</string>

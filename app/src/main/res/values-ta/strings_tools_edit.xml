@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Edit and secure tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Edit and secure tools (F212). Machine translation, not yet reviewed by a speaker. -->
     <string name="edit_err_cannot_read">இந்த PDF-ஐப் படிக்க முடியவில்லை. கடவுச்சொல் இருந்தால், முதலில் அதைத் திறக்கவும்.</string>
     <string name="edit_section_what_happens">என்ன நடக்கும்</string>
     <string name="edit_section_found">இந்த PDF-இல் கிடைத்தவை</string>

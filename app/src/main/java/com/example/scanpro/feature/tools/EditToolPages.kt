@@ -53,7 +53,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 
 /*
- * Edit and secure tools (F194): Greyscale, Invert colours and Flatten as full tool pages, plus the parts the other pages
+ * Edit and secure tools (F212): Greyscale, Invert colours and Flatten as full tool pages, plus the parts the other pages
  * of this group share: an honest size estimate for tools that turn pages into pictures, boxes drawn on the first page
  * at their real place, and a "How it works" button for the editors that have no room for the demonstration card.
  */
@@ -163,7 +163,7 @@ internal fun SummaryCard(content: @Composable () -> Unit) {
 }
 
 /**
- * Greyscale and Invert colours (F194): the first page with the real colour change applied (the same weights the tool
+ * Greyscale and Invert colours (F212): the first page with the real colour change applied (the same weights the tool
  * uses), what the file becomes (every page redrawn as a picture at 150 dpi, so the size can go either way) and the
  * honest note that text stops being selectable.
  */
@@ -229,7 +229,7 @@ internal fun RecolourPdfPage(uri: Uri, invert: Boolean, onDismiss: () -> Unit, o
 private class FlattenLoad(val preview: PdfCleanupTools.FlattenPreview?)
 
 /**
- * Flatten (F194): counts what will be drawn into the pages before anything runs (form fields, comments and stamps,
+ * Flatten (F212): counts what will be drawn into the pages before anything runs (form fields, comments and stamps,
  * links that stay), marks them on the first page, and refuses a file with nothing to flatten instead of making a copy
  * that is the same.
  */
