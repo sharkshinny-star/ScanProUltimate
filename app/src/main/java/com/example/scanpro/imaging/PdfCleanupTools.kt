@@ -180,6 +180,9 @@ object PdfCleanupTools {
                     onProgress(step + 1, removing.size, AppStrings.get(R.string.tools_blank_progress_removing))
                     doc.removePage(index)
                 }
+                // A link on a kept page that pointed at a removed one still held it (and through its /Parent the old
+                // page tree) in the file, so removing pages hardly made it smaller (F194). Cut such links, as Split does.
+                with(PdfToolsEngine) { doc.dropLinksToMissingPages() }
                 outputFile.parentFile?.mkdirs()
                 doc.save(outputFile)
                 PdfToolResult(

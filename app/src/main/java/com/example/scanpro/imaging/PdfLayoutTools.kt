@@ -22,7 +22,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 
 /**
- * N-up (F173): two or four pages drawn on each sheet, for reading drafts and slides on paper. Pages are imported as
+ * N-up (F173): two, four, six or nine pages drawn on each sheet, for reading drafts and slides on paper. Pages are imported as
  * form objects ([LayerUtility]), so text, vectors and images stay as they are, merely moved and scaled; nothing is
  * rasterised. Each page is placed as it is displayed (its /Rotate applied), scaled to fit its cell and centred, in
  * reading order (left to right, then down).
@@ -32,28 +32,63 @@ object PdfNupTools {
     private const val MARGIN_PT = 18f
     private const val GUTTER_PT = 12f
 
+    /** Pages per sheet the tool offers (F194: 6 and 9 added). */
+    val PER_SHEET_CHOICES = listOf(2, 4, 6, 9)
+
     /** A cell on the sheet: lower-left corner and size, in sheet points. */
     internal class Cell(val x: Float, val y: Float, val width: Float, val height: Float)
 
+    /** Sheets needed for [pages] pages at [perSheet] a sheet: the last one may be part empty. */
+    fun sheetCount(pages: Int, perSheet: Int): Int = if (pages <= 0 || perSheet <= 0) 0 else (pages + perSheet - 1) / perSheet
+
     /**
-     * The cells of one sheet in reading order: 2-up is two columns side by side, 4-up a 2 by 2 grid read left to
-     * right then down (so the first row is the TOP row, although PDF y runs up).
+     * The sheet for pages whose first one is [firstWidth] by [firstHeight] as seen: the same paper, turned sideways for
+     * 2 and 6 a sheet (an odd number of rows and columns would otherwise squash the pages), kept as it is for 4 and 9.
+     */
+    internal fun sheetSize(perSheet: Int, firstWidth: Float, firstHeight: Float): Pair<Float, Float> =
+        if (perSheet == 2 || perSheet == 6) firstHeight to firstWidth else firstWidth to firstHeight
+
+    /**
+     * Columns and rows: the longer side of the sheet gets more of them. A landscape page used to be put two side by
+     * side on a landscape sheet, each at under half its size; on a portrait sheet, one above the other, it is two
+     * thirds bigger.
+     */
+    internal fun grid(perSheet: Int, sheetWidth: Float, sheetHeight: Float): Pair<Int, Int> {
+        val wide = sheetWidth > sheetHeight
+        return when (perSheet) {
+            2 -> if (wide) 2 to 1 else 1 to 2
+            4 -> 2 to 2
+            6 -> if (wide) 3 to 2 else 2 to 3
+            9 -> 3 to 3
+            else -> throw IllegalArgumentException("perSheet must be one of $PER_SHEET_CHOICES")
+        }
+    }
+
+    /**
+     * The cells of one sheet in reading order: left to right, then down (so the first row is the TOP row, although
+     * PDF y runs up). The margin and gutter shrink on small paper so a receipt-sized sheet still has room for pages.
      */
     internal fun cells(perSheet: Int, sheetWidth: Float, sheetHeight: Float): List<Cell> {
-        val columns = 2
-        val rows = if (perSheet == 4) 2 else 1
-        val cellW = (sheetWidth - 2 * MARGIN_PT - (columns - 1) * GUTTER_PT) / columns
-        val cellH = (sheetHeight - 2 * MARGIN_PT - (rows - 1) * GUTTER_PT) / rows
+        val (columns, rows) = grid(perSheet, sheetWidth, sheetHeight)
+        val short = minOf(sheetWidth, sheetHeight)
+        val margin = minOf(MARGIN_PT, short * 0.04f)
+        val gutter = minOf(GUTTER_PT, short * 0.025f)
+        val cellW = (sheetWidth - 2 * margin - (columns - 1) * gutter) / columns
+        val cellH = (sheetHeight - 2 * margin - (rows - 1) * gutter) / rows
         return buildList {
             for (row in 0 until rows) {
                 for (column in 0 until columns) {
-                    val x = MARGIN_PT + column * (cellW + GUTTER_PT)
-                    val y = sheetHeight - MARGIN_PT - cellH - row * (cellH + GUTTER_PT)
+                    val x = margin + column * (cellW + gutter)
+                    val y = sheetHeight - margin - cellH - row * (cellH + gutter)
                     add(Cell(x, y, cellW, cellH))
                 }
             }
         }
     }
+
+    /** How much a page [pageWidth] by [pageHeight] (as seen) shrinks to fit [cell]: 0.5 is half size. */
+    internal fun fitScale(cell: Cell, pageWidth: Float, pageHeight: Float): Float =
+        if (pageWidth <= 0f || pageHeight <= 0f) 0f else min(cell.width / pageWidth, cell.height / pageHeight)
 
     /**
      * The matrix (a, b, c, d, e, f) that maps content in [box]'s coordinates to how the page is SEEN after
@@ -82,18 +117,19 @@ object PdfNupTools {
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         password: String = ""
     ): PdfToolResult = withContext(BackgroundWork.tools) {
-        require(perSheet == 2 || perSheet == 4) { "perSheet must be 2 or 4" }
+        require(perSheet in PER_SHEET_CHOICES) { "perSheet must be one of $PER_SHEET_CHOICES" }
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "nup_in_${UUID.randomUUID()}.pdf")
         try {
             PdfToolsEngine.openPdf(temp, password).use { source ->
                 val total = source.numberOfPages
                 userRequire(total > 1, R.string.tools_nup_err_one_page)
-                // The sheet is the first page's paper: the same size for a 2 by 2 grid, turned sideways for 2-up,
-                // so two portrait pages sit next to each other on a landscape sheet of the same paper.
+                // The sheet is the first page's paper: the same way up for 4 and 9, turned sideways for 2 and 6, so
+                // two portrait pages sit next to each other on a landscape sheet and two landscape pages one above the
+                // other on a portrait one.
                 val first = source.getPage(0)
                 val (firstW, firstH) = seenSize(first.cropBox, first.rotation)
-                val (sheetW, sheetH) = if (perSheet == 2) maxOf(firstW, firstH) to minOf(firstW, firstH) else firstW to firstH
-                val sheets = (total + perSheet - 1) / perSheet
+                val (sheetW, sheetH) = sheetSize(perSheet, firstW, firstH)
+                val sheets = sheetCount(total, perSheet)
                 PDDocument(MemoryUsageSetting.setupTempFileOnly()).use { out ->
                     val layer = LayerUtility(out)
                     val grid = cells(perSheet, sheetW, sheetH)
@@ -112,7 +148,7 @@ object PdfNupTools {
                                 val seen = seenMatrix(form.bBox, sourcePage.rotation)
                                 val (seenW, seenH) = seenSize(form.bBox, sourcePage.rotation)
                                 val cell = grid[slot]
-                                val scale = min(cell.width / seenW, cell.height / seenH)
+                                val scale = fitScale(cell, seenW, seenH)
                                 val tx = cell.x + (cell.width - seenW * scale) / 2
                                 val ty = cell.y + (cell.height - seenH * scale) / 2
                                 cs.saveGraphicsState()

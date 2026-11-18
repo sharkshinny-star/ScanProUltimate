@@ -89,6 +89,7 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
@@ -183,6 +184,18 @@ internal fun PdfPageOrganizerSheet(
 
     val isLoading = session == null && loadError == null
     val keptCount = pages.count { it.selected }
+    // The picked file's size, for the estimate under the pages (read once, off the main thread).
+    val fileSize by androidx.compose.runtime.produceState(0L, uri) {
+        value = withContext(kotlinx.coroutines.Dispatchers.IO) { sizeOf(context, uri) }
+    }
+    val totalPages = session?.pageCount ?: pages.size
+    val turnedCount = pages.count { (mode == "rotate" || it.selected) && it.rotation % 360 != 0 }
+    // Saving a PDF exactly as it was only makes a copy: Organise needs a move, a turn or a removal, Rotate a turn (F194).
+    val unchanged = when (mode) {
+        "organize" -> pages.withIndex().all { (i, p) -> p.index == i && p.selected && p.rotation % 360 == 0 }
+        "rotate" -> pages.none { it.rotation % 360 != 0 }
+        else -> false
+    }
     var previewPage by remember { mutableStateOf<ThumbnailPageModel?>(null) }
     var actionPage by remember { mutableStateOf<ThumbnailPageModel?>(null) }
     // Extracting every page gives back the same document, so that is not offered: select fewer.
@@ -366,7 +379,7 @@ internal fun PdfPageOrganizerSheet(
                     else -> stringResource(R.string.tools_organizer_save_pdf)
                 },
                 // Nothing to extract or keep would only end in an error message.
-                saveEnabled = !isLoading && pages.isNotEmpty() && (mode == "rotate" || keptCount > 0) && !extractsEverything,
+                saveEnabled = !isLoading && pages.isNotEmpty() && (mode == "rotate" || keptCount > 0) && !extractsEverything && !unchanged,
                 onSave = {
                     // Organise drops the pages that were unticked; Rotate keeps every page.
                     val specs = pages.filter { mode == "rotate" || it.selected }.map { PageSpec(it.index, it.rotation) }
@@ -408,6 +421,19 @@ internal fun PdfPageOrganizerSheet(
                         mode == "organize" -> ReorderHintBanner(stringResource(R.string.tools_organizer_drag_hint), com.example.scanpro.core.designsystem.DragHintLayout.Grid)
                         mode == "extract" -> OrganizerBanner(stringResource(R.string.tools_organizer_extract_title), warning = false)
                     }
+                    OrganizerOutcome(
+                        mode = mode,
+                        totalPages = totalPages,
+                        keptCount = keptCount,
+                        turnedCount = turnedCount,
+                        fileSize = fileSize,
+                        reason = when {
+                            pages.isEmpty() -> null
+                            mode != "rotate" && keptCount == 0 -> stringResource(if (mode == "extract") R.string.pages_org_pick_pages else R.string.tools_err_keep_one_page)
+                            unchanged -> stringResource(if (mode == "rotate") R.string.pages_org_turn_one else R.string.pages_org_nothing_changed)
+                            else -> null
+                        }
+                    )
                     ReorderablePageGrid(
                         items = pages,
                         key = { it.index },
@@ -588,8 +614,11 @@ internal fun OrganizerPageCard(
                             .fillMaxSize()
                             .graphicsLayer {
                                 rotationZ = item.rotation.toFloat()
-                                // A page turned on its side is wider than the card: shrink it to fit instead of clipping.
-                                if (item.rotation % 180 != 0) { scaleX = 0.78f; scaleY = 0.78f }
+                                // A page turned on its side must still fit the card: shrunk by exactly as much as its
+                                // shape needs (F194; a fixed 78% left landscape pages smaller than they had to be).
+                                val fit = turnedFitScale(bitmap.width, bitmap.height, size.width, size.height, item.rotation)
+                                scaleX = fit
+                                scaleY = fit
                                 alpha = if (removed) 0.35f else 1f
                             }
                     )
@@ -770,7 +799,12 @@ private fun PdfPagePreviewDialog(
                             contentDescription = stringResource(R.string.tools_page_number, page.index + 1),
                             modifier = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer { rotationZ = page.rotation.toFloat() },
+                                .graphicsLayer {
+                                    rotationZ = page.rotation.toFloat()
+                                    val fit = turnedFitScale(bitmap.width, bitmap.height, size.width, size.height, page.rotation)
+                                    scaleX = fit
+                                    scaleY = fit
+                                },
                             contentScale = ContentScale.Fit
                         )
                     } else {
@@ -780,4 +814,49 @@ private fun PdfPagePreviewDialog(
             }
         }
     }
+}
+
+/**
+ * How much a page drawn [bitmapW] x [bitmapH] and fitted into a [boxW] x [boxH] box must shrink so that, turned by
+ * [rotation], it still fits the box: 1 when it is upright or upside down, or when its turned shape fits already.
+ */
+internal fun turnedFitScale(bitmapW: Int, bitmapH: Int, boxW: Float, boxH: Float, rotation: Int): Float {
+    if (rotation % 180 == 0 || bitmapW <= 0 || bitmapH <= 0 || boxW <= 0f || boxH <= 0f) return 1f
+    // The page as fitted upright (ContentScale.Fit), then the same size turned a quarter.
+    val fit = minOf(boxW / bitmapW, boxH / bitmapH)
+    val w = bitmapW * fit
+    val h = bitmapH * fit
+    return minOf(1f, boxW / h, boxH / w)
+}
+
+/**
+ * The line under the mode switch: what saving will make (pages now → pages after, how many turned, about how big),
+ * or, in the error colour, why saving is not offered yet.
+ */
+@Composable
+private fun OrganizerOutcome(mode: String, totalPages: Int, keptCount: Int, turnedCount: Int, fileSize: Long, reason: String?) {
+    val context = LocalContext.current
+    val after = if (mode == "rotate") totalPages else keptCount
+    val text = reason ?: buildString {
+        append(
+            stringResource(
+                R.string.pages_org_outcome,
+                androidx.compose.ui.res.pluralStringResource(R.plurals.pdf_outcome_pages, totalPages, totalPages),
+                androidx.compose.ui.res.pluralStringResource(R.plurals.pdf_outcome_pages, after, after)
+            )
+        )
+        if (turnedCount > 0) append(" · ").append(androidx.compose.ui.res.pluralStringResource(R.plurals.pages_org_turned, turnedCount, turnedCount))
+        // Pages kept carry about their share of the file; turning a page changes nothing in its size.
+        val bytes = shareOf(fileSize, after, totalPages)
+        if (bytes != null) append(" · ").append(stringResource(R.string.img_tool_about, com.example.scanpro.core.ui.formatBytes(context, bytes)))
+    }
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (reason != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 2.dp)
+            .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
+    )
 }

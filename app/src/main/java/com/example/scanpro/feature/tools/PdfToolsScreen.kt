@@ -823,7 +823,7 @@ fun PdfToolsScreen(
             }
 
             blankPagesFound?.let { found ->
-                BlankPagesDialog(found = found, onDismiss = viewModel::clearBlankPages, onRemove = { viewModel.removeBlankPages(found) })
+                BlankPagesDialog(found = found, onDismiss = viewModel::clearBlankPages, onRemove = { ticked -> viewModel.removeBlankPages(found.copy(blankPages = ticked)) })
             }
 
             if (showGreyscaleDialog && uri != null) {
@@ -847,6 +847,7 @@ fun PdfToolsScreen(
 
             if (showNupDialog && uri != null) {
                 NupDialog(
+                    uri = uri,
                     onDismiss = { showNupDialog = false },
                     onConfirm = { perSheet -> showNupDialog = false; viewModel.nup(uri, perSheet) }
                 )
@@ -943,6 +944,7 @@ fun PdfToolsScreen(
 
             insertBase?.let { flat ->
                 InsertPagesDialog(
+                    baseUri = uri,
                     keptPages = flat.size / 2,
                     nameOf = viewModel::displayName,
                     onDismiss = { insertBase = null },

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Page tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_reading_pdf">PDF படிக்கப்படுகிறது…</string>
+    <string name="pages_count_unknown">பக்கங்களை எண்ண முடியவில்லை: PDF சேதமடைந்திருக்கலாம் அல்லது கடவுச்சொல் தேவைப்படலாம். இருந்தாலும் முயற்சிக்கலாம்.</string>
+
+    <string name="pages_split_how">எப்படிப் பிரிப்பது</string>
+    <string name="pages_split_ranges_hint" tools:ignore="TypographyDashes">ஒவ்வொரு வரம்பும் தனிக் கோப்பாகும், எடுத்துக்காட்டாக 1-3, 4, 8-10</string>
+    <string name="pages_split_overlap">சில கோப்புகள் ஒரே பக்கங்களைப் பகிர்கின்றன: அந்தப் பக்கங்கள் ஒன்றுக்கு மேற்பட்ட கோப்புகளில் வரும்.</string>
+    <plurals name="pages_split_zip_hint">
+        <item quantity="one">%1$d கோப்பு ஒரு ZIP கோப்பில் சேமிக்கப்படும்.</item>
+        <item quantity="other">%1$d கோப்புகள் ஒன்றாக ஒரு ZIP கோப்பில் சேமிக்கப்படும்.</item>
+    </plurals>
+    <plurals name="pages_split_file_line">
+        <item quantity="one">கோப்பு %1$d: பக்கம் %2$s (%3$d பக்கம்)</item>
+        <item quantity="other">கோப்பு %1$d: பக்கங்கள் %2$s (%3$d பக்கங்கள்)</item>
+    </plurals>
+    <plurals name="pages_split_more_files">
+        <item quantity="one">…மேலும் %1$d கோப்பு</item>
+        <item quantity="other">…மேலும் %1$d கோப்புகள்</item>
+    </plurals>
+
+    <string name="pages_numbers_where">எங்கே</string>
+    <string name="pages_numbers_edge_top">மேலே</string>
+    <string name="pages_numbers_edge_bottom">கீழே</string>
+    <string name="pages_numbers_align_left">இடது</string>
+    <string name="pages_numbers_align_centre">நடுவில்</string>
+    <string name="pages_numbers_align_right">வலது</string>
+    <string name="pages_numbers_latin_note">ஆப்பின் மொழி எதுவாக இருந்தாலும் எண்கள் லத்தீன் எழுத்துகளிலும் இலக்கங்களிலும் எழுதப்படும் (எ.கா. Page 3 of 12).</string>
+    <string name="pages_numbers_cover_hint">அட்டைப் பக்கம் வெறுமையாக இருக்கும் ஆனால் எண்ணிக்கையில் சேரும், எனவே எண்கள் 2 இலிருந்து தொடங்கும்.</string>
+    <string name="pages_numbers_only_cover">இந்த PDF இல் ஒரே பக்கம், நீங்கள் தவிர்க்கத் தேர்ந்த அட்டைப் பக்கம்: எதற்கும் எண் இடப்படாது.</string>
+    <string name="pages_numbers_preview_page_two">பக்கம் 2 இல் காட்டப்படுகிறது, எண் பெறும் முதல் பக்கம்.</string>
+    <plurals name="pages_numbers_numbered">
+        <item quantity="one">%1$d பக்கத்துக்கு எண் இடப்படும்</item>
+        <item quantity="other">%1$d பக்கங்களுக்கு எண் இடப்படும்</item>
+    </plurals>
+
+    <string name="pages_nup_per_sheet_title">ஒரு தாளுக்கு பக்கங்கள்</string>
+    <plurals name="pages_nup_sheets">
+        <item quantity="one">%1$d தாள்</item>
+        <item quantity="other">%1$d தாள்கள்</item>
+    </plurals>
+    <string name="pages_nup_scale">ஒவ்வொரு பக்கமும் அதன் அளவின் சுமார் %1$d%% இல் அச்சிடப்படும்.</string>
+    <string name="pages_nup_small_print">இவ்வளவு சிறிய உரையைத் தாளில் படிப்பது கடினமாக இருக்கலாம். ஒரு தாளில் குறைவான பக்கங்கள் இருந்தால் அது பெரிதாக இருக்கும்.</string>
+    <plurals name="pages_nup_last_sheet">
+        <item quantity="one">கடைசித் தாளில் %1$d பக்கம் உள்ளது; மீதி இடம் காலியாக இருக்கும்.</item>
+        <item quantity="other">கடைசித் தாளில் %1$d பக்கங்கள் உள்ளன; மீதி இடம் காலியாக இருக்கும்.</item>
+    </plurals>
+
+    <plurals name="pages_blank_found_count">
+        <item quantity="one">%2$d இல் %1$d பக்கம் வெறுமையாகத் தெரிகிறது</item>
+        <item quantity="other">%2$d இல் %1$d பக்கங்கள் வெறுமையாகத் தெரிகின்றன</item>
+    </plurals>
+    <string name="pages_blank_review">டிக் செய்த பக்கங்கள் அகற்றப்படும். வைத்திருக்க வேண்டிய பக்கத்தின் டிக்கை நீக்குங்கள்.</string>
+    <string name="pages_blank_none_ticked">அகற்ற குறைந்தது ஒரு பக்கத்தை டிக் செய்யுங்கள்.</string>
+    <string name="pages_blank_copy_note">இவை புதிய நகலில் அகற்றப்படும்; அசல் கோப்பு அப்படியே இருக்கும்.</string>
+
+    <string name="pages_insert_pick_first">பக்கங்களை எடுக்க வேண்டிய PDF ஐத் தேர்ந்தெடுங்கள்.</string>
+    <string name="pages_insert_change_pdf">வேறு PDF ஐத் தேர்ந்தெடு</string>
+    <plurals name="pages_insert_summary">
+        <item quantity="one">%1$d பக்கம் பக்கம் %2$d க்குப் பிறகு சேரும், மொத்தம் %3$d பக்கங்கள்.</item>
+        <item quantity="other">%1$d பக்கங்கள் பக்கம் %2$d க்குப் பிறகு சேரும், மொத்தம் %3$d பக்கங்கள்.</item>
+    </plurals>
+    <plurals name="pages_insert_summary_start">
+        <item quantity="one">%1$d பக்கம் தொடக்கத்தில் சேரும், மொத்தம் %2$d பக்கங்கள்.</item>
+        <item quantity="other">%1$d பக்கங்கள் தொடக்கத்தில் சேரும், மொத்தம் %2$d பக்கங்கள்.</item>
+    </plurals>
+
+    <string name="pages_merge_counting">பக்கங்கள் எண்ணப்படுகின்றன…</string>
+    <string name="pages_merge_summary">%1$s கொண்ட ஒரு PDF, சுமார் %2$s</string>
+    <plurals name="pages_merge_not_counted">
+        <item quantity="one">எண்ணப்படவில்லை: பூட்டப்பட்ட அல்லது படிக்க முடியாத %1$d கோப்பு.</item>
+        <item quantity="other">எண்ணப்படவில்லை: பூட்டப்பட்ட அல்லது படிக்க முடியாத %1$d கோப்புகள்.</item>
+    </plurals>
+    <string name="pages_merge_unreadable">படிக்க முடியவில்லை · %1$s</string>
+
+    <plurals name="pages_org_turned">
+        <item quantity="one">%1$d பக்கம் சுழற்றப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்கள் சுழற்றப்பட்டன</item>
+    </plurals>
+    <string name="pages_org_nothing_changed">முதலில் ஒரு பக்கத்தை நகர்த்துங்கள், சுழற்றுங்கள் அல்லது அகற்றுங்கள்: இப்போதுள்ளபடி PDF அப்படியே வரும்.</string>
+    <string name="pages_org_turn_one">ஒரு பக்கத்தைச் சுழற்ற அதைத் தட்டுங்கள்: இன்னும் எதுவும் சுழற்றப்படவில்லை.</string>
+    <string name="pages_org_pick_pages">பிரித்தெடுக்க வேண்டிய பக்கங்களைத் தட்டுங்கள்.</string>
+
+    <string name="pages_compress_estimating">ஒவ்வொரு நிலையும் என்ன தரும் எனக் கணக்கிடப்படுகிறது…</string>
+    <string name="pages_compress_level">எவ்வளவு சிறிதாக</string>
+    <string name="pages_compress_no_change">மாற்றமில்லை</string>
+    <string name="pages_compress_text_note">இந்த PDF பெரும்பாலும் உரை, அது ஏற்கனவே சிறியது. சுருக்குவது அதன் படங்களை மட்டுமே சிறிதாக்கும், எனவே அதிக மாற்றம் எதிர்பார்க்க வேண்டாம்; உரை தெளிவாகவும் தேடக்கூடியதாகவும் இருக்கும்.</string>
+    <string name="pages_compress_no_gain">இந்த நிலையில் இந்த PDF சிறிதாக வாய்ப்பில்லை, எனவே அதே அளவிலான நகல் கிடைக்கும்.</string>
+    <string name="pages_compress_picture_note">இந்த PDF இல் உரை அடுக்கு இல்லை, எனவே இந்த நிலையில் ஒவ்வொரு பக்கமும் மீண்டும் படமாகச் சேமிக்கப்படும். முதல் பக்கம் எப்படித் தோன்றும் என முடிவு முன்னோட்டம் காட்டுகிறது.</string>
+    <string name="pages_compress_target_unreachable">இந்த PDF சுமார் %1$s வரை மட்டுமே சிறிதாகக்கூடும், எனவே அதைவிடச் சிறிய இலக்கை அடைய முடியாமல் போகலாம்.</string>
+    <string name="pages_compress_target_text_warning">இவ்வளவு சிறிய அளவை அடைய பக்கங்கள் படங்களாகச் சேமிக்கப்படலாம்: அப்போது அவற்றின் உரையைத் தேடவோ நகலெடுக்கவோ முடியாது.</string>
+    <string name="pages_compress_estimate_failed">இந்த PDF க்கு மதிப்பீடு கணக்கிட முடியவில்லை. முடிந்ததும் உண்மையான அளவு காட்டப்படும்.</string>
+</resources>
