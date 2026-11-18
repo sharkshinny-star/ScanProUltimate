@@ -530,9 +530,9 @@ private fun StorageOverview(
         if (downloads != null) {
             StorageRow(Icons.Rounded.Download, TileTone.Sky, stringResource(R.string.phone_files_downloads), downloadsCount.toString()) { onOpenFolder(downloads) }
         }
-        StorageRow(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount.toString(), onOpenProcessed)
+        StorageRow(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount.toString(), onClick = onOpenProcessed)
         OverviewHeading(stringResource(R.string.phone_files_cloud_title))
-        StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, onOpenCloud, stringResource(R.string.phone_files_cloud_hint))
+        StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, subtitle = stringResource(R.string.phone_files_cloud_hint), onClick = onOpenCloud)
         OverviewHeading(stringResource(R.string.phone_files_all_files))
     }
 }
@@ -548,7 +548,7 @@ private fun OverviewHeading(text: String) {
 }
 
 @Composable
-private fun StorageRow(icon: ImageVector, tone: TileTone, title: String, count: String?, onClick: () -> Unit, subtitle: String? = null) {
+private fun StorageRow(icon: ImageVector, tone: TileTone, title: String, count: String?, subtitle: String? = null, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
     Surface(
         shape = shape,

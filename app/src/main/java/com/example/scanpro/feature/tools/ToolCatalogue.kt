@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.EditNote
@@ -98,6 +99,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("header_footer", R.string.tools_card_header_footer, Icons.Default.VerticalAlignTop, TileTone.Slate, label = R.string.tools_tile_header_footer),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
             PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark),
+            PdfToolCard("edit_pdf", R.string.tools_card_edit_pdf, Icons.Default.EditNote, TileTone.Indigo, label = R.string.tools_tile_edit_pdf),
             PdfToolCard("sign", R.string.tools_card_sign, Icons.Default.Draw, TileTone.Violet)
         )
     ),

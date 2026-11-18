@@ -540,4 +540,50 @@
     <string name="tools_protect_remove_password_first">ആദ്യം പാസ്‌വേഡ് നീക്കുക</string>
     <string name="tools_crop_img_done">%1$d × %2$d px ആയി ക്രോപ്പ് ചെയ്തു (%3$s)</string>
     <string name="tools_compress_img_target_missed">വായിക്കാൻ കഴിയുന്ന വിധം നിലനിർത്തി %1$s-ൽ താഴെയാക്കാൻ കഴിഞ്ഞില്ല. ഏറ്റവും ചെറിയ പതിപ്പ് %2$s ആണ് (%3$d%% ചെറുത്).</string>
+    <string name="tools_card_edit_pdf">PDF ടെക്സ്റ്റ് മാറ്റുക</string>
+    <string name="tools_tile_edit_pdf">PDF മാറ്റുക</string>
+    <string name="tools_desc_edit_pdf">വാക്കുകൾ, ഫോണ്ട്, ബോൾഡ്, വലുപ്പം മാറ്റുക</string>
+    <string name="hint_tool_edit_pdf">ടെക്സ്റ്റിന്റെ ഏത് വരിയിലും ടാപ്പ് ചെയ്ത് വാക്കുകൾ, ഫോണ്ട്, ബോൾഡ്, ഇറ്റാലിക് അല്ലെങ്കിൽ വലുപ്പം മാറ്റാം. നിങ്ങൾ ടൈപ്പ് ചെയ്യുന്ന അക്ഷരങ്ങൾ PDF-ന്റെ ഫോണ്ടിൽ ഉണ്ടെങ്കിൽ അതേ ഫോണ്ട് നിലനിൽക്കും. പുതിയ PDF സേവ് ചെയ്യും; ഒറിജിനൽ മാറില്ല.</string>
+    <string name="tools_edit_hint">മാറ്റാൻ ഏത് ടെക്സ്റ്റിലും ടാപ്പ് ചെയ്യുക</string>
+    <string name="tools_edit_save">PDF സേവ് ചെയ്യുക</string>
+    <string name="tools_edit_no_text">ഈ പേജിൽ ടെക്സ്റ്റ് ഇല്ല. സ്കാൻ ചെയ്ത പേജ് ഒരു ചിത്രമാണ്: ആദ്യം \"തിരയാവുന്നതാക്കുക\" ഉപയോഗിക്കുക.</string>
+    <string name="tools_edit_err_open">ഈ PDF മാറ്റാൻ തുറക്കാനായില്ല.</string>
+    <string name="tools_edit_dialog_title">ടെക്സ്റ്റ് മാറ്റുക</string>
+    <string name="tools_edit_text_label">ടെക്സ്റ്റ്</string>
+    <string name="tools_edit_font">ഫോണ്ട്</string>
+    <string name="tools_edit_font_same">PDF-ലേതുപോലെ</string>
+    <string name="tools_edit_font_sans">സാൻസ്</string>
+    <string name="tools_edit_font_serif">സെരിഫ്</string>
+    <string name="tools_edit_font_mono">മോണോ</string>
+    <string name="tools_edit_bold">ബോൾഡ്</string>
+    <string name="tools_edit_italic">ഇറ്റാലിക്</string>
+    <string name="tools_edit_size">വലുപ്പം</string>
+    <string name="tools_edit_size_value">%1$s pt</string>
+    <string name="tools_edit_smaller">ചെറുത്</string>
+    <string name="tools_edit_larger">വലുത്</string>
+    <string name="tools_edit_original">PDF-ൽ: %1$s, %2$s pt</string>
+    <string name="tools_edit_delete">ടെക്സ്റ്റ് മായ്ക്കുക</string>
+    <string name="tools_edit_undo_change">മാറ്റം പഴയപടിയാക്കുക</string>
+    <string name="tools_edit_undo">അവസാന മാറ്റം പഴയപടിയാക്കുക</string>
+    <string name="tools_edit_discard_title">മാറ്റങ്ങൾ ഉപേക്ഷിക്കണോ?</string>
+    <string name="tools_edit_discard_body">ഈ PDF-ലെ മാറ്റങ്ങൾ സേവ് ചെയ്തിട്ടില്ല.</string>
+    <string name="tools_edit_discard">ഉപേക്ഷിക്കുക</string>
+    <string name="tools_edit_progress">മാറ്റിയ PDF സേവ് ചെയ്യുന്നു…</string>
+    <string name="tools_edit_err_failed">മാറ്റിയ PDF സേവ് ചെയ്യാനായില്ല.</string>
+    <plurals name="tools_edit_save_count">
+        <item quantity="one">PDF സേവ് ചെയ്യുക (%1$d മാറ്റം)</item>
+        <item quantity="other">PDF സേവ് ചെയ്യുക (%1$d മാറ്റങ്ങൾ)</item>
+    </plurals>
+    <plurals name="tools_edit_done">
+        <item quantity="one">%1$d മാറ്റം സേവ് ചെയ്തു.</item>
+        <item quantity="other">%1$d മാറ്റങ്ങൾ സേവ് ചെയ്തു.</item>
+    </plurals>
+    <plurals name="tools_edit_similar_font">
+        <item quantity="one">%1$d മാറ്റം സമാനമായ ഫോണ്ട് ഉപയോഗിക്കുന്നു: PDF-ന്റെ ഫോണ്ടിൽ ചില അക്ഷരങ്ങൾ ഇല്ല.</item>
+        <item quantity="other">%1$d മാറ്റങ്ങൾ സമാനമായ ഫോണ്ട് ഉപയോഗിക്കുന്നു: PDF-ന്റെ ഫോണ്ടിൽ ചില അക്ഷരങ്ങൾ ഇല്ല.</item>
+    </plurals>
+    <plurals name="tools_edit_covered">
+        <item quantity="one">%1$d മാറ്റം വെള്ള ബോക്സിന് മുകളിൽ എഴുതി: പഴയ വാക്കുകൾ ഫയലിൽ താഴെ ഇപ്പോഴും ഉണ്ട്.</item>
+        <item quantity="other">%1$d മാറ്റങ്ങൾ വെള്ള ബോക്സുകൾക്ക് മുകളിൽ എഴുതി: പഴയ വാക്കുകൾ ഫയലിൽ താഴെ ഇപ്പോഴും ഉണ്ട്.</item>
+    </plurals>
 </resources>

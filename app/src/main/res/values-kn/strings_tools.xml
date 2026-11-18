@@ -540,4 +540,50 @@
     <string name="tools_protect_remove_password_first">ಮೊದಲು ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆಯಿರಿ</string>
     <string name="tools_crop_img_done">%1$d × %2$d px ಗೆ ಕ್ರಾಪ್ ಮಾಡಲಾಗಿದೆ (%3$s)</string>
     <string name="tools_compress_img_target_missed">ಓದಲು ಸಾಧ್ಯವಾಗುವಂತೆ ಉಳಿಸಿ %1$s ಗಿಂತ ಕಡಿಮೆ ಮಾಡಲಾಗಲಿಲ್ಲ. ಅತಿ ಚಿಕ್ಕ ಆವೃತ್ತಿ %2$s (%3$d%% ಚಿಕ್ಕದು).</string>
+    <string name="tools_card_edit_pdf">PDF ಪಠ್ಯ ಬದಲಿಸಿ</string>
+    <string name="tools_tile_edit_pdf">PDF ಬದಲಿಸಿ</string>
+    <string name="tools_desc_edit_pdf">ಪದಗಳು, ಫಾಂಟ್, ಬೋಲ್ಡ್ ಮತ್ತು ಗಾತ್ರ ಬದಲಿಸಿ</string>
+    <string name="hint_tool_edit_pdf">ಪಠ್ಯದ ಯಾವುದೇ ಸಾಲಿನ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ ಅದರ ಪದಗಳು, ಫಾಂಟ್, ಬೋಲ್ಡ್, ಇಟಾಲಿಕ್ ಅಥವಾ ಗಾತ್ರ ಬದಲಿಸಿ. ನೀವು ಬರೆಯುವ ಅಕ್ಷರಗಳು PDF ನ ಫಾಂಟ್‌ನಲ್ಲಿ ಇದ್ದರೆ ಅದೇ ಫಾಂಟ್ ಉಳಿಯುತ್ತದೆ. ಹೊಸ PDF ಉಳಿಸಲಾಗುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_edit_hint">ಬದಲಿಸಲು ಯಾವುದೇ ಪಠ್ಯದ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="tools_edit_save">PDF ಉಳಿಸಿ</string>
+    <string name="tools_edit_no_text">ಈ ಪುಟದಲ್ಲಿ ಪಠ್ಯವಿಲ್ಲ. ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟ ಒಂದು ಚಿತ್ರ: ಮೊದಲು \"ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ\" ಬಳಸಿ.</string>
+    <string name="tools_edit_err_open">ಈ PDF ಅನ್ನು ಬದಲಿಸಲು ತೆರೆಯಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="tools_edit_dialog_title">ಪಠ್ಯ ಬದಲಿಸಿ</string>
+    <string name="tools_edit_text_label">ಪಠ್ಯ</string>
+    <string name="tools_edit_font">ಫಾಂಟ್</string>
+    <string name="tools_edit_font_same">PDF ನಂತೆ</string>
+    <string name="tools_edit_font_sans">ಸ್ಯಾನ್ಸ್</string>
+    <string name="tools_edit_font_serif">ಸೆರಿಫ್</string>
+    <string name="tools_edit_font_mono">ಮೋನೋ</string>
+    <string name="tools_edit_bold">ಬೋಲ್ಡ್</string>
+    <string name="tools_edit_italic">ಇಟಾಲಿಕ್</string>
+    <string name="tools_edit_size">ಗಾತ್ರ</string>
+    <string name="tools_edit_size_value">%1$s pt</string>
+    <string name="tools_edit_smaller">ಚಿಕ್ಕದು</string>
+    <string name="tools_edit_larger">ದೊಡ್ಡದು</string>
+    <string name="tools_edit_original">PDF ನಲ್ಲಿ: %1$s, %2$s pt</string>
+    <string name="tools_edit_delete">ಪಠ್ಯ ಅಳಿಸಿ</string>
+    <string name="tools_edit_undo_change">ಬದಲಾವಣೆ ರದ್ದುಮಾಡಿ</string>
+    <string name="tools_edit_undo">ಕೊನೆಯ ಬದಲಾವಣೆ ರದ್ದುಮಾಡಿ</string>
+    <string name="tools_edit_discard_title">ಬದಲಾವಣೆಗಳನ್ನು ಬಿಡುವುದೇ?</string>
+    <string name="tools_edit_discard_body">ಈ PDF ನ ಬದಲಾವಣೆಗಳನ್ನು ಉಳಿಸಿಲ್ಲ.</string>
+    <string name="tools_edit_discard">ಬಿಡಿ</string>
+    <string name="tools_edit_progress">ಬದಲಿಸಿದ PDF ಉಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_edit_err_failed">ಬದಲಿಸಿದ PDF ಉಳಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <plurals name="tools_edit_save_count">
+        <item quantity="one">PDF ಉಳಿಸಿ (%1$d ಬದಲಾವಣೆ)</item>
+        <item quantity="other">PDF ಉಳಿಸಿ (%1$d ಬದಲಾವಣೆಗಳು)</item>
+    </plurals>
+    <plurals name="tools_edit_done">
+        <item quantity="one">%1$d ಬದಲಾವಣೆ ಉಳಿಸಲಾಗಿದೆ.</item>
+        <item quantity="other">%1$d ಬದಲಾವಣೆಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ.</item>
+    </plurals>
+    <plurals name="tools_edit_similar_font">
+        <item quantity="one">%1$d ಬದಲಾವಣೆ ಹೋಲುವ ಫಾಂಟ್ ಬಳಸುತ್ತದೆ: PDF ನ ಫಾಂಟ್‌ನಲ್ಲಿ ಕೆಲವು ಅಕ್ಷರಗಳಿಲ್ಲ.</item>
+        <item quantity="other">%1$d ಬದಲಾವಣೆಗಳು ಹೋಲುವ ಫಾಂಟ್ ಬಳಸುತ್ತವೆ: PDF ನ ಫಾಂಟ್‌ನಲ್ಲಿ ಕೆಲವು ಅಕ್ಷರಗಳಿಲ್ಲ.</item>
+    </plurals>
+    <plurals name="tools_edit_covered">
+        <item quantity="one">%1$d ಬದಲಾವಣೆ ಬಿಳಿ ಪೆಟ್ಟಿಗೆಯ ಮೇಲೆ ಬರೆಯಲಾಗಿದೆ: ಹಳೆಯ ಪದಗಳು ಕೆಳಗೆ ಫೈಲ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇವೆ.</item>
+        <item quantity="other">%1$d ಬದಲಾವಣೆಗಳು ಬಿಳಿ ಪೆಟ್ಟಿಗೆಗಳ ಮೇಲೆ ಬರೆಯಲಾಗಿವೆ: ಹಳೆಯ ಪದಗಳು ಕೆಳಗೆ ಫೈಲ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇವೆ.</item>
+    </plurals>
 </resources>
