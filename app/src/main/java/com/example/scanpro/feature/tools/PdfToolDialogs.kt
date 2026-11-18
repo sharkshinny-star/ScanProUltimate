@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -46,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -234,9 +236,24 @@ internal fun PasswordDialog(
     mergeFileName: String? = null,
     /** The file being protected or unlocked, shown above the question; not set when Merge asks. */
     fileUri: Uri? = null,
+    /** Protect only: the picked file already needs a password, and the person chose to remove it first. */
+    onUnlockInstead: (() -> Unit)? = null,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    // Protect: find out before any typing whether the file already needs a password to open. Null while checking.
+    // A file that cannot be read at all counts as not protected here; the tool itself then explains the problem.
+    val alreadyProtected by androidx.compose.runtime.produceState<Boolean?>(
+        initialValue = if (isProtect && fileUri != null) null else false,
+        key1 = fileUri,
+        key2 = isProtect
+    ) {
+        if (isProtect && fileUri != null) {
+            value = runCatching { com.example.scanpro.imaging.PdfToolsEngine.needsOpenPassword(context, fileUri) }.getOrDefault(false)
+        }
+    }
+    val blocked = alreadyProtected == true
     var password by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -261,12 +278,16 @@ internal fun PasswordDialog(
         actionLabel = stringResource(
             when {
                 mergeFileName != null -> R.string.common_continue
+                blocked && onUnlockInstead != null -> R.string.tools_protect_remove_password_first
+                blocked -> R.string.common_close
                 isProtect -> R.string.tools_protect_pdf
                 else -> R.string.tools_unlock_pdf
             }
         ),
         onAction = {
-            if (password.length < minimum) {
+            if (blocked) {
+                onUnlockInstead?.invoke() ?: onDismiss()
+            } else if (password.length < minimum) {
                 errorText = if (isProtect) tooShortError else enterPasswordError
             } else if (isProtect && confirm != password) {
                 errorText = mismatchError
@@ -274,13 +295,30 @@ internal fun PasswordDialog(
                 onConfirm(password)
             }
         },
-        actionEnabled = true,
+        // Waits the moment the check takes, so a protected file is never sent to be protected again.
+        actionEnabled = alreadyProtected != null,
         actionSupport = null
     ) {
             Column {
                 if (fileUri != null) {
                     PickedFileRow(fileUri)
                     Spacer(modifier = Modifier.height(12.dp))
+                }
+                if (alreadyProtected == null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+                        com.example.scanpro.core.designsystem.ProcessingDots(MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            stringResource(R.string.msg_tools_checking_protection),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    return@Column
+                }
+                if (blocked) {
+                    AlreadyProtectedNotice()
+                    return@Column
                 }
                 Text(
                     when {
@@ -342,6 +380,39 @@ internal fun PasswordDialog(
                 }
             }
         }
+}
+
+/** Protect PDF on a file that already needs a password to open: says so instead of asking for a new one. */
+@Composable
+private fun AlreadyProtectedNotice() {
+    Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+            Icon(
+                Icons.Default.Lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.padding(top = 2.dp).size(22.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.semantics(mergeDescendants = true) {}) {
+                Text(
+                    stringResource(R.string.tools_protect_already_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.tools_protect_already_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+        }
+    }
 }
 
 @Composable

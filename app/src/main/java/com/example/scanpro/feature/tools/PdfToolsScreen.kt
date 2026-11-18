@@ -734,6 +734,8 @@ fun PdfToolsScreen(
                     isProtect = isProtect,
                     fileUri = uri,
                     initialError = if (!isProtect && wrongPassword) stringResource(R.string.tools_wrong_password_try_again) else null,
+                    // The same file, now in Unlock: once unlocked, the copy can be protected with a new password.
+                    onUnlockInstead = if (isProtect) ({ selectedTool = "unlock" }) else null,
                     onDismiss = { showPasswordDialog = false; viewModel.clearWrongPassword() },
                     onConfirm = { pwd ->
                         showPasswordDialog = false

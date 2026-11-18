@@ -40,6 +40,9 @@
     <string name="tools_unlock_set_password">Set password</string>
     <string name="tools_wrong_password_try_again">That password didn\'t work. Try again.</string>
     <string name="tools_password_protect_title">Protect PDF with Password</string>
+    <string name="tools_protect_already_title">This PDF already has a password</string>
+    <string name="tools_protect_already_body">Anyone opening it already needs a password. To set a different one, remove the current password first, then protect the unlocked copy.</string>
+    <string name="tools_protect_remove_password_first">Remove password first</string>
     <string name="tools_password_label">Password</string>
     <string name="tools_password_toggle_visibility">Toggle password visibility</string>
     <plurals name="tools_password_too_short">
