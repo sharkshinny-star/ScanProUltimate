@@ -26,7 +26,7 @@ const val H = 960
 
 class P(val x: Double, val y: Double)
 class Scene(val name: String, val gray: Mat, val color: Mat, val truth: List<P>)
-enum class Desk { WOOD, DARK, GREY, WHITE, MAT }
+enum class Desk { WOOD, DARK, GREY, WHITE, MAT, CREAM, GREEN }
 /** A shadow band: start point offset from TL, direction vector, alpha, whether clipped to the page. */
 class Shadow(val dx0: Double, val dy0: Double, val vx: Double, val vy: Double, val alpha: Int = 150, val pageOnly: Boolean = true, val soft: Float = 0.15f)
 
@@ -52,13 +52,16 @@ fun matToBuf(m: Mat): BufferedImage {
 fun path(t: List<P>) = Path2D.Double().apply { moveTo(t[0].x, t[0].y); for (i in 1..3) lineTo(t[i].x, t[i].y); closePath() }
 
 fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248, 247, 242), receipt: Boolean = false,
-          shadow: Shadow? = null, noisy: Boolean = false, spread: Boolean = false, dim: Boolean = false, noPage: Boolean = false): Scene {
+          shadow: Shadow? = null, noisy: Boolean = false, spread: Boolean = false, dim: Boolean = false, noPage: Boolean = false,
+          photo: Boolean = false, warm: Boolean = false, objects: List<(Graphics2D) -> Unit> = emptyList()): Scene {
     val random = Random(name.hashCode().toLong())
     var img = BufferedImage(W, H, BufferedImage.TYPE_INT_RGB)
     val g = img.createGraphics(); g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-    drawDesk(g, desk, random); g.dispose()
+    drawDesk(g, desk, random)
+    objects.forEach { it(g) }
+    g.dispose()
     var bgr = bufToMat(img)
-    if (noPage) { val gray = Mat(); Imgproc.cvtColor(bgr, gray, Imgproc.COLOR_BGR2GRAY); return Scene(name, gray, bgr, truth) }
+    if (noPage) { if (warm) warmCast(bgr); val gray = Mat(); Imgproc.cvtColor(bgr, gray, Imgproc.COLOR_BGR2GRAY); return Scene(name, gray, bgr, truth) }
     // Soft drop shadow under the page.
     run {
         val mask = Mat.zeros(H, W, CvType.CV_32F)
@@ -74,7 +77,12 @@ fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248
     val fh = if (receipt) 1500 else if (spread) 1000 else 1131
     val flat = BufferedImage(fw, fh, BufferedImage.TYPE_INT_RGB)
     val pg = flat.createGraphics(); pg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-    drawPage(pg, fw, fh, pageColor, receipt, spread, random); pg.dispose()
+    drawPage(pg, fw, fh, pageColor, receipt, spread, random)
+    if (photo) {
+        // A large colour photo on the page (a brochure or a printed form with a picture): a strong colour region inside it.
+        pg.paint = GradientPaint(120f, 380f, Color(200, 40, 40), 680f, 760f, Color(40, 150, 60)); pg.fillRect(120, 380, 560, 380)
+    }
+    pg.dispose()
     val src = MatOfPoint2f(Point(0.0, 0.0), Point(fw.toDouble(), 0.0), Point(fw.toDouble(), fh.toDouble()), Point(0.0, fh.toDouble()))
     val dst = MatOfPoint2f(*truth.map { Point(it.x, it.y) }.toTypedArray())
     val hm = Imgproc.getPerspectiveTransform(src, dst)
@@ -103,9 +111,13 @@ fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248
         addNoise(bgr, random, 16.0, 1.0)
     }
     if (dim) addNoise(bgr, random, 5.0, 0.32)
+    if (warm) warmCast(bgr)
     val gray = Mat(); Imgproc.cvtColor(bgr, gray, Imgproc.COLOR_BGR2GRAY)
     return Scene(name, gray, bgr, truth)
 }
+
+/** A warm lamp: blue down and red up a little over the whole picture, so white paper looks cream. */
+fun warmCast(bgr: Mat) { Core.multiply(bgr, Scalar(0.72, 0.92, 1.0), bgr); Core.add(bgr, Scalar(0.0, 0.0, 12.0), bgr) }
 
 fun addNoise(bgr: Mat, random: Random, sd: Double, gain: Double) {
     val bytes = ByteArray(W * H * 3); bgr.get(0, 0, bytes)
@@ -114,7 +126,7 @@ fun addNoise(bgr: Mat, random: Random, sd: Double, gain: Double) {
 }
 
 fun drawDesk(g: Graphics2D, desk: Desk, random: Random) {
-    g.color = when (desk) { Desk.WOOD -> Color(142, 98, 62); Desk.DARK -> Color(34, 34, 38); Desk.GREY -> Color(205, 205, 200); Desk.WHITE -> Color(238, 238, 236); Desk.MAT -> Color(205, 150, 60) }
+    g.color = when (desk) { Desk.WOOD -> Color(142, 98, 62); Desk.DARK -> Color(34, 34, 38); Desk.GREY -> Color(205, 205, 200); Desk.WHITE -> Color(238, 238, 236); Desk.MAT -> Color(205, 150, 60); Desk.CREAM -> Color(236, 222, 180); Desk.GREEN -> Color(52, 120, 78) }
     g.fillRect(0, 0, W, H)
     when (desk) {
         Desk.WOOD -> repeat(70) {
@@ -158,6 +170,16 @@ fun drawPage(g: Graphics2D, w: Int, h: Int, pageColor: Color, receipt: Boolean, 
     }
 }
 
+/** Desk clutter for the no-page scenes: things a page detector must not take for a page. */
+fun laptop(g: Graphics2D) { g.color = Color(58, 58, 62); g.fillRoundRect(250, 180, 760, 520, 24, 24); g.color = Color(30, 34, 44); g.fillRect(280, 205, 700, 440)
+    g.color = Color(200, 210, 225); g.fillRect(320, 240, 620, 360) }
+fun keyboard(g: Graphics2D) { g.color = Color(40, 40, 44); g.fillRoundRect(200, 330, 880, 300, 20, 20); g.color = Color(225, 225, 228)
+    for (r in 0 until 5) for (c in 0 until 15) g.fillRoundRect(222 + c * 57, 352 + r * 54, 48, 44, 6, 6) }
+fun phone(g: Graphics2D) { g.color = Color(15, 15, 18); g.fillRoundRect(560, 260, 200, 400, 40, 40); g.color = Color(225, 230, 240); g.fillRoundRect(572, 285, 176, 350, 20, 20) }
+fun mugAndPen(g: Graphics2D) { g.color = Color(235, 235, 232); g.fillOval(300, 300, 260, 260); g.color = Color(150, 60, 40); g.fillOval(340, 340, 180, 180)
+    g.color = Color(20, 40, 160); g.stroke = BasicStroke(14f); g.drawLine(700, 300, 1000, 650) }
+fun notebookCover(g: Graphics2D) { g.color = Color(180, 30, 40); g.fillRect(380, 150, 520, 680) }
+
 val A4 = quad(370.0, 100.0, 910.0, 110.0, 900.0, 860.0, 380.0, 850.0)
 val BENCH_SHADOW = Shadow(0.0, 200.0, 400.0, 130.0)
 
@@ -198,10 +220,31 @@ fun scenes(extra: Boolean): List<Scene> = listOf(
     scene("x_shadow_most_of_right_sharp", Desk.WOOD, A4, shadow = Shadow(160.0, 0.0, 420.0, 0.0, soft = 0.02f)),
     scene("x_shadow_most_of_left_grey", Desk.GREY, A4, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
     scene("x_shadow_most_of_bottom_white", Desk.WHITE, A4, shadow = Shadow(0.0, 220.0, 0.0, 560.0)),
+    // Colour cases for F175's colour source (c_): coloured paper, a colour photo on the page, a warm lamp, a desk the
+    // colour of the paper and a coloured desk, with and without a shadow over most of one side.
+    scene("c_yellow_paper_wood", Desk.WOOD, A4, pageColor = Color(250, 236, 140)),
+    scene("c_blue_paper_wood", Desk.WOOD, A4, pageColor = Color(170, 200, 235)),
+    scene("c_yellow_paper_shadow_left", Desk.WOOD, A4, pageColor = Color(250, 236, 140), shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
+    scene("c_photo_on_page_grey", Desk.GREY, A4, photo = true),
+    scene("c_photo_on_page_wood", Desk.WOOD, A4, photo = true),
+    scene("c_photo_on_page_white", Desk.WHITE, A4, photo = true, pageColor = Color(250, 250, 248)),
+    scene("c_warm_lamp_wood", Desk.WOOD, A4, warm = true),
+    scene("c_warm_lamp_grey", Desk.GREY, A4, warm = true),
+    scene("c_warm_lamp_shadow_left", Desk.WOOD, A4, warm = true, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
+    scene("c_cream_paper_cream_desk", Desk.CREAM, A4, pageColor = Color(244, 232, 196)),
+    scene("c_white_page_green_desk", Desk.GREEN, A4),
+    scene("c_green_desk_shadow_left", Desk.GREEN, A4, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
+    scene("c_page_beside_phone", Desk.WOOD, quad(240.0, 100.0, 780.0, 110.0, 770.0, 860.0, 250.0, 850.0), objects = listOf { g -> g.color = Color(15, 15, 18); g.fillRoundRect(900, 300, 200, 400, 40, 40) }),
     scene("n_wood_only", Desk.WOOD, A4, noPage = true),
     scene("n_mat_only", Desk.MAT, A4, noPage = true),
     scene("n_white_only", Desk.WHITE, A4, noPage = true),
-    scene("n_dark_only", Desk.DARK, A4, noPage = true)
+    scene("n_dark_only", Desk.DARK, A4, noPage = true),
+    scene("n_laptop_wood", Desk.WOOD, A4, noPage = true, objects = listOf(::laptop)),
+    scene("n_keyboard_grey", Desk.GREY, A4, noPage = true, objects = listOf(::keyboard)),
+    scene("n_phone_wood", Desk.WOOD, A4, noPage = true, objects = listOf(::phone)),
+    scene("n_mug_pen_wood", Desk.WOOD, A4, noPage = true, objects = listOf(::mugAndPen)),
+    scene("n_notebook_cover_wood", Desk.WOOD, A4, noPage = true, objects = listOf(::notebookCover)),
+    scene("n_laptop_warm", Desk.WOOD, A4, noPage = true, warm = true, objects = listOf(::laptop))
 )
 
 fun iou(a: List<P>, b: List<P>): Double {
@@ -268,11 +311,15 @@ fun main(args: Array<String>) {
             Imgcodecs.imwrite("$dump/${s.name}.jpg", out)
         }
     }
-    val bench = rows.filter { !it.first.startsWith("x_") && !it.first.startsWith("n_") }
+    val bench = rows.filter { it.first.take(2) !in listOf("x_", "n_", "c_") }
     if (bench.isEmpty()) return
     println("bench: mean IoU ${"%.3f".format(bench.map { it.third }.average())}, worst err ${"%.2f".format(bench.maxOf { it.second })}")
+    val cRows = rows.filter { it.first.startsWith("c_") }
+    if (cRows.isNotEmpty()) println("colour cases (grey-only): mean IoU ${"%.3f".format(cRows.map { it.third }.average())}, under 2% err: ${cRows.count { it.second < 2.0 }}/${cRows.size}")
     if (colour) {
-        val cb = colourRows.filter { !it.first.startsWith("x_") && !it.first.startsWith("n_") }
+        val cc = colourRows.filter { it.first.startsWith("c_") }
+        if (cc.isNotEmpty()) println("colour cases (colour): mean IoU ${"%.3f".format(cc.map { it.third }.average())}, under 2% err: ${cc.count { it.second < 2.0 }}/${cc.size}")
+        val cb = colourRows.filter { it.first.take(2) !in listOf("x_", "n_", "c_") }
         val cx = colourRows.filter { it.first.startsWith("x_") }
         println("colour bench: mean IoU ${"%.3f".format(cb.map { it.third }.average())}, worst err ${"%.2f".format(cb.maxOf { it.second })}")
         if (cx.isNotEmpty()) println("colour extra: mean IoU ${"%.3f".format(cx.map { it.third }.average())}, under 2% err: ${cx.count { it.second < 2.0 }}/${cx.size}")

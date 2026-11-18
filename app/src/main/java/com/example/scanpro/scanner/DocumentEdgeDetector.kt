@@ -15,6 +15,7 @@ import org.opencv.core.MatOfPoint
 import org.opencv.core.MatOfPoint2f
 import org.opencv.core.Point
 import org.opencv.core.RotatedRect
+import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import kotlin.math.abs
@@ -95,32 +96,45 @@ object DocumentEdgeDetector {
     private const val LINE_SEARCH_BELOW = 0.5f
     /**
      * F175, colour source: the least gap between the mean colour strengths of the two sides of the Otsu split
-     * (chroma map units: CIE a/b distance times 2) for the split to count as page against surface, and the smallest
-     * share of the frame each side must cover. Wood against neutral paper is about 60; a grey or white desk is near 0.
+     * (chroma map units: chromaticity distance from neutral times [CHROMA_SCALE]) for the split to count as page
+     * against surface, and the smallest share of the frame each side must cover. Wood against white paper is about 80,
+     * wood against yellow paper about 35; a grey or white desk is near 0.
      */
     private const val CHROMA_MIN_GAP = 24.0
     private const val CHROMA_MIN_SHARE = 0.08
     private const val CHROMA_WEIGHT = 0.96
+    private const val CHROMA_SCALE = 600.0
+    private const val CHROMA_DARK_SUM = 90.0
 
     /**
-     * Colour strength of every pixel: the distance of its CIE a and b from neutral, times 2, as an 8-bit map the size
-     * of [rgba]. A shadow darkens a page but leaves it neutral, so against a coloured surface the page edge stays
-     * visible here where the brightness edge is lost (F175). The live camera path has no colour and passes none.
+     * Colour strength of every pixel: how far its chromaticity (each channel's share of r + g + b) is from neutral, as
+     * an 8-bit map the size of [rgba]. A share does not change when the light dims, so a shadow leaves a page's value
+     * where it was (CIE a/b, used first, shrank in shadow: lit yellow paper read stronger than wood and shadowed yellow
+     * weaker, so no split separated them). Near-black pixels, whose shares are noise, fade towards neutral. Against a
+     * coloured surface the page edge stays visible here where the brightness edge is lost (F175). The live camera path
+     * has no colour and passes none.
      */
     fun chromaMap(rgba: Mat): Mat {
-        val rgb = Mat(); val lab = Mat(); val ab = ArrayList<Mat>(); val a = Mat(); val b = Mat(); val magnitude = Mat()
+        val rgb = Mat(); val f = Mat(); val ch = ArrayList<Mat>(); val sum = Mat(); val rn = Mat(); val gn = Mat()
+        val magnitude = Mat(); val damp = Mat()
         try {
             Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
-            Imgproc.cvtColor(rgb, lab, Imgproc.COLOR_RGB2Lab)
-            Core.split(lab, ab)
-            ab[1].convertTo(a, CvType.CV_32F, 1.0, -128.0)
-            ab[2].convertTo(b, CvType.CV_32F, 1.0, -128.0)
-            Core.magnitude(a, b, magnitude)
+            rgb.convertTo(f, CvType.CV_32FC3)
+            Core.split(f, ch)
+            Core.add(ch[0], ch[1], sum); Core.add(sum, ch[2], sum); Core.add(sum, Scalar(1.0), sum)
+            Core.divide(ch[0], sum, rn); Core.subtract(rn, Scalar(1.0 / 3.0), rn)
+            Core.divide(ch[1], sum, gn); Core.subtract(gn, Scalar(1.0 / 3.0), gn)
+            Core.magnitude(rn, gn, magnitude)
+            // Full weight from a channel sum of CHROMA_DARK_SUM up; below it the shares fade out linearly.
+            Core.multiply(sum, Scalar(1.0 / CHROMA_DARK_SUM), damp)
+            Imgproc.threshold(damp, damp, 1.0, 1.0, Imgproc.THRESH_TRUNC)
+            Core.multiply(magnitude, damp, magnitude)
             val out = Mat()
-            magnitude.convertTo(out, CvType.CV_8U, 2.0)
+            magnitude.convertTo(out, CvType.CV_8U, CHROMA_SCALE)
             return out
         } finally {
-            rgb.release(); lab.release(); ab.forEach(Mat::release); a.release(); b.release(); magnitude.release()
+            rgb.release(); f.release(); ch.forEach(Mat::release); sum.release(); rn.release(); gn.release()
+            magnitude.release(); damp.release()
         }
     }
 
