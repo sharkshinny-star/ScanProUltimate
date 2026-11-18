@@ -47,7 +47,7 @@ object PdfRepairEngine {
             val originalSize = tempFile.length()
             userRequire(originalSize > 0, R.string.tools_err_repair_empty)
 
-            // How many pages the phone's own viewer still sees: the yardstick for "nothing was lost" (F195). The
+            // How many pages the phone's own viewer still sees: the yardstick for "nothing was lost" (F211). The
             // forgiving parser can rebuild a file with fewer pages than it had, and that used to be reported as repaired.
             val viewerPages = viewerPageCount(tempFile)
             val rewritten = rewriteStructure(tempFile, outputFile)

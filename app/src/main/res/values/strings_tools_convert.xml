@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Convert and info tools (F195): PDF to images, Images to PDF, Office to PDF, PDF to text, OCR, Extract images,
+    <!-- Convert and info tools (F211): PDF to images, Images to PDF, Office to PDF, PDF to text, OCR, Extract images,
          PDF info, Repair and Fill forms. What each tool will produce, shown before it runs. -->
 
     <!-- Shared -->

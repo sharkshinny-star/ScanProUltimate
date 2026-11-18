@@ -12,7 +12,7 @@ import java.io.Writer
 import java.util.zip.ZipInputStream
 
 /*
- * The arithmetic and checks behind the convert and info tools (F195): what a tool will produce, worked out before it
+ * The arithmetic and checks behind the convert and info tools (F211): what a tool will produce, worked out before it
  * runs, with the same rules the engines use, so the page never promises something the engine then does differently.
  * Kept free of Android rendering so the rules can be unit-tested.
  */

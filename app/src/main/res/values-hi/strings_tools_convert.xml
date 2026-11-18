@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Convert and info tools (F195). Machine translation into Hindi, not yet reviewed by a speaker. -->
+    <!-- Convert and info tools (F211). Machine translation into Hindi, not yet reviewed by a speaker. -->
     <string name="cvt_reading_pdf">PDF पढ़ा जा रहा है…</string>
     <string name="cvt_pdf_unreadable">यह PDF खुल नहीं रहा। पहले PDF ठीक करें आज़माएँ।</string>
     <string name="cvt_pdf_locked">इस PDF को पासवर्ड चाहिए। पहले इसे अनलॉक करें।</string>

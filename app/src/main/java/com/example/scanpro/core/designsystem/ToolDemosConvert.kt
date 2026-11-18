@@ -18,11 +18,11 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /*
- * Tool demonstrations (F195) for: PDF to images, Images to PDF, Office to PDF, PDF to text, Word, Excel and PowerPoint, OCR, Extract images, PDF info, Repair, Fill forms, the image tools.
+ * Tool demonstrations (F211) for: PDF to images, Images to PDF, Office to PDF, PDF to text, Word, Excel and PowerPoint, OCR, Extract images, PDF info, Repair, Fill forms, the image tools.
  * Built with the shared pieces in ToolDemos.kt. Keep the map lazy (or at the bottom of the file): top-level values
  * are set in file order, so a map above the scenes it names would hold nulls.
  *
- * Every scene shows the tool's result happening to a real-looking page or picture (F195): pages peel off and become
+ * Every scene shows the tool's result happening to a real-looking page or picture (F211): pages peel off and become
  * photo cards, lines lift off a page and rebuild as a document, a scan line turns a picture of text into selectable
  * text. The text drawn in the scenes is language-neutral (formats, numbers, units). Each holds a meaningful frame at
  * the still point (0.62) for people who turn animations off.

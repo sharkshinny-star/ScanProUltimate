@@ -71,7 +71,7 @@ import com.example.scanpro.imaging.SplitMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-// PDF to images and Images to PDF moved to ConvertToolPages.kt (F195).
+// PDF to images and Images to PDF moved to ConvertToolPages.kt (F211).
 
 @Composable
 internal fun PasswordDialog(

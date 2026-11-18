@@ -785,7 +785,7 @@ class PdfToolsViewModel @Inject constructor(
         val sourceSize = runCatching {
             resolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
         }.getOrNull() ?: 0L
-        // A PDF the phone's own viewer cannot open, or one with no pages, is not a result (F195): it used to be kept
+        // A PDF the phone's own viewer cannot open, or one with no pages, is not a result (F211): it used to be kept
         // and reported as "Converted: 0 pages".
         if (pages <= 0) {
             output.delete()

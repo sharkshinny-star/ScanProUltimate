@@ -135,7 +135,7 @@ internal fun FormFillDialog(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // How the tool works, folded away with a tap (F195).
+                // How the tool works, folded away with a tap (F211).
                 item(key = "demo", contentType = "demo") { ToolDemoCard("fill") }
                 item {
                     Text(
@@ -279,7 +279,7 @@ internal fun OcrScriptDialog(uri: android.net.Uri, onDismiss: () -> Unit, onConf
     val context = androidx.compose.ui.platform.LocalContext.current
     // The last script used, or the app language's (Hindi starts on Devanagari) rather than always Latin.
     var script by rememberSaveable { mutableStateOf(initialOcrScript(context)) }
-    // Before running (F195): how many pages will be read and how many already have text, by the engine's own rule.
+    // Before running (F211): how many pages will be read and how many already have text, by the engine's own rule.
     val facts by rememberPdfFacts(uri)
     val surveyed by rememberPdfSurvey(uri) { com.example.scanpro.imaging.PdfTextSurvey.of(it) }
     val result = surveyed

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Convert and info tools (F195). Machine translation into Telugu, not yet reviewed by a speaker. -->
+    <!-- Convert and info tools (F211). Machine translation into Telugu, not yet reviewed by a speaker. -->
     <string name="cvt_reading_pdf">PDF చదువుతోంది…</string>
     <string name="cvt_pdf_unreadable">ఈ PDF తెరుచుకోవడం లేదు. ముందు PDF సరిచేయి ప్రయత్నించండి.</string>
     <string name="cvt_pdf_locked">ఈ PDF కి పాస్‌వర్డ్ కావాలి. ముందు అన్‌లాక్ చేయండి.</string>

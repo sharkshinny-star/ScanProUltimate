@@ -82,7 +82,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 /*
- * The convert and info tools' pages (F195): PDF to images, Images to PDF, Office to PDF, Extract images and Repair.
+ * The convert and info tools' pages (F211): PDF to images, Images to PDF, Office to PDF, Extract images and Repair.
  * Each says, before anything runs, exactly what will come out (how many files, their pixel or page size, an honest
  * "About" size worked out from a real sample) and turns the button off with the reason when the input makes no sense.
  * File reading, rendering and sampling run off the main thread; estimates wait for the choices to settle.

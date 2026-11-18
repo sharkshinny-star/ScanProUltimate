@@ -83,7 +83,7 @@ internal fun PdfToTextDialog(
     val context = androidx.compose.ui.platform.LocalContext.current
     var format by rememberSaveable { mutableStateOf(initialFormat) }
     var script by rememberSaveable { mutableStateOf(initialOcrScript(context)) }
-    // Before running (F195): which pages are copied and which are read with OCR, by the engine's own rule.
+    // Before running (F211): which pages are copied and which are read with OCR, by the engine's own rule.
     val facts by rememberPdfFacts(uri)
     val surveyed by rememberPdfSurvey(uri) { com.example.scanpro.imaging.PdfTextSurvey.of(it) }
     val result = surveyed

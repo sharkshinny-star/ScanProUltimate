@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Convert and info tools (F195). Machine translation into Malayalam, not yet reviewed by a speaker. -->
+    <!-- Convert and info tools (F211). Machine translation into Malayalam, not yet reviewed by a speaker. -->
     <string name="cvt_reading_pdf">PDF വായിക്കുന്നു…</string>
     <string name="cvt_pdf_unreadable">ഈ PDF തുറക്കാനാവുന്നില്ല. ആദ്യം PDF നന്നാക്കുക പരീക്ഷിക്കൂ.</string>
     <string name="cvt_pdf_locked">ഈ PDF-ന് പാസ്‌വേഡ് വേണം. ആദ്യം അൺലോക്ക് ചെയ്യൂ.</string>

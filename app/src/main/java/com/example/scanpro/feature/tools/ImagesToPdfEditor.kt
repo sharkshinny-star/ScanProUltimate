@@ -139,7 +139,7 @@ internal fun ImagesToPdfEditor(
     val order = rememberSaveable(saver = OrderedImageListSaver) { mutableStateListOf<OrderedImage>() }
     var isLoading by remember { mutableStateOf(false) }
     // Jobs still running on the photos: "Rotate all" starts one per photo, and the first to finish used to switch the
-    // veil off and enable Continue while the others were still writing their files (F195).
+    // veil off and enable Continue while the others were still writing their files (F211).
     var pendingJobs by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val isProcessing = pendingJobs > 0
     var croppingItem by remember { mutableStateOf<OrderedImage?>(null) }

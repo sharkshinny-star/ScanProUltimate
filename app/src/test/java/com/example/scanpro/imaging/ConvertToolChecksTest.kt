@@ -40,7 +40,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The checks behind the convert and info tools (F195): the sizes and counts their pages promise before running, and
+ * The checks behind the convert and info tools (F211): the sizes and counts their pages promise before running, and
  * the engine fixes found with them. PdfRenderer does not run under Robolectric, so the rules are tested directly.
  */
 @RunWith(RobolectricTestRunner::class)

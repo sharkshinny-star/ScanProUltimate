@@ -132,7 +132,7 @@ fun PdfToolsScreen(
     var showConvertImageDialog by rememberSaveable { mutableStateOf(false) }
     var showResizeImageDialog by rememberSaveable { mutableStateOf(false) }
     var showPdfToImagesDialog by rememberSaveable { mutableStateOf(false) }
-    // Office to PDF, Extract images and Repair open their own pages first (F195), so the result is known before running.
+    // Office to PDF, Extract images and Repair open their own pages first (F211), so the result is known before running.
     var officeUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var showExtractImagesPage by rememberSaveable { mutableStateOf(false) }
     var showRepairPage by rememberSaveable { mutableStateOf(false) }

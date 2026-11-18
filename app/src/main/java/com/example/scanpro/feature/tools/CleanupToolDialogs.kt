@@ -80,7 +80,7 @@ internal fun PdfInfoDialog(
     var subject by rememberSaveable { mutableStateOf(info.subject) }
     var keywords by rememberSaveable { mutableStateOf(info.keywords) }
     val changed = title != info.title || author != info.author || subject != info.subject || keywords != info.keywords
-    // A full tool page (F195) instead of a pop-up: the facts, the fields and the button stay in reach at any font size.
+    // A full tool page (F211) instead of a pop-up: the facts, the fields and the button stay in reach at any font size.
     ToolPage(
         title = stringResource(R.string.tools_card_pdf_info),
         onClose = onDismiss,

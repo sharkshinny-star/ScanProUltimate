@@ -546,7 +546,7 @@ object PdfCleanupTools {
             (filters is com.tom_roush.pdfbox.cos.COSArray && filters.size() == 1 && filters.getObject(0) == COSName.DCT_DECODE)
         val cmyk = runCatching { image.colorSpace.numberOfComponents == 4 }.getOrDefault(false)
         // A JPEG with a transparency mask (a logo, a signature) is decoded with its mask and saved as PNG: copied as
-        // stored, its see-through parts came out as a black or white box (F195).
+        // stored, its see-through parts came out as a black or white box (F211).
         if (onlyJpeg && !cmyk && !PdfImageSurvey.hasTransparency(image)) {
             val file = File(dir, "$stem.jpg")
             image.cosObject.createRawInputStream().use { input -> FileOutputStream(file).buffered().use { input.copyTo(it) } }

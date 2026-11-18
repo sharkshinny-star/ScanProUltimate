@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Convert and info tools (F195). Machine translation into Tamil, not yet reviewed by a speaker. -->
+    <!-- Convert and info tools (F211). Machine translation into Tamil, not yet reviewed by a speaker. -->
     <string name="cvt_reading_pdf">PDF படிக்கப்படுகிறது…</string>
     <string name="cvt_pdf_unreadable">இந்த PDF திறக்கவில்லை. முதலில் PDF சரிசெய் முயலவும்.</string>
     <string name="cvt_pdf_locked">இந்த PDF-க்கு கடவுச்சொல் தேவை. முதலில் திறக்கவும்.</string>

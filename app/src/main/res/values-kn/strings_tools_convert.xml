@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Convert and info tools (F195). Machine translation into Kannada, not yet reviewed by a speaker. -->
+    <!-- Convert and info tools (F211). Machine translation into Kannada, not yet reviewed by a speaker. -->
     <string name="cvt_reading_pdf">PDF ಓದಲಾಗುತ್ತಿದೆ…</string>
     <string name="cvt_pdf_unreadable">ಈ PDF ತೆರೆಯುತ್ತಿಲ್ಲ. ಮೊದಲು PDF ಸರಿಪಡಿಸಿ ಪ್ರಯತ್ನಿಸಿ.</string>
     <string name="cvt_pdf_locked">ಈ PDF ಗೆ ಪಾಸ್‌ವರ್ಡ್ ಬೇಕು. ಮೊದಲು ಅನ್‌ಲಾಕ್ ಮಾಡಿ.</string>

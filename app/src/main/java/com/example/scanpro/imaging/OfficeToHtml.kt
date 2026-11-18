@@ -407,7 +407,7 @@ object OfficeToHtml {
                 zip.keys.filter { Regex("ppt/slides/slide\\d+\\.xml").matches(it) }
                     .sortedBy { it.substringAfter("slide").substringBefore(".xml").toIntOrNull() ?: 0 }
             }
-            // Slides past the limit used to be dropped without a word (F195): the PDF now says so on its last page.
+            // Slides past the limit used to be dropped without a word (F211): the PDF now says so on its last page.
             val slides = all.take(MAX_SLIDES)
             if (slides.isEmpty()) return page(title, "<p class=\"note\">${note(currentNotes().fileEmpty)}</p>")
 
