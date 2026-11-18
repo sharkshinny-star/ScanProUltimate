@@ -908,8 +908,9 @@ object PdfRedactTools {
                                 matches = matches,
                                 pageSize = { i -> page(i).let { it.width.toFloat() to it.height.toFloat() } },
                                 draw = { i, target -> page(i).render(target, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT) },
-                                outputFile = outputFile
-                            ) { onProgress(it + 1, total, AppStrings.get(R.string.tools_new_progress_page, it + 1, total)) }
+                                outputFile = outputFile,
+                                onPage = { onProgress(it + 1, total, AppStrings.get(R.string.tools_new_progress_page, it + 1, total)) }
+                            )
                         } finally {
                             open?.close()
                         }
@@ -956,8 +957,9 @@ object PdfRedactTools {
                                 terms = terms,
                                 pageSize = { i -> page(i).let { it.width.toFloat() to it.height.toFloat() } },
                                 draw = { i, target -> page(i).render(target, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT) },
-                                outputFile = outputFile
-                            ) { onProgress(it + 1, total, AppStrings.get(R.string.tools_new_progress_page, it + 1, total)) }
+                                outputFile = outputFile,
+                                onPage = { onProgress(it + 1, total, AppStrings.get(R.string.tools_new_progress_page, it + 1, total)) }
+                            )
                         } finally {
                             open?.close()
                         }

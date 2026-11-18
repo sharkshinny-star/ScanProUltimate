@@ -50,7 +50,7 @@
     <string name="lib_quick_book">Book</string>
     <string name="lib_quick_pdf_tools">PDF tools</string>
     <string name="lib_see_all">See all</string>
-    <string name="lib_privacy_line">Private by design: no account, nothing uploaded</string>
+    <string name="lib_privacy_line">Private by design: no account, your documents stay on your phone</string>
     <string name="lib_hero_eyebrow">SMART SCAN</string>
     <string name="lib_hero_title">Every detail.\nPerfectly captured.</string>
     <string name="lib_hero_body">Auto-crop. Clean up. Make it searchable.</string>
@@ -217,7 +217,7 @@
         <item quantity="other">%1$d days</item>
     </plurals>
     <string name="settings_privacy_title">Privacy</string>
-    <string name="settings_privacy_subtitle">No account, nothing uploaded</string>
+    <string name="settings_privacy_subtitle">No account, documents stay on your phone</string>
     <string name="settings_rate_title">Rate ScanPro</string>
     <string name="settings_rate_subtitle">Leave a rating on Google Play</string>
     <string name="settings_feedback_subtitle">Tell us what works and what doesn\'t</string>
@@ -230,7 +230,7 @@
     <string name="settings_free_space_action">Free up</string>
     <string name="settings_free_space_running">Freeing up space…</string>
     <string name="settings_free_space_done">Freed %1$s</string>
-    <string name="settings_footer_privacy">Private by design. No account, nothing uploaded.</string>
+    <string name="settings_footer_privacy">Private by design. No account, and your documents stay on your phone.</string>
     <string name="settings_privacy_dialog_title">Your scans stay on this phone</string>
     <string name="settings_privacy_dialog_account">ScanPro needs no account and sends nothing to a server. Documents, text recognition and PDF tools all run on the device.</string>
     <string name="settings_privacy_dialog_storage">Files are kept in the app\'s private storage. Other apps only see a document when you share, print or save it yourself.</string>
