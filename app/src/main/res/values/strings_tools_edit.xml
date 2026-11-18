@@ -11,6 +11,7 @@
     <string name="edit_flatten_marked">Marked: the fields and comments on page 1 that become part of the page.</string>
     <string name="edit_flatten_fields">Form fields</string>
     <string name="edit_flatten_comments">Comments and stamps</string>
+    <string name="edit_flatten_what_happens">Form answers, comments, highlights and stamps that have their own look are drawn into the pages, so they can no longer be edited as fields or comments. The answers stay readable, selectable text, and anyone with a PDF editor can still change page content. Links, and comments without a look of their own, are kept as they are. Nothing is hidden: use Redact to remove words.</string>
     <string name="edit_flatten_links">Links (kept)</string>
 
     <string name="edit_crop_section_how">How to crop</string>

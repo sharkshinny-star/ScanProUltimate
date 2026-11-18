@@ -175,6 +175,8 @@ class EditToolsTest {
                 page = third
             }
             third.annotations = listOf<PDAnnotation>(note)
+            // Document information that names her too: a redacted copy must not carry it over.
+            doc.documentInformation.title = "Report for Alice"
             doc.save(file)
         }
         return file
@@ -238,6 +240,21 @@ class EditToolsTest {
             assertSame(doc.getPage(0).cosObject, target.cosObject)
             // The note's page is a picture now, with no comments left on it.
             assertTrue(doc.getPage(2).annotations.isEmpty())
+            // Every object the file holds, as listed by its cross-reference table, not only what the page tree reaches:
+            // no word, and no page object other than the three pages of the copy.
+            var pageObjects = 0
+            for (entry in doc.document.objects) {
+                val obj = entry.getObject() ?: continue
+                if (obj is COSDictionary && obj.getCOSName(COSName.TYPE) == COSName.PAGE) pageObjects++
+                if (obj is COSString) assertFalse(obj.string.contains("alice", ignoreCase = true))
+                if (obj is COSStream && obj.getCOSName(COSName.SUBTYPE) != COSName.IMAGE) {
+                    val bytes = obj.createInputStream().use { it.readBytes() }
+                    assertFalse(String(bytes, Charsets.ISO_8859_1).contains("alice", ignoreCase = true))
+                }
+            }
+            assertEquals(3, pageObjects)
+            assertTrue(doc.documentInformation.title.isNullOrEmpty())
+            assertTrue(doc.documentCatalog.documentOutline == null)
         }
     }
 
@@ -266,6 +283,84 @@ class EditToolsTest {
             val first = PDFTextStripper().apply { startPage = 1; endPage = 1 }.getText(doc)
             assertTrue(first, first.contains("Kept text"))
         }
+    }
+
+    @Test
+    fun theWrittenFileIsCheckedAndRefusedWhenAWordIsStillThere() {
+        val file = File(dir, "still-there.pdf")
+        PDDocument().use { doc ->
+            val page = PDPage(PDRectangle(400f, 300f)).also { doc.addPage(it) }
+            line(doc, page, "Account 12345", 40f, 200f)
+            doc.save(file)
+        }
+        // Clean for another word, refused for the one it still holds.
+        PdfRedactTools.verifyRedacted(file, listOf("99999"))
+        var refused = false
+        try {
+            PdfRedactTools.verifyRedacted(file, listOf("12345"))
+        } catch (_: com.example.scanpro.core.text.UserFacingException) {
+            refused = true
+        }
+        assertTrue(refused)
+    }
+
+    /**
+     * Text that reads upright on screen, on pages turned 0, 90, 180 and 270 degrees: the box sits where the word is
+     * seen. [origin] is where the text starts in page space; [seen] is that point on the turned page, worked out by
+     * hand from the turn (x right, y down from the top-left of the page as shown).
+     */
+    @Test
+    fun boxesFollowEveryPageTurn() {
+        // Page 400 x 300. Text matrix turned with the page so the word reads upright once shown.
+        data class Case(val rotation: Int, val matrix: Matrix, val seenX: Float, val seenY: Float)
+        val cases = listOf(
+            Case(0, Matrix(1f, 0f, 0f, 1f, 100f, 200f), 100f, 100f),
+            Case(90, Matrix(0f, 1f, -1f, 0f, 100f, 50f), 50f, 100f),
+            Case(180, Matrix(-1f, 0f, 0f, -1f, 300f, 200f), 100f, 200f),
+            Case(270, Matrix(0f, -1f, 1f, 0f, 250f, 250f), 50f, 150f),
+        )
+        PDDocument().use { doc ->
+            cases.forEach { case ->
+                val page = PDPage(PDRectangle(400f, 300f)).apply { rotation = case.rotation }.also { doc.addPage(it) }
+                PDPageContentStream(doc, page).use {
+                    it.beginText(); it.setFont(PDType1Font.HELVETICA, 14f); it.setTextMatrix(case.matrix); it.showText("Secret"); it.endText()
+                }
+            }
+            val index = PdfRedactTools.buildIndex(doc)
+            val found = PdfRedactTools.search(index, listOf("secret"), false)
+            cases.forEachIndexed { i, case ->
+                val box = found.boxesOn(i).single()
+                val label = "rotation ${case.rotation}: $box"
+                assertTrue(label, box.left in case.seenX - 6f..case.seenX)
+                assertTrue(label, box.right in case.seenX + 38f..case.seenX + 50f)
+                assertTrue(label, box.top in case.seenY - 15f..case.seenY - 8f)
+                assertTrue(label, box.bottom in case.seenY + 2f..case.seenY + 8f)
+            }
+        }
+    }
+
+    @Test
+    fun sidewaysTextOnAnUprightPageIsBoxedSideways() {
+        PDDocument().use { doc ->
+            val page = PDPage(PDRectangle(400f, 300f)).also { doc.addPage(it) }
+            // Written upwards from (100, 50): on screen it starts 250 pt down and climbs.
+            PDPageContentStream(doc, page).use {
+                it.beginText(); it.setFont(PDType1Font.HELVETICA, 14f); it.setTextMatrix(Matrix(0f, 1f, -1f, 0f, 100f, 50f)); it.showText("Secret"); it.endText()
+            }
+            val box = PdfRedactTools.search(PdfRedactTools.buildIndex(doc), listOf("secret"), false).boxesOn(0).single()
+            // Tall and narrow: about 14 pt across the baseline, about 40 pt along it.
+            assertTrue("$box", box.height() > box.width())
+            assertTrue("$box", box.left <= 89f && box.right >= 101f)
+            assertTrue("$box", box.top <= 212f && box.bottom >= 249f)
+        }
+    }
+
+    @Test
+    fun caseFoldingKeepsOneCharacterPerCharacter() {
+        // Whole-string lowercasing turns the Turkish dotted capital into two characters and shifts every later match.
+        assertEquals("istanbul", PdfRedactTools.normaliseForSearch("İstanbul", fold = true))
+        assertEquals("office", PdfRedactTools.normaliseForSearch("o\uFB03ce", fold = true))
+        assertEquals("jose", PdfRedactTools.normaliseForSearch("JOSÉ", fold = true))
     }
 
     // ---- Flatten preview ----

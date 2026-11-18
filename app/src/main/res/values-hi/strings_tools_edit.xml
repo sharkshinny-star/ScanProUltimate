@@ -11,6 +11,7 @@
     <string name="edit_flatten_marked">निशान लगे हिस्से: पेज 1 के फ़ील्ड और टिप्पणियाँ, जो पेज का हिस्सा बन जाएँगी।</string>
     <string name="edit_flatten_fields">फ़ॉर्म फ़ील्ड</string>
     <string name="edit_flatten_comments">टिप्पणियाँ और स्टैम्प</string>
+    <string name="edit_flatten_what_happens">जिन फ़ॉर्म उत्तरों, टिप्पणियों, हाइलाइट और स्टैम्प का अपना रूप है, वे पेजों में बना दिए जाते हैं, इसलिए उन्हें फ़ील्ड या टिप्पणी की तरह बदला नहीं जा सकता। उत्तर पढ़ने और चुनने लायक टेक्स्ट बने रहते हैं, और PDF एडिटर से पेज की सामग्री अब भी बदली जा सकती है। लिंक, और बिना अपने रूप वाली टिप्पणियाँ, जैसी हैं वैसी रहती हैं। कुछ छिपाया नहीं जाता: शब्द हटाने के लिए Redact का उपयोग करें।</string>
     <string name="edit_flatten_links">लिंक (बने रहेंगे)</string>
 
     <string name="edit_crop_section_how">कैसे क्रॉप करें</string>

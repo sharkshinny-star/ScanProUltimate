@@ -11,6 +11,7 @@
     <string name="edit_flatten_marked">గుర్తించినవి: పేజీలో భాగమయ్యే పేజీ 1లోని ఫీల్డ్‌లు, వ్యాఖ్యలు.</string>
     <string name="edit_flatten_fields">ఫారమ్ ఫీల్డ్‌లు</string>
     <string name="edit_flatten_comments">వ్యాఖ్యలు, స్టాంపులు</string>
+    <string name="edit_flatten_what_happens">సొంత రూపం ఉన్న ఫారమ్ సమాధానాలు, వ్యాఖ్యలు, హైలైట్‌లు, స్టాంపులు పేజీలలోకి గీయబడతాయి, కాబట్టి వాటిని ఫీల్డ్‌లుగా లేదా వ్యాఖ్యలుగా మార్చలేరు. సమాధానాలు చదవగల, ఎంచుకోగల వచనంగానే ఉంటాయి, PDF ఎడిటర్‌తో పేజీ విషయాన్ని ఇంకా మార్చవచ్చు. లింక్‌లు, సొంత రూపం లేని వ్యాఖ్యలు అలాగే ఉంటాయి. ఏదీ దాచబడదు: పదాలను తీసేయడానికి Redact ఉపయోగించండి.</string>
     <string name="edit_flatten_links">లింక్‌లు (అలాగే ఉంటాయి)</string>
 
     <string name="edit_crop_section_how">ఎలా కత్తిరించాలి</string>

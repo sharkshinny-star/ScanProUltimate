@@ -545,6 +545,8 @@ object PdfRedactTools {
             node = node.getDictionaryObject(COSName.PARENT) as? COSDictionary
             depth++
         }
+        // A link's web address can hold a name too (mailto:, a profile page).
+        (dict.getDictionaryObject(COSName.A) as? COSDictionary)?.getDictionaryObject(COSName.URI)?.let { cosText(it)?.let { uri -> parts += uri } }
         return parts.joinToString("\n")
     }
 
@@ -635,7 +637,9 @@ object PdfRedactTools {
         pageSize: (Int) -> Pair<Float, Float>,
         draw: (index: Int, target: Bitmap) -> Unit,
         outputFile: File,
-        onPage: (Int) -> Unit = {}
+        onPage: (Int) -> Unit = {},
+        /** The searched words, for the check of the written file; empty for drawn boxes. */
+        terms: List<String> = emptyList()
     ): Int {
         val byPage = matches.groupBy { it.page }
         var bitmap: Bitmap? = null
@@ -681,9 +685,17 @@ object PdfRedactTools {
                     pageMap[sourcePage.cosObject] = page.cosObject
                 }
                 scrubReferences(out.documentCatalog.cosObject, pageMap, banned)
+                // Stated, not left to chance: the copy has no document information, XMP, bookmarks, names, attached
+                // files, form, JavaScript or open action; its catalogue holds the page tree and nothing else.
+                val catalog = out.documentCatalog.cosObject
+                for (key in ArrayList(catalog.keySet())) if (key != COSName.TYPE && key != COSName.PAGES) catalog.removeItem(key)
+                out.document.trailer.removeItem(COSName.INFO)
                 outputFile.parentFile?.mkdirs()
                 out.save(outputFile)
             }
+            // Fail closed: the written file is read back and refused if anything in it leads past its own pages or
+            // still holds a searched word.
+            verifyRedacted(outputFile, terms)
             return byPage.size
         } catch (error: Throwable) {
             outputFile.delete()
@@ -711,6 +723,7 @@ object PdfRedactTools {
         dict.removeItem(COSName.getPDFName("B"))
         dict.removeItem(COSName.getPDFName("PieceInfo"))
         dict.removeItem(COSName.METADATA)
+        dict.removeItem(COSName.getPDFName("Thumb"))
         val annotations = dict.getDictionaryObject(COSName.ANNOTS) as? COSArray
         if (annotations != null) {
             for (k in 0 until annotations.size()) {
@@ -803,6 +816,49 @@ object PdfRedactTools {
     }
 
     private fun deref(value: COSBase?): COSBase? = if (value is COSObject) value.getObject() else value
+
+    /** Stream dictionaries of embedded font programs: their bytes are glyph outlines, not the document's words. */
+    private val FONT_PROGRAM_KEYS = listOf("Length1", "Length2", "Length3").map { COSName.getPDFName(it) }
+    private val FONT_PROGRAM_SUBTYPES = setOf("Type1C", "CIDFontType0C", "OpenType")
+
+    /**
+     * Reads [file] back and throws (the caller then deletes it) when an object reachable from it is a page that is not
+     * one of its own pages, or when a string or a decoded content stream still holds one of [terms] (plain ASCII words
+     * of three letters or more, ignoring case: a word in a font's own encoding cannot be checked this way, which the
+     * page-tree check and the rasterising cover).
+     */
+    internal fun verifyRedacted(file: File, terms: List<String>) {
+        val needles = terms.map { it.trim().lowercase() }.filter { t -> t.length >= 3 && t.all { it.code in 32..126 } }
+        PDDocument.load(file, MemoryUsageSetting.setupTempFileOnly()).use { doc ->
+            val seen: MutableSet<COSBase> = Collections.newSetFromMap(IdentityHashMap())
+            val stack = ArrayDeque<COSBase>()
+            stack.addLast(doc.document.trailer)
+            var pageDictionaries = 0
+            var leaked = false
+            while (stack.isNotEmpty() && !leaked) {
+                val node = deref(stack.removeLast()) ?: continue
+                if (!seen.add(node)) continue
+                when (node) {
+                    is COSString -> leaked = needles.any { node.string.lowercase().contains(it) }
+                    is COSDictionary -> {
+                        if (node.getCOSName(COSName.TYPE) == COSName.PAGE) pageDictionaries++
+                        if (node is COSStream && needles.isNotEmpty()) {
+                            val subtype = node.getCOSName(COSName.SUBTYPE)?.name
+                            val fontProgram = FONT_PROGRAM_KEYS.any { node.containsKey(it) } || subtype in FONT_PROGRAM_SUBTYPES
+                            if (subtype != "Image" && !fontProgram) {
+                                val text = node.createInputStream().use { String(it.readBytes(), Charsets.ISO_8859_1) }.lowercase()
+                                leaked = needles.any { text.contains(it) }
+                            }
+                        }
+                        for (key in node.keySet()) node.getItem(key)?.let { stack.addLast(it) }
+                    }
+                    is COSArray -> for (k in 0 until node.size()) node.get(k)?.let { stack.addLast(it) }
+                    else -> Unit
+                }
+            }
+            if (leaked || pageDictionaries != doc.numberOfPages) userError(R.string.tools_redact_err_failed)
+        }
+    }
 
     /** A box drawn by hand on page [page] (0-based): edges as shares (0..1) of the page as displayed, top-left origin. */
     class DrawnBox(val page: Int, val left: Float, val top: Float, val right: Float, val bottom: Float)
@@ -897,6 +953,7 @@ object PdfRedactTools {
                             writeRedacted(
                                 source = doc,
                                 matches = found.matches,
+                                terms = terms,
                                 pageSize = { i -> page(i).let { it.width.toFloat() to it.height.toFloat() } },
                                 draw = { i, target -> page(i).render(target, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT) },
                                 outputFile = outputFile

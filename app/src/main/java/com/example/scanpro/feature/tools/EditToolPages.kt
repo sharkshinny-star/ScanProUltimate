@@ -282,7 +282,7 @@ internal fun FlattenPage(uri: Uri, onDismiss: () -> Unit, onConfirm: () -> Unit)
             }
         }
         ToolSection(stringResource(R.string.edit_section_what_happens)) {
-            ToolHint(stringResource(R.string.tools_flatten_confirm_body))
+            ToolHint(stringResource(R.string.edit_flatten_what_happens))
         }
     }
 }
