@@ -41,6 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-18, F177 framed-object check for R58, commit bd193c7, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`; the app's `DocumentEdgeDetector.kt` and new `PageFraming.kt` compiled unchanged): detection results identical to F176 on every scene; all 106 page results have 0 framed sides; laptop (wood, warm lamp) and keyboard 4 of 4 framed and no longer convincing pages; notebook cover 0 (still a page); phone, mug and pen, empty desks unchanged. Threshold sweep: at 15 grey levels two page scenes reach 1 framed side (the rule needs 3); at 60 and 90 only the keyboard stays framed. Grey-only `time`: median 5.87 ms.
+- `PageFramingTest` (5 tests): 5 passed, 0 failed, run once through a temporary JUnit set-up in the bench build against desktop OpenCV 4.9 (not committed); NOT run as part of `:app:testDebugUnitTest` (no Android SDK in this container), so the vendored-library run is pending.
+- NOT run: `:app` build, unit tests and lint, `ScanDetectionBenchmarkTest`, anything on a device (R56, R57).
+
 ## Latest results (2026-11-18, F176 colour cases, clutter scenes, chromaticity colour map, commit f694416, Linux cloud container)
 
 - Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`; the app's `DocumentEdgeDetector.kt` compiled unchanged): benchmark scenes unchanged (grey-only mean IoU 0.986, colour 0.985, worst error 0.58%); shadow cases with colour 21 of 21 under 2%; new colour cases 13 of 13 under 2% with colour (grey-only 12 of 13: yellow paper with a shadow over most of one side, 10.69% → 0.11% with colour). Clutter scenes (R58): laptop 0.68 and keyboard 0.63 are taken for a page (above the 0.48 gate), notebook cover 0.49 (0.64 with colour); phone, mug and pen and empty desks 0.29 or less. Grey-only `time`: median 6.45 ms.
