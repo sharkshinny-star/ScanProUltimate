@@ -523,6 +523,11 @@
     <string name="tools_card_invert_pdf">PDF ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಿ</string>
     <string name="tools_tile_invert_pdf">ಬಣ್ಣ ಹಿಮ್ಮುಖಗೊಳಿಸಿ</string>
     <string name="tools_desc_invert_pdf">ರಾತ್ರಿ ಓದಲು ಡಾರ್ಕ್ ಮೋಡ್ PDF</string>
+    <string name="tools_invert_confirm_body">ಪ್ರತಿ ಪುಟವನ್ನು %1$d dpi ನಲ್ಲಿ ಹಿಮ್ಮುಖ ಬಣ್ಣಗಳಲ್ಲಿ ಮತ್ತೆ ಚಿತ್ರಿಸಲಾಗುತ್ತದೆ: ಬಿಳಿ ಕಾಗದ ಕಪ್ಪಾಗುತ್ತದೆ, ಗಾಢ ಪಠ್ಯ ತಿಳಿಯಾಗುತ್ತದೆ. ಪಠ್ಯವು ಪುಟದ ಚಿತ್ರದ ಭಾಗವಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಅದನ್ನು ಹುಡುಕಲು ಅಥವಾ ನಕಲಿಸಲು ನಂತರ \"ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ\" ಬಳಸಿ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_invert_confirm_action">ಬಣ್ಣ ಹಿಮ್ಮುಖಗೊಳಿಸಿ</string>
+    <string name="tools_invert_progress">ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_invert_err_failed">ಈ PDF ನ ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ.</string>
+    <string name="hint_tool_invert_pdf">ರಾತ್ರಿ ಸುಲಭವಾಗಿ ಓದಲು ಬಿಳಿ ಪುಟಗಳನ್ನು ಗಾಢವಾಗಿ ಮತ್ತು ಗಾಢ ಪಠ್ಯವನ್ನು ತಿಳಿಯಾಗಿ ಮಾಡಿ.</string>
     <plurals name="tools_invert_done">
         <item quantity="one">%1$d ಪುಟದ ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲಾಗಿದೆ.</item>
         <item quantity="other">%1$d ಪುಟಗಳ ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲಾಗಿದೆ.</item>

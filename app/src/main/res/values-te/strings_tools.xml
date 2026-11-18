@@ -523,6 +523,11 @@
     <string name="tools_card_invert_pdf">PDF రంగులను తిరగరాయండి</string>
     <string name="tools_tile_invert_pdf">రంగులు మార్చు</string>
     <string name="tools_desc_invert_pdf">రాత్రి చదవడానికి డార్క్ మోడ్ PDF</string>
+    <string name="tools_invert_confirm_body">ప్రతి పేజీని %1$d dpi వద్ద తిరగబడిన రంగుల్లో మళ్లీ గీస్తాము: తెల్ల కాగితం నల్లగా, ముదురు టెక్స్ట్ లేతగా మారుతుంది. టెక్స్ట్ పేజీ చిత్రంలో భాగమవుతుంది, కాబట్టి దాన్ని వెతకడానికి లేదా కాపీ చేయడానికి తర్వాత \"వెతకదగినదిగా చేయండి\" ఉపయోగించండి. అసలు ఫైల్ మారదు.</string>
+    <string name="tools_invert_confirm_action">రంగులు మార్చు</string>
+    <string name="tools_invert_progress">రంగులు మారుస్తోంది…</string>
+    <string name="tools_invert_err_failed">ఈ PDF రంగులను మార్చలేకపోయాము.</string>
+    <string name="hint_tool_invert_pdf">రాత్రి సులభంగా చదవడానికి తెల్ల పేజీలను ముదురుగా, ముదురు టెక్స్ట్‌ను లేతగా మార్చండి.</string>
     <plurals name="tools_invert_done">
         <item quantity="one">%1$d పేజీ రంగులు మార్చబడ్డాయి.</item>
         <item quantity="other">%1$d పేజీల రంగులు మార్చబడ్డాయి.</item>

@@ -40,7 +40,8 @@ object ImageProcessor {
     private const val HD_SOURCE_LONG_SIDE = 4500
 
     /**
-     * The longest side, in pixels, a rendered page keeps. A standard photo keeps 3400 (2200 for black and white, which
+     * The longest side, in pixels, a rendered page keeps (of the page itself since 2026-11-18, see processPage; it
+     * used to be of the whole photo the page was cut from). A standard photo keeps 3400 (2200 for black and white, which
      * is already crisp at that size); an HD photo keeps more, so the extra detail the sensor captured is not thrown away
      * on the way to the saved page. Taken from the photo itself, so HD photos imported from the gallery benefit too.
      */
@@ -119,12 +120,24 @@ object ImageProcessor {
         annotations: List<PageAnnotation>,
         maxDimension: Int
     ): Bitmap {
-        // Laid on white: a transparent PNG would otherwise turn black in the JPEG and in the OpenCV filters.
-        var bitmap = decodeScaled(source.absolutePath, maxDimension)?.let(PdfExporter::onWhite)
-            ?: userError(R.string.err_could_not_decode_image, source.name)
         val exifRotation = runCatching { ExifInterface(source.absolutePath).rotationDegrees }.getOrDefault(0)
-        if (exifRotation != 0) bitmap = bitmap.then { rotate(it, exifRotation) }
-        if (!crop.isIdentity()) bitmap = bitmap.then { cropPage(it, crop) }
+        // Only the page's own area is read from a photo larger than the limit (2026-11-18), so the limit is spent on
+        // the page. The whole photo used to be shrunk to the limit first and the page cut out of that: a page filling
+        // two thirds of a 12 MP photo was saved about 2200 px long (some 190 dpi for A4) however sharp the photo was.
+        val area = if (crop.isIdentity()) null else {
+            runCatching { decodePageArea(source.absolutePath, crop, exifRotation, maxDimension) }.getOrNull()
+        }
+        var pageCrop = crop
+        // Laid on white: a transparent PNG would otherwise turn black in the JPEG and in the OpenCV filters.
+        var bitmap = if (area != null) {
+            pageCrop = area.second
+            PdfExporter.onWhite(area.first)
+        } else {
+            val whole = decodeScaled(source.absolutePath, maxDimension)?.let(PdfExporter::onWhite)
+                ?: userError(R.string.err_could_not_decode_image, source.name)
+            if (exifRotation != 0) whole.then { rotate(it, exifRotation) } else whole
+        }
+        if (!pageCrop.isIdentity()) bitmap = bitmap.then { cropPage(it, pageCrop) }
         val totalRotation = ((manualRotationDegrees % 360) + 360) % 360
         if (totalRotation != 0) bitmap = bitmap.then { rotate(it, totalRotation) }
         bitmap = applyLook(bitmap, filter, adjustments)
@@ -301,7 +314,8 @@ object ImageProcessor {
 
         val regionDecoder = runCatching {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                android.graphics.BitmapRegionDecoder.newInstance(File(path).inputStream())
+                // The decoder takes its own copy of the data, so the stream is closed straight away.
+                File(path).inputStream().use { android.graphics.BitmapRegionDecoder.newInstance(it) }
             } else {
                 @Suppress("DEPRECATION")
                 android.graphics.BitmapRegionDecoder.newInstance(path, false)
@@ -311,7 +325,12 @@ object ImageProcessor {
         var sample = 1
         val boxWidth = box.width()
         val boxHeight = box.height()
-        while (max(boxWidth, boxHeight) / sample > maxDimension * 2) {
+        // As in decodeScaled: up to twice the target, but never more pixels than the device can be trusted to hold
+        // (the page area of a 48 MP photo can itself be 30 MP).
+        while (
+            max(boxWidth, boxHeight) / sample > maxDimension * 2 ||
+            (boxWidth.toLong() / sample) * (boxHeight.toLong() / sample) > MAX_DECODE_PIXELS
+        ) {
             sample *= 2
         }
 

@@ -115,8 +115,8 @@ object DocumentEdgeDetector {
     private const val CHROMA_MIN_GAP = 24.0
     private const val CHROMA_MIN_SHARE = 0.08
     private const val CHROMA_WEIGHT = 0.96
-    private const val CHROMA_SCALE = 600.0
-    private const val CHROMA_DARK_SUM = 90.0
+    internal const val CHROMA_SCALE = 600.0
+    internal const val CHROMA_DARK_SUM = 90.0
 
     /**
      * Colour strength of every pixel: how far its chromaticity (each channel's share of r + g + b) is from neutral, as
@@ -124,7 +124,7 @@ object DocumentEdgeDetector {
      * where it was (CIE a/b, used first, shrank in shadow: lit yellow paper read stronger than wood and shadowed yellow
      * weaker, so no split separated them). Near-black pixels, whose shares are noise, fade towards neutral. Against a
      * coloured surface the page edge stays visible here where the brightness edge is lost (F175). The live camera path
-     * has no colour and passes none.
+     * makes the same map from the frame's own colour planes ([LiveChroma]).
      */
     fun chromaMap(rgba: Mat): Mat {
         val rgb = Mat(); val f = Mat(); val ch = ArrayList<Mat>(); val sum = Mat(); val rn = Mat(); val gn = Mat()
@@ -152,7 +152,8 @@ object DocumentEdgeDetector {
 
     fun detect(grayInput: Mat, chroma: Mat? = null): DocumentDetection {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
-        require(chroma == null || (chroma.channels() == 1 && chroma.size() == grayInput.size())) { "The colour map must match the grayscale Mat" }
+        // Any size with the frame's shape: the map is brought to the working size below (the live camera passes a quarter-size one).
+        require(chroma == null || (chroma.channels() == 1 && !chroma.empty())) { "The colour map must be a single-channel Mat" }
 
         val working = resizeForAnalysis(grayInput)
         val processed = Mat()

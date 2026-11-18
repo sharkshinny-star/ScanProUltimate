@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Merge
 import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.InvertColors
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -140,6 +141,7 @@ fun PdfToolsScreen(
     var showWatermarkDialog by rememberSaveable { mutableStateOf(false) }
     var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
     var showGreyscaleDialog by rememberSaveable { mutableStateOf(false) }
+    var showInvertDialog by rememberSaveable { mutableStateOf(false) }
     var showFlattenDialog by rememberSaveable { mutableStateOf(false) }
     var showCropPdfDialog by rememberSaveable { mutableStateOf(false) }
     var showRedactDialog by rememberSaveable { mutableStateOf(false) }
@@ -302,6 +304,7 @@ fun PdfToolsScreen(
             "pdf2excel" -> { pdfTextFormat = TextExportFormat.EXCEL; showPdfToTextDialog = true }
             "blank_pages" -> viewModel.findBlankPages(uri)
             "greyscale" -> showGreyscaleDialog = true
+            "invert_pdf" -> showInvertDialog = true
             "flatten" -> showFlattenDialog = true
             "crop_pdf" -> showCropPdfDialog = true
             "redact" -> showRedactDialog = true
@@ -865,6 +868,17 @@ fun PdfToolsScreen(
                 )
             }
 
+            if (showInvertDialog && uri != null) {
+                ToolConfirmDialog(
+                    icon = Icons.Default.InvertColors,
+                    title = stringResource(R.string.tools_card_invert_pdf),
+                    body = stringResource(R.string.tools_invert_confirm_body, com.example.scanpro.imaging.PdfCleanupTools.GREYSCALE_DPI),
+                    confirmLabel = stringResource(R.string.tools_invert_confirm_action),
+                    onDismiss = { showInvertDialog = false },
+                    onConfirm = { showInvertDialog = false; viewModel.invertColors(uri) }
+                )
+            }
+
             if (showFlattenDialog && uri != null) {
                 ToolConfirmDialog(
                     icon = Icons.Default.Layers,
@@ -1064,7 +1078,7 @@ private const val RESULTS_SHOWN = 5
 private val RETRYABLE_TOOLS = setOf(
     "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
     "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
+    "blank_pages", "greyscale", "invert_pdf", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
 )
 
 /** Tools whose input is a picture, not a PDF: their failures are never offered Repair. */
@@ -1079,7 +1093,7 @@ private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img"
  */
 private val OPENS_PAGES = setOf(
     "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
+    "blank_pages", "greyscale", "invert_pdf", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
 )
 
 internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {

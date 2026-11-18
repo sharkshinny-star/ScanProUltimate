@@ -62,6 +62,56 @@ class OpenCvDocumentAnalyzer(
         return rowBytes
     }
 
+    private var uBytes = ByteArray(0)
+    private var vBytes = ByteArray(0)
+    private var chromaBytes = ByteArray(0)
+
+    /**
+     * The frame's colour-strength map ([LiveChroma]), turned upright and cut to the viewport like the grey image, or
+     * null when the frame has no usable colour planes. Reads the luma that [grayMatOf] left in the frame buffer, so it
+     * must be called after it, for the same frame.
+     */
+    private fun chromaMatOf(image: ImageProxy): Mat? {
+        val planes = image.planes
+        if (planes.size < 3 || frameBytes.size != image.width * image.height) return null
+        fun read(buffer: java.nio.ByteBuffer, into: ByteArray): ByteArray {
+            buffer.rewind()
+            val bytes = if (into.size == buffer.remaining()) into else ByteArray(buffer.remaining())
+            buffer.get(bytes, 0, bytes.size)
+            return bytes
+        }
+        uBytes = read(planes[1].buffer, uBytes)
+        vBytes = read(planes[2].buffer, vBytes)
+        val width = LiveChroma.width(image.width)
+        val height = LiveChroma.height(image.height)
+        if (width <= 0 || height <= 0) return null
+        if (chromaBytes.size != width * height) chromaBytes = ByteArray(width * height)
+        if (!LiveChroma.compute(frameBytes, image.width, image.height, uBytes, vBytes, planes[1].rowStride, planes[1].pixelStride, chromaBytes)) return null
+        val source = Mat(height, width, CvType.CV_8UC1)
+        try {
+            source.put(0, 0, chromaBytes)
+            val rotateCode = when (image.imageInfo.rotationDegrees) {
+                90 -> Core.ROTATE_90_CLOCKWISE
+                180 -> Core.ROTATE_180
+                270 -> Core.ROTATE_90_COUNTERCLOCKWISE
+                else -> -1
+            }
+            if (rotateCode < 0) return source.croppedToViewport(image, LiveChroma.STEP)
+            val rotated = Mat()
+            try {
+                Core.rotate(source, rotated, rotateCode)
+            } catch (error: Throwable) {
+                rotated.release()
+                throw error
+            }
+            source.release()
+            return rotated.croppedToViewport(image, LiveChroma.STEP)
+        } catch (error: Throwable) {
+            source.release()
+            throw error
+        }
+    }
+
     override fun analyze(image: ImageProxy) {
         if (!enabled || closed) {
             image.close()
@@ -86,8 +136,10 @@ class OpenCvDocumentAnalyzer(
             // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
             // are found describe exactly the pixels the user sees and the capture keeps.
             val gray = toRotatedGrayMat(image).croppedToViewport(image)
+            // The colour-strength map from the same frame (R57); without it the detector works on brightness alone, as before.
+            val chroma = runCatching { chromaMatOf(image) }.getOrNull()
             try {
-                val raw = DocumentEdgeDetector.detect(gray)
+                val raw = DocumentEdgeDetector.detect(gray, chroma)
                 var result = raw.copy(guidance = steadyGuidance(raw.guidance))
                 // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -128,6 +180,7 @@ class OpenCvDocumentAnalyzer(
                 }
             } finally {
                 gray.release()
+                chroma?.release()
             }
         } catch (error: Throwable) {
             // Analyser failures should never kill the camera pipeline. One bad frame is dropped quietly, but a
@@ -229,9 +282,11 @@ internal class Steadiness {
     }
 }
 
-private fun Mat.croppedToViewport(image: ImageProxy): Mat {
+/** Cuts this upright image to the part of the frame the preview shows; [step] is how many frame pixels one of its pixels covers. */
+private fun Mat.croppedToViewport(image: ImageProxy, step: Int = 1): Mat {
     val rect = image.cropRect
-    val box = rotateBox(IntBox(rect.left, rect.top, rect.right, rect.bottom), image.width, image.height, image.imageInfo.rotationDegrees)
+    val full = rotateBox(IntBox(rect.left, rect.top, rect.right, rect.bottom), image.width, image.height, image.imageInfo.rotationDegrees)
+    val box = if (step == 1) full else IntBox(full.left / step, full.top / step, full.right / step, full.bottom / step)
     val width = box.right - box.left
     val height = box.bottom - box.top
     val coversFrame = box.left <= 0 && box.top <= 0 && width >= cols() && height >= rows()

@@ -1271,13 +1271,13 @@ private fun CropCanvas(
                 }
                 close()
             }
-            drawPath(path, accent.copy(alpha = 0.18f))
-            drawPath(path, Color.White, style = Stroke(width = 2.dp.toPx()))
+            drawPath(path, PageOutlineBlue.copy(alpha = 0.14f))
+            drawPath(path, PageOutlineBlue, style = Stroke(width = 2.dp.toPx()))
             // Corner handles: 30 dp circles with a translucent primary fill, a white ring and a thin primary outer ring.
             points.forEach { centre ->
-                drawCircle(accent.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
+                drawCircle(PageOutlineBlue.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
                 drawCircle(Color.White, radius = 13.dp.toPx(), center = centre, style = Stroke(width = 2.5.dp.toPx()))
-                drawCircle(accent, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
+                drawCircle(PageOutlineBlue, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
             }
             if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
             if (dragging && active < 4) {

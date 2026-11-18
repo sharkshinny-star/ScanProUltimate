@@ -287,6 +287,16 @@ fun main(args: Array<String>) {
     if ("enhance" in args) { enhanceBench(args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")); return }
     val extra = "extra" in args
     val colour = "colour" in args
+    // "live": the colour map at a quarter of the frame's size, as the live camera makes it (LiveChroma), not full size.
+    val live = "live" in args
+    fun chromaOf(rgba: Mat): Mat {
+        val full = DocumentEdgeDetector.chromaMap(rgba)
+        if (!live) return full
+        val small = Mat()
+        Imgproc.resize(full, small, org.opencv.core.Size(full.cols() / 4.0, full.rows() / 4.0), 0.0, 0.0, Imgproc.INTER_AREA)
+        full.release()
+        return small
+    }
     val dump = args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")
     val only = args.firstOrNull { it.startsWith("only=") }?.removePrefix("only=")
     println("scene | found | err% | IoU | ms | conf")
@@ -304,14 +314,14 @@ fun main(args: Array<String>) {
         rows += Triple(s.name, err, o)
         if (s.name.startsWith("n_") && colour) {
             val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
-            val c = DocumentEdgeDetector.detect(s.gray, DocumentEdgeDetector.chromaMap(rgba))
+            val c = DocumentEdgeDetector.detect(s.gray, chromaOf(rgba))
             println("    colour: NEG conf ${"%.2f".format(c.confidence)} convincing ${c.isConvincingPage} area ${"%.2f".format(c.areaRatio)} framed ${c.framedSides}")
         }
         if (s.name.startsWith("n_")) { println("${s.name} | NEG conf ${"%.2f".format(det.confidence)} convincing ${det.isConvincingPage} area ${"%.2f".format(det.areaRatio)} framed ${det.framedSides}"); return@forEach }
         println("${s.name} | true | ${"%.2f".format(err)} | ${"%.3f".format(o)} | ${"%.1f".format(times[3])} | ${"%.2f".format(det.confidence)} | framed ${det.framedSides}")
         if (colour) {
             val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
-            val chroma = DocumentEdgeDetector.chromaMap(rgba)
+            val chroma = chromaOf(rgba)
             DocumentEdgeDetector.detect(s.gray, chroma)
             var cdet = DocumentEdgeDetector.detect(s.gray, chroma)
             val ctimes = List(7) { val t = System.nanoTime(); cdet = DocumentEdgeDetector.detect(s.gray, chroma); (System.nanoTime() - t) / 1e6 }.sorted()

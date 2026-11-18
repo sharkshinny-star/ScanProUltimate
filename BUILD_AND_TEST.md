@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-18 (F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-18 (F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,6 +40,15 @@ Gradle properties:
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
+
+## Latest results (2026-11-18, F181–F185, commit PENDING_F181, Linux cloud container)
+
+- Filter, detector and colour-map unit tests on the desktop JVM, with the app's sources unchanged, the `:opencv` Java wrappers and the vendored `opencv_java4.bin` the CI uses (a throwaway Gradle project, not committed): 31 run, 31 passed (`MatFiltersGoldenTest` 14, `MatFiltersEquivalenceTest` 6, `SmartAutoTest` 2, `PageFramingTest` 5, `LiveChromaTest` 4). Goldens `auto`, `color`, `gray`, `bw`, `whiteboard`, `chain` regenerated with `scanpro.updateGoldens=true` and compared by eye with the old ones.
+- `cd scripts/scan-bench && gradle -q run --args="enhance"`: Colour bgStd 0.0 to 1.4 (was 5.4 to 7.7), Grey 0.0 to 1.4 (was 2.9 to 7.7), halo 0.0 (was up to 4.7), on five degraded pages; Auto unchanged except the warm-lamp page, now cleaned as a document.
+- `gradle -q run --args="extra colour live"` (colour map at a quarter size, as the live camera makes it): 12 benchmark scenes mean IoU 0.985, worst error 0.58%; colour cases 17/17 under 2% (grey only 16/17); shadow cases 21/21 (grey only 19/21); no-page scenes: same answers as grey only.
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS.
+- CI run 167 on `a8f220c` (F180): unit tests and lint passed, Play bundle built (with AGP 9.6.0-alpha04); the sideload step was still running when this was written.
+- NOT run: `:app` compile, the full unit suite, lint and release builds for F181–F185 (no Android SDK here; the CI run for the push is their first build), and anything on a device.
 
 ## Latest results (2026-11-18, F180 repairs after the review of 8de31f6, commit a8f220c, Linux cloud container)
 

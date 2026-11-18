@@ -1021,7 +1021,10 @@ fun CameraScannerScreen(
                     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
                     .setResolutionStrategy(
                         ResolutionStrategy(
-                            if (hdCapture) android.util.Size(8000, 6000) else android.util.Size(4000, 3000),
+                            // 4096x3072, not 4000x3000: the closest-lower rule skipped a 4096x3072 camera's full size and
+                            // took 3456x2592, a third fewer pixels (measured on the owner's phone, see CaptureSizes).
+                            if (hdCapture) android.util.Size(CaptureSizes.HD_WIDTH, CaptureSizes.HD_HEIGHT)
+                            else android.util.Size(CaptureSizes.STANDARD_WIDTH, CaptureSizes.STANDARD_HEIGHT),
                             ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
                         )
                     )
@@ -1363,7 +1366,7 @@ fun CameraScannerScreen(
 
             if (showGrid && !reviewing) ThirdsGrid()
             if (!barcodeMode && detectMode != DetectMode.NO_DETECT && scanMode != ScanMode.ID_CARD) {
-                DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable, accent = scanLine)
+                DocumentBoundaryOverlay(detection = detection, quad = { shownQuad }, stable = stable)
             }
             if (scanMode == ScanMode.BOOK && bookLayout != 0 && !barcodeMode && !reviewing) {
                 val tracking = detectMode != DetectMode.NO_DETECT
@@ -2137,6 +2140,13 @@ private val TorchOn = Color(0xFFFFD54A)
 private val HintFound = Color(0xFF14804F)
 
 /**
+ * The page outline is blue everywhere it is drawn (owner, 2026-11-18): over the live camera, in the review and in the
+ * crop editor. The lighter blue is the outline while the page is still being found; the full blue once it is steady.
+ */
+internal val PageOutlineBlue = Color(0xFF2979FF)
+internal val PageOutlineBlueSoft = Color(0xFF82B1FF)
+
+/**
  * QR mode's viewfinder, like Google Lens: everything outside a centred square is dimmed, the square has rounded
  * corner brackets and a scan line sweeping down it, and a hint sits under it. Any code in view is read, inside the
  * square or not; the square only shows where to aim.
@@ -2700,8 +2710,8 @@ internal fun ScanIntroDialog(mode: ScanMode, onTry: (() -> Unit)? = null, onStar
  * [detection] supplies the frame size the outline is expressed in.
  */
 @Composable
-private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: () -> CropQuad?, stable: Boolean, accent: Color) {
-    val lineColor by androidx.compose.animation.animateColorAsState(if (stable) accent else Color.White, tween(220), label = "outline")
+private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: () -> CropQuad?, stable: Boolean) {
+    val lineColor by androidx.compose.animation.animateColorAsState(if (stable) PageOutlineBlue else PageOutlineBlueSoft, tween(220), label = "outline")
     val fillAlpha by androidx.compose.animation.core.animateFloatAsState(if (stable) 0.16f else 0.07f, tween(220), label = "fill")
     // Stroke widths in dp (2026-11-18): they were raw pixels, under 1dp on a 3x phone, beside 4-5dp QR and ID marks.
     val weight by androidx.compose.animation.core.animateFloatAsState(if (stable) 3f else 2f, tween(220), label = "weight")

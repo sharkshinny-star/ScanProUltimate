@@ -883,7 +883,7 @@ class PdfToolsViewModel @Inject constructor(
             com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, named(uri, "redacted"), ::report)
         }
 
-    fun invertColors(uri: Uri) = launchTool(R.string.tools_grey_progress, R.string.tools_grey_err_failed) {
+    fun invertColors(uri: Uri) = launchTool(R.string.tools_invert_progress, R.string.tools_invert_err_failed) {
         com.example.scanpro.imaging.PdfCleanupTools.invertColors(context, uri, named(uri, "inverted"), ::report)
     }
 

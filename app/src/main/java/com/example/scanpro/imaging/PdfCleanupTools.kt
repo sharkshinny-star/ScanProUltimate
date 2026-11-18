@@ -300,9 +300,9 @@ object PdfCleanupTools {
         }
     }
 
-    // ---- Invert Colors (Dark Mode PDF) ----------------------------------------------------------------------------
+    // ---- Invert colours (dark PDF for night reading) ----------------------------------------------------------------------------
 
-    /** Inverts [bitmap] colors in place for dark mode reading. */
+    /** Inverts the colours of [bitmap] in place (white paper becomes black). */
     internal fun toInvertedColors(bitmap: Bitmap) {
         val width = bitmap.width
         val row = IntArray(width)
@@ -332,7 +332,7 @@ object PdfCleanupTools {
             PDDocument(MemoryUsageSetting.setupTempFileOnly()).use { out ->
                 val buffer = ByteArrayOutputStream()
                 for (i in 0 until pageCount) {
-                    if (!currentCoroutineContext().isActive) throw InterruptedException("Invert colors cancelled")
+                    if (!currentCoroutineContext().isActive) throw InterruptedException("Invert colours cancelled")
                     onPage(i)
                     val (widthPt, heightPt) = pageSize(i)
                     val scale = minOf(GREYSCALE_DPI / 72f, GREYSCALE_MAX_SIDE / maxOf(widthPt, heightPt).coerceAtLeast(1f))

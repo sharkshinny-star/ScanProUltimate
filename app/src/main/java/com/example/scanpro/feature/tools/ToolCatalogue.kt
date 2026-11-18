@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.InvertColors
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material.icons.filled.GridView
@@ -88,6 +89,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("repair", R.string.tools_card_repair, Icons.Default.Build, TileTone.Amber),
             PdfToolCard("blank_pages", R.string.tools_card_blank_pages, Icons.Default.DeleteSweep, TileTone.Sky, label = R.string.tools_tile_blank_pages),
             PdfToolCard("greyscale", R.string.tools_card_greyscale, Icons.Default.Contrast, TileTone.Slate, label = R.string.tools_tile_greyscale),
+            PdfToolCard("invert_pdf", R.string.tools_card_invert_pdf, Icons.Default.InvertColors, TileTone.Slate, label = R.string.tools_tile_invert_pdf),
             PdfToolCard("flatten", R.string.tools_card_flatten, Icons.Default.Layers, TileTone.Violet, label = R.string.tools_tile_flatten),
             PdfToolCard("crop_pdf", R.string.tools_card_crop_pdf, Icons.Default.Crop, TileTone.Sky, label = R.string.tools_tile_crop_pdf),
             PdfToolCard("redact", R.string.tools_card_redact, Icons.Default.VisibilityOff, TileTone.Rose, label = R.string.tools_tile_redact),

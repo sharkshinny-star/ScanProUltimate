@@ -558,6 +558,11 @@
     <string name="tools_card_invert_pdf">Invert PDF colours</string>
     <string name="tools_tile_invert_pdf">Invert PDF</string>
     <string name="tools_desc_invert_pdf">Dark mode PDF for night reading</string>
+    <string name="tools_invert_confirm_body" tools:ignore="PluralsCandidate">Every page is redrawn with its colours reversed at %1$d dpi: white paper turns black and dark text turns light. Text becomes part of the page image, so use Make searchable afterwards if you need to search or copy it. The original is not changed.</string>
+    <string name="tools_invert_confirm_action">Invert colours</string>
+    <string name="tools_invert_progress">Inverting colours…</string>
+    <string name="tools_invert_err_failed">Couldn\'t invert this PDF\'s colours.</string>
+    <string name="hint_tool_invert_pdf">Turn white pages dark and dark text light, for easier reading at night.</string>
     <plurals name="tools_invert_done">
         <item quantity="one">Inverted colours on %1$d page.</item>
         <item quantity="other">Inverted colours on %1$d pages.</item>

@@ -523,6 +523,11 @@
     <string name="tools_card_invert_pdf">PDF നിറങ്ങൾ മാറ്റുക</string>
     <string name="tools_tile_invert_pdf">നിറങ്ങൾ മാറ്റുക</string>
     <string name="tools_desc_invert_pdf">രാത്രി വായനയ്ക്കായി ഡാർക്ക് മോഡ് PDF</string>
+    <string name="tools_invert_confirm_body">ഓരോ പേജും %1$d dpi-ൽ വിപരീത നിറങ്ങളിൽ വീണ്ടും വരയ്ക്കുന്നു: വെള്ള പേപ്പർ കറുപ്പാകും, ഇരുണ്ട ടെക്സ്റ്റ് ഇളം നിറമാകും. ടെക്സ്റ്റ് പേജ് ചിത്രത്തിന്റെ ഭാഗമാകും, അതിനാൽ അത് തിരയാനോ പകർത്താനോ പിന്നീട് \"തിരയാവുന്നതാക്കുക\" ഉപയോഗിക്കുക. ഒറിജിനൽ മാറില്ല.</string>
+    <string name="tools_invert_confirm_action">നിറങ്ങൾ മാറ്റുക</string>
+    <string name="tools_invert_progress">നിറങ്ങൾ മാറ്റുന്നു…</string>
+    <string name="tools_invert_err_failed">ഈ PDF-ന്റെ നിറങ്ങൾ മാറ്റാനായില്ല.</string>
+    <string name="hint_tool_invert_pdf">രാത്രി എളുപ്പത്തിൽ വായിക്കാൻ വെള്ള പേജുകൾ ഇരുണ്ടതും ഇരുണ്ട ടെക്സ്റ്റ് ഇളം നിറവുമാക്കുക.</string>
     <plurals name="tools_invert_done">
         <item quantity="one">%1$d പേജിന്റെ നിറങ്ങൾ മാറ്റി.</item>
         <item quantity="other">%1$d പേജുകളുടെ നിറങ്ങൾ മാറ്റി.</item>

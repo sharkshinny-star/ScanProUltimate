@@ -523,6 +523,11 @@
     <string name="tools_card_invert_pdf">PDF நிறங்களை மாற்று</string>
     <string name="tools_tile_invert_pdf">நிறங்களை மாற்று</string>
     <string name="tools_desc_invert_pdf">இரவு வாசிப்பிற்கான டார்க் மோட் PDF</string>
+    <string name="tools_invert_confirm_body">ஒவ்வொரு பக்கமும் %1$d dpi-இல் தலைகீழ் நிறங்களில் மீண்டும் வரையப்படும்: வெள்ளைத் தாள் கருப்பாகும், அடர் உரை வெளிர் நிறமாகும். உரை பக்கப் படத்தின் பகுதியாகிவிடும், எனவே அதைத் தேட அல்லது நகலெடுக்கப் பின்னர் \"தேடக்கூடியதாக்கு\" பயன்படுத்தவும். மூலக் கோப்பு மாறாது.</string>
+    <string name="tools_invert_confirm_action">நிறங்களை மாற்று</string>
+    <string name="tools_invert_progress">நிறங்களை மாற்றுகிறது…</string>
+    <string name="tools_invert_err_failed">இந்த PDF-இன் நிறங்களை மாற்ற முடியவில்லை.</string>
+    <string name="hint_tool_invert_pdf">இரவில் எளிதாகப் படிக்க வெள்ளைப் பக்கங்களை அடர் நிறமாகவும் அடர் உரையை வெளிர் நிறமாகவும் மாற்றவும்.</string>
     <plurals name="tools_invert_done">
         <item quantity="one">%1$d பக்கத்தின் நிறங்கள் மாற்றப்பட்டன.</item>
         <item quantity="other">%1$d பக்கங்களின் நிறங்கள் மாற்றப்பட்டன.</item>

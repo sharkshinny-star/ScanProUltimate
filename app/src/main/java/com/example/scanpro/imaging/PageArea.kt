@@ -55,6 +55,11 @@ internal object PageArea {
             ((p.x - u0) / (u1 - u0)).coerceIn(0f, 1f),
             ((p.y - v0) / (v1 - v0)).coerceIn(0f, 1f)
         )
-        return CropQuad(map(crop.topLeft), map(crop.topRight), map(crop.bottomRight), map(crop.bottomLeft))
+        // A bow is an offset, a share of the picture's width and height, so it only changes scale.
+        fun bow(p: NormalizedPoint?) = p?.let { NormalizedPoint(it.x / (u1 - u0), it.y / (v1 - v0)) }
+        return CropQuad(
+            map(crop.topLeft), map(crop.topRight), map(crop.bottomRight), map(crop.bottomLeft),
+            topBow = bow(crop.topBow), bottomBow = bow(crop.bottomBow), leftBow = bow(crop.leftBow), rightBow = bow(crop.rightBow)
+        )
     }
 }

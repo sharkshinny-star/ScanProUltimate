@@ -523,6 +523,11 @@
     <string name="tools_card_invert_pdf">PDF के रंग उलटें</string>
     <string name="tools_tile_invert_pdf">रंग उलटें</string>
     <string name="tools_desc_invert_pdf">रात में पढ़ने के लिए डार्क मोड PDF</string>
+    <string name="tools_invert_confirm_body">हर पेज को %1$d dpi पर उलटे रंगों में फिर से बनाया जाता है: सफ़ेद काग़ज़ काला और गहरा टेक्स्ट हल्का हो जाता है। टेक्स्ट पेज की इमेज का हिस्सा बन जाता है, इसलिए उसे खोजने या कॉपी करने के लिए बाद में \"खोजने योग्य बनाएँ\" का उपयोग करें। मूल फ़ाइल नहीं बदलती।</string>
+    <string name="tools_invert_confirm_action">रंग उलटें</string>
+    <string name="tools_invert_progress">रंग उलटे जा रहे हैं…</string>
+    <string name="tools_invert_err_failed">इस PDF के रंग नहीं उलटे जा सके।</string>
+    <string name="hint_tool_invert_pdf">रात में आसानी से पढ़ने के लिए सफ़ेद पेज गहरे और गहरा टेक्स्ट हल्का करें।</string>
     <plurals name="tools_invert_done">
         <item quantity="one">%1$d पेज का रंग उल्टा किया गया।</item>
         <item quantity="other">%1$d पेजों के रंग उल्टे किए गए।</item>

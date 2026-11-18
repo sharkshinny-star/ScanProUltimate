@@ -203,8 +203,8 @@ fun CropEditorDialog(
         val latestCurveMode by rememberUpdatedState(curveMode)
 
         // The outline and its handles use the same mint as the live scanner, so "found page" looks the same everywhere.
-        val handleColor = ScanProTheme.colors.scanLine
-        val boundaryColor = ScanProTheme.colors.scanLine
+        val handleColor = com.example.scanpro.scanner.PageOutlineBlue
+        val boundaryColor = com.example.scanpro.scanner.PageOutlineBlue
         val pagePreview = stringResource(R.string.a11y_page_preview)
 
         Box(
