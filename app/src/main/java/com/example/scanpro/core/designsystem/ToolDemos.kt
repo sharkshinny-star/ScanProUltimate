@@ -265,8 +265,9 @@ fun DrawScope.drawScanPass(page: Rect, y: Float, c: DemoColours, alpha: Float) {
 // ---------------------------------------------------------------------------------------------------------------
 
 /**
- * Redact text: a search for a word, every match on the page lights up, black bars sweep over them, then the bars
- * lift for a moment to show the words are gone from underneath (not just covered).
+ * Redact text: the word is typed into the search, every match on the page lights up and the count shows, black bars
+ * sweep over them, the page is redrawn as a picture (the scan line: this is what removes the text layer), then the
+ * bars lift for a moment to show the words are gone from underneath (not just covered).
  */
 val RedactTextScene = DemoScene(5_200) { f ->
     val c = f.c
@@ -299,10 +300,17 @@ val RedactTextScene = DemoScene(5_200) { f ->
             drawRoundRect(c.redact, Offset(x0 - stroke * 0.2f, barTop), Size(((x1 - x0) + stroke * 0.4f) * sweep, stroke), CornerRadius(stroke * 0.15f))
         }
     }
-    // The search box above the page.
-    val search = window(t, 0.04f, 0.6f)
-    drawPill("Name", Offset(size.width / 2f, page.top - page.height * 0.02f), c, f, search, background = c.surface, foreground = c.onSurface)
-    drawDoneBadge(Offset(page.right - page.width * 0.08f, page.bottom - page.width * 0.08f), page.width * 0.1f, c, seg(t, 0.62f, 0.68f) * (1f - seg(t, 0.94f, 0.99f)))
+    // The page becomes a picture: a scan line passes once the bars are on, as the tool redraws each matched page.
+    val pass = seg(t, 0.6f, 0.72f)
+    drawScanPass(page, mixf(page.top, page.bottom, pass), c, window(t, 0.59f, 0.73f, 0.02f))
+    // The search box above the page: the word is typed, then the number of matches appears beside it.
+    val search = window(t, 0.02f, 0.6f)
+    val word = "Name"
+    val typed = if (f.still) word else word.take((word.length * seg(t, 0.03f, 0.13f)).toInt().coerceAtLeast(1))
+    val searchAt = Offset(size.width / 2f, page.top - page.height * 0.02f)
+    drawPill(typed, searchAt, c, f, search, background = c.surface, foreground = c.onSurface)
+    drawPill(matches.size.toString(), searchAt + Offset(size.minDimension * 0.2f, 0f), c, f, seg(t, 0.32f, 0.36f) * (1f - seg(t, 0.56f, 0.6f)), background = c.mint, foreground = Color(0xFF04281E))
+    drawDoneBadge(Offset(page.right - page.width * 0.08f, page.bottom - page.width * 0.08f), page.width * 0.1f, c, seg(t, 0.72f, 0.76f) * (1f - seg(t, 0.94f, 0.99f)))
 }
 
 /**

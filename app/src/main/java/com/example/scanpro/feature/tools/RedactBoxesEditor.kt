@@ -57,6 +57,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -111,9 +112,12 @@ internal fun RedactBoxesEditor(
 
     DisposableEffect(uri) { onDispose { session?.close(); session = null } }
     val opened by produceState<PdfPreviewSession?>(null, uri) {
-        value = withContext(Dispatchers.IO) { runCatching { PdfPreviewSession.open(context, uri) }.getOrNull() }
-        session = value
-        openFailed = value == null
+        val ready = withContext(Dispatchers.IO) { runCatching { PdfPreviewSession.open(context, uri) }.getOrNull() }
+        value = ready
+        session = ready
+        openFailed = ready == null
+        // Closed here too: a session that finished opening after the page was closed would otherwise keep its copy.
+        awaitDispose { ready?.close() }
     }
     val preview = opened
     val pageCount = preview?.pageCount ?: 0
@@ -133,6 +137,7 @@ internal fun RedactBoxesEditor(
                         title = { Text(stringResource(R.string.tools_card_redact_box), style = MaterialTheme.typography.titleLarge) },
                         navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close)) } },
                         actions = {
+                            ToolDemoHelpButton("redact_box")
                             val chosen = selected
                             if (chosen != null) {
                                 IconButton(onClick = { boxes.remove(chosen); selected = null }) {
@@ -166,6 +171,20 @@ internal fun RedactBoxesEditor(
                                         Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.tools_redact_box_next))
                                     }
                                 }
+                            }
+                            if (boxes.isNotEmpty()) {
+                                val pagesWithBoxes = boxes.map { it.page }.distinct().size
+                                Text(
+                                    stringResource(
+                                        R.string.edit_redact_box_summary,
+                                        pluralStringResource(R.plurals.edit_redact_box_areas, boxes.size, boxes.size),
+                                        pluralStringResource(R.plurals.pdf_outcome_pages, pagesWithBoxes, pagesWithBoxes)
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                                )
                             }
                             Button(
                                 onClick = { onConfirm(boxes.toList()) },
@@ -265,7 +284,8 @@ private fun PageWithBoxes(
             ) {
                 pageBoxes.forEach { box ->
                     val rect = Rect(box.left * shownW, box.top * shownH, box.right * shownW, box.bottom * shownH)
-                    drawRect(Color.Black.copy(alpha = 0.55f), rect.topLeft, rect.size)
+                    // Nearly as black as the result, with the words just showing through so the box can be checked.
+                    drawRect(Color.Black.copy(alpha = 0.82f), rect.topLeft, rect.size)
                     if (box === selected) {
                         drawRect(Color(0xFFE53935), rect.topLeft, rect.size, style = Stroke(width = 3.dp.toPx()))
                     }

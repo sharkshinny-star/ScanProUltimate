@@ -825,11 +825,9 @@ fun PdfToolsScreen(
             }
 
             if (showGreyscaleDialog && uri != null) {
-                ToolConfirmDialog(
-                    icon = Icons.Default.Contrast,
-                    title = stringResource(R.string.tools_card_greyscale),
-                    body = stringResource(R.string.tools_grey_confirm_body, com.example.scanpro.imaging.PdfCleanupTools.GREYSCALE_DPI),
-                    confirmLabel = stringResource(R.string.tools_grey_confirm_action),
+                RecolourPdfPage(
+                    uri = uri,
+                    invert = false,
                     onDismiss = { showGreyscaleDialog = false },
                     onConfirm = { showGreyscaleDialog = false; viewModel.greyscale(uri) }
                 )
@@ -852,6 +850,7 @@ fun PdfToolsScreen(
 
             if (showHeaderFooterDialog && uri != null) {
                 HeaderFooterDialog(
+                    uri = uri,
                     onDismiss = { showHeaderFooterDialog = false },
                     onConfirm = { config -> showHeaderFooterDialog = false; viewModel.headerFooter(uri, config) }
                 )
@@ -859,6 +858,7 @@ fun PdfToolsScreen(
 
             if (showCropPdfDialog && uri != null) {
                 CropPdfDialog(
+                    uri = uri,
                     onDismiss = { showCropPdfDialog = false },
                     onConfirm = { options -> showCropPdfDialog = false; viewModel.cropPdf(uri, options) }
                 )
@@ -866,28 +866,24 @@ fun PdfToolsScreen(
 
             if (showRedactDialog && uri != null) {
                 RedactDialog(
+                    uri = uri,
                     onDismiss = { showRedactDialog = false },
                     onConfirm = { terms, matchCase -> showRedactDialog = false; viewModel.redact(uri, terms, matchCase) }
                 )
             }
 
             if (showInvertDialog && uri != null) {
-                ToolConfirmDialog(
-                    icon = Icons.Default.InvertColors,
-                    title = stringResource(R.string.tools_card_invert_pdf),
-                    body = stringResource(R.string.tools_invert_confirm_body, com.example.scanpro.imaging.PdfCleanupTools.GREYSCALE_DPI),
-                    confirmLabel = stringResource(R.string.tools_invert_confirm_action),
+                RecolourPdfPage(
+                    uri = uri,
+                    invert = true,
                     onDismiss = { showInvertDialog = false },
                     onConfirm = { showInvertDialog = false; viewModel.invertColors(uri) }
                 )
             }
 
             if (showFlattenDialog && uri != null) {
-                ToolConfirmDialog(
-                    icon = Icons.Default.Layers,
-                    title = stringResource(R.string.tools_card_flatten),
-                    body = stringResource(R.string.tools_flatten_confirm_body),
-                    confirmLabel = stringResource(R.string.tools_flatten_confirm_action),
+                FlattenPage(
+                    uri = uri,
                     onDismiss = { showFlattenDialog = false },
                     onConfirm = { showFlattenDialog = false; viewModel.flatten(uri) }
                 )

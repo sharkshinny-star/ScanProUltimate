@@ -167,6 +167,14 @@ object PdfHeaderFooterTools {
         val hasAny: Boolean get() = headerText.isNotBlank() || footerText.isNotBlank()
     }
 
+    /** The smallest size a header or footer is shrunk to so that it fits between the page's side margins. */
+    internal const val MIN_FONT_SIZE_PT = 5f
+
+    /** [fontSize], or smaller so that a line [widthAtSize] wide at [fontSize] fits in [available] points. */
+    internal fun fittedFontSize(fontSize: Float, widthAtSize: Float, available: Float): Float =
+        if (widthAtSize <= 0f || widthAtSize <= available) fontSize
+        else (fontSize * available / widthAtSize).coerceIn(MIN_FONT_SIZE_PT, fontSize)
+
     internal fun substitute(text: String, page: Int, total: Int): String =
         text.replace("{page}", page.toString()).replace("{total}", total.toString())
 
@@ -226,21 +234,26 @@ object PdfHeaderFooterTools {
                             val text = substitute(raw.trim(), i + 1, total)
                             // Text Helvetica cannot write (Hindi, Tamil, ...) goes on as a picture of the text, the
                             // way the Watermark tool does. Drawn per page because {page} changes the words.
-                            val picture = if (PdfTextImage.canEncode(font, text)) null else PdfTextImage.create(doc, text, fontSize, PICTURE_COLOUR, bold = false)
-                            val textWidth = picture?.width ?: ((font.getStringWidth(text) / 1000f) * fontSize)
-                            val spot = edgeStamp(top, config.align, textWidth, fontSize, margin, box.width, box.height, page.rotation)
+                            val encodable = PdfTextImage.canEncode(font, text)
+                            val widthAtSize = if (encodable) (font.getStringWidth(text) / 1000f) * fontSize else PdfTextImage.widthPt(text, fontSize, bold = false)
+                            // A line longer than the page is between its margins gets smaller rather than running off the edge.
+                            val seenWidth = WatermarkGeometry.seenSize(box.width, box.height, page.rotation).first
+                            val size = fittedFontSize(fontSize, widthAtSize, seenWidth - 2f * margin)
+                            val picture = if (encodable) null else PdfTextImage.create(doc, text, size, PICTURE_COLOUR, bold = false)
+                            val textWidth = picture?.width ?: ((font.getStringWidth(text) / 1000f) * size)
+                            val spot = edgeStamp(top, config.align, textWidth, size, margin, box.width, box.height, page.rotation)
                             val cos = Math.cos(spot.angleRad).toFloat()
                             val sin = Math.sin(spot.angleRad).toFloat()
                             if (picture == null) {
                                 cs.beginText()
-                                cs.setFont(font, fontSize)
+                                cs.setFont(font, size)
                                 cs.setTextMatrix(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
                                 cs.showText(text)
                                 cs.endText()
                             } else {
                                 // The picture is placed by its centre: half a width along the baseline and half a cap
                                 // height up from it (the inverse of the Watermark tool's centre-to-baseline shift).
-                                val halfCap = fontSize * 0.36f
+                                val halfCap = size * 0.36f
                                 val cx = box.lowerLeftX + spot.x + (textWidth / 2f * cos) - (halfCap * sin)
                                 val cy = box.lowerLeftY + spot.y + (textWidth / 2f * sin) + (halfCap * cos)
                                 cs.drawImage(picture.image, PdfTextImage.placement(picture, cx, cy, spot.angleRad))

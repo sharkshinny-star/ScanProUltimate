@@ -4,6 +4,7 @@ import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.RectF
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -55,7 +56,7 @@ object PdfCleanupTools {
     const val GREYSCALE_JPEG_QUALITY = 82
 
     /** The longest side a greyscale page is drawn at, so a poster-sized page cannot run out of memory. */
-    private const val GREYSCALE_MAX_SIDE = 3500
+    internal const val GREYSCALE_MAX_SIDE = 3500
 
     /** Images smaller than this on either side are icons, bullets or one-pixel spacers, not pictures worth saving. */
     const val MIN_IMAGE_SIDE = 16
@@ -475,6 +476,53 @@ object PdfCleanupTools {
         val sx = rect.width / width
         val sy = rect.height / height
         return Matrix(sx, 0f, 0f, sy, rect.lowerLeftX - minX * sx, rect.lowerLeftY - minY * sy)
+    }
+
+    /**
+     * What Flatten would do, worked out without changing anything: the form fields and the comments or stamps that
+     * would be drawn into the pages, the links that stay, and where the first page's fields and comments are (display
+     * points from its top-left corner) so the tool page can mark them. The same choices as [flattenDocument].
+     */
+    class FlattenPreview(val fields: Int, val annotations: Int, val links: Int, val firstPageAreas: List<RectF>)
+
+    internal fun flattenPreview(doc: PDDocument): FlattenPreview {
+        val form = doc.documentCatalog.acroForm
+        val fields = if (form == null) 0 else runCatching { form.fieldTree.count { it.widgets.isNotEmpty() } }.getOrDefault(0)
+        var annotations = 0
+        var links = 0
+        val areas = ArrayList<RectF>()
+        for ((index, page) in doc.pages.withIndex()) {
+            val all = runCatching { page.annotations }.getOrNull() ?: continue
+            for (annotation in all) {
+                val drawn = when {
+                    annotation is PDAnnotationLink -> { links++; false }
+                    annotation is PDAnnotationPopup -> false
+                    annotation.isHidden || annotation.isNoView -> false
+                    annotation is PDAnnotationWidget && form != null -> true
+                    annotation.normalAppearanceStream != null && annotation.rectangle != null -> { annotations++; true }
+                    else -> false
+                }
+                if (!drawn || index != 0) continue
+                val r = annotation.rectangle ?: continue
+                val crop = page.cropBox
+                areas += PdfCropTools.userRectToDisplay(
+                    r.lowerLeftX - crop.lowerLeftX, r.lowerLeftY - crop.lowerLeftY,
+                    r.upperRightX - crop.lowerLeftX, r.upperRightY - crop.lowerLeftY,
+                    page.rotation, crop.width, crop.height
+                )
+            }
+        }
+        return FlattenPreview(fields, annotations, links, areas)
+    }
+
+    /** [flattenPreview] for a picked file: copied aside, read and removed again. */
+    suspend fun previewFlatten(context: Context, inputUri: Uri): FlattenPreview = withContext(BackgroundWork.tools) {
+        val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "flatten_look_${UUID.randomUUID()}.pdf")
+        try {
+            PdfToolsEngine.loadPdf(temp).use { flattenPreview(it) }
+        } finally {
+            temp.delete()
+        }
     }
 
     suspend fun flatten(
