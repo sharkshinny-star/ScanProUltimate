@@ -542,7 +542,9 @@ object PdfCleanupTools {
         val onlyJpeg = filters == COSName.DCT_DECODE ||
             (filters is com.tom_roush.pdfbox.cos.COSArray && filters.size() == 1 && filters.getObject(0) == COSName.DCT_DECODE)
         val cmyk = runCatching { image.colorSpace.numberOfComponents == 4 }.getOrDefault(false)
-        if (onlyJpeg && !cmyk) {
+        // A JPEG with a transparency mask (a logo, a signature) is decoded with its mask and saved as PNG: copied as
+        // stored, its see-through parts came out as a black or white box (F195).
+        if (onlyJpeg && !cmyk && !PdfImageSurvey.hasTransparency(image)) {
             val file = File(dir, "$stem.jpg")
             image.cosObject.createRawInputStream().use { input -> FileOutputStream(file).buffered().use { input.copyTo(it) } }
             return file
@@ -557,11 +559,26 @@ object PdfCleanupTools {
         return file
     }
 
+    private fun digestOf(file: File): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-1")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val n = input.read(buffer)
+                if (n < 0) break
+                digest.update(buffer, 0, n)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
     suspend fun extractImages(
         context: Context,
         inputUri: Uri,
         outputDir: File,
-        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        /** Told how many pictures could not be decoded on this phone (JPEG 2000, JBIG2), so the result can say so. */
+        onSkipped: (count: Int) -> Unit = {}
     ): List<File> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "ximg_in_${UUID.randomUUID()}.pdf")
@@ -571,16 +588,27 @@ object PdfCleanupTools {
                 val total = doc.numberOfPages
                 val seen = HashSet<COSBase>()
                 val files = mutableListOf<File>()
+                // The same picture embedded twice as separate objects (a logo on every page of a merged PDF) is saved
+                // once: identical bytes, identical file.
+                val digests = HashSet<String>()
+                var skipped = 0
                 for (i in 0 until total) {
                     if (!currentCoroutineContext().isActive) throw InterruptedException("Extract images cancelled")
                     onProgress(i + 1, total, AppStrings.get(R.string.tools_new_progress_page, i + 1, total))
                     val images = mutableListOf<PDImageXObject>()
                     runCatching { pageImages(doc.getPage(i), seen, images) }
                     for (image in images) {
-                        // One unreadable image must not cost the others.
-                        runCatching { saveImage(image, outputDir, base, files.size + 1) }.getOrNull()?.let { files += it }
+                        val tiny = runCatching { image.width < MIN_IMAGE_SIDE || image.height < MIN_IMAGE_SIDE }.getOrDefault(true)
+                        // One unreadable image must not cost the others, but it is counted, not passed over in silence.
+                        val saved = runCatching { saveImage(image, outputDir, base, files.size + 1) }.getOrNull()
+                        if (saved == null) {
+                            if (!tiny) skipped++
+                            continue
+                        }
+                        if (digests.add(digestOf(saved))) files += saved else saved.delete()
                     }
                 }
+                if (skipped > 0) onSkipped(skipped)
                 userRequire(files.isNotEmpty(), R.string.tools_ximg_err_none)
                 files
             }

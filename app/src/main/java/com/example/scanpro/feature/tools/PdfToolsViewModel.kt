@@ -709,13 +709,19 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun imagesToPdf(uris: List<Uri>, pageSize: PdfPageSize = PdfPageSize.AUTO, quality: PdfQuality = PdfQuality.BALANCED) =
+    fun imagesToPdf(
+        uris: List<Uri>,
+        pageSize: PdfPageSize = PdfPageSize.AUTO,
+        quality: PdfQuality = PdfQuality.BALANCED,
+        margin: com.example.scanpro.imaging.ImageMargin = com.example.scanpro.imaging.ImageMargin.SMALL
+    ) =
         launchTool(context.resources.getQuantityString(R.plurals.msg_tools_converting_images, uris.size, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
             val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm", java.util.Locale.getDefault()).format(java.util.Date())
             try {
                 PdfToolsEngine.imagesToPdf(
                     context, uris, pageSize, quality,
-                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report
+                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report,
+                    margin.points
                 )
             } finally {
                 withContext(Dispatchers.IO) {
@@ -752,6 +758,7 @@ class PdfToolsViewModel @Inject constructor(
             fileTooLong = context.getString(R.string.tools_office_note_too_long),
             workbookTruncated = { cells -> context.getString(R.string.tools_office_note_workbook_truncated, cells) },
             fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) },
+            slidesTruncated = { slides -> context.getString(R.string.office_note_slides_truncated, slides) },
         )
         val html = withContext(Dispatchers.IO) {
             try {
@@ -778,6 +785,12 @@ class PdfToolsViewModel @Inject constructor(
         val sourceSize = runCatching {
             resolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
         }.getOrNull() ?: 0L
+        // A PDF the phone's own viewer cannot open, or one with no pages, is not a result (F195): it used to be kept
+        // and reported as "Converted: 0 pages".
+        if (pages <= 0) {
+            output.delete()
+            userError(R.string.office_err_empty_result)
+        }
         PdfToolResult(output, pages, sourceSize, output.length(), context.resources.getQuantityString(R.plurals.msg_tools_office_done, pages, pages))
     }
 
@@ -900,8 +913,12 @@ class PdfToolsViewModel @Inject constructor(
     fun extractImages(uri: Uri) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
         val base = PdfToolsEngine.sourceBaseName(context, uri)
         inScratchDir("$base images") { dir ->
-            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report)
-            bundled(files, "$base images", R.plurals.tools_ximg_done)()
+            var skipped = 0
+            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report) { skipped = it }
+            bundled(files, "$base images", R.plurals.tools_ximg_done)()?.let { result ->
+                if (skipped == 0) result
+                else result.copy(message = result.message + " " + context.resources.getQuantityString(R.plurals.ximg_skipped, skipped, skipped))
+            }
         }
     }
 

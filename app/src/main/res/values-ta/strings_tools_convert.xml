@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Convert and info tools (F195). Machine translation into Tamil, not yet reviewed by a speaker. -->
+    <string name="cvt_reading_pdf">PDF படிக்கப்படுகிறது…</string>
+    <string name="cvt_pdf_unreadable">இந்த PDF திறக்கவில்லை. முதலில் PDF சரிசெய் முயலவும்.</string>
+    <string name="cvt_pdf_locked">இந்த PDF-க்கு கடவுச்சொல் தேவை. முதலில் திறக்கவும்.</string>
+    <string name="cvt_checking_pages">எந்தப் பக்கங்களில் உரை உள்ளது எனப் பார்க்கப்படுகிறது…</string>
+    <string name="cvt_up_to">%1$s வரை</string>
+    <string name="cvt_portrait">நிமிர்வு</string>
+    <string name="cvt_landscape">கிடைமட்டம்</string>
+    <plurals name="cvt_pictures">
+        <item quantity="one">%1$d படம்</item>
+        <item quantity="other">%1$d படங்கள்</item>
+    </plurals>
+    <string name="cvt_dpi_screen">திரை: செய்திகளுக்குச் சிறிய கோப்புகள்</string>
+    <string name="cvt_dpi_standard">நிலையானது: எந்த ஃபோனிலும் கணினியிலும் தெளிவு</string>
+    <string name="cvt_dpi_sharp">கூர்மை: சிறிய எழுத்துகளை பெரிதாக்கிப் படிக்கலாம்</string>
+    <string name="cvt_dpi_print">அச்சு: பெரிய கோப்புகள், அச்சிட ஏற்றவை</string>
+    <string name="cvt_dpi_pixels">%1$d dpi-இல் ஒவ்வொரு படமும் %2$s ஆக இருக்கும்.</string>
+    <string name="cvt_format_jpg">JPG: ஸ்கேன்கள் மற்றும் புகைப்படங்களுக்கு மிகச் சிறிய கோப்புகள்.</string>
+    <string name="cvt_format_png">PNG: இழப்பில்லை, உரையும் கோடுகளும் தெளிவாக இருக்கும்; கோப்புகள் பெரியவை.</string>
+    <string name="cvt_format_webp">WebP: JPG-ஐ விடச் சிறியது, ஆனால் சில பழைய ஆப்கள் இதைத் திறக்காது.</string>
+    <string name="cvt_pages_type">ஏற்றுமதி செய்ய வேண்டிய பக்கங்களை எழுதவும், எ.கா. 1–3, 7</string>
+    <string name="cvt_pdf2img_mixed">பக்கங்களின் அளவு வேறுபடுகிறது; மிகப் பெரிய படம் காட்டப்படுகிறது.</string>
+    <string name="cvt_pdf2img_single">ஒரு %1$s படம், பகிரத் தயார்</string>
+    <plurals name="cvt_pdf2img_zip">
+        <item quantity="one">%1$d %2$s படம், ஒரு zip கோப்பில்</item>
+        <item quantity="other">%1$d %2$s படங்கள், ஒன்றாக ஒரு zip கோப்பில்</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_action">
+        <item quantity="one">%1$d படத்தை ஏற்றுமதி செய்</item>
+        <item quantity="other">%1$d படங்களை ஏற்றுமதி செய்</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_capped">
+        <item quantity="one">%1$d பக்கம் இந்தத் தெளிவுத்திறனுக்கு மிகப் பெரியது, எனவே அதன் படம் நீண்ட பக்கத்தில் %2$d px ஆகும்.</item>
+        <item quantity="other">%1$d பக்கங்கள் இந்தத் தெளிவுத்திறனுக்கு மிகப் பெரியவை, எனவே அவற்றின் படங்கள் நீண்ட பக்கத்தில் %2$d px ஆகும்.</item>
+    </plurals>
+    <plurals name="cvt_pages_chosen">
+        <item quantity="one">%1$d பக்கம் தேர்ந்தெடுக்கப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்கள் தேர்ந்தெடுக்கப்பட்டன</item>
+    </plurals>
+    <string name="cvt_reading_images">படங்கள் படிக்கப்படுகின்றன…</string>
+    <string name="cvt_img2pdf_orientation">ஒவ்வொரு பக்கமும் அதன் படத்திற்கேற்ப நிமிர்வாகவோ கிடைமட்டமாகவோ மாறும்.</string>
+    <string name="cvt_img2pdf_quality_hint">படங்கள் நீண்ட பக்கத்தில் %1$d px வரை சேமிக்கப்படும்; அதைவிடப் பெரியவை சிறிதாக்கப்படும்.</string>
+    <string name="cvt_margin">ஓரம்</string>
+    <string name="cvt_margin_none">இல்லை</string>
+    <string name="cvt_margin_small">சிறியது</string>
+    <string name="cvt_margin_large">பெரியது</string>
+    <string name="cvt_margin_hint">ஒவ்வொரு படத்தைச் சுற்றியும் %1$d mm வெள்ளை இடம்.</string>
+    <plurals name="cvt_img2pdf_support">
+        <item quantity="one">அதன் படத்துடன் %1$d பக்கம்</item>
+        <item quantity="other">%1$d பக்கங்கள், ஒவ்வொன்றிலும் ஒரு படம், நீங்கள் அமைத்த வரிசையில்</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_unreadable">
+        <item quantity="one">%1$d படத்தைப் படிக்க முடியவில்லை, அது விடப்பட்டது.</item>
+        <item quantity="other">%1$d படங்களைப் படிக்க முடியவில்லை, அவை விடப்பட்டன.</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_soft">
+        <item quantity="one">%1$d படத்திற்கு அதன் பக்கத்தில் அங்குலத்திற்கு %2$d-க்குக் குறைவான புள்ளிகள் உள்ளன; அச்சிடும்போது மங்கலாகத் தெரியலாம்.</item>
+        <item quantity="other">%1$d படங்களுக்கு அவற்றின் பக்கங்களில் அங்குலத்திற்கு %2$d-க்குக் குறைவான புள்ளிகள் உள்ளன; அச்சிடும்போது மங்கலாகத் தெரியலாம்.</item>
+    </plurals>
+    <string name="cvt_office_reading">கோப்பு படிக்கப்படுகிறது…</string>
+    <string name="cvt_office_action">PDF ஆக மாற்று</string>
+    <string name="cvt_office_support">இந்த ஃபோனிலேயே மாற்றப்படுகிறது; எதுவும் பதிவேற்றப்படாது.</string>
+    <string name="cvt_office_after_pdf">PDF</string>
+    <string name="cvt_office_pages_later">மாற்றும்போது பக்கங்கள் எண்ணப்படும்</string>
+    <string name="cvt_office_legacy">இது பழைய Office கோப்பு (.doc, .xls அல்லது .ppt) அல்லது கடவுச்சொல்லால் பூட்டப்பட்டது. Office அல்லது Google Docs-இல் திறந்து .docx, .xlsx அல்லது .pptx ஆகச் சேமித்து, அந்த நகலை மாற்றவும்.</string>
+    <string name="cvt_office_kind_docx">Word ஆவணம்</string>
+    <string name="cvt_office_kind_xlsx">Excel பணிப்புத்தகம்</string>
+    <string name="cvt_office_kind_pptx">PowerPoint விளக்கக்காட்சி</string>
+    <string name="cvt_office_kind_text">உரைக் கோப்பு</string>
+    <string name="cvt_office_kind_csv">CSV அட்டவணை</string>
+    <string name="cvt_office_kind_html">வலைப் பக்கம்</string>
+    <string name="cvt_office_kind_unknown">கோப்பு</string>
+    <string name="cvt_office_fact_slides">ஸ்லைடுகள்</string>
+    <string name="cvt_office_fact_sheets">தாள்கள்</string>
+    <string name="cvt_office_fact_lines">வரிகள்</string>
+    <string name="cvt_office_fact_pictures">படங்கள்</string>
+    <string name="cvt_office_fact_paper">காகிதம்</string>
+    <string name="cvt_office_paper_value">A4, 16 mm ஓரம்</string>
+    <string name="cvt_office_kept_docx">உரை, தலைப்புகள், பட்டியல்கள், அட்டவணைகள், படங்கள் இருக்கும். பக்கங்கள் A4 அளவில் அமைவதால் Word-இலிருந்து வேறு இடங்களில் பிரியலாம்; உரைப் பெட்டிகள், வடிவங்கள், வரைபடங்கள் வராது.</string>
+    <string name="cvt_office_kept_xlsx">தெரியும் ஒவ்வொரு தாளும் அதன் மதிப்புகளுடன் அட்டவணையாகும். வரைபடங்கள், கலங்களில் உள்ள படங்கள், நிறங்கள் வராது.</string>
+    <string name="cvt_office_kept_pptx">ஒவ்வொரு ஸ்லைடும் அதன் உரை, படங்களுடன் ஒரு பக்கமாகும், ஸ்லைடு வரிசையில். வடிவமைப்பு, பின்னணி, வரைபடங்கள், அசைவூட்டங்கள் வராது.</string>
+    <string name="cvt_office_kept_text">உரை உள்ளபடியே, வரிக்கு வரி இருக்கும்; CSV கோப்புகள் அட்டவணையாகும்.</string>
+    <string name="cvt_office_kept_html">பக்கத்தின் உரை, அட்டவணைகள், உள்ளே உள்ள படங்கள் இருக்கும். இணையத்திலிருந்து எதுவும் ஏற்றப்படாது.</string>
+    <string name="office_note_slides_truncated">முதல் %1$s ஸ்லைடுகள் மட்டுமே மாற்றப்பட்டன; மீதி விடப்பட்டன.</string>
+    <string name="office_err_empty_result">மாற்றியபோது எந்தப் பக்கமும் உருவாகவில்லை. கோப்பு காலியாகவோ சேதமாகவோ இருக்கலாம்.</string>
+    <plurals name="cvt_office_slides">
+        <item quantity="one">குறைந்தது %1$d பக்கம், ஒரு ஸ்லைடுக்கு ஒன்று</item>
+        <item quantity="other">குறைந்தது %1$d பக்கங்கள், ஒரு ஸ்லைடுக்கு ஒன்று</item>
+    </plurals>
+    <plurals name="cvt_office_sheets">
+        <item quantity="one">அட்டவணையாக %1$d தாள்</item>
+        <item quantity="other">%1$d தாள்கள், ஒவ்வொன்றும் அட்டவணையாக</item>
+    </plurals>
+    <plurals name="cvt_office_lines">
+        <item quantity="one">உரையின் %1$d வரி</item>
+        <item quantity="other">உரையின் %1$d வரிகள்</item>
+    </plurals>
+    <plurals name="cvt_office_hidden_sheets">
+        <item quantity="one">%1$d மறைக்கப்பட்ட தாள் விடப்பட்டது, Excel அச்சிடும்போது விடுவது போல.</item>
+        <item quantity="other">%1$d மறைக்கப்பட்ட தாள்கள் விடப்பட்டன, Excel அச்சிடும்போது விடுவது போல.</item>
+    </plurals>
+    <string name="cvt_text_after_word">Word ஆவணம்</string>
+    <string name="cvt_text_after_text">உரைக் கோப்பு</string>
+    <string name="cvt_text_fact_layer">உரை உள்ள பக்கங்கள் (நகலெடுக்கப்படும்)</string>
+    <string name="cvt_text_fact_ocr">உரை அறிதலால் படிக்கப்படும் பக்கங்கள்</string>
+    <string name="cvt_text_locked">இந்த PDF-க்கு கடவுச்சொல் உள்ளது; உங்களிடம் கேட்கப்படும்.</string>
+    <string name="cvt_ocr_support">ஏற்கனவே உரை உள்ள பக்கங்கள் அப்படியே இருக்கும்.</string>
+    <string name="cvt_ocr_nothing">ஒவ்வொரு பக்கத்திலும் ஏற்கனவே உரை உள்ளது, எனவே இந்த PDF ஏற்கனவே தேடக்கூடியது.</string>
+    <plurals name="cvt_text_after_sheets">
+        <item quantity="one">%1$d தாள்</item>
+        <item quantity="other">%1$d தாள்கள், ஒரு பக்கத்திற்கு ஒன்று</item>
+    </plurals>
+    <plurals name="cvt_text_ocr_support">
+        <item quantity="one">%1$d பக்கம் உரை அறிதலால் படிக்கப்படும், சில வினாடிகள் ஆகும்.</item>
+        <item quantity="other">%1$d பக்கங்கள் உரை அறிதலால் படிக்கப்படும், ஒவ்வொன்றுக்கும் சில வினாடிகள் ஆகும்.</item>
+    </plurals>
+    <plurals name="cvt_ocr_action">
+        <item quantity="one">%1$d பக்கத்தைப் படி</item>
+        <item quantity="other">%1$d பக்கங்களைப் படி</item>
+    </plurals>
+    <string name="cvt_ximg_looking">படங்கள் தேடப்படுகின்றன…</string>
+    <string name="cvt_ximg_zip">ஒன்றாக ஒரு zip கோப்பாகப் பகிரப்படும்</string>
+    <string name="cvt_ximg_fact_pictures">படங்கள்</string>
+    <string name="cvt_ximg_fact_pages">படங்கள் உள்ள பக்கங்கள்</string>
+    <string name="cvt_ximg_fact_formats">வடிவங்கள்</string>
+    <string name="cvt_ximg_hint">JPG படங்கள் உள்ளபடியே, தரம் குறையாமல் சேமிக்கப்படும்; மற்றவையும் ஒளிபுகும் பகுதி உள்ளவையும் PNG ஆகச் சேமிக்கப்படும். பல பக்கங்களில் உள்ள படம் ஒருமுறை மட்டுமே சேமிக்கப்படும்.</string>
+    <plurals name="cvt_ximg_action">
+        <item quantity="one">%1$d படத்தைச் சேமி</item>
+        <item quantity="other">%1$d படங்களைச் சேமி</item>
+    </plurals>
+    <plurals name="cvt_ximg_tiny">
+        <item quantity="one">%1$d மிகச் சிறிய படம் (கோடு, புள்ளி அல்லது இடைவெளி) விடப்பட்டது.</item>
+        <item quantity="other">%1$d மிகச் சிறிய படங்கள் (கோடுகள், புள்ளிகள், இடைவெளிகள்) விடப்பட்டன.</item>
+    </plurals>
+    <plurals name="cvt_ximg_unreadable">
+        <item quantity="one">%1$d படம் JPEG 2000 அல்லது JBIG2 வடிவில் உள்ளது, இந்த ஃபோன் அதைத் திறக்காமல் போகலாம். அப்படியானால் அது விடப்பட்டு முடிவில் சொல்லப்படும்.</item>
+        <item quantity="other">%1$d படங்கள் JPEG 2000 அல்லது JBIG2 வடிவில் உள்ளன, இந்த ஃபோன் அவற்றைத் திறக்காமல் போகலாம். அப்படியானால் அவை விடப்பட்டு முடிவில் சொல்லப்படும்.</item>
+    </plurals>
+    <plurals name="ximg_skipped">
+        <item quantity="one">%1$d படத்தை இந்த ஃபோனில் படிக்க முடியவில்லை, அது விடப்பட்டது.</item>
+        <item quantity="other">%1$d படங்களை இந்த ஃபோனில் படிக்க முடியவில்லை, அவை விடப்பட்டன.</item>
+    </plurals>
+    <string name="cvt_info_page_size">பக்க அளவு</string>
+    <string name="cvt_info_mixed_sizes">சில பக்கங்களின் அளவு வேறுபடுகிறது.</string>
+    <string name="cvt_info_bytes">%1$s பைட்டுகள்</string>
+    <string name="cvt_info_security">பாதுகாப்பு</string>
+    <string name="cvt_info_encrypted">கடவுச்சொல் அல்லது கட்டுப்பாடுகள்</string>
+    <string name="cvt_info_not_encrypted">கடவுச்சொல் அல்லது கட்டுப்பாடு இல்லை</string>
+    <string name="cvt_info_form_fields">படிவப் புலங்கள்</string>
+    <string name="cvt_info_none">இல்லை</string>
+    <string name="cvt_info_save_support">புதிய விவரங்களுடன் ஒரு நகலைச் சேமிக்கும்; மூலக் கோப்பு மாறாது.</string>
+    <string name="cvt_info_change_to_save">நகலைச் சேமிக்க கீழே ஏதேனும் ஒரு விவரத்தை மாற்றவும்.</string>
+    <string name="cvt_repair_checking">கோப்பு சரிபார்க்கப்படுகிறது…</string>
+    <string name="cvt_repair_action">PDF சரிசெய்</string>
+    <string name="cvt_repair_viewer">ஃபோனின் PDF பார்வையாளர்</string>
+    <string name="cvt_repair_structure">கோப்பின் அமைப்பு</string>
+    <string name="cvt_repair_cannot_open">திறக்க முடியவில்லை</string>
+    <string name="cvt_repair_damaged">சேதமடைந்தது</string>
+    <string name="cvt_repair_password">கடவுச்சொல் தேவை</string>
+    <string name="cvt_repair_nothing">இந்தக் கோப்பில் எதையும் பக்கங்களாகப் படிக்க முடியவில்லை, எனவே மீட்க எதுவுமில்லை.</string>
+    <string name="cvt_repair_not_pdf">இந்தக் கோப்பு PDF அல்ல, எனவே சரிசெய்ய எதுவுமில்லை.</string>
+    <string name="cvt_repair_plan_missing">ஃபோன் காட்டக்கூடிய %2$d பக்கங்களில் %1$d மட்டுமே அமைப்பில் உள்ளன. எதுவும் இழக்கப்படாமல் இருக்க பக்கங்கள் படங்களாக மீண்டும் உருவாக்கப்படும்; அதன் பிறகு அவற்றின் உரையைத் தேர்ந்தெடுக்க முடியாது.</string>
+    <plurals name="cvt_repair_opens">
+        <item quantity="one">திறக்கிறது, %1$d பக்கம்</item>
+        <item quantity="other">திறக்கிறது, %1$d பக்கங்கள்</item>
+    </plurals>
+    <plurals name="cvt_repair_reads">
+        <item quantity="one">படிக்கலாம், %1$d பக்கம்</item>
+        <item quantity="other">படிக்கலாம், %1$d பக்கங்கள்</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_clean">
+        <item quantity="one">அமைப்பைப் படிக்கலாம்: அதன் %1$d பக்கம், உரையுடன் புதிய நகல் எழுதப்படும்.</item>
+        <item quantity="other">அமைப்பைப் படிக்கலாம்: எல்லா %1$d பக்கங்களும் அவற்றின் உரையுடன் புதிய நகல் எழுதப்படும்.</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_pictures">
+        <item quantity="one">அமைப்பு உடைந்துள்ளது, ஆனால் ஃபோன் இன்னும் %1$d பக்கத்தைக் காட்டும். அது படமாக மீண்டும் உருவாக்கப்படும், எனவே அதன் உரையைத் தேர்ந்தெடுக்க முடியாது.</item>
+        <item quantity="other">அமைப்பு உடைந்துள்ளது, ஆனால் ஃபோன் இன்னும் %1$d பக்கங்களைக் காட்டும். அவை படங்களாக மீண்டும் உருவாக்கப்படும், எனவே அவற்றின் உரையைத் தேர்ந்தெடுக்க முடியாது.</item>
+    </plurals>
+    <plurals name="tools_repair_partial">
+        <item quantity="one">PDF மீண்டும் உருவாக்கப்பட்டது, ஆனால் %2$d-இல் %1$d பக்கம் மட்டுமே மீட்கப்பட்டது.</item>
+        <item quantity="other">PDF மீண்டும் உருவாக்கப்பட்டது, ஆனால் %2$d-இல் %1$d பக்கங்கள் மட்டுமே மீட்கப்பட்டன.</item>
+    </plurals>
+    <string name="tools_form_saved_no_changes">படிவம் சேமிக்கப்பட்டது (மாற்றம் இல்லை)</string>
+    <string name="tools_form_err_flatten_font">சில பதில்களில் இந்தப் படிவத்தின் எழுத்துருவால் காட்ட முடியாத எழுத்துகள் உள்ளன, எனவே படிவத்தைத் தட்டையாக்க முடியாது. தட்டையாக்காமல் சேமிக்கவும்: PDF பார்வையாளர்கள் அவற்றைக் காட்டும்.</string>
+    <plurals name="tools_form_filled">
+        <item quantity="one">%1$d புலம் நிரப்பப்பட்டது</item>
+        <item quantity="other">%1$d புலங்கள் நிரப்பப்பட்டன</item>
+    </plurals>
+    <plurals name="tools_form_filled_flattened">
+        <item quantity="one">%1$d புலம் நிரப்பப்பட்டு படிவம் தட்டையாக்கப்பட்டது</item>
+        <item quantity="other">%1$d புலங்கள் நிரப்பப்பட்டு படிவம் தட்டையாக்கப்பட்டது</item>
+    </plurals>
+</resources>
