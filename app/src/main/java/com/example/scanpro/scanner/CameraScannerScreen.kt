@@ -1032,10 +1032,13 @@ fun CameraScannerScreen(
                     .build()
                 val capture = ImageCapture.Builder()
                     .setResolutionSelector(captureSelector)
-                    // Standard: low latency keeps the shutter responsive (the page is captured the moment it is steady)
-                    // and quality 95 keeps paper text crisp after the filters. HD trades a little speed for quality.
-                    .setCaptureMode(if (hdCapture) ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY else ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .setJpegQuality(if (hdCapture) 98 else 95)
+                    // Quality mode for every capture (2026-11-18; standard used the low-latency mode). In low-latency mode
+                    // CameraX takes the frame without the focus and exposure pre-capture sequence and may skip the
+                    // camera's multi-frame noise reduction, so a page caught while focus was still settling came out soft.
+                    // Auto-capture already waits for a steady, sharp page, so the extra few hundred milliseconds cost
+                    // little. Quality 97: at 95 the strokes of small print showed JPEG ringing after the filters.
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    .setJpegQuality(if (hdCapture) 98 else 97)
                     .build()
                 // Live detection stays bounded at 4:3 1280x960 (or the nearest lower size the camera offers): the detector
                 // scales every frame down to 900 px anyway, so a larger stream only costs conversion time and memory.

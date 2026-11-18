@@ -42,8 +42,10 @@ object PdfExporter {
      * one scanned page 15 MB; as JPEG it is a few hundred kilobytes and looks the same at these levels.
      */
     private fun jpegQualityFor(quality: PdfQuality): Int = when (quality) {
-        PdfQuality.HIGH -> 90
-        PdfQuality.BALANCED -> 80
+        // Raised 2026-11-18 from 90 and 80 with the page sizes (see PdfQuality): at 80 the edges of small print showed
+        // JPEG ringing.
+        PdfQuality.HIGH -> 92
+        PdfQuality.BALANCED -> 85
         PdfQuality.SMALL -> 65
     }
 

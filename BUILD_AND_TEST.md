@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-18 (F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-18 (F186 capture and PDF quality, F187 AGP 9.5.1; F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,6 +40,11 @@ Gradle properties:
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
+
+## Latest results (2026-11-18, F186–F187, commit PENDING_F186, Linux cloud container)
+
+- Tool wiring traced in the code for all 36 tiles in `ToolCatalogue.kt`: each has a branch in `PdfToolsScreen.openTool` (or its own picker), and every `show…Dialog` flag has its dialog block. Not run on a device.
+- NOT run: compile, unit tests (`PdfShareTest` changed), lint, release builds; the CI run for the push is their first build. CI run 169 for `bf4af45` (F181–F185) was still in unit tests and lint when this was pushed and is cancelled by it; the new run covers both.
 
 ## Latest results (2026-11-18, F181–F185, commit bf4af45, Linux cloud container)
 
