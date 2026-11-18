@@ -134,7 +134,7 @@ internal fun PdfOutcomeRow(before: PdfFacts, after: PdfOutcome?) {
         modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            SizeColumn(
+            OutcomeColumn(
                 label = stringResource(R.string.img_tool_now),
                 size = before.pageCount?.let { pluralStringResource(R.plurals.pdf_outcome_pages, it, it) } ?: "—",
                 detail = formatBytes(context, before.sizeBytes),
@@ -148,7 +148,7 @@ internal fun PdfOutcomeRow(before: PdfFacts, after: PdfOutcome?) {
             )
             Column(Modifier.weight(1f)) {
                 if (after == null) {
-                    SizeColumn(stringResource(R.string.img_tool_after), "…", stringResource(R.string.img_tool_estimating))
+                    OutcomeColumn(stringResource(R.string.img_tool_after), "…", stringResource(R.string.img_tool_estimating))
                 } else {
                     val pages = after.pages?.let { after.pagesLabel ?: pluralStringResource(R.plurals.pdf_outcome_pages, it, it) } ?: "—"
                     val headline = if (after.files > 1) pluralStringResource(R.plurals.pdf_outcome_files, after.files, after.files) else pages
@@ -156,7 +156,7 @@ internal fun PdfOutcomeRow(before: PdfFacts, after: PdfOutcome?) {
                         val formatted = formatBytes(context, it)
                         if (after.approximate) stringResource(R.string.img_tool_about, formatted) else formatted
                     } ?: stringResource(R.string.pdf_outcome_size_unknown)
-                    SizeColumn(
+                    OutcomeColumn(
                         label = stringResource(R.string.img_tool_after),
                         size = headline,
                         detail = if (after.files > 1) "$pages · $sizeText" else sizeText
