@@ -36,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
@@ -82,9 +83,15 @@ internal fun PdfToTextDialog(
     val context = androidx.compose.ui.platform.LocalContext.current
     var format by rememberSaveable { mutableStateOf(initialFormat) }
     var script by rememberSaveable { mutableStateOf(initialOcrScript(context)) }
+    // Before running (F211): which pages are copied and which are read with OCR, by the engine's own rule.
+    val facts by rememberPdfFacts(uri)
+    val surveyed by rememberPdfSurvey(uri) { com.example.scanpro.imaging.PdfTextSurvey.of(it) }
+    val result = surveyed
+    val survey = (result as? Survey.Ready<com.example.scanpro.imaging.PdfTextSurvey>)?.value
     ToolPage(
         // One tool for Word, Excel and plain text (the PDF to Excel tile was merged into it).
         title = stringResource(R.string.tools_card_pdf2text),
+        demoToolId = if (format == TextExportFormat.EXCEL) "pdf2excel" else "pdf2text",
         onClose = onDismiss,
         actionLabel = stringResource(
             when (format) {
@@ -97,9 +104,28 @@ internal fun PdfToTextDialog(
             rememberOcrScriptChoice(context, script)
             onConfirm(format, script)
         },
-        actionSupport = stringResource(R.string.tools_pdf2text_unprotected_note)
+        actionSupport = when {
+            result == Survey.Locked -> stringResource(R.string.cvt_text_locked)
+            survey != null && survey.ocrPages > 0 -> pluralStringResource(R.plurals.cvt_text_ocr_support, survey.ocrPages, survey.ocrPages)
+            else -> stringResource(R.string.tools_pdf2text_unprotected_note)
+        }
     ) {
         PickedFileRow(uri)
+        facts?.let { before ->
+            val pages = before.pageCount ?: survey?.pageCount
+            val label = when (format) {
+                TextExportFormat.WORD -> stringResource(R.string.cvt_text_after_word)
+                TextExportFormat.EXCEL -> pages?.let { pluralStringResource(R.plurals.cvt_text_after_sheets, it, it) }
+                TextExportFormat.TEXT -> stringResource(R.string.cvt_text_after_text)
+            }
+            PdfOutcomeRow(before, if (result == null) null else PdfOutcome(pages = pages, bytes = null, pagesLabel = label))
+        }
+        if (survey != null) {
+            FactsCard {
+                FactRow(stringResource(R.string.cvt_text_fact_layer), survey.textPages.toString())
+                FactRow(stringResource(R.string.cvt_text_fact_ocr), survey.ocrPages.toString())
+            }
+        }
         ToolHint(stringResource(R.string.tools_pdf2text_body))
         ToolSection(stringResource(R.string.tools_pdf2text_format)) {
             ChoiceGroup {

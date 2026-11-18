@@ -71,162 +71,7 @@ import com.example.scanpro.imaging.SplitMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-internal fun PdfToImagesDialog(
-    uri: Uri,
-    onDismiss: () -> Unit,
-    onConfirm: (format: ImageExportFormat, pages: List<Int>?, scale: Float) -> Unit
-) {
-    val context = LocalContext.current
-    var format by rememberSaveable { mutableStateOf(ImageExportFormat.JPEG) }
-    var scale by rememberSaveable { mutableStateOf(2.5f) }
-    var allPages by rememberSaveable { mutableStateOf(true) }
-    var rangesText by rememberSaveable { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    var pageCount by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(uri) {
-        pageCount = withContext(Dispatchers.IO) {
-            runCatching {
-                context.contentResolver.openFileDescriptor(uri, "r")?.use { android.graphics.pdf.PdfRenderer(it).use { r -> r.pageCount } }
-            }.getOrNull()
-        }
-    }
-
-    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
-    ToolPage(
-        title = stringResource(R.string.tools_pdf2img_dialog_title),
-        onClose = onDismiss,
-        actionLabel = stringResource(R.string.tools_pdf2img_export_button),
-        onAction = {
-            if (allPages) onConfirm(format, null, scale)
-            else PageRanges.parse(rangesText, pageCount ?: Int.MAX_VALUE)
-                .onSuccess { ranges -> onConfirm(format, ranges.flatMap { it.toList() }, scale) }
-                .onFailure { error = it.message }
-        },
-        actionEnabled = true,
-        actionSupport = null
-    ) {
-            Column {
-                PickedFileRow(uri)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(stringResource(R.string.tools_pdf2img_format), style = MaterialTheme.typography.labelLarge)
-                Spacer(modifier = Modifier.height(6.dp))
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    ImageExportFormat.entries.forEach { item ->
-                        FilterChip(selected = format == item, onClick = { format = item }, label = { Text(item.extension.uppercase()) })
-                    }
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-                Text(stringResource(R.string.tools_pdf2img_resolution), style = MaterialTheme.typography.labelLarge)
-                Spacer(modifier = Modifier.height(6.dp))
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    listOf(R.string.tools_pdf2img_screen to 1.5f, R.string.tools_pdf2img_sharp to 2.5f, R.string.tools_pdf2img_print to 4f).forEach { (label, value) ->
-                        FilterChip(selected = scale == value, onClick = { scale = value }, label = { Text(stringResource(label)) })
-                    }
-                }
-                Text(
-                    stringResource(
-                        when (scale) {
-                            1.5f -> R.string.tools_pdf2img_screen_hint
-                            4f -> R.string.tools_pdf2img_print_hint
-                            else -> R.string.tools_pdf2img_sharp_hint
-                        }
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                Text(stringResource(R.string.tools_pdf2img_pages), style = MaterialTheme.typography.labelLarge)
-                Spacer(modifier = Modifier.height(6.dp))
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    FilterChip(
-                        selected = allPages,
-                        onClick = { allPages = true; error = null },
-                        label = { Text(pageCount?.let { stringResource(R.string.tools_pdf2img_all_count, it) } ?: stringResource(R.string.tools_pdf2img_all)) }
-                    )
-                    FilterChip(selected = !allPages, onClick = { allPages = false }, label = { Text(stringResource(R.string.tools_pdf2img_some)) })
-                }
-                if (!allPages) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = rangesText,
-                        onValueChange = { rangesText = it; error = null },
-                        label = { Text(stringResource(R.string.tools_pdf2img_pages_label)) },
-                        singleLine = true,
-                        isError = error != null,
-                        supportingText = error?.let { { Text(it) } },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        }
-}
-
-/** Page size and quality for Images to PDF, the two settings the engine already takes. */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-internal fun ImagesToPdfDialog(count: Int, onDismiss: () -> Unit, onConfirm: (PdfPageSize, PdfQuality) -> Unit) {
-    var size by rememberSaveable { mutableStateOf(PdfPageSize.AUTO) }
-    var quality by rememberSaveable { mutableStateOf(PdfQuality.BALANCED) }
-    // A full tool page (F146) instead of a pop-up: options on cards, the button always in reach at the bottom.
-    ToolPage(
-        title = pluralStringResource(R.plurals.tools_img2pdf_title, count, count),
-        onClose = onDismiss,
-        actionLabel = stringResource(R.string.tools_img2pdf_create),
-        onAction = {
-            onConfirm(size, quality)
-        },
-        actionEnabled = true,
-        actionSupport = null
-    ) {
-            Column {
-                Text(stringResource(R.string.tools_img2pdf_page_size), style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(6.dp))
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    PdfPageSize.entries.forEach { item ->
-                        FilterChip(
-                            selected = size == item,
-                            onClick = { size = item },
-                            label = { Text(stringResource(item.labelRes)) }
-                        )
-                    }
-                }
-                Text(
-                    if (size == PdfPageSize.AUTO) stringResource(R.string.tools_img2pdf_auto_hint) else stringResource(R.string.tools_img2pdf_fitted_hint, stringResource(size.labelRes)),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp)
-                )
-                Spacer(Modifier.height(14.dp))
-                Text(stringResource(R.string.tools_img2pdf_quality), style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(6.dp))
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    PdfQuality.entries.forEach { item ->
-                        FilterChip(
-                            selected = quality == item,
-                            onClick = { quality = item },
-                            label = { Text(stringResource(item.labelRes)) }
-                        )
-                    }
-                }
-            }
-        }
-}
+// PDF to images and Images to PDF moved to ConvertToolPages.kt (F211).
 
 @Composable
 internal fun PasswordDialog(
@@ -297,12 +142,22 @@ internal fun PasswordDialog(
         },
         // Waits the moment the check takes, so a protected file is never sent to be protected again.
         actionEnabled = alreadyProtected != null,
-        actionSupport = null
+        actionSupport = null,
+        // Merge asks for a password on its own behalf: no demonstration of Protect or Unlock there.
+        demoToolId = if (mergeFileName != null) null else if (isProtect) "protect" else "unlock"
     ) {
             Column {
                 if (fileUri != null) {
                     PickedFileRow(fileUri)
                     Spacer(modifier = Modifier.height(12.dp))
+                }
+                // Protect: the file as it is now and as it will be (same pages, a little larger for the encryption).
+                if (isProtect && fileUri != null && alreadyProtected == false) {
+                    val facts by rememberPdfFacts(fileUri)
+                    facts?.let { known ->
+                        PdfOutcomeRow(known, known.pageCount?.let { PdfOutcome(it, known.sizeBytes + PROTECT_OVERHEAD_BYTES, approximate = true) })
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
                 if (alreadyProtected == null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
@@ -370,6 +225,14 @@ internal fun PasswordDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+                if (isProtect && password.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    PasswordStrength(password)
+                }
+                if (isProtect) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ToolHint(stringResource(R.string.edit_protect_what_happens))
+                }
                 if (errorText != null) {
                     Text(
                         errorText!!,
@@ -380,6 +243,58 @@ internal fun PasswordDialog(
                 }
             }
         }
+}
+
+/** About what encryption adds to a file: the encryption dictionary and a little padding per stream. */
+private const val PROTECT_OVERHEAD_BYTES = 1_500L
+
+/**
+ * How hard [password] is to guess, as bits: its length times log2 of the characters it draws from (lower case, upper
+ * case, digits, symbols, anything else). A rough upper bound (a dictionary word scores more than it deserves), so the
+ * labels are cautious: under 45 bits weak, under 60 fair, under 80 good, then strong.
+ */
+internal fun passwordBits(password: String): Int {
+    if (password.isEmpty()) return 0
+    var pool = 0
+    if (password.any { it in 'a'..'z' }) pool += 26
+    if (password.any { it in 'A'..'Z' }) pool += 26
+    if (password.any { it in '0'..'9' }) pool += 10
+    if (password.any { it.code in 33..126 && !it.isLetterOrDigit() }) pool += 33
+    if (password.any { it.code > 126 || it == ' ' }) pool += 64
+    // The same character repeated ("aaaaaaaa") is one guess per length, whatever the pool.
+    val distinct = password.toSet().size
+    val length = if (distinct == 1) 1 else password.length
+    return (length * kotlin.math.ln(pool.coerceAtLeast(2).toDouble()) / kotlin.math.ln(2.0)).toInt()
+}
+
+/** A bar and a word for [password]'s strength, from [passwordBits]. */
+@Composable
+private fun PasswordStrength(password: String) {
+    val bits = passwordBits(password)
+    val (label, colour) = when {
+        bits < 45 -> R.string.edit_protect_strength_weak to MaterialTheme.colorScheme.error
+        bits < 60 -> R.string.edit_protect_strength_fair to androidx.compose.ui.graphics.Color(0xFFB26A00)
+        bits < 80 -> R.string.edit_protect_strength_good to androidx.compose.ui.graphics.Color(0xFF1B7F4B)
+        else -> R.string.edit_protect_strength_strong to androidx.compose.ui.graphics.Color(0xFF1B7F4B)
+    }
+    val share = (bits / 100f).coerceIn(0.05f, 1f)
+    Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+        ) {
+            Box(Modifier.fillMaxWidth(share).height(6.dp).background(colour))
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.edit_protect_strength, stringResource(label), bits),
+            style = MaterialTheme.typography.bodySmall,
+            color = colour
+        )
+    }
 }
 
 /** Protect PDF on a file that already needs a password to open: says so instead of asking for a new one. */

@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -114,6 +115,7 @@ fun SignPdfScreen(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
+                ToolDemoHelpButton("sign")
                 Button(
                     enabled = file != null && state.placements.isNotEmpty() && !busy,
                     onClick = { if (file != null) onSign(file, state.placements, state.sourceName) },
@@ -165,6 +167,19 @@ fun SignPdfScreen(
                     val selected = state.selected
                     val placement = state.placements.getOrNull(selected)
                     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                        if (placement == null && state.placements.isNotEmpty()) {
+                            // What Save will write: so many stamps on so many pages, not only the page on screen.
+                            val onPages = state.placements.map { it.pageIndex }.distinct().size
+                            Text(
+                                stringResource(
+                                    R.string.edit_sign_summary,
+                                    pluralStringResource(R.plurals.edit_sign_stamps, state.placements.size, state.placements.size),
+                                    pluralStringResource(R.plurals.pdf_outcome_pages, onPages, onPages)
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         if (placement == null) {
                             Text(
                                 stringResource(R.string.sign_hint),

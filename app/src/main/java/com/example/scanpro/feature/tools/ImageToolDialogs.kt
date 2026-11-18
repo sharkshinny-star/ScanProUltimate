@@ -130,6 +130,7 @@ internal fun CompressImageDialog(
 
     ToolPage(
         title = stringResource(R.string.tools_compress_img_title),
+        demoToolId = "compress_img",
         onClose = onDismiss,
         actionLabel = stringResource(R.string.tools_compress_img_action),
         onAction = {
@@ -267,6 +268,7 @@ internal fun ConvertImageDialog(
     ToolPage(
         title = if (single) stringResource(R.string.tools_convert_img_title)
         else stringResource(R.string.tools_convert_img_title) + " (${uris.size})",
+        demoToolId = "convert_img",
         onClose = onDismiss,
         actionLabel = if (exportPdf) stringResource(R.string.img_convert_make_pdf) else stringResource(R.string.img_convert_action, formatLabel(format)),
         onAction = { if (exportPdf) onConvertToPdf() else onConfirm(format, chosenQuality) },
@@ -491,6 +493,7 @@ internal fun ResizeImageDialog(
 
     ToolPage(
         title = stringResource(R.string.tools_resize_img_title),
+        demoToolId = "resize_img",
         onClose = onDismiss,
         actionLabel = stringResource(R.string.tools_resize_img_action),
         onAction = { onConfirm(ImageResizeConfig(targetWidth = boxW, targetHeight = boxH, outputFormat = format, fit = usedFit)) },
