@@ -83,6 +83,10 @@ object DocumentEdgeDetector {
     private const val FAINT_CANNY_HIGH = 7.0
     /** Weight of an outline rebuilt from straight edges ([LineQuadFinder]), before its edge support. */
     private const val LINE_WEIGHT = 0.95
+    /** How far a snapped side may slide (px at the analysis scale), the samples per side, and the least mean step. */
+    private const val SNAP_RANGE = 5
+    private const val SNAP_SAMPLES = 40
+    private const val SNAP_MIN_STEP = 6.0
     /**
      * The straight-edge search runs only when the best closed outline scores below this. A page the contour sources
      * already agree on (a plain page scores 0.56 and up on the benchmark) never pays for the search; a page broken by
@@ -120,22 +124,6 @@ object DocumentEdgeDetector {
             val lower = max(15.0, median * 0.5)
             val upper = min(255.0, median * 1.4)
             Imgproc.Canny(processed, edgesCanny, lower, upper)
-
-            // Method 2: Adaptive Threshold for low-contrast edges on light or dark backgrounds
-            Imgproc.adaptiveThreshold(
-                processed,
-                edgesAdaptive,
-                255.0,
-                // A box mean, not a Gaussian one: 4.5 ms less per frame, and this map is only the fallback source.
-                Imgproc.ADAPTIVE_THRESH_MEAN_C,
-                Imgproc.THRESH_BINARY_INV,
-                15,
-                4.0
-            )
-
-            // Combine both edge maps
-            Core.bitwise_or(edgesCanny, edgesAdaptive, combinedEdges)
-            Imgproc.morphologyEx(combinedEdges, combinedEdges, Imgproc.MORPH_CLOSE, kernel)
 
             // Methods 3 and 4 only need the rough region of the page, not pixel-exact edges, so both run on a half-
             // size copy and their maps are scaled back up (nearest, so they stay binary). Measured 2026-11-18: 3.0 ms
@@ -208,21 +196,13 @@ object DocumentEdgeDetector {
                     polygon.release()
                 }
             }
-            fun consider(points: Array<Point>, weight: Double) {
+            fun consider(points: Array<Point>, weight: Double, precise: Boolean) {
                 val (ordered, score) = scoreOf(points, weight) ?: return
                 val current = best
-                if (current == null || score.toFloat() > current.score) best = Candidate(ordered, score.toFloat())
+                if (current == null || score.toFloat() > current.score) best = Candidate(ordered, score.toFloat(), precise)
             }
 
-            val sources = listOf(
-                Triple(cannyClosed, 1.0, Imgproc.RETR_EXTERNAL),
-                Triple(thinEdges, 0.98, Imgproc.RETR_LIST),
-                Triple(brightMask, 0.96, Imgproc.RETR_EXTERNAL),
-                Triple(faintClosed, 0.97, Imgproc.RETR_EXTERNAL),
-                Triple(combinedEdges, 0.85, Imgproc.RETR_EXTERNAL),
-                Triple(darkMask, 0.7, Imgproc.RETR_EXTERNAL)
-            )
-            sources.forEach { (map, weight, retrieval) ->
+            fun searchSources(sources: List<Source>) = sources.forEach { (map, weight, retrieval, precise) ->
                 val contours = mutableListOf<MatOfPoint>()
                 val sourceHierarchy = Mat()
                 try {
@@ -232,12 +212,42 @@ object DocumentEdgeDetector {
                         if (abs(Imgproc.contourArea(contour)) < frameArea * MIN_DOCUMENT_AREA_RATIO) return@forEach
                         val (points, solidity) = pageCorners(contour, frameArea) ?: return@forEach
                         // Several objects fused into one blob have a dented outline; a page is nearly solid.
-                        consider(points, weight * solidity * solidity * solidity)
+                        consider(points, weight * solidity * solidity * solidity, precise)
                     }
                 } finally {
                     contours.forEach(MatOfPoint::release)
                     sourceHierarchy.release()
                 }
+            }
+
+            searchSources(listOf(
+                Source(cannyClosed, 1.0, Imgproc.RETR_EXTERNAL, precise = true),
+                Source(thinEdges, 0.98, Imgproc.RETR_LIST, precise = true),
+                Source(brightMask, 0.96, Imgproc.RETR_EXTERNAL, precise = false),
+                Source(faintClosed, 0.97, Imgproc.RETR_EXTERNAL, precise = false)
+            ))
+
+            // The fallback sources only run when the main four found no confident outline, so a plain page never
+            // pays for them (F170; on the benchmark no scene's winner comes from them at a score under the gate).
+            // Method 2: adaptive threshold for low-contrast edges on light or dark backgrounds, merged with the
+            // Canny map; and the dark counterpart of the Otsu mask.
+            if ((best?.score ?: 0f) < LINE_SEARCH_BELOW) {
+                Imgproc.adaptiveThreshold(
+                    processed,
+                    edgesAdaptive,
+                    255.0,
+                    // A box mean, not a Gaussian one: 4.5 ms less per frame, and this map is only a fallback source.
+                    Imgproc.ADAPTIVE_THRESH_MEAN_C,
+                    Imgproc.THRESH_BINARY_INV,
+                    15,
+                    4.0
+                )
+                Core.bitwise_or(edgesCanny, edgesAdaptive, combinedEdges)
+                Imgproc.morphologyEx(combinedEdges, combinedEdges, Imgproc.MORPH_CLOSE, kernel)
+                searchSources(listOf(
+                    Source(combinedEdges, 0.85, Imgproc.RETR_EXTERNAL, precise = true),
+                    Source(darkMask, 0.7, Imgproc.RETR_EXTERNAL, precise = false)
+                ))
             }
 
             // F168: an outline broken by a hard shadow never closes, so no contour above traces it, and the best
@@ -246,7 +256,19 @@ object DocumentEdgeDetector {
             // clean page keeps exactly the result, and the time, it had before.
             if ((best?.score ?: 0f) < LINE_SEARCH_BELOW) {
                 LineQuadFinder.find(edgesCanny, faintEdges, frameArea * MIN_DOCUMENT_AREA_RATIO).forEach { line ->
-                    consider(line.points, LINE_WEIGHT * line.support)
+                    // Both line passes end with corners from full-resolution line fits, but a pass2 line can sit on
+                    // the blurred map's thick edge, so its corners get the same snap as the coarse sources.
+                    consider(line.points, LINE_WEIGHT * line.support, precise = false)
+                }
+            }
+
+            // F170: a winner from a half-size source is up to 2 px off at the analysis scale (about 1% corner error
+            // on an A4 benchmark page). Each side is slid a few pixels along its normal onto the strongest brightness
+            // step of the full-resolution blurred frame; a side with no clear step nearby stays where it was.
+            best?.let { chosen ->
+                if (!chosen.precise) {
+                    val snapped = snapToGradient(chosen.points, processed)
+                    if (snapped != null) best = chosen.copy(points = snapped)
                 }
             }
 
@@ -458,6 +480,93 @@ object DocumentEdgeDetector {
         return CropQuad(norm(points[0]), norm(points[1]), norm(points[2]), norm(points[3]))
     }
 
-    private data class Candidate(val points: List<Point>, val score: Float)
+    private data class Source(val map: Mat, val weight: Double, val retrieval: Int, val precise: Boolean)
+
+    /** A reused full-frame buffer for [snapToGradient]; the detector can run on more than one thread. */
+    private val grayBuffer = ThreadLocal<ByteArray>()
+
+    /**
+     * The four corners with each side slid (at most [SNAP_RANGE] px) along its normal onto the strongest brightness
+     * step of [gray] near it, or null when no side moved. A side moves only to a clear step (mean central difference
+     * of at least [SNAP_MIN_STEP] grey levels) that beats the step where the side already is; the snapped quad is
+     * kept only if it is still a plausible page and no corner moved further than twice the range.
+     */
+    private fun snapToGradient(points: List<Point>, gray: Mat): List<Point>? {
+        val width = gray.cols()
+        val height = gray.rows()
+        var buffer = grayBuffer.get()
+        if (buffer == null || buffer.size < width * height) {
+            buffer = ByteArray(width * height)
+            grayBuffer.set(buffer)
+        }
+        gray.get(0, 0, buffer)
+
+        /** Mean |I(p+n) - I(p-n)| along the side from [ax],[ay] to [bx],[by], or null off frame. */
+        fun ridge(ax: Double, ay: Double, bx: Double, by: Double, nx: Double, ny: Double): Double? {
+            var sum = 0.0
+            var inside = 0
+            for (k in 0..SNAP_SAMPLES) {
+                val t = 0.06 + 0.88 * k / SNAP_SAMPLES
+                val x = ax + (bx - ax) * t
+                val y = ay + (by - ay) * t
+                val x0 = (x - nx * 1.5).toInt()
+                val y0 = (y - ny * 1.5).toInt()
+                val x1 = (x + nx * 1.5).toInt()
+                val y1 = (y + ny * 1.5).toInt()
+                if (x0 < 0 || y0 < 0 || x1 < 0 || y1 < 0 || x0 >= width || y0 >= height || x1 >= width || y1 >= height) continue
+                inside++
+                sum += abs((buffer[y1 * width + x1].toInt() and 255) - (buffer[y0 * width + x0].toInt() and 255))
+            }
+            return if (inside < SNAP_SAMPLES / 2) null else sum / inside
+        }
+
+        var moved = false
+        val shifted = ArrayList<DoubleArray>(4)
+        for (i in 0 until 4) {
+            val a = points[i]
+            val b = points[(i + 1) % 4]
+            val length = hypot(b.x - a.x, b.y - a.y)
+            if (length < 8.0) return null
+            val nx = -(b.y - a.y) / length
+            val ny = (b.x - a.x) / length
+            var bestShift = 0
+            var bestRidge = ridge(a.x, a.y, b.x, b.y, nx, ny) ?: return null
+            val atRest = bestRidge
+            for (shift in -SNAP_RANGE..SNAP_RANGE) {
+                if (shift == 0) continue
+                val r = ridge(a.x + nx * shift, a.y + ny * shift, b.x + nx * shift, b.y + ny * shift, nx, ny) ?: continue
+                if (r > bestRidge) {
+                    bestRidge = r
+                    bestShift = shift
+                }
+            }
+            // Move only onto a clear step that beats where the side already is; drift onto noise helps nothing.
+            val keep = bestShift != 0 && bestRidge >= SNAP_MIN_STEP && bestRidge >= atRest * 1.15
+            val use = if (keep) bestShift.toDouble() else 0.0
+            if (keep) moved = true
+            shifted += doubleArrayOf(a.x + nx * use, a.y + ny * use, b.x + nx * use, b.y + ny * use)
+        }
+        if (!moved) return null
+
+        // The corners are where neighbouring shifted sides cross, in the same order as before.
+        val result = ArrayList<Point>(4)
+        for (i in 0 until 4) {
+            val s1 = shifted[(i + 3) % 4]
+            val s2 = shifted[i]
+            val d1x = s1[2] - s1[0]; val d1y = s1[3] - s1[1]
+            val d2x = s2[2] - s2[0]; val d2y = s2[3] - s2[1]
+            val det = d1x * d2y - d1y * d2x
+            if (abs(det) < 1e-9) return null
+            val t = ((s2[0] - s1[0]) * d2y - (s2[1] - s1[1]) * d2x) / det
+            val x = s1[0] + d1x * t
+            val y = s1[1] + d1y * t
+            if (!x.isFinite() || !y.isFinite() || hypot(x - points[i].x, y - points[i].y) > SNAP_RANGE * 2.0) return null
+            result += Point(x, y)
+        }
+        return if (QuadGeometry.isPlausiblePage(result.map { QuadGeometry.P(it.x, it.y) })) result else null
+    }
+
+    /** [precise] when the points came from a full-resolution edge map; a half-size source is 2 px coarse. */
+    private data class Candidate(val points: List<Point>, val score: Float, val precise: Boolean)
 }
 
