@@ -413,6 +413,8 @@ class MainActivity : FragmentActivity() {
             ACTION_OPEN_TRASH -> viewModel.requestDestination(ScanProDestinations.TRASH)
             ACTION_OPEN_SETTINGS -> viewModel.requestDestination(ScanProDestinations.SETTINGS)
             ACTION_OPEN_KEPT_SCANS -> viewModel.requestDestination(ScanProDestinations.KEPT_SCANS)
+            ACTION_OPEN_TOOLS -> viewModel.requestDestination(ScanProDestinations.TOOLS)
+            ACTION_OPEN_FILES -> viewModel.requestDestination(ScanProDestinations.FILES)
             ACTION_SCAN_NOW -> {
                 // Launchers rank shortcuts by how often each is used.
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
@@ -591,6 +593,9 @@ class MainActivity : FragmentActivity() {
         const val ACTION_OPEN_TRASH = "com.example.scanpro.action.OPEN_TRASH"
         const val ACTION_OPEN_SETTINGS = "com.example.scanpro.action.OPEN_SETTINGS"
         const val ACTION_OPEN_KEPT_SCANS = "com.example.scanpro.action.OPEN_KEPT_SCANS"
+        /** The widget's Tools and Files buttons (F197). */
+        const val ACTION_OPEN_TOOLS = "com.example.scanpro.action.OPEN_TOOLS"
+        const val ACTION_OPEN_FILES = "com.example.scanpro.action.OPEN_FILES"
         const val EXTRA_DOCUMENT_ID = "documentId"
         /** One launcher shortcut that opens this activity with [action]. */
         private fun launcherShortcut(context: Context, id: String, short: Int, long: Int, action: String) =

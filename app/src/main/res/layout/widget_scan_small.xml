@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Small widget (two cells, F197): one large Scan button. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@drawable/widget_background"
+    android:padding="6dp">
+
+    <LinearLayout
+        android:id="@+id/widget_scan"
+        style="@style/ScanProWidgetButton"
+        android:orientation="horizontal"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_widget_scan"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetLabel"
+            android:layout_marginTop="0dp"
+            android:layout_marginStart="8dp"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:text="@string/widget_scan" />
+    </LinearLayout>
+</LinearLayout>

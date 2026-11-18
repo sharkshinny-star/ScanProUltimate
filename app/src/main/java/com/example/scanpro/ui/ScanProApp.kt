@@ -164,7 +164,12 @@ fun ScanProApp(
             // A reminder notification's screen (recycle bin, settings), also only once the library is unlocked.
             LaunchedEffect(destinationRequest) {
                 val route = destinationRequest ?: return@LaunchedEffect
-                navController.navigate(route) { launchSingleTop = true }
+                // A tab (the widget's Tools and Files) is switched to like a tap on the bottom bar, not stacked on top.
+                if (route == ScanProDestinations.TOOLS || route == ScanProDestinations.FILES || route == ScanProDestinations.HOME) {
+                    navController.navigateToTopLevel(route)
+                } else {
+                    navController.navigate(route) { launchSingleTop = true }
+                }
                 viewModel.clearDestinationRequest()
             }
 

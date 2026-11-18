@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Large widget (two rows or more, F197): the app's name, a wide Scan button, and ID card, Import, Tools and Files. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_tile_scan"
+            android:tint="@color/scanpro_widget_button"
+            android:contentDescription="@null" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="@color/scanpro_widget_heading"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_large_subtitle"
+                android:textColor="@color/scanpro_widget_subtle"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_scan"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="6dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@drawable/widget_button_background"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_widget_scan"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetLabel"
+            android:layout_marginTop="0dp"
+            android:layout_marginStart="10dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:text="@string/widget_scan_document" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal">
+    <LinearLayout
+        android:id="@+id/widget_id_card"
+        style="@style/ScanProWidgetTonalButton"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_widget_id_card"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetTonalLabel"
+            android:text="@string/lib_quick_id_card" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/widget_import"
+        style="@style/ScanProWidgetTonalButton"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_widget_import"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetTonalLabel"
+            android:text="@string/widget_import" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/widget_tools"
+        style="@style/ScanProWidgetTonalButton"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_widget_tools"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetTonalLabel"
+            android:text="@string/widget_tools" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/widget_files"
+        style="@style/ScanProWidgetTonalButton"
+        tools:ignore="UseCompoundDrawables">
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_widget_files"
+            android:contentDescription="@null" />
+        <TextView
+            style="@style/ScanProWidgetTonalLabel"
+            android:text="@string/widget_files" />
+    </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
