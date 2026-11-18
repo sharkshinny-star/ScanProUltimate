@@ -1379,15 +1379,16 @@ private fun ScanHeroCard(
     // A scan beam sweeps down the page glyph and back, like the scanner finding a page. Read while drawing,
     // so it never recomposes the card; still when animations are off.
     val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
-    val beam = androidx.compose.animation.core.rememberInfiniteTransition(label = "hero").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            androidx.compose.animation.core.tween(2_400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-            androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "beam"
-    )
+    // Overhaul 2026-11-18: the beam used to sweep forever, redrawing Home every frame for as long as it was open (battery,
+    // and frames taken from scrolling). It now sweeps down and back once when Home appears, then rests at the top.
+    val beam = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(motion) {
+        if (!motion) return@LaunchedEffect
+        val sweep = androidx.compose.animation.core.tween<Float>(1_400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        beam.snapTo(0f)
+        beam.animateTo(1f, sweep)
+        beam.animateTo(0f, sweep)
+    }
     Box(
         modifier
             .fillMaxWidth()

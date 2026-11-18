@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -223,11 +224,11 @@ fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: android
             .shadow(10.dp, CircleShape, ambientColor = brand.gradientStart.copy(alpha = 0.5f), spotColor = brand.gradientEnd.copy(alpha = 0.6f))
             .background(Brush.linearGradient(listOf(brand.gradientStart, brand.gradientEnd)), CircleShape)
             .clip(CircleShape)
-            .selectable(
-                selected = false,
-                role = Role.Button,
+            // clickable, not selectable(selected = false): TalkBack read the button as "not selected".
+            .clickable(
                 interactionSource = interaction,
-                indication = ripple(bounded = true, color = Color.White)
+                indication = ripple(bounded = true, color = Color.White),
+                role = Role.Button
             ) {
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
                 onClick()
