@@ -72,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.pressTilt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -387,11 +388,10 @@ private fun ToolCard(
     val pinLabel = stringResource(if (pinned) R.string.tools_unpin_action else R.string.tools_pin_action)
     val haptic = LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, spring(stiffness = Spring.StiffnessMediumLow), label = "toolPress")
     Column(
         modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
+            // Tilts towards the finger and springs back, like a physical tile (F197).
+            .pressTilt(interaction)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .combinedClickable(

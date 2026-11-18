@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextMeasurer
@@ -139,7 +140,7 @@ private fun DrawScope.drawStage(c: DemoColours) {
         center = centre
     )
     val floor = Offset(size.width / 2f, size.height * 0.93f)
-    androidx.compose.ui.graphics.drawscope.scale(1f, 0.18f, pivot = floor) {
+    scale(1f, 0.18f, pivot = floor) {
         drawCircle(
             androidx.compose.ui.graphics.Brush.radialGradient(listOf(Color.Black.copy(alpha = 0.16f), Color.Transparent), center = floor, radius = size.width * 0.42f),
             radius = size.width * 0.42f,

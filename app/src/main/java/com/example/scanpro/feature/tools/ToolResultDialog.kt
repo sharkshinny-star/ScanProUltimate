@@ -277,7 +277,9 @@ internal fun ResultDialog(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    file.extension.uppercase() + " · " + formatBytes(context, result.outputSizeBytes.takeIf { it > 0 } ?: file.length()),
+                    file.extension.uppercase() + " · " + formatBytes(context, result.outputSizeBytes.takeIf { it > 0 } ?: file.length()) +
+                        // How many pages came out, for a PDF (F197): the first thing to check after Split, Merge or N-up.
+                        (if (file.extension.equals("pdf", ignoreCase = true) && result.pageCount > 0) " · " + androidx.compose.ui.res.pluralStringResource(R.plurals.pdf_outcome_pages, result.pageCount, result.pageCount) else ""),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -327,6 +329,27 @@ internal fun ResultDialog(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
+                        }
+                    }
+                }
+
+                // Every other tool: the size before and after, quieter than the compression card (F197), so a result that
+                // grew (a watermark, OCR text) is seen, not discovered later.
+                if (!isCompression && result.originalSizeBytes > 0 && result.outputSizeBytes > 0) {
+                    Spacer(Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SizeColumn(stringResource(R.string.tools_result_original_label), formatBytes(context, result.originalSizeBytes), highlight = false)
+                            Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            SizeColumn(stringResource(R.string.img_tool_result), formatBytes(context, result.outputSizeBytes), highlight = false)
                         }
                     }
                 }

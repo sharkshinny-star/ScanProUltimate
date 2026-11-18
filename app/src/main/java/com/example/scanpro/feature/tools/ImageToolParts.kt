@@ -322,7 +322,7 @@ internal fun BeforeAfterRow(context: Context, image: LoadedImage, after: ImageEs
         modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            SizeColumn(
+            OutcomeColumn(
                 label = stringResource(R.string.img_tool_now),
                 size = formatBytes(context, image.meta.sizeBytes),
                 detail = stringResource(R.string.img_tool_dims, image.width, image.height) + " · " + formatLabel(image.format),
@@ -336,10 +336,10 @@ internal fun BeforeAfterRow(context: Context, image: LoadedImage, after: ImageEs
             )
             Column(Modifier.weight(1f)) {
                 if (after == null) {
-                    SizeColumn(stringResource(R.string.img_tool_after), "…", stringResource(R.string.img_tool_estimating))
+                    OutcomeColumn(stringResource(R.string.img_tool_after), "…", stringResource(R.string.img_tool_estimating))
                 } else {
                     val size = formatBytes(context, after.bytes)
-                    SizeColumn(
+                    OutcomeColumn(
                         label = stringResource(R.string.img_tool_after),
                         size = if (after.approximate) stringResource(R.string.img_tool_about, size) else size,
                         detail = stringResource(R.string.img_tool_dims, after.width, after.height) + " · " + formatLabel(afterFormat)
@@ -359,7 +359,7 @@ internal fun BeforeAfterRow(context: Context, image: LoadedImage, after: ImageEs
 }
 
 @Composable
-internal fun SizeColumn(label: String, size: String, detail: String, modifier: Modifier = Modifier) {
+internal fun OutcomeColumn(label: String, size: String, detail: String, modifier: Modifier = Modifier) {
     Column(modifier) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(size, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
