@@ -306,4 +306,53 @@ class ImageToolsEngineTest {
         val decoded = BitmapFactory.decodeFile(outFile.absolutePath)
         assertNotNull("Cropped file must be readable", decoded)
     }
+
+    // F193: a straight crop keeps the picture's own format and transparency, and applies the turn before the cut.
+    @Test
+    fun cropToFile_turnsThenCutsAndKeepsPngTransparency() {
+        val sourceFile = saveBitmap(createSampleBitmap(200, 100, withAlpha = true), Bitmap.CompressFormat.PNG, File(testDir, "wide.png"))
+        val outFile = File(testDir, "cut.png")
+
+        val written = ImageToolsEngine.cropToFile(sourceFile, outFile, ImageCropSpec(left = 0.5f, rotation = 90))
+
+        assertEquals(ImageExportFormat.PNG, written)
+        val decoded = BitmapFactory.decodeFile(outFile.absolutePath)
+        // Turned a quarter: 100 wide, 200 high; the right half of that is 50 wide.
+        assertEquals(50, decoded.width)
+        assertEquals(200, decoded.height)
+        assertTrue("Transparent corners must stay transparent", Color.alpha(decoded.getPixel(decoded.width - 1, 0)) < 255)
+    }
+
+    // F193: Compress to a size the full-resolution picture can meet keeps the full resolution.
+    @Test
+    fun compressImage_targetMetAtFullResolution_keepsResolution() = runBlocking {
+        val sourceFile = saveBitmap(createSampleBitmap(1200, 900), Bitmap.CompressFormat.JPEG, File(testDir, "plain.jpg"))
+        val atForty = ImageToolsEngine.encodeBytes(BitmapFactory.decodeFile(sourceFile.absolutePath), ImageExportFormat.JPEG, 40).size
+        val target = minOf(sourceFile.length() - 1, atForty * 2L)
+        val outFile = File(testDir, "target.jpg")
+
+        ImageToolsEngine.compressImage(app, Uri.fromFile(sourceFile), ImageCompressConfig(targetSizeBytes = target), outFile)
+
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(outFile.absolutePath, bounds)
+        assertEquals(1200, bounds.outWidth)
+        assertTrue(outFile.length() <= target)
+    }
+
+    // F193: two pictures with the same name (from two folders) both reach the bundle instead of one overwriting the other.
+    @Test
+    fun convertImage_sameNames_bothKept() = runBlocking {
+        val first = saveBitmap(createSampleBitmap(120, 120), Bitmap.CompressFormat.JPEG, File(File(testDir, "a").apply { mkdirs() }, "photo.jpg"))
+        val second = saveBitmap(createSampleBitmap(140, 140), Bitmap.CompressFormat.JPEG, File(File(testDir, "b").apply { mkdirs() }, "photo.jpg"))
+        val outDir = File(testDir, "same_names").apply { mkdirs() }
+
+        val result = ImageToolsEngine.convertImage(
+            context = app,
+            inputUris = listOf(Uri.fromFile(first), Uri.fromFile(second)),
+            targetFormat = ImageExportFormat.PNG,
+            outputLocation = File(outDir, "bundle.png")
+        )
+
+        ZipFile(result.outputFile).use { zip -> assertEquals(2, zip.size()) }
+    }
 }

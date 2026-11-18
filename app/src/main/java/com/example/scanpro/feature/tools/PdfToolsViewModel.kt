@@ -809,6 +809,12 @@ class PdfToolsViewModel @Inject constructor(
             ImageToolsEngine.cropImage(context, uri, quad, out, format, ::report)
         }
 
+    /** Crop image: a straight cut with turn and mirror, kept in the picture's own format (a PNG keeps its transparency). */
+    fun cropImageRect(uri: Uri, spec: com.example.scanpro.imaging.ImageCropSpec) =
+        launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
+            ImageToolsEngine.cropImageRect(context, uri, spec, java.io.File(context.cacheDir, "exports"), null, ::report)
+        }
+
     fun watermarkPdf(uri: Uri, config: WatermarkConfig) =
         launchTool(R.string.tools_progress_watermarking, R.string.tools_err_watermark) {
             val out = named(uri, "watermarked", "pdf")
