@@ -21,7 +21,8 @@
             android:layout_height="22dp"
             android:src="@drawable/ic_tile_scan"
             android:tint="@color/scanpro_widget_button"
-            android:contentDescription="@null" />
+            android:contentDescription="@null"
+            tools:ignore="UseAppTint" />
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
