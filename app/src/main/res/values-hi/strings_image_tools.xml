@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Image tools (F193). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_tool_original">मूल</string>
+    <string name="img_tool_result">नतीजा</string>
+    <string name="img_tool_crop">क्रॉप</string>
+    <string name="img_tool_now">अभी</string>
+    <string name="img_tool_after">बाद में</string>
+    <string name="img_tool_estimating">नतीजा तैयार हो रहा है…</string>
+    <string name="img_tool_about">लगभग %1$s</string>
+    <string name="img_tool_smaller">%1$d%% छोटा</string>
+    <string name="img_tool_larger">%1$d%% बड़ा</string>
+    <string name="img_tool_other_format">इमेज</string>
+    <string name="img_transparency_white">JPG में पारदर्शी हिस्से सफ़ेद हो जाते हैं। उन्हें पारदर्शी रखने के लिए PNG या WebP चुनें।</string>
+    <string name="img_section_make_smaller">छोटा करें इससे</string>
+    <string name="img_section_resolution">रिज़ॉल्यूशन</string>
+    <string name="img_section_format">फ़ॉर्मैट</string>
+    <string name="img_section_quality">क्वालिटी</string>
+    <string name="img_section_new_size">नया साइज़</string>
+    <string name="img_section_common_sizes">आम साइज़</string>
+    <string name="img_section_convert_to">इसमें बदलें</string>
+    <string name="img_compress_target_hint">जहाँ हो सके पूरा रिज़ॉल्यूशन रखता है, और उसे तभी घटाता है जब वरना क्वालिटी ख़राब होती।</string>
+    <string name="img_compress_already_small">यह तस्वीर पहले से छोटी है (%1$s)। नीचे साइज़ लिखें, या क्वालिटी इस्तेमाल करें।</string>
+    <string name="img_compress_no_gain">यह तस्वीर पहले से अच्छी तरह कंप्रेस है: इन सेटिंग से यह छोटी नहीं होगी, इसलिए मूल रखी जाएगी। कम क्वालिटी या रिज़ॉल्यूशन आज़माएँ।</string>
+    <string name="img_quality_high">हाई</string>
+    <string name="img_quality_balanced">संतुलित</string>
+    <string name="img_quality_small">सबसे छोटा</string>
+    <string name="img_quality_smaller_file">छोटी फ़ाइल</string>
+    <string name="img_quality_better_picture">बेहतर तस्वीर</string>
+    <string name="img_lossless">लॉसलेस</string>
+    <string name="img_res_original">मूल (%1$d px)</string>
+    <string name="img_resolution_hint">सबसे लंबी साइड। ज़्यादातर अपलोड फ़ॉर्म और मैसेजिंग ऐप्स को 1920 px से ज़्यादा नहीं चाहिए।</string>
+    <string name="img_convert_action">%1$s में बदलें</string>
+    <string name="img_convert_make_pdf">PDF बनाएँ</string>
+    <string name="img_convert_already">यह तस्वीर पहले से %1$s है। कोई दूसरा फ़ॉर्मैट चुनें।</string>
+    <string name="img_convert_quality_hint" formatted="false">90% या उससे ज़्यादा आँखों को मूल जैसा ही दिखता है।</string>
+    <string name="img_convert_tap_to_crop">पहले क्रॉप करने के लिए तस्वीर पर क्रॉप बटन दबाएँ।</string>
+    <string name="img_crop_picture_n">तस्वीर %1$d क्रॉप करें</string>
+    <plurals name="img_pictures_count">
+        <item quantity="one">%1$d तस्वीर</item>
+        <item quantity="other">%1$d तस्वीरें</item>
+    </plurals>
+    <string name="img_resize_enlarge_warning">तस्वीर को मूल से बड़ा करने पर कोई डिटेल नहीं जुड़ती, इसलिए वह धुंधली लग सकती है।</string>
+    <string name="img_resize_linked_hint">अनुपात जुड़ा है: एक साइड बदलें तो दूसरी साथ बदलेगी। दोनों अलग सेट करने के लिए लिंक दबाएँ।</string>
+    <string name="img_resize_unlinked_hint">अनुपात अलग है: अगर आकार तस्वीर से अलग है, तो नीचे चुनें कि वह कैसे फ़िट हो।</string>
+    <string name="img_fit_fit_desc">पूरी तस्वीर और अनुपात बना रहता है; एक साइड माँगे से छोटी हो सकती है।</string>
+    <string name="img_fit_fill_desc">ठीक वही साइज़, अनुपात बना रहता है; जो किनारे नहीं समाते वे कट जाते हैं।</string>
+    <string name="img_fit_stretch_desc">ठीक वही साइज़, पूरी तस्वीर; फ़िट करने के लिए दबाई या खींची जाती है।</string>
+    <string name="img_format_kept">अभी वाला ही फ़ॉर्मैट (%1$s)।</string>
+    <string name="img_crop_title">इमेज क्रॉप करें</string>
+    <string name="img_crop_done">हो गया</string>
+    <string name="img_crop_frame">क्रॉप फ़्रेम। साइज़ बदलने के लिए कोने या किनारे खींचें, या हिलाने के लिए अंदर खींचें।</string>
+    <string name="img_crop_free">फ़्री</string>
+    <string name="img_crop_original">मूल</string>
+    <string name="img_crop_square">चौकोर</string>
+    <string name="img_crop_rotate">घुमाएँ</string>
+    <string name="img_crop_flip">मिरर</string>
+    <string name="img_crop_reset">रीसेट</string>
+</resources>

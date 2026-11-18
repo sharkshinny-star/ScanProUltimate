@@ -535,4 +535,9 @@
     <string name="tools_wm_color_red">ಕೆಂಪು</string>
     <string name="tools_wm_color_green">ಹಸಿರು</string>
     <string name="tools_wm_color_purple">ನೇರಳೆ</string>
+    <string name="tools_protect_already_title">ಈ PDF ಗೆ ಈಗಾಗಲೇ ಪಾಸ್‌ವರ್ಡ್ ಇದೆ</string>
+    <string name="tools_protect_already_body">ಇದನ್ನು ತೆರೆಯುವವರಿಗೆ ಈಗಾಗಲೇ ಪಾಸ್‌ವರ್ಡ್ ಬೇಕು. ಬೇರೆ ಪಾಸ್‌ವರ್ಡ್ ಹಾಕಲು, ಮೊದಲು ಈಗಿನ ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆದು, ನಂತರ ಅನ್‌ಲಾಕ್ ಮಾಡಿದ ಪ್ರತಿಯನ್ನು ರಕ್ಷಿಸಿ.</string>
+    <string name="tools_protect_remove_password_first">ಮೊದಲು ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_crop_img_done">%1$d × %2$d px ಗೆ ಕ್ರಾಪ್ ಮಾಡಲಾಗಿದೆ (%3$s)</string>
+    <string name="tools_compress_img_target_missed">ಓದಲು ಸಾಧ್ಯವಾಗುವಂತೆ ಉಳಿಸಿ %1$s ಗಿಂತ ಕಡಿಮೆ ಮಾಡಲಾಗಲಿಲ್ಲ. ಅತಿ ಚಿಕ್ಕ ಆವೃತ್ತಿ %2$s (%3$d%% ಚಿಕ್ಕದು).</string>
 </resources>

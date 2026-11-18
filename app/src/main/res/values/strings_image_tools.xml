@@ -10,7 +10,7 @@
     <string name="img_tool_about">About %1$s</string>
     <string name="img_tool_smaller">%1$d%% smaller</string>
     <string name="img_tool_larger">%1$d%% larger</string>
-    <string name="img_tool_dims">%1$d × %2$d px</string>
+    <string name="img_tool_dims" translatable="false">%1$d × %2$d px</string>
     <string name="img_tool_other_format">Image</string>
     <string name="img_transparency_white">Transparent areas turn white in a JPG. Choose PNG or WebP to keep them see-through.</string>
 
@@ -59,11 +59,11 @@
     <string name="img_crop_free">Free</string>
     <string name="img_crop_original">Original</string>
     <string name="img_crop_square">Square</string>
-    <string name="img_crop_4_5">4:5</string>
-    <string name="img_crop_3_4">3:4</string>
-    <string name="img_crop_4_3">4:3</string>
-    <string name="img_crop_16_9">16:9</string>
-    <string name="img_crop_9_16">9:16</string>
+    <string name="img_crop_4_5" translatable="false">4:5</string>
+    <string name="img_crop_3_4" translatable="false">3:4</string>
+    <string name="img_crop_4_3" translatable="false">4:3</string>
+    <string name="img_crop_16_9" translatable="false">16:9</string>
+    <string name="img_crop_9_16" translatable="false">9:16</string>
     <string name="img_crop_rotate">Rotate</string>
     <string name="img_crop_flip">Mirror</string>
     <string name="img_crop_reset">Reset</string>

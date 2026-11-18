@@ -535,4 +535,9 @@
     <string name="tools_wm_color_red">ചുവപ്പ്</string>
     <string name="tools_wm_color_green">പച്ച</string>
     <string name="tools_wm_color_purple">പർപ്പിൾ</string>
+    <string name="tools_protect_already_title">ഈ PDF-ന് ഇതിനകം പാസ്‌വേഡ് ഉണ്ട്</string>
+    <string name="tools_protect_already_body">ഇത് തുറക്കുന്നവർക്ക് ഇതിനകം പാസ്‌വേഡ് വേണം. മറ്റൊന്ന് സജ്ജമാക്കാൻ, ആദ്യം നിലവിലെ പാസ്‌വേഡ് നീക്കം ചെയ്യുക, തുടർന്ന് അൺലോക്ക് ചെയ്ത പകർപ്പ് സംരക്ഷിക്കുക.</string>
+    <string name="tools_protect_remove_password_first">ആദ്യം പാസ്‌വേഡ് നീക്കുക</string>
+    <string name="tools_crop_img_done">%1$d × %2$d px ആയി ക്രോപ്പ് ചെയ്തു (%3$s)</string>
+    <string name="tools_compress_img_target_missed">വായിക്കാൻ കഴിയുന്ന വിധം നിലനിർത്തി %1$s-ൽ താഴെയാക്കാൻ കഴിഞ്ഞില്ല. ഏറ്റവും ചെറിയ പതിപ്പ് %2$s ആണ് (%3$d%% ചെറുത്).</string>
 </resources>
