@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tool pages upgrade (F194). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tool_demo_how_it_works">ఇది ఎలా పనిచేస్తుంది</string>
+    <string name="tool_demo_shown">చూపబడుతోంది</string>
+    <string name="tool_demo_hidden">దాచబడింది</string>
+    <string name="pdf_outcome_size_unknown">సైజు తర్వాత తెలుస్తుంది</string>
+    <plurals name="pdf_outcome_pages">
+        <item quantity="one">%1$d పేజీ</item>
+        <item quantity="other">%1$d పేజీలు</item>
+    </plurals>
+    <plurals name="pdf_outcome_files">
+        <item quantity="one">%1$d ఫైల్</item>
+        <item quantity="other">%1$d ఫైల్‌లు</item>
+    </plurals>
+</resources>
