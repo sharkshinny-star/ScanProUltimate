@@ -1,0 +1,52 @@
+# Release check (Play release preparation, F210): started by hand only (workflow_dispatch), never on push.
+# Builds the unsigned release App Bundle and sideload APKs, then checks 16 KB page-size alignment of every native
+# library (llvm-readelf) and of the APKs (zipalign -P 16), and lists the merged release manifest's permissions and
+# exported components. About 15 minutes; uploads only the small text report, kept 1 day. Owner approved 2026-11-18.
+
+name: Release check
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI_GRADLE: >-
+    --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx3g
+    -Pkotlin.compiler.execution.strategy=in-process --warning-mode=all
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+      - run: chmod +x ./gradlew
+      - name: Release bundle and sideload APKs (unsigned unless signing is configured)
+        run: |
+          ./gradlew :app:bundleRelease $CI_GRADLE
+          ./gradlew -Pscanpro.sideload=true :app:assembleRelease $CI_GRADLE
+      - name: 16 KB alignment and merged manifest
+        run: |
+          manifest=$(find app/build/intermediates -path '*release*' -name AndroidManifest.xml | grep -i merged | head -1)
+          scripts/ci/release-check.sh app/build/outputs/bundle/release app/build/outputs/apk/release "$manifest" | tee release-check.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-check-report
+          path: release-check.md
+          if-no-files-found: ignore
+          retention-days: 1
