@@ -54,15 +54,14 @@ import com.example.scanpro.imaging.TextExportFormat
 import com.example.scanpro.core.designsystem.ScanProTheme
 import com.example.scanpro.core.ui.openFile
 import com.example.scanpro.core.ui.shareFile
-import com.example.scanpro.data.CropQuad
 import com.example.scanpro.data.FirstRunHints
 import com.example.scanpro.data.PdfPageSize
 import com.example.scanpro.data.PdfQuality
 import com.example.scanpro.data.RecentPdf
 import com.example.scanpro.data.ToolResultFile
 import com.example.scanpro.data.ThemeMode
-import com.example.scanpro.feature.document.CropEditorDialog
-import com.example.scanpro.imaging.ImageProcessor
+import com.example.scanpro.imaging.ImageExportFormat
+import com.example.scanpro.imaging.ImageToolsEngine
 import com.example.scanpro.imaging.PageSpec
 import com.example.scanpro.imaging.PdfProtection
 import com.example.scanpro.imaging.PdfToolsEngine
@@ -501,16 +500,16 @@ fun PdfToolsScreen(
             if (toolRunning) ToolProgressHost(viewModel.progress, onCancel = viewModel::cancel)
 
             activeCropSourcePath?.let { stagedPath ->
-                CropEditorDialog(
+                // A straight crop with aspect ratios, turn and mirror (F193), in the picture's own format.
+                ImageCropEditor(
                     sourcePath = stagedPath,
-                    initial = CropQuad.DEFAULT,
                     onDismiss = {
                         File(stagedPath).delete()
                         activeCropSourcePath = null
                         activeCropUri = null
                         cropReturn = null
                     },
-                    onConfirm = { quad ->
+                    onConfirm = { spec ->
                         val originalUri = activeCropUri
                         val target = cropReturn
                         activeCropSourcePath = null
@@ -521,14 +520,16 @@ fun PdfToolsScreen(
                                 cropScope.launch {
                                     // Checked on the IO thread too; a crop that fails says so instead of ending the app.
                                     val croppedFile = withContext(Dispatchers.IO) {
-                                        val dest = File(context.cacheDir, "precrop_${UUID.randomUUID()}.jpg")
+                                        val staged = File(stagedPath)
+                                        val format = ImageToolsEngine.formatOf(stagedPath) ?: ImageExportFormat.JPEG
+                                        val dest = File(context.cacheDir, "precrop_${UUID.randomUUID()}.${format.extension}")
                                         try {
-                                            ImageProcessor.cropSourceToNewFile(File(stagedPath), dest, quad)
+                                            ImageToolsEngine.cropToFile(staged, dest, spec, format)
                                         } catch (failed: Exception) {
                                             if (failed is kotlinx.coroutines.CancellationException) throw failed
                                             dest.delete()
                                         } finally {
-                                            File(stagedPath).delete()
+                                            staged.delete()
                                         }
                                         dest.takeIf { it.exists() && it.length() > 0 }
                                     }
@@ -537,7 +538,7 @@ fun PdfToolsScreen(
                                 }
                             } else {
                                 File(stagedPath).delete()
-                                viewModel.cropImage(originalUri, quad)
+                                viewModel.cropImageRect(originalUri, spec)
                             }
                         } else {
                             File(stagedPath).delete()

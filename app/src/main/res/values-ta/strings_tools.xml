@@ -535,6 +535,11 @@
     <string name="tools_wm_color_red">சிவப்பு</string>
     <string name="tools_wm_color_green">பச்சை</string>
     <string name="tools_wm_color_purple">ஊதா</string>
+    <string name="tools_protect_already_title">இந்த PDF-க்கு ஏற்கனவே கடவுச்சொல் உள்ளது</string>
+    <string name="tools_protect_already_body">இதைத் திறப்பவருக்கு ஏற்கனவே கடவுச்சொல் தேவை. வேறொன்றை அமைக்க, முதலில் தற்போதைய கடவுச்சொல்லை நீக்கி, பின்னர் திறக்கப்பட்ட நகலைப் பாதுகாக்கவும்.</string>
+    <string name="tools_protect_remove_password_first">முதலில் கடவுச்சொல்லை நீக்கு</string>
+    <string name="tools_crop_img_done">%1$d × %2$d px ஆகச் செதுக்கப்பட்டது (%3$s)</string>
+    <string name="tools_compress_img_target_missed">படிக்கக்கூடியதாக வைத்து %1$s-க்குக் கீழே குறைக்க முடியவில்லை. மிகச் சிறிய பதிப்பு %2$s (%3$d%% சிறியது).</string>
     <string name="tools_card_edit_pdf">PDF உரையைத் திருத்து</string>
     <string name="tools_tile_edit_pdf">PDF திருத்து</string>
     <string name="tools_desc_edit_pdf">சொற்கள், எழுத்துரு, தடிமன், அளவை மாற்று</string>
@@ -581,7 +586,4 @@
         <item quantity="one">%1$d மாற்றம் வெள்ளைப் பெட்டியின் மேல் எழுதப்பட்டது: பழைய சொற்கள் கோப்பில் கீழே இன்னும் உள்ளன.</item>
         <item quantity="other">%1$d மாற்றங்கள் வெள்ளைப் பெட்டிகளின் மேல் எழுதப்பட்டன: பழைய சொற்கள் கோப்பில் கீழே இன்னும் உள்ளன.</item>
     </plurals>
-    <string name="tools_protect_already_body">இதைத் திறப்பவருக்கு ஏற்கெனவே கடவுச்சொல் தேவை. வேறு கடவுச்சொல் அமைக்க, முதலில் தற்போதைய கடவுச்சொல்லை நீக்கி, பிறகு திறந்த நகலைப் பாதுகாக்கவும்.</string>
-    <string name="tools_protect_already_title">இந்த PDF-க்கு ஏற்கெனவே கடவுச்சொல் உள்ளது</string>
-    <string name="tools_protect_remove_password_first">முதலில் கடவுச்சொல்லை நீக்கு</string>
 </resources>

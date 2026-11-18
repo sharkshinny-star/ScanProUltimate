@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Image tools (F193). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_tool_original">அசல்</string>
+    <string name="img_tool_result">முடிவு</string>
+    <string name="img_tool_crop">செதுக்கு</string>
+    <string name="img_tool_now">இப்போது</string>
+    <string name="img_tool_after">பின்னர்</string>
+    <string name="img_tool_estimating">முடிவு தயாராகிறது…</string>
+    <string name="img_tool_about">சுமார் %1$s</string>
+    <string name="img_tool_smaller">%1$d%% சிறியது</string>
+    <string name="img_tool_larger">%1$d%% பெரியது</string>
+    <string name="img_tool_other_format">படம்</string>
+    <string name="img_transparency_white">JPG-இல் வெளிப்படையான பகுதிகள் வெள்ளையாகும். அவற்றை வெளிப்படையாக வைக்க PNG அல்லது WebP-ஐத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="img_section_make_smaller">சிறிதாக்கும் முறை</string>
+    <string name="img_section_resolution">தெளிவுத்திறன்</string>
+    <string name="img_section_format">வடிவம்</string>
+    <string name="img_section_quality">தரம்</string>
+    <string name="img_section_new_size">புதிய அளவு</string>
+    <string name="img_section_common_sizes">பொதுவான அளவுகள்</string>
+    <string name="img_section_convert_to">இதற்கு மாற்று</string>
+    <string name="img_compress_target_hint">முடிந்தவரை முழு தெளிவுத்திறனை வைத்திருக்கும்; இல்லையெனில் தரம் கெடும்போது மட்டுமே அதைக் குறைக்கும்.</string>
+    <string name="img_compress_already_small">இந்தப் படம் ஏற்கனவே சிறியது (%1$s). கீழே அளவை உள்ளிடவும், அல்லது தரத்தைப் பயன்படுத்தவும்.</string>
+    <string name="img_compress_no_gain">இந்தப் படம் ஏற்கனவே நன்றாகச் சுருக்கப்பட்டுள்ளது: இந்த அமைப்புகளால் சிறிதாகாது, எனவே அசலே வைக்கப்படும். குறைந்த தரம் அல்லது தெளிவுத்திறனை முயலவும்.</string>
+    <string name="img_quality_high">உயர்</string>
+    <string name="img_quality_balanced">சமநிலை</string>
+    <string name="img_quality_small">மிகச் சிறியது</string>
+    <string name="img_quality_smaller_file">சிறிய கோப்பு</string>
+    <string name="img_quality_better_picture">சிறந்த படம்</string>
+    <string name="img_lossless">இழப்பற்றது</string>
+    <string name="img_res_original">அசல் (%1$d px)</string>
+    <string name="img_resolution_hint">நீளமான பக்கம். பெரும்பாலான பதிவேற்றப் படிவங்களுக்கும் செய்தி ஆப்களுக்கும் 1920 px-க்கு மேல் தேவையில்லை.</string>
+    <string name="img_convert_action">%1$s ஆக மாற்று</string>
+    <string name="img_convert_make_pdf">PDF உருவாக்கு</string>
+    <string name="img_convert_already">இந்தப் படம் ஏற்கனவே %1$s. வேறு வடிவத்தைத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="img_convert_quality_hint" formatted="false">90% அல்லது அதற்கு மேல் கண்ணுக்கு அசல் போலவே தெரியும்.</string>
+    <string name="img_convert_tap_to_crop">முதலில் செதுக்க, படத்தில் உள்ள செதுக்கு பொத்தானைத் தட்டவும்.</string>
+    <string name="img_crop_picture_n">படம் %1$d-ஐச் செதுக்கு</string>
+    <plurals name="img_pictures_count">
+        <item quantity="one">%1$d படம்</item>
+        <item quantity="other">%1$d படங்கள்</item>
+    </plurals>
+    <string name="img_resize_enlarge_warning">படத்தை அசலை விடப் பெரிதாக்கினால் புதிய விவரம் சேராது, எனவே மங்கலாகத் தெரியலாம்.</string>
+    <string name="img_resize_linked_hint">விகிதம் இணைக்கப்பட்டுள்ளது: ஒரு பக்கத்தை மாற்றினால் மற்றதும் மாறும். இரண்டையும் அமைக்க இணைப்பைத் தட்டவும்.</string>
+    <string name="img_resize_unlinked_hint">விகிதம் பிரிக்கப்பட்டுள்ளது: வடிவம் படத்திலிருந்து வேறுபட்டால், அது எப்படிப் பொருந்த வேண்டும் என்பதைக் கீழே தேர்ந்தெடுக்கவும்.</string>
+    <string name="img_fit_fit_desc">முழுப் படமும் விகிதமும் இருக்கும்; ஒரு பக்கம் கேட்டதை விடச் சிறியதாகலாம்.</string>
+    <string name="img_fit_fill_desc">சரியான அளவு, விகிதம் இருக்கும்; பொருந்தாத ஓரங்கள் வெட்டப்படும்.</string>
+    <string name="img_fit_stretch_desc">சரியான அளவு, முழுப் படம்; பொருந்த அழுத்தப்படும் அல்லது இழுக்கப்படும்.</string>
+    <string name="img_format_kept">இப்போதைய அதே வடிவம் (%1$s).</string>
+    <string name="img_crop_title">படத்தைச் செதுக்கு</string>
+    <string name="img_crop_done">முடிந்தது</string>
+    <string name="img_crop_frame">செதுக்கும் சட்டம். அளவை மாற்ற மூலைகளை அல்லது ஓரங்களை இழுக்கவும், நகர்த்த உள்ளே இழுக்கவும்.</string>
+    <string name="img_crop_free">இலவசம்</string>
+    <string name="img_crop_original">அசல்</string>
+    <string name="img_crop_square">சதுரம்</string>
+    <string name="img_crop_rotate">சுழற்று</string>
+    <string name="img_crop_flip">கண்ணாடி</string>
+    <string name="img_crop_reset">மீட்டமை</string>
+</resources>

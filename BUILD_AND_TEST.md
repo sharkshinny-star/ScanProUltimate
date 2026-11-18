@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-18 (F191 not compiled; F192 Files storage overview and folders, not compiled; F189–F190 not compiled; F188 (hexagon colour picker for signatures, not compiled); F186 capture and PDF quality, F187 AGP 9.5.1; F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-18 (F194 Edit PDF text: engine 7/7 on the desktop, editor not compiled; F193 not compiled, new tests not run; F192 (Protect PDF) not compiled; F191 Files storage overview and folders, not compiled; F189–F190 not compiled; F188 (hexagon colour picker for signatures, not compiled); F186 capture and PDF quality, F187 AGP 9.5.1; F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -41,15 +41,23 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-**F189–F191 (2026-11-18, cloud container): not compiled and not run**, for the same reason as F188 below.
+**F193 (2026-11-18, cloud container): not compiled and not run.** Three new Robolectric tests (`cropToFile_turnsThenCutsAndKeepsPngTransparency`, `compressImage_targetMetAtFullResolution_keepsResolution`, `convertImage_sameNames_bothKept`) were written but not run: Gradle cannot resolve the Android Gradle Plugin here. CI or the owner's Mac must compile and run `testDebugUnitTest --tests "*ImageToolsEngineTest*"`.
+
+**F189, F190, F192 (2026-11-18, cloud container): not compiled and not run**, for the same reason as F188 below.
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
-## Latest results (2026-11-18, F192 (Files; committed as F191), commit b5f5192, Linux cloud container)
+## Latest results (2026-11-18, F194 Edit PDF text, commit PENDING_F194, Linux cloud container)
+
+- `PdfTextEditorTest` on the desktop JVM with Apache PDFBox 2.0.27 (the app's `PdfTextEditor.kt` with `com.tom_roush.pdfbox` renamed to `org.apache.pdfbox`; a throwaway Gradle project): 7 run, 7 passed. The pdfbox-android 2.0.27 AAR was checked with `javap` for every overridden or called method (`showGlyph` with the unicode argument, `showForm`, `processOperator`, `PDFStreamParser(PDContentStream)`, `ContentStreamWriter`, `PDVectorFont.hasGlyph`, `PDColor.toRGB`).
+- `scanpro-quality-audit.py`: PASS (34 new strings and plurals, six languages; also the Protect PDF strings another session left untranslated).
+- NOT run: compile of `EditPdfTextEditor.kt`, `PdfTextEditTool.kt` and the wiring, the Robolectric copy of the tests, the full unit suite, lint; nothing on a device (R70).
+
+## Latest results (2026-11-18, F191 (Files), commit b5f5192, Linux cloud container)
 
 - `PhoneFilesTest` (12 tests, 3 new for folders) on the desktop JVM with the app's `PhoneFiles.kt` unchanged and a stand-in `android.net.Uri` (Robolectric not available here): 12 passed.
 - `scanpro-quality-audit.py`: PASS (12 new strings, six languages).
-- NOT run: compile of `PhonePdfsScreen.kt` and `PhonePdfsViewModel.kt`, the full unit suite, lint; nothing seen on a device (R68).
+- NOT run: compile of `PhonePdfsScreen.kt` and `PhonePdfsViewModel.kt`, the full unit suite, lint; nothing seen on a device (R67).
 
 ## Latest results (2026-11-18, translations for F188, Linux cloud container)
 

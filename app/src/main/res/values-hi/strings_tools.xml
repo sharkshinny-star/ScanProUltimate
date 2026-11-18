@@ -535,6 +535,11 @@
     <string name="tools_wm_color_red">लाल</string>
     <string name="tools_wm_color_green">हरा</string>
     <string name="tools_wm_color_purple">बैंगनी</string>
+    <string name="tools_protect_already_title">इस PDF में पहले से पासवर्ड है</string>
+    <string name="tools_protect_already_body">इसे खोलने वाले को पहले से पासवर्ड चाहिए। दूसरा पासवर्ड लगाने के लिए पहले मौजूदा पासवर्ड हटाएँ, फिर अनलॉक की गई कॉपी को सुरक्षित करें।</string>
+    <string name="tools_protect_remove_password_first">पहले पासवर्ड हटाएँ</string>
+    <string name="tools_crop_img_done">%1$d × %2$d px में क्रॉप किया गया (%3$s)</string>
+    <string name="tools_compress_img_target_missed">इसे पढ़ने लायक रखते हुए %1$s से कम नहीं किया जा सका। सबसे छोटा वर्ज़न %2$s है (%3$d%% छोटा)।</string>
     <string name="tools_card_edit_pdf">PDF टेक्स्ट बदलें</string>
     <string name="tools_tile_edit_pdf">PDF बदलें</string>
     <string name="tools_desc_edit_pdf">शब्द, फ़ॉन्ट, बोल्ड और आकार बदलें</string>
@@ -581,7 +586,4 @@
         <item quantity="one">%1$d बदलाव सफ़ेद बॉक्स के ऊपर लिखा है: पुराने शब्द फ़ाइल में नीचे अब भी हैं।</item>
         <item quantity="other">%1$d बदलाव सफ़ेद बॉक्स के ऊपर लिखे हैं: पुराने शब्द फ़ाइल में नीचे अब भी हैं।</item>
     </plurals>
-    <string name="tools_protect_already_body">इसे खोलने वाले को पहले से पासवर्ड चाहिए। दूसरा पासवर्ड लगाने के लिए पहले मौजूदा पासवर्ड हटाएँ, फिर खुली हुई कॉपी को सुरक्षित करें।</string>
-    <string name="tools_protect_already_title">इस PDF पर पहले से पासवर्ड है</string>
-    <string name="tools_protect_remove_password_first">पहले पासवर्ड हटाएँ</string>
 </resources>
