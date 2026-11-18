@@ -41,7 +41,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-## Latest results (2026-11-18, F178 framed-object limits and phone benchmark update, Linux cloud container)
+## Latest results (2026-11-18, F178 framed-object limits and phone benchmark update, commit 18deb2b, Linux cloud container)
 
 - Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`): new page scenes with a printed dark frame: inset 22 px (about 6 mm) 0 framed sides, a page (also on a white desk); at the paper's edge 4 framed, held back from auto-capture (also on a white desk and with a shadow); corner error 0.22 to 0.28% for all four. New clutter: silver laptop on a dark desk 0.68, 0 framed, still taken for a page; tablet showing a document 0.69, 4 framed, held back. Every earlier scene unchanged.
 - NOT run: `ScanDetectionBenchmarkTest` changes (three page scenes with floor assertions, `clutterIsNotTakenForAPage`) are written but not compiled or run; `:app` build, unit tests and lint (no Android SDK here); anything on a device (R56, R57, R59).
