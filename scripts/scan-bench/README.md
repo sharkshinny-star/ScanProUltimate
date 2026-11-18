@@ -8,7 +8,7 @@ the device benchmark (`ScanDetectionBenchmarkTest`, see `BUILD_AND_TEST.md`) rem
 cd scripts/scan-bench && gradle -q run --args="extra"
 ```
 
-`extra` also adds colour cases (`c_`: coloured paper, a colour photo on the page, a warm lamp, coloured desks) and desk clutter with no page (`n_`: laptop, keyboard, phone, mug, notebook cover). `gradle -q run --args="extra colour"` also runs every scene with its colour map, the way the app does for a captured photo (the live camera has none), and prints that result on a second line with its own summary.
+`extra` also adds colour cases (`c_`: coloured paper, a colour photo on the page, a warm lamp, coloured desks) and desk clutter with no page (`n_`: laptop, keyboard, phone, mug, notebook cover). Every row also prints `framed`, the outline's framed sides (`PageFraming`, F177). `gradle -q run --args="extra colour"` also runs every scene with its colour map, the way the app does for a captured photo (the live camera has none), and prints that result on a second line with its own summary.
 
 Other arguments: `only=shadow`, `dump=/some/dir` (images with true and found outlines), `time` (median detection time).
 

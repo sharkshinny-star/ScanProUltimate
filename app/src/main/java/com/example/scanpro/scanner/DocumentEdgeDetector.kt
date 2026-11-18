@@ -32,7 +32,12 @@ data class DocumentDetection(
     val frameHeight: Int,
     val guidance: Guidance,
     /** Share of the page covered by its largest clipped-white patch (see [PageQuality.glareShare]); 0 without a page. */
-    val glareShare: Double = 0.0
+    val glareShare: Double = 0.0,
+    /**
+     * Sides of the outline whose inside edge is clearly darker than both the surface just outside and the middle of
+     * the outline (R58): a dark rim round a brighter inside, as a laptop or a keyboard has and a page does not.
+     */
+    val framedSides: Int = 0
 ) {
     val isBlurry: Boolean get() = blurScore < PageQuality.BLUR_LIMIT
     val isDark: Boolean get() = brightness < PageQuality.DARK_LIMIT
@@ -46,11 +51,18 @@ data class DocumentDetection(
      * card held far away does not), is not just the frame edge, and is sharp and lit.
      */
     val isReady: Boolean get() = isConvincingPage && !isBlurry && !isDark
-    /** The outline is trusted to be a page: confident, a real share of the frame, and not just the frame edge. */
-    val isConvincingPage: Boolean get() = quad != null && confidence >= 0.48f && areaRatio >= MIN_READY_AREA && !fillsFrame
+    /** A dark rim round a brighter inside on most sides: a laptop or a keyboard, not a page (R58). */
+    val isFramedObject: Boolean get() = framedSides >= FRAMED_OBJECT_SIDES
+    /**
+     * The outline is trusted to be a page: confident, a real share of the frame, not just the frame edge, and not a
+     * dark-rimmed object such as a laptop or a keyboard (which score as high as pages do).
+     */
+    val isConvincingPage: Boolean get() = quad != null && confidence >= 0.48f && areaRatio >= MIN_READY_AREA && !fillsFrame && !isFramedObject
 
     companion object {
         const val MIN_READY_AREA = 0.2f
+        /** Three, not four: an object at the frame edge has a side with no surface outside it to compare. */
+        const val FRAMED_OBJECT_SIDES = 3
     }
 }
 
@@ -389,10 +401,13 @@ object DocumentEdgeDetector {
                     candidate.points.toList()
                 )
             }.getOrDefault(0.0)
+            val framed = if (candidate == null) 0 else runCatching { PageFraming.framedSides(candidate.points, processed) }.getOrDefault(0)
             val guidance = when {
                 // Darkness first: a dark frame hides the outline, so "point at a document" would mislead.
                 pageBrightness < PageQuality.DARK_LIMIT -> Guidance.MORE_LIGHT
                 quad == null -> Guidance.POINT_AT_DOCUMENT
+                // R58: a laptop or a keyboard outlined as if it were a page.
+                framed >= DocumentDetection.FRAMED_OBJECT_SIDES -> Guidance.POINT_AT_DOCUMENT
                 blur < PageQuality.BLUR_LIMIT -> Guidance.HOLD_STEADY
                 confidence < 0.48f -> Guidance.MOVE_CLOSER
                 PageQuality.isGlare(glare) -> Guidance.GLARE
@@ -408,7 +423,8 @@ object DocumentEdgeDetector {
                 frameWidth = working.cols(),
                 frameHeight = working.rows(),
                 guidance = guidance,
-                glareShare = glare
+                glareShare = glare,
+                framedSides = framed
             )
         } finally {
             if (working !== grayInput) working.release()

@@ -285,10 +285,10 @@ fun main(args: Array<String>) {
         if (s.name.startsWith("n_") && colour) {
             val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
             val c = DocumentEdgeDetector.detect(s.gray, DocumentEdgeDetector.chromaMap(rgba))
-            println("    colour: NEG conf ${"%.2f".format(c.confidence)} convincing ${c.isConvincingPage} area ${"%.2f".format(c.areaRatio)}")
+            println("    colour: NEG conf ${"%.2f".format(c.confidence)} convincing ${c.isConvincingPage} area ${"%.2f".format(c.areaRatio)} framed ${c.framedSides}")
         }
-        if (s.name.startsWith("n_")) { println("${s.name} | NEG conf ${"%.2f".format(det.confidence)} convincing ${det.isConvincingPage} area ${"%.2f".format(det.areaRatio)}"); return@forEach }
-        println("${s.name} | true | ${"%.2f".format(err)} | ${"%.3f".format(o)} | ${"%.1f".format(times[3])} | ${"%.2f".format(det.confidence)}")
+        if (s.name.startsWith("n_")) { println("${s.name} | NEG conf ${"%.2f".format(det.confidence)} convincing ${det.isConvincingPage} area ${"%.2f".format(det.areaRatio)} framed ${det.framedSides}"); return@forEach }
+        println("${s.name} | true | ${"%.2f".format(err)} | ${"%.3f".format(o)} | ${"%.1f".format(times[3])} | ${"%.2f".format(det.confidence)} | framed ${det.framedSides}")
         if (colour) {
             val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
             val chroma = DocumentEdgeDetector.chromaMap(rgba)
@@ -301,7 +301,7 @@ fun main(args: Array<String>) {
                 val cerr = s.truth.indices.map { hypot(cf[it].x - s.truth[it].x, cf[it].y - s.truth[it].y) }.average() / hypot(W.toDouble(), H.toDouble()) * 100
                 val co = iou(s.truth, cf)
                 colourRows += Triple(s.name, cerr, co)
-                println("    colour: err ${"%.2f".format(cerr)} | IoU ${"%.3f".format(co)} | ${"%.1f".format(ctimes[3])} ms | conf ${"%.2f".format(cdet.confidence)}")
+                println("    colour: err ${"%.2f".format(cerr)} | IoU ${"%.3f".format(co)} | ${"%.1f".format(ctimes[3])} ms | conf ${"%.2f".format(cdet.confidence)} | framed ${cdet.framedSides}")
             }
         }
         if (dump != null) {
