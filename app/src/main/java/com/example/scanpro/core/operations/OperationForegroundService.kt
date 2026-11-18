@@ -30,12 +30,20 @@ class OperationForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val label = intent?.getStringExtra(EXTRA_LABEL)
         ensureChannel()
-        ServiceCompat.startForeground(
-            this,
-            NOTIFICATION_ID,
-            buildNotification(label),
-            if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
-        )
+        // Refused when Android 15+'s daily data-sync budget is used up (or the app is not allowed to start one now):
+        // the work carries on in its own scope without the notification, rather than the app crashing (F210).
+        val started = runCatching {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                buildNotification(label),
+                if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
+            )
+        }.isSuccess
+        if (!started) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
         if (intent?.action == ACTION_STOP) {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             // With the start id, a newer "show" request that is already queued keeps the service alive.

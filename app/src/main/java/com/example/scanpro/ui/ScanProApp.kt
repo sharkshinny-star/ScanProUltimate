@@ -289,7 +289,11 @@ fun ScanProApp(
                 // before it asked; a new install answers it on the welcome's permission page, which marks it asked.
                 // Comes before What's new, the tour and the default-viewer sheet, never together with them.
                 var filesAskDue by remember {
-                    mutableStateOf(!FilesAccessPrompts.startFilesAsked(context) && !com.example.scanpro.feature.phonepdfs.PhonePdfSource.hasAccess(context))
+                    mutableStateOf(
+                        com.example.scanpro.BuildConfig.ALL_FILES_ACCESS &&
+                            !FilesAccessPrompts.startFilesAsked(context) &&
+                            !com.example.scanpro.feature.phonepdfs.PhonePdfSource.hasAccess(context)
+                    )
                 }
                 val filesAskShowing = filesAskDue && welcomeSeen == true && !feedbackOpen && launchSettled
                 if (filesAskShowing) {

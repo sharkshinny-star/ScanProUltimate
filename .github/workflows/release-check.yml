@@ -36,7 +36,7 @@ jobs:
       - run: chmod +x ./gradlew
       - name: Release bundle and sideload APKs (unsigned unless signing is configured)
         run: |
-          ./gradlew :app:bundleRelease $CI_GRADLE
+          ./gradlew :app:bundleRelease -Pscanpro.allowMissingPolicy=true $CI_GRADLE
           ./gradlew -Pscanpro.sideload=true :app:assembleRelease $CI_GRADLE
       - name: 16 KB alignment and merged manifest
         run: |

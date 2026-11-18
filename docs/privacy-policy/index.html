@@ -44,7 +44,7 @@
 <ul>
   <li>Your scans, photos, recognised text and documents stay on your phone. ScanPro has no account and no server of its own, and it does not show ads.</li>
   <li>Google's ML Kit, which powers text recognition, barcode scanning, translation and the document-scanner fallback, sends Google small diagnostic reports. They never contain your images or text.</li>
-  <li>Translation downloads its language models over the internet. That is the only reason the app needs a network connection.</li>
+  <li>The app uses the internet only to download parts Google provides: language and recognition models for ML Kit, the optional translation module from Google Play, and Google Play's rating card. Your documents are never uploaded.</li>
   <li>Nothing leaves your phone unless you share, export or email it yourself.</li>
 </ul>
 </div>
@@ -53,7 +53,7 @@
 <p>ScanPro is an offline-first document scanner for Android. It captures pages with the camera, tidies and crops them, recognises their text, builds PDFs and keeps a searchable library. Documents, page images, recognised text, notes, tags and settings are stored in the app's private storage on your device. The core scanning workflow needs no account.</p>
 
 <h2>2. Camera, photos and files</h2>
-<p>The app asks for camera access when you scan. Camera frames are used on the device to find the page edges, judge blur and lighting, and take the picture. Photos and files are imported through Android's Photo Picker and file picker, so the app sees only what you choose. It does not ask for access to all your files. For PDFs you open from other apps, Android keeps a read permission for those files so that you can reopen them from Recent. If a provider does not allow that, ScanPro keeps a copy of the PDF (up to 30 MB) in its private storage instead, and deletes it when you remove the file from Recent. You can remove files from that list at any time.</p>
+<p>The app asks for camera access when you scan. Camera frames are used on the device to find the page edges, judge blur and lighting, and take the picture. Photos and files are imported through Android's Photo Picker and file picker, so the app sees only what you choose. Separately, ScanPro can ask for Android's "All files access" so it can list the PDFs, Word, Excel and other documents and photos already on your phone in its Files tab and open them; it reads them only to show and open them, and only when you choose a file. It asks once, when you first start the app, and you can say no or turn it off at any time in Android's settings; everything else in the app works without it. For PDFs you open from other apps, Android keeps a read permission for those files so that you can reopen them from Recent. If a provider does not allow that, ScanPro keeps a copy of the PDF (up to 30 MB) in its private storage instead, and deletes it when you remove the file from Recent. You can remove files from that list at any time.</p>
 
 <h2>3. Text recognition and other features that run on your device</h2>
 <p>Text recognition, barcode and QR scanning, language detection, and the document-insight features (for example spotting a receipt total or a business card) run on your device. Recognised text is stored locally so you can search it, correct it, copy it and export it. Scanning a business card offers to open your Contacts app with the details filled in; ScanPro does not read your contacts. Scanning a Wi-Fi code can open Android's own "save this network" prompt; the password is never included when you share the code.</p>
@@ -72,7 +72,7 @@
 <p>This does not include your images, scans or recognised text, and the app has no setting that turns it off. It is declared in ScanPro's Google Play Data safety form as Diagnostics, Other app performance data, and Device or other IDs, collected for analytics. Google's own privacy policy applies to what Google receives.</p>
 
 <h2>5. Translation</h2>
-<p>If you use translation, ML Kit downloads the language model it needs. The text is then translated on your device. The download is the only network use in the app. The text you translate is not sent anywhere.</p>
+<p>If you use translation, ML Kit downloads the language model it needs, and Google Play may download ScanPro's translation module the first time. The text is then translated on your device and is not sent anywhere. Other network use is limited to Google Play services downloading ML Kit's text-recognition and barcode models, ML Kit's diagnostics described in section 4, and Google Play's in-app rating card. None of it includes your documents, images or text.</p>
 
 <h2>6. Where your documents are kept</h2>
 <p>Documents are stored in the app's private storage and indexed there for search. They stay available without an internet connection until you delete them, clear the app's data or uninstall the app. The optional app lock uses your phone's biometrics or screen lock to control who can open the app. It is an access control, not a separate encryption of your library; the files rely on Android's own protection of app storage. ScanPro's data is excluded from Google's cloud backup, so it is never copied to a server that way. When you set up a new phone with Android's phone-to-phone transfer, your library and settings can move across, protected in transit by Android.</p>
@@ -87,13 +87,13 @@
 <p>Deleted documents go to a Recycle bin on your device so you can restore them. They are removed for good after the retention period set in Settings (7 days unless you change it to 14 or 30), or when you empty the bin or delete an item permanently. Copies you exported, shared or saved elsewhere are not affected.</p>
 
 <h2>10. Notifications and background work</h2>
-<p>Saving a large scan or import can continue in the background; Android shows a notification while it does, and a notification when a scan could not be saved or a Recycle bin item is about to expire. You can turn the Recycle bin reminder off in ScanPro's Settings, and all notifications off in Android settings.</p>
+<p>Saving a large scan or import, and long PDF tools, can continue in the background; Android shows a notification while they do, and a notification when a task has finished or failed, when a scan could not be saved, or when a Recycle bin item is about to expire. ScanPro can also remind you to drink water if that reminder is on. You can turn ScanPro's reminders off in its Settings, and all notifications off in Android settings.</p>
 
 <h2>11. Messages you send us</h2>
 <p>"Send feedback" and "Report an issue" open your email app with a message already filled in. An issue report includes your app version, phone model, Android version, screen and memory details, recent app events, and the last crash if there was one. The app takes folder paths, links to other apps' files and exported file names out of it first, and says what it contains. Nothing is sent until you press Send in your email app, and you can read and edit it before then. We use what you send only to answer you and to fix the problem.</p>
 
 <h2>12. What ScanPro does not collect</h2>
-<p>ScanPro does not ask for your location, contacts, microphone, call history, text messages or access to all files. It has no account system, no advertising and no analytics or crash-reporting service of its own. The diagnostics in section 4 come from Google's libraries, not from ScanPro.</p>
+<p>ScanPro does not ask for your location, contacts, microphone, call history or text messages. Its optional "All files access" (section 2) is used only on your phone to list and open your documents; nothing it reads is collected or sent anywhere. It has no account system, no advertising and no analytics or crash-reporting service of its own. The diagnostics in section 4 come from Google's libraries, not from ScanPro.</p>
 
 <h2>13. Security</h2>
 <p>ScanPro keeps your data in Android's private app storage, shares files only through temporary permissions, offers an optional biometric lock, and encrypts backups with a password. No software is perfectly secure. Keep Android up to date and protect your phone with a strong screen lock.</p>

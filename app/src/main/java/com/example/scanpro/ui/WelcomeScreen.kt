@@ -125,7 +125,9 @@ internal object StartupPermissions {
 
     fun missing(context: Context): List<String> = buildList {
         addAll(wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED })
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !PhonePdfSource.hasAccess(context)) add(FILES_ACCESS)
+        if (com.example.scanpro.BuildConfig.ALL_FILES_ACCESS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !PhonePdfSource.hasAccess(context)) {
+            add(FILES_ACCESS)
+        }
     }
 }
 

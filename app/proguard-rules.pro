@@ -43,3 +43,11 @@
    void traceEventEnd();
 }
 
+
+# Release builds drop verbose, debug and info logs (F210): they can carry file names, OCR text or QR contents, and
+# logcat is readable over adb. Warnings and errors stay for crash diagnosis.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
