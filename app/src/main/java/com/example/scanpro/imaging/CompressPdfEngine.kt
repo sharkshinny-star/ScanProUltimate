@@ -81,7 +81,15 @@ object CompressPdfEngine {
             if (customTargetBytes != null && originalSize > 0 && customTargetBytes >= originalSize) {
                 userError(R.string.tools_compress_err_target_larger_engine)
             }
-            val pageTotal = runCatching { PDDocument.load(tempInput, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { it.numberOfPages } }.getOrDefault(1)
+            // A file that needs a password to open used to fall through to the picture pass, where the system
+            // renderer refused it with a general "could not compress" (F194): say what is wrong instead.
+            val pageTotal = try {
+                PDDocument.load(tempInput, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { it.numberOfPages }
+            } catch (locked: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+                userError(R.string.tools_err_password_protected, cause = locked)
+            } catch (_: Exception) {
+                1
+            }
             val hasSearchableText = checkSearchableText(tempInput)
 
             val (effectiveScale, effectiveQuality) = if (customTargetBytes != null && customTargetBytes > 0L && originalSize > 0L) {
@@ -94,7 +102,9 @@ object CompressPdfEngine {
             }
 
             // One pass at a given scale and quality; the custom-target loop below runs it again, tighter, if the result is too big.
-            suspend fun attempt(scale: Float, quality: Int): CompressionResult {
+            // [rasterTextPages]: whether a PDF with text may be rebuilt from pictures of its pages when shrinking its
+            // images did not help. Only for a custom target, which asks for a size above all else.
+            suspend fun attempt(scale: Float, quality: Int, rasterTextPages: Boolean): CompressionResult {
                 if (hasSearchableText) {
                     // Strategy A: Preserve vector text/OCR layers while recompressing embedded images
                     val success = runCatching {
@@ -108,6 +118,19 @@ object CompressPdfEngine {
                             pageCount = pageTotal,
                             originalSizeBytes = originalSize,
                             compressedSizeBytes = outputFile.length(),
+                            isSearchablePreserved = true
+                        )
+                    }
+                    if (!rasterTextPages) {
+                        // F194: a preset used to rebuild a text PDF (a letter, a report) from pictures of its pages at
+                        // 65 to 120 dpi when it had no photos to shrink: the text came out blurred and could no longer be
+                        // searched or copied, for a file that was small already. It is kept as it is instead.
+                        tempInput.copyTo(outputFile, overwrite = true)
+                        return CompressionResult(
+                            outputFile = outputFile,
+                            pageCount = pageTotal,
+                            originalSizeBytes = originalSize,
+                            compressedSizeBytes = originalSize,
                             isSearchablePreserved = true
                         )
                     }
@@ -149,7 +172,7 @@ object CompressPdfEngine {
                 try {
                     for (pass in 0 until MAX_TARGET_PASSES) {
                         outputFile.delete()
-                        val tried = attempt(scaleAt(u), qualityAt(u))
+                        val tried = attempt(scaleAt(u), qualityAt(u), rasterTextPages = true)
                         last = tried
                         if (tried.compressedSizeBytes <= customTargetBytes) {
                             if (best == null || tried.compressedSizeBytes > best.compressedSizeBytes) {
@@ -175,7 +198,7 @@ object CompressPdfEngine {
                     bestFile.delete()
                 }
             } else {
-                result = attempt(effectiveScale, effectiveQuality)
+                result = attempt(effectiveScale, effectiveQuality, rasterTextPages = false)
             }
             return@withContext result
         } catch (error: Throwable) {
@@ -315,6 +338,191 @@ object CompressPdfEngine {
             }
         } finally {
             renderDir.deleteRecursively()
+        }
+    }
+
+    // ---- Estimate before compressing (F194) ------------------------------------------------------------------------
+
+    /**
+     * What Compress is expected to make of a PDF, worked out before it runs. The old screen promised a fixed share of
+     * the size (65%, 40%, 20%) whatever the file held: a text PDF was "about 60% smaller" and came out the same size.
+     * [bytes] has an estimate for each preset, [smallestBytes] the least a custom target can reach, [firstPage] the
+     * first page as the picture pass would leave it (only for a PDF with no text, the one that pass rebuilds).
+     */
+    class CompressEstimate(
+        val originalBytes: Long,
+        val pageCount: Int,
+        val hasText: Boolean,
+        /** Bytes of the pictures the image pass can shrink; 0 for a PDF of text and drawings only. */
+        val imageBytes: Long,
+        val bytes: Map<CompressionPreset, Long>,
+        val smallestBytes: Long,
+        val firstPage: Map<CompressionPreset, android.graphics.Bitmap> = emptyMap(),
+    )
+
+    /** Biggest pictures sampled for the image pass, and the longest side samples are decoded or rendered at. */
+    private const val SAMPLE_IMAGES = 3
+    private const val SAMPLE_SIDE = 1600
+    /** What a rebuilt page costs beyond its picture (page, image and content objects), and the file's own overhead. */
+    internal const val RASTER_PAGE_OVERHEAD = 700L
+    internal const val RASTER_FILE_OVERHEAD = 1500L
+
+    /**
+     * The image pass, worked out from a sample: the pictures sampled shrank from [sampleBefore] to [sampleAfter] bytes,
+     * so all [imageBytes] of pictures shrink by the same share and the rest of the file stays as it is. A picture that
+     * would grow is kept as it is, so the share is never above 1.
+     */
+    internal fun imagePassBytes(originalBytes: Long, imageBytes: Long, sampleBefore: Long, sampleAfter: Long): Long {
+        if (imageBytes <= 0L || sampleBefore <= 0L) return originalBytes
+        val ratio = (sampleAfter.toDouble() / sampleBefore).coerceIn(0.0, 1.0)
+        val rest = (originalBytes - imageBytes).coerceAtLeast(0L)
+        return rest + (imageBytes * ratio).toLong()
+    }
+
+    /** The picture pass: [pages] pages at an average of [averagePageBytes] each, plus the overheads. */
+    internal fun rasterPassBytes(pages: Int, averagePageBytes: Long): Long =
+        RASTER_FILE_OVERHEAD + pages.coerceAtLeast(1) * (averagePageBytes + RASTER_PAGE_OVERHEAD)
+
+    /** JPEG bytes scaled from an encoded size of [encodedPixels] to [targetPixels] (JPEG size grows about with area). */
+    internal fun scaleByArea(bytes: Long, encodedPixels: Long, targetPixels: Long): Long =
+        if (encodedPixels <= 0L) bytes else (bytes.toDouble() * targetPixels / encodedPixels).toLong()
+
+    private fun jpegBytes(bitmap: android.graphics.Bitmap, quality: Int): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, quality, out)
+        return out.toByteArray()
+    }
+
+    /** Encodes [bitmap] at [quality] as if it were [targetW] x [targetH]: a smaller size is encoded as it is, a larger one scaled up by area. */
+    private fun sampleJpeg(bitmap: android.graphics.Bitmap, targetW: Int, targetH: Int, quality: Int): Long {
+        val w = minOf(targetW, bitmap.width).coerceAtLeast(1)
+        val h = minOf(targetH, bitmap.height).coerceAtLeast(1)
+        val sized = if (w == bitmap.width && h == bitmap.height) bitmap else bitmap.scale(w, h, true)
+        try {
+            val bytes = jpegBytes(sized, quality).size.toLong()
+            return scaleByArea(bytes, w.toLong() * h, targetW.toLong() * targetH)
+        } finally {
+            if (sized !== bitmap) sized.recycle()
+        }
+    }
+
+    /**
+     * Works out a [CompressEstimate] for [inputUri] from samples: its biggest pictures re-encoded at each preset's scale
+     * and quality, and the first and middle pages rendered as the picture pass would. Takes a second or two on a phone
+     * for a large scan; call it off the main thread (it moves to the tools dispatcher itself).
+     */
+    suspend fun estimate(context: Context, inputUri: Uri): CompressEstimate = withContext(BackgroundWork.tools) {
+        val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "compress_est_${UUID.randomUUID()}.pdf")
+        try {
+            val original = temp.length()
+            // The presets, and (null) the strongest setting a custom target can go down to.
+            val settings = LinkedHashMap<CompressionPreset?, Pair<Float, Int>>()
+            CompressionPreset.entries.forEach { settings[it] = it.targetScale to it.jpegQuality }
+            settings[null] = MIN_TARGET_SCALE to MIN_TARGET_QUALITY
+            val hasText = checkSearchableText(temp)
+
+            // The image pass, from the biggest pictures.
+            var imageBytes = 0L
+            var pageCount = 0
+            val sampleBefore = HashMap<CompressionPreset?, Long>()
+            val sampleAfter = HashMap<CompressionPreset?, Long>()
+            val doc = try {
+                PDDocument.load(temp, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly())
+            } catch (locked: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
+                userError(R.string.tools_err_password_protected, cause = locked)
+            }
+            doc.use { pdf ->
+                pageCount = pdf.numberOfPages
+                val seen = HashSet<com.tom_roush.pdfbox.cos.COSBase>()
+                val images = ArrayList<PDImageXObject>()
+                for (page in pdf.pages) {
+                    currentCoroutineContext().ensureActive()
+                    val resources = page.resources ?: continue
+                    for (name in resources.xObjectNames) {
+                        val image = runCatching { resources.getXObject(name) }.getOrNull() as? PDImageXObject ?: continue
+                        if (image.isStencil || !seen.add(image.cosObject)) continue
+                        images += image
+                        imageBytes += image.cosObject.length
+                    }
+                }
+                for (image in images.sortedByDescending { it.cosObject.length }.take(SAMPLE_IMAGES)) {
+                    currentCoroutineContext().ensureActive()
+                    var sub = 1
+                    while (maxOf(image.width, image.height) / sub > SAMPLE_SIDE && sub < 16) sub *= 2
+                    val bitmap = runCatching { image.getImage(null, sub) }.getOrNull() ?: continue
+                    try {
+                        val before = image.cosObject.length
+                        for ((preset, setting) in settings) {
+                            val w = (image.width * setting.first).toInt().coerceAtLeast(1)
+                            val h = (image.height * setting.first).toInt().coerceAtLeast(1)
+                            // Only a smaller picture replaces the original, as in the real pass.
+                            val after = minOf(before, sampleJpeg(bitmap, w, h, setting.second))
+                            sampleBefore[preset] = (sampleBefore[preset] ?: 0L) + before
+                            sampleAfter[preset] = (sampleAfter[preset] ?: 0L) + after
+                        }
+                    } finally {
+                        bitmap.recycle()
+                    }
+                }
+            }
+            fun imagePass(preset: CompressionPreset?): Long =
+                imagePassBytes(original, imageBytes, sampleBefore[preset] ?: 0L, sampleAfter[preset] ?: 0L)
+
+            // The picture pass, from the first page and one in the middle.
+            val rasterAverage = HashMap<CompressionPreset?, Long>()
+            val previews = HashMap<CompressionPreset, android.graphics.Bitmap>()
+            runCatching {
+                ParcelFileDescriptor.open(temp, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+                    PdfRenderer(descriptor).use { renderer ->
+                        val samples = listOf(0, renderer.pageCount / 2).distinct().filter { it in 0 until renderer.pageCount }
+                        for (index in samples) {
+                            currentCoroutineContext().ensureActive()
+                            renderer.openPage(index).use { page ->
+                                val longest = maxOf(page.width, page.height).coerceAtLeast(1).toFloat()
+                                val renderScale = minOf(CompressionPreset.HIGH.targetScale * 2f, SAMPLE_SIDE / longest)
+                                val bitmap = createBitmap((page.width * renderScale).toInt().coerceAtLeast(1), (page.height * renderScale).toInt().coerceAtLeast(1))
+                                try {
+                                    bitmap.eraseColor(android.graphics.Color.WHITE)
+                                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                    for ((preset, setting) in settings) {
+                                        // The size the real pass renders this page at.
+                                        val real = minOf(setting.first * 2f, MAX_RASTER_DIMENSION / longest)
+                                        val w = (page.width * real).toInt().coerceAtLeast(1)
+                                        val h = (page.height * real).toInt().coerceAtLeast(1)
+                                        rasterAverage[preset] = (rasterAverage[preset] ?: 0L) + sampleJpeg(bitmap, w, h, setting.second) / samples.size
+                                        if (index == 0 && preset != null && !hasText) {
+                                            // The first page as the picture pass leaves it, for the Result preview.
+                                            val shown = if (w < bitmap.width) bitmap.scale(w, (bitmap.height.toLong() * w / bitmap.width).toInt().coerceAtLeast(1), true) else bitmap
+                                            try {
+                                                val jpeg = jpegBytes(shown, setting.second)
+                                                val options = android.graphics.BitmapFactory.Options().apply { inPreferredConfig = android.graphics.Bitmap.Config.RGB_565 }
+                                                android.graphics.BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size, options)?.let { previews[preset] = it }
+                                            } finally {
+                                                if (shown !== bitmap) shown.recycle()
+                                            }
+                                        }
+                                    }
+                                } finally {
+                                    bitmap.recycle()
+                                }
+                            }
+                        }
+                    }
+                }
+            }.onFailure { if (it is kotlinx.coroutines.CancellationException) throw it }
+            fun rasterPass(preset: CompressionPreset?): Long? = rasterAverage[preset]?.let { rasterPassBytes(pageCount, it) }
+
+            // The pass the engine takes, as in compressPdf: a PDF with text gets the image pass (and, for a preset,
+            // nothing more); one without is rebuilt from pictures. A result that is not smaller is never kept.
+            val bytes = CompressionPreset.entries.associateWith { preset ->
+                val after = if (hasText) imagePass(preset) else rasterPass(preset) ?: original
+                minOf(after, original)
+            }
+            val images = imagePass(null)
+            val smallest = minOf(if (hasText && images < original) images else rasterPass(null) ?: images, original)
+            CompressEstimate(original, pageCount, hasText, imageBytes, bytes, smallest, previews)
+        } finally {
+            temp.delete()
         }
     }
 

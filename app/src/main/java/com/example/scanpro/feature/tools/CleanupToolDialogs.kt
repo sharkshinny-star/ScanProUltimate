@@ -64,45 +64,6 @@ internal fun ToolConfirmDialog(
 }
 
 /**
- * What the blank-page check found. Nothing blank, or every page blank, only says so; otherwise the pages are listed
- * and removing them is one tap (into a new copy).
- */
-@Composable
-internal fun BlankPagesDialog(found: BlankPagesFound, onDismiss: () -> Unit, onRemove: () -> Unit) {
-    val count = found.blankPages.size
-    val removable = count in 1 until found.pageCount
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) },
-        title = {
-            Text(
-                stringResource(if (count == 0) R.string.tools_blank_none_title else R.string.tools_blank_found_title),
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Text(
-                when {
-                    count == 0 -> stringResource(R.string.tools_blank_none_body)
-                    !removable -> stringResource(R.string.tools_blank_all_blank)
-                    else -> pluralStringResource(
-                        R.plurals.tools_blank_found_body, count, count, found.pageCount,
-                        found.blankPages.joinToString(", ") { (it + 1).toString() }
-                    )
-                }
-            )
-        },
-        confirmButton = {
-            if (removable) Button(onClick = onRemove) { Text(pluralStringResource(R.plurals.tools_blank_remove_action, count, count)) }
-            else TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) }
-        },
-        dismissButton = if (removable) {
-            { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
-        } else null
-    )
-}
-
-/**
  * PDF info and metadata: the facts about the file, the four details a person can edit, and a one-tap "Remove all
  * metadata" for privacy. Both write a new copy.
  */

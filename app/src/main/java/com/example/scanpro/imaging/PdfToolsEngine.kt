@@ -162,22 +162,47 @@ internal object PageNumberGeometry {
     ): WatermarkGeometry.Stamp {
         val (seenW, seenH) = WatermarkGeometry.seenSize(width, height, rotation)
         val seenX = when (position) {
-            PageNumberPosition.BOTTOM_LEFT -> margin
+            PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.TOP_LEFT -> margin
             PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.TOP_CENTER -> (seenW - textWidth) / 2f
             PageNumberPosition.BOTTOM_RIGHT, PageNumberPosition.TOP_RIGHT -> seenW - margin - textWidth
         }
         // Seen y points down; this is the baseline.
         val seenY = when (position) {
             PageNumberPosition.BOTTOM_LEFT, PageNumberPosition.BOTTOM_CENTER, PageNumberPosition.BOTTOM_RIGHT -> seenH - margin
-            PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> margin + fontSize
+            PageNumberPosition.TOP_LEFT, PageNumberPosition.TOP_CENTER, PageNumberPosition.TOP_RIGHT -> margin + fontSize
         }
         val (px, py) = WatermarkGeometry.toPage(seenX, seenY, width, height, rotation)
         return WatermarkGeometry.Stamp(px, py, Math.toRadians((((rotation % 360) + 360) % 360).toDouble()))
     }
+
+    /**
+     * How much the number and its margin grow or shrink with the page (F194): 11 pt with a half-inch margin suits A4
+     * and Letter, but on a page made from a 3000-pixel photo (3000 pt wide) it was a speck, and on a receipt-sized
+     * page "Page 10 of 120" ran off the edge. Scaled by the page's shorter side against A4's, within 0.5 to 5 times.
+     */
+    fun sizeScale(seenWidth: Float, seenHeight: Float): Float =
+        (minOf(seenWidth, seenHeight) / A4_SHORT_SIDE_PT).coerceIn(0.5f, 5f)
+
+    /** The font size that keeps a number [widthPerPoint] wide per point of font size inside [seenWidth] between its margins. */
+    fun fittedFontSize(fontSize: Float, widthPerPoint: Float, margin: Float, seenWidth: Float): Float {
+        val room = seenWidth - 2f * margin
+        if (widthPerPoint <= 0f || room <= 0f) return fontSize
+        return minOf(fontSize, room / widthPerPoint)
+    }
+
+    /** The text written for page [page] of [total] (both from 1). The words are the same in every language: the PDF font has Latin letters only. */
+    fun text(format: PageNumberFormat, page: Int, total: Int): String = when (format) {
+        PageNumberFormat.PAGE_N_OF_M -> "Page $page of $total"
+        PageNumberFormat.N_SLASH_M -> "$page / $total"
+        PageNumberFormat.DASH -> "- $page -"
+        PageNumberFormat.SIMPLE -> "$page"
+    }
+
+    private const val A4_SHORT_SIDE_PT = 595f
 }
 
 enum class PageNumberPosition {
-    BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT
+    BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT, TOP_LEFT
 }
 
 enum class PageNumberFormat {
@@ -938,8 +963,8 @@ object PdfToolsEngine {
                 userRequire(totalPages > 0, R.string.tools_err_no_pages)
 
                 val font = PDType1Font.HELVETICA
-                val fontSize = config.fontSizePt.coerceIn(8f, 24f)
-                val margin = config.marginPt.coerceIn(12f, 100f)
+                val baseFontSize = config.fontSizePt.coerceIn(8f, 24f)
+                val baseMargin = config.marginPt.coerceIn(12f, 100f)
 
                 var numberedCount = 0
                 val label = AppStrings.get(R.string.tools_progress_page_numbers)
@@ -955,14 +980,15 @@ object PdfToolsEngine {
                     val box = page.cropBox
 
                     val pageNum = i + 1
-                    val text = when (config.format) {
-                        PageNumberFormat.PAGE_N_OF_M -> "Page $pageNum of $totalPages"
-                        PageNumberFormat.N_SLASH_M -> "$pageNum / $totalPages"
-                        PageNumberFormat.DASH -> "- $pageNum -"
-                        PageNumberFormat.SIMPLE -> "$pageNum"
-                    }
+                    val text = PageNumberGeometry.text(config.format, pageNum, totalPages)
 
-                    val textWidth = (font.getStringWidth(text) / 1000f) * fontSize
+                    // Sized to the page as seen (F194), and never wider than the page between its margins.
+                    val (seenW, seenH) = WatermarkGeometry.seenSize(box.width, box.height, page.rotation)
+                    val grow = PageNumberGeometry.sizeScale(seenW, seenH)
+                    val margin = baseMargin * grow
+                    val widthPerPoint = font.getStringWidth(text) / 1000f
+                    val fontSize = PageNumberGeometry.fittedFontSize(baseFontSize * grow, widthPerPoint, margin, seenW)
+                    val textWidth = widthPerPoint * fontSize
 
                     // Placed on the page as seen, so a page turned with /Rotate gets an upright number on the edge the reader sees.
                     val spot = PageNumberGeometry.place(config.position, textWidth, fontSize, margin, box.width, box.height, page.rotation)
