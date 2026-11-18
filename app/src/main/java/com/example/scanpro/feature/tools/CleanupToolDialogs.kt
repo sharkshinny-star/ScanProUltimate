@@ -111,32 +111,31 @@ internal fun PdfInfoDialog(
     info: PdfInfo,
     onDismiss: () -> Unit,
     onSave: (PdfMetadataEdit) -> Unit,
-    onRemoveAll: () -> Unit
+    onRemoveAll: () -> Unit,
+    uri: android.net.Uri? = null
 ) {
     var title by rememberSaveable { mutableStateOf(info.title) }
     var author by rememberSaveable { mutableStateOf(info.author) }
     var subject by rememberSaveable { mutableStateOf(info.subject) }
     var keywords by rememberSaveable { mutableStateOf(info.keywords) }
     val changed = title != info.title || author != info.author || subject != info.subject || keywords != info.keywords
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.Info, contentDescription = null) },
-        title = { Text(stringResource(R.string.tools_card_pdf_info), textAlign = TextAlign.Center) },
-        text = {
-            PdfInfoContent(
-                info = info, title = title, author = author, subject = subject, keywords = keywords,
-                onTitle = { title = it }, onAuthor = { author = it }, onSubject = { subject = it }, onKeywords = { keywords = it },
-                onRemoveAll = onRemoveAll,
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            )
-        },
-        confirmButton = {
-            Button(onClick = { onSave(PdfMetadataEdit(title, author, subject, keywords)) }, enabled = changed) {
-                Text(stringResource(R.string.tools_info_save))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } }
-    )
+    // A full tool page (F195) instead of a pop-up: the facts, the fields and the button stay in reach at any font size.
+    ToolPage(
+        title = stringResource(R.string.tools_card_pdf_info),
+        onClose = onDismiss,
+        actionLabel = stringResource(R.string.tools_info_save),
+        onAction = { onSave(PdfMetadataEdit(title, author, subject, keywords)) },
+        actionEnabled = changed,
+        actionSupport = if (changed) stringResource(R.string.cvt_info_save_support) else stringResource(R.string.cvt_info_change_to_save),
+        demoToolId = "pdf_info"
+    ) {
+        if (uri != null) PickedFileRow(uri)
+        PdfInfoContent(
+            info = info, title = title, author = author, subject = subject, keywords = keywords,
+            onTitle = { title = it }, onAuthor = { author = it }, onSubject = { subject = it }, onKeywords = { keywords = it },
+            onRemoveAll = onRemoveAll
+        )
+    }
 }
 
 /** The facts and the editable details of [PdfInfoDialog], apart from the dialog so it can be drawn on its own. */
@@ -158,8 +157,16 @@ internal fun PdfInfoContent(
     val dates = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
     Column(modifier) {
         InfoRow(stringResource(R.string.tools_info_pages), info.pageCount.toString())
+        pdfPageSizeText(info)?.let { InfoRow(stringResource(R.string.cvt_info_page_size), it) }
         InfoRow(stringResource(R.string.tools_info_version), info.version)
-        InfoRow(stringResource(R.string.tools_info_size), formatBytes(androidx.compose.ui.platform.LocalContext.current, info.sizeBytes))
+        // The exact byte count too: "1.2 MB" alone hides whether the phone counts 1000 or 1024 to a kilobyte.
+        InfoRow(
+            stringResource(R.string.tools_info_size),
+            formatBytes(androidx.compose.ui.platform.LocalContext.current, info.sizeBytes) + "\n" +
+                stringResource(R.string.cvt_info_bytes, java.text.NumberFormat.getIntegerInstance().format(info.sizeBytes))
+        )
+        InfoRow(stringResource(R.string.cvt_info_security), stringResource(if (info.encrypted) R.string.cvt_info_encrypted else R.string.cvt_info_not_encrypted))
+        InfoRow(stringResource(R.string.cvt_info_form_fields), if (info.formFields > 0) info.formFields.toString() else stringResource(R.string.cvt_info_none))
         InfoRow(stringResource(R.string.tools_info_created), info.created?.let { dates.format(Date(it)) } ?: notSet)
         InfoRow(stringResource(R.string.tools_info_modified), info.modified?.let { dates.format(Date(it)) } ?: notSet)
         InfoRow(stringResource(R.string.tools_info_creator), info.creator.ifEmpty { notSet })
@@ -196,6 +203,29 @@ internal fun PdfInfoContent(
             modifier = Modifier.padding(top = 4.dp)
         )
     }
+}
+
+/** "A4 · 210 × 297 mm (8.27 × 11.69 in) · Portrait", or null when the page size is not known. */
+@Composable
+private fun pdfPageSizeText(info: PdfInfo): String? {
+    val w = info.pageWidthPt
+    val h = info.pageHeightPt
+    if (w <= 0f || h <= 0f) return null
+    val number = java.text.NumberFormat.getNumberInstance().apply { maximumFractionDigits = 2; minimumFractionDigits = 0 }
+    val mm = stringResource(
+        R.string.cvt_size_mm,
+        kotlin.math.round(com.example.scanpro.imaging.PaperSizes.toMillimetres(w)).toInt(),
+        kotlin.math.round(com.example.scanpro.imaging.PaperSizes.toMillimetres(h)).toInt()
+    )
+    val inches = stringResource(
+        R.string.cvt_size_in,
+        number.format(com.example.scanpro.imaging.PaperSizes.toInches(w).toDouble()),
+        number.format(com.example.scanpro.imaging.PaperSizes.toInches(h).toDouble())
+    )
+    val orientation = stringResource(if (w > h) R.string.cvt_landscape else R.string.cvt_portrait)
+    val parts = listOfNotNull(com.example.scanpro.imaging.PaperSizes.name(w, h), "$mm ($inches)", orientation)
+    val text = parts.joinToString(" · ")
+    return if (info.mixedPageSizes) text + "\n" + stringResource(R.string.cvt_info_mixed_sizes) else text
 }
 
 @Composable
