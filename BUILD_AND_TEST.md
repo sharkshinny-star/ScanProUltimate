@@ -49,6 +49,11 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-18, F200 Tools regrouping, cloud container with the Android SDK)
+
+- Android SDK (platform android-37.0, build-tools 37.0.0) installed in the cloud container; Maven Central answered 429, so a local, uncommitted Gradle init script points it at Google's mirror. `:app:compileDebugKotlin` passed after merging the other session's `ToolDemos.kt` fix (before it, only `ToolDemos.kt:378/438/495/558` failed).
+- `ToolsLandingScreenshotTest` rendered the old layout; the new one was not rendered (stopped). Unit tests and lint not run locally.
+
 ## Latest results (2026-11-18, F199 Edit PDF add text and colour, Linux cloud container)
 
 - `PdfTextEditorTest` 14/14 on the desktop JVM (Apache PDFBox 2.0.27); `scanpro-quality-audit.py` PASS.

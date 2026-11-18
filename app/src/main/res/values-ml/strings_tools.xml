@@ -595,4 +595,13 @@
     <string name="tools_edit_new_title">പുതിയ ടെക്സ്റ്റ്</string>
     <string name="tools_edit_colour">നിറം</string>
     <string name="tools_edit_colour_same">PDF-ലേതുപോലെ</string>
+    <string name="tools_section_organise">ക്രമീകരിക്കുക</string>
+    <string name="tools_section_optimise">മെച്ചപ്പെടുത്തുക</string>
+    <string name="tools_section_edit_sign">മാറ്റുക, ഒപ്പിടുക</string>
+    <string name="tools_subtitle_organise">പേജുകൾ ചേർക്കുക, വേർതിരിക്കുക, ക്രമീകരിക്കുക</string>
+    <string name="tools_subtitle_edit">ടെക്സ്റ്റ് മാറ്റുക, ഒപ്പിടുക, മുദ്ര ചേർക്കുക, മറയ്ക്കുക</string>
+    <string name="tools_subtitle_optimise">ഫയലുകൾ ചെറുതോ തിരയാവുന്നതോ ലളിതമോ ആക്കുക</string>
+    <string name="tools_subtitle_convert">ഫയലുകൾ PDF ആക്കുക, തിരിച്ചും</string>
+    <string name="tools_subtitle_secure">പാസ്‌വേഡുകളും ഫയൽ വിവരങ്ങളും</string>
+    <string name="tools_subtitle_read">ഈ ഫോണിലെ ഏത് PDF-ഉം തുറക്കുക</string>
 </resources>

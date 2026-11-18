@@ -595,4 +595,13 @@
     <string name="tools_edit_new_title">కొత్త టెక్స్ట్</string>
     <string name="tools_edit_colour">రంగు</string>
     <string name="tools_edit_colour_same">PDFలో ఉన్నట్టు</string>
+    <string name="tools_section_organise">అమర్చండి</string>
+    <string name="tools_section_optimise">మెరుగుపరచండి</string>
+    <string name="tools_section_edit_sign">మార్చండి, సంతకం చేయండి</string>
+    <string name="tools_subtitle_organise">పేజీలను కలపండి, విడదీయండి, అమర్చండి</string>
+    <string name="tools_subtitle_edit">టెక్స్ట్ మార్చండి, సంతకం చేయండి, ముద్ర వేయండి, దాచండి</string>
+    <string name="tools_subtitle_optimise">ఫైల్‌లను చిన్నవిగా, వెతకదగినవిగా లేదా సరళంగా చేయండి</string>
+    <string name="tools_subtitle_convert">ఫైల్‌లను PDFగా మరియు తిరిగి మార్చండి</string>
+    <string name="tools_subtitle_secure">పాస్‌వర్డ్‌లు మరియు ఫైల్ వివరాలు</string>
+    <string name="tools_subtitle_read">ఈ ఫోన్‌లోని ఏ PDFనైనా తెరవండి</string>
 </resources>

@@ -31,6 +31,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 ## 2. Completed work (newest first)
 
+- **F200** (2026-11-18): Tools tab regrouped into five rounded panels (Organise, Edit and sign, Optimise, Convert, Security) with subtitles; compiles, not yet seen (R72). The cloud container can now compile (Android SDK + local Maven mirror script, not committed).
 - **F199** (2026-11-18): Edit PDF can add new text anywhere (in the nearest line's font) and set a colour; a bug that read every line as black is fixed. Engine 14/14 on the desktop. Note: a push containing any `[skip ci]` commit builds nothing.
 - **Docs not in the code commit (rule break, recorded 2026-11-18):** `3cc0326` (Edit PDF tool code, F194) and `96b53bd` (F198 review fixes) were committed without their reference-file updates, which followed in `ab4512e` and `4de55b8`. Pushed history is not rewritten; read those docs commits with them. From now on, code and its four reference-file updates go in one commit.
 - **F198** (2026-11-18, 96b53bd): high-effort code review of F181–F194; 9 of 10 findings fixed (Edit PDF no longer drops a line it can't draw, preview copies one page, turned and cropped pages placed right, neighbouring text kept; Files list computed once; cloud files keep permission; detector guards the colour map's shape). Engine 11/11 on the desktop.

@@ -630,4 +630,13 @@
     <string name="tools_edit_new_title">New text</string>
     <string name="tools_edit_colour">Colour</string>
     <string name="tools_edit_colour_same">As in the PDF</string>
+    <string name="tools_section_organise">Organise</string>
+    <string name="tools_section_optimise">Optimise</string>
+    <string name="tools_section_edit_sign">Edit and sign</string>
+    <string name="tools_subtitle_organise">Combine, split and arrange pages</string>
+    <string name="tools_subtitle_edit">Change text, sign, stamp and hide</string>
+    <string name="tools_subtitle_optimise">Make files smaller, searchable or simpler</string>
+    <string name="tools_subtitle_convert">Turn files into PDF and back</string>
+    <string name="tools_subtitle_secure">Passwords and file details</string>
+    <string name="tools_subtitle_read">Open any PDF on this phone</string>
 </resources>

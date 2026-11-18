@@ -300,6 +300,55 @@ internal suspend fun androidx.compose.foundation.lazy.LazyListState.scrollToKey(
     }
 }
 
+/** Which part of a group's panel an item is: the heading on top, rows of tools, the last row. */
+private enum class PanelPart { TOP, MIDDLE, BOTTOM }
+
+/**
+ * Layout revamp (2026-11-18): each group of tools sits on one rounded panel, drawn by its list items in turn (heading,
+ * rows, last row), so the page reads as a few tidy blocks instead of a wall of separate grey cards.
+ */
+@Composable
+private fun Modifier.panel(part: PanelPart): Modifier {
+    val radius = 24.dp
+    val shape = when (part) {
+        PanelPart.TOP -> RoundedCornerShape(topStart = radius, topEnd = radius)
+        PanelPart.MIDDLE -> androidx.compose.ui.graphics.RectangleShape
+        PanelPart.BOTTOM -> RoundedCornerShape(bottomStart = radius, bottomEnd = radius)
+    }
+    return this.background(MaterialTheme.colorScheme.surfaceContainerLow, shape)
+}
+
+/** A group's heading at the top of its panel: name, how many tools, and a few words on what they are for. */
+@Composable
+private fun PanelHeading(text: String, subtitle: String?, count: Int?) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .panel(PanelPart.TOP)
+            .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
+            if (count != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    count.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
+                        .padding(horizontal = 8.dp, vertical = 1.dp)
+                )
+            }
+        }
+        if (subtitle != null) {
+            Spacer(Modifier.height(2.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
 /** A heading on the Tools page, with how many tools it holds (F140). */
 @Composable
 private fun SectionTitle(text: String, modifier: Modifier = Modifier, count: Int? = null) {
@@ -393,7 +442,9 @@ private fun ToolCard(
             // Tilts towards the finger and springs back, like a physical tile (F197).
             .pressTilt(interaction)
             .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            // On the group's panel: a compact tile is just its icon and name (no box of its own); a wide card for large
+            // text stands out a little from the panel.
+            .background(if (compact) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface)
             .combinedClickable(
                 interactionSource = interaction,
                 indication = ripple(),
@@ -468,14 +519,17 @@ private fun ToolCardRow(
     tools: List<PdfToolCard>,
     perRow: Int,
     memory: ToolsMemory,
-    onLaunch: (PdfToolCard) -> Unit
+    onLaunch: (PdfToolCard) -> Unit,
+    last: Boolean = true
 ) {
     Row(
         Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .padding(bottom = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+            .panel(if (last) PanelPart.BOTTOM else PanelPart.MIDDLE)
+            .padding(horizontal = 8.dp)
+            .padding(bottom = if (last) 12.dp else 4.dp)
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(if (perRow >= 3) 4.dp else 8.dp)
     ) {
         tools.forEach { tool ->
             ToolCard(
@@ -620,18 +674,19 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
     // (the whole section used to be one item).
     TOOL_SECTIONS.filter { it.tiles.isNotEmpty() && (category == ALL_CATEGORIES || it.id == category) }.forEach { section ->
         item(key = "section-${section.id}", contentType = "tools-header") {
-            SectionTitle(stringResource(section.title), count = section.tiles.size)
+            PanelHeading(stringResource(section.title), section.subtitle.takeIf { it != 0 }?.let { stringResource(it) }, section.tiles.size)
         }
-        section.tiles.chunked(perRow).forEachIndexed { index, row ->
+        val rows = section.tiles.chunked(perRow)
+        rows.forEachIndexed { index, row ->
             item(key = "section-${section.id}-$index", contentType = "tools-row") {
-                ToolCardRow(row, perRow, memory, onLaunch)
+                ToolCardRow(row, perRow, memory, onLaunch, last = index == rows.lastIndex)
             }
         }
     }
 
     if (category == ALL_CATEGORIES) {
         item(key = "viewer-header", contentType = "tools-header") {
-            SectionTitle(stringResource(R.string.tools_section_read))
+            PanelHeading(stringResource(R.string.tools_section_read), stringResource(R.string.tools_subtitle_read), null)
         }
         item(key = "viewer", contentType = "tools-row") {
             Column {
