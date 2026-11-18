@@ -28,9 +28,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.ViewList
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -186,6 +202,13 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
     val shareTitle = stringResource(R.string.phone_pdfs_share)
     val openWithTitle = stringResource(R.string.phone_files_open_with)
     var previewing by remember { mutableStateOf<PhoneFile?>(null) }
+    val processed by viewModel.processed.collectAsStateWithLifecycle()
+    // A file from Google Drive, Dropbox, OneDrive or any other storage app, through the phone's own picker.
+    val cloudPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) openPicked(context, uri, actions, openWithTitle)
+    }
+    // Back steps out of the open folder before it leaves the screen.
+    androidx.activity.compose.BackHandler(enabled = state.hasAccess == true && state.folderPath != null, onBack = viewModel::folderUp)
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         when (state.hasAccess) {
             null -> Unit
@@ -214,6 +237,17 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
                         FileAction.OPEN -> if (file.kind == PhoneFileKind.PDF) actions.onOpenPdf(file.uri, file.name) else previewing = file
                     }
                 },
+                onOpenFolder = viewModel::openFolder,
+                onGridChange = viewModel::setGrid,
+                processedCount = processed.size,
+                onOpenProcessed = {
+                    com.example.scanpro.feature.tools.ToolsFocusRequest.pending.value = com.example.scanpro.feature.tools.ToolsFocus.RESULTS
+                    actions.onOpenTools()
+                },
+                onOpenCloud = {
+                    runCatching { cloudPicker.launch(PhoneFiles.MIME_TYPES.values.flatten().distinct().toTypedArray()) }
+                        .onFailure { Toast.makeText(context, context.getString(R.string.phone_files_no_app), Toast.LENGTH_SHORT).show() }
+                },
                 onSelectionAction = { action ->
                     val files = state.selection
                     when (action) {
@@ -236,6 +270,30 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
             },
             onShare = { PhonePdfSource.shareableUri(context, image) { uri -> if (uri != null) shareUris(context, listOf(uri), image.mimeType, shareTitle) } }
         )
+    }
+}
+
+/**
+ * A file picked from a cloud drive or another app: a PDF opens in the viewer, a picture goes to Images to PDF and an
+ * Office file to Office to PDF (as from the list), anything else opens in an app the user chooses.
+ */
+private fun openPicked(context: android.content.Context, uri: Uri, actions: PhoneFileActions, openWithTitle: String) {
+    val resolver = context.contentResolver
+    val name = runCatching {
+        resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
+    }.getOrNull() ?: uri.lastPathSegment.orEmpty().substringAfterLast('/')
+    val mime = runCatching { resolver.getType(uri) }.getOrNull().orEmpty()
+    fun toTools(tool: String) {
+        PhoneFilesToTools.pending.value = PhoneFilesToTools.Request(tool, listOf(uri))
+        actions.onOpenTools()
+    }
+    when (PhoneFiles.kindOf(mime, name)) {
+        PhoneFileKind.PDF -> actions.onOpenPdf(uri, name)
+        PhoneFileKind.IMAGE -> toTools(PhoneFilesToTools.IMAGES_TO_PDF)
+        PhoneFileKind.WORD, PhoneFileKind.EXCEL, PhoneFileKind.POWERPOINT -> toTools(PhoneFilesToTools.OFFICE_TO_PDF)
+        else -> openWith(context, uri, mime.ifBlank { PhoneFiles.mimeForName(name) }, openWithTitle)
     }
 }
 
@@ -303,10 +361,18 @@ internal fun PhoneFilesList(
     onClearSelection: () -> Unit,
     onOpen: (PhoneFile) -> Unit,
     onFileAction: (PhoneFile, FileAction) -> Unit,
-    onSelectionAction: (SelectionAction) -> Unit
+    onSelectionAction: (SelectionAction) -> Unit,
+    onOpenFolder: (String?) -> Unit = {},
+    onGridChange: (Boolean) -> Unit = {},
+    /** How many files the tools have made, for the Processed files entry; null hides the storage overview. */
+    processedCount: Int? = null,
+    onOpenProcessed: () -> Unit = {},
+    onOpenCloud: () -> Unit = {}
 ) {
     val shown = state.shown
     val selecting = state.selected.isNotEmpty()
+    // The storage overview (iLovePDF's "My storage" and "Cloud storage") sits above the plain list of every file.
+    val overview = processedCount != null && !selecting && state.query.isBlank() && state.folderPath == null && state.filter == PhoneFileFilter.ALL
     Column(Modifier.fillMaxSize().widthIn(max = 900.dp)) {
         if (selecting) {
             SelectionBar(state.selection, onClear = onClearSelection, onAction = onSelectionAction)
@@ -330,6 +396,14 @@ internal fun PhoneFilesList(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item {
+                FilterChip(
+                    selected = state.folderPath != null,
+                    onClick = { onOpenFolder(if (state.folderPath == null) "" else null) },
+                    label = { Text(stringResource(R.string.phone_files_folders)) },
+                    leadingIcon = { Icon(Icons.Rounded.Folder, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                )
+            }
             items(PhoneFileFilter.entries) { filter ->
                 FilterChip(selected = state.filter == filter, onClick = { onFilterChange(filter) }, label = { Text(stringResource(filterLabel(filter))) })
             }
@@ -356,6 +430,14 @@ internal fun PhoneFilesList(
                     } else null
                 )
             }
+            item {
+                IconButton(onClick = { onGridChange(!state.grid) }) {
+                    Icon(
+                        if (state.grid) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                        contentDescription = stringResource(if (state.grid) R.string.phone_files_show_list else R.string.phone_files_show_grid)
+                    )
+                }
+            }
             if (shown != null) item {
                 Text(
                     pluralStringResource(R.plurals.phone_files_count, shown.size, shown.size),
@@ -365,6 +447,7 @@ internal fun PhoneFilesList(
                 )
             }
         }
+        if (state.browsingFolders) FolderPathBar(path = state.folderPath.orEmpty(), onOpen = onOpenFolder)
         PullToRefreshBox(isRefreshing = state.loading && shown != null, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
             when {
                 shown == null -> Column(Modifier.fillMaxWidth().padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -372,12 +455,29 @@ internal fun PhoneFilesList(
                     Spacer(Modifier.height(12.dp))
                     Text(stringResource(R.string.phone_pdfs_loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                else -> LazyColumn(
+                else -> LazyVerticalGrid(
+                    columns = if (state.grid) GridCells.Adaptive(108.dp) else GridCells.Fixed(1),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (shown.isEmpty()) item {
+                    val wide: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope.() -> GridItemSpan) = { GridItemSpan(maxLineSpan) }
+                    if (overview && processedCount != null) {
+                        item(key = "storage", span = wide, contentType = "storage") {
+                            StorageOverview(
+                                all = state.all.orEmpty(),
+                                processedCount = processedCount,
+                                onOpenFolder = onOpenFolder,
+                                onOpenProcessed = onOpenProcessed,
+                                onOpenCloud = onOpenCloud
+                            )
+                        }
+                    }
+                    items(state.folders, key = { "folder:" + it.path }, span = { GridItemSpan(maxLineSpan) }, contentType = { "folder" }) { folder ->
+                        FolderRow(folder = folder, onClick = { onOpenFolder(folder.path) })
+                    }
+                    if (shown.isEmpty() && state.folders.isEmpty()) item(span = wide) {
                         Text(
                             if (state.query.isBlank()) stringResource(R.string.phone_pdfs_empty)
                             else stringResource(R.string.phone_pdfs_no_match, state.query.trim()),
@@ -387,19 +487,172 @@ internal fun PhoneFilesList(
                             modifier = Modifier.fillMaxWidth().padding(top = 48.dp, start = 16.dp, end = 16.dp)
                         )
                     }
-                    items(shown, key = { it.uri.toString() }, contentType = { "phone_file" }) { file ->
+                    items(shown, key = { it.uri.toString() }, contentType = { if (state.grid) "phone_file_cell" else "phone_file" }) { file ->
                         val isSelected = file.uri.toString() in state.selected
-                        PhoneFileRow(
-                            file = file,
-                            selected = isSelected,
-                            selecting = selecting,
-                            onClick = { if (selecting) onToggleSelection(file) else onOpen(file) },
-                            onLongClick = { onToggleSelection(file) },
-                            onAction = { onFileAction(file, it) }
-                        )
+                        val click = { if (selecting) onToggleSelection(file) else onOpen(file) }
+                        if (state.grid) {
+                            PhoneFileCell(file = file, selected = isSelected, onClick = click, onLongClick = { onToggleSelection(file) })
+                        } else {
+                            PhoneFileRow(
+                                file = file,
+                                selected = isSelected,
+                                selecting = selecting,
+                                onClick = click,
+                                onLongClick = { onToggleSelection(file) },
+                                onAction = { onFileAction(file, it) }
+                            )
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Above the list of every file: where files are (the whole storage, Downloads, the tools' results) and a way to open
+ * one from a cloud drive. The cloud entry is the phone's own file picker, which lists Google Drive, Dropbox, OneDrive
+ * and any other storage app installed; ScanPro signs in to nothing and reaches no network itself.
+ */
+@Composable
+private fun StorageOverview(
+    all: List<PhoneFile>,
+    processedCount: Int,
+    onOpenFolder: (String?) -> Unit,
+    onOpenProcessed: () -> Unit,
+    onOpenCloud: () -> Unit
+) {
+    val downloads = remember(all) { PhoneFiles.downloadsFolder(all) }
+    val downloadsCount = remember(all, downloads) { downloads?.let { PhoneFiles.countUnder(all, it) } ?: 0 }
+    Column(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+        OverviewHeading(stringResource(R.string.phone_files_my_storage))
+        StorageRow(Icons.Rounded.PhoneAndroid, TileTone.Indigo, stringResource(R.string.phone_files_internal_storage), all.size.toString()) { onOpenFolder("") }
+        if (downloads != null) {
+            StorageRow(Icons.Rounded.Download, TileTone.Sky, stringResource(R.string.phone_files_downloads), downloadsCount.toString()) { onOpenFolder(downloads) }
+        }
+        StorageRow(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount.toString(), onOpenProcessed)
+        OverviewHeading(stringResource(R.string.phone_files_cloud_title))
+        StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, onOpenCloud, stringResource(R.string.phone_files_cloud_hint))
+        OverviewHeading(stringResource(R.string.phone_files_all_files))
+    }
+}
+
+@Composable
+private fun OverviewHeading(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 12.dp, bottom = 6.dp, start = 4.dp).semantics { heading() }
+    )
+}
+
+@Composable
+private fun StorageRow(icon: ImageVector, tone: TileTone, title: String, count: String?, onClick: () -> Unit, subtitle: String? = null) {
+    val shape = RoundedCornerShape(16.dp)
+    Surface(
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(shape).clickable(role = Role.Button, onClick = onClick)
+    ) {
+        Row(Modifier.heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconTile(icon, tone, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (count != null) Text(count, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** Where the Folders view is: the top of the storage, then each folder down to the open one; each step can be tapped. */
+@Composable
+private fun FolderPathBar(path: String, onOpen: (String?) -> Unit) {
+    val steps = remember(path) { PhoneFiles.pathSteps(path) }
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        item {
+            IconButton(onClick = { onOpen(if (path.isEmpty()) null else path.substringBeforeLast('/', "")) }) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.phone_files_up))
+            }
+        }
+        item {
+            TextButton(onClick = { onOpen("") }, enabled = steps.isNotEmpty()) { Text(stringResource(R.string.phone_files_internal_storage)) }
+        }
+        items(steps, key = { it.path }) { step ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                TextButton(onClick = { onOpen(step.path) }, enabled = step.path != path.trim('/')) { Text(step.name, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderRow(folder: PhoneFolder, onClick: () -> Unit) {
+    val context = LocalContext.current
+    val shape = RoundedCornerShape(16.dp)
+    val count = pluralStringResource(R.plurals.phone_files_count, folder.count, folder.count)
+    val info = buildList {
+        add(count)
+        if (folder.modified > 0) add(DateUtils.formatDateTime(context, folder.modified, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH or DateUtils.FORMAT_SHOW_YEAR))
+    }.joinToString(" · ")
+    Surface(
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth().clip(shape).clickable(role = Role.Button, onClick = onClick)
+    ) {
+        Row(Modifier.padding(start = 10.dp, top = 8.dp, bottom = 8.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconTile(Icons.Rounded.Folder, TileTone.Violet, size = 48.dp, corner = 12.dp, iconSize = 24.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(folder.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(info, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** A file in the grid view: its thumbnail and name; a long press selects, as in the list. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PhoneFileCell(file: PhoneFile, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    Surface(
+        shape = shape,
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick, role = Role.Button)
+            .then(if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
+    ) {
+        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box {
+                KindTile(file, 84.dp)
+                if (selected) Icon(
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.TopEnd).size(20.dp).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(10.dp))
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                file.name,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                minLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

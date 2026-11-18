@@ -63,4 +63,16 @@
     <string name="import_tip_body">एक फ़ाइल चुनने के लिए टैप करें, कई चुनने के लिए देर तक दबाएँ, फिर इम्पोर्ट करने के लिए ऊपर दाईं ओर चुनें पर टैप करें।</string>
     <string name="import_tip_cancel">रद्द करें</string>
     <string name="import_tip_import">इम्पोर्ट करें</string>
+    <string name="phone_files_folders">फ़ोल्डर</string>
+    <string name="phone_files_show_grid">ग्रिड में दिखाएँ</string>
+    <string name="phone_files_show_list">सूची में दिखाएँ</string>
+    <string name="phone_files_my_storage">मेरा स्टोरेज</string>
+    <string name="phone_files_internal_storage">इंटरनल स्टोरेज</string>
+    <string name="phone_files_downloads">डाउनलोड</string>
+    <string name="phone_files_processed">प्रोसेस की गई फ़ाइलें</string>
+    <string name="phone_files_cloud_title">क्लाउड ड्राइव और दूसरे ऐप</string>
+    <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… से खोलें</string>
+    <string name="phone_files_cloud_hint">आपके फ़ोन का फ़ाइल पिकर इस्तेमाल होता है। ScanPro कहीं साइन इन नहीं करता।</string>
+    <string name="phone_files_all_files">सभी फ़ाइलें</string>
+    <string name="phone_files_up">एक फ़ोल्डर ऊपर</string>
 </resources>

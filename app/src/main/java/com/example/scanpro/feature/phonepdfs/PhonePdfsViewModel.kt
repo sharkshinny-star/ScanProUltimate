@@ -26,10 +26,25 @@ data class PhoneFilesState(
     val sort: PhoneFileSort = PhoneFileSort.DATE,
     val ascending: Boolean = PhoneFiles.defaultAscending(PhoneFileSort.DATE),
     /** Uris of the files ticked by a long-press, in the order they were ticked. */
-    val selected: List<String> = emptyList()
+    val selected: List<String> = emptyList(),
+    /** The folder open in the Folders view ("" is the top of the storage); null shows every file in one list. */
+    val folderPath: String? = null,
+    /** Files as a grid of thumbnails instead of a list. */
+    val grid: Boolean = false
 ) {
-    /** What the list shows: filtered by kind and [query], then sorted. */
-    val shown: List<PhoneFile>? get() = all?.let { PhoneFiles.sort(PhoneFiles.filter(it, filter, query), sort, ascending) }
+    /** The Folders view is showing: a search always looks through every folder. */
+    val browsingFolders: Boolean get() = folderPath != null && query.isBlank()
+
+    /** What the list shows: filtered by kind and [query] (and to the open folder when browsing), then sorted. */
+    val shown: List<PhoneFile>? get() = all?.let { files ->
+        val inPlace = if (browsingFolders) PhoneFiles.filesIn(files, folderPath.orEmpty()) else files
+        PhoneFiles.sort(PhoneFiles.filter(inPlace, filter, query), sort, ascending)
+    }
+
+    /** The folders inside the open one, for the kind chosen; empty outside the Folders view. */
+    val folders: List<PhoneFolder> get() = if (!browsingFolders) emptyList() else all?.let { files ->
+        PhoneFiles.sortFolders(PhoneFiles.subfolders(PhoneFiles.filter(files, filter, ""), folderPath.orEmpty()), sort, ascending)
+    }.orEmpty()
     val selection: List<PhoneFile> get() = all.orEmpty().associateBy { it.uri.toString() }.let { byUri -> selected.mapNotNull(byUri::get) }
 }
 
@@ -39,10 +54,15 @@ data class PhoneFilesState(
  */
 @HiltViewModel
 class PhonePdfsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    results: com.example.scanpro.data.ToolResultsStore
 ) : ViewModel() {
-    private val _state = MutableStateFlow(PhoneFilesState(all = lastFound))
+    private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val _state = MutableStateFlow(PhoneFilesState(all = lastFound, grid = prefs.getBoolean(KEY_GRID, false)))
     val state: StateFlow<PhoneFilesState> = _state.asStateFlow()
+
+    /** The files the PDF and image tools made, for the "Processed files" entry. */
+    val processed: StateFlow<List<com.example.scanpro.data.ToolResultFile>> = results.items
     private var loadJob: Job? = null
     private var changeJob: Job? = null
 
@@ -103,11 +123,28 @@ class PhonePdfsViewModel @Inject constructor(
 
     fun clearSelection() = _state.update { it.copy(selected = emptyList()) }
 
+    /** Opens [path] in the Folders view ("" is the top of the storage); null goes back to the single list. */
+    fun openFolder(path: String?) = _state.update { it.copy(folderPath = path?.trim('/'), query = if (path != null) "" else it.query) }
+
+    /** One folder up; at the top, leaves the Folders view. */
+    fun folderUp() = _state.update { state ->
+        val path = state.folderPath ?: return@update state
+        state.copy(folderPath = if (path.isEmpty()) null else path.substringBeforeLast('/', ""))
+    }
+
+    fun setGrid(grid: Boolean) {
+        prefs.edit().putBoolean(KEY_GRID, grid).apply()
+        _state.update { it.copy(grid = grid) }
+    }
+
     override fun onCleared() {
         stopObserving()
     }
 
     private companion object {
+        const val PREFS = "phone_files"
+        const val KEY_GRID = "grid"
+
         /** The last list found, shared by Home and Files so switching between them shows it at once while it refreshes. */
         @Volatile
         var lastFound: List<PhoneFile>? = null

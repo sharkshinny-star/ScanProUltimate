@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-18 (F189–F190 not compiled; F188 (hexagon colour picker for signatures, not compiled); F186 capture and PDF quality, F187 AGP 9.5.1; F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-18 (F191 Files storage overview and folders, not compiled; F189–F190 not compiled; F188 (hexagon colour picker for signatures, not compiled); F186 capture and PDF quality, F187 AGP 9.5.1; F181–F185: Invert PDF, filters, page-area save, live colour detection, blue outline; desktop tests only; F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -44,6 +44,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 **F189–F190 (2026-11-18, cloud container): not compiled and not run**, for the same reason as F188 below.
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
+
+## Latest results (2026-11-18, F191, commit PENDING_F191, Linux cloud container)
+
+- `PhoneFilesTest` (12 tests, 3 new for folders) on the desktop JVM with the app's `PhoneFiles.kt` unchanged and a stand-in `android.net.Uri` (Robolectric not available here): 12 passed.
+- `scanpro-quality-audit.py`: PASS (12 new strings, six languages).
+- NOT run: compile of `PhonePdfsScreen.kt` and `PhonePdfsViewModel.kt`, the full unit suite, lint; nothing seen on a device (R67).
 
 ## Latest results (2026-11-18, translations for F188, Linux cloud container)
 
