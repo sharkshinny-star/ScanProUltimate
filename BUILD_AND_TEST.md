@@ -45,7 +45,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
-## Latest results (2026-11-18, F191, commit PENDING_F191, Linux cloud container)
+## Latest results (2026-11-18, F191, commit b5f5192, Linux cloud container)
 
 - `PhoneFilesTest` (12 tests, 3 new for folders) on the desktop JVM with the app's `PhoneFiles.kt` unchanged and a stand-in `android.net.Uri` (Robolectric not available here): 12 passed.
 - `scanpro-quality-audit.py`: PASS (12 new strings, six languages).
