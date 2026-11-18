@@ -1,5 +1,6 @@
 package com.example.scanpro.scanner
 
+import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.MatOfPoint
 import org.opencv.core.MatOfPoint2f
@@ -23,7 +24,14 @@ import kotlin.math.sin
  * the long straight runs of the edge map are found, joined into lines, and every two near-parallel pairs
  * are tried as a page.
  *
- * A quad is kept only when the edge map really runs along its sides (most of the perimeter, and some of every side)
+ * Lines are read from a thin Canny map; if that gives no acceptable quad, they are read again from a faint-edge map
+ * (Canny of a widely blurred copy), where the long page/desk step survives a shadow that defeats plain Canny. The two
+ * maps are never mixed in one search: the faint map's long desk-grain lines would crowd out the page's own lines.
+ * Side support is always judged against the union of both maps, so a side whose edge is too weak for the Canny map
+ * but present in the blurred one still counts. The corner test below stays on the single map the lines came from: the
+ * blurred map's outline is thick, and around a corner it would read as the side running on.
+ *
+ * A quad is kept only when the edge maps really run along its sides (most of the perimeter, and some of every side)
  * and stops at its corners. That last test is what separates a page from the lines of a table edge, a patterned mat
  * or wood grain: those run on past the point where two of them cross, a page's sides do not.
  */
@@ -40,35 +48,80 @@ internal object LineQuadFinder {
     private const val MIN_SIDE_SUPPORT = 0.15
     /** Past a corner, a page side must not go on: at most this share of the stretch beyond it may be edge. */
     private const val MAX_OVERSHOOT = 0.35
+    /**
+     * At most this many opposite-side pairs are combined per pass. Pairs are kept longest lines first, and a page's
+     * sides are long, so a page is never cut off; the cap only trims a frame full of grid lines (a patterned mat),
+     * whose combination count would otherwise grow with the fourth power of the line count. Measured on an empty
+     * patterned-mat frame (the worst case: grid lines in both directions, every quad rejected): the cap took the
+     * search from 15.0 ms to 10.6 ms without changing any benchmark scene's result.
+     */
+    private const val MAX_PAIRS = 36
 
-    private class Line(val nx: Double, val ny: Double, val rho: Double) {
+    private class Line(val nx: Double, val ny: Double, val rho: Double, val length: Double) {
         val angle: Double get() = normalise(atan2(ny, nx))
     }
 
     /**
-     * Candidate page quads in the binary [edges] map (a thin Canny map), largest support first. [minArea] is the
-     * smallest page area in pixels of that map.
+     * Candidate page quads, largest support first. [edges] is a thin Canny map; [faint] an optional faint-edge map of
+     * the same size whose edges also count. [minArea] is the smallest page area in pixels of those maps.
      */
-    fun find(edges: Mat, minArea: Double): List<Candidate> {
+    fun find(edges: Mat, faint: Mat?, minArea: Double): List<Candidate> {
         val width = edges.cols()
         val height = edges.rows()
         if (width < 32 || height < 32) return emptyList()
-        val shortSide = min(width, height).toDouble()
-        val lines = longLines(edges, shortSide)
-        if (lines.size < 4) return emptyList()
+        if (faint != null && (faint.cols() != width || faint.rows() != height)) return emptyList()
 
-        // A one-pixel tolerance around the edge pixels, read once into an array for the many samples below.
-        val tolerant = Mat()
+        // A one-pixel tolerance around the union of the edge maps, read once into an array for the many samples below.
+        val union = Mat()
         val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, org.opencv.core.Size(3.0, 3.0))
         val pixels = ByteArray(width * height)
         try {
-            Imgproc.dilate(edges, tolerant, kernel)
-            tolerant.get(0, 0, pixels)
+            if (faint == null) edges.copyTo(union) else Core.bitwise_or(edges, faint, union)
+            Imgproc.dilate(union, union, kernel)
+            union.get(0, 0, pixels)
         } finally {
-            tolerant.release()
+            union.release()
             kernel.release()
         }
-        val map = EdgeLookup(pixels, width, height)
+        val support = EdgeLookup(pixels, width, height)
+
+        fun pass(primary: Mat): List<Candidate> {
+            // Lines first: on a frame with no page (a bare desk), they run in one direction at most (wood grain, a
+            // table edge), no quad can form, and the pass ends before the lookup map below is paid for.
+            val lines = longLines(primary, min(width, height).toDouble())
+            if (!crossingOrientations(lines)) return emptyList()
+            val own = Mat()
+            val k = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, org.opencv.core.Size(3.0, 3.0))
+            val ownPixels = ByteArray(width * height)
+            try {
+                Imgproc.dilate(primary, own, k)
+                own.get(0, 0, ownPixels)
+            } finally {
+                own.release()
+                k.release()
+            }
+            return quads(lines, support, EdgeLookup(ownPixels, width, height), minArea, width, height)
+        }
+        val fromCanny = pass(edges)
+        if (fromCanny.isNotEmpty() || faint == null) return fromCanny
+        return pass(faint)
+    }
+
+    /** Whether two of the lines cross at a page-corner-like angle; without that no quad can form. */
+    private fun crossingOrientations(lines: List<Line>): Boolean {
+        for (i in lines.indices) for (j in i + 1 until lines.size) {
+            if (angleBetween(lines[i].angle, lines[j].angle) >= PI * 50 / 180) return true
+        }
+        return false
+    }
+
+    /**
+     * Every acceptable quad the given lines form, largest support first. Sides are supported by [map] (the union of
+     * the edge maps); the corner overshoot test reads [own], only the map the lines were found in.
+     */
+    private fun quads(lines: List<Line>, map: EdgeLookup, own: EdgeLookup, minArea: Double, width: Int, height: Int): List<Candidate> {
+        if (lines.size < 4) return emptyList()
+        val shortSide = min(width, height).toDouble()
 
         // Opposite sides: near-parallel (perspective tilts them by up to ~30 degrees) and well apart.
         val pairs = ArrayList<Pair<Line, Line>>()
@@ -79,6 +132,8 @@ internal object LineQuadFinder {
             if (separation(a, b, width, height) < shortSide * 0.15) continue
             pairs += a to b
         }
+        pairs.sortByDescending { it.first.length + it.second.length }
+        if (pairs.size > MAX_PAIRS) pairs.subList(MAX_PAIRS, pairs.size).clear()
         val results = ArrayList<Candidate>()
         for (i in pairs.indices) for (j in i + 1 until pairs.size) {
             val (a1, a2) = pairs[i]
@@ -95,7 +150,7 @@ internal object LineQuadFinder {
             if (corners.any { it.x < -slack || it.y < -slack || it.x > width - 1 + slack || it.y > height - 1 + slack }) continue
             val ring = ringOrder(corners)
             if (polygonArea(ring) < minArea) continue
-            val support = support(ring, map) ?: continue
+            val support = support(ring, map, own) ?: continue
             results += Candidate(ring, support)
         }
         return results.sortedByDescending { it.support }
@@ -104,8 +159,9 @@ internal object LineQuadFinder {
     /** Long straight edges, merged so each page side is one line however many pieces the shadow broke it into. */
     private fun longLines(edges: Mat, shortSide: Double): List<Line> {
         // Straight runs of the edge map's own curves. Unlike a Hough transform, letters are separate small curves
-        // here, so a line of text never adds up to one long segment; page sides, rules and desk edges do.
-        val minLength = shortSide * 0.07
+        // here, so a line of text never adds up to one long segment; page sides, rules and desk edges do. A grain or
+        // text junction can chop the page edge into short runs, so the floor is low; the support test does the vetting.
+        val minLength = shortSide * 0.045
         val segments = ArrayList<DoubleArray>()
         val contours = ArrayList<MatOfPoint>()
         val hierarchy = Mat()
@@ -165,11 +221,11 @@ internal object LineQuadFinder {
         clusters.sortedByDescending { it.length }.forEach { c ->
             if (kept.size < MAX_LINES && kept.count { angleBetween(it.angle, c.angle) < PI / 9 } < MAX_PER_ORIENTATION) kept += c
         }
-        return kept.mapNotNull { c -> fit(c.members) }
+        return kept.mapNotNull { c -> fit(c.members, c.length) }
     }
 
     /** A least-squares line through points sampled along every member segment, so long pieces weigh more. */
-    private fun fit(members: List<DoubleArray>): Line? {
+    private fun fit(members: List<DoubleArray>, length: Double): Line? {
         val points = ArrayList<Point>()
         members.forEach { s ->
             val n = max(2, (hypot(s[2] - s[0], s[3] - s[1]) / 4).toInt())
@@ -188,7 +244,7 @@ internal object LineQuadFinder {
             if (norm < 1e-9) return null
             val nx = -v[1] / norm
             val ny = v[0] / norm
-            return Line(nx, ny, nx * v[2] + ny * v[3])
+            return Line(nx, ny, nx * v[2] + ny * v[3], length)
         } finally {
             input.release()
             out.release()
@@ -199,7 +255,7 @@ internal object LineQuadFinder {
      * Share of the perimeter with an edge along it, or null when a side has too little, or a side runs on past a
      * corner (a line of the desk or a mat, not the edge of a page).
      */
-    private fun support(ring: Array<Point>, map: EdgeLookup): Double? {
+    private fun support(ring: Array<Point>, map: EdgeLookup, own: EdgeLookup): Double? {
         var hits = 0.0
         var total = 0.0
         for (i in 0 until 4) {
@@ -213,8 +269,8 @@ internal object LineQuadFinder {
             if (side < MIN_SIDE_SUPPORT) return null
             // Beyond each corner: start a few pixels out so the neighbouring side's own edge is not counted.
             val reach = max(10.0, length * 0.1)
-            val past = map.share(b.x + ux * 4, b.y + uy * 4, ux, uy, reach)
-            val before = map.share(a.x - ux * 4, a.y - uy * 4, -ux, -uy, reach)
+            val past = own.share(b.x + ux * 4, b.y + uy * 4, ux, uy, reach)
+            val before = own.share(a.x - ux * 4, a.y - uy * 4, -ux, -uy, reach)
             if ((past ?: 0.0) > MAX_OVERSHOOT || (before ?: 0.0) > MAX_OVERSHOOT) return null
             hits += side * length
             total += length

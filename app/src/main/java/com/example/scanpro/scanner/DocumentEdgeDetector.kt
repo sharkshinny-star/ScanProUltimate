@@ -83,8 +83,12 @@ object DocumentEdgeDetector {
     private const val FAINT_CANNY_HIGH = 7.0
     /** Weight of an outline rebuilt from straight edges ([LineQuadFinder]), before its edge support. */
     private const val LINE_WEIGHT = 0.95
-    /** The straight-edge search runs only when the best closed outline scores below this. */
-    private const val LINE_SEARCH_BELOW = 0.55f
+    /**
+     * The straight-edge search runs only when the best closed outline scores below this. A page the contour sources
+     * already agree on (a plain page scores 0.56 and up on the benchmark) never pays for the search; a page broken by
+     * a shadow scores 0.2 to 0.45 there and does.
+     */
+    private const val LINE_SEARCH_BELOW = 0.5f
 
     fun detect(grayInput: Mat): DocumentDetection {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
@@ -98,6 +102,8 @@ object DocumentEdgeDetector {
         val bigKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(9.0, 9.0))
         // Every per-frame Mat is released in the outer finally, so an exception part-way through a frame
         // (the analyser runs this up to 30 times a second) cannot leak native memory.
+        val half = Mat()
+        val halfKernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(5.0, 5.0))
         val brightMask = Mat()
         val darkMask = Mat()
         val cannyClosed = Mat()
@@ -131,12 +137,20 @@ object DocumentEdgeDetector {
             Core.bitwise_or(edgesCanny, edgesAdaptive, combinedEdges)
             Imgproc.morphologyEx(combinedEdges, combinedEdges, Imgproc.MORPH_CLOSE, kernel)
 
+            // Methods 3 and 4 only need the rough region of the page, not pixel-exact edges, so both run on a half-
+            // size copy and their maps are scaled back up (nearest, so they stay binary). Measured 2026-11-18: 3.0 ms
+            // less per frame, and every benchmark scene's corner error within 0.1 points of the full-size maps.
+            val size = working.size()
+            Imgproc.resize(processed, half, Size(size.width / 2, size.height / 2), 0.0, 0.0, Imgproc.INTER_AREA)
+
             // Method 3: paper is usually the big bright (or big dark) region against its surroundings, so
             // a global threshold finds it even where the page edge itself is faint or shadowed.
-            Imgproc.threshold(processed, brightMask, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
+            Imgproc.threshold(half, brightMask, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
             Core.bitwise_not(brightMask, darkMask)
-            Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_CLOSE, bigKernel)
-            Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_OPEN, bigKernel)
+            Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_CLOSE, halfKernel)
+            Imgproc.morphologyEx(brightMask, brightMask, Imgproc.MORPH_OPEN, halfKernel)
+            Imgproc.resize(brightMask, brightMask, size, 0.0, 0.0, Imgproc.INTER_NEAREST)
+            Imgproc.resize(darkMask, darkMask, size, 0.0, 0.0, Imgproc.INTER_NEAREST)
 
             // Cleaner Canny map for the contour search: dilated so a small gap in the page outline closes.
             Imgproc.dilate(edgesCanny, cannyClosed, kernel)
@@ -147,8 +161,11 @@ object DocumentEdgeDetector {
             // copy with low limits: text, wood grain and noise average out, while the long step between the page
             // margin and the surface behind it stays. Hysteresis keeps a faint stretch of the outline when it joins a
             // strong one (a page with a shadow along two sides), so the outline still closes.
-            Imgproc.GaussianBlur(processed, smooth, Size(25.0, 25.0), 0.0)
-            Imgproc.Canny(smooth, faintEdges, FAINT_CANNY_LOW, FAINT_CANNY_HIGH)
+            // On the half-size copy: a 13x13 blur there matches the 25x25 blur here, and the same brightness step
+            // climbs in half the pixels, so the gradient doubles and the Canny limits double with it.
+            Imgproc.GaussianBlur(half, smooth, Size(13.0, 13.0), 0.0)
+            Imgproc.Canny(smooth, faintEdges, FAINT_CANNY_LOW * 2, FAINT_CANNY_HIGH * 2)
+            Imgproc.resize(faintEdges, faintEdges, size, 0.0, 0.0, Imgproc.INTER_NEAREST)
             Imgproc.dilate(faintEdges, faintClosed, kernel)
             Imgproc.morphologyEx(faintClosed, faintClosed, Imgproc.MORPH_CLOSE, bigKernel)
 
@@ -228,7 +245,7 @@ object DocumentEdgeDetector {
             // weighted by how much of the perimeter really has an edge. Only when no confident outline closed: a
             // clean page keeps exactly the result, and the time, it had before.
             if ((best?.score ?: 0f) < LINE_SEARCH_BELOW) {
-                LineQuadFinder.find(edgesCanny, frameArea * MIN_DOCUMENT_AREA_RATIO).forEach { line ->
+                LineQuadFinder.find(edgesCanny, faintEdges, frameArea * MIN_DOCUMENT_AREA_RATIO).forEach { line ->
                     consider(line.points, LINE_WEIGHT * line.support)
                 }
             }
@@ -311,6 +328,8 @@ object DocumentEdgeDetector {
             faintEdges.release()
             faintClosed.release()
             thinEdges.release()
+            half.release()
+            halfKernel.release()
         }
     }
 

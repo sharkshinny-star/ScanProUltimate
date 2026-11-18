@@ -41,6 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-18, F169 shadow detection widened and detector sped up, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`): all 12 benchmark scenes found, mean IoU 0.980 (F168: 0.975), worst corner error 0.97% (`white_page_white_table`; F168: 1.33%); all 16 shadow variants under 2% corner error (F168: 13; corner wedge 24.3% → 1.0%, two-side shadow 24.3% → 0.9%, sharp-edged shadow 11.9% → 0.2%); 4 no-page scenes still produce no convincing page. Median detection time 8.8 ms (F168: 12.8 ms; −31%), worst frame 13.2 ms; an empty patterned-mat frame costs 10.6 ms in the straight-edge search.
+- Gradle on this commit: `:app:testDebugUnitTest` 907 tests, 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the changed files); `:app:compileDebugAndroidTestKotlin` passed (the device benchmark now asserts ten scenes); `:app:bundleRelease` passed, `app-release.aab` 49,770,075 bytes (47.5 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device (R56).
+
 ## Latest results (2026-11-17, F168 hard-shadow detection, Linux cloud container)
 
 - Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`; the app's `DocumentEdgeDetector.kt`, `LineQuadFinder.kt`, `QuadGeometry.kt`, `PageQuality.kt` and `ScanAlignment.kt` compiled unchanged with Kotlin 2.0.21 against stubs and OpenCV 4.9): 12 benchmark scenes all found, mean IoU 0.975 (0.921 before), worst corner error 1.33% (10.86% before, `hard_shadow_across_page`, now 0.10%); 13 of 16 shadow variants under 2% (9 before); 4 no-page scenes unchanged; median detection time 12.8 ms (13.0 ms before).

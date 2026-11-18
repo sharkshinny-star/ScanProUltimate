@@ -64,7 +64,8 @@ class ScanDetectionBenchmarkTest {
         // the hard shadows the straight-edge search (F168) fixed.
         listOf(
             "clean_a4_desk", "strong_perspective", "receipt_dark_desk", "low_contrast_grey_desk", "white_page_white_table",
-            "hard_shadow_across_page", "shadow_band_lower_half", "shadow_on_tilted_page"
+            "hard_shadow_across_page", "shadow_band_lower_half", "shadow_on_tilted_page", "shadow_corner_wedge",
+            "shadow_sharp_edged"
         ).forEach { name ->
             val r = results.first { it.name == name }
             assertTrue("$name: no page found", r.found)
@@ -135,6 +136,9 @@ class ScanDetectionBenchmarkTest {
         // F168: a shadow across the lower half, and one across a page seen at a strong angle.
         scene("shadow_band_lower_half", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(0f, 250f, 60f, 320f)),
         scene("shadow_on_tilted_page", Desk.WOOD, quad(420f, 90f, 860f, 120f, 1010f, 880f, 250f, 840f), shadow = ShadowBand(100f, 150f, 380f, 200f)),
+        // F169: a wedge of shadow over the top-left corner, and a shadow with a sharp edge (a phone held close).
+        scene("shadow_corner_wedge", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(-100f, -100f, 420f, 420f, soft = 0.1f)),
+        scene("shadow_sharp_edged", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(0f, 200f, 400f, 130f, soft = 0.01f)),
         scene("noisy_and_soft", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), noisy = true),
         scene("book_spread", Desk.WOOD, quad(190f, 170f, 1090f, 150f, 1110f, 800f, 170f, 820f), spread = true),
         scene("dim_light", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), dim = true)
@@ -151,8 +155,11 @@ class ScanDetectionBenchmarkTest {
 
     private enum class Desk { WOOD, DARK, GREY, WHITE, MAT }
 
-    /** A hard shadow band across the page: it starts [dx], [dy] from the top-left corner and runs along ([vx], [vy]). */
-    private class ShadowBand(val dx: Float, val dy: Float, val vx: Float, val vy: Float)
+    /**
+     * A hard shadow band across the page: it starts [dx], [dy] from the top-left corner and runs along ([vx], [vy]).
+     * [soft] is how much of the band each edge's fade takes (0.15 is a hand's soft shadow, 0.01 a sharp one).
+     */
+    private class ShadowBand(val dx: Float, val dy: Float, val vx: Float, val vy: Float, val soft: Float = 0.15f)
 
     private fun scene(
         name: String,
@@ -196,7 +203,7 @@ class ScanDetectionBenchmarkTest {
             val x0 = truth[0].x + shadow.dx
             val y0 = truth[0].y + shadow.dy
             val band = Paint().apply {
-                shader = LinearGradient(x0, y0, x0 + shadow.vx, y0 + shadow.vy, intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(150, 20, 20, 25), Color.argb(150, 20, 20, 25), Color.argb(0, 0, 0, 0)), floatArrayOf(0f, 0.15f, 0.85f, 1f), Shader.TileMode.CLAMP)
+                shader = LinearGradient(x0, y0, x0 + shadow.vx, y0 + shadow.vy, intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(150, 20, 20, 25), Color.argb(150, 20, 20, 25), Color.argb(0, 0, 0, 0)), floatArrayOf(0f, shadow.soft, 1f - shadow.soft, 1f), Shader.TileMode.CLAMP)
             }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), band)
             canvas.restore()

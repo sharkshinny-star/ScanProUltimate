@@ -43,7 +43,7 @@ do on the owner's behalf. iLovePDF's home screen lists files from the phone, so 
 | Camera screen redrew in full on every analysis frame | Fixed in F125 |
 | Start-up did eager disk reads on the main thread | Reduced in F124 |
 | Three zoom buttons sat over the page being framed | Fixed in F125 |
-| A hard shadow across the page breaks detection (10.8% error) | Fixed in F168 (0.10% on the desktop benchmark; device run pending, R56) |
+| A hard shadow across the page breaks detection (10.8% error) | Fixed in F168/F169 (0.10%; wedge and two-side shadows 24% → about 1%; device run pending, R56) |
 | Control panel covers the lower preview, more with each page | **Open** |
 | Two Save buttons on the review screen | Open, documented as deliberate |
 
@@ -72,7 +72,7 @@ lighting cases; they do not replace real photographs.
 1. **Real-photo corpus and a fair competitor run** (high impact, medium effort, low risk). Print the test pages once (A4 text, small
    text, receipt, handwriting, a book) and photograph them on a fixed rig; run each app on the same photos by import where the app lets
    you without an account. Without this, claims about being better than the competitors are unsupported.
-2. **Hard-shadow detection**: done in F168 by fitting lines to the visible edge segments; still failing: a shadow over most of one side. The page edge disappears where a shadow is as dark as the
+2. **Hard-shadow detection**: done in F168/F169 by fitting lines to the visible edge segments of the Canny and faint maps; the corner-wedge and two-side shadows fell to about 1% in F169. The page edge disappears where a shadow is as dark as the
    surface. Options to measure with the benchmark: combine partial outlines into one quad, or fit lines to the visible edge segments.
 3. **Enhancement and readability benchmark** (high impact, medium effort, low risk). Score each filter on the generated pages: text
    contrast, halo around letters, background evenness, colour accuracy, and OCR word accuracy. Then tune, instead of judging by eye.
