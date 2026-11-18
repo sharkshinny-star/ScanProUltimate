@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Page tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Page tools (F210). Machine translation, not yet reviewed by a speaker. -->
     <string name="pages_reading_pdf">PDF पढ़ा जा रहा है…</string>
     <string name="pages_count_unknown">पेज गिने नहीं जा सके: PDF खराब हो सकता है या उसे पासवर्ड चाहिए। आप फिर भी कोशिश कर सकते हैं।</string>
 

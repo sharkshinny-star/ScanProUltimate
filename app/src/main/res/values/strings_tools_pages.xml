@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Page tools (F194): Merge, Split, Organise, Insert pages, Remove blank pages, N-up, Page numbers, Compress PDF -->
+    <!-- Page tools (F210): Merge, Split, Organise, Insert pages, Remove blank pages, N-up, Page numbers, Compress PDF -->
     <string name="pages_reading_pdf">Reading the PDF…</string>
     <string name="pages_count_unknown">The pages could not be counted: the PDF may be damaged or need a password. You can still try.</string>
 

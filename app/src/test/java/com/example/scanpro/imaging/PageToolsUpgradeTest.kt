@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The page tools' upgrade (F194): N-up sheets for 2, 4, 6 and 9 pages, page numbers sized to the page, Remove blank
+ * The page tools' upgrade (F210): N-up sheets for 2, 4, 6 and 9 pages, page numbers sized to the page, Remove blank
  * pages cutting links to removed pages, and Compress keeping a text PDF as it is and estimating sizes honestly.
  */
 @RunWith(RobolectricTestRunner::class)

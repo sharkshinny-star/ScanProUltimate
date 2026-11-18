@@ -104,7 +104,7 @@ private fun loadMergeInfo(context: android.content.Context, uri: Uri, name: Stri
             }
         }
     }
-    // Some providers report no size through the descriptor (-1): ask them directly (F194).
+    // Some providers report no size through the descriptor (-1): ask them directly (F210).
     if (size <= 0L) size = sizeOf(context, uri)
     return MergeFileInfo(name, size, pages, thumb, locked)
 }
@@ -131,7 +131,7 @@ internal fun MergeEditor(
         )
     ) { mutableStateListOf<Uri>().apply { addAll(initialUris.distinct()) } }
     // Read once per file, off the main thread, and kept while the editor is open: the cards and the totals both use it
-    // (F194; each card used to read its file again whenever it scrolled back into view).
+    // (F210; each card used to read its file again whenever it scrolled back into view).
     val infos = remember { mutableStateMapOf<Uri, MergeFileInfo>() }
     val thumbPx = with(androidx.compose.ui.platform.LocalDensity.current) { 88.dp.roundToPx() }
     val orderNow = order.toList()

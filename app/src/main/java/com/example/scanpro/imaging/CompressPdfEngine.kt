@@ -82,7 +82,7 @@ object CompressPdfEngine {
                 userError(R.string.tools_compress_err_target_larger_engine)
             }
             // A file that needs a password to open used to fall through to the picture pass, where the system
-            // renderer refused it with a general "could not compress" (F194): say what is wrong instead.
+            // renderer refused it with a general "could not compress" (F210): say what is wrong instead.
             val pageTotal = try {
                 PDDocument.load(tempInput, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).use { it.numberOfPages }
             } catch (locked: com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException) {
@@ -122,7 +122,7 @@ object CompressPdfEngine {
                         )
                     }
                     if (!rasterTextPages) {
-                        // F194: a preset used to rebuild a text PDF (a letter, a report) from pictures of its pages at
+                        // F210: a preset used to rebuild a text PDF (a letter, a report) from pictures of its pages at
                         // 65 to 120 dpi when it had no photos to shrink: the text came out blurred and could no longer be
                         // searched or copied, for a file that was small already. It is kept as it is instead.
                         tempInput.copyTo(outputFile, overwrite = true)
@@ -341,7 +341,7 @@ object CompressPdfEngine {
         }
     }
 
-    // ---- Estimate before compressing (F194) ------------------------------------------------------------------------
+    // ---- Estimate before compressing (F210) ------------------------------------------------------------------------
 
     /**
      * What Compress is expected to make of a PDF, worked out before it runs. The old screen promised a fixed share of

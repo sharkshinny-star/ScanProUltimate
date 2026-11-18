@@ -96,7 +96,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /*
- * The page tools' option pages (F194): Split, Page numbers, N-up, Remove blank pages and Insert pages. Each shows the
+ * The page tools' option pages (F210): Split, Page numbers, N-up, Remove blank pages and Insert pages. Each shows the
  * picked PDF, works out before it runs exactly what will come out (files, pages, sheets, and a size where one can be
  * honestly guessed), and refuses input that makes no sense with the reason above the button. Page numbers and N-up
  * draw their result on the real first page.
@@ -540,7 +540,7 @@ internal fun NupDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (perSheet: In
 
 /**
  * What the blank-page check found, page by page with a picture of each, all ticked to go. Untick any to keep it:
- * nothing is removed that the person has not seen (F194; the old pop-up only listed the page numbers).
+ * nothing is removed that the person has not seen (F210; the old pop-up only listed the page numbers).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -665,7 +665,7 @@ private const val POSITION_AFTER = 1
 private const val POSITION_END = 2
 
 /**
- * Organise's "insert pages from another PDF", as a full page (F194): which PDF, which of its pages, and where among
+ * Organise's "insert pages from another PDF", as a full page (F210): which PDF, which of its pages, and where among
  * the [keptPages] pages being organised; the second PDF's pages are counted as soon as it is picked, so the range and
  * the total are checked before anything runs, and a strip shows where the new pages land.
  */

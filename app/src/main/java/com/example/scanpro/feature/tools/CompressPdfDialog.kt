@@ -62,7 +62,7 @@ import kotlinx.coroutines.withContext
 private const val LAST_COMPRESS_PRESET = "last_compress_preset"
 
 /**
- * Compress PDF (rebuilt, F194). Before anything runs the PDF is sampled ([CompressPdfEngine.estimate]): its biggest
+ * Compress PDF (rebuilt, F210). Before anything runs the PDF is sampled ([CompressPdfEngine.estimate]): its biggest
  * pictures re-encoded and a page or two rendered at each level, so every level shows the size it is likely to give,
  * a text PDF says it will barely change instead of promising "60% smaller", and a scan shows its first page as the
  * chosen level will leave it.

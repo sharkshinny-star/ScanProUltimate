@@ -32,7 +32,7 @@ object PdfNupTools {
     private const val MARGIN_PT = 18f
     private const val GUTTER_PT = 12f
 
-    /** Pages per sheet the tool offers (F194: 6 and 9 added). */
+    /** Pages per sheet the tool offers (F210: 6 and 9 added). */
     val PER_SHEET_CHOICES = listOf(2, 4, 6, 9)
 
     /** A cell on the sheet: lower-left corner and size, in sheet points. */

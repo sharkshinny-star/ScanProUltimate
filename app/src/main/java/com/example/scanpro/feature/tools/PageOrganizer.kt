@@ -190,7 +190,7 @@ internal fun PdfPageOrganizerSheet(
     }
     val totalPages = session?.pageCount ?: pages.size
     val turnedCount = pages.count { (mode == "rotate" || it.selected) && it.rotation % 360 != 0 }
-    // Saving a PDF exactly as it was only makes a copy: Organise needs a move, a turn or a removal, Rotate a turn (F194).
+    // Saving a PDF exactly as it was only makes a copy: Organise needs a move, a turn or a removal, Rotate a turn (F210).
     val unchanged = when (mode) {
         "organize" -> pages.withIndex().all { (i, p) -> p.index == i && p.selected && p.rotation % 360 == 0 }
         "rotate" -> pages.none { it.rotation % 360 != 0 }
@@ -615,7 +615,7 @@ internal fun OrganizerPageCard(
                             .graphicsLayer {
                                 rotationZ = item.rotation.toFloat()
                                 // A page turned on its side must still fit the card: shrunk by exactly as much as its
-                                // shape needs (F194; a fixed 78% left landscape pages smaller than they had to be).
+                                // shape needs (F210; a fixed 78% left landscape pages smaller than they had to be).
                                 val fit = turnedFitScale(bitmap.width, bitmap.height, size.width, size.height, item.rotation)
                                 scaleX = fit
                                 scaleY = fit

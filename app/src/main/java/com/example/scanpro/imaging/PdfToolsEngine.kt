@@ -176,7 +176,7 @@ internal object PageNumberGeometry {
     }
 
     /**
-     * How much the number and its margin grow or shrink with the page (F194): 11 pt with a half-inch margin suits A4
+     * How much the number and its margin grow or shrink with the page (F210): 11 pt with a half-inch margin suits A4
      * and Letter, but on a page made from a 3000-pixel photo (3000 pt wide) it was a speck, and on a receipt-sized
      * page "Page 10 of 120" ran off the edge. Scaled by the page's shorter side against A4's, within 0.5 to 5 times.
      */
@@ -982,7 +982,7 @@ object PdfToolsEngine {
                     val pageNum = i + 1
                     val text = PageNumberGeometry.text(config.format, pageNum, totalPages)
 
-                    // Sized to the page as seen (F194), and never wider than the page between its margins.
+                    // Sized to the page as seen (F210), and never wider than the page between its margins.
                     val (seenW, seenH) = WatermarkGeometry.seenSize(box.width, box.height, page.rotation)
                     val grow = PageNumberGeometry.sizeScale(seenW, seenH)
                     val margin = baseMargin * grow

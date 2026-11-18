@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Page tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Page tools (F210). Machine translation, not yet reviewed by a speaker. -->
     <string name="pages_reading_pdf">PDF വായിക്കുന്നു…</string>
     <string name="pages_count_unknown">പേജുകൾ എണ്ണാൻ കഴിഞ്ഞില്ല: PDF കേടായതാകാം അല്ലെങ്കിൽ പാസ്‌വേഡ് വേണ്ടതാകാം. എങ്കിലും ശ്രമിക്കാം.</string>
 

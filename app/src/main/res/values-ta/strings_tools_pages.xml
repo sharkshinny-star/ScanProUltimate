@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Page tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Page tools (F210). Machine translation, not yet reviewed by a speaker. -->
     <string name="pages_reading_pdf">PDF படிக்கப்படுகிறது…</string>
     <string name="pages_count_unknown">பக்கங்களை எண்ண முடியவில்லை: PDF சேதமடைந்திருக்கலாம் அல்லது கடவுச்சொல் தேவைப்படலாம். இருந்தாலும் முயற்சிக்கலாம்.</string>
 

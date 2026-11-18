@@ -181,7 +181,7 @@ object PdfCleanupTools {
                     doc.removePage(index)
                 }
                 // A link on a kept page that pointed at a removed one still held it (and through its /Parent the old
-                // page tree) in the file, so removing pages hardly made it smaller (F194). Cut such links, as Split does.
+                // page tree) in the file, so removing pages hardly made it smaller (F210). Cut such links, as Split does.
                 with(PdfToolsEngine) { doc.dropLinksToMissingPages() }
                 outputFile.parentFile?.mkdirs()
                 doc.save(outputFile)
