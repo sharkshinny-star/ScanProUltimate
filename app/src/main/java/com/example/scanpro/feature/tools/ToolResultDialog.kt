@@ -243,7 +243,9 @@ internal fun ResultDialog(
                                 bitmap = p.bitmap.asImageBitmap(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.height(156.dp)
+                                // The placeholder's size (2026-11-18): sized by the picture, the dialog widened when it
+                                // loaded and the tick and the burst slid sideways mid-animation.
+                                modifier = Modifier.size(width = 118.dp, height = 156.dp)
                             )
                             is ResultPreview.Placeholder -> Box(Modifier.size(width = 118.dp, height = 156.dp), contentAlignment = Alignment.Center) {
                                 Icon(p.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))

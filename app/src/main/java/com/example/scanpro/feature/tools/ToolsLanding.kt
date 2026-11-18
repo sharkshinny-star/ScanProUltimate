@@ -82,9 +82,11 @@ import kotlinx.coroutines.withContext
  */
 @Stable
 internal class ToolsMemory(private val context: Context, private val scope: kotlinx.coroutines.CoroutineScope) {
-    var pinned by mutableStateOf<List<String>>(emptyList())
+    // Start from the lists read on an earlier visit (2026-11-18): starting empty made Quick access pop in a frame later
+    // on every visit to Tools, pushing every section below it about 90dp down.
+    var pinned by mutableStateOf(cached?.first ?: emptyList())
         private set
-    var recent by mutableStateOf<List<String>>(emptyList())
+    var recent by mutableStateOf(cached?.second ?: emptyList())
         private set
 
     /** Reads the saved lists off the main thread (the first preferences read is a disk read). */
@@ -98,6 +100,7 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
         }
         pinned = p
         recent = r
+        cached = p to r
     }
 
     fun isPinned(id: String) = id in pinned
@@ -114,6 +117,7 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     }
 
     private fun save() {
+        cached = pinned to recent
         val p = pinned.joinToString(",")
         val r = recent.joinToString(",")
         scope.launch(Dispatchers.IO) {
@@ -126,6 +130,9 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
         const val KEY_PINNED = "pinned"
         const val KEY_RECENT = "recent"
         const val MAX_RECENT = 4
+
+        /** The last lists read or saved in this process, so the next visit has them on its first frame. */
+        @Volatile var cached: Pair<List<String>, List<String>>? = null
         val KNOWN_IDS: Set<String> by lazy { (TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL).map { it.id }.toSet() }
     }
 }

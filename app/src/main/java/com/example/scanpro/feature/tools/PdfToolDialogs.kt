@@ -358,6 +358,15 @@ internal fun SplitDialog(
     var error by remember { mutableStateOf<String?>(null) }
     // The page count makes the ranges checkable before the split starts.
     var pageCount by remember { mutableStateOf<Int?>(null) }
+    // Whether the read has finished, found a count or not (2026-11-18): a file the renderer can't open (damaged, or one it
+    // refuses) left pageCount null and the opening dialog spinning for ever. It now goes on with the count unknown.
+    var loaded by remember { mutableStateOf(false) }
+    // The opening dialog only for a read that takes a moment; a quick one used to flash it for a frame or two.
+    var slowRead by remember { mutableStateOf(false) }
+    LaunchedEffect(uri) {
+        kotlinx.coroutines.delay(300)
+        slowRead = true
+    }
     LaunchedEffect(uri) {
         pageCount = withContext(Dispatchers.IO) {
             runCatching {
@@ -365,9 +374,11 @@ internal fun SplitDialog(
             }.getOrNull()
         }
         if (rangesText.isEmpty()) pageCount?.let { rangesText = if (it > 1) "1-${(it + 1) / 2}, ${(it + 1) / 2 + 1}-$it" else "1" }
+        loaded = true
     }
 
-    if (pageCount == null) {
+    if (!loaded) {
+        if (!slowRead) return
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.tools_split_title)) },

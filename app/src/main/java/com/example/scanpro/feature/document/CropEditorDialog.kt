@@ -242,7 +242,8 @@ fun CropEditorDialog(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .navigationBarsPadding()
+                    // No navigationBarsPadding here: the panel's measured height below already includes the navigation
+                    // bar, so the bar was counted twice and the page drawn smaller and higher than it needed to be.
                     // The bottom panel's real height, not a guess: it grows at large font sizes and wraps in landscape.
                     .padding(top = 56.dp, bottom = if (panelHeightPx > 0) with(LocalDensity.current) { panelHeightPx.toDp() } + 8.dp else 180.dp, start = 16.dp, end = 16.dp),
                 contentAlignment = Alignment.Center
@@ -359,11 +360,13 @@ fun CropEditorDialog(
                             // Explicit receiver: a bare close() would call the dialog's own close lambda, which dismisses the editor on the first draw.
                             this.close()
                         }
-                        drawPath(path, boundaryColor, style = Stroke(width = 6f))
+                        // In dp (2026-11-18): raw pixels made the outline and handles about a third of the review screen's
+                        // on a 3x phone, while their touch radius stayed 48dp.
+                        drawPath(path, boundaryColor, style = Stroke(width = 2.dp.toPx()))
 
                         // Draw 8 Handles (4 Corners + 4 Midpoints)
                         handles.forEachIndexed { index, point ->
-                            val radius = if (index < 4) 18f else 14f
+                            val radius = (if (index < 4) 12.dp else 9.dp).toPx()
                             val bendHandle = curveMode && index >= 4
                             drawCircle(if (bendHandle) DarkChrome.highlight else handleColor, radius = radius, center = point)
                             drawCircle(Color.White, radius = radius * 0.45f, center = point)
@@ -380,7 +383,9 @@ fun CropEditorDialog(
                             val actualWidth = sampleSize.coerceAtMost(image.width - left)
                             val actualHeight = sampleSize.coerceAtMost(image.height - top)
                             val loupe = 132.dp.toPx()
-                            val dstLeft = (size.width - loupe) / 2f
+                            // On the side away from the dragged corner, so the loupe never covers the corner itself
+                            // (a top corner of a narrow receipt sat right under a centred loupe).
+                            val dstLeft = if (normalized.x < 0.5f) size.width - loupe - 12.dp.toPx() else 12.dp.toPx()
                             val dstTop = 12.dp.toPx()
 
                             drawRect(

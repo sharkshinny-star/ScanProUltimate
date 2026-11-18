@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-18 (F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,6 +40,14 @@ Gradle properties:
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
+
+## Latest results (2026-11-18, F179 UI/motion overhaul, owner's Mac, Android Studio Preview JBR)
+
+- Baseline before F179 (tree at `8de31f6`'s content): `:app:compileDebugKotlin :app:testDebugUnitTest` exit 0; 940 tests, 0 failed, 117 skipped.
+- After F179: `:app:compileDebugKotlin :app:testDebugUnitTest`: 948 tests run, 947 passed, 1 failed (HomeScrollTest: the test scrolled to the tips card with performScrollTo, which cannot reach a lazy-list item that is not composed; F179's taller Recent cards moved the card below that; the test now uses performScrollToNode and its 3 tests pass, re-run alone); 122 skipped (opt-in). The full suite was not re-run after that test-only change.
+- `:app:lintDebug`: running when this was committed; result in the follow-up docs commit
+- `:app:bundleRelease`: running when this was committed; result in the follow-up docs commit
+- NOT run: any device or emulator (the phone disconnected early in the session; the Mac, 8 GB, ran at load 15-24 with Android Studio indexing, so the emulator was not started), instrumented and screenshot tests, sideload `assembleRelease`, release signing (no keystore configured here).
 
 ## Latest results (2026-11-18, F178 framed-object limits and phone benchmark update, commit 18deb2b, Linux cloud container)
 

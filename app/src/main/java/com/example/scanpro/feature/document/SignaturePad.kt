@@ -13,6 +13,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -123,6 +124,12 @@ fun SignaturePadDialog(
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
                         .semantics { contentDescription = padDescription }
                         .onSizeChanged { padSize = it }
+                        // A tap is a dot (the dot on an i, a full stop): shorter than the touch slop, it used to vanish.
+                        .pointerInput(Unit) {
+                            detectTapGestures { point ->
+                                strokes = strokes + listOf(listOf(point, point))
+                            }
+                        }
                         .pointerInput(Unit) {
                             detectDragGestures(
                                 onDragStart = { start ->
@@ -181,10 +188,12 @@ fun SignaturePadDialog(
             }
         },
         confirmButton = {
+            val strokePx = with(androidx.compose.ui.platform.LocalDensity.current) { 4.dp.toPx() }
             TextButton(
                 enabled = strokes.any { it.size > 1 } && padSize.width > 0,
                 onClick = {
-                    onConfirm(signatureBitmap(strokes, padSize, ink.toArgb()), keep)
+                    // The same width as drawn on the pad: a fixed 6px made the placed signature half as thick on a 3x phone.
+                    onConfirm(signatureBitmap(strokes, padSize, ink.toArgb(), strokePx), keep)
                 }
             ) { Text(stringResource(R.string.doc_place_signature)) }
         },
@@ -234,7 +243,7 @@ private fun SavedSignature(file: File, onClick: () -> Unit, onLongClick: () -> U
     }
 }
 
-private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize, inkColor: Int): Bitmap {
+private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize, inkColor: Int, strokePx: Float = 6f): Bitmap {
     val width = size.width.coerceAtLeast(1)
     val height = size.height.coerceAtLeast(1)
     val bitmap = createBitmap(width, height)
@@ -245,7 +254,7 @@ private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize, inkColor
         style = AndroidPaint.Style.STROKE
         strokeCap = AndroidPaint.Cap.ROUND
         strokeJoin = AndroidPaint.Join.ROUND
-        strokeWidth = 6f
+        strokeWidth = strokePx
     }
     strokes.forEach { stroke ->
         for (i in 1 until stroke.size) {

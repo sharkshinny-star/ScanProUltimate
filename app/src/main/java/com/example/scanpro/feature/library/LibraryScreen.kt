@@ -1,5 +1,9 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.TextButton
@@ -703,13 +707,16 @@ internal fun LibraryScreen(
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
                     // Files: ScanPro's own documents, or every file on the phone (F168).
-                    if (phoneFilesPane != null && !selecting) {
+                    // Kept while selecting, only disabled (2026-11-18): hiding it moved the list 48dp up under the finger
+                    // that had just long-pressed a document.
+                    if (phoneFilesPane != null) {
                         androidx.compose.material3.SingleChoiceSegmentedButtonRow(
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
                         ) {
                             listOf(R.string.phone_files_tab_mine, R.string.phone_files_tab_phone).forEachIndexed { index, label ->
                                 SegmentedButton(
                                     selected = phoneFilesTab == (index == 1),
+                                    enabled = !selecting,
                                     onClick = { phoneFilesTab = index == 1 },
                                     shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 2),
                                     label = { Text(stringResource(label), maxLines = 1, overflow = TextOverflow.Ellipsis) }
@@ -1040,7 +1047,11 @@ private fun EmptyLibrary(
 ) {
     val fresh = query.isBlank() && !favoritesOnly && folder.isBlank()
     Box(Modifier.fillMaxSize().padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(max = 360.dp)) {
+        // Scrolls when it doesn't fit (a phone on its side, a 2x font): the buttons at the bottom were cut off.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.widthIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(vertical = 16.dp)
+        ) {
             IconTile(
                 icon = when {
                     query.isNotBlank() -> Icons.Rounded.Search
@@ -1179,7 +1190,8 @@ private fun HomeDashboard(
             ScanHeroCard(
                 onStartScan = onStartScan,
                 enabled = !busy,
-                compact = documentCount > 0,
+                // Compact until the first library read too: it started full size and shrank on every cold start.
+                compact = documentCount > 0 || overview.revision == 0L,
                 onQuickScan = onQuickScan,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -1274,7 +1286,8 @@ private fun HomeDashboard(
                         now = now
                     )
                 }
-                com.example.scanpro.feature.tools.HomeRecentRow(items)
+                // A fresh row per chip, so a new list starts at its beginning rather than at the old one's scroll.
+                androidx.compose.runtime.key(recentKind) { com.example.scanpro.feature.tools.HomeRecentRow(items) }
             }
         }
         // Files on this phone (F168): the access card until granted or closed, then the newest files with See all.

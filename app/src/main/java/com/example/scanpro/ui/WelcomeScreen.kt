@@ -504,28 +504,30 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
     val brand = ScanProTheme.colors
     val scheme = MaterialTheme.colorScheme
     val sweep = rememberInfiniteTransition(label = "scan")
-    val beam by sweep.animateFloat(
+    val beam = sweep.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(2_600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "beam"
     )
-    val glow by sweep.animateFloat(
+    val glow = sweep.animateFloat(
         initialValue = 0.85f,
         targetValue = 1.05f,
         animationSpec = infiniteRepeatable(tween(1_800, easing = LinearEasing), RepeatMode.Reverse),
         label = "glow"
     )
-    val float by sweep.animateFloat(
+    val float = sweep.animateFloat(
         initialValue = -1f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(3_400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "float"
     )
     val motion = rememberMotionEnabled()
-    val beamPosition = if (motion) beam else 0.5f
-    val haloScale = if (motion) glow else 1f
-    val bob = if (motion) float else 0f
+    // Read only inside graphicsLayer and Canvas blocks (2026-11-18): read here, they recomposed the illustration on every
+    // frame of the three endless animations.
+    fun beamPosition() = if (motion) beam.value else 0.5f
+    fun haloScale() = if (motion) glow.value else 1f
+    fun bob() = if (motion) float.value else 0f
     // Lock-on: as the screen comes into view the brackets start loose and white, then snap tight and mint,
     // the way the scanner's own outline does when it finds a page.
     val lock by animateFloatAsState(
@@ -544,24 +546,24 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         Box(
             Modifier
                 .size(sheetWidth * 1.8f)
-                .graphicsLayer { scaleX = haloScale; scaleY = haloScale }
+                .graphicsLayer { scaleX = haloScale(); scaleY = haloScale() }
                 .background(
                     Brush.radialGradient(listOf(brand.gradientEnd.copy(alpha = 0.22f), Color.Transparent)),
                     CircleShape
                 )
         )
         // Two sheets behind, fanned out; the whole stack drifts gently, the back sheets a little more.
-        Box(Modifier.graphicsLayer { translationY = bob * 7.dp.toPx(); rotationZ = bob * 1.2f }) {
+        Box(Modifier.graphicsLayer { translationY = bob() * 7.dp.toPx(); rotationZ = bob() * 1.2f }) {
             Sheet(sheetWidth, sheetHeight, rotation = -9f, offsetX = -backOffsetX - 4.dp, offsetY = 8.dp, alpha = 0.55f, lines = false)
         }
-        Box(Modifier.graphicsLayer { translationY = -bob * 5.dp.toPx(); rotationZ = -bob * 0.8f }) {
+        Box(Modifier.graphicsLayer { translationY = -bob() * 5.dp.toPx(); rotationZ = -bob() * 0.8f }) {
             Sheet(sheetWidth, sheetHeight, rotation = 6f, offsetX = backOffsetX, offsetY = 5.dp, alpha = 0.75f, lines = false)
         }
         // Front sheet with text lines and the beam.
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob * 3.dp.toPx() }) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob() * 3.dp.toPx() }) {
             Sheet(sheetWidth, sheetHeight, rotation = 0f, offsetX = 0.dp, offsetY = 0.dp, alpha = 1f, lines = true)
             Canvas(Modifier.size(sheetWidth + 30.dp, sheetHeight)) {
-                val y = size.height * (0.12f + 0.76f * beamPosition)
+                val y = size.height * (0.12f + 0.76f * beamPosition())
                 // Wake of the beam: a faint band fading upwards.
                 drawRect(
                     brush = Brush.verticalGradient(

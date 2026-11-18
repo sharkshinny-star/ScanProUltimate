@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.Badge
@@ -376,6 +377,9 @@ fun CameraScannerScreen(
     var returnToReview by rememberSaveable { mutableStateOf(false) }
     // A page removed from the strip with a long press (R30): kept for a few seconds so Undo can put it back.
     var pendingDelete by remember { mutableStateOf<PendingDelete?>(null) }
+    // The "Page n removed" message that offers Undo. Undo is shown only beside that message (2026-11-18): it used to
+    // appear beside any message while a removal was pending, so "Page 4 captured" offered to bring a page back.
+    var undoStatus by remember { mutableStateOf<String?>(null) }
     val pages = rememberSaveable(
         saver = listSaver(save = { list -> list.map(Uri::toString) }, restore = { saved -> mutableStateListOf(*saved.map(Uri::parse).toTypedArray()) })
     ) { mutableStateListOf<Uri>() }
@@ -964,7 +968,8 @@ fun CameraScannerScreen(
 
     LaunchedEffect(status) {
         if (status != null) {
-            delay(3.seconds)
+            // A removal message stays as long as its Undo works (six seconds, see pendingDelete).
+            delay(if (pendingDelete != null && status == undoStatus) 6.seconds else 3.seconds)
             status = null
         }
     }
@@ -1279,7 +1284,7 @@ fun CameraScannerScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp).semantics { liveRegion = LiveRegionMode.Polite }
                 )
-                pendingDelete?.let { deleted ->
+                pendingDelete?.takeIf { status == undoStatus }?.let { deleted ->
                     // Undo puts the page back where it was, with its outline, filter and sliders.
                     TextButton(onClick = {
                         val at = deleted.index.coerceAtMost(pages.size)
@@ -1400,6 +1405,35 @@ fun CameraScannerScreen(
             }
         }
 
+        // QR viewfinder and tappable code outlines (2026-11-18): in the same padded box as the camera image, so the
+        // outlines land on the codes when the preview is inset (landscape panel, short phones), and before the zoom pill
+        // and status chip so the dimming layer is no longer drawn over them.
+        Box(Modifier.fillMaxSize().padding(top = previewTop, bottom = previewBottom, end = panelClearance)) {
+            if (barcodeMode && foundCode == null) {
+                QrViewfinder(
+                    hint = stringResource(
+                        when {
+                            barcodeUnavailable -> R.string.scan_qr_downloading
+                            qrBatch -> R.string.qrscan_batch_on
+                            outlinedFrame != null -> R.string.qr_pick_one_hint
+                            else -> R.string.scan_qr_point
+                        }
+                    ),
+                    motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
+                )
+            }
+            outlinedFrame?.let { frame ->
+                if (barcodeMode && foundCode == null && !qrBatch) {
+                    QrCodeOutlines(frame) { picked ->
+                        barcodeAnalyzer.pause()
+                        codeFeedback()
+                        outlinedFrame = null
+                        foundCode = picked
+                        qrScans.record(picked)
+                    }
+                }
+            }
+        }
         if (!reviewing && maxZoomRatio > 1.05f) {
             ZoomPill(
                 zoomRatio = { zoomRatio },
@@ -1417,30 +1451,6 @@ fun CameraScannerScreen(
             LevelBubble(tilt = { tilt }, accent = scanLine, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 64.dp, end = 16.dp + panelClearance))
         }
 
-        if (barcodeMode && foundCode == null) {
-            QrViewfinder(
-                hint = stringResource(
-                    when {
-                        barcodeUnavailable -> R.string.scan_qr_downloading
-                        qrBatch -> R.string.qrscan_batch_on
-                        outlinedFrame != null -> R.string.qr_pick_one_hint
-                        else -> R.string.scan_qr_point
-                    }
-                ),
-                motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
-            )
-        }
-        outlinedFrame?.let { frame ->
-            if (barcodeMode && foundCode == null && !qrBatch) {
-                QrCodeOutlines(frame) { picked ->
-                    barcodeAnalyzer.pause()
-                    codeFeedback()
-                    outlinedFrame = null
-                    foundCode = picked
-                    qrScans.record(picked)
-                }
-            }
-        }
         foundCode?.let { code ->
             val scanAgain = {
                 foundCode = null
@@ -1733,6 +1743,7 @@ fun CameraScannerScreen(
                         if (idComposite == key) idComposite = null
                         pages.removeAt(index)
                         status = resources.getString(R.string.scan_status_page_removed, index + 1)
+                        undoStatus = status
                     }
                 )
             }
@@ -1777,6 +1788,7 @@ fun CameraScannerScreen(
                         if (idComposite == key) idComposite = null
                         pages.removeAt(index)
                         status = resources.getString(R.string.scan_status_page_removed, index + 1)
+                        undoStatus = status
                     }
                 )
                 Spacer(Modifier.height(8.dp))
@@ -2021,7 +2033,11 @@ fun CameraScannerScreen(
                         enabled = !barcodeMode && !capturing && (retaking || pages.size < pageLimit),
                         shape = CircleShape,
                         // Dimmed in QR mode: codes are read live, there is nothing to capture.
-                        color = if (barcodeMode) Color.White.copy(alpha = 0.25f) else Color.White,
+                        // Also dimmed when it can't take a page (both ID card sides taken, or the page limit): it used to
+                        // look live and do nothing.
+                        color = if (barcodeMode) Color.White.copy(alpha = 0.25f)
+                            else if (!capturing && !retaking && pages.size >= pageLimit) Color.White.copy(alpha = 0.35f)
+                            else Color.White,
                         // The shutter has no visible label, so screen readers need one.
                         modifier = Modifier.fillMaxSize().semantics { contentDescription = takePhotoDescription }
                     ) {}
@@ -2133,12 +2149,13 @@ private val HintFound = Color(0xFF14804F)
 private fun QrViewfinder(hint: String, motion: Boolean) {
     val sweep = if (motion) {
         val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "qr")
+        // The State, read only inside the Canvas below: reading .value here recomposed the viewfinder on every frame.
         transition.animateFloat(
             0f, 1f,
             androidx.compose.animation.core.infiniteRepeatable(tween(1800), androidx.compose.animation.core.RepeatMode.Reverse),
             label = "qrSweep"
-        ).value
-    } else 0.5f
+        )
+    } else null
     Box(Modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
             val side = minOf(size.width * 0.68f, size.height * 0.42f)
@@ -2166,7 +2183,7 @@ private fun QrViewfinder(hint: String, motion: Boolean) {
             corner(left + side, top, -1f, 1f)
             corner(left, top + side, 1f, -1f)
             corner(left + side, top + side, -1f, -1f)
-            val y = top + side * (0.1f + 0.8f * sweep)
+            val y = top + side * (0.1f + 0.8f * (sweep?.value ?: 0.5f))
             drawLine(
                 androidx.compose.ui.graphics.Brush.horizontalGradient(
                     listOf(Color.Transparent, TorchOn, Color.Transparent),
@@ -2285,9 +2302,10 @@ private fun PermissionPanel(askable: Boolean, onRequest: () -> Unit, onFallback:
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
     }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    // Scrolls, clear of the system bars (2026-11-18): in landscape or at a large font the last buttons were cut off.
+    Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.Center) {
         Card(Modifier.padding(24.dp)) {
-            Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(44.dp))
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(R.string.scan_permission_title), style = MaterialTheme.typography.titleLarge)
@@ -2707,7 +2725,8 @@ internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Un
 private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: () -> CropQuad?, stable: Boolean, accent: Color) {
     val lineColor by androidx.compose.animation.animateColorAsState(if (stable) accent else Color.White, tween(220), label = "outline")
     val fillAlpha by androidx.compose.animation.core.animateFloatAsState(if (stable) 0.16f else 0.07f, tween(220), label = "fill")
-    val weight by androidx.compose.animation.core.animateFloatAsState(if (stable) 5f else 3f, tween(220), label = "weight")
+    // Stroke widths in dp (2026-11-18): they were raw pixels, under 1dp on a 3x phone, beside 4-5dp QR and ID marks.
+    val weight by androidx.compose.animation.core.animateFloatAsState(if (stable) 3f else 2f, tween(220), label = "weight")
     Canvas(Modifier.fillMaxSize()) {
         val result = detection ?: return@Canvas
         val outline = quad() ?: return@Canvas
@@ -2727,10 +2746,10 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: () -> C
             close()
         }
         drawPath(path, color = lineColor.copy(alpha = fillAlpha))
-        drawPath(path, color = lineColor.copy(alpha = 0.9f), style = Stroke(width = weight, cap = StrokeCap.Round))
+        drawPath(path, color = lineColor.copy(alpha = 0.9f), style = Stroke(width = weight.dp.toPx(), cap = StrokeCap.Round))
 
         // Bracket corners: a short run along each edge away from the corner, plus anchor dot on lock.
-        val armLength = (size.minDimension * 0.052f).coerceIn(20f, 48f)
+        val armLength = (size.minDimension * 0.052f).coerceIn(16.dp.toPx(), 32.dp.toPx())
         for (i in points.indices) {
             val corner = points[i]
             val next = points[(i + 1) % 4]
@@ -2740,13 +2759,13 @@ private fun DocumentBoundaryOverlay(detection: DocumentDetection?, quad: () -> C
                 val dy = toward.y - corner.y
                 val length = kotlin.math.hypot(dx, dy).coerceAtLeast(1f)
                 val end = Offset(corner.x + dx / length * armLength, corner.y + dy / length * armLength)
-                drawLine(lineColor, corner, end, strokeWidth = weight + 3f, cap = StrokeCap.Round)
+                drawLine(lineColor, corner, end, strokeWidth = (weight + 1.5f).dp.toPx(), cap = StrokeCap.Round)
             }
             arm(next)
             arm(previous)
             if (stable) {
-                drawCircle(Color.White, radius = 5f, center = corner)
-                drawCircle(lineColor, radius = 3.5f, center = corner)
+                drawCircle(Color.White, radius = 4.dp.toPx(), center = corner)
+                drawCircle(lineColor, radius = 2.5.dp.toPx(), center = corner)
             }
         }
     }

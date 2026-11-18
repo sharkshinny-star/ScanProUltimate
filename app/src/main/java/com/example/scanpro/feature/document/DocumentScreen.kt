@@ -57,6 +57,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.only
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
@@ -602,7 +610,12 @@ internal fun DocumentDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
+        // The bottom and side system bars (and a cutout on its side) are kept clear (2026-11-18): with no insets the
+        // snackbar sat behind the navigation bar and, in landscape, the right-hand column of pages under a side bar.
+        // The top bar pads for the status bar itself.
+        contentWindowInsets = WindowInsets.navigationBars
+            .union(WindowInsets.displayCutout)
+            .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
         topBar = {
             TopBarWithProgress(busy, onStop = onStop) {
                 Column {
@@ -651,6 +664,8 @@ internal fun DocumentDetailScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                // So the tabs' imePadding below does not count the navigation bar a second time.
+                .consumeWindowInsets(padding)
         ) {
             when (DocumentTab.entries[tab]) {
                 DocumentTab.PAGES -> LazyVerticalGrid(
@@ -748,6 +763,7 @@ internal fun DocumentDetailScreen(
                 DocumentTab.TEXT -> Column(
                     Modifier
                         .fillMaxSize()
+                        .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)
                 ) {
@@ -934,6 +950,8 @@ internal fun DocumentDetailScreen(
                 DocumentTab.INSIGHTS -> Column(
                     Modifier
                         .fillMaxSize()
+                        // The Ask field: the keyboard used to cover it and its answer.
+                        .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -1822,9 +1840,12 @@ private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersi
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Column {
-                DocumentTopBar(title = title.orEmpty(), status = null, onBack = onBack)
-                DocumentTabs(selected = DocumentTab.PAGES.ordinal, onSelect = {})
+            // The same 4dp progress strip as the loaded screen, so its pages don't move down 4dp when they arrive.
+            TopBarWithProgress(busy = false) {
+                Column {
+                    DocumentTopBar(title = title.orEmpty(), status = null, onBack = onBack)
+                    DocumentTabs(selected = DocumentTab.PAGES.ordinal, onSelect = {})
+                }
             }
         }
     ) { padding ->

@@ -313,12 +313,32 @@ fun TopBarWithProgress(busy: Boolean, onStop: (() -> Unit)? = null, topBar: @Com
             if (busy) ScanBeamProgressBar(Modifier.matchParentSize())
         }
         // A long task (re-reading 300 pages, say) can be stopped from the screen that shows it running.
-        if (busy && onStop != null) {
+        // The row slides open and closed (2026-11-18): it used to appear at once and push the whole list 48dp down,
+        // then snap it back when the task ended. With animations off it still appears at once.
+        // Only for a task still running after 0.7 s: rotating or filtering one page is quicker than that, so the row no
+        // longer opens and closes on every small edit in the document screen.
+        val motion = rememberMotionEnabled()
+        var longTask by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        androidx.compose.runtime.LaunchedEffect(busy) {
+            longTask = false
+            if (busy) {
+                kotlinx.coroutines.delay(700)
+                longTask = true
+            }
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = busy && longTask && onStop != null,
+            enter = if (motion) androidx.compose.animation.expandVertically(androidx.compose.animation.core.tween(220)) +
+                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) else androidx.compose.animation.EnterTransition.None,
+            exit = if (motion) androidx.compose.animation.shrinkVertically(androidx.compose.animation.core.tween(200)) +
+                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) else androidx.compose.animation.ExitTransition.None
+        ) {
             androidx.compose.foundation.layout.Row(
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
             ) {
-                TextButton(onClick = onStop) { Text(stringResource(R.string.common_stop)) }
+                // onStop can turn null while the row is closing: keep the button but do nothing then.
+                TextButton(onClick = { onStop?.invoke() }) { Text(stringResource(R.string.common_stop)) }
             }
         }
     }
