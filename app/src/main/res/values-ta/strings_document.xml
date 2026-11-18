@@ -270,4 +270,10 @@
     <string name="doc_saved_copy_total">மொத்தத்தை நகலெடு</string>
     <string name="doc_share_as_word">Word ஆகப் பகிர்</string>
     <string name="doc_share_as_word_hint">ScanPro கண்டறிந்த சொற்களிலிருந்து திருத்தக்கூடிய உரை</string>
+    <string name="doc_colour_hex">ஹெக்ஸ் குறியீடு</string>
+    <string name="doc_colour_palette">வண்ணத் தட்டு</string>
+    <string name="doc_colour_picker_title">ஒரு வண்ணத்தைத் தேர்வுசெய்</string>
+    <string name="doc_colour_use">இந்த வண்ணத்தைப் பயன்படுத்து</string>
+    <string name="doc_ink_custom">விருப்ப வண்ணம்</string>
+    <string name="doc_save_for_next_time_hint">அடுத்த முறை சேமித்த கையொப்பங்களிலிருந்து இதைத் தேர்வுசெய்யலாம்</string>
 </resources>

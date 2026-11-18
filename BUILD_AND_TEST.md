@@ -45,6 +45,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-18, translations for F188, Linux cloud container)
+
+- CI runs 171–174 (`fe39ccd` F188, `1d89999` F189–F190, pushed by another session) failed at the source audit: six new `doc_*` strings (colour picker, Save for next time hint) had no Hindi, Kannada, Malayalam, Tamil or Telugu text. Those runs also cancelled run 170, so F181–F190 had not been built. Translations added (by the assistant, unread by a speaker); `scanpro-quality-audit.py` PASS, Room schema check PASS. Gradle steps not run here.
+
 ## Latest results (2026-11-18, F186–F187, commit eb2da5b, Linux cloud container)
 
 - Tool wiring traced in the code for all 36 tiles in `ToolCatalogue.kt`: each has a branch in `PdfToolsScreen.openTool` (or its own picker), and every `show…Dialog` flag has its dialog block. Not run on a device.

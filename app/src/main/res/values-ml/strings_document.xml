@@ -270,4 +270,10 @@
     <string name="doc_saved_copy_total">ആകെ പകർത്തുക</string>
     <string name="doc_share_as_word">Word ആയി പങ്കിടുക</string>
     <string name="doc_share_as_word_hint">ScanPro കണ്ടെത്തിയ വാക്കുകളിൽ നിന്നുള്ള എഡിറ്റ് ചെയ്യാവുന്ന ടെക്സ്റ്റ്</string>
+    <string name="doc_colour_hex">ഹെക്സ് കോഡ്</string>
+    <string name="doc_colour_palette">നിറങ്ങളുടെ പാലറ്റ്</string>
+    <string name="doc_colour_picker_title">ഒരു നിറം തിരഞ്ഞെടുക്കുക</string>
+    <string name="doc_colour_use">ഈ നിറം ഉപയോഗിക്കുക</string>
+    <string name="doc_ink_custom">ഇഷ്ടമുള്ള നിറം</string>
+    <string name="doc_save_for_next_time_hint">അടുത്ത തവണ സേവ് ചെയ്ത ഒപ്പുകളിൽ നിന്ന് ഇത് തിരഞ്ഞെടുക്കാം</string>
 </resources>
