@@ -1,6 +1,6 @@
 # ScanPro: security report for the Play release
 
-Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (HEAD `3692fbf`)
+Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (code reviewed at `3692fbf`; later commits are docs only)
 Evidence: source review (security audit S1–S23 of 2026-11-18 at `e8a31d3`, re-checked against HEAD for the fixed items),
 CI results and official documentation. Not devices, not a penetration test. "Pending CI" means the fix is written but has
 not yet been compiled or tested.

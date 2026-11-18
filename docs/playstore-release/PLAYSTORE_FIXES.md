@@ -1,6 +1,6 @@
 # ScanPro: Play release fixes made on 2026-11-18
 
-Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (HEAD `3692fbf`)
+Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (code reviewed at `3692fbf`; later commits are docs only)
 Evidence: source review of each commit, GitHub Actions results and official Google documentation, not devices.
 "Result" says what was actually run. When the result is "pending CI", the code has not yet been compiled or tested.
 
@@ -9,7 +9,10 @@ Related: [Compliance audit](PLAYSTORE_COMPLIANCE_AUDIT.md) · [Security](PLAYSTO
 
 CI status when this was written: the last green runs on this branch were push run `44323159144` and PR run
 `44353049118` (`a8f220c`). Runs on `e8a31d3` and `e764f73` failed to compile; later runs were cancelled by newer
-pushes; run `44375015645` on `3692fbf` (all commits below) was in progress. The coordinator adds the outcome.
+pushes, including push run `44375015645` on `3692fbf` (all commits below). PR run `44376563792` on `dda768a` (docs commit on top)
+failed in 32 s before compiling: Gradle could not resolve the plugin `org.jetbrains.kotlin.plugin.compose` 2.4.21 from
+Google or Maven Central (probably a repository or network fault; NOT VERIFIED). So no fix below has compiled yet. The
+coordinator adds the outcome of the next run.
 
 ## Release and platform fixes
 

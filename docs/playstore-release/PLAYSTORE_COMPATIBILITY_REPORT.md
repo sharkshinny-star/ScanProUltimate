@@ -1,6 +1,6 @@
 # ScanPro: Android compatibility report
 
-Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (HEAD `3692fbf`)
+Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (code reviewed at `3692fbf`; later commits are docs only)
 Evidence: source review, CI results and official Android documentation, not devices. Nothing in this file was seen on a
 phone, tablet, foldable or emulator; every device row is **NOT VERIFIED**.
 

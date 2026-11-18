@@ -1,6 +1,6 @@
 # ScanPro: permissions audit
 
-Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (HEAD `3692fbf`)
+Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (code reviewed at `3692fbf`; later commits are docs only)
 Evidence: `app/src/main/AndroidManifest.xml`, `app/src/noAllFilesAccess/AndroidManifest.xml`, source review, official
 Google documentation. Not devices. The **merged** release manifest has not been read (the Release check workflow that
 prints it has not run), so permissions added by libraries are listed as expected, NOT VERIFIED.

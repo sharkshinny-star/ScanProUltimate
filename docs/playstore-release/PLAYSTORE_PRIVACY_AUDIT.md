@@ -1,6 +1,6 @@
 # ScanPro: privacy audit for Google Play
 
-Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (HEAD `3692fbf`)
+Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (code reviewed at `3692fbf`; later commits are docs only)
 Evidence: source review, CI results and official Google documentation, not devices. No network capture was made, so
 what actually leaves a phone is taken from Google's ML Kit disclosure, not measured. Not legal advice.
 

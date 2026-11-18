@@ -1,6 +1,6 @@
 # ScanPro: test report for the Play release
 
-Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (HEAD `3692fbf`)
+Date: 2026-11-18 · Branch: `claude/awesome-clarke-ussjo3` (code reviewed at `3692fbf`; later commits are docs only)
 Evidence: test sources, GitHub Actions results and official Android documentation. **No device or emulator test has
 been run by anyone in this session.** Every device row below is NOT VERIFIED; no test is recorded as passing unless a CI
 run or a logged local run showed it.
@@ -29,7 +29,8 @@ Related: [Compatibility (device matrix)](PLAYSTORE_COMPATIBILITY_REPORT.md) · [
 | 187 / `44371484511` | `e8a31d3` | Failed: `ToolDemos.kt:378` `NAMED_PARAMETER_NOT_FOUND` |
 | `44372838000` | `e764f73` | Failed: same compile error (fixed `3860b76`, `d2ba7aa`) |
 | `44373310506` … `44374805216` | `8ddf581` … `b6ab8c2` | Cancelled by newer pushes (concurrency) |
-| `44375015645` | `3692fbf` (HEAD) | **In progress** when written: result pending CI (coordinator adds it) |
+| `44375015645` | `3692fbf` | Cancelled by a newer push |
+| `44376563792` (PR) | `dda768a` (docs on top of `3692fbf`) | **Failed before compiling**: plugin `org.jetbrains.kotlin.plugin.compose` 2.4.21 not resolved from Google or Maven Central (likely a repository/network fault, NOT VERIFIED). Code status: pending CI (coordinator adds the next result) |
 
 Last green runs on the branch: push `44323159144`, PR `44353049118` (`a8f220c`). Nothing after `a8f220c` has a full green run yet.
 
