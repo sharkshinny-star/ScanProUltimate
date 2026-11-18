@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tool pages upgrade (F194): demonstrations and before/after outcomes -->
+    <string name="tool_demo_how_it_works">How it works</string>
+    <string name="tool_demo_shown">Shown</string>
+    <string name="tool_demo_hidden">Hidden</string>
+    <string name="pdf_outcome_size_unknown">Size known after</string>
+    <plurals name="pdf_outcome_pages">
+        <item quantity="one">%1$d page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
+    <plurals name="pdf_outcome_files">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+</resources>

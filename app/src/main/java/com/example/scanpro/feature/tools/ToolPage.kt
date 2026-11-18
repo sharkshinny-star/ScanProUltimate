@@ -74,6 +74,8 @@ internal fun ToolPage(
     actionIcon: ImageVector? = null,
     actionSupport: String? = null,
     topBarActions: @Composable RowScope.() -> Unit = {},
+    /** The tool's id: shows its "How it works" demonstration at the top of the page (F194), when it has one. */
+    demoToolId: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Dialog(
@@ -133,9 +135,11 @@ internal fun ToolPage(
                         .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    content = content
-                )
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    if (demoToolId != null) ToolDemoCard(demoToolId)
+                    content()
+                }
             }
         }
     }

@@ -71,7 +71,12 @@ internal fun ToolIntroDialog(tool: PdfToolCard, intro: ToolIntro, onContinue: ()
     IllustratedDialog(
         title = stringResource(tool.title),
         body = stringResource(intro.description),
-        illustration = { ToolFlowIllustration(tool.icon, tool.tone, intro.input, Modifier.fillMaxSize()) },
+        // The tool's own demonstration when it has one (F194); the general file-to-tool picture otherwise.
+        illustration = {
+            val scene = com.example.scanpro.core.designsystem.toolDemoScene(tool.id)
+            if (scene != null) com.example.scanpro.core.designsystem.ToolDemo(scene, Modifier.fillMaxSize())
+            else ToolFlowIllustration(tool.icon, tool.tone, intro.input, Modifier.fillMaxSize())
+        },
         confirmText = stringResource(R.string.common_continue),
         onConfirm = onContinue,
         dismissText = stringResource(R.string.common_cancel),

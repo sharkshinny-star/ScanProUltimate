@@ -359,7 +359,7 @@ internal fun BeforeAfterRow(context: Context, image: LoadedImage, after: ImageEs
 }
 
 @Composable
-private fun SizeColumn(label: String, size: String, detail: String, modifier: Modifier = Modifier) {
+internal fun SizeColumn(label: String, size: String, detail: String, modifier: Modifier = Modifier) {
     Column(modifier) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(size, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -369,7 +369,7 @@ private fun SizeColumn(label: String, size: String, detail: String, modifier: Mo
 
 /** "62% smaller" in green, or "12% larger" in the error colour. */
 @Composable
-private fun ChangeBadge(changePercent: Int) {
+internal fun ChangeBadge(changePercent: Int) {
     val smaller = changePercent < 0
     val background = if (smaller) Color(0xFF1B7F4B).copy(alpha = 0.14f) else MaterialTheme.colorScheme.errorContainer
     val foreground = if (smaller) Color(0xFF1B7F4B) else MaterialTheme.colorScheme.onErrorContainer
