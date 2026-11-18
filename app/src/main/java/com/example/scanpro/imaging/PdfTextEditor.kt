@@ -84,8 +84,11 @@ internal object PdfTextEditor {
         val colour: Int? = null
     )
 
-    /** [sameFont]: edits written in the PDF's own font (or its other weight); [similarFont]: in a substitute. */
-    data class Outcome(val applied: Int, val sameFont: Int, val similarFont: Int, val covered: Int)
+    /**
+     * [sameFont]: edits written in the PDF's own font (or its other weight); [similarFont]: in a substitute; [skipped]:
+     * edits left out and their line left as it was (no font on the phone can draw the new text, or the line is gone).
+     */
+    data class Outcome(val applied: Int, val sameFont: Int, val similarFont: Int, val covered: Int, val skipped: Int = 0)
 
     /** Every span on page [pageIndex] (0-based), in reading order. */
     fun spans(doc: PDDocument, pageIndex: Int): List<Span> = analyse(doc, pageIndex).spans.map { it.span }
@@ -99,6 +102,7 @@ internal object PdfTextEditor {
         var same = 0
         var similar = 0
         var covered = 0
+        var skipped = 0
         var unicode: PDFont? = null
         var unicodeLoaded = false
         val unicodeOnce: () -> PDFont? = {
@@ -112,10 +116,14 @@ internal object PdfTextEditor {
             val removal = HashMap<Int, MutableSet<Int>>()
             val opsOfEdit = HashMap<Edit, MutableSet<Int>>()
             val needsCover = HashSet<Edit>()
-            val chosen = ArrayList<Pair<Edit, SpanData>>()
+            val chosen = ArrayList<Triple<Edit, SpanData, FontChoice?>>()
             for (edit in pageEdits.distinctBy { it.index }) {
-                val data = analysis.spans.getOrNull(edit.index) ?: continue
-                chosen += edit to data
+                val data = analysis.spans.getOrNull(edit.index)
+                // The font is chosen before anything is cut: a line whose new text no font can draw is left as it was,
+                // rather than cut out and not written back.
+                val choice = if (data == null || edit.text.isEmpty()) null else chooseFont(page, data, edit, unicodeOnce)
+                if (data == null || (edit.text.isNotEmpty() && choice == null)) { skipped++; continue }
+                chosen += Triple(edit, data, choice)
                 val ops = opsOfEdit.getOrPut(edit) { HashSet() }
                 val glyphs = analysis.glyphs.filter { data.covers(it) } + data.positions.mapNotNull { analysis.glyphOf[it] }
                 for (glyph in glyphs) {
@@ -129,17 +137,16 @@ internal object PdfTextEditor {
             val failed = if (removal.isEmpty()) emptySet() else rewrite(doc, page, removal, analysis.ops)
             for ((edit, ops) in opsOfEdit) if (ops.any { it in failed }) needsCover += edit
             PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { stream ->
-                for ((edit, data) in chosen) {
+                for ((edit, data, choice) in chosen) {
                     if (edit in needsCover) { cover(stream, data); covered++ }
-                    if (edit.text.isEmpty()) { applied++; continue }
-                    val choice = chooseFont(page, data, edit, unicodeOnce) ?: continue
+                    if (choice == null) { applied++; continue }
                     draw(stream, data, edit, choice)
                     applied++
                     if (choice.same) same++ else similar++
                 }
             }
         }
-        return Outcome(applied, same, similar, covered)
+        return Outcome(applied, same, similar, covered, skipped)
     }
 
     // ---- reading the page ---------------------------------------------------------------------------------------
@@ -153,14 +160,19 @@ internal object PdfTextEditor {
     /** The text state a show-text instruction ran with, to work out each letter's advance when cutting it out. */
     private class OpState(val font: PDFont?, val fontSize: Float, val charSpacing: Float, val wordSpacing: Float)
 
-    private class SpanData(val span: Span, val positions: List<TextPosition>) {
+    /**
+     * [offsetX] and [offsetY]: the crop box's lower-left corner. Text extraction gives each letter's matrix relative to
+     * it, so it is added back to draw in the page's own coordinates.
+     */
+    private class SpanData(val span: Span, val positions: List<TextPosition>, val offsetX: Float, val offsetY: Float) {
         /** True for a letter on this span's line and inside its extent: the span's own, or a copy drawn over it. */
         fun covers(glyph: Glyph): Boolean {
             val size = span.fontSize.coerceAtLeast(1f)
             val baseline = positions.first().yDirAdj
-            val centre = glyph.x + glyph.width / 2f
-            return abs(glyph.baseline - baseline) <= size * 0.35f &&
-                centre >= span.left - size * 0.05f && centre <= span.right + size * 0.05f
+            if (abs(glyph.baseline - baseline) > size * 0.35f) return false
+            // Only where one of the span's own letters is: a copy drawn over it (fake bold) goes too, a neighbouring
+            // run that overlaps the line (a superscript, a label) stays.
+            return positions.any { abs(it.xDirAdj - glyph.x) < size * 0.25f }
         }
     }
 
@@ -178,7 +190,9 @@ internal object PdfTextEditor {
         reader.sortByPosition = true
         reader.getText(doc)
         reader.endLine()
-        return PageAnalysis(buildSpans(pageIndex, reader.lines, reader.colours), reader.glyphs, reader.glyphOf, reader.ops)
+        val page = doc.getPage(pageIndex)
+        val shape = PageShape(page.cropBox.lowerLeftX, page.cropBox.lowerLeftY, page.cropBox.width, page.cropBox.height, ((page.rotation % 360) + 360) % 360)
+        return PageAnalysis(buildSpans(pageIndex, reader.lines, reader.colours, shape), reader.glyphs, reader.glyphOf, reader.ops)
     }
 
     /**
@@ -257,14 +271,25 @@ internal object PdfTextEditor {
      * Spans from each line's letters: a new span starts where the font or size changes, the line steps up or down, or
      * a gap is wider than about two spaces. A word break inside a span becomes a space.
      */
-    private fun buildSpans(page: Int, lines: List<List<Pair<TextPosition, Boolean>>>, colours: Map<TextPosition, Int>): List<SpanData> {
+    /** The crop box (lower-left corner and size, in the page's own coordinates) and the page's turn for display. */
+    private class PageShape(val x: Float, val y: Float, val width: Float, val height: Float, val rotation: Int) {
+        /** A point relative to the crop box's lower-left corner, as display points from the shown page's top-left. */
+        fun toDisplay(x: Float, y: Float): Pair<Float, Float> = when (rotation) {
+            90 -> y to x
+            180 -> (width - x) to y
+            270 -> (height - y) to (width - x)
+            else -> x to (height - y)
+        }
+    }
+
+    private fun buildSpans(page: Int, lines: List<List<Pair<TextPosition, Boolean>>>, colours: Map<TextPosition, Int>, shape: PageShape): List<SpanData> {
         val spans = ArrayList<SpanData>()
         for (line in lines) {
             var run = ArrayList<TextPosition>()
             val text = StringBuilder()
             fun emit() {
                 if (run.isEmpty() || text.isBlank()) { run = ArrayList(); text.clear(); return }
-                spans += makeSpan(page, spans.size, run, text.toString().trim(), colours)
+                spans += makeSpan(page, spans.size, run, text.toString().trim(), colours, shape)
                 run = ArrayList()
                 text.clear()
             }
@@ -286,27 +311,41 @@ internal object PdfTextEditor {
         return spans
     }
 
-    private fun makeSpan(page: Int, index: Int, run: List<TextPosition>, text: String, colours: Map<TextPosition, Int>): SpanData {
+    private fun makeSpan(page: Int, index: Int, run: List<TextPosition>, text: String, colours: Map<TextPosition, Int>, shape: PageShape): SpanData {
         val first = run.first()
         val size = first.fontSizeInPt.takeIf { it > 0f } ?: (first.heightDir * 1.4f).coerceAtLeast(1f)
-        val baseline = first.yDirAdj
         val font = first.font
         val name = baseName(font?.name)
+        // The box as the page is shown: each letter's corners (from its baseline origin, along and across the text),
+        // turned with the page. Text-direction coordinates would put it in the wrong place on a turned page.
+        val xs = ArrayList<Float>(run.size * 4)
+        val ys = ArrayList<Float>(run.size * 4)
+        for (position in run) {
+            val m = position.textMatrix
+            val (ux, uy) = unit(m.scaleX, m.shearY) ?: (1f to 0f)
+            val (vx, vy) = unit(m.shearX, m.scaleY) ?: (0f to 1f)
+            val advance = position.widthDirAdj
+            for ((along, across) in listOf(0f to -0.25f, advance to -0.25f, 0f to 0.9f, advance to 0.9f)) {
+                val (dx, dy) = shape.toDisplay(m.translateX + ux * along + vx * across * size, m.translateY + uy * along + vy * across * size)
+                xs += dx
+                ys += dy
+            }
+        }
         val span = Span(
             page = page,
             index = index,
             text = text,
-            left = run.minOf { it.xDirAdj },
-            top = baseline - size * 0.9f,
-            right = run.maxOf { it.xDirAdj + it.widthDirAdj },
-            bottom = baseline + size * 0.25f,
+            left = xs.min(),
+            top = ys.min(),
+            right = xs.max(),
+            bottom = ys.max(),
             fontName = name,
             fontSize = size,
             bold = isBold(font),
             italic = isItalic(font),
             colour = colours[first] ?: 0
         )
-        return SpanData(span, run)
+        return SpanData(span, run, shape.x, shape.y)
     }
 
     // ---- cutting the old letters out ----------------------------------------------------------------------------
@@ -432,8 +471,8 @@ internal object PdfTextEditor {
         val (vx, vy) = unit(m.shearX, m.scaleY) ?: return
         val size = data.span.fontSize
         val length = hypot(last.textMatrix.translateX - m.translateX, last.textMatrix.translateY - m.translateY) + last.widthDirAdj
-        val x0 = m.translateX - ux * size * 0.05f - vx * size * 0.3f
-        val y0 = m.translateY - uy * size * 0.05f - vy * size * 0.3f
+        val x0 = data.offsetX + m.translateX - ux * size * 0.05f - vx * size * 0.3f
+        val y0 = data.offsetY + m.translateY - uy * size * 0.05f - vy * size * 0.3f
         val along = length + size * 0.1f
         val up = size * 1.3f
         stream.saveGraphicsState()
@@ -498,7 +537,7 @@ internal object PdfTextEditor {
         stream.beginText()
         stream.setFont(choice.font, size)
         if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL_STROKE)
-        stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, m.translateX, m.translateY))
+        stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, data.offsetX + m.translateX, data.offsetY + m.translateY))
         stream.showText(edit.text)
         if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL)
         stream.endText()

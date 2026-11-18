@@ -79,6 +79,7 @@ import com.example.scanpro.imaging.PdfTextEditSession
 import com.example.scanpro.imaging.PdfTextEditor
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 
 /** The edits survive a rotation: each as its fields in a flat list. */
@@ -129,7 +130,10 @@ internal fun EditPdfTextEditor(uri: Uri, onDismiss: () -> Unit, onSave: (List<Pd
 
     DisposableEffect(uri) { onDispose { session?.close(); session = null } }
     val opened by produceState<PdfTextEditSession?>(null, uri) {
-        value = withContext(Dispatchers.IO) { runCatching { PdfTextEditSession.open(context, uri) }.getOrNull() }
+        // Not cancellable: an editor closed while the PDF opens still gets the session back, to close it.
+        val opened = withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) { runCatching { PdfTextEditSession.open(context, uri) }.getOrNull() }
+        if (!isActive) { opened?.close(); return@produceState }
+        value = opened
         session = value
         openFailed = value == null
     }

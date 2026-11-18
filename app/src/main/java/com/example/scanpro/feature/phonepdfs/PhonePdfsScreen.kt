@@ -279,6 +279,8 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
  */
 private fun openPicked(context: android.content.Context, uri: Uri, actions: PhoneFileActions, openWithTitle: String) {
     val resolver = context.contentResolver
+    // Kept, so the file still opens from Recent after the app restarts (the picker's grant would end with it).
+    runCatching { resolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
     val name = runCatching {
         resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else null

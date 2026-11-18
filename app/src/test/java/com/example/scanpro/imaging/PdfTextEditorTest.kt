@@ -175,4 +175,63 @@ class PdfTextEditorTest {
             }
         }
     }
+    @Test fun aCroppedPageKeepsTheNewWordsWhereTheOldOnesWere() {
+        val doc0 = PDDocument()
+        val page = PDPage(PDRectangle.A4); doc0.addPage(page)
+        PDPageContentStream(doc0, page).use { cs -> cs.beginText(); cs.setFont(PDType1Font.HELVETICA, 12f); cs.newLineAtOffset(150f, 400f); cs.showText("Cropped page"); cs.endText() }
+        page.cropBox = PDRectangle(100f, 200f, 300f, 400f)
+        reload(doc0).use { doc ->
+            val before = PdfTextEditor.spans(doc, 0).single()
+            assertEquals(50f, before.left, 0.5f)
+            PdfTextEditor.apply(doc, listOf(PdfTextEditor.Edit(0, 0, "Cropped text", bold = false, italic = false, size = 12f)))
+            reload(doc).use { d2 ->
+                val after = PdfTextEditor.spans(d2, 0).single()
+                assertEquals("Cropped text", after.text)
+                assertEquals(before.left, after.left, 0.5f)
+                assertEquals(before.bottom, after.bottom, 0.5f)
+            }
+        }
+    }
+
+    @Test fun aTurnedPageGivesBoxesAsThePageIsShown() {
+        val doc0 = PDDocument()
+        val page = PDPage(PDRectangle.A4); doc0.addPage(page)
+        PDPageContentStream(doc0, page).use { cs -> cs.beginText(); cs.setFont(PDType1Font.HELVETICA, 10f); cs.newLineAtOffset(72f, 700f); cs.showText("Sideways"); cs.endText() }
+        page.rotation = 90
+        reload(doc0).use { doc ->
+            val span = PdfTextEditor.spans(doc, 0).single()
+            // Turned a quarter clockwise for display: the page's height runs across, and the line runs down the screen.
+            assertEquals(697.5f, span.left, 0.6f)
+            assertEquals(709f, span.right, 0.6f)
+            assertEquals(72f, span.top, 0.6f)
+            assertTrue(span.bottom > 100f)
+            PdfTextEditor.apply(doc, listOf(PdfTextEditor.Edit(0, 0, "Turned", bold = false, italic = false, size = 10f)))
+            reload(doc).use { d2 -> assertEquals("Turned", PdfTextEditor.spans(d2, 0).single().text) }
+        }
+    }
+
+    @Test fun textNoFontCanDrawLeavesTheLineAsItWas() {
+        sample().use { doc0 ->
+            val span = PdfTextEditor.spans(doc0, 0)[0]
+            val outcome = PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, span.index, "नमस्ते", bold = false, italic = false, size = 12f)))
+            assertEquals(1, outcome.skipped)
+            assertEquals(0, outcome.applied)
+            reload(doc0).use { doc -> assertTrue(text(doc).contains("Hello World")) }
+        }
+    }
+
+    @Test fun aSuperscriptBesideTheLineIsNotCut() {
+        val doc0 = PDDocument()
+        val page = PDPage(PDRectangle.A4); doc0.addPage(page)
+        PDPageContentStream(doc0, page).use { cs ->
+            cs.beginText(); cs.setFont(PDType1Font.HELVETICA, 12f); cs.newLineAtOffset(72f, 500f); cs.showText("Price"); cs.endText()
+            cs.beginText(); cs.setFont(PDType1Font.HELVETICA, 7f); cs.newLineAtOffset(103f, 503f); cs.showText("1"); cs.endText()
+        }
+        reload(doc0).use { doc ->
+            val spans = PdfTextEditor.spans(doc, 0)
+            val price = spans.first { it.text == "Price" }
+            PdfTextEditor.apply(doc, listOf(PdfTextEditor.Edit(0, price.index, "Cost", bold = false, italic = false, size = 12f)))
+            reload(doc).use { d2 -> val all = PdfTextEditor.spans(d2, 0).map { it.text }; assertTrue(all.toString(), "1" in all && "Cost" in all) }
+        }
+    }
 }

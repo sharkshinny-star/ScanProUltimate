@@ -621,4 +621,8 @@
         <item quantity="one">%1$d change is written over a white box: the old words are still in the file underneath.</item>
         <item quantity="other">%1$d changes are written over white boxes: the old words are still in the file underneath.</item>
     </plurals>
+    <plurals name="tools_edit_skipped">
+        <item quantity="one">%1$d change was left out: no font on this phone can draw its letters, so that line is as it was.</item>
+        <item quantity="other">%1$d changes were left out: no font on this phone can draw their letters, so those lines are as they were.</item>
+    </plurals>
 </resources>
