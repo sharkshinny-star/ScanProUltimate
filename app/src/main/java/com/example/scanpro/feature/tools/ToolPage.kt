@@ -74,7 +74,7 @@ internal fun ToolPage(
     actionIcon: ImageVector? = null,
     actionSupport: String? = null,
     topBarActions: @Composable RowScope.() -> Unit = {},
-    /** The tool's id: shows its "How it works" demonstration at the top of the page (F194), when it has one. */
+    /** The tool's id: shows its "How it works" demonstration at the top of the page (F195), when it has one. */
     demoToolId: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {

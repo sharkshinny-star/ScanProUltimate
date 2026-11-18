@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tool pages upgrade (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Tool pages upgrade (F195). Machine translation, not yet reviewed by a speaker. -->
     <string name="tool_demo_how_it_works">ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു</string>
     <string name="tool_demo_shown">കാണിക്കുന്നു</string>
     <string name="tool_demo_hidden">മറച്ചിരിക്കുന്നു</string>

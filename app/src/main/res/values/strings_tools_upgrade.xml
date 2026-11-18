@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tool pages upgrade (F194): demonstrations and before/after outcomes -->
+    <!-- Tool pages upgrade (F195): demonstrations and before/after outcomes -->
     <string name="tool_demo_how_it_works">How it works</string>
     <string name="tool_demo_shown">Shown</string>
     <string name="tool_demo_hidden">Hidden</string>

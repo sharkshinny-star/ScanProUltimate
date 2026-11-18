@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tool pages upgrade (F194). Machine translation, not yet reviewed by a speaker. -->
+    <!-- Tool pages upgrade (F195). Machine translation, not yet reviewed by a speaker. -->
     <string name="tool_demo_how_it_works">यह कैसे काम करता है</string>
     <string name="tool_demo_shown">दिख रहा है</string>
     <string name="tool_demo_hidden">छिपा है</string>

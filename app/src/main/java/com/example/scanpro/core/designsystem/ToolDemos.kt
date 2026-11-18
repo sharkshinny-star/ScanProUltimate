@@ -32,7 +32,7 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 /*
- * Tool demonstrations (F194): a short looping scene for each tool that shows what it does to a real-looking page,
+ * Tool demonstrations (F195): a short looping scene for each tool that shows what it does to a real-looking page,
  * on a slightly tilted 3D "desk" so layers can lift off the page and settle back. Shown in the tool's introduction
  * and in the "How it works" card at the top of its page. Every scene is drawn with the shared pieces below, in the
  * brand colours, reads the frame clock only in the draw phase (it redraws without recomposing), and holds a
