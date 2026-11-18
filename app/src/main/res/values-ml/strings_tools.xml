@@ -586,4 +586,13 @@
         <item quantity="one">%1$d മാറ്റം വെള്ള ബോക്സിന് മുകളിൽ എഴുതി: പഴയ വാക്കുകൾ ഫയലിൽ താഴെ ഇപ്പോഴും ഉണ്ട്.</item>
         <item quantity="other">%1$d മാറ്റങ്ങൾ വെള്ള ബോക്സുകൾക്ക് മുകളിൽ എഴുതി: പഴയ വാക്കുകൾ ഫയലിൽ താഴെ ഇപ്പോഴും ഉണ്ട്.</item>
     </plurals>
+    <plurals name="tools_edit_skipped">
+        <item quantity="one">%1$d മാറ്റം ഒഴിവാക്കി: ഈ ഫോണിലെ ഒരു ഫോണ്ടിനും അതിന്റെ അക്ഷരങ്ങൾ വരയ്ക്കാനാവില്ല, അതിനാൽ ആ വരി പഴയതുപോലെയാണ്.</item>
+        <item quantity="other">%1$d മാറ്റങ്ങൾ ഒഴിവാക്കി: ഈ ഫോണിലെ ഒരു ഫോണ്ടിനും അവയുടെ അക്ഷരങ്ങൾ വരയ്ക്കാനാവില്ല, അതിനാൽ ആ വരികൾ പഴയതുപോലെയാണ്.</item>
+    </plurals>
+    <string name="tools_edit_add_text">ടെക്സ്റ്റ് ചേർക്കുക</string>
+    <string name="tools_edit_add_hint">പുതിയ ടെക്സ്റ്റ് വേണ്ടിടത്ത് ടാപ്പ് ചെയ്യുക</string>
+    <string name="tools_edit_new_title">പുതിയ ടെക്സ്റ്റ്</string>
+    <string name="tools_edit_colour">നിറം</string>
+    <string name="tools_edit_colour_same">PDF-ലേതുപോലെ</string>
 </resources>

@@ -46,12 +46,20 @@ internal class PdfTextEditSession private constructor(private val source: File, 
         if (mine.isEmpty()) return renderPage(source, page, width)
         val preview = File(context.cacheDir, "pdfedit_preview_${UUID.randomUUID()}.pdf")
         return try {
+            // Only this page is copied into a new PDF (a fresh read of the file, so the session's copy is never
+            // changed): a preview costs one page however long the PDF is.
             PDDocument.load(source, MemoryUsageSetting.setupTempFileOnly()).use { copy ->
-                // A file with only an owner password (restrictions) can be read but not saved as it is.
-                if (copy.isEncrypted) copy.isAllSecurityToBeRemoved = true
-                for (i in copy.numberOfPages - 1 downTo 0) if (i != page) copy.removePage(i)
-                PdfTextEditor.apply(copy, mine.map { it.copy(page = 0) }, ::phoneUnicodeFont)
-                copy.save(preview)
+                PDDocument().use { single ->
+                    val original = copy.getPage(page)
+                    val imported = single.importPage(original)
+                    // Inherited from the page tree in the source; the imported page has to carry them itself.
+                    imported.resources = original.resources
+                    imported.mediaBox = original.mediaBox
+                    imported.cropBox = original.cropBox
+                    imported.rotation = original.rotation
+                    PdfTextEditor.apply(single, mine.map { it.copy(page = 0) }, ::phoneUnicodeFont)
+                    single.save(preview)
+                }
             }
             renderPage(preview, 0, width)
         } catch (_: Exception) {
@@ -113,6 +121,7 @@ internal object PdfTextEditTool {
                 val notes = buildList {
                     add(AppStrings.plural(R.plurals.tools_edit_done, outcome.applied, outcome.applied))
                     if (outcome.similarFont > 0) add(AppStrings.plural(R.plurals.tools_edit_similar_font, outcome.similarFont, outcome.similarFont))
+                    if (outcome.skipped > 0) add(AppStrings.plural(R.plurals.tools_edit_skipped, outcome.skipped, outcome.skipped))
                     if (outcome.covered > 0) add(AppStrings.plural(R.plurals.tools_edit_covered, outcome.covered, outcome.covered))
                 }
                 PdfToolResult(

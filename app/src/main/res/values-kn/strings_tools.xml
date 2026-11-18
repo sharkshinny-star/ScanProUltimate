@@ -586,4 +586,13 @@
         <item quantity="one">%1$d ಬದಲಾವಣೆ ಬಿಳಿ ಪೆಟ್ಟಿಗೆಯ ಮೇಲೆ ಬರೆಯಲಾಗಿದೆ: ಹಳೆಯ ಪದಗಳು ಕೆಳಗೆ ಫೈಲ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇವೆ.</item>
         <item quantity="other">%1$d ಬದಲಾವಣೆಗಳು ಬಿಳಿ ಪೆಟ್ಟಿಗೆಗಳ ಮೇಲೆ ಬರೆಯಲಾಗಿವೆ: ಹಳೆಯ ಪದಗಳು ಕೆಳಗೆ ಫೈಲ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇವೆ.</item>
     </plurals>
+    <plurals name="tools_edit_skipped">
+        <item quantity="one">%1$d ಬದಲಾವಣೆ ಬಿಡಲಾಗಿದೆ: ಈ ಫೋನ್‌ನ ಯಾವ ಫಾಂಟ್ ಕೂಡ ಅದರ ಅಕ್ಷರಗಳನ್ನು ಬರೆಯಲಾರದು, ಆದ್ದರಿಂದ ಆ ಸಾಲು ಹಿಂದಿನಂತೆಯೇ ಇದೆ.</item>
+        <item quantity="other">%1$d ಬದಲಾವಣೆಗಳನ್ನು ಬಿಡಲಾಗಿದೆ: ಈ ಫೋನ್‌ನ ಯಾವ ಫಾಂಟ್ ಕೂಡ ಅವುಗಳ ಅಕ್ಷರಗಳನ್ನು ಬರೆಯಲಾರದು, ಆದ್ದರಿಂದ ಆ ಸಾಲುಗಳು ಹಿಂದಿನಂತೆಯೇ ಇವೆ.</item>
+    </plurals>
+    <string name="tools_edit_add_text">ಪಠ್ಯ ಸೇರಿಸಿ</string>
+    <string name="tools_edit_add_hint">ಹೊಸ ಪಠ್ಯ ಬೇಕಾದ ಸ್ಥಳದಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="tools_edit_new_title">ಹೊಸ ಪಠ್ಯ</string>
+    <string name="tools_edit_colour">ಬಣ್ಣ</string>
+    <string name="tools_edit_colour_same">PDF ನಂತೆ</string>
 </resources>

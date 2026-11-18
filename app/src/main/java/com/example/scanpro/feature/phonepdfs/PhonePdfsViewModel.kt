@@ -36,15 +36,16 @@ data class PhoneFilesState(
     val browsingFolders: Boolean get() = folderPath != null && query.isBlank()
 
     /** What the list shows: filtered by kind and [query] (and to the open folder when browsing), then sorted. */
-    val shown: List<PhoneFile>? get() = all?.let { files ->
+    // Worked out once per state (lazily): the list reads them several times in one recomposition.
+    val shown: List<PhoneFile>? by lazy { all?.let { files ->
         val inPlace = if (browsingFolders) PhoneFiles.filesIn(files, folderPath.orEmpty()) else files
         PhoneFiles.sort(PhoneFiles.filter(inPlace, filter, query), sort, ascending)
-    }
+    } }
 
     /** The folders inside the open one, for the kind chosen; empty outside the Folders view. */
-    val folders: List<PhoneFolder> get() = if (!browsingFolders) emptyList() else all?.let { files ->
+    val folders: List<PhoneFolder> by lazy { if (!browsingFolders) emptyList() else all?.let { files ->
         PhoneFiles.sortFolders(PhoneFiles.subfolders(PhoneFiles.filter(files, filter, ""), folderPath.orEmpty()), sort, ascending)
-    }.orEmpty()
+    }.orEmpty() }
     val selection: List<PhoneFile> get() = all.orEmpty().associateBy { it.uri.toString() }.let { byUri -> selected.mapNotNull(byUri::get) }
 }
 

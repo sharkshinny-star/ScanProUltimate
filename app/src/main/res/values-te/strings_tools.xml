@@ -586,4 +586,13 @@
         <item quantity="one">%1$d మార్పు తెల్లని పెట్టెపై రాయబడింది: పాత పదాలు ఫైల్‌లో కింద ఇంకా ఉన్నాయి.</item>
         <item quantity="other">%1$d మార్పులు తెల్లని పెట్టెలపై రాయబడ్డాయి: పాత పదాలు ఫైల్‌లో కింద ఇంకా ఉన్నాయి.</item>
     </plurals>
+    <plurals name="tools_edit_skipped">
+        <item quantity="one">%1$d మార్పు వదిలేయబడింది: ఈ ఫోన్‌లోని ఏ ఫాంట్ కూడా దాని అక్షరాలను గీయలేదు, కాబట్టి ఆ వరుస ముందులాగే ఉంది.</item>
+        <item quantity="other">%1$d మార్పులు వదిలేయబడ్డాయి: ఈ ఫోన్‌లోని ఏ ఫాంట్ కూడా వాటి అక్షరాలను గీయలేదు, కాబట్టి ఆ వరుసలు ముందులాగే ఉన్నాయి.</item>
+    </plurals>
+    <string name="tools_edit_add_text">టెక్స్ట్ జోడించండి</string>
+    <string name="tools_edit_add_hint">కొత్త టెక్స్ట్ ఎక్కడ కావాలో అక్కడ ట్యాప్ చేయండి</string>
+    <string name="tools_edit_new_title">కొత్త టెక్స్ట్</string>
+    <string name="tools_edit_colour">రంగు</string>
+    <string name="tools_edit_colour_same">PDFలో ఉన్నట్టు</string>
 </resources>

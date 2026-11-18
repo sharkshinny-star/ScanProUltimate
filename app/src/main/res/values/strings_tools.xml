@@ -578,7 +578,7 @@
     <string name="tools_card_edit_pdf">Edit PDF text</string>
     <string name="tools_tile_edit_pdf">Edit PDF</string>
     <string name="tools_desc_edit_pdf">Change words, font, bold and size</string>
-    <string name="hint_tool_edit_pdf">Tap any line of text to change its words, font, bold, italic or size. The PDF\'s own font is kept whenever it has the letters you type. A new PDF is saved; the original is not changed.</string>
+    <string name="hint_tool_edit_pdf">Tap any line of text to change its words, font, bold, italic, size or colour, or use Add text to write new words anywhere on the page. The PDF\'s own font is kept whenever it has the letters you type. A new PDF is saved; the original is not changed.</string>
     <string name="tools_edit_hint">Tap any text to change it</string>
     <string name="tools_edit_save">Save PDF</string>
     <string name="tools_edit_no_text">No text on this page. A scanned page is a picture: use Make searchable first.</string>
@@ -621,4 +621,13 @@
         <item quantity="one">%1$d change is written over a white box: the old words are still in the file underneath.</item>
         <item quantity="other">%1$d changes are written over white boxes: the old words are still in the file underneath.</item>
     </plurals>
+    <plurals name="tools_edit_skipped">
+        <item quantity="one">%1$d change was left out: no font on this phone can draw its letters, so that line is as it was.</item>
+        <item quantity="other">%1$d changes were left out: no font on this phone can draw their letters, so those lines are as they were.</item>
+    </plurals>
+    <string name="tools_edit_add_text">Add text</string>
+    <string name="tools_edit_add_hint">Tap where the new text should go</string>
+    <string name="tools_edit_new_title">New text</string>
+    <string name="tools_edit_colour">Colour</string>
+    <string name="tools_edit_colour_same">As in the PDF</string>
 </resources>

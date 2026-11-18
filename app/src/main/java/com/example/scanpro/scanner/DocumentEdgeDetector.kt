@@ -154,6 +154,12 @@ object DocumentEdgeDetector {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
         // Any size with the frame's shape: the map is brought to the working size below (the live camera passes a quarter-size one).
         require(chroma == null || (chroma.channels() == 1 && !chroma.empty())) { "The colour map must be a single-channel Mat" }
+        // Any size, but the frame's shape: a map of another shape would be stretched onto the frame and point the colour
+        // outlines at the wrong place, so it is left out (brightness alone, as without colour).
+        val colourMap = chroma?.takeIf {
+            kotlin.math.abs(it.cols().toDouble() / it.rows() - grayInput.cols().toDouble() / grayInput.rows()) <
+                2.0 / minOf(it.rows(), it.cols()).coerceAtLeast(1)
+        }
 
         val working = resizeForAnalysis(grayInput)
         val processed = Mat()
@@ -317,8 +323,8 @@ object DocumentEdgeDetector {
             // at its Otsu level and search both halves for the page; the usual page score then prefers the whole
             // page over its lit part. Skipped unless the two halves really differ (a grey or white desk has no colour
             // edge) and each covers a real share of the frame.
-            if (chroma != null) {
-                Imgproc.resize(chroma, chromaWork, working.size(), 0.0, 0.0, Imgproc.INTER_AREA)
+            if (colourMap != null) {
+                Imgproc.resize(colourMap, chromaWork, working.size(), 0.0, 0.0, Imgproc.INTER_AREA)
                 Imgproc.GaussianBlur(chromaWork, chromaWork, Size(7.0, 7.0), 0.0)
                 Imgproc.threshold(chromaWork, chromaHigh, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
                 Core.bitwise_not(chromaHigh, chromaLow)

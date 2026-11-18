@@ -49,6 +49,17 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-18, F199 Edit PDF add text and colour, Linux cloud container)
+
+- `PdfTextEditorTest` 14/14 on the desktop JVM (Apache PDFBox 2.0.27); `scanpro-quality-audit.py` PASS.
+- CI note: GitHub skips a whole push when any commit in it carries `[skip ci]`, so `4de55b8` (F198) was not built (it carried another session's docs commit). This push has no `[skip ci]` commit. CI run 187 (`e8a31d3`) failed to compile in another session's `ToolDemos.kt:378`; that session was told.
+- NOT run: compile and unit suite (CI), anything on a device (R71).
+
+## Latest results (2026-11-18, F198 review fixes, commit 96b53bd, Linux cloud container)
+
+- `PdfTextEditorTest` 11/11 on the desktop JVM (Apache PDFBox 2.0.27); `scan-bench extra colour live`: benchmark mean IoU 0.985, colour 17/17, shadow 21/21 (unchanged); `scanpro-quality-audit.py` PASS.
+- NOT run here: compile and the unit suite (CI for the push), anything on a device (R71).
+
 ## Latest results (2026-11-18, CI run 183 on `3c06b85`: F191 Files fix and F194 Edit PDF text)
 
 - `:app:compileDebugKotlin` passed (warnings only), so F181–F194 compile. `:app:testDebugUnitTest`: 965 tests, 1 failed (`ImageToolsEngineTest.compressImage_withTargetSize_producesSmallerFile`, F193 by another session, whose test premise it fixed in `c162957`), 82 skipped. Whether `PdfTextEditorTest` ran or was skipped is not in the log (no reports are uploaded for a failed run). Lint, the Play bundle and the APKs did not run. The next run (185, `c162957`) covers them.
