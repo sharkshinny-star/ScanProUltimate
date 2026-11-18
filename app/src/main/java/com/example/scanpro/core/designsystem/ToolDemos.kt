@@ -75,7 +75,7 @@ private val DEMO_SCENES: Map<String, DemoScene> by lazy {
         "redact_box" to RedactAreasScene,
         "flatten" to FlattenScene,
         "header_footer" to HeaderFooterScene,
-    )
+    ) + PAGE_TOOL_SCENES + EDIT_TOOL_SCENES + CONVERT_TOOL_SCENES
 }
 
 /**
