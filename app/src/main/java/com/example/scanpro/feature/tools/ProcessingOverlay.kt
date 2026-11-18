@@ -16,6 +16,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import com.example.scanpro.core.designsystem.ProcessingAnimation
+import com.example.scanpro.core.designsystem.ProcessingDots
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -62,7 +66,9 @@ internal fun ProcessingOverlay(
             contentAlignment = Alignment.Center
         ) {
             Card(
+                // Capped, so on a tablet or in landscape the card stays a dialog rather than a wide banner.
                 modifier = Modifier
+                    .widthIn(max = 360.dp)
                     .fillMaxWidth(0.85f)
                     .padding(24.dp),
                 shape = RoundedCornerShape(20.dp),
@@ -71,30 +77,39 @@ internal fun ProcessingOverlay(
             ) {
                 Column(
                     // Scrolls when a large font or landscape leaves too little height, so Cancel is never cut off.
-                    modifier = Modifier.verticalScroll(rememberScrollState()).padding(24.dp),
+                    // Grows smoothly when a tool starts reporting its count, instead of jumping.
+                    modifier = Modifier.verticalScroll(rememberScrollState()).animateContentSize().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // The processing animation: a ring that fills with the real progress (circling while the tool
                     // cannot tell how long it will take) around a page the scan line keeps passing over.
                     val fraction = if (total > 0) (current.toFloat() / total.toFloat()).coerceIn(0f, 1f) else null
                     ProcessingAnimation(progress = fraction, size = 132.dp)
-                    if (fraction != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            // The real figure, so it always agrees with the "28 / 40" below; only the ring eases.
-                            text = stringResource(R.string.tools_progress_percent, (fraction * 100).toInt()),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    // The same slot holds the dots until a tool reports progress, then the percentage, so the
+                    // title below stays put on every tool, reporting or not.
+                    Box(Modifier.height(36.dp), contentAlignment = Alignment.Center) {
+                        if (fraction != null) {
+                            Text(
+                                // The real figure, so it always agrees with the "28 / 40" below; only the ring eases.
+                                text = stringResource(R.string.tools_progress_percent, (fraction * 100).toInt()),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            ProcessingDots(MaterialTheme.colorScheme.primary)
+                        }
                     }
-                    Spacer(modifier = Modifier.height(if (fraction != null) 8.dp else 18.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     val showSubtitle = !subtitle.isNullOrBlank() && subtitle != title
@@ -105,6 +120,8 @@ internal fun ProcessingOverlay(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
                         )
                     }

@@ -405,7 +405,7 @@ internal fun PdfPageOrganizerSheet(
                     }
                     when {
                         extractsEverything -> OrganizerBanner(stringResource(R.string.tools_extract_all_selected), warning = true)
-                        mode == "organize" -> OrganizerBanner(stringResource(R.string.tools_organizer_drag_hint), warning = false)
+                        mode == "organize" -> ReorderHintBanner(stringResource(R.string.tools_organizer_drag_hint), com.example.scanpro.core.designsystem.DragHintLayout.Grid)
                         mode == "extract" -> OrganizerBanner(stringResource(R.string.tools_organizer_extract_title), warning = false)
                     }
                     ReorderablePageGrid(
@@ -474,6 +474,36 @@ internal fun PdfPageOrganizerSheet(
 }
 
 /** A short line above the pages: how to use the screen, or why the action is not available. */
+/**
+ * The reorder tip with a small demonstration beside it: a finger presses and holds an item, then drags it into
+ * place. Used wherever items are reordered by press and hold (Merge, Organise pages, Images to PDF).
+ */
+@Composable
+internal fun ReorderHintBanner(text: String, layout: com.example.scanpro.core.designsystem.DragHintLayout, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        com.example.scanpro.core.designsystem.DragToReorderHint(
+            layout = layout,
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surface)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
 @Composable
 internal fun OrganizerBanner(text: String, warning: Boolean) {
     Row(

@@ -160,11 +160,10 @@ internal fun MergeEditor(
                 }
             ) { padding ->
                 Column(Modifier.fillMaxSize().padding(padding)) {
-                    Text(
+                    ReorderHintBanner(
                         stringResource(R.string.tools_merge_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        com.example.scanpro.core.designsystem.DragHintLayout.List,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                     )
                     ReorderablePageGrid(
                         items = order.toList(),

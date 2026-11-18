@@ -332,7 +332,7 @@ internal fun ImagesToPdfEditor(
                             }
                         }
                         else -> Column(Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
-                            OrganizerBanner(stringResource(R.string.tools_img2pdf_drag_hint), warning = false)
+                            ReorderHintBanner(stringResource(R.string.tools_img2pdf_drag_hint), com.example.scanpro.core.designsystem.DragHintLayout.Grid)
                             ReorderablePageGrid(
                                 items = order,
                                 key = { it.id },
