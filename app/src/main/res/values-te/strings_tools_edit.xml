@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Edit and secure tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_err_cannot_read">ఈ PDFని చదవలేకపోయాము. దానికి పాస్‌వర్డ్ ఉంటే, ముందుగా దాన్ని అన్‌లాక్ చేయండి.</string>
+    <string name="edit_section_what_happens">ఏమి జరుగుతుంది</string>
+    <string name="edit_section_found">ఈ PDFలో కనిపించినవి</string>
+    <string name="edit_size_mm">%1$d × %2$d మి.మీ</string>
+
+    <string name="edit_recolour_estimate_note">పరిమాణం మొదటి పేజీ నుండి లెక్కించబడింది; ఫోటోలు ఉన్న పేజీలు పెద్దవిగా వస్తాయి.</string>
+
+    <string name="edit_flatten_marked">గుర్తించినవి: పేజీలో భాగమయ్యే పేజీ 1లోని ఫీల్డ్‌లు, వ్యాఖ్యలు.</string>
+    <string name="edit_flatten_fields">ఫారమ్ ఫీల్డ్‌లు</string>
+    <string name="edit_flatten_comments">వ్యాఖ్యలు, స్టాంపులు</string>
+    <string name="edit_flatten_what_happens">సొంత రూపం ఉన్న ఫారమ్ సమాధానాలు, వ్యాఖ్యలు, హైలైట్‌లు, స్టాంపులు పేజీలలోకి గీయబడతాయి, కాబట్టి వాటిని ఫీల్డ్‌లుగా లేదా వ్యాఖ్యలుగా మార్చలేరు. సమాధానాలు చదవగల, ఎంచుకోగల వచనంగానే ఉంటాయి, PDF ఎడిటర్‌తో పేజీ విషయాన్ని ఇంకా మార్చవచ్చు. లింక్‌లు, సొంత రూపం లేని వ్యాఖ్యలు అలాగే ఉంటాయి. ఏదీ దాచబడదు: పదాలను తీసేయడానికి Redact ఉపయోగించండి.</string>
+    <string name="edit_flatten_links">లింక్‌లు (అలాగే ఉంటాయి)</string>
+
+    <string name="edit_crop_section_how">ఎలా కత్తిరించాలి</string>
+    <string name="edit_crop_err_no_margins">కనీసం ఒక వైపు మార్జిన్ సెట్ చేయండి.</string>
+    <string name="edit_crop_err_too_small">ఈ మార్జిన్‌ల తర్వాత మొదటి పేజీలో %1$d మి.మీ కంటే తక్కువ మిగులుతుంది.</string>
+    <string name="edit_crop_size_change">పేజీ 1: %1$s → %2$s</string>
+    <string name="edit_crop_first_blank">పేజీ 1 ఖాళీగా ఉన్నట్లుంది, కాబట్టి అది అలాగే ఉంటుంది. విషయం ఉన్న పేజీలు కత్తిరించబడతాయి.</string>
+    <string name="edit_crop_auto_hint">ఆటో ట్రిమ్ పేజీ 1లో ఏమి ఉంచుతుందో ఫ్రేమ్ చూపిస్తుంది; ప్రతి పేజీకి దాని స్వంత ఫ్రేమ్ ఉంటుంది.</string>
+    <string name="edit_crop_all_sides">అన్ని వైపులా</string>
+    <string name="edit_crop_not_redaction">కత్తిరించడం వల్ల తీసేసిన భాగాలు దాగుతాయి కానీ తొలగిపోవు, కాబట్టి ఎవరైనా దాన్ని తిరిగి చేయవచ్చు. ఏదైనా శాశ్వతంగా తీసేయడానికి Redact ఉపయోగించండి.</string>
+
+    <string name="edit_redact_reading">ప్రతి పేజీలోని వచనం చదువుతోంది…</string>
+    <string name="edit_redact_need_words">నల్లగా చేయాల్సిన పదాలను టైప్ చేయండి.</string>
+    <string name="edit_redact_no_text">ఈ PDFలో వెతకగల వచనం లేదు (ఇది స్కాన్‌లా ఉంది). ముందుగా Make searchable నడపండి, లేదా Redact areas ఉపయోగించండి.</string>
+    <string name="edit_redact_found">%2$sలో %1$s కనిపించాయి</string>
+    <plurals name="edit_redact_matches">
+        <item quantity="one">%1$d సరిపోలిక</item>
+        <item quantity="other">%1$d సరిపోలికలు</item>
+    </plurals>
+    <string name="edit_redact_none_on_first">పేజీ 1లో సరిపోలికలు లేవు; అవి తర్వాతి పేజీల్లో ఉన్నాయి.</string>
+    <string name="edit_redact_search_rules">Match case ఆన్ చేయకపోతే పెద్ద, చిన్న అక్షరాలు, యాక్సెంట్లు పట్టించుకోబడవు. రెండు లైన్లలో విడిపోయిన పదాలు, వ్యాఖ్యలు, ఫారమ్ ఫీల్డ్‌లలోని పదాలు కూడా కనుగొనబడతాయి.</string>
+
+    <string name="edit_redact_box_summary">%2$sలో %1$s</string>
+    <plurals name="edit_redact_box_areas">
+        <item quantity="one">%1$d ప్రాంతం</item>
+        <item quantity="other">%1$d ప్రాంతాలు</item>
+    </plurals>
+
+    <string name="edit_hf_err_empty">హెడర్, ఫుటర్ లేదా రెండూ రాయండి.</string>
+    <string name="edit_hf_err_only_page_skipped">ఈ PDFలో ఒకే పేజీ ఉంది, మొదటి పేజీ వదిలివేయబడుతోంది.</string>
+    <string name="edit_hf_first_skipped">మొదటి పేజీ వదిలివేయబడింది, అది అలాగే ఉంటుంది; మిగతా పేజీలకు వచనం వస్తుంది.</string>
+    <string name="edit_hf_shrunk">వచనం పేజీ వెడల్పు కంటే పొడవుగా ఉంది, కాబట్టి సరిపోయేలా చిన్నది చేయబడింది: %1$d pt.</string>
+    <string name="edit_hf_section_text">వచనం</string>
+    <string name="edit_hf_quick_footer">ఫుటర్ కోసం పేజీ సంఖ్యలు</string>
+    <string name="edit_hf_quick_page_of">పేజీ {page} / {total}</string>
+    <string name="edit_hf_section_look">స్థానం, పరిమాణం</string>
+    <string name="edit_hf_size_small">చిన్నది</string>
+    <string name="edit_hf_size_medium">మధ్యస్థం</string>
+    <string name="edit_hf_size_large">పెద్దది</string>
+
+    <plurals name="edit_wm_pages">
+        <item quantity="one">%2$d పేజీలో %1$dపై వాటర్‌మార్క్</item>
+        <item quantity="other">%2$d పేజీలలో %1$dపై వాటర్‌మార్క్</item>
+    </plurals>
+
+    <string name="edit_protect_what_happens">ఫైల్ AES-256తో ఎన్‌క్రిప్ట్ అవుతుంది. పాస్‌వర్డ్ ఉన్నవారు దాన్ని తెరవచ్చు, ప్రింట్ చేయవచ్చు, కాపీ చేయవచ్చు, మార్చవచ్చు; అది లేకుండా ఎవరూ తెరవలేరు. పాస్‌వర్డ్‌ను జాగ్రత్తగా ఉంచండి: దాన్ని తిరిగి పొందలేము.</string>
+    <string name="edit_protect_strength">బలం: %1$s (సుమారు %2$d బిట్‌లు)</string>
+    <string name="edit_protect_strength_weak">బలహీనం</string>
+    <string name="edit_protect_strength_fair">పరవాలేదు</string>
+    <string name="edit_protect_strength_good">మంచిది</string>
+    <string name="edit_protect_strength_strong">బలమైనది</string>
+
+    <string name="edit_sign_summary">%2$sలో %1$s</string>
+    <plurals name="edit_sign_stamps">
+        <item quantity="one">%1$d సంతకం లేదా వచనం</item>
+        <item quantity="other">%1$d సంతకాలు లేదా వచనాలు</item>
+    </plurals>
+</resources>

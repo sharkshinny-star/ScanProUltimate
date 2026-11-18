@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Edit and secure tools (F194). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_err_cannot_read">यह PDF पढ़ी नहीं जा सकती। अगर इसमें पासवर्ड है, तो पहले उसे अनलॉक करें।</string>
+    <string name="edit_section_what_happens">क्या होगा</string>
+    <string name="edit_section_found">इस PDF में मिला</string>
+    <string name="edit_size_mm">%1$d × %2$d मिमी</string>
+
+    <string name="edit_recolour_estimate_note">साइज़ पहले पेज से अनुमानित है; फ़ोटो वाले पेज बड़े बनते हैं।</string>
+
+    <string name="edit_flatten_marked">निशान लगे हिस्से: पेज 1 के फ़ील्ड और टिप्पणियाँ, जो पेज का हिस्सा बन जाएँगी।</string>
+    <string name="edit_flatten_fields">फ़ॉर्म फ़ील्ड</string>
+    <string name="edit_flatten_comments">टिप्पणियाँ और स्टैम्प</string>
+    <string name="edit_flatten_what_happens">जिन फ़ॉर्म उत्तरों, टिप्पणियों, हाइलाइट और स्टैम्प का अपना रूप है, वे पेजों में बना दिए जाते हैं, इसलिए उन्हें फ़ील्ड या टिप्पणी की तरह बदला नहीं जा सकता। उत्तर पढ़ने और चुनने लायक टेक्स्ट बने रहते हैं, और PDF एडिटर से पेज की सामग्री अब भी बदली जा सकती है। लिंक, और बिना अपने रूप वाली टिप्पणियाँ, जैसी हैं वैसी रहती हैं। कुछ छिपाया नहीं जाता: शब्द हटाने के लिए Redact का उपयोग करें।</string>
+    <string name="edit_flatten_links">लिंक (बने रहेंगे)</string>
+
+    <string name="edit_crop_section_how">कैसे क्रॉप करें</string>
+    <string name="edit_crop_err_no_margins">कम से कम एक तरफ़ हाशिया सेट करें।</string>
+    <string name="edit_crop_err_too_small">इन हाशियों के बाद पहले पेज का %1$d मिमी से कम हिस्सा बचता है।</string>
+    <string name="edit_crop_size_change">पेज 1: %1$s → %2$s</string>
+    <string name="edit_crop_first_blank">पेज 1 खाली लगता है, इसलिए वह जैसा है वैसा रहेगा। सामग्री वाले पेज ट्रिम होंगे।</string>
+    <string name="edit_crop_auto_hint">फ़्रेम दिखाता है कि ऑटो ट्रिम पेज 1 का कितना हिस्सा रखेगा; हर पेज का अपना फ़्रेम बनता है।</string>
+    <string name="edit_crop_all_sides">सभी तरफ़</string>
+    <string name="edit_crop_not_redaction">क्रॉप करने से कटे हिस्से छिपते हैं, मिटते नहीं, इसलिए कोई भी इसे वापस कर सकता है। कुछ हमेशा के लिए हटाने के लिए Redact का उपयोग करें।</string>
+
+    <string name="edit_redact_reading">हर पेज का टेक्स्ट पढ़ा जा रहा है…</string>
+    <string name="edit_redact_need_words">काले करने वाले शब्द लिखें।</string>
+    <string name="edit_redact_no_text">इस PDF में खोजने लायक टेक्स्ट नहीं है (यह स्कैन लगता है)। पहले Make searchable चलाएँ, या Redact areas का उपयोग करें।</string>
+    <string name="edit_redact_found">%2$s पर %1$s मिले</string>
+    <plurals name="edit_redact_matches">
+        <item quantity="one">%1$d मिलान</item>
+        <item quantity="other">%1$d मिलान</item>
+    </plurals>
+    <string name="edit_redact_none_on_first">पेज 1 पर कोई मिलान नहीं; मिलान बाद के पेजों पर हैं।</string>
+    <string name="edit_redact_search_rules">Match case चालू न हो तो बड़े-छोटे अक्षर और एक्सेंट नहीं देखे जाते। दो पंक्तियों में बँटे शब्द, और टिप्पणियों व फ़ॉर्म फ़ील्ड के शब्द भी मिलते हैं।</string>
+
+    <string name="edit_redact_box_summary">%2$s पर %1$s</string>
+    <plurals name="edit_redact_box_areas">
+        <item quantity="one">%1$d हिस्सा</item>
+        <item quantity="other">%1$d हिस्से</item>
+    </plurals>
+
+    <string name="edit_hf_err_empty">हेडर, फ़ुटर या दोनों लिखें।</string>
+    <string name="edit_hf_err_only_page_skipped">इस PDF में एक ही पेज है, और पहला पेज छोड़ा जा रहा है।</string>
+    <string name="edit_hf_first_skipped">पहला पेज छोड़ा गया है, वह जैसा है वैसा रहेगा; बाकी पेजों पर टेक्स्ट आएगा।</string>
+    <string name="edit_hf_shrunk">टेक्स्ट पेज की चौड़ाई से लंबा है, इसलिए उसे छोटा किया गया है: %1$d pt।</string>
+    <string name="edit_hf_section_text">टेक्स्ट</string>
+    <string name="edit_hf_quick_footer">फ़ुटर के लिए पेज नंबर</string>
+    <string name="edit_hf_quick_page_of">पेज {page} / {total}</string>
+    <string name="edit_hf_section_look">जगह और साइज़</string>
+    <string name="edit_hf_size_small">छोटा</string>
+    <string name="edit_hf_size_medium">मध्यम</string>
+    <string name="edit_hf_size_large">बड़ा</string>
+
+    <plurals name="edit_wm_pages">
+        <item quantity="one">%2$d में से %1$d पेज पर वॉटरमार्क</item>
+        <item quantity="other">%2$d में से %1$d पेजों पर वॉटरमार्क</item>
+    </plurals>
+
+    <string name="edit_protect_what_happens">फ़ाइल AES-256 से एन्क्रिप्ट होती है। जिसके पास पासवर्ड है वह इसे खोल, प्रिंट, कॉपी और बदल सकता है; उसके बिना कोई इसे नहीं खोल सकता। पासवर्ड संभालकर रखें: इसे वापस नहीं पाया जा सकता।</string>
+    <string name="edit_protect_strength">मज़बूती: %1$s (लगभग %2$d बिट)</string>
+    <string name="edit_protect_strength_weak">कमज़ोर</string>
+    <string name="edit_protect_strength_fair">ठीक</string>
+    <string name="edit_protect_strength_good">अच्छा</string>
+    <string name="edit_protect_strength_strong">मज़बूत</string>
+
+    <string name="edit_sign_summary">%2$s पर %1$s</string>
+    <plurals name="edit_sign_stamps">
+        <item quantity="one">%1$d हस्ताक्षर या टेक्स्ट</item>
+        <item quantity="other">%1$d हस्ताक्षर या टेक्स्ट</item>
+    </plurals>
+</resources>
