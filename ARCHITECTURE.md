@@ -31,7 +31,7 @@ The app follows the layered, package-by-feature structure recommended in Android
   share effects).
 - **ViewModels**: `AppViewModel` (activity: theme, lock, imports, app-wide events), `LibraryViewModel`,
   `DocumentViewModel` (document id from `SavedStateHandle`), `TrashViewModel`, `SettingsViewModel`.
-- **`core/`**: `designsystem` (theme, shared components; `LoadingAnimations.kt` holds the only loading/processing indicators to use: `FileLoadingAnimation`, `ProcessingAnimation`, `LoadingShimmer`, `ScanBeamProgressBar`, `ProcessingDots`, Canvas-drawn, no animation library), `ui` (share/format helpers), `operations`
+- **`core/`**: `designsystem` (theme, shared components; `InkColourPicker.kt` is the shared ink swatch row and hexagon colour picker (`InkColourRow`); `LoadingAnimations.kt` holds the only loading/processing indicators to use: `FileLoadingAnimation`, `ProcessingAnimation`, `LoadingShimmer`, `ScanBeamProgressBar`, `ProcessingDots`, Canvas-drawn, no animation library), `ui` (share/format helpers), `operations`
   (`OperationRunner` runs one long document job at a time on an application-scoped coroutine, so jobs
   survive leaving the screen, and publishes progress, messages and exports), `di` (Hilt modules).
 - **Data layer (`data/`)**: `DocumentLibrary` exposes the active, trash and storage flows every screen

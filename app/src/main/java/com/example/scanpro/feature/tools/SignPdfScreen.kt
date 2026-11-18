@@ -416,22 +416,11 @@ private fun SignTextDialog(onDismiss: () -> Unit, onConfirm: (String, Color, Typ
                     label = { Text(stringResource(R.string.sign_text_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    com.example.scanpro.feature.document.InkColors.forEach { (nameRes, c) ->
-                        val chosen = color == c
-                        Box(
-                            Modifier
-                                .padding(end = 8.dp)
-                                .size(28.dp)
-                                .background(c, androidx.compose.foundation.shape.CircleShape)
-                                .border(if (chosen) 3.dp else 1.dp, if (chosen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.CircleShape)
-                                .clickable { color = c }
-                        )
-                    }
-                }
+                com.example.scanpro.core.designsystem.InkColourRow(
+                    presets = com.example.scanpro.feature.document.InkColors,
+                    selected = color,
+                    onSelect = { color = it }
+                )
                 androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(fonts) { (name, tf) ->
                         androidx.compose.material3.FilterChip(
