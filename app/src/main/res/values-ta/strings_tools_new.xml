@@ -93,4 +93,45 @@
     <string name="hint_tool_flatten">படிவப் பதில்கள், கருத்துகள், முத்திரைகளைப் பக்கங்களிலேயே வரையவும், யாரும் மாற்ற முடியாதபடி.</string>
     <string name="hint_tool_extract_images">PDF-இல் உள்ள ஒவ்வொரு படத்தையும் தனிப் படக் கோப்பாகச் சேமிக்கவும்.</string>
     <string name="hint_tool_pdf_info">PDF-இன் மறைந்த விவரங்களைப் பார்க்கவும், தலைப்பு அல்லது ஆசிரியரைத் திருத்தவும், அல்லது தனியுரிமைக்காக அனைத்தையும் அகற்றவும்.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF பக்கங்களை வெட்டு</string>
+    <string name="tools_tile_crop_pdf">பக்க வெட்டு</string>
+    <string name="tools_desc_crop_pdf">ஓரங்களை அல்லது வெற்றிடத்தை நீக்கு</string>
+    <string name="hint_tool_crop_pdf">ஒவ்வொரு பக்கத்தின் ஓரங்களையும் வெட்டுங்கள்: உள்ளடக்கத்தைச் சுற்றி தானாக, அல்லது மில்லிமீட்டரில். உரை அடுக்கு அப்படியே இருக்கும்.</string>
+    <string name="tools_crop_pdf_body">தானியங்கி ஒவ்வொரு பக்கத்தையும் உள்ளடக்கத்தைச் சுற்றி சிறிது இடைவெளியுடன் வெட்டுகிறது; ஓரங்கள் நீங்கள் அமைத்த அளவை ஒவ்வொரு பக்கத்திலிருந்தும் காட்டப்படும் விதத்தில் வெட்டுகிறது. எதுவும் நீக்கப்படவில்லை, எனவே பின்னர் பழுதுநீக்கம் மூலம் பக்கங்களை மீட்கலாம்.</string>
+    <string name="tools_crop_pdf_mode_auto">தானாக வெட்டு</string>
+    <string name="tools_crop_pdf_mode_margins">ஓரங்கள்</string>
+    <string name="tools_crop_pdf_padding">உள்ளடக்கத்தைச் சுற்றிய இடைவெளி</string>
+    <string name="tools_crop_pdf_top">மேல்</string>
+    <string name="tools_crop_pdf_bottom">கீழ்</string>
+    <string name="tools_crop_pdf_left">இடது</string>
+    <string name="tools_crop_pdf_right">வலது</string>
+    <string name="tools_crop_pdf_mm">%1$d மிமீ</string>
+    <string name="tools_crop_pdf_action">பக்கங்களை வெட்டு</string>
+    <string name="tools_crop_pdf_progress">பக்கங்கள் வெட்டப்படுகின்றன…</string>
+    <string name="tools_crop_pdf_err_failed">இந்த PDF-ஐ வெட்ட முடியவில்லை.</string>
+    <string name="tools_crop_pdf_err_nothing">வெட்ட ஒன்றுமில்லை: ஒவ்வொரு பக்கமும் ஏற்கனவே இறுக்கமாக உள்ளது, அல்லது வெட்டினால் மிகக் குறைவே மீதமிருக்கும்.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d பக்கம் வெட்டப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்கள் வெட்டப்பட்டன</item>
+    </plurals>
+    <string name="tools_card_redact">உரையை மறை</string>
+    <string name="tools_tile_redact">மறை</string>
+    <string name="tools_desc_redact">சொற்களை நிரந்தரமாகக் கறுப்பாக்கு</string>
+    <string name="hint_tool_redact">பெயர்கள், எண்கள் அல்லது எந்தச் சொற்களையும் எங்கு இருந்தாலும் கறுப்பாக்குங்கள். பொருந்திய பக்கங்கள் படங்களாகின்றன, எனவே சொற்கள் உண்மையிலேயே நீங்கும், மூடப்படுவதில்லை.</string>
+    <string name="tools_redact_body">ஒவ்வொரு பொருத்தமும் கறுப்பாக வரையப்பட்டு, பொருத்தம் உள்ள ஒவ்வொரு பக்கமும் படமாக மீண்டும் வரையப்படுகிறது, எனவே உரையை மீட்க முடியாது. பொருத்தம் இல்லாத பக்கங்கள் தங்கள் உரையை வைத்திருக்கும். உரை மீண்டும் வேண்டுமெனில் பிறகு “தேடக்கூடியதாக்கு”-ஐப் பயன்படுத்தவும்.</string>
+    <string name="tools_redact_terms_label">கறுப்பாக்க வேண்டிய சொற்கள்</string>
+    <string name="tools_redact_terms_hint">வரிக்கு ஒன்று, அல்லது காற்புள்ளியால் பிரித்து</string>
+    <string name="tools_redact_match_case">பெரிய, சிறிய எழுத்துகளைப் பொருத்து</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d சொல் தேடப்படும்</item>
+        <item quantity="other">%1$d சொற்கள் தேடப்படும்</item>
+    </plurals>
+    <string name="tools_redact_action">மறை</string>
+    <string name="tools_redact_progress">மறைக்கப்படுகிறது…</string>
+    <string name="tools_redact_progress_searching">சொற்கள் தேடப்படுகின்றன…</string>
+    <string name="tools_redact_err_failed">இந்த PDF-ஐ மறைக்க முடியவில்லை.</string>
+    <string name="tools_redact_err_no_matches">இந்தச் சொற்கள் எதுவும் இந்த PDF-இன் உரையில் இல்லை. ஸ்கேன் செய்த பக்கத்திற்கு முதலில் “தேடக்கூடியதாக்கு” தேவை.</string>
+    <string name="tools_redact_done">%2$d பக்கங்களில் %1$d பொருத்தங்கள் கறுப்பாக்கப்பட்டன</string>
 </resources>

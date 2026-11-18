@@ -93,4 +93,45 @@
     <string name="hint_tool_flatten">फ़ॉर्म के जवाब, टिप्पणियाँ और स्टैम्प पेजों में बना दें, ताकि कोई उन्हें बदल न सके।</string>
     <string name="hint_tool_extract_images">PDF के अंदर की हर तस्वीर को अलग इमेज फ़ाइल के रूप में सहेजें।</string>
     <string name="hint_tool_pdf_info">PDF की छिपी जानकारी देखें, शीर्षक या लेखक बदलें, या निजता के लिए सब हटा दें।</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF पेज क्रॉप करें</string>
+    <string name="tools_tile_crop_pdf">पेज क्रॉप</string>
+    <string name="tools_desc_crop_pdf">हाशिये या खाली जगह काटें</string>
+    <string name="hint_tool_crop_pdf">हर पेज के हाशिये काटें: अपने आप सामग्री के चारों ओर, या मिलीमीटर में। टेक्स्ट परत बनी रहती है।</string>
+    <string name="tools_crop_pdf_body">ऑटो हर पेज को उसकी सामग्री के चारों ओर थोड़ी जगह छोड़कर काटता है; हाशिये में आप हर पेज से तय मात्रा काटते हैं, जैसा वह दिखता है। कुछ भी मिटाया नहीं जाता, इसलिए बाद में रिपेयर से पेज वापस पूरे किए जा सकते हैं।</string>
+    <string name="tools_crop_pdf_mode_auto">ऑटो ट्रिम</string>
+    <string name="tools_crop_pdf_mode_margins">हाशिये</string>
+    <string name="tools_crop_pdf_padding">सामग्री के चारों ओर जगह</string>
+    <string name="tools_crop_pdf_top">ऊपर</string>
+    <string name="tools_crop_pdf_bottom">नीचे</string>
+    <string name="tools_crop_pdf_left">बाएँ</string>
+    <string name="tools_crop_pdf_right">दाएँ</string>
+    <string name="tools_crop_pdf_mm">%1$d मिमी</string>
+    <string name="tools_crop_pdf_action">पेज क्रॉप करें</string>
+    <string name="tools_crop_pdf_progress">पेज क्रॉप हो रहे हैं…</string>
+    <string name="tools_crop_pdf_err_failed">यह PDF क्रॉप नहीं हो सकी।</string>
+    <string name="tools_crop_pdf_err_nothing">क्रॉप करने को कुछ नहीं: हर पेज पहले से ही जितना कसा हो सकता है उतना है, या क्रॉप से उसका बहुत कम हिस्सा बचता।</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d पेज क्रॉप किया</item>
+        <item quantity="other">%1$d पेज क्रॉप किए</item>
+    </plurals>
+    <string name="tools_card_redact">टेक्स्ट रिडैक्ट करें</string>
+    <string name="tools_tile_redact">रिडैक्ट</string>
+    <string name="tools_desc_redact">शब्दों को हमेशा के लिए काला करें</string>
+    <string name="hint_tool_redact">नाम, नंबर या कोई भी शब्द जहाँ भी हों, काले कर दें। मेल वाले पेज चित्र बन जाते हैं, इसलिए शब्द सचमुच हट जाते हैं, सिर्फ़ ढके नहीं जाते।</string>
+    <string name="tools_redact_body">हर मेल काला रंग दिया जाता है और मेल वाला हर पेज चित्र के रूप में फिर बनाया जाता है, ताकि टेक्स्ट वापस न मिल सके। बिना मेल वाले पेज अपना टेक्स्ट रखते हैं। टेक्स्ट फिर चाहिए तो बाद में “खोजने योग्य बनाएँ” चलाएँ।</string>
+    <string name="tools_redact_terms_label">काले करने वाले शब्द</string>
+    <string name="tools_redact_terms_hint">एक प्रति पंक्ति, या अल्पविराम से अलग</string>
+    <string name="tools_redact_match_case">बड़े-छोटे अक्षर मिलाएँ</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d शब्द खोजा जाएगा</item>
+        <item quantity="other">%1$d शब्द खोजे जाएँगे</item>
+    </plurals>
+    <string name="tools_redact_action">रिडैक्ट करें</string>
+    <string name="tools_redact_progress">रिडैक्ट हो रहा है…</string>
+    <string name="tools_redact_progress_searching">शब्द खोजे जा रहे हैं…</string>
+    <string name="tools_redact_err_failed">यह PDF रिडैक्ट नहीं हो सकी।</string>
+    <string name="tools_redact_err_no_matches">इनमें से कोई शब्द इस PDF के टेक्स्ट में नहीं मिला। स्कैन किए पेज को पहले “खोजने योग्य बनाएँ” चाहिए।</string>
+    <string name="tools_redact_done">%2$d पेजों पर %1$d मेल काले किए</string>
 </resources>

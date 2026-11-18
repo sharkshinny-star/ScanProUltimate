@@ -93,4 +93,45 @@
     <string name="hint_tool_flatten">ಫಾರ್ಮ್ ಉತ್ತರಗಳು, ಕಾಮೆಂಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳನ್ನು ಪುಟಗಳಲ್ಲೇ ಚಿತ್ರಿಸಿ, ಯಾರೂ ಬದಲಿಸಲಾಗದಂತೆ.</string>
     <string name="hint_tool_extract_images">PDF ಒಳಗಿನ ಪ್ರತಿ ಚಿತ್ರವನ್ನು ಪ್ರತ್ಯೇಕ ಚಿತ್ರ ಫೈಲ್ ಆಗಿ ಉಳಿಸಿ.</string>
     <string name="hint_tool_pdf_info">PDF ನ ಮರೆಯಾದ ವಿವರಗಳನ್ನು ನೋಡಿ, ಶೀರ್ಷಿಕೆ ಅಥವಾ ಲೇಖಕರನ್ನು ಬದಲಿಸಿ, ಅಥವಾ ಗೌಪ್ಯತೆಗಾಗಿ ಎಲ್ಲವನ್ನೂ ತೆಗೆದುಹಾಕಿ.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಿ</string>
+    <string name="tools_tile_crop_pdf">ಪುಟ ಕತ್ತರಿಸು</string>
+    <string name="tools_desc_crop_pdf">ಅಂಚುಗಳು ಅಥವಾ ಖಾಲಿ ಜಾಗ ತೆಗೆಯಿರಿ</string>
+    <string name="hint_tool_crop_pdf">ಪ್ರತಿ ಪುಟದ ಅಂಚುಗಳನ್ನು ಕತ್ತರಿಸಿ: ವಿಷಯದ ಸುತ್ತ ತಾನಾಗಿ, ಅಥವಾ ಮಿಲಿಮೀಟರ್‌ನಲ್ಲಿ. ಪಠ್ಯ ಪದರ ಉಳಿಯುತ್ತದೆ.</string>
+    <string name="tools_crop_pdf_body">ಸ್ವಯಂ ಪ್ರತಿ ಪುಟವನ್ನು ವಿಷಯದ ಸುತ್ತ ಸ್ವಲ್ಪ ಜಾಗ ಬಿಟ್ಟು ಕತ್ತರಿಸುತ್ತದೆ; ಅಂಚುಗಳು ನೀವು ನಿಗದಿಪಡಿಸಿದ ಪ್ರಮಾಣವನ್ನು ಪ್ರತಿ ಪುಟದಿಂದ ತೋರಿಸಿದಂತೆ ಕತ್ತರಿಸುತ್ತದೆ. ಏನನ್ನೂ ಅಳಿಸಲಾಗುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ನಂತರ ದುರಸ್ತಿ ಮೂಲಕ ಪುಟಗಳನ್ನು ಮರಳಿ ಪಡೆಯಬಹುದು.</string>
+    <string name="tools_crop_pdf_mode_auto">ಸ್ವಯಂ ಕತ್ತರಿಸು</string>
+    <string name="tools_crop_pdf_mode_margins">ಅಂಚುಗಳು</string>
+    <string name="tools_crop_pdf_padding">ವಿಷಯದ ಸುತ್ತ ಜಾಗ</string>
+    <string name="tools_crop_pdf_top">ಮೇಲೆ</string>
+    <string name="tools_crop_pdf_bottom">ಕೆಳಗೆ</string>
+    <string name="tools_crop_pdf_left">ಎಡ</string>
+    <string name="tools_crop_pdf_right">ಬಲ</string>
+    <string name="tools_crop_pdf_mm">%1$d ಮಿಮೀ</string>
+    <string name="tools_crop_pdf_action">ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಿ</string>
+    <string name="tools_crop_pdf_progress">ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_crop_pdf_err_failed">ಈ PDF ಅನ್ನು ಕತ್ತರಿಸಲಾಗಲಿಲ್ಲ.</string>
+    <string name="tools_crop_pdf_err_nothing">ಕತ್ತರಿಸಲು ಏನೂ ಇಲ್ಲ: ಪ್ರತಿ ಪುಟವೂ ಈಗಾಗಲೇ ಸಾಧ್ಯವಾದಷ್ಟು ಬಿಗಿಯಾಗಿದೆ, ಅಥವಾ ಕತ್ತರಿಸಿದರೆ ಬಹಳ ಕಡಿಮೆ ಉಳಿಯುತ್ತದೆ.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d ಪುಟ ಕತ್ತರಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಲಾಗಿದೆ</item>
+    </plurals>
+    <string name="tools_card_redact">ಪಠ್ಯ ಮರೆಮಾಡಿ</string>
+    <string name="tools_tile_redact">ಮರೆಮಾಡು</string>
+    <string name="tools_desc_redact">ಪದಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ಕಪ್ಪಾಗಿಸಿ</string>
+    <string name="hint_tool_redact">ಹೆಸರುಗಳು, ಸಂಖ್ಯೆಗಳು ಅಥವಾ ಯಾವುದೇ ಪದಗಳನ್ನು ಎಲ್ಲಿದ್ದರೂ ಕಪ್ಪಾಗಿಸಿ. ಹೊಂದಿಕೆಯಾದ ಪುಟಗಳು ಚಿತ್ರಗಳಾಗುತ್ತವೆ, ಆದ್ದರಿಂದ ಪದಗಳು ನಿಜವಾಗಿಯೂ ಹೋಗುತ್ತವೆ, ಕೇವಲ ಮುಚ್ಚಲ್ಪಡುವುದಿಲ್ಲ.</string>
+    <string name="tools_redact_body">ಪ್ರತಿ ಹೊಂದಿಕೆಯನ್ನು ಕಪ್ಪಾಗಿ ಬಣ್ಣಿಸಲಾಗುತ್ತದೆ ಮತ್ತು ಹೊಂದಿಕೆ ಇರುವ ಪ್ರತಿ ಪುಟವನ್ನು ಚಿತ್ರವಾಗಿ ಮರುರಚಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಪಠ್ಯವನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗದು. ಹೊಂದಿಕೆ ಇಲ್ಲದ ಪುಟಗಳು ತಮ್ಮ ಪಠ್ಯ ಉಳಿಸಿಕೊಳ್ಳುತ್ತವೆ. ಪಠ್ಯ ಮತ್ತೆ ಬೇಕಿದ್ದರೆ ನಂತರ “ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ” ಬಳಸಿ.</string>
+    <string name="tools_redact_terms_label">ಕಪ್ಪಾಗಿಸಬೇಕಾದ ಪದಗಳು</string>
+    <string name="tools_redact_terms_hint">ಸಾಲಿಗೆ ಒಂದು, ಅಥವಾ ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ</string>
+    <string name="tools_redact_match_case">ದೊಡ್ಡ ಮತ್ತು ಸಣ್ಣ ಅಕ್ಷರ ಹೊಂದಿಸಿ</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d ಪದವನ್ನು ಹುಡುಕಲಾಗುವುದು</item>
+        <item quantity="other">%1$d ಪದಗಳನ್ನು ಹುಡುಕಲಾಗುವುದು</item>
+    </plurals>
+    <string name="tools_redact_action">ಮರೆಮಾಡಿ</string>
+    <string name="tools_redact_progress">ಮರೆಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_redact_progress_searching">ಪದಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_redact_err_failed">ಈ PDF ಅನ್ನು ಮರೆಮಾಡಲಾಗಲಿಲ್ಲ.</string>
+    <string name="tools_redact_err_no_matches">ಈ ಪದಗಳಲ್ಲಿ ಯಾವುದೂ ಈ PDF ಪಠ್ಯದಲ್ಲಿ ಸಿಗಲಿಲ್ಲ. ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟಕ್ಕೆ ಮೊದಲು “ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ” ಬೇಕು.</string>
+    <string name="tools_redact_done">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಹೊಂದಿಕೆಗಳನ್ನು ಕಪ್ಪಾಗಿಸಲಾಗಿದೆ</string>
 </resources>

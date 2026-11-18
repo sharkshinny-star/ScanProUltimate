@@ -710,9 +710,9 @@ object PdfToolsEngine {
             if (PdfSecurity.protection(tempFile) == PdfProtection.PASSWORD_REQUIRED) {
                 userError(R.string.tools_err_already_protected)
             }
-            PdfSecurity.protect(tempFile, outputFile, password)
-            var pageCount = 0
-            PDDocument.load(outputFile, password).use { pageCount = it.numberOfPages }
+            // The page count comes back from the write itself: reopening and parsing the finished file just to count
+            // its pages used to cost a second full read of a large PDF (F172).
+            val pageCount = PdfSecurity.protect(tempFile, outputFile, password)
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = pageCount,
@@ -735,9 +735,7 @@ object PdfToolsEngine {
         try {
             val originalSize = tempFile.length()
             val before = PdfSecurity.protection(tempFile)
-            PdfSecurity.unlock(tempFile, outputFile, password)
-            var pageCount = 0
-            PDDocument.load(outputFile).use { pageCount = it.numberOfPages }
+            val pageCount = PdfSecurity.unlock(tempFile, outputFile, password)
             return@withContext PdfToolResult(
                 outputFile = outputFile,
                 pageCount = pageCount,

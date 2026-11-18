@@ -41,6 +41,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-18, F172 Crop PDF pages and Redact text, Linux cloud container)
+
+- `:app:testDebugUnitTest` 916 tests (9 new in `PdfCropRedactToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,814,231 bytes (47.5 MiB, +40 KB), unsigned as configured.
+- NOT run: anything on a device (the two new tools' dialogs and the PdfRenderer paths of Crop and Redact have only their seam-level unit tests; R7), sideload `assembleRelease`, instrumented tests.
+
 ## Latest results (2026-11-18, F171 enhancement benchmark and filter fixes, Linux cloud container)
 
 - Enhancement benchmark (`scripts/scan-bench`, `gradle -q run --args="enhance"`; the app's `MatFilters.kt` compiled unchanged): COLOR halo around strokes 19–22 → 3.8–4.7 grey levels, background spread 19–21 → 5.4–7.7, blown paper 38–40% → under 1%, colour-patch dE 28–30 → 9.7–15.0 (warm cast 27.5 → 10.5); GRAY halo 22–23 → 1.0–2.0, blown 38% → 0.5%; WHITEBOARD dE roughly halved; AUTO and BW byte-identical paths. Faint pencil/highlighter retention on GRAY 67–88% (the old 70–106% rode on the glow defect).

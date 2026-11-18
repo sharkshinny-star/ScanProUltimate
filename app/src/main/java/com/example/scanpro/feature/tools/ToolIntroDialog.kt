@@ -51,6 +51,8 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "blank_pages" -> ToolIntro(R.string.hint_tool_blank_pages, HintInput.Pdf)
     "greyscale" -> ToolIntro(R.string.hint_tool_greyscale, HintInput.Pdf)
     "flatten" -> ToolIntro(R.string.hint_tool_flatten, HintInput.Pdf)
+    "crop_pdf" -> ToolIntro(R.string.hint_tool_crop_pdf, HintInput.Pdf)
+    "redact" -> ToolIntro(R.string.hint_tool_redact, HintInput.Pdf)
     "extract_images" -> ToolIntro(R.string.hint_tool_extract_images, HintInput.Pdf)
     "pdf_info" -> ToolIntro(R.string.hint_tool_pdf_info, HintInput.Pdf)
     else -> null

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.getValue
@@ -85,6 +86,8 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("blank_pages", R.string.tools_card_blank_pages, Icons.Default.DeleteSweep, TileTone.Sky, label = R.string.tools_tile_blank_pages),
             PdfToolCard("greyscale", R.string.tools_card_greyscale, Icons.Default.Contrast, TileTone.Slate, label = R.string.tools_tile_greyscale),
             PdfToolCard("flatten", R.string.tools_card_flatten, Icons.Default.Layers, TileTone.Violet, label = R.string.tools_tile_flatten),
+            PdfToolCard("crop_pdf", R.string.tools_card_crop_pdf, Icons.Default.Crop, TileTone.Sky, label = R.string.tools_tile_crop_pdf),
+            PdfToolCard("redact", R.string.tools_card_redact, Icons.Default.VisibilityOff, TileTone.Rose, label = R.string.tools_tile_redact),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
             PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark),
             PdfToolCard("sign", R.string.tools_card_sign, Icons.Default.Draw, TileTone.Violet)

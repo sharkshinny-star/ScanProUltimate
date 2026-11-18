@@ -859,6 +859,16 @@ class PdfToolsViewModel @Inject constructor(
         com.example.scanpro.imaging.PdfCleanupTools.greyscale(context, uri, named(uri, "greyscale"), ::report)
     }
 
+    fun cropPdf(uri: Uri, options: com.example.scanpro.imaging.PdfCropTools.CropOptions) =
+        launchTool(R.string.tools_crop_pdf_progress, R.string.tools_crop_pdf_err_failed) {
+            com.example.scanpro.imaging.PdfCropTools.cropPdf(context, uri, options, named(uri, "cropped"), ::report)
+        }
+
+    fun redact(uri: Uri, terms: List<String>, matchCase: Boolean) =
+        launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
+            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, named(uri, "redacted"), ::report)
+        }
+
     fun flatten(uri: Uri) = launchTool(R.string.tools_flatten_progress, R.string.tools_flatten_err_failed) {
         com.example.scanpro.imaging.PdfCleanupTools.flatten(context, uri, named(uri, "flattened"), ::report)
     }

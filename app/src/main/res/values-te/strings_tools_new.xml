@@ -93,4 +93,45 @@
     <string name="hint_tool_flatten">ఫారమ్ సమాధానాలు, వ్యాఖ్యలు, స్టాంప్‌లను పేజీల్లోనే గీయండి, ఎవరూ మార్చలేనట్లుగా.</string>
     <string name="hint_tool_extract_images">PDF లోపలి ప్రతి చిత్రాన్ని ప్రత్యేక చిత్ర ఫైల్‌గా సేవ్ చేయండి.</string>
     <string name="hint_tool_pdf_info">PDF దాచిన వివరాలను చూడండి, శీర్షిక లేదా రచయితను మార్చండి, లేదా గోప్యత కోసం అన్నీ తీసివేయండి.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF పేజీలను క్రాప్ చేయండి</string>
+    <string name="tools_tile_crop_pdf">పేజీ క్రాప్</string>
+    <string name="tools_desc_crop_pdf">మార్జిన్లు లేదా ఖాళీ స్థలం తీసేయండి</string>
+    <string name="hint_tool_crop_pdf">ప్రతి పేజీ మార్జిన్లను కత్తిరించండి: కంటెంట్ చుట్టూ ఆటోమేటిక్‌గా, లేదా మిల్లీమీటర్లలో. టెక్స్ట్ లేయర్ అలాగే ఉంటుంది.</string>
+    <string name="tools_crop_pdf_body">ఆటో ప్రతి పేజీని కంటెంట్ చుట్టూ కొంత ఖాళీతో కత్తిరిస్తుంది; మార్జిన్లు మీరు సెట్ చేసిన మొత్తాన్ని ప్రతి పేజీ నుండి చూపించినట్లుగా కత్తిరిస్తుంది. ఏదీ తొలగించబడదు, కాబట్టి తర్వాత రిపేర్‌తో పేజీలను తిరిగి పొందవచ్చు.</string>
+    <string name="tools_crop_pdf_mode_auto">ఆటో ట్రిమ్</string>
+    <string name="tools_crop_pdf_mode_margins">మార్జిన్లు</string>
+    <string name="tools_crop_pdf_padding">కంటెంట్ చుట్టూ ఖాళీ</string>
+    <string name="tools_crop_pdf_top">పైన</string>
+    <string name="tools_crop_pdf_bottom">కింద</string>
+    <string name="tools_crop_pdf_left">ఎడమ</string>
+    <string name="tools_crop_pdf_right">కుడి</string>
+    <string name="tools_crop_pdf_mm">%1$d మిమీ</string>
+    <string name="tools_crop_pdf_action">పేజీలను క్రాప్ చేయండి</string>
+    <string name="tools_crop_pdf_progress">పేజీలు క్రాప్ అవుతున్నాయి…</string>
+    <string name="tools_crop_pdf_err_failed">ఈ PDFని క్రాప్ చేయలేకపోయాం.</string>
+    <string name="tools_crop_pdf_err_nothing">క్రాప్ చేయడానికి ఏమీ లేదు: ప్రతి పేజీ ఇప్పటికే వీలైనంత బిగుతుగా ఉంది, లేదా క్రాప్ చేస్తే చాలా తక్కువ మిగులుతుంది.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d పేజీ క్రాప్ చేయబడింది</item>
+        <item quantity="other">%1$d పేజీలు క్రాప్ చేయబడ్డాయి</item>
+    </plurals>
+    <string name="tools_card_redact">టెక్స్ట్ దాచండి</string>
+    <string name="tools_tile_redact">దాచు</string>
+    <string name="tools_desc_redact">పదాలను శాశ్వతంగా నల్లగా చేయండి</string>
+    <string name="hint_tool_redact">పేర్లు, సంఖ్యలు లేదా ఏ పదాలనైనా ఎక్కడ ఉన్నా నల్లగా చేయండి. సరిపోలిన పేజీలు చిత్రాలుగా మారతాయి, కాబట్టి పదాలు నిజంగా పోతాయి, కేవలం కప్పబడవు.</string>
+    <string name="tools_redact_body">ప్రతి సరిపోలికను నల్లగా పెయింట్ చేసి, సరిపోలిక ఉన్న ప్రతి పేజీని చిత్రంగా మళ్లీ గీస్తారు, కాబట్టి టెక్స్ట్‌ను తిరిగి పొందలేరు. సరిపోలిక లేని పేజీలు వాటి టెక్స్ట్‌ను ఉంచుకుంటాయి. టెక్స్ట్ మళ్లీ కావాలంటే తర్వాత “శోధించదగినదిగా చేయండి” వాడండి.</string>
+    <string name="tools_redact_terms_label">నల్లగా చేయాల్సిన పదాలు</string>
+    <string name="tools_redact_terms_hint">లైన్‌కు ఒకటి, లేదా కామాలతో వేరు చేసి</string>
+    <string name="tools_redact_match_case">పెద్ద, చిన్న అక్షరాలను సరిపోల్చండి</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d పదం శోధించబడుతుంది</item>
+        <item quantity="other">%1$d పదాలు శోధించబడతాయి</item>
+    </plurals>
+    <string name="tools_redact_action">దాచండి</string>
+    <string name="tools_redact_progress">దాచబడుతోంది…</string>
+    <string name="tools_redact_progress_searching">పదాలు శోధించబడుతున్నాయి…</string>
+    <string name="tools_redact_err_failed">ఈ PDFని దాచలేకపోయాం.</string>
+    <string name="tools_redact_err_no_matches">ఈ పదాలలో ఏదీ ఈ PDF టెక్స్ట్‌లో కనబడలేదు. స్కాన్ చేసిన పేజీకి ముందుగా “శోధించదగినదిగా చేయండి” అవసరం.</string>
+    <string name="tools_redact_done">%2$d పేజీలలో %1$d సరిపోలికలు నల్లగా చేయబడ్డాయి</string>
 </resources>

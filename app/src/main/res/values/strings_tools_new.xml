@@ -104,4 +104,45 @@
     <string name="hint_tool_flatten">Draw form answers, comments and stamps into the pages so nobody can change them.</string>
     <string name="hint_tool_extract_images">Save every picture inside a PDF as its own image file.</string>
     <string name="hint_tool_pdf_info">See a PDF\'s hidden details, edit the title or author, or remove them all for privacy.</string>
+    <!-- Crop PDF pages and Redact text (F172). -->
+    <string name="tools_card_crop_pdf">Crop PDF pages</string>
+    <string name="tools_tile_crop_pdf">Crop pages</string>
+    <string name="tools_desc_crop_pdf">Trim margins or white space</string>
+    <string name="hint_tool_crop_pdf">Trim the margins of every page, automatically around the content or by the millimetre. The text layer is kept.</string>
+    <string name="tools_crop_pdf_body">Auto trims each page to its content with a little padding; Margins cuts the amount you set from every page as it is shown. Nothing is deleted, so the pages can be uncropped later with Repair.</string>
+    <string name="tools_crop_pdf_mode_auto">Auto trim</string>
+    <string name="tools_crop_pdf_mode_margins">Margins</string>
+    <string name="tools_crop_pdf_padding">Padding around content</string>
+    <string name="tools_crop_pdf_top">Top</string>
+    <string name="tools_crop_pdf_bottom">Bottom</string>
+    <string name="tools_crop_pdf_left">Left</string>
+    <string name="tools_crop_pdf_right">Right</string>
+    <string name="tools_crop_pdf_mm">%1$d mm</string>
+    <string name="tools_crop_pdf_action">Crop pages</string>
+    <string name="tools_crop_pdf_progress">Cropping pages…</string>
+    <string name="tools_crop_pdf_err_failed">Couldn\'t crop this PDF.</string>
+    <string name="tools_crop_pdf_err_nothing">Nothing to crop: every page is already as tight as it can be, or the crop would leave too little of it.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">Cropped %1$d page</item>
+        <item quantity="other">Cropped %1$d pages</item>
+    </plurals>
+
+    <string name="tools_card_redact">Redact text</string>
+    <string name="tools_tile_redact">Redact</string>
+    <string name="tools_desc_redact">Black out words for good</string>
+    <string name="hint_tool_redact">Black out names, numbers or any words wherever they appear. Pages with a match become pictures, so the words are really gone, not just covered.</string>
+    <string name="tools_redact_body">Every match is painted black and each page with a match is redrawn as a picture, so the text cannot be recovered. Pages without a match keep their text. Use Make searchable afterwards if you need the text back.</string>
+    <string name="tools_redact_terms_label">Words to black out</string>
+    <string name="tools_redact_terms_hint">One per line, or separated by commas</string>
+    <string name="tools_redact_match_case">Match upper and lower case</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d word will be searched for</item>
+        <item quantity="other">%1$d words will be searched for</item>
+    </plurals>
+    <string name="tools_redact_action">Redact</string>
+    <string name="tools_redact_progress">Redacting…</string>
+    <string name="tools_redact_progress_searching">Searching for the words…</string>
+    <string name="tools_redact_err_failed">Couldn\'t redact this PDF.</string>
+    <string name="tools_redact_err_no_matches">None of those words were found in this PDF\'s text. A scanned page needs Make searchable first.</string>
+    <string name="tools_redact_done" tools:ignore="PluralsCandidate">Blacked out %1$d matches on %2$d pages</string>
 </resources>

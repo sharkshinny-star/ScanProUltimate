@@ -141,6 +141,8 @@ fun PdfToolsScreen(
     var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
     var showGreyscaleDialog by rememberSaveable { mutableStateOf(false) }
     var showFlattenDialog by rememberSaveable { mutableStateOf(false) }
+    var showCropPdfDialog by rememberSaveable { mutableStateOf(false) }
+    var showRedactDialog by rememberSaveable { mutableStateOf(false) }
     val blankPagesFound by viewModel.blankPages.collectAsStateWithLifecycle()
     val pdfInfo by viewModel.pdfInfo.collectAsStateWithLifecycle()
 
@@ -298,6 +300,8 @@ fun PdfToolsScreen(
             "blank_pages" -> viewModel.findBlankPages(uri)
             "greyscale" -> showGreyscaleDialog = true
             "flatten" -> showFlattenDialog = true
+            "crop_pdf" -> showCropPdfDialog = true
+            "redact" -> showRedactDialog = true
             "extract_images" -> viewModel.extractImages(uri)
             "pdf_info" -> viewModel.openPdfInfo(uri)
         }
@@ -819,6 +823,20 @@ fun PdfToolsScreen(
                 )
             }
 
+            if (showCropPdfDialog && uri != null) {
+                CropPdfDialog(
+                    onDismiss = { showCropPdfDialog = false },
+                    onConfirm = { options -> showCropPdfDialog = false; viewModel.cropPdf(uri, options) }
+                )
+            }
+
+            if (showRedactDialog && uri != null) {
+                RedactDialog(
+                    onDismiss = { showRedactDialog = false },
+                    onConfirm = { terms, matchCase -> showRedactDialog = false; viewModel.redact(uri, terms, matchCase) }
+                )
+            }
+
             if (showFlattenDialog && uri != null) {
                 ToolConfirmDialog(
                     icon = Icons.Default.Layers,
@@ -1018,7 +1036,7 @@ private const val RESULTS_SHOWN = 5
 private val RETRYABLE_TOOLS = setOf(
     "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
     "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact"
 )
 
 /** Tools whose input is a picture, not a PDF: their failures are never offered Repair. */
@@ -1033,7 +1051,7 @@ private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img"
  */
 private val OPENS_PAGES = setOf(
     "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact"
 )
 
 internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {

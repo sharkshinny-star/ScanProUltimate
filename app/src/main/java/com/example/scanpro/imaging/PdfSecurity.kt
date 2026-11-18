@@ -15,7 +15,8 @@ object PdfSecurity {
      */
     const val MIN_PASSWORD_LENGTH = 8
 
-    fun protect(source: File, destination: File, password: String) {
+    /** Writes [destination] encrypted with [password] and returns its page count, so callers need not reopen it. */
+    fun protect(source: File, destination: File, password: String): Int {
         if (password.length < MIN_PASSWORD_LENGTH) throw UserFacingPluralException(R.plurals.err_pdf_password_too_short, MIN_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH)
         destination.parentFile?.mkdirs()
         // AES-256 first; a device whose crypto provider rejects it still gets AES-128 rather than a failure.
@@ -33,8 +34,8 @@ object PdfSecurity {
                     }
                     document.protect(policy)
                     document.save(destination)
+                    return document.numberOfPages
                 }
-                return
             } catch (error: Exception) {
                 failure = error
                 destination.delete()
@@ -54,11 +55,13 @@ object PdfSecurity {
         PdfProtection.PASSWORD_REQUIRED
     }
 
-    fun unlock(source: File, destination: File, password: String) {
+    /** Writes [destination] without any protection and returns its page count, so callers need not reopen it. */
+    fun unlock(source: File, destination: File, password: String): Int {
         destination.parentFile?.mkdirs()
-        PDDocument.load(source, password, SCRATCH()).use { document ->
+        return PDDocument.load(source, password, SCRATCH()).use { document ->
             document.isAllSecurityToBeRemoved = true
             document.save(destination)
+            document.numberOfPages
         }
     }
 

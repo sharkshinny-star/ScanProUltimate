@@ -93,4 +93,45 @@
     <string name="hint_tool_flatten">ഫോം ഉത്തരങ്ങളും കമന്റുകളും സ്റ്റാമ്പുകളും പേജുകളിൽ തന്നെ വരയ്ക്കുക, ആർക്കും മാറ്റാനാവാത്ത വിധം.</string>
     <string name="hint_tool_extract_images">PDF-നുള്ളിലെ ഓരോ ചിത്രവും പ്രത്യേക ചിത്ര ഫയലായി സേവ് ചെയ്യുക.</string>
     <string name="hint_tool_pdf_info">PDF-ന്റെ മറഞ്ഞ വിവരങ്ങൾ കാണുക, ശീർഷകമോ രചയിതാവോ മാറ്റുക, അല്ലെങ്കിൽ സ്വകാര്യതയ്ക്കായി എല്ലാം നീക്കുക.</string>
+
+    <!-- Crop PDF pages and Redact text (F172): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_crop_pdf">PDF പേജുകൾ ക്രോപ്പ് ചെയ്യുക</string>
+    <string name="tools_tile_crop_pdf">പേജ് ക്രോപ്പ്</string>
+    <string name="tools_desc_crop_pdf">മാർജിനുകളോ വെള്ള സ്ഥലമോ നീക്കുക</string>
+    <string name="hint_tool_crop_pdf">ഓരോ പേജിന്റെയും മാർജിനുകൾ മുറിക്കുക: ഉള്ളടക്കത്തിന് ചുറ്റും സ്വയമേവ, അല്ലെങ്കിൽ മില്ലിമീറ്ററിൽ. ടെക്സ്റ്റ് ലെയർ നിലനിൽക്കും.</string>
+    <string name="tools_crop_pdf_body">ഓട്ടോ ഓരോ പേജും ഉള്ളടക്കത്തിന് ചുറ്റും അൽപ്പം ഇടം വിട്ട് മുറിക്കുന്നു; മാർജിനുകൾ നിങ്ങൾ നിശ്ചയിച്ച അളവ് ഓരോ പേജിൽ നിന്നും കാണിക്കുന്നതുപോലെ മുറിക്കുന്നു. ഒന്നും മായ്ക്കുന്നില്ല, അതിനാൽ പിന്നീട് റിപ്പയർ ഉപയോഗിച്ച് പേജുകൾ തിരികെ നൽകാം.</string>
+    <string name="tools_crop_pdf_mode_auto">ഓട്ടോ ട്രിം</string>
+    <string name="tools_crop_pdf_mode_margins">മാർജിനുകൾ</string>
+    <string name="tools_crop_pdf_padding">ഉള്ളടക്കത്തിന് ചുറ്റുമുള്ള ഇടം</string>
+    <string name="tools_crop_pdf_top">മുകളിൽ</string>
+    <string name="tools_crop_pdf_bottom">താഴെ</string>
+    <string name="tools_crop_pdf_left">ഇടത്</string>
+    <string name="tools_crop_pdf_right">വലത്</string>
+    <string name="tools_crop_pdf_mm">%1$d മിമീ</string>
+    <string name="tools_crop_pdf_action">പേജുകൾ ക്രോപ്പ് ചെയ്യുക</string>
+    <string name="tools_crop_pdf_progress">പേജുകൾ ക്രോപ്പ് ചെയ്യുന്നു…</string>
+    <string name="tools_crop_pdf_err_failed">ഈ PDF ക്രോപ്പ് ചെയ്യാനായില്ല.</string>
+    <string name="tools_crop_pdf_err_nothing">ക്രോപ്പ് ചെയ്യാൻ ഒന്നുമില്ല: ഓരോ പേജും ഇതിനകം കഴിയുന്നത്ര ഇറുകിയതാണ്, അല്ലെങ്കിൽ ക്രോപ്പ് ചെയ്താൽ വളരെ കുറച്ചേ ബാക്കിയാകൂ.</string>
+    <plurals name="tools_crop_pdf_done">
+        <item quantity="one">%1$d പേജ് ക്രോപ്പ് ചെയ്തു</item>
+        <item quantity="other">%1$d പേജുകൾ ക്രോപ്പ് ചെയ്തു</item>
+    </plurals>
+    <string name="tools_card_redact">ടെക്സ്റ്റ് മറയ്ക്കുക</string>
+    <string name="tools_tile_redact">മറയ്ക്കുക</string>
+    <string name="tools_desc_redact">വാക്കുകൾ എന്നേക്കുമായി കറുപ്പിക്കുക</string>
+    <string name="hint_tool_redact">പേരുകൾ, നമ്പറുകൾ അല്ലെങ്കിൽ ഏതു വാക്കുകളും എവിടെയായാലും കറുപ്പിക്കുക. പൊരുത്തമുള്ള പേജുകൾ ചിത്രങ്ങളാകുന്നു, അതിനാൽ വാക്കുകൾ ശരിക്കും പോകുന്നു, വെറുതെ മൂടുകയല്ല.</string>
+    <string name="tools_redact_body">ഓരോ പൊരുത്തവും കറുപ്പായി വരയ്ക്കുകയും പൊരുത്തമുള്ള ഓരോ പേജും ചിത്രമായി വീണ്ടും വരയ്ക്കുകയും ചെയ്യുന്നു, അതിനാൽ ടെക്സ്റ്റ് വീണ്ടെടുക്കാനാവില്ല. പൊരുത്തമില്ലാത്ത പേജുകൾ അവയുടെ ടെക്സ്റ്റ് നിലനിർത്തുന്നു. ടെക്സ്റ്റ് തിരികെ വേണമെങ്കിൽ പിന്നീട് “തിരയാവുന്നതാക്കുക” ഉപയോഗിക്കുക.</string>
+    <string name="tools_redact_terms_label">കറുപ്പിക്കേണ്ട വാക്കുകൾ</string>
+    <string name="tools_redact_terms_hint">വരിക്ക് ഒന്ന്, അല്ലെങ്കിൽ കോമയിട്ട് വേർതിരിച്ച്</string>
+    <string name="tools_redact_match_case">വലിയ, ചെറിയ അക്ഷരങ്ങൾ പൊരുത്തപ്പെടുത്തുക</string>
+    <plurals name="tools_redact_terms_count">
+        <item quantity="one">%1$d വാക്ക് തിരയും</item>
+        <item quantity="other">%1$d വാക്കുകൾ തിരയും</item>
+    </plurals>
+    <string name="tools_redact_action">മറയ്ക്കുക</string>
+    <string name="tools_redact_progress">മറയ്ക്കുന്നു…</string>
+    <string name="tools_redact_progress_searching">വാക്കുകൾ തിരയുന്നു…</string>
+    <string name="tools_redact_err_failed">ഈ PDF മറയ്ക്കാനായില്ല.</string>
+    <string name="tools_redact_err_no_matches">ഈ വാക്കുകളൊന്നും ഈ PDF-ന്റെ ടെക്സ്റ്റിൽ കണ്ടെത്തിയില്ല. സ്കാൻ ചെയ്ത പേജിന് ആദ്യം “തിരയാവുന്നതാക്കുക” വേണം.</string>
+    <string name="tools_redact_done">%2$d പേജുകളിൽ %1$d പൊരുത്തങ്ങൾ കറുപ്പിച്ചു</string>
 </resources>
