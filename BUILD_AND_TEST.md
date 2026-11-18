@@ -41,6 +41,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-18, F175 colour source for the page detector, commit 3f90bee, Linux cloud container)
+
+- Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra colour"`; the app's `DocumentEdgeDetector.kt` compiled unchanged): grey-only (the live camera's input) is identical to F170 on every earlier scene (12 benchmark scenes mean IoU 0.986, worst corner error 0.58%; 16 of 16 earlier shadow variants under 2%). Five new scenes, a shadow over most of one side: grey-only fails two (left 10.76%, right-sharp 11.64% corner error, both at confidence 0.50 to 0.52); with the colour map (the saved-photo path) all 21 extra scenes are under 2% (mean IoU 0.987), those two at 0.06% and 0.11%, and the corner-wedge and sharp-edged shadows rise from confidence 0.38 and 0.45 to 0.63. Colour benchmark mean IoU 0.985, worst error 0.58%. The four empty-desk scenes still give no convincing page (confidence 0.17 to 0.29). One-shot detection with colour takes about 7 to 12 ms (grey-only 5 to 10 ms).
+- NOT run: `:app` Gradle build, unit tests and lint (no Android SDK in this container; the change adds no JVM-testable code, the detector needs native OpenCV), `ScanDetectionBenchmarkTest` (two shadow scenes and their floor assertions added; written but not compiled or run), anything on a device (R56, R57).
+
 ## Latest results (2026-11-18, F174 Redact areas, Linux cloud container)
 
 - `:app:testDebugUnitTest` 930 tests (5 new: `RedactBoxesEditorTest`, two more in `PdfCropRedactToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,886,534 bytes (47.6 MiB, +35 KB).
