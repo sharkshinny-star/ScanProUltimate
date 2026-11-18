@@ -41,7 +41,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-## Latest results (2026-11-18, F186–F187, commit PENDING_F186, Linux cloud container)
+## Latest results (2026-11-18, F186–F187, commit eb2da5b, Linux cloud container)
 
 - Tool wiring traced in the code for all 36 tiles in `ToolCatalogue.kt`: each has a branch in `PdfToolsScreen.openTool` (or its own picker), and every `show…Dialog` flag has its dialog block. Not run on a device.
 - NOT run: compile, unit tests (`PdfShareTest` changed), lint, release builds; the CI run for the push is their first build. CI run 169 for `bf4af45` (F181–F185) was still in unit tests and lint when this was pushed and is cancelled by it; the new run covers both.
