@@ -886,7 +886,14 @@ class PdfToolsViewModel @Inject constructor(
 
     fun redact(uri: Uri, terms: List<String>, matchCase: Boolean) =
         launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
-            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, named(uri, "redacted"), ::report)
+            // A file name holding a redacted word would give it away: such a copy is named by the time instead.
+            val base = PdfToolsEngine.sourceBaseName(context, uri)
+            val out = if (terms.any { it.isNotBlank() && base.contains(it.trim(), ignoreCase = true) }) {
+                PdfToolsEngine.outputLocation(context, "redacted ${nameStamp()}.pdf")
+            } else {
+                named(uri, "redacted")
+            }
+            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, out, ::report)
         }
 
     fun invertColors(uri: Uri) = launchTool(R.string.tools_invert_progress, R.string.tools_invert_err_failed) {

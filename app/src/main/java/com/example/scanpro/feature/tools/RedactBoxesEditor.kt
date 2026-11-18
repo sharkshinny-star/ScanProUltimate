@@ -172,10 +172,11 @@ internal fun RedactBoxesEditor(
                                     }
                                 }
                             }
-                            if (boxes.isNotEmpty()) {
+                            // Always one line tall (empty before the first box), so the page does not jump when it appears.
+                            run {
                                 val pagesWithBoxes = boxes.map { it.page }.distinct().size
                                 Text(
-                                    stringResource(
+                                    if (boxes.isEmpty()) "" else stringResource(
                                         R.string.edit_redact_box_summary,
                                         pluralStringResource(R.plurals.edit_redact_box_areas, boxes.size, boxes.size),
                                         pluralStringResource(R.plurals.pdf_outcome_pages, pagesWithBoxes, pagesWithBoxes)

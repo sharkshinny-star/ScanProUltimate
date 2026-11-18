@@ -46,6 +46,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
+/** Auto trim's content box on the first page, once looked for; [box] is null for a blank page. */
+private class FoundContent(val box: RectF?)
+
 /** Margins offered in one tap for all four sides, in millimetres. */
 private val MARGIN_PRESETS = listOf(5, 10, 15, 20)
 
@@ -70,11 +73,13 @@ internal fun CropPdfDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (PdfCropT
     val known = widthPt > 0f && heightPt > 0f
     // Auto-trim on the first page, found the way the tool finds it (pixels darker than paper), without padding: the
     // padding is added below, so moving its slider does not start the search again.
-    val content by produceState<RectF?>(null, f) {
+    val found by produceState<FoundContent?>(null, f) {
         val page = f?.firstPage ?: return@produceState
         if (!known) return@produceState
-        value = withContext(BackgroundWork.tools) { PdfCropTools.contentBounds(page, widthPt, heightPt, 0f) }
+        value = FoundContent(withContext(BackgroundWork.tools) { PdfCropTools.contentBounds(page, widthPt, heightPt, 0f) })
     }
+    // Null while looking; a null box once looked means a blank first page.
+    val content = found?.box
 
     val k = PdfCropTools.PT_PER_MM
     val keep: RectF? = when {
@@ -131,7 +136,7 @@ internal fun CropPdfDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (PdfCropT
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.fillMaxWidth()
             )
-        } else if (auto && known && f?.firstPage != null && content == null) {
+        } else if (auto && found != null && content == null) {
             ToolHint(stringResource(R.string.edit_crop_first_blank))
         }
 
