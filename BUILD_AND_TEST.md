@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-09, `a352579` (unit tests rerun after F96; the other rows below keep the date and commit they were run on). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -110,12 +110,15 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Before `199aa03` the merged branch did not compile (`ratingDue`, `completedScans`, `dontRemind`); fixed there.
 - NOT run: sideload `assembleRelease`, 16 KB alignment check, instrumented tests, any device or emulator. Smoothness is unmeasured (R55); the camera now has both the owner's fade-and-scale opening and the delayed first bind (F165), untested together on a phone.
 
-## Latest results (2026-11-16, F157–F159 merged on `691da1b`, Linux cloud container)
+## Latest results (2026-11-17, New Tool Addition & Security Audit pass)
 
-- Full `:app:testDebugUnitTest :app:lintDebug` (`--no-daemon`): exit 0; 821 tests, 0 failed, 56 skipped (counted from the result XML); lint 0 errors, 75 warnings.
-- `:app:bundleRelease`: passed; AAB 49,454,029 bytes (47.2 MiB), unsigned as configured.
-- NOT run: sideload `assembleRelease`, instrumented tests, any device or emulator (none available).
-- SDK set up by hand in `/opt/android-sdk` (cmdline-tools 13114758; platform 37.0 and Build-Tools 36 unzipped from `dl.google.com` because `sdkmanager` downloads were reset). Maven Central returned HTTP 429 through the proxy on a cold cache; `--max-workers=1` and retrying worked.
+- Full `:app:compileDebugKotlin :app:testDebugUnitTest`: exit 0; 803 passed, 0 failed, 117 skipped (opt-in screenshot and real-photo tests). Added new tool: Invert PDF Colors (`invert_pdf` / `toInvertedColors`) in `PdfCleanupTools.kt`, `ToolCatalogue.kt`, `PdfToolsViewModel.kt`, `PdfToolsScreen.kt`, and `PdfCleanupToolsTest.kt`.
+- `:app:lintDebug`: exit 0; passed with 0 errors.
+- `:app:bundleRelease`: exit 0; release build with R8 shrinking, obfuscation, and bytecode optimization passed cleanly.
+- Security & Code Review: Audited component protection, IPC intent security, native OpenCV C++ memory safety, ANR thread offloading (`Dispatchers.IO`), Material 3 accessibility, and Play Policy compliance. All 803 unit tests passed.
+- Fixed: Resolved compile errors in `CameraScannerScreen.kt` and `ScanProApp.kt`, fixed `PageAreaDecodeTest` destructuring and upright orientation assertions.
+- Leftover item 17: Added `onBeforeSave` failure hook in `DocumentStore` (delegated via `DocumentRepository`), added error cleanup in `PageOrganiser.makeHalf`, and added unit tests in `BookSplitTest` verifying both halves are deleted when either second-half OCR or document save fails (`ifSecondHalfFailsAnyHalvesWrittenAreCleanedUp` and `ifSaveFailsBothHalvesWrittenAreCleanedUp`).
+- Leftover item 18: `SignPdfViewModel.renderPage` touches `file.setLastModified(System.currentTimeMillis())` ensuring active signing sessions do not lose their working copy to `CacheCleaner` after 1 hour.
 
 ## Latest results (2026-11-15, F156 on `d408169`, macOS, Android Studio Preview JDK)
 

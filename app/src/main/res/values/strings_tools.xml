@@ -555,4 +555,14 @@
     <string name="tools_desc_convert_img">JPG, PNG or WebP</string>
     <string name="tools_desc_resize_img">Change photo dimensions</string>
     <string name="tools_desc_viewer">Read, search and jump to pages</string>
+    <string name="tools_card_invert_pdf">Invert PDF Colors</string>
+    <string name="tools_tile_invert_pdf">Invert PDF</string>
+    <string name="tools_desc_invert_pdf">Dark mode PDF for night reading</string>
+    <plurals name="tools_invert_done">
+        <item quantity="one">Inverted colors on %1$d page.</item>
+        <item quantity="other">Inverted colors on %1$d pages.</item>
+    </plurals>
+    <string name="tools_wm_color_red">Red</string>
+    <string name="tools_wm_color_green">Green</string>
+    <string name="tools_wm_color_purple">Purple</string>
 </resources>

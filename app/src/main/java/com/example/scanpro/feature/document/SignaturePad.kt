@@ -67,7 +67,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Ink name resource and colour. */
-private val InkColors = listOf(R.string.doc_ink_black to Color(0xFF111111), R.string.doc_ink_blue to Color(0xFF1A3FB8))
+val InkColors = listOf(
+    R.string.doc_ink_black to Color(0xFF111111),
+    R.string.doc_ink_blue to Color(0xFF1A3FB8),
+    R.string.tools_watermark_color_red to Color(0xFFD32F2F),
+    R.string.tools_watermark_color_grey to Color(0xFF757575)
+)
 
 /**
  * Draw a signature, or tap one saved earlier. New signatures are kept for next time unless unticked;

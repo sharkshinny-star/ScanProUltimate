@@ -90,4 +90,51 @@ class BookSplitTest : RepositoryTestBase() {
         }
         assertEquals(2, load(doc.id)!!.pages.size)
     }
+
+    @Test fun ifSecondHalfFailsAnyHalvesWrittenAreCleanedUp() = runBlocking {
+        val doc = spreadDocument()
+        val renderedDir = File(File(doc.pdfPath).parentFile, "rendered")
+        val sourceDir = File(File(doc.pdfPath).parentFile, "source")
+        val initialRenderedCount = renderedDir.listFiles()?.size ?: 0
+        val initialSourceCount = sourceDir.listFiles()?.size ?: 0
+
+        var calls = 0
+        ocr.failFor = { _ ->
+            calls++
+            if (calls == 2) throw kotlinx.coroutines.CancellationException("Simulated second half failure")
+            false
+        }
+
+        try {
+            repository.splitBookSpread(doc.id, doc.page(1).id)
+            fail("expected an error")
+        } catch (_: kotlinx.coroutines.CancellationException) {
+        }
+
+        assertEquals(initialRenderedCount, renderedDir.listFiles()?.size ?: 0)
+        assertEquals(initialSourceCount, sourceDir.listFiles()?.size ?: 0)
+        assertTrue(File(doc.page(1).imagePath).exists())
+    }
+
+    @Test fun ifSaveFailsBothHalvesWrittenAreCleanedUp() = runBlocking {
+        val doc = spreadDocument()
+        val renderedDir = File(File(doc.pdfPath).parentFile, "rendered")
+        val sourceDir = File(File(doc.pdfPath).parentFile, "source")
+        val initialRenderedCount = renderedDir.listFiles()?.size ?: 0
+        val initialSourceCount = sourceDir.listFiles()?.size ?: 0
+
+        repository.onBeforeSave = { throw IllegalStateException("Simulated save failure") }
+
+        try {
+            repository.splitBookSpread(doc.id, doc.page(1).id)
+            fail("expected a save error")
+        } catch (_: IllegalStateException) {
+        } finally {
+            repository.onBeforeSave = null
+        }
+
+        assertEquals(initialRenderedCount, renderedDir.listFiles()?.size ?: 0)
+        assertEquals(initialSourceCount, sourceDir.listFiles()?.size ?: 0)
+        assertTrue(File(doc.page(1).imagePath).exists())
+    }
 }

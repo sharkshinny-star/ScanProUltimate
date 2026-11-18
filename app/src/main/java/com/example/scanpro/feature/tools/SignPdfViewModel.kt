@@ -151,12 +151,12 @@ class SignPdfViewModel @Inject constructor(
     }
 
     /** A typed stamp, such as a date, drawn to a transparent picture so any script the phone can show is kept. */
-    fun addText(text: String) {
+    fun addText(text: String, color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color(0xFF111111), typeface: android.graphics.Typeface? = android.graphics.Typeface.DEFAULT) {
         val clean = text.replace('\n', ' ').trim().take(MAX_TEXT_LENGTH)
         if (clean.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
-            val bitmap = textBitmap(clean)
+            val bitmap = textBitmap(clean, color.value.toInt(), typeface)
             try {
                 ImageProcessor.saveSignature(bitmap, stamp)
             } finally {
@@ -205,6 +205,7 @@ class SignPdfViewModel @Inject constructor(
     /** Page [index] of the working copy at [width] pixels wide, or null when it cannot be drawn. */
     suspend fun renderPage(file: File, index: Int, width: Int): Bitmap? = withContext(Dispatchers.IO) {
         try {
+            file.setLastModified(System.currentTimeMillis())
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                 PdfRenderer(pfd).use { renderer ->
                     renderer.openPage(index).use { page ->
@@ -227,17 +228,18 @@ class SignPdfViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) { library.delete(file) }
     }
 
-    private fun textBitmap(text: String): Bitmap {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF111111.toInt()
+    private fun textBitmap(text: String, colorArgb: Int, tf: android.graphics.Typeface?): Bitmap {
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorArgb
             textSize = TEXT_SIZE
+            typeface = tf ?: android.graphics.Typeface.DEFAULT
         }
         val padding = TEXT_PADDING
         val metrics = paint.fontMetrics
-        val width = ceil(paint.measureText(text)).toInt() + padding * 2
-        val height = ceil(metrics.descent - metrics.ascent).toInt() + padding * 2
-        val bitmap = createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1))
-        Canvas(bitmap).drawText(text, padding.toFloat(), padding - metrics.ascent, paint)
+        val width = kotlin.math.ceil(paint.measureText(text)).toInt() + padding * 2
+        val height = kotlin.math.ceil(metrics.descent - metrics.ascent).toInt() + padding * 2
+        val bitmap = androidx.core.graphics.createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1))
+        android.graphics.Canvas(bitmap).drawText(text, padding.toFloat(), padding - metrics.ascent, paint)
         return bitmap
     }
 

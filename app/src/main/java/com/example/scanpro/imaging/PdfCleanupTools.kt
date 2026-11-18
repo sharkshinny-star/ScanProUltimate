@@ -300,6 +300,107 @@ object PdfCleanupTools {
         }
     }
 
+    // ---- Invert Colors (Dark Mode PDF) ----------------------------------------------------------------------------
+
+    /** Inverts [bitmap] colors in place for dark mode reading. */
+    internal fun toInvertedColors(bitmap: Bitmap) {
+        val width = bitmap.width
+        val row = IntArray(width)
+        for (y in 0 until bitmap.height) {
+            bitmap.getPixels(row, 0, width, 0, y, width, 1)
+            for (x in 0 until width) {
+                val p = row[x]
+                val a = (p shr 24) and 0xFF
+                val r = 255 - ((p shr 16) and 0xFF)
+                val g = 255 - ((p shr 8) and 0xFF)
+                val b = 255 - (p and 0xFF)
+                row[x] = (a shl 24) or (r shl 16) or (g shl 8) or b
+            }
+            bitmap.setPixels(row, 0, width, 0, y, width, 1)
+        }
+    }
+
+    internal suspend fun writeInvertedColors(
+        pageCount: Int,
+        pageSize: (Int) -> Pair<Float, Float>,
+        draw: (index: Int, target: Bitmap) -> Unit,
+        outputFile: File,
+        onPage: (Int) -> Unit = {}
+    ) {
+        var bitmap: Bitmap? = null
+        try {
+            PDDocument(MemoryUsageSetting.setupTempFileOnly()).use { out ->
+                val buffer = ByteArrayOutputStream()
+                for (i in 0 until pageCount) {
+                    if (!currentCoroutineContext().isActive) throw InterruptedException("Invert colors cancelled")
+                    onPage(i)
+                    val (widthPt, heightPt) = pageSize(i)
+                    val scale = minOf(GREYSCALE_DPI / 72f, GREYSCALE_MAX_SIDE / maxOf(widthPt, heightPt).coerceAtLeast(1f))
+                    val w = (widthPt * scale).toInt().coerceAtLeast(1)
+                    val h = (heightPt * scale).toInt().coerceAtLeast(1)
+                    val canvas = bitmap?.takeIf { it.width == w && it.height == h }
+                        ?: createBitmap(w, h).also { bitmap?.recycle(); bitmap = it }
+                    canvas.eraseColor(Color.WHITE)
+                    draw(i, canvas)
+                    toInvertedColors(canvas)
+                    buffer.reset()
+                    canvas.compress(Bitmap.CompressFormat.JPEG, GREYSCALE_JPEG_QUALITY, buffer)
+                    val image = JPEGFactory.createFromByteArray(out, buffer.toByteArray())
+                    val page = PDPage(PDRectangle(widthPt, heightPt))
+                    out.addPage(page)
+                    PDPageContentStream(out, page).use { it.drawImage(image, 0f, 0f, widthPt, heightPt) }
+                }
+                outputFile.parentFile?.mkdirs()
+                out.save(outputFile)
+            }
+        } catch (error: Throwable) {
+            outputFile.delete()
+            throw error
+        } finally {
+            bitmap?.recycle()
+        }
+    }
+
+    suspend fun invertColors(
+        context: Context,
+        inputUri: Uri,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "invert_in_${UUID.randomUUID()}.pdf")
+        try {
+            val total = ParcelFileDescriptor.open(temp, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                PdfToolsEngine.openRenderer(pfd, temp).use { renderer ->
+                    val total = renderer.pageCount
+                    userRequire(total > 0, R.string.tools_err_no_pages)
+                    var open: PdfRenderer.Page? = null
+                    fun page(i: Int): PdfRenderer.Page = open?.takeIf { it.index == i } ?: renderer.openPage(i).also { open?.close(); open = it }
+                    try {
+                        writeInvertedColors(
+                            pageCount = total,
+                            pageSize = { i -> page(i).let { it.width.toFloat() to it.height.toFloat() } },
+                            draw = { i, target -> page(i).render(target, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT) },
+                            outputFile = outputFile,
+                            onPage = { onProgress(it + 1, total, AppStrings.get(R.string.tools_new_progress_page, it + 1, total)) }
+                        )
+                    } finally {
+                        open?.close()
+                    }
+                    total
+                }
+            }
+            PdfToolResult(
+                outputFile = outputFile,
+                pageCount = total,
+                originalSizeBytes = temp.length(),
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.plural(R.plurals.tools_invert_done, total, total)
+            )
+        } finally {
+            temp.delete()
+        }
+    }
+
     // ---- Flatten --------------------------------------------------------------------------------------------------
 
     /**

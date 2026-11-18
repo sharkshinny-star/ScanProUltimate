@@ -140,6 +140,7 @@ fun PdfToolsScreen(
     var showWatermarkDialog by rememberSaveable { mutableStateOf(false) }
     var showPageNumbersDialog by rememberSaveable { mutableStateOf(false) }
     var showGreyscaleDialog by rememberSaveable { mutableStateOf(false) }
+    var showInvertDialog by rememberSaveable { mutableStateOf(false) }
     var showFlattenDialog by rememberSaveable { mutableStateOf(false) }
     var showCropPdfDialog by rememberSaveable { mutableStateOf(false) }
     var showRedactDialog by rememberSaveable { mutableStateOf(false) }
@@ -217,9 +218,9 @@ fun PdfToolsScreen(
         }
     }
 
-    var saveSourceFile by remember { mutableStateOf<File?>(null) }
+    var saveSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
     fun saveTo(destUri: Uri?) {
-        val file = saveSourceFile ?: return
+        val file = saveSourcePath?.let { File(it) } ?: return
         if (destUri == null) return
         viewModel.saveTo(file, destUri)
     }
@@ -253,7 +254,7 @@ fun PdfToolsScreen(
 
     /** "Save" on a result: the system's save dialog for the file's own type, then a copy is written there. */
     fun saveCopy(file: File) {
-        saveSourceFile = file
+        saveSourcePath = file.absolutePath
         val name = file.name
         when (mimeFor(file)) {
             "application/zip" -> saveZipLauncher.launch(name)
@@ -302,6 +303,7 @@ fun PdfToolsScreen(
             "pdf2excel" -> { pdfTextFormat = TextExportFormat.EXCEL; showPdfToTextDialog = true }
             "blank_pages" -> viewModel.findBlankPages(uri)
             "greyscale" -> showGreyscaleDialog = true
+            "invert_pdf" -> showInvertDialog = true
             "flatten" -> showFlattenDialog = true
             "crop_pdf" -> showCropPdfDialog = true
             "redact" -> showRedactDialog = true
@@ -829,42 +831,6 @@ fun PdfToolsScreen(
                 )
             }
 
-            if (showRedactBoxesEditor && uri != null) {
-                RedactBoxesEditor(
-                    uri = uri,
-                    onDismiss = { showRedactBoxesEditor = false },
-                    onConfirm = { boxes -> showRedactBoxesEditor = false; viewModel.redactBoxes(uri, boxes) }
-                )
-            }
-
-            if (showNupDialog && uri != null) {
-                NupDialog(
-                    onDismiss = { showNupDialog = false },
-                    onConfirm = { perSheet -> showNupDialog = false; viewModel.nup(uri, perSheet) }
-                )
-            }
-
-            if (showHeaderFooterDialog && uri != null) {
-                HeaderFooterDialog(
-                    onDismiss = { showHeaderFooterDialog = false },
-                    onConfirm = { config -> showHeaderFooterDialog = false; viewModel.headerFooter(uri, config) }
-                )
-            }
-
-            if (showCropPdfDialog && uri != null) {
-                CropPdfDialog(
-                    onDismiss = { showCropPdfDialog = false },
-                    onConfirm = { options -> showCropPdfDialog = false; viewModel.cropPdf(uri, options) }
-                )
-            }
-
-            if (showRedactDialog && uri != null) {
-                RedactDialog(
-                    onDismiss = { showRedactDialog = false },
-                    onConfirm = { terms, matchCase -> showRedactDialog = false; viewModel.redact(uri, terms, matchCase) }
-                )
-            }
-
             if (showFlattenDialog && uri != null) {
                 ToolConfirmDialog(
                     icon = Icons.Default.Layers,
@@ -1064,7 +1030,7 @@ private const val RESULTS_SHOWN = 5
 private val RETRYABLE_TOOLS = setOf(
     "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
     "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
 )
 
 /** Tools whose input is a picture, not a PDF: their failures are never offered Repair. */
@@ -1079,7 +1045,7 @@ private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img"
  */
 private val OPENS_PAGES = setOf(
     "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info"
 )
 
 internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {

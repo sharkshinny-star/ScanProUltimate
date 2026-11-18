@@ -49,6 +49,7 @@ class IntroductionsScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
+
     private fun text(id: Int): String = ApplicationProvider.getApplicationContext<Application>().getString(id)
 
     private fun captureDialog(name: String) {

@@ -46,6 +46,11 @@ class DocumentRepository @Inject constructor(
         get() = store.pdfWriter
         set(value) { store.pdfWriter = value }
 
+    /** Tests can set this to throw before saving, to check clean-up when a save fails. */
+    internal var onBeforeSave: ((ScanDocument) -> Unit)?
+        get() = store.onBeforeSave
+        set(value) { store.onBeforeSave = value }
+
     /** Undo and redo steps available per document, for this session. */
     val undoState: kotlinx.coroutines.flow.StateFlow<Map<String, UndoState>> = store.history.state
 

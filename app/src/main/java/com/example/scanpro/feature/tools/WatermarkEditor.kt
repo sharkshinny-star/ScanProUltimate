@@ -340,7 +340,7 @@ private fun PositionGrid(cx: Float, cy: Float, enabled: Boolean, onPick: (Float,
                     val here = enabled && kotlin.math.abs(cx - x) < 0.06f && kotlin.math.abs(cy - y) < 0.06f
                     Box(
                         Modifier
-                            .size(width = 44.dp, height = 36.dp)
+                            .size(width = 44.dp, height = 44.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (here) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest)
                             .then(if (enabled) Modifier.clickable(role = Role.Button) { onPick(x, y) } else Modifier),

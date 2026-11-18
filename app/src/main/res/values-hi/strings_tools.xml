@@ -520,4 +520,14 @@
     <string name="tools_desc_convert_img">JPG, PNG या WebP</string>
     <string name="tools_desc_resize_img">फ़ोटो का माप बदलें</string>
     <string name="tools_desc_viewer">पढ़ें, खोजें, पेज पर जाएँ</string>
+    <string name="tools_card_invert_pdf">PDF के रंग उलटें</string>
+    <string name="tools_tile_invert_pdf">रंग उलटें</string>
+    <string name="tools_desc_invert_pdf">रात में पढ़ने के लिए डार्क मोड PDF</string>
+    <plurals name="tools_invert_done">
+        <item quantity="one">%1$d पेज का रंग उल्टा किया गया।</item>
+        <item quantity="other">%1$d पेजों के रंग उल्टे किए गए।</item>
+    </plurals>
+    <string name="tools_wm_color_red">लाल</string>
+    <string name="tools_wm_color_green">हरा</string>
+    <string name="tools_wm_color_purple">बैंगनी</string>
 </resources>

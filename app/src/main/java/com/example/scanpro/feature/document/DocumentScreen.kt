@@ -602,6 +602,7 @@ internal fun DocumentDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         topBar = {
             TopBarWithProgress(busy, onStop = onStop) {
                 Column {

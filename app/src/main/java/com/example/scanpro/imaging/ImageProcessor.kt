@@ -276,6 +276,69 @@ object ImageProcessor {
         return bounds.outWidth.toFloat() / bounds.outHeight
     }
 
+    /**
+     * Reads only the page's bounding area of a stored photo [path], mapped by [crop] and EXIF [rotation].
+     * Returns the cropped page bitmap and its crop quad within that bitmap, or null if the page covers the whole photo.
+     */
+    fun decodePageArea(
+        path: String,
+        crop: CropQuad,
+        rotation: Int,
+        maxDimension: Int,
+        wholePhotoLimit: Int = maxDimension
+    ): Pair<Bitmap, CropQuad>? {
+        if (crop == CropQuad.DEFAULT) return null
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        val storedW = bounds.outWidth
+        val storedH = bounds.outHeight
+        if (storedW <= 0 || storedH <= 0) return null
+        if (maxOf(storedW, storedH) <= wholePhotoLimit) return null
+
+        val box = PageArea.rawBox(crop, rotation, storedW, storedH)
+        val fullCoverage = box.left <= 0 && box.top <= 0 && box.right >= storedW && box.bottom >= storedH
+        if (fullCoverage) return null
+
+        val regionDecoder = runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                android.graphics.BitmapRegionDecoder.newInstance(File(path).inputStream())
+            } else {
+                @Suppress("DEPRECATION")
+                android.graphics.BitmapRegionDecoder.newInstance(path, false)
+            }
+        }.getOrNull() ?: return null
+
+        var sample = 1
+        val boxWidth = box.width()
+        val boxHeight = box.height()
+        while (max(boxWidth, boxHeight) / sample > maxDimension * 2) {
+            sample *= 2
+        }
+
+        val options = BitmapFactory.Options().apply { inSampleSize = sample }
+        val cropped = try {
+            regionDecoder.decodeRegion(box, options)
+        } finally {
+            regionDecoder.recycle()
+        } ?: return null
+
+        val innerCrop = PageArea.cropWithin(crop, box, rotation, storedW, storedH)
+        val rotated = if (rotation != 0) rotate(cropped, rotation) else cropped
+        if (rotated !== cropped && !cropped.isRecycled) cropped.recycle()
+
+        val longSide = maxOf(rotated.width, rotated.height)
+        val finalBitmap = if (longSide > maxDimension) {
+            val scale = maxDimension.toFloat() / longSide
+            val w = (rotated.width * scale).toInt().coerceAtLeast(1)
+            val h = (rotated.height * scale).toInt().coerceAtLeast(1)
+            val scaled = rotated.scale(w, h)
+            if (scaled !== rotated && !rotated.isRecycled) rotated.recycle()
+            scaled
+        } else rotated
+
+        return finalBitmap to innerCrop
+    }
+
     fun decodeOrientedScaled(path: String, maxDimension: Int): Bitmap? {
         return try {
             var bitmap = decodeScaled(path, maxDimension) ?: return null

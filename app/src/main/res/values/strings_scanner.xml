@@ -193,6 +193,7 @@
     <string name="scan_doc_intro_title">Scanning a document</string>
     <string name="scan_doc_intro_body">Lay the page flat in good light and keep the phone steady. ScanPro finds the edges, straightens the page and cleans it up. Tap the shutter, or leave auto capture on and hold still. Add more pages, then tap Done.</string>
     <string name="scan_book_intro_start">Start now</string>
+    <string name="scan_book_intro_dont_remind">Don\'t show this again</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">Spread split into pages %1$d and %2$d</string>
     <string name="scan_take_photo">Take photo</string>
     <string name="scan_import_photos">Import photos</string>

@@ -44,6 +44,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import android.graphics.Typeface
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -229,8 +234,8 @@ fun SignPdfScreen(
     if (textOpen) {
         SignTextDialog(
             onDismiss = { textOpen = false },
-            onConfirm = { text ->
-                viewModel.addText(text)
+            onConfirm = { text, color, tf ->
+                viewModel.addText(text, color, tf)
                 textOpen = false
             }
         )
@@ -388,23 +393,58 @@ private fun SignPasswordDialog(wrong: Boolean, onDismiss: () -> Unit, onConfirm:
 }
 
 @Composable
-private fun SignTextDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+private fun SignTextDialog(onDismiss: () -> Unit, onConfirm: (String, Color, Typeface?) -> Unit) {
     // Starts as today's date, the usual thing to put beside a signature.
     var text by remember { mutableStateOf(DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date())) }
+    var color by remember { mutableStateOf(com.example.scanpro.feature.document.InkColors.first().second) }
+    var typeface by remember { mutableStateOf<Typeface?>(Typeface.DEFAULT) }
+    val fonts = listOf(
+        "Sans" to Typeface.DEFAULT,
+        "Serif" to Typeface.SERIF,
+        "Mono" to Typeface.MONOSPACE,
+        "Bold" to Typeface.DEFAULT_BOLD
+    )
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.sign_text_title)) },
         text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.take(80) },
-                singleLine = true,
-                label = { Text(stringResource(R.string.sign_text_label)) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.take(80) },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.sign_text_label)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    com.example.scanpro.feature.document.InkColors.forEach { (nameRes, c) ->
+                        val chosen = color == c
+                        Box(
+                            Modifier
+                                .padding(end = 8.dp)
+                                .size(28.dp)
+                                .background(c, androidx.compose.foundation.shape.CircleShape)
+                                .border(if (chosen) 3.dp else 1.dp, if (chosen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.CircleShape)
+                                .clickable { color = c }
+                        )
+                    }
+                }
+                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(fonts) { (name, tf) ->
+                        androidx.compose.material3.FilterChip(
+                            selected = typeface == tf,
+                            onClick = { typeface = tf },
+                            label = { Text(name) }
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
-            TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text) }) {
+            TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text, color, typeface) }) {
                 Text(stringResource(R.string.sign_text_add))
             }
         },

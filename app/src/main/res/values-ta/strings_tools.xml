@@ -520,4 +520,14 @@
     <string name="tools_desc_convert_img">JPG, PNG அல்லது WebP</string>
     <string name="tools_desc_resize_img">புகைப்பட அளவுகளை மாற்றவும்</string>
     <string name="tools_desc_viewer">படி, தேடு, பக்கத்துக்குச் செல்</string>
+    <string name="tools_card_invert_pdf">PDF நிறங்களை மாற்று</string>
+    <string name="tools_tile_invert_pdf">நிறங்களை மாற்று</string>
+    <string name="tools_desc_invert_pdf">இரவு வாசிப்பிற்கான டார்க் மோட் PDF</string>
+    <plurals name="tools_invert_done">
+        <item quantity="one">%1$d பக்கத்தின் நிறங்கள் மாற்றப்பட்டன.</item>
+        <item quantity="other">%1$d பக்கங்களின் நிறங்கள் மாற்றப்பட்டன.</item>
+    </plurals>
+    <string name="tools_wm_color_red">சிவப்பு</string>
+    <string name="tools_wm_color_green">பச்சை</string>
+    <string name="tools_wm_color_purple">ஊதா</string>
 </resources>

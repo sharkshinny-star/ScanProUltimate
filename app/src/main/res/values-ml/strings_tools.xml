@@ -520,4 +520,14 @@
     <string name="tools_desc_convert_img">JPG, PNG അല്ലെങ്കിൽ WebP</string>
     <string name="tools_desc_resize_img">ഫോട്ടോ അളവുകൾ മാറ്റുക</string>
     <string name="tools_desc_viewer">വായിക്കുക, തിരയുക, പേജിലേക്ക് പോകുക</string>
+    <string name="tools_card_invert_pdf">PDF നിറങ്ങൾ മാറ്റുക</string>
+    <string name="tools_tile_invert_pdf">നിറങ്ങൾ മാറ്റുക</string>
+    <string name="tools_desc_invert_pdf">രാത്രി വായനയ്ക്കായി ഡാർക്ക് മോഡ് PDF</string>
+    <plurals name="tools_invert_done">
+        <item quantity="one">%1$d പേജിന്റെ നിറങ്ങൾ മാറ്റി.</item>
+        <item quantity="other">%1$d പേജുകളുടെ നിറങ്ങൾ മാറ്റി.</item>
+    </plurals>
+    <string name="tools_wm_color_red">ചുവപ്പ്</string>
+    <string name="tools_wm_color_green">പച്ച</string>
+    <string name="tools_wm_color_purple">പർപ്പിൾ</string>
 </resources>

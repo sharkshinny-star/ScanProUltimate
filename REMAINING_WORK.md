@@ -42,9 +42,9 @@ Nothing below has been tried on a device unless it says so. CI covers compile, u
 16. Tool ideas: Redact PDF (text must really be removed, not covered), table to Excel, receipt and expense summary, batch tools.
 
 **Known gaps and limits**
-17. No test that `splitBookSpread` removes its halves when the save fails (it needs a seam to make the save fail).
-18. `CacheCleaner` deletes `sign_*` temp files after one hour, so a signing session left open longer could lose its working copy.
-19. Scan history stores raw text, so Wi-Fi passwords sit in `filesDir/scan_history.json`, unencrypted like the rest of the library (R20).
+17. [RESOLVED 2026-11-17] `splitBookSpread` clean-up on save/second-half failure is tested by `BookSplitTest.ifSecondHalfFailsAnyHalvesWrittenAreCleanedUp` and `ifSaveFailsBothHalvesWrittenAreCleanedUp` using the `onBeforeSave` hook on `DocumentRepository`/`DocumentStore` and `makeHalf` file cleanup.
+18. [RESOLVED 2026-11-17] `SignPdfViewModel.renderPage` touches `file.setLastModified(System.currentTimeMillis())`, ensuring an active signing session continuously refreshes its working copy timestamp against `CacheCleaner`'s 1-hour sweep threshold.
+19. [RESOLVED] Scan history is encrypted at rest via `ScanHistoryProtection` using Android Keystore AES-GCM; Wi-Fi codes only expose their network name to search.
 20. Multi-code outlines assume the preview and analysis share one 4:3 field of view with FIT_CENTER (`cropRect` is not used).
 21. `upload-artifact` v7 (Dependabot bump) has not run: those steps only run on a failed build or a manual run.
 22. CI cost: a push run with no saved Gradle cache took about 39 minutes (run 131); runs with the cache took 19 to 24. The

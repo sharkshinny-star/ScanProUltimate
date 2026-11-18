@@ -520,4 +520,14 @@
     <string name="tools_desc_convert_img">JPG, PNG లేదా WebP</string>
     <string name="tools_desc_resize_img">ఫోటో కొలతలు మార్చండి</string>
     <string name="tools_desc_viewer">చదవండి, వెతకండి, పేజీకి వెళ్లండి</string>
+    <string name="tools_card_invert_pdf">PDF రంగులను తిరగరాయండి</string>
+    <string name="tools_tile_invert_pdf">రంగులు మార్చు</string>
+    <string name="tools_desc_invert_pdf">రాత్రి చదవడానికి డార్క్ మోడ్ PDF</string>
+    <plurals name="tools_invert_done">
+        <item quantity="one">%1$d పేజీ రంగులు మార్చబడ్డాయి.</item>
+        <item quantity="other">%1$d పేజీల రంగులు మార్చబడ్డాయి.</item>
+    </plurals>
+    <string name="tools_wm_color_red">ఎరుపు</string>
+    <string name="tools_wm_color_green">ఆకుపచ్చ</string>
+    <string name="tools_wm_color_purple">పర్పుల్</string>
 </resources>

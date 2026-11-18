@@ -520,4 +520,14 @@
     <string name="tools_desc_convert_img">JPG, PNG ಅಥವಾ WebP</string>
     <string name="tools_desc_resize_img">ಫೋಟೋ ಅಳತೆ ಬದಲಿಸಿ</string>
     <string name="tools_desc_viewer">ಓದಿ, ಹುಡುಕಿ, ಪುಟಕ್ಕೆ ಹೋಗಿ</string>
+    <string name="tools_card_invert_pdf">PDF ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಿ</string>
+    <string name="tools_tile_invert_pdf">ಬಣ್ಣ ಹಿಮ್ಮುಖಗೊಳಿಸಿ</string>
+    <string name="tools_desc_invert_pdf">ರಾತ್ರಿ ಓದಲು ಡಾರ್ಕ್ ಮೋಡ್ PDF</string>
+    <plurals name="tools_invert_done">
+        <item quantity="one">%1$d ಪುಟದ ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲಾಗಿದೆ.</item>
+        <item quantity="other">%1$d ಪುಟಗಳ ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲಾಗಿದೆ.</item>
+    </plurals>
+    <string name="tools_wm_color_red">ಕೆಂಪು</string>
+    <string name="tools_wm_color_green">ಹಸಿರು</string>
+    <string name="tools_wm_color_purple">ನೇರಳೆ</string>
 </resources>

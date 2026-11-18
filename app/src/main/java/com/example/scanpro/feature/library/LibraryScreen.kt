@@ -1594,7 +1594,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
 /** Picks an existing folder, types a new one, or takes the documents out of any folder. */
 @Composable
 private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
-    var name by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(pluralStringResource(R.plurals.lib_move_documents_title, count, count)) },

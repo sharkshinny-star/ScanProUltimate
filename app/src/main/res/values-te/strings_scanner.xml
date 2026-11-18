@@ -172,6 +172,7 @@
     <string name="scan_doc_intro_title">పత్రం స్కాన్ చేయడం</string>
     <string name="scan_doc_intro_body">పేజీని మంచి వెలుతురులో చదునుగా ఉంచి, ఫోన్‌ను స్థిరంగా పట్టుకోండి. ScanPro అంచులను గుర్తించి పేజీని సరిచేసి శుభ్రం చేస్తుంది. షట్టర్ నొక్కండి, లేదా ఆటో క్యాప్చర్ ఆన్‌లో ఉంచి కదలకుండా ఉండండి. మరిన్ని పేజీలు జోడించి, పూర్తయింది నొక్కండి.</string>
     <string name="scan_book_intro_start">ఇప్పుడు ప్రారంభించండి</string>
+    <string name="scan_book_intro_dont_remind">దీన్ని మళ్లీ చూపించవద్దు</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">స్ప్రెడ్ %1$d, %2$d పేజీలుగా విభజించబడింది</string>
     <string name="scan_take_photo">ఫోటో తీయండి</string>
     <string name="scan_import_photos">ఫోటోలు ఇంపోర్ట్ చేయండి</string>
