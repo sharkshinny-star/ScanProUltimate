@@ -41,7 +41,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-## Latest results (2026-11-18, F181–F185, commit PENDING_F181, Linux cloud container)
+## Latest results (2026-11-18, F181–F185, commit bf4af45, Linux cloud container)
 
 - Filter, detector and colour-map unit tests on the desktop JVM, with the app's sources unchanged, the `:opencv` Java wrappers and the vendored `opencv_java4.bin` the CI uses (a throwaway Gradle project, not committed): 31 run, 31 passed (`MatFiltersGoldenTest` 14, `MatFiltersEquivalenceTest` 6, `SmartAutoTest` 2, `PageFramingTest` 5, `LiveChromaTest` 4). Goldens `auto`, `color`, `gray`, `bw`, `whiteboard`, `chain` regenerated with `scanpro.updateGoldens=true` and compared by eye with the old ones.
 - `cd scripts/scan-bench && gradle -q run --args="enhance"`: Colour bgStd 0.0 to 1.4 (was 5.4 to 7.7), Grey 0.0 to 1.4 (was 2.9 to 7.7), halo 0.0 (was up to 4.7), on five degraded pages; Auto unchanged except the warm-lamp page, now cleaned as a document.
