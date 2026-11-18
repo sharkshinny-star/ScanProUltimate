@@ -134,4 +134,37 @@
     <string name="tools_redact_err_failed">ഈ PDF മറയ്ക്കാനായില്ല.</string>
     <string name="tools_redact_err_no_matches">ഈ വാക്കുകളൊന്നും ഈ PDF-ന്റെ ടെക്സ്റ്റിൽ കണ്ടെത്തിയില്ല. സ്കാൻ ചെയ്ത പേജിന് ആദ്യം “തിരയാവുന്നതാക്കുക” വേണം.</string>
     <string name="tools_redact_done">%2$d പേജുകളിൽ %1$d പൊരുത്തങ്ങൾ കറുപ്പിച്ചു</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ഒരു ഷീറ്റിൽ പല പേജുകൾ (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ഒരു ഷീറ്റിൽ 2 അല്ലെങ്കിൽ 4 പേജുകൾ</string>
+    <string name="hint_tool_nup">ഓരോ ഷീറ്റിലും രണ്ടോ നാലോ പേജുകൾ, വായനാക്രമത്തിൽ: ഡ്രാഫ്റ്റുകളോ സ്ലൈഡുകളോ ഹാൻഡ്ഔട്ടുകളോ അച്ചടിക്കാൻ.</string>
+    <string name="tools_nup_body">പേജുകൾ ചെറുതാക്കി വായനാക്രമത്തിൽ അടുത്തടുത്ത് വയ്ക്കുന്നു. ടെക്സ്റ്റും ചിത്രങ്ങളും വ്യക്തമായി നിലനിൽക്കും: ഒന്നും വീണ്ടും വരയ്ക്കുന്നില്ല, നീക്കി ചെറുതാക്കുക മാത്രം.</string>
+    <string name="tools_nup_two">ഷീറ്റിന് 2</string>
+    <string name="tools_nup_four">ഷീറ്റിന് 4</string>
+    <string name="tools_nup_action">ഷീറ്റുകൾ ഉണ്ടാക്കുക</string>
+    <string name="tools_nup_progress">ഷീറ്റുകൾ ക്രമീകരിക്കുന്നു…</string>
+    <string name="tools_nup_err_failed">ഈ PDF ക്രമീകരിക്കാനായില്ല.</string>
+    <string name="tools_nup_err_one_page">ഈ PDF-ൽ ഒരു പേജേ ഉള്ളൂ, അടുത്തടുത്ത് വയ്ക്കാൻ ഒന്നുമില്ല.</string>
+    <string name="tools_nup_done">%2$d ഷീറ്റുകളിൽ %1$d പേജുകൾ വെച്ചു</string>
+    <string name="tools_card_header_footer">ഹെഡറും ഫൂട്ടറും</string>
+    <string name="tools_tile_header_footer">ഹെഡർ/ഫൂട്ടർ</string>
+    <string name="tools_desc_header_footer">മുകളിലോ താഴെയോ ടെക്സ്റ്റ്</string>
+    <string name="hint_tool_header_footer">ഓരോ പേജിന്റെയും മുകളിലോ താഴെയോ ഒരു വരി: തലക്കെട്ട്, തീയതി അല്ലെങ്കിൽ ഫയൽ റഫറൻസ്.</string>
+    <string name="tools_hf_body">ടെക്സ്റ്റ് ഓരോ പേജിലും അതു കാണുന്നതുപോലെ ചേർക്കുന്നു; ബാക്കിയെല്ലാം അതേപടി നിൽക്കും. പേജ് നമ്പറിന് {page}, ആകെ പേജുകൾക്ക് {total} എഴുതുക.</string>
+    <string name="tools_hf_header_label">ഹെഡർ (പേജിന്റെ മുകളിൽ)</string>
+    <string name="tools_hf_footer_label">ഫൂട്ടർ (പേജിന്റെ താഴെ)</string>
+    <string name="tools_hf_placeholders_hint">{page} പേജ് നമ്പറാകും, {total} ആകെ പേജുകളുടെ എണ്ണം.</string>
+    <string name="tools_hf_align_left">ഇടത്</string>
+    <string name="tools_hf_align_centre">നടുവിൽ</string>
+    <string name="tools_hf_align_right">വലത്</string>
+    <string name="tools_hf_skip_first">ആദ്യ പേജ് ഒഴിവാക്കുക</string>
+    <string name="tools_hf_action">ടെക്സ്റ്റ് ചേർക്കുക</string>
+    <string name="tools_hf_progress">ടെക്സ്റ്റ് ചേർക്കുന്നു…</string>
+    <string name="tools_hf_err_failed">ഹെഡറോ ഫൂട്ടറോ ചേർക്കാനായില്ല.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d പേജിൽ ടെക്സ്റ്റ് ചേർത്തു</item>
+        <item quantity="other">%1$d പേജുകളിൽ ടെക്സ്റ്റ് ചേർത്തു</item>
+    </plurals>
 </resources>

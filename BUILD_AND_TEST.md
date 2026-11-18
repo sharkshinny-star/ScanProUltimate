@@ -41,6 +41,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-18, F173 N-up and Header and footer, Linux cloud container)
+
+- `:app:testDebugUnitTest` 925 tests (9 new in `PdfLayoutToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,851,645 bytes (47.5 MiB, +37 KB).
+- NOT run: anything on a device (the two dialogs and the real look of the sheets and stamped text; R7), sideload `assembleRelease`, instrumented tests.
+
 ## Latest results (2026-11-18, F172 Crop PDF pages and Redact text, Linux cloud container)
 
 - `:app:testDebugUnitTest` 916 tests (9 new in `PdfCropRedactToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,814,231 bytes (47.5 MiB, +40 KB), unsigned as configured.

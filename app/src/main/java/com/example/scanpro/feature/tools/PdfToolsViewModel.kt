@@ -859,6 +859,15 @@ class PdfToolsViewModel @Inject constructor(
         com.example.scanpro.imaging.PdfCleanupTools.greyscale(context, uri, named(uri, "greyscale"), ::report)
     }
 
+    fun nup(uri: Uri, perSheet: Int) = launchTool(R.string.tools_nup_progress, R.string.tools_nup_err_failed) {
+        com.example.scanpro.imaging.PdfNupTools.nup(context, uri, perSheet, named(uri, "$perSheet-up"), ::report)
+    }
+
+    fun headerFooter(uri: Uri, config: com.example.scanpro.imaging.PdfHeaderFooterTools.HeaderFooterConfig) =
+        launchTool(R.string.tools_hf_progress, R.string.tools_hf_err_failed) {
+            com.example.scanpro.imaging.PdfHeaderFooterTools.headerFooter(context, uri, config, named(uri, "header footer"), ::report)
+        }
+
     fun cropPdf(uri: Uri, options: com.example.scanpro.imaging.PdfCropTools.CropOptions) =
         launchTool(R.string.tools_crop_pdf_progress, R.string.tools_crop_pdf_err_failed) {
             com.example.scanpro.imaging.PdfCropTools.cropPdf(context, uri, options, named(uri, "cropped"), ::report)

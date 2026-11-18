@@ -134,4 +134,37 @@
     <string name="tools_redact_err_failed">ఈ PDFని దాచలేకపోయాం.</string>
     <string name="tools_redact_err_no_matches">ఈ పదాలలో ఏదీ ఈ PDF టెక్స్ట్‌లో కనబడలేదు. స్కాన్ చేసిన పేజీకి ముందుగా “శోధించదగినదిగా చేయండి” అవసరం.</string>
     <string name="tools_redact_done">%2$d పేజీలలో %1$d సరిపోలికలు నల్లగా చేయబడ్డాయి</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ఒక షీట్‌లో అనేక పేజీలు (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ఒక షీట్‌లో 2 లేదా 4 పేజీలు</string>
+    <string name="hint_tool_nup">ప్రతి షీట్‌లో రెండు లేదా నాలుగు పేజీలు, చదివే క్రమంలో: డ్రాఫ్ట్‌లు, స్లైడ్‌లు లేదా హ్యాండ్అవుట్‌లు ముద్రించడానికి.</string>
+    <string name="tools_nup_body">పేజీలను చిన్నవి చేసి చదివే క్రమంలో పక్కపక్కన ఉంచుతారు. టెక్స్ట్, చిత్రాలు స్పష్టంగా ఉంటాయి: ఏదీ మళ్లీ గీయరు, కదిపి కుదిస్తారు అంతే.</string>
+    <string name="tools_nup_two">షీట్‌కు 2</string>
+    <string name="tools_nup_four">షీట్‌కు 4</string>
+    <string name="tools_nup_action">షీట్లు చేయండి</string>
+    <string name="tools_nup_progress">షీట్లు అమర్చబడుతున్నాయి…</string>
+    <string name="tools_nup_err_failed">ఈ PDFని అమర్చలేకపోయాం.</string>
+    <string name="tools_nup_err_one_page">ఈ PDFలో ఒకే పేజీ ఉంది, పక్కపక్కన పెట్టడానికి ఏమీ లేదు.</string>
+    <string name="tools_nup_done">%2$d షీట్లలో %1$d పేజీలు పెట్టబడ్డాయి</string>
+    <string name="tools_card_header_footer">హెడర్ మరియు ఫుటర్</string>
+    <string name="tools_tile_header_footer">హెడర్/ఫుటర్</string>
+    <string name="tools_desc_header_footer">పైన లేదా కింద టెక్స్ట్</string>
+    <string name="hint_tool_header_footer">ప్రతి పేజీ పైన లేదా కింద ఒక లైన్: శీర్షిక, తేదీ లేదా ఫైల్ రిఫరెన్స్.</string>
+    <string name="tools_hf_body">టెక్స్ట్ ప్రతి పేజీకి అది కనిపించే విధంగా జోడించబడుతుంది; మిగతాదంతా అలాగే ఉంటుంది. పేజీ సంఖ్యకు {page}, మొత్తం పేజీలకు {total} రాయండి.</string>
+    <string name="tools_hf_header_label">హెడర్ (పేజీ పైన)</string>
+    <string name="tools_hf_footer_label">ఫుటర్ (పేజీ కింద)</string>
+    <string name="tools_hf_placeholders_hint">{page} పేజీ సంఖ్య అవుతుంది, {total} మొత్తం పేజీల సంఖ్య.</string>
+    <string name="tools_hf_align_left">ఎడమ</string>
+    <string name="tools_hf_align_centre">మధ్య</string>
+    <string name="tools_hf_align_right">కుడి</string>
+    <string name="tools_hf_skip_first">మొదటి పేజీని వదిలేయండి</string>
+    <string name="tools_hf_action">టెక్స్ట్ జోడించండి</string>
+    <string name="tools_hf_progress">టెక్స్ట్ జోడించబడుతోంది…</string>
+    <string name="tools_hf_err_failed">హెడర్ లేదా ఫుటర్ జోడించలేకపోయాం.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d పేజీకి టెక్స్ట్ జోడించబడింది</item>
+        <item quantity="other">%1$d పేజీలకు టెక్స్ట్ జోడించబడింది</item>
+    </plurals>
 </resources>

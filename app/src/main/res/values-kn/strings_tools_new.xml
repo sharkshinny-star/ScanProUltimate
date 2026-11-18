@@ -134,4 +134,37 @@
     <string name="tools_redact_err_failed">ಈ PDF ಅನ್ನು ಮರೆಮಾಡಲಾಗಲಿಲ್ಲ.</string>
     <string name="tools_redact_err_no_matches">ಈ ಪದಗಳಲ್ಲಿ ಯಾವುದೂ ಈ PDF ಪಠ್ಯದಲ್ಲಿ ಸಿಗಲಿಲ್ಲ. ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟಕ್ಕೆ ಮೊದಲು “ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ” ಬೇಕು.</string>
     <string name="tools_redact_done">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಹೊಂದಿಕೆಗಳನ್ನು ಕಪ್ಪಾಗಿಸಲಾಗಿದೆ</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ಒಂದು ಹಾಳೆಯಲ್ಲಿ ಹಲವು ಪುಟಗಳು (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ಒಂದು ಹಾಳೆಯಲ್ಲಿ 2 ಅಥವಾ 4 ಪುಟಗಳು</string>
+    <string name="hint_tool_nup">ಪ್ರತಿ ಹಾಳೆಯಲ್ಲಿ ಎರಡು ಅಥವಾ ನಾಲ್ಕು ಪುಟಗಳು, ಓದುವ ಕ್ರಮದಲ್ಲಿ: ಕರಡುಗಳು, ಸ್ಲೈಡ್‌ಗಳು ಅಥವಾ ಕೈಪಿಡಿಗಳನ್ನು ಮುದ್ರಿಸಲು.</string>
+    <string name="tools_nup_body">ಪುಟಗಳನ್ನು ಚಿಕ್ಕದಾಗಿಸಿ ಓದುವ ಕ್ರಮದಲ್ಲಿ ಪಕ್ಕಪಕ್ಕ ಇಡಲಾಗುತ್ತದೆ. ಪಠ್ಯ ಮತ್ತು ಚಿತ್ರಗಳು ಸ್ಪಷ್ಟವಾಗಿ ಉಳಿಯುತ್ತವೆ: ಏನನ್ನೂ ಮರುಬರೆಯುವುದಿಲ್ಲ, ಸರಿಸಿ ಕುಗ್ಗಿಸಲಾಗುತ್ತದೆ ಅಷ್ಟೇ.</string>
+    <string name="tools_nup_two">ಹಾಳೆಗೆ 2</string>
+    <string name="tools_nup_four">ಹಾಳೆಗೆ 4</string>
+    <string name="tools_nup_action">ಹಾಳೆಗಳನ್ನು ಮಾಡಿ</string>
+    <string name="tools_nup_progress">ಹಾಳೆಗಳನ್ನು ಜೋಡಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_nup_err_failed">ಈ PDF ಅನ್ನು ಜೋಡಿಸಲಾಗಲಿಲ್ಲ.</string>
+    <string name="tools_nup_err_one_page">ಈ PDF ನಲ್ಲಿ ಒಂದೇ ಪುಟವಿದೆ, ಪಕ್ಕಪಕ್ಕ ಇಡಲು ಏನೂ ಇಲ್ಲ.</string>
+    <string name="tools_nup_done">%2$d ಹಾಳೆಗಳಲ್ಲಿ %1$d ಪುಟಗಳನ್ನು ಇಡಲಾಗಿದೆ</string>
+    <string name="tools_card_header_footer">ಹೆಡರ್ ಮತ್ತು ಫೂಟರ್</string>
+    <string name="tools_tile_header_footer">ಹೆಡರ್/ಫೂಟರ್</string>
+    <string name="tools_desc_header_footer">ಮೇಲೆ ಅಥವಾ ಕೆಳಗೆ ಪಠ್ಯ</string>
+    <string name="hint_tool_header_footer">ಪ್ರತಿ ಪುಟದ ಮೇಲೆ ಅಥವಾ ಕೆಳಗೆ ಒಂದು ಸಾಲು: ಶೀರ್ಷಿಕೆ, ದಿನಾಂಕ ಅಥವಾ ಫೈಲ್ ಉಲ್ಲೇಖ.</string>
+    <string name="tools_hf_body">ಪಠ್ಯವನ್ನು ಪ್ರತಿ ಪುಟಕ್ಕೆ ಅದು ಕಾಣುವಂತೆ ಸೇರಿಸಲಾಗುತ್ತದೆ; ಉಳಿದದ್ದು ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ಪುಟ ಸಂಖ್ಯೆಗೆ {page}, ಒಟ್ಟು ಪುಟಗಳಿಗೆ {total} ಬರೆಯಿರಿ.</string>
+    <string name="tools_hf_header_label">ಹೆಡರ್ (ಪುಟದ ಮೇಲೆ)</string>
+    <string name="tools_hf_footer_label">ಫೂಟರ್ (ಪುಟದ ಕೆಳಗೆ)</string>
+    <string name="tools_hf_placeholders_hint">{page} ಪುಟ ಸಂಖ್ಯೆಯಾಗುತ್ತದೆ, {total} ಒಟ್ಟು ಪುಟಗಳ ಸಂಖ್ಯೆ.</string>
+    <string name="tools_hf_align_left">ಎಡ</string>
+    <string name="tools_hf_align_centre">ಮಧ್ಯ</string>
+    <string name="tools_hf_align_right">ಬಲ</string>
+    <string name="tools_hf_skip_first">ಮೊದಲ ಪುಟವನ್ನು ಬಿಡಿ</string>
+    <string name="tools_hf_action">ಪಠ್ಯ ಸೇರಿಸಿ</string>
+    <string name="tools_hf_progress">ಪಠ್ಯ ಸೇರಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="tools_hf_err_failed">ಹೆಡರ್ ಅಥವಾ ಫೂಟರ್ ಸೇರಿಸಲಾಗಲಿಲ್ಲ.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d ಪುಟಕ್ಕೆ ಪಠ್ಯ ಸೇರಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳಿಗೆ ಪಠ್ಯ ಸೇರಿಸಲಾಗಿದೆ</item>
+    </plurals>
 </resources>

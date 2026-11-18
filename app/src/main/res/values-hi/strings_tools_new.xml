@@ -134,4 +134,37 @@
     <string name="tools_redact_err_failed">यह PDF रिडैक्ट नहीं हो सकी।</string>
     <string name="tools_redact_err_no_matches">इनमें से कोई शब्द इस PDF के टेक्स्ट में नहीं मिला। स्कैन किए पेज को पहले “खोजने योग्य बनाएँ” चाहिए।</string>
     <string name="tools_redact_done">%2$d पेजों पर %1$d मेल काले किए</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">एक शीट पर कई पेज (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">एक शीट पर 2 या 4 पेज रखें</string>
+    <string name="hint_tool_nup">हर शीट पर दो या चार पेज, पढ़ने के क्रम में: ड्राफ़्ट, स्लाइड या हैंडआउट छापने के लिए।</string>
+    <string name="tools_nup_body">पेज छोटे करके पढ़ने के क्रम में एक-दूसरे के बगल में रखे जाते हैं। टेक्स्ट और चित्र साफ़ रहते हैं: कुछ भी दोबारा नहीं बनाया जाता, बस खिसकाया और छोटा किया जाता है।</string>
+    <string name="tools_nup_two">2 प्रति शीट</string>
+    <string name="tools_nup_four">4 प्रति शीट</string>
+    <string name="tools_nup_action">शीट बनाएँ</string>
+    <string name="tools_nup_progress">शीट बन रही हैं…</string>
+    <string name="tools_nup_err_failed">इस PDF को व्यवस्थित नहीं किया जा सका।</string>
+    <string name="tools_nup_err_one_page">इस PDF में सिर्फ़ एक पेज है, बगल में रखने को कुछ नहीं।</string>
+    <string name="tools_nup_done">%2$d शीटों पर %1$d पेज रखे</string>
+    <string name="tools_card_header_footer">हेडर और फ़ुटर</string>
+    <string name="tools_tile_header_footer">हेडर/फ़ुटर</string>
+    <string name="tools_desc_header_footer">ऊपर या नीचे टेक्स्ट</string>
+    <string name="hint_tool_header_footer">हर पेज के ऊपर या नीचे एक पंक्ति: शीर्षक, तारीख़ या फ़ाइल संदर्भ।</string>
+    <string name="tools_hf_body">टेक्स्ट हर पेज पर वैसे जोड़ा जाता है जैसा वह दिखता है; बाक़ी सब अछूता रहता है। पेज नंबर के लिए {page} और कुल पेजों के लिए {total} लिखें।</string>
+    <string name="tools_hf_header_label">हेडर (पेज के ऊपर)</string>
+    <string name="tools_hf_footer_label">फ़ुटर (पेज के नीचे)</string>
+    <string name="tools_hf_placeholders_hint">{page} पेज नंबर बन जाता है, {total} पेजों की कुल संख्या।</string>
+    <string name="tools_hf_align_left">बाएँ</string>
+    <string name="tools_hf_align_centre">बीच में</string>
+    <string name="tools_hf_align_right">दाएँ</string>
+    <string name="tools_hf_skip_first">पहला पेज छोड़ें</string>
+    <string name="tools_hf_action">टेक्स्ट जोड़ें</string>
+    <string name="tools_hf_progress">टेक्स्ट जुड़ रहा है…</string>
+    <string name="tools_hf_err_failed">हेडर या फ़ुटर नहीं जोड़ा जा सका।</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d पेज पर टेक्स्ट जोड़ा</item>
+        <item quantity="other">%1$d पेजों पर टेक्स्ट जोड़ा</item>
+    </plurals>
 </resources>

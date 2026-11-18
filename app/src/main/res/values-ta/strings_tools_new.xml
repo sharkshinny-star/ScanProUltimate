@@ -134,4 +134,37 @@
     <string name="tools_redact_err_failed">இந்த PDF-ஐ மறைக்க முடியவில்லை.</string>
     <string name="tools_redact_err_no_matches">இந்தச் சொற்கள் எதுவும் இந்த PDF-இன் உரையில் இல்லை. ஸ்கேன் செய்த பக்கத்திற்கு முதலில் “தேடக்கூடியதாக்கு” தேவை.</string>
     <string name="tools_redact_done">%2$d பக்கங்களில் %1$d பொருத்தங்கள் கறுப்பாக்கப்பட்டன</string>
+
+    <!-- N-up and Header and footer (F173): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_nup">ஒரு தாளில் பல பக்கங்கள் (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">ஒரு தாளில் 2 அல்லது 4 பக்கங்கள்</string>
+    <string name="hint_tool_nup">ஒவ்வொரு தாளிலும் இரண்டு அல்லது நான்கு பக்கங்கள், படிக்கும் வரிசையில்: வரைவுகள், ஸ்லைடுகள் அல்லது கையேடுகள் அச்சிட.</string>
+    <string name="tools_nup_body">பக்கங்கள் சிறிதாக்கப்பட்டு படிக்கும் வரிசையில் அருகருகே வைக்கப்படுகின்றன. உரையும் படங்களும் கூர்மையாக இருக்கும்: எதுவும் மீண்டும் வரையப்படவில்லை, நகர்த்தி சிறிதாக்கப்படுகிறது மட்டுமே.</string>
+    <string name="tools_nup_two">தாளுக்கு 2</string>
+    <string name="tools_nup_four">தாளுக்கு 4</string>
+    <string name="tools_nup_action">தாள்களை உருவாக்கு</string>
+    <string name="tools_nup_progress">தாள்கள் அமைக்கப்படுகின்றன…</string>
+    <string name="tools_nup_err_failed">இந்த PDF-ஐ அமைக்க முடியவில்லை.</string>
+    <string name="tools_nup_err_one_page">இந்த PDF-இல் ஒரே பக்கம் உள்ளது, அருகருகே வைக்க எதுவுமில்லை.</string>
+    <string name="tools_nup_done">%2$d தாள்களில் %1$d பக்கங்கள் வைக்கப்பட்டன</string>
+    <string name="tools_card_header_footer">மேற்குறிப்பும் கீழ்க்குறிப்பும்</string>
+    <string name="tools_tile_header_footer">மேல்/கீழ் குறிப்பு</string>
+    <string name="tools_desc_header_footer">மேலே அல்லது கீழே உரை</string>
+    <string name="hint_tool_header_footer">ஒவ்வொரு பக்கத்தின் மேலோ கீழோ ஒரு வரி: தலைப்பு, தேதி அல்லது கோப்புக் குறிப்பு.</string>
+    <string name="tools_hf_body">உரை ஒவ்வொரு பக்கத்திலும் காட்டப்படும் விதத்தில் சேர்க்கப்படுகிறது; மற்றவை அப்படியே இருக்கும். பக்க எண்ணுக்கு {page}, மொத்தப் பக்கங்களுக்கு {total} என்று எழுதுங்கள்.</string>
+    <string name="tools_hf_header_label">மேற்குறிப்பு (பக்கத்தின் மேலே)</string>
+    <string name="tools_hf_footer_label">கீழ்க்குறிப்பு (பக்கத்தின் கீழே)</string>
+    <string name="tools_hf_placeholders_hint">{page} பக்க எண்ணாகவும், {total} மொத்தப் பக்கங்களாகவும் மாறும்.</string>
+    <string name="tools_hf_align_left">இடது</string>
+    <string name="tools_hf_align_centre">நடுவில்</string>
+    <string name="tools_hf_align_right">வலது</string>
+    <string name="tools_hf_skip_first">முதல் பக்கத்தைத் தவிர்</string>
+    <string name="tools_hf_action">உரையைச் சேர்</string>
+    <string name="tools_hf_progress">உரை சேர்க்கப்படுகிறது…</string>
+    <string name="tools_hf_err_failed">மேற்குறிப்பையோ கீழ்க்குறிப்பையோ சேர்க்க முடியவில்லை.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">%1$d பக்கத்தில் உரை சேர்க்கப்பட்டது</item>
+        <item quantity="other">%1$d பக்கங்களில் உரை சேர்க்கப்பட்டது</item>
+    </plurals>
 </resources>

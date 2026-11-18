@@ -145,4 +145,37 @@
     <string name="tools_redact_err_failed">Couldn\'t redact this PDF.</string>
     <string name="tools_redact_err_no_matches">None of those words were found in this PDF\'s text. A scanned page needs Make searchable first.</string>
     <string name="tools_redact_done" tools:ignore="PluralsCandidate">Blacked out %1$d matches on %2$d pages</string>
+    <!-- N-up and Header and footer (F173). -->
+    <string name="tools_card_nup">Pages per sheet (N-up)</string>
+    <string name="tools_tile_nup">N-up</string>
+    <string name="tools_desc_nup">Put 2 or 4 pages on one sheet</string>
+    <string name="hint_tool_nup">Put two or four pages on each sheet, in reading order, for printing drafts, slides or handouts.</string>
+    <string name="tools_nup_body">Pages are scaled down and placed side by side, in reading order. Text and pictures stay sharp: nothing is redrawn, only moved and shrunk.</string>
+    <string name="tools_nup_two">2 per sheet</string>
+    <string name="tools_nup_four">4 per sheet</string>
+    <string name="tools_nup_action">Make sheets</string>
+    <string name="tools_nup_progress">Laying out the sheets…</string>
+    <string name="tools_nup_err_failed">Couldn\'t lay out this PDF.</string>
+    <string name="tools_nup_err_one_page">This PDF has only one page, so there is nothing to put side by side.</string>
+    <string name="tools_nup_done" tools:ignore="PluralsCandidate">Placed %1$d pages on %2$d sheets</string>
+
+    <string name="tools_card_header_footer">Header and footer</string>
+    <string name="tools_tile_header_footer">Header/footer</string>
+    <string name="tools_desc_header_footer">Text along the top or bottom</string>
+    <string name="hint_tool_header_footer">Put a line of text along the top or bottom of every page: a title, a date, a file reference.</string>
+    <string name="tools_hf_body">The text is added to each page as it is shown; everything else stays untouched. Write {page} or {total} to show the page number or the page count.</string>
+    <string name="tools_hf_header_label">Header (top of the page)</string>
+    <string name="tools_hf_footer_label">Footer (bottom of the page)</string>
+    <string name="tools_hf_placeholders_hint">{page} becomes the page number, {total} the page count.</string>
+    <string name="tools_hf_align_left">Left</string>
+    <string name="tools_hf_align_centre">Centre</string>
+    <string name="tools_hf_align_right">Right</string>
+    <string name="tools_hf_skip_first">Skip the first page</string>
+    <string name="tools_hf_action">Add text</string>
+    <string name="tools_hf_progress">Adding the text…</string>
+    <string name="tools_hf_err_failed">Couldn\'t add the header or footer.</string>
+    <plurals name="tools_hf_done">
+        <item quantity="one">Added the text to %1$d page</item>
+        <item quantity="other">Added the text to %1$d pages</item>
+    </plurals>
 </resources>
