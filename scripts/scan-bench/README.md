@@ -9,4 +9,10 @@ cd scripts/scan-bench && gradle -q run --args="extra"
 ```
 
 Other arguments: `only=shadow`, `dump=/some/dir` (images with true and found outlines), `time` (median detection time).
+
+`gradle -q run --args="enhance"` scores the page filters (`MatFilters.kt`, compiled unchanged) instead: a known page
+is degraded (warm cast, brightness ramp, corner shadow, dim noise, glare) and each filter's output is measured for
+text contrast, background evenness, blown whites, halo around strokes, colour fidelity (Lab dE of known patches) and
+retention of faint content (a pencil line and a highlighter bar). `dump=` writes each output image. OCR word accuracy
+needs the phone and is not covered here.
 Needs a JDK 17+ and Gradle 8; the first run downloads about 100 MB of OpenCV.

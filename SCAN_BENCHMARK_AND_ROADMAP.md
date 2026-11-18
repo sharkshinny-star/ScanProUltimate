@@ -74,7 +74,7 @@ lighting cases; they do not replace real photographs.
    you without an account. Without this, claims about being better than the competitors are unsupported.
 2. **Hard-shadow detection**: done in F168/F169 by fitting lines to the visible edge segments of the Canny and faint maps; the corner-wedge and two-side shadows fell to about 1% in F169. The page edge disappears where a shadow is as dark as the
    surface. Options to measure with the benchmark: combine partial outlines into one quad, or fit lines to the visible edge segments.
-3. **Enhancement and readability benchmark** (high impact, medium effort, low risk). Score each filter on the generated pages: text
+3. **Enhancement and readability benchmark**: built in F171 (`scripts/scan-bench` `enhance`), and its first findings fixed (filter glow and colour cast). Still missing: OCR word accuracy on a phone. Score each filter on the generated pages: text
    contrast, halo around letters, background evenness, colour accuracy, and OCR word accuracy. Then tune, instead of judging by eye.
 4. **A release-like build type for honest timing** (medium impact, small effort, low risk): minified, debug-signed, with the baseline
    profile; then compare start-up and camera-open time against the competitors on equal terms.

@@ -41,6 +41,13 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-18, F171 enhancement benchmark and filter fixes, Linux cloud container)
+
+- Enhancement benchmark (`scripts/scan-bench`, `gradle -q run --args="enhance"`; the app's `MatFilters.kt` compiled unchanged): COLOR halo around strokes 19–22 → 3.8–4.7 grey levels, background spread 19–21 → 5.4–7.7, blown paper 38–40% → under 1%, colour-patch dE 28–30 → 9.7–15.0 (warm cast 27.5 → 10.5); GRAY halo 22–23 → 1.0–2.0, blown 38% → 0.5%; WHITEBOARD dE roughly halved; AUTO and BW byte-identical paths. Faint pencil/highlighter retention on GRAY 67–88% (the old 70–106% rode on the glow defect).
+- Golden images regenerated (`-Pscanpro.updateGoldens=true`) for color, gray, whiteboard and chain, and reviewed side by side with the old ones; the other goldens are unchanged.
+- Gradle on this commit: `:app:testDebugUnitTest` 907 tests, 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings; `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,774,304 bytes (47.5 MiB), unsigned as configured.
+- NOT run: sideload `assembleRelease`, instrumented tests, any device; OCR word accuracy per filter needs the phone (R56 and roadmap item 3).
+
 ## Latest results (2026-11-18, F170 gradient snap and gated fallback sources, Linux cloud container)
 
 - Desktop detector benchmark (`scripts/scan-bench`, `gradle -q run --args="extra"`): 12 benchmark scenes mean IoU 0.986 (F169: 0.980), worst corner error 0.58% (F169: 0.97%); all 16 shadow variants under 2% (13 under 0.7%); 4 no-page scenes still produce no convincing page. Median detection time 6.6 ms (F169: 8.8 ms, F168: 12.8 ms), worst timed frame 11.6 ms; the straight-edge search on an empty patterned mat costs 8.9 ms.

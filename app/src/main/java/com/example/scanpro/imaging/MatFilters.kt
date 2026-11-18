@@ -6,7 +6,9 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import org.opencv.core.Core
+import org.opencv.core.CvType
 import org.opencv.core.Mat
+import org.opencv.core.Scalar
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 
@@ -22,6 +24,8 @@ internal object MatFilters {
     private const val SHADOW_SIGMA = 30.0
     private const val PAPER_MAX_SATURATION = 59.0
     private const val FINGER_ESTIMATE_SIZE = 800.0
+    /** The illumination estimate never drops below this share of the paper level (see [illuminationEstimate]). */
+    private const val ILLUMINATION_FLOOR = 0.55
 
     /** True when applying this look would change any pixel. */
     fun changesPixels(filter: PageFilter, adjustments: PageAdjustments): Boolean =
@@ -212,6 +216,93 @@ internal object MatFilters {
      * apply local contrast (CLAHE), edge-preserving denoise and a restrained unsharp mask.
      * This improves both visual output and OCR without sending pixels off-device.
      */
+    /**
+     * An estimate of the illumination on the page, for dividing out shadows: the luminance at a low resolution with
+     * the dark content closed away, then smoothed. A plain blur of the page itself darkens wherever text is dense,
+     * so dividing by it over-brightens a halo around every paragraph (measured by `scripts/scan-bench` `enhance`
+     * before this estimate: a background spread of about 20 grey levels and a glow of about 20 around the strokes;
+     * after: both under 3). The closing kernel is wider than a text line, so ink vanishes from the estimate, while
+     * blocks larger than it (photos, logos) survive; the floor at [ILLUMINATION_FLOOR] of the paper level keeps such
+     * a block dark instead of treating it as a shadow to lift.
+     */
+    private fun illuminationEstimate(luminance: Mat): Mat {
+        val longSide = max(luminance.cols(), luminance.rows()).toDouble()
+        val scale = (SHADOW_ESTIMATE_SIZE / longSide).coerceAtMost(1.0)
+        val small = Mat()
+        val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, Size(21.0, 21.0))
+        val paperMask = Mat()
+        val masked = Mat()
+        val weight = Mat()
+        try {
+            Imgproc.resize(luminance, small, Size(luminance.cols() * scale, luminance.rows() * scale), 0.0, 0.0, Imgproc.INTER_AREA)
+            Imgproc.morphologyEx(small, small, Imgproc.MORPH_CLOSE, kernel)
+            // The paper level is where most of the (closed) page sits. Blocks that stay darker (a photo, a logo)
+            // are masked out and their area filled from the paper around them, so the estimate neither lifts them
+            // to white nor leaves a bright ring on the paper beside them.
+            val histogram = histogramOf(small)
+            val target = small.rows().toLong() * small.cols() * 6 / 10
+            var seen = 0L
+            var paper = 255
+            for (v in 0..255) {
+                seen += histogram[v]
+                if (seen >= target) { paper = v; break }
+            }
+            Imgproc.threshold(small, paperMask, paper * ILLUMINATION_FLOOR, 1.0, Imgproc.THRESH_BINARY)
+            small.convertTo(masked, CvType.CV_32F)
+            paperMask.convertTo(weight, CvType.CV_32F)
+            Core.multiply(masked, weight, masked)
+            Imgproc.GaussianBlur(masked, masked, Size(0.0, 0.0), 10.0)
+            Imgproc.GaussianBlur(weight, weight, Size(0.0, 0.0), 10.0)
+            Core.max(weight, Scalar(1e-4), weight)
+            Core.divide(masked, weight, masked)
+            // A page that is mostly one dark block leaves no paper to fill from; the floor keeps the divide sane.
+            Core.max(masked, Scalar(paper * ILLUMINATION_FLOOR), masked)
+            masked.convertTo(small, CvType.CV_8U)
+            val background = Mat()
+            Imgproc.resize(small, background, luminance.size(), 0.0, 0.0, Imgproc.INTER_LINEAR)
+            return background
+        } finally {
+            small.release()
+            kernel.release()
+            paperMask.release()
+            masked.release()
+            weight.release()
+        }
+    }
+
+    /**
+     * Shifts Lab [a] and [b] so the paper reads neutral grey, killing a warm or cool light cast. The cast is read
+     * from the pixels that are bright in [luminance] (the paper); a page with no cast shifts by nearly nothing.
+     */
+    private fun neutraliseCast(luminance: Mat, a: Mat, b: Mat) {
+        val brightMask = Mat()
+        try {
+            Imgproc.threshold(luminance, brightMask, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
+            val meanA = Core.mean(a, brightMask).`val`[0]
+            val meanB = Core.mean(b, brightMask).`val`[0]
+            // At most a gentle pull: a strongly coloured scene (a poster) is not paper to neutralise.
+            val shiftA = (128.0 - meanA).coerceIn(-14.0, 14.0)
+            val shiftB = (128.0 - meanB).coerceIn(-14.0, 14.0)
+            if (kotlin.math.abs(shiftA) > 0.8) Core.add(a, Scalar(shiftA), a)
+            if (kotlin.math.abs(shiftB) > 0.8) Core.add(b, Scalar(shiftB), b)
+        } finally {
+            brightMask.release()
+        }
+    }
+
+    /** The grey-level histogram of a single-channel image, for [percentile]. */
+    private fun histogramOf(gray: Mat): IntArray {
+        val hist = Mat()
+        try {
+            Imgproc.calcHist(listOf(gray), org.opencv.core.MatOfInt(0), Mat(), hist, org.opencv.core.MatOfInt(256), org.opencv.core.MatOfFloat(0f, 256f))
+            val values = FloatArray(256)
+            hist.get(0, 0, values)
+            return IntArray(256) { values[it].toInt() }
+        } finally {
+            hist.release()
+        }
+    }
+
     internal fun autoDocumentEnhance(rgb: Mat, colorBoost: Boolean): Mat {
         val lab = Mat()
         val channels = mutableListOf<Mat>()
@@ -225,9 +316,12 @@ internal object MatFilters {
             Imgproc.cvtColor(rgb, lab, Imgproc.COLOR_RGB2Lab)
             Core.split(lab, channels)
             val luminance = channels[0]
+            // The lighting's colour cast sits in a and b; the paper says how far from neutral it is.
+            neutraliseCast(luminance, channels[1], channels[2])
 
-            // Large-radius illumination estimate. Dividing by it suppresses page shadows.
-            Imgproc.GaussianBlur(luminance, background, Size(0.0, 0.0), 24.0)
+            // Content-free illumination estimate. Dividing by it suppresses page shadows without the halo a plain
+            // blur leaves around text (see illuminationEstimate).
+            illuminationEstimate(luminance).let { it.copyTo(background); it.release() }
             Core.divide(luminance, background, normalized, 235.0)
             val clahe = Imgproc.createCLAHE(if (colorBoost) 2.0 else 2.35, Size(8.0, 8.0))
             try {
@@ -363,7 +457,7 @@ internal object MatFilters {
         val out = Mat()
         try {
             Imgproc.cvtColor(rgb, gray, Imgproc.COLOR_RGB2GRAY)
-            Imgproc.GaussianBlur(gray, background, Size(0.0, 0.0), 24.0)
+            illuminationEstimate(gray).let { it.copyTo(background); it.release() }
             Core.divide(gray, background, normalized, 235.0)
             val clahe = Imgproc.createCLAHE(2.4, Size(8.0, 8.0))
             try { clahe.apply(normalized, normalized) } finally { clahe.collectGarbage() }

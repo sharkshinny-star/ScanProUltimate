@@ -213,6 +213,7 @@ fun main(args: Array<String>) {
         println("time: median-of-scenes %.2f ms, mean %.2f ms, max %.2f".format(med.sorted()[med.size / 2], med.average(), med.max()))
         return
     }
+    if ("enhance" in args) { enhanceBench(args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")); return }
     val extra = "extra" in args
     val dump = args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")
     val only = args.firstOrNull { it.startsWith("only=") }?.removePrefix("only=")
