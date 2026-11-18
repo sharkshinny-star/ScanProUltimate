@@ -535,4 +535,53 @@
     <string name="tools_wm_color_red">लाल</string>
     <string name="tools_wm_color_green">हरा</string>
     <string name="tools_wm_color_purple">बैंगनी</string>
+    <string name="tools_card_edit_pdf">PDF टेक्स्ट बदलें</string>
+    <string name="tools_tile_edit_pdf">PDF बदलें</string>
+    <string name="tools_desc_edit_pdf">शब्द, फ़ॉन्ट, बोल्ड और आकार बदलें</string>
+    <string name="hint_tool_edit_pdf">टेक्स्ट की किसी भी पंक्ति पर टैप करके उसके शब्द, फ़ॉन्ट, बोल्ड, इटैलिक या आकार बदलें। आपके लिखे अक्षर PDF के अपने फ़ॉन्ट में हों तो वही फ़ॉन्ट रहता है। नई PDF सेव होती है; मूल फ़ाइल नहीं बदलती।</string>
+    <string name="tools_edit_hint">बदलने के लिए किसी भी टेक्स्ट पर टैप करें</string>
+    <string name="tools_edit_save">PDF सेव करें</string>
+    <string name="tools_edit_no_text">इस पेज पर कोई टेक्स्ट नहीं है। स्कैन किया पेज एक तस्वीर होता है: पहले \"खोजने योग्य बनाएँ\" इस्तेमाल करें।</string>
+    <string name="tools_edit_err_open">इस PDF को बदलने के लिए खोला नहीं जा सका।</string>
+    <string name="tools_edit_dialog_title">टेक्स्ट बदलें</string>
+    <string name="tools_edit_text_label">टेक्स्ट</string>
+    <string name="tools_edit_font">फ़ॉन्ट</string>
+    <string name="tools_edit_font_same">PDF जैसा</string>
+    <string name="tools_edit_font_sans">सैंस</string>
+    <string name="tools_edit_font_serif">सेरिफ़</string>
+    <string name="tools_edit_font_mono">मोनो</string>
+    <string name="tools_edit_bold">बोल्ड</string>
+    <string name="tools_edit_italic">इटैलिक</string>
+    <string name="tools_edit_size">आकार</string>
+    <string name="tools_edit_size_value">%1$s pt</string>
+    <string name="tools_edit_smaller">छोटा</string>
+    <string name="tools_edit_larger">बड़ा</string>
+    <string name="tools_edit_original">PDF में: %1$s, %2$s pt</string>
+    <string name="tools_edit_delete">टेक्स्ट हटाएँ</string>
+    <string name="tools_edit_undo_change">बदलाव वापस लें</string>
+    <string name="tools_edit_undo">पिछला बदलाव वापस लें</string>
+    <string name="tools_edit_discard_title">बदलाव छोड़ दें?</string>
+    <string name="tools_edit_discard_body">इस PDF के बदलाव सेव नहीं हुए हैं।</string>
+    <string name="tools_edit_discard">छोड़ दें</string>
+    <string name="tools_edit_progress">बदली हुई PDF सेव हो रही है…</string>
+    <string name="tools_edit_err_failed">बदली हुई PDF सेव नहीं हो सकी।</string>
+    <plurals name="tools_edit_save_count">
+        <item quantity="one">PDF सेव करें (%1$d बदलाव)</item>
+        <item quantity="other">PDF सेव करें (%1$d बदलाव)</item>
+    </plurals>
+    <plurals name="tools_edit_done">
+        <item quantity="one">%1$d बदलाव सेव हुआ।</item>
+        <item quantity="other">%1$d बदलाव सेव हुए।</item>
+    </plurals>
+    <plurals name="tools_edit_similar_font">
+        <item quantity="one">%1$d बदलाव मिलते-जुलते फ़ॉन्ट में है: PDF के फ़ॉन्ट में कुछ अक्षर नहीं हैं।</item>
+        <item quantity="other">%1$d बदलाव मिलते-जुलते फ़ॉन्ट में हैं: PDF के फ़ॉन्ट में कुछ अक्षर नहीं हैं।</item>
+    </plurals>
+    <plurals name="tools_edit_covered">
+        <item quantity="one">%1$d बदलाव सफ़ेद बॉक्स के ऊपर लिखा है: पुराने शब्द फ़ाइल में नीचे अब भी हैं।</item>
+        <item quantity="other">%1$d बदलाव सफ़ेद बॉक्स के ऊपर लिखे हैं: पुराने शब्द फ़ाइल में नीचे अब भी हैं।</item>
+    </plurals>
+    <string name="tools_protect_already_body">इसे खोलने वाले को पहले से पासवर्ड चाहिए। दूसरा पासवर्ड लगाने के लिए पहले मौजूदा पासवर्ड हटाएँ, फिर खुली हुई कॉपी को सुरक्षित करें।</string>
+    <string name="tools_protect_already_title">इस PDF पर पहले से पासवर्ड है</string>
+    <string name="tools_protect_remove_password_first">पहले पासवर्ड हटाएँ</string>
 </resources>
