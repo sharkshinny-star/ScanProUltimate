@@ -172,7 +172,6 @@
     <string name="scan_doc_intro_title">രേഖ സ്കാൻ ചെയ്യൽ</string>
     <string name="scan_doc_intro_body">പേജ് നല്ല വെളിച്ചത്തിൽ പരത്തിവച്ച് ഫോൺ ഉറപ്പിച്ചു പിടിക്കുക. ScanPro അരികുകൾ കണ്ടെത്തി പേജ് നേരെയാക്കി വൃത്തിയാക്കും. ഷട്ടർ അമർത്തുക, അല്ലെങ്കിൽ ഓട്ടോ ക്യാപ്ചർ ഓണാക്കി അനങ്ങാതെ നിൽക്കുക. കൂടുതൽ പേജുകൾ ചേർത്ത് പൂർത്തിയായി അമർത്തുക.</string>
     <string name="scan_book_intro_start">ഇപ്പോൾ ആരംഭിക്കുക</string>
-    <string name="scan_book_intro_dont_remind">ഇത് ഇനി കാണിക്കരുത്</string>
     <string name="scan_status_spread_split" tools:ignore="PluralsCandidate">സ്പ്രെഡ് %1$d, %2$d പേജുകളായി വിഭജിച്ചു</string>
     <string name="scan_take_photo">ഫോട്ടോ എടുക്കുക</string>
     <string name="scan_import_photos">ഫോട്ടോകൾ ഇംപോർട്ട് ചെയ്യുക</string>

@@ -361,15 +361,11 @@ fun CameraScannerScreen(
         } else {
             ScanIntroDialog(
                 mode,
-                onTry = { dontRemind ->
-                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
+                onTry = {
                     introMode = null
                     trySample = true
                 },
-                onStart = { dontRemind ->
-                    if (dontRemind) mode.introPrefKey()?.let { k -> prefs.edit { putBoolean(k, true) } }
-                    introMode = null
-                })
+                onStart = { introMode = null })
         }
     }
     // Set when the review was left to add a page or to go back to the camera: the next Done returns to it rather
@@ -2668,8 +2664,8 @@ internal fun resetScanIntros(context: android.content.Context) {
  * book with the A / B halves the viewfinder shows. Each shows once (remembered the moment it appears), with no tick box.
  */
 @Composable
-internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Unit)? = null, onStart: (dontRemind: Boolean) -> Unit) {
-    var dontRemind by rememberSaveable { mutableStateOf(false) }
+internal fun ScanIntroDialog(mode: ScanMode, onTry: (() -> Unit)? = null, onStart: () -> Unit) {
+    val sample = mode != ScanMode.BOOK && mode != ScanMode.ID_CARD
     val (title, body) = when (mode) {
         ScanMode.BOOK -> R.string.scan_book_intro_title to R.string.intro_book_body
         ScanMode.ID_CARD -> R.string.scan_idcard_intro_title to R.string.intro_idcard_body
@@ -2677,8 +2673,6 @@ internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Un
     }
     val frontLabel = stringResource(R.string.scan_id_side_front)
     val backLabel = stringResource(R.string.scan_id_side_back)
-    val confirmText = if (onTry != null) stringResource(R.string.intro_doc_try) else stringResource(R.string.scan_book_intro_start)
-    val dismissText = if (onTry != null) stringResource(R.string.hint_skip) else null
     com.example.scanpro.core.designsystem.IllustratedDialog(
         title = stringResource(title),
         body = stringResource(body),
@@ -2691,27 +2685,11 @@ internal fun ScanIntroDialog(mode: ScanMode, onTry: ((dontRemind: Boolean) -> Un
                 else -> com.example.scanpro.core.designsystem.SampleDocumentArt(art)
             }
         },
-        extra = {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .toggleable(value = dontRemind, role = Role.Checkbox) { dontRemind = it }
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.Checkbox(checked = dontRemind, onCheckedChange = null)
-                Text(stringResource(R.string.scan_book_intro_dont_remind), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodyMedium)
-            }
-        },
-        confirmText = confirmText,
-        dismissText = dismissText,
-        buttonsInRow = onTry != null,
-        onConfirm = {
-            if (onTry != null) onTry(dontRemind) else onStart(dontRemind)
-        },
-        onDismiss = { onStart(dontRemind) }
+        confirmText = stringResource(if (sample && onTry != null) R.string.intro_doc_try else R.string.scan_book_intro_start),
+        onConfirm = { if (sample && onTry != null) onTry() else onStart() },
+        dismissText = if (sample && onTry != null) stringResource(R.string.hint_skip) else null,
+        buttonsInRow = sample && onTry != null,
+        onDismiss = onStart
     )
 }
 

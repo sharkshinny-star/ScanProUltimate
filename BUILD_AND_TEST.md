@@ -1,6 +1,6 @@
 # Build and test
 
-Last updated: 2026-11-18 (F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
+Last updated: 2026-11-18 (F180 repairs after `8de31f6`, not compiled; F179 UI/motion overhaul; see Latest results). Earlier: 2026-11-17 (resolved CameraScannerScreen & ScanProApp compile errors, PageAreaDecodeTest destructuring, 800 tests 0 failed, lint 0 errors, assembleDebug passed). Supersedes `BUILD_STATUS.md` (8 October 2026, written before the project
 had ever been built).
 
 ## Toolchain
@@ -40,6 +40,12 @@ Gradle properties:
 | `-Pscanpro.privacyPolicyUrl=…`, `-Pscanpro.termsUrl=…` | Settings links (hidden when empty) |
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
+
+## Latest results (2026-11-18, F180 repairs after the review of 8de31f6, commit PENDING_F180, Linux cloud container)
+
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS. `bash scripts/ci/check-room-schema.sh`: schema files 1..3 present. The six edited string files parse as XML.
+- `PdfToolsScreen.kt` compared with `0bd0609`: identical apart from the saved-state path used by Save. `ScanIntroDialog` is identical to `0bd0609`.
+- NOT run: compile, unit tests, lint, release builds (no Android SDK in the cloud container) and anything on a device. The CI run for this push is the first build of F180.
 
 ## Latest results (2026-11-18, F179 UI/motion overhaul, commit 5747828, owner's Mac, Android Studio Preview JBR)
 

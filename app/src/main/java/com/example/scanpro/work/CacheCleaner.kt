@@ -18,7 +18,6 @@ object CacheCleaner {
         "thumb_", "markup_", "inspect_", "pdf2img_in", "img2pdf_", "raster_", "temp_in_",
         "ocr_in_", "ocr_page_", "form_read_", "form_fill_", "backup_", "sign_",
         "pdftext_", "insert_base_", "insert_extra_",
-        "pdftext_", "insert_base_", "insert_extra_",
         "wm_in_", "num_in_", "txt_in_", "resize_in_", "crop_in_", "crop_staged_", "precrop_", "conv_in_",
         "compress_img_", "repair_", "pdf2ppt_", "PDFBox",
         "blank_in_", "blank_rm_", "grey_in_", "flatten_in_", "ximg_in_", "invert_in_",

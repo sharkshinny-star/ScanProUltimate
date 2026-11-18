@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -156,7 +157,7 @@ class SignPdfViewModel @Inject constructor(
         if (clean.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
             val stamp = newStampFile()
-            val bitmap = textBitmap(clean, color.value.toInt(), typeface)
+            val bitmap = textBitmap(clean, color.toArgb(), typeface)
             try {
                 ImageProcessor.saveSignature(bitmap, stamp)
             } finally {
