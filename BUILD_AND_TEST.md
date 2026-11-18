@@ -41,7 +41,7 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
-## Latest results (2026-11-18, F180 repairs after the review of 8de31f6, commit PENDING_F180, Linux cloud container)
+## Latest results (2026-11-18, F180 repairs after the review of 8de31f6, commit a8f220c, Linux cloud container)
 
 - `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS. `bash scripts/ci/check-room-schema.sh`: schema files 1..3 present. The six edited string files parse as XML.
 - `PdfToolsScreen.kt` compared with `0bd0609`: identical apart from the saved-state path used by Save. `ScanIntroDialog` is identical to `0bd0609`.
