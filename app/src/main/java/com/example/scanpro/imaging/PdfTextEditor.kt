@@ -1,6 +1,12 @@
 package com.example.scanpro.imaging
 
 import com.tom_roush.pdfbox.contentstream.operator.Operator
+import com.tom_roush.pdfbox.contentstream.operator.color.SetNonStrokingColor
+import com.tom_roush.pdfbox.contentstream.operator.color.SetNonStrokingColorN
+import com.tom_roush.pdfbox.contentstream.operator.color.SetNonStrokingColorSpace
+import com.tom_roush.pdfbox.contentstream.operator.color.SetNonStrokingDeviceCMYKColor
+import com.tom_roush.pdfbox.contentstream.operator.color.SetNonStrokingDeviceGrayColor
+import com.tom_roush.pdfbox.contentstream.operator.color.SetNonStrokingDeviceRGBColor
 import com.tom_roush.pdfbox.cos.COSArray
 import com.tom_roush.pdfbox.cos.COSBase
 import com.tom_roush.pdfbox.cos.COSFloat
@@ -72,7 +78,11 @@ internal object PdfTextEditor {
         val colour: Int
     )
 
-    /** Replace span [index] on [page] with [text] (empty removes it). [colour] null keeps the span's own. */
+    /**
+     * Replace span [index] on [page] with [text] (empty removes it). [colour] null keeps the span's own (0xRRGGBB).
+     * An [index] of [NEW] adds [text] as new words starting at [x], [y]: the baseline's left end in display points from
+     * the shown page's top-left; Same as PDF then means the font of the nearest text on the page.
+     */
     data class Edit(
         val page: Int,
         val index: Int,
@@ -81,8 +91,15 @@ internal object PdfTextEditor {
         val bold: Boolean,
         val italic: Boolean,
         val size: Float,
-        val colour: Int? = null
-    )
+        val colour: Int? = null,
+        val x: Float = 0f,
+        val y: Float = 0f
+    ) {
+        val isNew: Boolean get() = index == NEW
+    }
+
+    /** The [Edit.index] of new text added to a page. */
+    const val NEW = -1
 
     /**
      * [sameFont]: edits written in the PDF's own font (or its other weight); [similarFont]: in a substitute; [skipped]:
@@ -117,7 +134,8 @@ internal object PdfTextEditor {
             val opsOfEdit = HashMap<Edit, MutableSet<Int>>()
             val needsCover = HashSet<Edit>()
             val chosen = ArrayList<Triple<Edit, SpanData, FontChoice?>>()
-            for (edit in pageEdits.distinctBy { it.index }) {
+            val additions = pageEdits.filter { it.isNew && it.text.isNotBlank() }
+            for (edit in pageEdits.filterNot { it.isNew }.distinctBy { it.index }) {
                 val data = analysis.spans.getOrNull(edit.index)
                 // The font is chosen before anything is cut: a line whose new text no font can draw is left as it was,
                 // rather than cut out and not written back.
@@ -133,7 +151,7 @@ internal object PdfTextEditor {
                     ops += ref.op
                 }
             }
-            if (chosen.isEmpty()) continue
+            if (chosen.isEmpty() && additions.isEmpty()) continue
             val failed = if (removal.isEmpty()) emptySet() else rewrite(doc, page, removal, analysis.ops)
             for ((edit, ops) in opsOfEdit) if (ops.any { it in failed }) needsCover += edit
             PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { stream ->
@@ -141,6 +159,18 @@ internal object PdfTextEditor {
                     if (edit in needsCover) { cover(stream, data); covered++ }
                     if (choice == null) { applied++; continue }
                     draw(stream, data, edit, choice)
+                    applied++
+                    if (choice.same) same++ else similar++
+                }
+                for (addition in additions) {
+                    // The nearest line's font stands for "the PDF's font" here, and its colour when none was chosen.
+                    val near = analysis.spans.minByOrNull { distance(it.span, addition.x, addition.y) }
+                    val choice = if (near != null) chooseFont(page, near, addition, unicodeOnce)
+                    else chooseStandard(null, addition, unicodeOnce)
+                    if (choice == null) { skipped++; continue }
+                    val (ux, uy, vx, vy) = analysis.shape.upright()
+                    val (ox, oy) = analysis.shape.toPage(addition.x, addition.y)
+                    drawText(stream, addition.text, choice, addition.size, addition.colour ?: near?.span?.colour ?: 0, ux, uy, vx, vy, ox, oy)
                     applied++
                     if (choice.same) same++ else similar++
                 }
@@ -177,6 +207,7 @@ internal object PdfTextEditor {
     }
 
     private class PageAnalysis(
+        val shape: PageShape,
         val spans: List<SpanData>,
         val glyphs: List<Glyph>,
         val glyphOf: Map<TextPosition, Glyph>,
@@ -192,7 +223,7 @@ internal object PdfTextEditor {
         reader.endLine()
         val page = doc.getPage(pageIndex)
         val shape = PageShape(page.cropBox.lowerLeftX, page.cropBox.lowerLeftY, page.cropBox.width, page.cropBox.height, ((page.rotation % 360) + 360) % 360)
-        return PageAnalysis(buildSpans(pageIndex, reader.lines, reader.colours, shape), reader.glyphs, reader.glyphOf, reader.ops)
+        return PageAnalysis(shape, buildSpans(pageIndex, reader.lines, reader.colours, shape), reader.glyphs, reader.glyphOf, reader.ops)
     }
 
     /**
@@ -211,6 +242,17 @@ internal object PdfTextEditor {
         val lines = ArrayList<List<Pair<TextPosition, Boolean>>>()
         private var line = ArrayList<Pair<TextPosition, Boolean>>()
         private var wordBreak = false
+
+        init {
+            // Text extraction leaves the fill colour alone unless asked: without these every line read as black, so an
+            // edited line came back black whatever its colour.
+            addOperator(SetNonStrokingColorSpace())
+            addOperator(SetNonStrokingColor())
+            addOperator(SetNonStrokingColorN())
+            addOperator(SetNonStrokingDeviceRGBColor())
+            addOperator(SetNonStrokingDeviceGrayColor())
+            addOperator(SetNonStrokingDeviceCMYKColor())
+        }
 
         override fun processOperator(operator: Operator, operands: MutableList<COSBase>) {
             if (depth == 0) {
@@ -280,6 +322,32 @@ internal object PdfTextEditor {
             270 -> (height - y) to (width - x)
             else -> x to (height - y)
         }
+
+        /** The other way: a display point to the page's own coordinates (crop box corner added back). */
+        fun toPage(displayX: Float, displayY: Float): Pair<Float, Float> {
+            val (rx, ry) = when (rotation) {
+                90 -> displayY to displayX
+                180 -> (width - displayX) to displayY
+                270 -> (width - displayY) to (height - displayX)
+                else -> displayX to (height - displayY)
+            }
+            return (x + rx) to (y + ry)
+        }
+
+        /** Rightwards and upwards on the shown page, as directions in the page's own coordinates. */
+        fun upright(): FloatArray = when (rotation) {
+            90 -> floatArrayOf(0f, 1f, -1f, 0f)
+            180 -> floatArrayOf(-1f, 0f, 0f, -1f)
+            270 -> floatArrayOf(0f, -1f, 1f, 0f)
+            else -> floatArrayOf(1f, 0f, 0f, 1f)
+        }
+    }
+
+    /** How far a display point is from a span's box (0 inside it). */
+    private fun distance(span: Span, x: Float, y: Float): Float {
+        val dx = maxOf(span.left - x, 0f, x - span.right)
+        val dy = maxOf(span.top - y, 0f, y - span.bottom)
+        return hypot(dx, dy)
     }
 
     private fun buildSpans(page: Int, lines: List<List<Pair<TextPosition, Boolean>>>, colours: Map<TextPosition, Int>, shape: PageShape): List<SpanData> {
@@ -507,6 +575,12 @@ internal object PdfTextEditor {
                 }
             if (sibling != null) return FontChoice(sibling, same = true, synthBold = false, synthItalic = false)
         }
+        return chooseStandard(original, edit, unicode)
+    }
+
+    /** A standard font of the family asked for (or like [original]), else the phone's wide font. */
+    private fun chooseStandard(original: PDFont?, edit: Edit, unicode: () -> PDFont?): FontChoice? {
+        val text = edit.text
         val family = if (edit.family == Family.ORIGINAL) guessFamily(original) else edit.family
         val standard = standardFont(family, edit.bold, edit.italic)
         if (canShow(standard, text)) return FontChoice(standard, same = false, synthBold = false, synthItalic = false)
@@ -519,8 +593,15 @@ internal object PdfTextEditor {
         val m = data.positions.first().textMatrix
         val (ux, uy) = unit(m.scaleX, m.shearY) ?: return
         val (vx, vy) = unit(m.shearX, m.scaleY) ?: return
-        val size = edit.size.coerceIn(1f, 400f)
-        val rgb = edit.colour ?: data.span.colour
+        drawText(stream, edit.text, choice, edit.size, edit.colour ?: data.span.colour, ux, uy, vx, vy, data.offsetX + m.translateX, data.offsetY + m.translateY)
+    }
+
+    /** [text] with its baseline starting at [ox], [oy], running along ([ux], [uy]) with up ([vx], [vy]). */
+    private fun drawText(
+        stream: PDPageContentStream, text: String, choice: FontChoice, fontSize: Float, rgb: Int,
+        ux: Float, uy: Float, vx: Float, vy: Float, ox: Float, oy: Float
+    ) {
+        val size = fontSize.coerceIn(1f, 400f)
         val colour = PDColor(
             floatArrayOf(((rgb shr 16) and 0xFF) / 255f, ((rgb shr 8) and 0xFF) / 255f, (rgb and 0xFF) / 255f),
             PDDeviceRGB.INSTANCE
@@ -537,8 +618,8 @@ internal object PdfTextEditor {
         stream.beginText()
         stream.setFont(choice.font, size)
         if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL_STROKE)
-        stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, data.offsetX + m.translateX, data.offsetY + m.translateY))
-        stream.showText(edit.text)
+        stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, ox, oy))
+        stream.showText(text)
         if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL)
         stream.endText()
         stream.restoreGraphicsState()

@@ -590,4 +590,9 @@
         <item quantity="one">%1$d बदलाव छोड़ा गया: इस फ़ोन का कोई फ़ॉन्ट उसके अक्षर नहीं बना सकता, इसलिए वह पंक्ति पहले जैसी है।</item>
         <item quantity="other">%1$d बदलाव छोड़े गए: इस फ़ोन का कोई फ़ॉन्ट उनके अक्षर नहीं बना सकता, इसलिए वे पंक्तियाँ पहले जैसी हैं।</item>
     </plurals>
+    <string name="tools_edit_add_text">टेक्स्ट जोड़ें</string>
+    <string name="tools_edit_add_hint">जहाँ नया टेक्स्ट चाहिए वहाँ टैप करें</string>
+    <string name="tools_edit_new_title">नया टेक्स्ट</string>
+    <string name="tools_edit_colour">रंग</string>
+    <string name="tools_edit_colour_same">PDF जैसा</string>
 </resources>

@@ -590,4 +590,9 @@
         <item quantity="one">%1$d మార్పు వదిలేయబడింది: ఈ ఫోన్‌లోని ఏ ఫాంట్ కూడా దాని అక్షరాలను గీయలేదు, కాబట్టి ఆ వరుస ముందులాగే ఉంది.</item>
         <item quantity="other">%1$d మార్పులు వదిలేయబడ్డాయి: ఈ ఫోన్‌లోని ఏ ఫాంట్ కూడా వాటి అక్షరాలను గీయలేదు, కాబట్టి ఆ వరుసలు ముందులాగే ఉన్నాయి.</item>
     </plurals>
+    <string name="tools_edit_add_text">టెక్స్ట్ జోడించండి</string>
+    <string name="tools_edit_add_hint">కొత్త టెక్స్ట్ ఎక్కడ కావాలో అక్కడ ట్యాప్ చేయండి</string>
+    <string name="tools_edit_new_title">కొత్త టెక్స్ట్</string>
+    <string name="tools_edit_colour">రంగు</string>
+    <string name="tools_edit_colour_same">PDFలో ఉన్నట్టు</string>
 </resources>

@@ -31,6 +31,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 ## 2. Completed work (newest first)
 
+- **F199** (2026-11-18): Edit PDF can add new text anywhere (in the nearest line's font) and set a colour; a bug that read every line as black is fixed. Engine 14/14 on the desktop. Note: a push containing any `[skip ci]` commit builds nothing.
 - **Docs not in the code commit (rule break, recorded 2026-11-18):** `3cc0326` (Edit PDF tool code, F194) and `96b53bd` (F198 review fixes) were committed without their reference-file updates, which followed in `ab4512e` and `4de55b8`. Pushed history is not rewritten; read those docs commits with them. From now on, code and its four reference-file updates go in one commit.
 - **F198** (2026-11-18, 96b53bd): high-effort code review of F181–F194; 9 of 10 findings fixed (Edit PDF no longer drops a line it can't draw, preview copies one page, turned and cropped pages placed right, neighbouring text kept; Files list computed once; cloud files keep permission; detector guards the colour map's shape). Engine 11/11 on the desktop.
 - **F194** (2026-11-18, ab4512e): **Edit PDF text**, owner's end goal: tap a line, change its words, font, bold, italic or size, and save as a new PDF. The old letters are cut out of the page, and the new words are written in the PDF's own font when it has the letters (else the nearest match). Engine 7/7 on the desktop; editor not compiled (R70).

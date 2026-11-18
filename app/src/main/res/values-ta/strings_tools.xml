@@ -590,4 +590,9 @@
         <item quantity="one">%1$d மாற்றம் விடப்பட்டது: இந்த போனின் எந்த எழுத்துருவும் அதன் எழுத்துகளை வரைய முடியாது, எனவே அந்த வரி முன்பு போலவே உள்ளது.</item>
         <item quantity="other">%1$d மாற்றங்கள் விடப்பட்டன: இந்த போனின் எந்த எழுத்துருவும் அவற்றின் எழுத்துகளை வரைய முடியாது, எனவே அந்த வரிகள் முன்பு போலவே உள்ளன.</item>
     </plurals>
+    <string name="tools_edit_add_text">உரையைச் சேர்</string>
+    <string name="tools_edit_add_hint">புதிய உரை வர வேண்டிய இடத்தில் தட்டவும்</string>
+    <string name="tools_edit_new_title">புதிய உரை</string>
+    <string name="tools_edit_colour">வண்ணம்</string>
+    <string name="tools_edit_colour_same">PDF-இல் உள்ளபடி</string>
 </resources>

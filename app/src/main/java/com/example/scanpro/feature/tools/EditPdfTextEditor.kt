@@ -4,6 +4,13 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -85,10 +92,10 @@ import kotlinx.coroutines.withContext
 /** The edits survive a rotation: each as its fields in a flat list. */
 private val EditsSaver = listSaver<MutableList<PdfTextEditor.Edit>, Any>(
     save = { edits ->
-        edits.flatMap { listOf(it.page, it.index, it.text, it.family.name, it.bold, it.italic, it.size, it.colour ?: -1) }
+        edits.flatMap { listOf(it.page, it.index, it.text, it.family.name, it.bold, it.italic, it.size, it.colour ?: -1, it.x, it.y) }
     },
     restore = { flat ->
-        flat.chunked(8).map { f ->
+        flat.chunked(10).map { f ->
             PdfTextEditor.Edit(
                 page = f[0] as Int,
                 index = f[1] as Int,
@@ -97,7 +104,9 @@ private val EditsSaver = listSaver<MutableList<PdfTextEditor.Edit>, Any>(
                 bold = f[4] as Boolean,
                 italic = f[5] as Boolean,
                 size = f[6] as Float,
-                colour = (f[7] as Int).takeIf { it >= 0 }
+                colour = (f[7] as Int).takeIf { it >= 0 },
+                x = f[8] as Float,
+                y = f[9] as Float
             )
         }.toMutableStateList()
     }
@@ -124,6 +133,8 @@ internal fun EditPdfTextEditor(uri: Uri, onDismiss: () -> Unit, onSave: (List<Pd
     var pageIndex by rememberSaveable { mutableIntStateOf(0) }
     val edits = rememberSaveable(saver = EditsSaver) { mutableListOf<PdfTextEditor.Edit>().toMutableStateList() }
     var editing by remember { mutableStateOf<PdfTextEditor.Span?>(null) }
+    // Add text: the next tap on the page says where new words start.
+    var adding by rememberSaveable { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
     // Back and the close button ask first when there are changes that would be lost.
     val close: () -> Unit = { if (edits.isEmpty()) onDismiss() else confirmDiscard = true }
@@ -157,6 +168,13 @@ internal fun EditPdfTextEditor(uri: Uri, onDismiss: () -> Unit, onSave: (List<Pd
                         title = { Text(stringResource(R.string.tools_card_edit_pdf), style = MaterialTheme.typography.titleLarge) },
                         navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close)) } },
                         actions = {
+                            IconButton(onClick = { adding = !adding }) {
+                                Icon(
+                                    Icons.Default.TextFields,
+                                    contentDescription = stringResource(R.string.tools_edit_add_text),
+                                    tint = if (adding) SpanBlue else androidx.compose.material3.LocalContentColor.current
+                                )
+                            }
                             if (edits.isNotEmpty()) IconButton(onClick = { edits.removeAt(edits.size - 1) }) {
                                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.tools_edit_undo))
                             }
@@ -201,7 +219,13 @@ internal fun EditPdfTextEditor(uri: Uri, onDismiss: () -> Unit, onSave: (List<Pd
                 Column(Modifier.fillMaxSize().padding(padding)) {
                     val pageSpans = spans
                     Text(
-                        stringResource(if (pageSpans != null && pageSpans.isEmpty()) R.string.tools_edit_no_text else R.string.tools_edit_hint),
+                        stringResource(
+                            when {
+                                adding -> R.string.tools_edit_add_hint
+                                pageSpans != null && pageSpans.isEmpty() -> R.string.tools_edit_no_text
+                                else -> R.string.tools_edit_hint
+                            }
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
@@ -216,7 +240,23 @@ internal fun EditPdfTextEditor(uri: Uri, onDismiss: () -> Unit, onSave: (List<Pd
                                 pageSize = page.second,
                                 spans = pageSpans.orEmpty(),
                                 changed = pageEdits.map { it.index }.toSet(),
-                                onTap = { editing = it }
+                                onTap = { editing = it },
+                                onTapPoint = if (!adding) null else { x, y ->
+                                    adding = false
+                                    // The new words take the size, font name and colour of the nearest line; the tap is
+                                    // their middle, so the baseline sits a little below it.
+                                    val near = pageSpans.orEmpty().minByOrNull { s ->
+                                        kotlin.math.hypot(maxOf(s.left - x, 0f, x - s.right), maxOf(s.top - y, 0f, y - s.bottom))
+                                    }
+                                    val size = near?.fontSize ?: 12f
+                                    val baseline = y + size * 0.35f
+                                    editing = PdfTextEditor.Span(
+                                        page = pageIndex, index = PdfTextEditor.NEW, text = "",
+                                        left = x, top = baseline - size * 0.9f, right = x, bottom = baseline + size * 0.25f,
+                                        fontName = near?.fontName.orEmpty(), fontSize = size, bold = false, italic = false,
+                                        colour = near?.colour ?: 0
+                                    )
+                                }
                             )
                         }
                     }
@@ -224,16 +264,22 @@ internal fun EditPdfTextEditor(uri: Uri, onDismiss: () -> Unit, onSave: (List<Pd
             }
         }
         editing?.let { span ->
-            val existing = edits.lastOrNull { it.page == span.page && it.index == span.index }
+            val isNew = span.index == PdfTextEditor.NEW
+            val existing = if (isNew) null else edits.lastOrNull { it.page == span.page && it.index == span.index }
             EditSpanDialog(
                 span = span,
                 existing = existing,
                 onDismiss = { editing = null },
                 onApply = { edit ->
+                    if (isNew) {
+                        if (edit.text.isNotBlank()) edits.add(edit.copy(x = span.left, y = span.bottom - span.fontSize * 0.25f))
+                        editing = null
+                        return@EditSpanDialog
+                    }
                     edits.removeAll { it.page == edit.page && it.index == edit.index }
                     // Unchanged in every way: nothing to save for this line.
                     val untouched = edit.text == span.text && edit.family == PdfTextEditor.Family.ORIGINAL && edit.bold == span.bold &&
-                        edit.italic == span.italic && kotlin.math.abs(edit.size - span.fontSize) < 0.05f
+                        edit.italic == span.italic && kotlin.math.abs(edit.size - span.fontSize) < 0.05f && edit.colour == null
                     if (!untouched) edits.add(edit)
                     editing = null
                 },
@@ -261,7 +307,9 @@ private fun PageWithSpans(
     pageSize: Pair<Float, Float>,
     spans: List<PdfTextEditor.Span>,
     changed: Set<Int>,
-    onTap: (PdfTextEditor.Span) -> Unit
+    onTap: (PdfTextEditor.Span) -> Unit,
+    /** Set while adding text: a tap anywhere gives its place in page points instead of opening a line. */
+    onTapPoint: ((Float, Float) -> Unit)? = null
 ) {
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val density = LocalDensity.current
@@ -277,10 +325,11 @@ private fun PageWithSpans(
             Canvas(
                 Modifier
                     .fillMaxSize()
-                    .pointerInput(spans, perPoint) {
+                    .pointerInput(spans, perPoint, onTapPoint) {
                         detectTapGestures { tap ->
                             val x = tap.x / perPoint
                             val y = tap.y / perPoint
+                            if (onTapPoint != null) { onTapPoint(x, y); return@detectTapGestures }
                             // The smallest box under the finger, with a little slack round thin lines of small text.
                             val slack = 4f
                             spans.filter { x >= it.left - slack && x <= it.right + slack && y >= it.top - slack && y <= it.bottom + slack }
@@ -318,12 +367,15 @@ private fun EditSpanDialog(
     var bold by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.bold ?: span.bold) }
     var italic by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.italic ?: span.italic) }
     var size by rememberSaveable(span.page, span.index) { mutableFloatStateOf(existing?.size ?: span.fontSize) }
+    // Null: the colour the line already has.
+    var colour by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.colour) }
+    val isNew = span.index == PdfTextEditor.NEW
     fun shown(points: Float) = if (points % 1f == 0f) points.toInt().toString() else String.format(Locale.getDefault(), "%.1f", points)
-    val edit = { value: String -> PdfTextEditor.Edit(span.page, span.index, value, family, bold, italic, size) }
+    val edit = { value: String -> PdfTextEditor.Edit(span.page, span.index, value, family, bold, italic, size, colour) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tools_edit_dialog_title)) },
+        title = { Text(stringResource(if (isNew) R.string.tools_edit_new_title else R.string.tools_edit_dialog_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -382,8 +434,40 @@ private fun EditSpanDialog(
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tools_edit_larger))
                     }
                 }
+                Text(stringResource(R.string.tools_edit_colour), style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val options = listOf<Pair<Int?, Int>>(
+                        null to R.string.tools_edit_colour_same,
+                        0x000000 to R.string.doc_ink_black,
+                        0x1A3FB8 to R.string.doc_ink_blue,
+                        0xC62828 to R.string.tools_watermark_color_red,
+                        0x616161 to R.string.tools_watermark_color_grey
+                    )
+                    options.forEach { (value, name) ->
+                        val chosen = colour == value
+                        val swatch = Color(0xFF000000.toInt() or (value ?: span.colour))
+                        val label = stringResource(name)
+                        Box(
+                            Modifier
+                                .size(32.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
+                                .background(swatch)
+                                .border(
+                                    if (chosen) 3.dp else 1.dp,
+                                    if (chosen) SpanBlue else MaterialTheme.colorScheme.outlineVariant,
+                                    androidx.compose.foundation.shape.CircleShape
+                                )
+                                .selectable(selected = chosen, role = androidx.compose.ui.semantics.Role.RadioButton) { colour = value }
+                                .semantics { contentDescription = label },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // "As in the PDF" is marked, since its swatch can look like one of the others.
+                            if (value == null) Text("=", color = if (span.colour == 0) Color.White else Color.Black, style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = { onApply(edit("")) }) { Text(stringResource(R.string.tools_edit_delete)) }
+                    if (!isNew) TextButton(onClick = { onApply(edit("")) }) { Text(stringResource(R.string.tools_edit_delete)) }
                     if (onUndo != null) TextButton(onClick = onUndo) { Text(stringResource(R.string.tools_edit_undo_change)) }
                 }
             }

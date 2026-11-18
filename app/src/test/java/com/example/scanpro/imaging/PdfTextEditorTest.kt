@@ -234,4 +234,44 @@ class PdfTextEditorTest {
             reload(doc).use { d2 -> val all = PdfTextEditor.spans(d2, 0).map { it.text }; assertTrue(all.toString(), "1" in all && "Cost" in all) }
         }
     }
+    @Test fun newTextGoesWhereTappedInTheNearestLinesFont() {
+        sample().use { doc0 ->
+            val hello = PdfTextEditor.spans(doc0, 0)[0]
+            // Below "Hello World", left-aligned with it.
+            val outcome = PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, PdfTextEditor.NEW, "Added line", bold = false, italic = false, size = 12f, x = hello.left, y = hello.bottom + 6f)))
+            assertEquals(1, outcome.sameFont)
+            reload(doc0).use { doc ->
+                val added = PdfTextEditor.spans(doc, 0).first { it.text == "Added line" }
+                assertEquals("Helvetica", added.fontName)
+                assertEquals(hello.left, added.left, 0.5f)
+                assertEquals(hello.bottom + 6f + 3f, added.bottom, 0.5f)
+                assertTrue(PdfTextEditor.spans(doc, 0).any { it.text == "Hello World" })
+            }
+        }
+    }
+
+    @Test fun newTextOnATurnedPageReadsAcrossTheShownPage() {
+        val doc0 = PDDocument()
+        val page = PDPage(PDRectangle.A4); doc0.addPage(page)
+        page.rotation = 90
+        reload(doc0).use { doc ->
+            PdfTextEditor.apply(doc, listOf(PdfTextEditor.Edit(0, PdfTextEditor.NEW, "Across", bold = true, italic = false, size = 14f, x = 100f, y = 200f)))
+            reload(doc).use { d2 ->
+                val s = PdfTextEditor.spans(d2, 0).single()
+                assertEquals("Across", s.text)
+                assertEquals(100f, s.left, 1f)
+                assertTrue("runs left to right as shown: ${'$'}s", s.right - s.left > s.bottom - s.top)
+                assertEquals(200f, s.bottom - 14f * 0.25f, 1f)
+                assertTrue(s.bold)
+            }
+        }
+    }
+
+    @Test fun aChosenColourIsUsed() {
+        sample().use { doc0 ->
+            val span = PdfTextEditor.spans(doc0, 0)[0]
+            PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, span.index, "Red words", bold = false, italic = false, size = 12f, colour = 0xC62828)))
+            reload(doc0).use { doc -> assertEquals(0xC62828, PdfTextEditor.spans(doc, 0).first { it.text == "Red words" }.colour) }
+        }
+    }
 }
