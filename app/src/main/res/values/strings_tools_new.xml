@@ -178,4 +178,19 @@
         <item quantity="one">Added the text to %1$d page</item>
         <item quantity="other">Added the text to %1$d pages</item>
     </plurals>
+    <!-- Redact by drawing boxes (F174). -->
+    <string name="tools_card_redact_box">Redact areas</string>
+    <string name="tools_tile_redact_box">Redact areas</string>
+    <string name="tools_desc_redact_box">Draw boxes to black out</string>
+    <string name="hint_tool_redact_box">Draw boxes over anything on a page: a photo, a signature, a handwritten note. The boxes are blacked out for good.</string>
+    <string name="tools_redact_box_hint">Drag to draw a box over what should go. Tap a box to pick it, then the bin removes it.</string>
+    <string name="tools_redact_box_remove">Remove this box</string>
+    <string name="tools_redact_box_undo">Remove the last box</string>
+    <string name="tools_redact_box_previous">Previous page</string>
+    <string name="tools_redact_box_next">Next page</string>
+    <string name="tools_redact_box_apply_empty">Draw a box first</string>
+    <string name="tools_redact_box_apply" tools:ignore="PluralsCandidate">Redact %1$d areas</string>
+    <string name="tools_redact_box_err_preview">These pages can\'t be shown. If the PDF needs a password, unlock it first.</string>
+    <string name="tools_redact_box_err_none">No boxes were drawn on this PDF\'s pages.</string>
+    <string name="tools_redact_box_done" tools:ignore="PluralsCandidate">Blacked out %1$d areas on %2$d pages</string>
 </resources>

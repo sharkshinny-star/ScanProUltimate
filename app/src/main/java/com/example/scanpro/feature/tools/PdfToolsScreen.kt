@@ -144,6 +144,7 @@ fun PdfToolsScreen(
     var showCropPdfDialog by rememberSaveable { mutableStateOf(false) }
     var showRedactDialog by rememberSaveable { mutableStateOf(false) }
     var showNupDialog by rememberSaveable { mutableStateOf(false) }
+    var showRedactBoxesEditor by rememberSaveable { mutableStateOf(false) }
     var showHeaderFooterDialog by rememberSaveable { mutableStateOf(false) }
     val blankPagesFound by viewModel.blankPages.collectAsStateWithLifecycle()
     val pdfInfo by viewModel.pdfInfo.collectAsStateWithLifecycle()
@@ -304,6 +305,7 @@ fun PdfToolsScreen(
             "flatten" -> showFlattenDialog = true
             "crop_pdf" -> showCropPdfDialog = true
             "redact" -> showRedactDialog = true
+            "redact_box" -> showRedactBoxesEditor = true
             "nup" -> showNupDialog = true
             "header_footer" -> showHeaderFooterDialog = true
             "extract_images" -> viewModel.extractImages(uri)
@@ -827,6 +829,14 @@ fun PdfToolsScreen(
                 )
             }
 
+            if (showRedactBoxesEditor && uri != null) {
+                RedactBoxesEditor(
+                    uri = uri,
+                    onDismiss = { showRedactBoxesEditor = false },
+                    onConfirm = { boxes -> showRedactBoxesEditor = false; viewModel.redactBoxes(uri, boxes) }
+                )
+            }
+
             if (showNupDialog && uri != null) {
                 NupDialog(
                     onDismiss = { showNupDialog = false },
@@ -1054,7 +1064,7 @@ private const val RESULTS_SHOWN = 5
 private val RETRYABLE_TOOLS = setOf(
     "compress", "pdf2img", "protect", "unlock", "repair", "split", "organize", "extract", "rotate", "ocr", "page_numbers",
     "watermark", "crop_img", "compress_img", "resize_img", "pdf2text", "pdf2excel",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "nup", "header_footer"
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
 )
 
 /** Tools whose input is a picture, not a PDF: their failures are never offered Repair. */
@@ -1069,7 +1079,7 @@ private val MULTI_FILE_TOOLS = setOf("merge", "img2pdf", "office", "convert_img"
  */
 private val OPENS_PAGES = setOf(
     "compress", "pdf2img", "split", "organize", "extract", "rotate", "fill", "ocr", "page_numbers", "watermark",
-    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "nup", "header_footer"
+    "blank_pages", "greyscale", "flatten", "extract_images", "pdf_info", "crop_pdf", "redact", "redact_box", "nup", "header_footer"
 )
 
 internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {

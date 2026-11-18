@@ -364,6 +364,74 @@ object PdfRedactTools {
         }
     }
 
+    /** A box drawn by hand on page [page] (0-based): edges as shares (0..1) of the page as displayed, top-left origin. */
+    class DrawnBox(val page: Int, val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+    /** A drawn box narrower or shorter than this share of the page is a slip of the finger, not a redaction. */
+    internal const val MIN_BOX_SHARE = 0.005f
+
+    /**
+     * The drawn boxes as page matches in display points. Boxes on pages that do not exist, and boxes too small to
+     * mean anything, are dropped; edges are clamped to the page and put in order, so an upward drag still works.
+     */
+    internal fun boxesToMatches(boxes: List<DrawnBox>, pageCount: Int, pageSize: (Int) -> Pair<Float, Float>): List<Match> =
+        boxes.filter { it.page in 0 until pageCount }.mapNotNull { box ->
+            val left = minOf(box.left, box.right).coerceIn(0f, 1f)
+            val right = maxOf(box.left, box.right).coerceIn(0f, 1f)
+            val top = minOf(box.top, box.bottom).coerceIn(0f, 1f)
+            val bottom = maxOf(box.top, box.bottom).coerceIn(0f, 1f)
+            if (right - left < MIN_BOX_SHARE || bottom - top < MIN_BOX_SHARE) return@mapNotNull null
+            val (width, height) = pageSize(box.page)
+            Match(box.page, RectF(left * width, top * height, right * width, bottom * height))
+        }
+
+    /** Redact by drawn boxes (F174): the same black-out-and-rasterise as [redact], with hand-drawn areas. */
+    suspend fun redactBoxes(
+        context: Context,
+        inputUri: Uri,
+        boxes: List<DrawnBox>,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "redactb_in_${UUID.randomUUID()}.pdf")
+        try {
+            PdfToolsEngine.openPdf(temp).use { doc ->
+                val total = doc.numberOfPages
+                userRequire(total > 0, R.string.tools_err_no_pages)
+                val (matches, pages) = ParcelFileDescriptor.open(temp, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                    PdfToolsEngine.openRenderer(pfd, temp).use { renderer ->
+                        var open: PdfRenderer.Page? = null
+                        fun page(i: Int): PdfRenderer.Page = open?.takeIf { it.index == i } ?: renderer.openPage(i).also { open?.close(); open = it }
+                        try {
+                            val matches = boxesToMatches(boxes, min(total, renderer.pageCount)) { i ->
+                                page(i).let { it.width.toFloat() to it.height.toFloat() }
+                            }
+                            userRequire(matches.isNotEmpty(), R.string.tools_redact_box_err_none)
+                            matches to writeRedacted(
+                                source = doc,
+                                matches = matches,
+                                pageSize = { i -> page(i).let { it.width.toFloat() to it.height.toFloat() } },
+                                draw = { i, target -> page(i).render(target, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT) },
+                                outputFile = outputFile
+                            ) { onProgress(it + 1, total, AppStrings.get(R.string.tools_new_progress_page, it + 1, total)) }
+                        } finally {
+                            open?.close()
+                        }
+                    }
+                }
+                PdfToolResult(
+                    outputFile = outputFile,
+                    pageCount = total,
+                    originalSizeBytes = temp.length(),
+                    outputSizeBytes = outputFile.length(),
+                    message = AppStrings.get(R.string.tools_redact_box_done, matches.size, pages)
+                )
+            }
+        } finally {
+            temp.delete()
+        }
+    }
+
     suspend fun redact(
         context: Context,
         inputUri: Uri,

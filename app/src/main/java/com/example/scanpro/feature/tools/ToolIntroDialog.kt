@@ -53,6 +53,7 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "flatten" -> ToolIntro(R.string.hint_tool_flatten, HintInput.Pdf)
     "crop_pdf" -> ToolIntro(R.string.hint_tool_crop_pdf, HintInput.Pdf)
     "redact" -> ToolIntro(R.string.hint_tool_redact, HintInput.Pdf)
+    "redact_box" -> ToolIntro(R.string.hint_tool_redact_box, HintInput.Pdf)
     "nup" -> ToolIntro(R.string.hint_tool_nup, HintInput.Pdf)
     "header_footer" -> ToolIntro(R.string.hint_tool_header_footer, HintInput.Pdf)
     "extract_images" -> ToolIntro(R.string.hint_tool_extract_images, HintInput.Pdf)

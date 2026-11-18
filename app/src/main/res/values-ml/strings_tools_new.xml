@@ -167,4 +167,20 @@
         <item quantity="one">%1$d പേജിൽ ടെക്സ്റ്റ് ചേർത്തു</item>
         <item quantity="other">%1$d പേജുകളിൽ ടെക്സ്റ്റ് ചേർത്തു</item>
     </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">ഭാഗങ്ങൾ മറയ്ക്കുക</string>
+    <string name="tools_tile_redact_box">ഭാഗം മറയ്ക്കൽ</string>
+    <string name="tools_desc_redact_box">കറുപ്പിക്കാൻ ബോക്സുകൾ വരയ്ക്കുക</string>
+    <string name="hint_tool_redact_box">പേജിലെ എന്തിനുമേലും ബോക്സുകൾ വരയ്ക്കുക: ഫോട്ടോ, ഒപ്പ്, കൈയെഴുത്ത്. ബോക്സുകൾ എന്നേക്കുമായി കറുപ്പാകും.</string>
+    <string name="tools_redact_box_hint">പോകേണ്ടതിന് മുകളിൽ വലിച്ച് ബോക്സ് വരയ്ക്കുക. ബോക്സ് തിരഞ്ഞെടുക്കാൻ തൊടുക, പിന്നെ ചവറ്റുകുട്ട അതു നീക്കും.</string>
+    <string name="tools_redact_box_remove">ഈ ബോക്സ് നീക്കുക</string>
+    <string name="tools_redact_box_undo">അവസാന ബോക്സ് നീക്കുക</string>
+    <string name="tools_redact_box_previous">മുമ്പത്തെ പേജ്</string>
+    <string name="tools_redact_box_next">അടുത്ത പേജ്</string>
+    <string name="tools_redact_box_apply_empty">ആദ്യം ഒരു ബോക്സ് വരയ്ക്കുക</string>
+    <string name="tools_redact_box_apply">%1$d ഭാഗങ്ങൾ മറയ്ക്കുക</string>
+    <string name="tools_redact_box_err_preview">ഈ പേജുകൾ കാണിക്കാനാവില്ല. PDF-ന് പാസ്‌വേഡ് വേണമെങ്കിൽ ആദ്യം അൺലോക്ക് ചെയ്യുക.</string>
+    <string name="tools_redact_box_err_none">ഈ PDF-ന്റെ പേജുകളിൽ ബോക്സുകളൊന്നും വരച്ചിട്ടില്ല.</string>
+    <string name="tools_redact_box_done">%2$d പേജുകളിൽ %1$d ഭാഗങ്ങൾ കറുപ്പിച്ചു</string>
 </resources>

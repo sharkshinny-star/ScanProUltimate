@@ -412,6 +412,7 @@ Cloud sync, accounts, collaboration, subscription entitlements, and server AI ar
 
 ## Scanning quality, conversions and tool feedback (F124-F133)
 
+- `feature/tools/RedactBoxesEditor.kt` (F174): full-screen page viewer with rectangle drawing (drag to draw, tap to pick, normalised boxes), feeding `PdfRedactTools.redactBoxes` → `boxesToMatches` → the F172 redaction writer.
 - `imaging/PdfLayoutTools.kt` (F173): `PdfNupTools` (2 or 4 pages per sheet as form objects, placed as displayed via `seenMatrix`) and `PdfHeaderFooterTools` (edge text placed as seen, picture fallback for scripts Helvetica lacks). Same seam pattern as the other tool engines.
 - `imaging/PdfCropRedactTools.kt` (F172): `PdfCropTools` (crop box per page, measured as displayed and mapped back through /Rotate) and `PdfRedactTools` (PDFBox text positions → black boxes → matched pages rasterised, others imported). Both follow `PdfCleanupTools`' seam pattern: the decisions take `pageSize`/`draw` lambdas, so the unit tests run without PdfRenderer.
 - `imaging/MatFilters.kt` (F171): COLOR/GRAY illumination is estimated content-free (ink closed away at low resolution, dark blocks filled from surrounding paper) instead of a plain blur of the page, and the COLOR path neutralises the lighting's colour cast from the paper's Lab a/b (clamped). Measured by `scripts/scan-bench` `enhance`, which scores every filter on degraded known pages.

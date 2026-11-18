@@ -868,6 +868,11 @@ class PdfToolsViewModel @Inject constructor(
             com.example.scanpro.imaging.PdfHeaderFooterTools.headerFooter(context, uri, config, named(uri, "header footer"), ::report)
         }
 
+    fun redactBoxes(uri: Uri, boxes: List<com.example.scanpro.imaging.PdfRedactTools.DrawnBox>) =
+        launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
+            com.example.scanpro.imaging.PdfRedactTools.redactBoxes(context, uri, boxes, named(uri, "redacted"), ::report)
+        }
+
     fun cropPdf(uri: Uri, options: com.example.scanpro.imaging.PdfCropTools.CropOptions) =
         launchTool(R.string.tools_crop_pdf_progress, R.string.tools_crop_pdf_err_failed) {
             com.example.scanpro.imaging.PdfCropTools.cropPdf(context, uri, options, named(uri, "cropped"), ::report)

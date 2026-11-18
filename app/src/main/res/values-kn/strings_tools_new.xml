@@ -167,4 +167,20 @@
         <item quantity="one">%1$d ಪುಟಕ್ಕೆ ಪಠ್ಯ ಸೇರಿಸಲಾಗಿದೆ</item>
         <item quantity="other">%1$d ಪುಟಗಳಿಗೆ ಪಠ್ಯ ಸೇರಿಸಲಾಗಿದೆ</item>
     </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">ಪ್ರದೇಶಗಳನ್ನು ಮರೆಮಾಡಿ</string>
+    <string name="tools_tile_redact_box">ಪ್ರದೇಶ ಮರೆಮಾಡು</string>
+    <string name="tools_desc_redact_box">ಕಪ್ಪಾಗಿಸಲು ಬಾಕ್ಸ್ ಎಳೆಯಿರಿ</string>
+    <string name="hint_tool_redact_box">ಪುಟದ ಯಾವುದರ ಮೇಲಾದರೂ ಬಾಕ್ಸ್ ಎಳೆಯಿರಿ: ಫೋಟೋ, ಸಹಿ, ಕೈಬರಹ. ಬಾಕ್ಸ್‌ಗಳು ಶಾಶ್ವತವಾಗಿ ಕಪ್ಪಾಗುತ್ತವೆ.</string>
+    <string name="tools_redact_box_hint">ಹೋಗಬೇಕಾದದ್ದರ ಮೇಲೆ ಎಳೆದು ಬಾಕ್ಸ್ ಮಾಡಿ. ಬಾಕ್ಸ್ ಆಯ್ಕೆಗೆ ಅದನ್ನು ಮುಟ್ಟಿ, ಕಸದ ಬುಟ್ಟಿ ಅದನ್ನು ತೆಗೆಯುತ್ತದೆ.</string>
+    <string name="tools_redact_box_remove">ಈ ಬಾಕ್ಸ್ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_redact_box_undo">ಕೊನೆಯ ಬಾಕ್ಸ್ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_redact_box_previous">ಹಿಂದಿನ ಪುಟ</string>
+    <string name="tools_redact_box_next">ಮುಂದಿನ ಪುಟ</string>
+    <string name="tools_redact_box_apply_empty">ಮೊದಲು ಒಂದು ಬಾಕ್ಸ್ ಎಳೆಯಿರಿ</string>
+    <string name="tools_redact_box_apply">%1$d ಪ್ರದೇಶಗಳನ್ನು ಮರೆಮಾಡಿ</string>
+    <string name="tools_redact_box_err_preview">ಈ ಪುಟಗಳನ್ನು ತೋರಿಸಲಾಗದು. PDF ಗೆ ಪಾಸ್‌ವರ್ಡ್ ಬೇಕಿದ್ದರೆ ಮೊದಲು ಅನ್‌ಲಾಕ್ ಮಾಡಿ.</string>
+    <string name="tools_redact_box_err_none">ಈ PDF ಪುಟಗಳಲ್ಲಿ ಯಾವುದೇ ಬಾಕ್ಸ್ ಎಳೆದಿಲ್ಲ.</string>
+    <string name="tools_redact_box_done">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಪ್ರದೇಶಗಳನ್ನು ಕಪ್ಪಾಗಿಸಲಾಗಿದೆ</string>
 </resources>

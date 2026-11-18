@@ -172,6 +172,58 @@ class PdfCropRedactToolsTest {
         }
     }
 
+    // ---- Redact by drawn boxes (F174) ----
+
+    @Test
+    fun drawnBoxesBecomeMatchesInPagePoints() {
+        val boxes = listOf(
+            // Drawn upwards and leftwards: still a box. Page 1 is 400 x 300 points.
+            PdfRedactTools.DrawnBox(1, 0.8f, 0.9f, 0.2f, 0.1f),
+            // Too thin to mean anything, and a page that does not exist: both dropped.
+            PdfRedactTools.DrawnBox(0, 0.5f, 0.1f, 0.502f, 0.9f),
+            PdfRedactTools.DrawnBox(7, 0.1f, 0.1f, 0.9f, 0.9f),
+            // Hanging over the edge: clamped.
+            PdfRedactTools.DrawnBox(0, -0.2f, 0.25f, 0.5f, 0.75f)
+        )
+        val matches = PdfRedactTools.boxesToMatches(boxes, pageCount = 2) { i -> if (i == 0) 200f to 100f else 400f to 300f }
+        assertEquals(2, matches.size)
+        val turned = matches.first { it.page == 1 }
+        assertEquals(0.2f * 400f, turned.rect.left, 0.01f)
+        assertEquals(0.1f * 300f, turned.rect.top, 0.01f)
+        assertEquals(0.8f * 400f, turned.rect.right, 0.01f)
+        assertEquals(0.9f * 300f, turned.rect.bottom, 0.01f)
+        val clamped = matches.first { it.page == 0 }
+        assertEquals(0f, clamped.rect.left, 0.01f)
+        assertEquals(0.5f * 200f, clamped.rect.right, 0.01f)
+    }
+
+    @Test
+    fun drawnBoxesBlackOutTheirPages() = runBlocking {
+        val out = File(dir, "boxes.pdf")
+        PDDocument.load(twoPageDocument()).use { doc ->
+            val matches = PdfRedactTools.boxesToMatches(
+                listOf(PdfRedactTools.DrawnBox(0, 0.05f, 0.2f, 0.95f, 0.5f)),
+                pageCount = 2
+            ) { 400f to 300f }
+            val pages = PdfRedactTools.writeRedacted(
+                source = doc,
+                matches = matches,
+                pageSize = { 400f to 300f },
+                draw = { _, target -> target.eraseColor(Color.WHITE) },
+                outputFile = out
+            )
+            assertEquals(1, pages)
+        }
+        PDDocument.load(out).use { doc ->
+            assertEquals(2, doc.numberOfPages)
+            val stripper = PDFTextStripper()
+            stripper.startPage = 1; stripper.endPage = 1
+            assertFalse(stripper.getText(doc).contains("Alice"))
+            stripper.startPage = 2; stripper.endPage = 2
+            assertTrue(stripper.getText(doc).contains("Nothing secret"))
+        }
+    }
+
     @Test
     fun redactedPagesLoseTheirTextAndOthersKeepIt() = runBlocking {
         val out = File(dir, "redacted.pdf")

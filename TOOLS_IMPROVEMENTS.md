@@ -34,8 +34,8 @@ Add a blank page or pages from another PDF at a chosen position in the Organise 
 Crop PDF pages (auto-trim or margins, crop box only) and Redact text (words blacked out, matched pages rasterised) are
 in the Edit section; Protect and Unlock no longer reopen the finished file to count pages. N-up (2 or 4 pages per
 sheet, vector-preserving) and Header and footer ({page}/{total} placeholders, any script via picture text) followed as
-F173. Still missing against the leading apps: redact by drawing boxes on the page (needs a page viewer with rectangle
-drawing; Sign PDF's placement step is the closest reuse), and compare two PDFs.
+F173. Redact by drawing boxes followed as F174 (`RedactBoxesEditor`, reusing F172's redaction writer). Still missing
+against the leading apps: compare two PDFs.
 
 ## Open items in `AUDIT_FINDINGS.md` that touch the tools
 

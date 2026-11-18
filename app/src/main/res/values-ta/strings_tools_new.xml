@@ -167,4 +167,20 @@
         <item quantity="one">%1$d பக்கத்தில் உரை சேர்க்கப்பட்டது</item>
         <item quantity="other">%1$d பக்கங்களில் உரை சேர்க்கப்பட்டது</item>
     </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">பகுதிகளை மறை</string>
+    <string name="tools_tile_redact_box">பகுதி மறைப்பு</string>
+    <string name="tools_desc_redact_box">கறுப்பாக்கப் பெட்டிகள் வரையுங்கள்</string>
+    <string name="hint_tool_redact_box">பக்கத்தில் எதன் மீதும் பெட்டிகள் வரையுங்கள்: புகைப்படம், கையொப்பம், கையெழுத்து. பெட்டிகள் நிரந்தரமாகக் கறுப்பாகும்.</string>
+    <string name="tools_redact_box_hint">நீக்க வேண்டியதன் மீது இழுத்துப் பெட்டி வரையுங்கள். பெட்டியைத் தேர்வு செய்யத் தொடவும், பின் குப்பைத் தொட்டி அதை நீக்கும்.</string>
+    <string name="tools_redact_box_remove">இந்தப் பெட்டியை நீக்கு</string>
+    <string name="tools_redact_box_undo">கடைசிப் பெட்டியை நீக்கு</string>
+    <string name="tools_redact_box_previous">முந்தைய பக்கம்</string>
+    <string name="tools_redact_box_next">அடுத்த பக்கம்</string>
+    <string name="tools_redact_box_apply_empty">முதலில் ஒரு பெட்டி வரையுங்கள்</string>
+    <string name="tools_redact_box_apply">%1$d பகுதிகளை மறை</string>
+    <string name="tools_redact_box_err_preview">இந்தப் பக்கங்களைக் காட்ட முடியவில்லை. PDF-க்கு கடவுச்சொல் தேவையெனில் முதலில் திறக்கவும்.</string>
+    <string name="tools_redact_box_err_none">இந்த PDF-இன் பக்கங்களில் பெட்டிகள் வரையப்படவில்லை.</string>
+    <string name="tools_redact_box_done">%2$d பக்கங்களில் %1$d பகுதிகள் கறுப்பாக்கப்பட்டன</string>
 </resources>

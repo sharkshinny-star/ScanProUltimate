@@ -167,4 +167,20 @@
         <item quantity="one">%1$d पेज पर टेक्स्ट जोड़ा</item>
         <item quantity="other">%1$d पेजों पर टेक्स्ट जोड़ा</item>
     </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">क्षेत्र रिडैक्ट करें</string>
+    <string name="tools_tile_redact_box">क्षेत्र रिडैक्ट</string>
+    <string name="tools_desc_redact_box">काला करने के लिए बॉक्स बनाएँ</string>
+    <string name="hint_tool_redact_box">पेज पर किसी भी चीज़ पर बॉक्स बनाएँ: फ़ोटो, हस्ताक्षर, हाथ की लिखावट। बॉक्स हमेशा के लिए काले हो जाते हैं।</string>
+    <string name="tools_redact_box_hint">जो हटाना है उस पर खींचकर बॉक्स बनाएँ। बॉक्स चुनने के लिए उसे छुएँ, फिर डस्टबिन उसे हटाता है।</string>
+    <string name="tools_redact_box_remove">यह बॉक्स हटाएँ</string>
+    <string name="tools_redact_box_undo">आख़िरी बॉक्स हटाएँ</string>
+    <string name="tools_redact_box_previous">पिछला पेज</string>
+    <string name="tools_redact_box_next">अगला पेज</string>
+    <string name="tools_redact_box_apply_empty">पहले एक बॉक्स बनाएँ</string>
+    <string name="tools_redact_box_apply">%1$d क्षेत्र रिडैक्ट करें</string>
+    <string name="tools_redact_box_err_preview">ये पेज दिखाए नहीं जा सकते। अगर PDF को पासवर्ड चाहिए, पहले उसे अनलॉक करें।</string>
+    <string name="tools_redact_box_err_none">इस PDF के पेजों पर कोई बॉक्स नहीं बनाया गया।</string>
+    <string name="tools_redact_box_done">%2$d पेजों पर %1$d क्षेत्र काले किए</string>
 </resources>

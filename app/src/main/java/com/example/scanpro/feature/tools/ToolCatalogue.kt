@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.HighlightAlt
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Info
@@ -90,6 +91,7 @@ internal val TOOL_SECTIONS = listOf(
             PdfToolCard("flatten", R.string.tools_card_flatten, Icons.Default.Layers, TileTone.Violet, label = R.string.tools_tile_flatten),
             PdfToolCard("crop_pdf", R.string.tools_card_crop_pdf, Icons.Default.Crop, TileTone.Sky, label = R.string.tools_tile_crop_pdf),
             PdfToolCard("redact", R.string.tools_card_redact, Icons.Default.VisibilityOff, TileTone.Rose, label = R.string.tools_tile_redact),
+            PdfToolCard("redact_box", R.string.tools_card_redact_box, Icons.Default.HighlightAlt, TileTone.Rose, label = R.string.tools_tile_redact_box),
             PdfToolCard("nup", R.string.tools_card_nup, Icons.Default.GridView, TileTone.Amber, label = R.string.tools_tile_nup),
             PdfToolCard("header_footer", R.string.tools_card_header_footer, Icons.Default.VerticalAlignTop, TileTone.Slate, label = R.string.tools_tile_header_footer),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),

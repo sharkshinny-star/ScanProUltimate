@@ -167,4 +167,20 @@
         <item quantity="one">%1$d పేజీకి టెక్స్ట్ జోడించబడింది</item>
         <item quantity="other">%1$d పేజీలకు టెక్స్ట్ జోడించబడింది</item>
     </plurals>
+
+    <!-- Redact by drawing boxes (F174): machine-written, not reviewed by a speaker (R19). -->
+    <string name="tools_card_redact_box">ప్రాంతాలను దాచండి</string>
+    <string name="tools_tile_redact_box">ప్రాంతం దాచు</string>
+    <string name="tools_desc_redact_box">నల్లగా చేయడానికి బాక్సులు గీయండి</string>
+    <string name="hint_tool_redact_box">పేజీలో దేనిపైనైనా బాక్సులు గీయండి: ఫోటో, సంతకం, చేతిరాత. బాక్సులు శాశ్వతంగా నల్లగా అవుతాయి.</string>
+    <string name="tools_redact_box_hint">పోవాల్సిన దానిపై లాగి బాక్స్ గీయండి. బాక్స్ ఎంచుకోవడానికి తాకండి, తర్వాత చెత్తబుట్ట దాన్ని తీసేస్తుంది.</string>
+    <string name="tools_redact_box_remove">ఈ బాక్స్ తీసేయండి</string>
+    <string name="tools_redact_box_undo">చివరి బాక్స్ తీసేయండి</string>
+    <string name="tools_redact_box_previous">మునుపటి పేజీ</string>
+    <string name="tools_redact_box_next">తదుపరి పేజీ</string>
+    <string name="tools_redact_box_apply_empty">ముందుగా ఒక బాక్స్ గీయండి</string>
+    <string name="tools_redact_box_apply">%1$d ప్రాంతాలను దాచండి</string>
+    <string name="tools_redact_box_err_preview">ఈ పేజీలను చూపించలేం. PDFకి పాస్‌వర్డ్ అవసరమైతే ముందుగా అన్‌లాక్ చేయండి.</string>
+    <string name="tools_redact_box_err_none">ఈ PDF పేజీలలో బాక్సులేవీ గీయలేదు.</string>
+    <string name="tools_redact_box_done">%2$d పేజీలలో %1$d ప్రాంతాలు నల్లగా చేయబడ్డాయి</string>
 </resources>
