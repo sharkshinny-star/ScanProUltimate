@@ -9,12 +9,14 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
+import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.scanpro.data.CropQuad
 import com.example.scanpro.imaging.OpenCvRuntime
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -44,7 +46,7 @@ class ScanDetectionBenchmarkTest {
 
     private class Scene(val name: String, val bitmap: Bitmap, val truth: List<PointF>)
 
-    private class Result(val name: String, val found: Boolean, val cornerErrorPct: Double, val iou: Double, val millis: Double, val blur: Double = 0.0)
+    private class Result(val name: String, val found: Boolean, val cornerErrorPct: Double, val iou: Double, val millis: Double, val blur: Double = 0.0, val convincing: Boolean = false)
 
     @Test
     fun detectorOnKnownScenes() {
@@ -65,11 +67,45 @@ class ScanDetectionBenchmarkTest {
         listOf(
             "clean_a4_desk", "strong_perspective", "receipt_dark_desk", "low_contrast_grey_desk", "white_page_white_table",
             "hard_shadow_across_page", "shadow_band_lower_half", "shadow_on_tilted_page", "shadow_corner_wedge",
-            "shadow_sharp_edged", "shadow_most_of_left", "shadow_most_of_right_sharp"
+            "shadow_sharp_edged", "shadow_most_of_left", "shadow_most_of_right_sharp", "yellow_paper_shadow_left",
+            "warm_lamp_shadow_left", "dark_border_inset"
         ).forEach { name ->
             val r = results.first { it.name == name }
             assertTrue("$name: no page found", r.found)
             assertTrue("$name: corner error ${r.cornerErrorPct}% is above 4%", r.cornerErrorPct < 4.0)
+        }
+        // F177: a printed dark frame set in from the paper's edge is still a page, not a dark-rimmed object.
+        assertTrue("dark_border_inset: not taken for a page", results.first { it.name == "dark_border_inset" }.convincing)
+    }
+
+    /** F177 (R58): a laptop or a keyboard, which score as high as pages, must not be taken for one. */
+    @Test
+    fun clutterIsNotTakenForAPage() {
+        assumeTrue("OpenCV could not load on this device", OpenCvRuntime.ensureLoaded())
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+        fun clutter(name: String, desk: Desk, draw: (Canvas) -> Unit) {
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            drawDesk(canvas, desk, Random(name.hashCode().toLong()))
+            draw(canvas)
+            val detection = DocumentEdgeDetector.detect(bmp)
+            bmp.recycle()
+            Log.i(TAG, "$name | confidence ${"%.2f".format(detection.confidence)} | framed ${detection.framedSides} | page ${detection.isConvincingPage}")
+            assertFalse("$name: taken for a page", detection.isConvincingPage)
+        }
+        clutter("laptop_wood", Desk.WOOD) { c ->
+            fill.color = Color.rgb(58, 58, 62); c.drawRoundRect(RectF(250f, 180f, 1010f, 700f), 12f, 12f, fill)
+            fill.color = Color.rgb(30, 34, 44); c.drawRect(280f, 205f, 980f, 645f, fill)
+            fill.color = Color.rgb(200, 210, 225); c.drawRect(320f, 240f, 940f, 600f, fill)
+        }
+        clutter("keyboard_grey", Desk.GREY) { c ->
+            fill.color = Color.rgb(40, 40, 44); c.drawRoundRect(RectF(200f, 330f, 1080f, 630f), 10f, 10f, fill)
+            fill.color = Color.rgb(225, 225, 228)
+            for (r in 0 until 5) for (k in 0 until 15) {
+                val x = 222f + k * 57f
+                val y = 352f + r * 54f
+                c.drawRoundRect(RectF(x, y, x + 48f, y + 44f), 3f, 3f, fill)
+            }
         }
     }
 
@@ -78,10 +114,11 @@ class ScanDetectionBenchmarkTest {
         DocumentEdgeDetector.detect(scene.bitmap)
         var last: CropQuad? = null
         var blur = 0.0
+        var convincing = false
         // The median of nine runs: one run interrupted by the system does not move it, as it moved the old average.
         val times = List(9) {
             val start = System.nanoTime()
-            DocumentEdgeDetector.detect(scene.bitmap).let { last = it.quad; blur = it.blurScore }
+            DocumentEdgeDetector.detect(scene.bitmap).let { last = it.quad; blur = it.blurScore; convincing = it.isConvincingPage }
             (System.nanoTime() - start) / 1e6
         }
         val millis = times.sorted()[times.size / 2]
@@ -90,7 +127,7 @@ class ScanDetectionBenchmarkTest {
         val diagonal = hypot(width.toDouble(), height.toDouble())
         val error = scene.truth.indices.map { hypot((found[it].x - scene.truth[it].x).toDouble(), (found[it].y - scene.truth[it].y).toDouble()) }.average() / diagonal * 100.0
         if (error > 2.0) Log.i(TAG, "  ${scene.name} found ${found.joinToString { "(${it.x.toInt()},${it.y.toInt()})" }} truth ${scene.truth.joinToString { "(${it.x.toInt()},${it.y.toInt()})" }}")
-        return Result(scene.name, true, error, overlap(scene.truth, found), millis, blur)
+        return Result(scene.name, true, error, overlap(scene.truth, found), millis, blur, convincing)
     }
 
     /** Overlap of two quadrilaterals by drawing both on a small mask: shared pixels over the pixels of either. */
@@ -142,6 +179,11 @@ class ScanDetectionBenchmarkTest {
         // F175: a shadow over most of one side, so the page's edge there is as dark as the wood: only colour sees it.
         scene("shadow_most_of_left", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(-40f, 0f, 420f, 0f)),
         scene("shadow_most_of_right_sharp", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(160f, 0f, 420f, 0f, soft = 0.02f)),
+        // F176: yellow paper and a warm lamp, each with a shadow over most of one side (the colour map must ignore both).
+        scene("yellow_paper_shadow_left", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), pageColor = Color.rgb(250, 236, 140), shadow = ShadowBand(-40f, 0f, 420f, 0f)),
+        scene("warm_lamp_shadow_left", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(-40f, 0f, 420f, 0f), warm = true),
+        // F177: a printed dark frame (a certificate, a form) set in from the paper's edge, as office printers leave.
+        scene("dark_border_inset", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), border = 26, borderInset = 22),
         scene("noisy_and_soft", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), noisy = true),
         scene("book_spread", Desk.WOOD, quad(190f, 170f, 1090f, 150f, 1110f, 800f, 170f, 820f), spread = true),
         scene("dim_light", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), dim = true)
@@ -173,7 +215,10 @@ class ScanDetectionBenchmarkTest {
         shadow: ShadowBand? = null,
         noisy: Boolean = false,
         spread: Boolean = false,
-        dim: Boolean = false
+        dim: Boolean = false,
+        warm: Boolean = false,
+        border: Int = 0,
+        borderInset: Int = 0
     ): Scene {
         val random = Random(name.hashCode().toLong())
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -191,7 +236,18 @@ class ScanDetectionBenchmarkTest {
         val flatW = if (receipt) 360 else if (spread) 1400 else 800
         val flatH = if (receipt) 1500 else if (spread) 1000 else 1131
         val flat = Bitmap.createBitmap(flatW, flatH, Bitmap.Config.ARGB_8888)
-        drawPage(Canvas(flat), flatW, flatH, pageColor, receipt, spread, random)
+        val flatCanvas = Canvas(flat)
+        drawPage(flatCanvas, flatW, flatH, pageColor, receipt, spread, random)
+        if (border > 0) {
+            // A printed dark frame, [border] px thick, [borderInset] px in from the paper's edge.
+            val ink = Paint().apply { color = Color.rgb(28, 28, 34) }
+            val l = borderInset.toFloat(); val t = borderInset.toFloat()
+            val r = (flatW - borderInset).toFloat(); val b = (flatH - borderInset).toFloat()
+            flatCanvas.drawRect(l, t, r, t + border, ink)
+            flatCanvas.drawRect(l, b - border, r, b, ink)
+            flatCanvas.drawRect(l, t, l + border, b, ink)
+            flatCanvas.drawRect(r - border, t, r, b, ink)
+        }
         val matrix = Matrix()
         val src = floatArrayOf(0f, 0f, flatW.toFloat(), 0f, flatW.toFloat(), flatH.toFloat(), 0f, flatH.toFloat())
         val dst = floatArrayOf(truth[0].x, truth[0].y, truth[1].x, truth[1].y, truth[2].x, truth[2].y, truth[3].x, truth[3].y)
@@ -214,6 +270,7 @@ class ScanDetectionBenchmarkTest {
         var result = bmp
         if (noisy) result = noisyAndSoft(bmp, random)
         if (dim) result = dimmed(result, random)
+        if (warm) result = warmed(result)
         return Scene(name, result, truth)
     }
 
@@ -300,6 +357,18 @@ class ScanDetectionBenchmarkTest {
         }
         soft.setPixels(pixels, 0, width, 0, 0, width, height)
         return soft
+    }
+
+    private fun warmed(source: Bitmap): Bitmap {
+        // A warm lamp: blue down and red up a little, so white paper looks cream.
+        val pixels = IntArray(width * height)
+        source.getPixels(pixels, 0, width, 0, 0, width, height)
+        for (i in pixels.indices) {
+            val p = pixels[i]
+            pixels[i] = Color.rgb((Color.red(p) + 12).coerceAtMost(255), (Color.green(p) * 0.92f).toInt(), (Color.blue(p) * 0.72f).toInt())
+        }
+        source.setPixels(pixels, 0, width, 0, 0, width, height)
+        return source
     }
 
     private fun dimmed(source: Bitmap, random: Random): Bitmap {

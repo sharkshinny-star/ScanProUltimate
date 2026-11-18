@@ -53,7 +53,8 @@ fun path(t: List<P>) = Path2D.Double().apply { moveTo(t[0].x, t[0].y); for (i in
 
 fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248, 247, 242), receipt: Boolean = false,
           shadow: Shadow? = null, noisy: Boolean = false, spread: Boolean = false, dim: Boolean = false, noPage: Boolean = false,
-          photo: Boolean = false, warm: Boolean = false, objects: List<(Graphics2D) -> Unit> = emptyList()): Scene {
+          photo: Boolean = false, warm: Boolean = false, objects: List<(Graphics2D) -> Unit> = emptyList(),
+          border: Int = 0, borderInset: Int = 0): Scene {
     val random = Random(name.hashCode().toLong())
     var img = BufferedImage(W, H, BufferedImage.TYPE_INT_RGB)
     val g = img.createGraphics(); g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -78,6 +79,12 @@ fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248
     val flat = BufferedImage(fw, fh, BufferedImage.TYPE_INT_RGB)
     val pg = flat.createGraphics(); pg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
     drawPage(pg, fw, fh, pageColor, receipt, spread, random)
+    if (border > 0) {
+        // A printed dark frame (a certificate, a form): [border] px thick, [borderInset] px in from the paper's edge.
+        pg.color = Color(28, 28, 34)
+        pg.fillRect(borderInset, borderInset, fw - 2 * borderInset, border); pg.fillRect(borderInset, fh - borderInset - border, fw - 2 * borderInset, border)
+        pg.fillRect(borderInset, borderInset, border, fh - 2 * borderInset); pg.fillRect(fw - borderInset - border, borderInset, border, fh - 2 * borderInset)
+    }
     if (photo) {
         // A large colour photo on the page (a brochure or a printed form with a picture): a strong colour region inside it.
         pg.paint = GradientPaint(120f, 380f, Color(200, 40, 40), 680f, 760f, Color(40, 150, 60)); pg.fillRect(120, 380, 560, 380)
@@ -178,6 +185,12 @@ fun keyboard(g: Graphics2D) { g.color = Color(40, 40, 44); g.fillRoundRect(200, 
 fun phone(g: Graphics2D) { g.color = Color(15, 15, 18); g.fillRoundRect(560, 260, 200, 400, 40, 40); g.color = Color(225, 230, 240); g.fillRoundRect(572, 285, 176, 350, 20, 20) }
 fun mugAndPen(g: Graphics2D) { g.color = Color(235, 235, 232); g.fillOval(300, 300, 260, 260); g.color = Color(150, 60, 40); g.fillOval(340, 340, 180, 180)
     g.color = Color(20, 40, 160); g.stroke = BasicStroke(14f); g.drawLine(700, 300, 1000, 650) }
+/** A silver laptop on a dark desk: its rim is lighter than the desk, so it is not "framed" (F177's blind spot). */
+fun silverLaptop(g: Graphics2D) { g.color = Color(176, 178, 182); g.fillRoundRect(250, 180, 760, 520, 24, 24); g.color = Color(30, 34, 44); g.fillRect(280, 205, 700, 440)
+    g.color = Color(200, 210, 225); g.fillRect(320, 240, 620, 360) }
+/** A tablet showing a document: a black bezel round a white page with lines of text. */
+fun tabletWithPage(g: Graphics2D) { g.color = Color(14, 14, 16); g.fillRoundRect(360, 110, 560, 760, 40, 40); g.color = Color(246, 246, 244); g.fillRect(392, 150, 496, 680)
+    g.color = Color(40, 40, 44); for (r in 0 until 24) g.fillRect(420, 190 + r * 26, 260 + (r * 53 % 160), 8) }
 fun notebookCover(g: Graphics2D) { g.color = Color(180, 30, 40); g.fillRect(380, 150, 520, 680) }
 
 val A4 = quad(370.0, 100.0, 910.0, 110.0, 900.0, 860.0, 380.0, 850.0)
@@ -235,6 +248,11 @@ fun scenes(extra: Boolean): List<Scene> = listOf(
     scene("c_white_page_green_desk", Desk.GREEN, A4),
     scene("c_green_desk_shadow_left", Desk.GREEN, A4, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
     scene("c_page_beside_phone", Desk.WOOD, quad(240.0, 100.0, 780.0, 110.0, 770.0, 860.0, 250.0, 850.0), objects = listOf { g -> g.color = Color(15, 15, 18); g.fillRoundRect(900, 300, 200, 400, 40, 40) }),
+    // F178: pages with a printed dark frame, which F177's framed-object check must still take for pages.
+    scene("c_dark_border_at_edge", Desk.WOOD, A4, border = 34),
+    scene("c_dark_border_inset", Desk.WOOD, A4, border = 26, borderInset = 22),
+    scene("c_dark_border_white_desk", Desk.WHITE, A4, border = 34, pageColor = Color(250, 250, 248)),
+    scene("c_dark_border_shadow_left", Desk.WOOD, A4, border = 34, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
     scene("n_wood_only", Desk.WOOD, A4, noPage = true),
     scene("n_mat_only", Desk.MAT, A4, noPage = true),
     scene("n_white_only", Desk.WHITE, A4, noPage = true),
@@ -244,7 +262,9 @@ fun scenes(extra: Boolean): List<Scene> = listOf(
     scene("n_phone_wood", Desk.WOOD, A4, noPage = true, objects = listOf(::phone)),
     scene("n_mug_pen_wood", Desk.WOOD, A4, noPage = true, objects = listOf(::mugAndPen)),
     scene("n_notebook_cover_wood", Desk.WOOD, A4, noPage = true, objects = listOf(::notebookCover)),
-    scene("n_laptop_warm", Desk.WOOD, A4, noPage = true, warm = true, objects = listOf(::laptop))
+    scene("n_laptop_warm", Desk.WOOD, A4, noPage = true, warm = true, objects = listOf(::laptop)),
+    scene("n_silver_laptop_dark_desk", Desk.DARK, A4, noPage = true, objects = listOf(::silverLaptop)),
+    scene("n_tablet_showing_page", Desk.WOOD, A4, noPage = true, objects = listOf(::tabletWithPage))
 )
 
 fun iou(a: List<P>, b: List<P>): Double {
