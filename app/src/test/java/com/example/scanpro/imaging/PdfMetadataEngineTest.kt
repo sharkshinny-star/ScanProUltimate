@@ -75,7 +75,12 @@ class PdfMetadataEngineTest {
         PdfMetadataEngine.write(context, sample(), null, removeAll = true, outputFile = out)
 
         PDDocument.load(out).use { doc ->
-            assertEquals(PdfInfo(pageCount = 3, version = "1.7", sizeBytes = 1), PdfMetadataEngine.readInfo(doc, 1))
+            // Only the details this test is about; page size, forms and encryption (F211) are checked elsewhere.
+            val info = PdfMetadataEngine.readInfo(doc, 1)
+            assertEquals(
+                PdfInfo(pageCount = 3, version = "1.7", sizeBytes = 1),
+                info.copy(pageWidthPt = 0f, pageHeightPt = 0f, mixedPageSizes = false, formFields = 0, encrypted = false)
+            )
             assertNull(doc.getPage(0).metadata)
             assertEquals(3, doc.numberOfPages)
         }

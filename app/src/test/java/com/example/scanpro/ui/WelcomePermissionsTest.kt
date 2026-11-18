@@ -97,6 +97,8 @@ class WelcomePermissionsTest {
     fun nothingLeftToAskGoesStraightIn() {
         shadowOf(ApplicationProvider.getApplicationContext<Application>())
             .grantPermissions(Manifest.permission.CAMERA, Manifest.permission.POST_NOTIFICATIONS)
+        // Since F196 the page also asks for "All files access"; granted here, so nothing is left to ask.
+        org.robolectric.shadows.ShadowEnvironment.setIsExternalStorageManager(true)
 
         showAndGetStarted()
 
