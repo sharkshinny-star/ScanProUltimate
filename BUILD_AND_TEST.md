@@ -47,6 +47,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-18, CI run 183 on `3c06b85`: F191 Files fix and F194 Edit PDF text)
+
+- `:app:compileDebugKotlin` passed (warnings only), so F181–F194 compile. `:app:testDebugUnitTest`: 965 tests, 1 failed (`ImageToolsEngineTest.compressImage_withTargetSize_producesSmallerFile`, F193 by another session, whose test premise it fixed in `c162957`), 82 skipped. Whether `PdfTextEditorTest` ran or was skipped is not in the log (no reports are uploaded for a failed run). Lint, the Play bundle and the APKs did not run. The next run (185, `c162957`) covers them.
+
 ## Latest results (2026-11-18, CI run 177 on `b5f5192`, F191 Files)
 
 - `:app:compileDebugKotlin` FAILED: `PhonePdfsScreen.kt:529`, "No value passed for parameter 'onClick'" (the `StorageRow` helper took a trailing lambda as its last parameter, `subtitle`). Fixed by moving `onClick` last; the next CI run is the check. Runs 178 and 180 (another session's pushes) failed on the same file.
