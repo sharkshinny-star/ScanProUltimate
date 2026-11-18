@@ -194,7 +194,7 @@ fun lineSpan(page: Rect, index: Int): Pair<Float, Float> {
 }
 
 /** Text lines and a heading bar on [page]; [skip] leaves out lines a scene draws itself. */
-fun DrawScope.drawTextLines(page: Rect, c: DemoColours, alpha: Float = 1f, count: Int = DEMO_LINES.size, heading: Boolean = true, skip: Set<Int> = emptySet()) {
+fun DrawScope.drawTextLines(page: Rect, c: DemoColours, alpha: Float = 1f, count: Int = DEMO_LINES.size, heading: Boolean = true, skip: Set<Int> = emptySet(), top: Float = 0.24f, bottom: Float = 0.82f) {
     val stroke = page.height * 0.022f
     if (heading) {
         val y = page.top + page.height * 0.13f
@@ -202,7 +202,7 @@ fun DrawScope.drawTextLines(page: Rect, c: DemoColours, alpha: Float = 1f, count
     }
     for (i in 0 until count) {
         if (i in skip) continue
-        val y = lineY(page, i, count)
+        val y = lineY(page, i, count, top, bottom)
         val (l, r) = lineSpan(page, i)
         drawLine(c.inkSoft.copy(alpha = c.inkSoft.alpha * alpha), Offset(l, y), Offset(r, y), stroke, StrokeCap.Round)
     }
