@@ -458,3 +458,53 @@ val HeaderFooterScene = DemoScene(5_600) { f ->
         }
     }
 }
+
+/**
+ * Files on this phone (the start prompt for "All files access", F196): a folder on the desk opens and the documents
+ * already on the phone (a PDF, a Word file, a spreadsheet and a photo) rise out of it and fan out, each with its
+ * colour badge, then settle into a tidy row with a tick.
+ */
+val FilesAccessScene = DemoScene(5_200) { f ->
+    val c = f.c
+    val t = f.t
+    val unit = size.height
+    val folderW = unit * 0.62f
+    val folderH = unit * 0.42f
+    val folder = Rect(size.width / 2f - folderW / 2f, unit * 0.5f, size.width / 2f + folderW / 2f, unit * 0.5f + folderH)
+    val open = seg(t, 0.08f, 0.22f) * (1f - seg(t, 0.9f, 0.98f))
+    // Back of the folder, with its tab.
+    val back = Color(0xFFF2B33D)
+    val front = Color(0xFFF7C653)
+    drawRoundRect(c.shadow, folder.topLeft + Offset(4f, unit * 0.03f), folder.size, CornerRadius(unit * 0.03f))
+    drawRoundRect(back, Offset(folder.left, folder.top - unit * 0.05f), Size(folderW * 0.4f, unit * 0.08f), CornerRadius(unit * 0.02f))
+    drawRoundRect(back, folder.topLeft, folder.size, CornerRadius(unit * 0.03f))
+    // The documents: label, badge colour, final x position.
+    val docs = listOf(
+        Triple("PDF", Color(0xFFE5483B), -1.5f),
+        Triple("DOC", Color(0xFF2F6FE4), -0.5f),
+        Triple("XLS", Color(0xFF1E9E5A), 0.5f),
+        Triple("JPG", c.accent, 1.5f),
+    )
+    docs.forEachIndexed { i, (label, colour, slot) ->
+        val rise = seg(t, 0.18f + i * 0.07f, 0.42f + i * 0.07f) * (1f - seg(t, 0.86f, 0.95f))
+        val h = unit * 0.36f
+        val startCentre = Offset(size.width / 2f + slot * unit * 0.06f, folder.top + h * 0.3f)
+        val endCentre = Offset(size.width / 2f + slot * unit * 0.3f, unit * 0.3f)
+        val centre = Offset(mixf(startCentre.x, endCentre.x, rise), mixf(startCentre.y, endCentre.y, rise))
+        val page = pageAt(centre, h)
+        drawPaper(page, c, lift = rise)
+        drawTextLines(page, c, count = 4, heading = false, top = 0.4f, bottom = 0.82f)
+        drawPill(label, Offset(page.center.x, page.top + page.height * 0.2f), c, f, background = colour)
+    }
+    // Front of the folder, tilting open.
+    val tilt = folderH * 0.18f * open
+    val frontPath = Path().apply {
+        moveTo(folder.left + tilt, folder.top + folderH * 0.18f + tilt)
+        lineTo(folder.right - tilt, folder.top + folderH * 0.18f + tilt)
+        lineTo(folder.right, folder.bottom)
+        lineTo(folder.left, folder.bottom)
+        close()
+    }
+    drawPath(frontPath, front)
+    drawDoneBadge(Offset(folder.right - unit * 0.04f, folder.bottom - unit * 0.04f), unit * 0.07f, c, seg(t, 0.62f, 0.68f) * (1f - seg(t, 0.88f, 0.94f)))
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Files access asked at start (F196). Machine translation, not yet reviewed by a speaker. -->
+    <string name="ui_permission_files_title">உங்கள் ஃபோனில் உள்ள கோப்புகள்</string>
+    <string name="ui_permission_files_body_settings">உங்கள் ஃபோனில் ஏற்கனவே உள்ள PDF, Word, Excel கோப்புகளையும் புகைப்படங்களையும் கண்டுபிடித்துத் திறக்க. படிக்க மட்டும், எதுவும் உங்கள் ஃபோனை விட்டு வெளியேறாது. அடுத்து Android ஒரு அமைப்புகள் பக்கத்தைத் திறக்கும்: “எல்லாக் கோப்புகளையும் நிர்வகிக்க அனுமதி” என்பதை இயக்கி, திரும்பி வரவும்.</string>
+    <string name="ui_permission_files_body_dialog">உங்கள் ஃபோனில் ஏற்கனவே உள்ள PDF, Word, Excel கோப்புகளையும் புகைப்படங்களையும் கண்டுபிடித்துத் திறக்க. படிக்க மட்டும், எதுவும் உங்கள் ஃபோனை விட்டு வெளியேறாது.</string>
+    <string name="files_start_title">உங்கள் ஃபோனின் எல்லா ஆவணங்களையும் பாருங்கள்</string>
+    <string name="files_start_allow">அனுமதி</string>
+</resources>

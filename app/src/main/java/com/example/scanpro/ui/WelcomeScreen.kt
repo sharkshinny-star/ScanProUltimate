@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.snap
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material3.TextButton
@@ -93,6 +94,8 @@ import com.example.scanpro.core.designsystem.PrivateToolsArt
 import com.example.scanpro.core.designsystem.ReceiptGridArt
 import kotlinx.coroutines.launch
 import com.example.scanpro.core.designsystem.AuroraBackground
+import com.example.scanpro.data.FilesAccessPrompts
+import com.example.scanpro.feature.phonepdfs.PhonePdfSource
 import com.example.scanpro.core.designsystem.BrandLockup
 import com.example.scanpro.core.designsystem.GradientButton
 import com.example.scanpro.core.designsystem.IconTile
@@ -107,13 +110,23 @@ import com.example.scanpro.core.designsystem.rememberMotionEnabled
  * user says no here, each is asked for again where it is used: the camera screen and Settings > Notifications.
  */
 internal object StartupPermissions {
+    /**
+     * Not an Android runtime permission: "All files access" (Android 11+), granted on a system settings page rather
+     * than in a dialog. Listed with the others so the page explains it in the same place (F196, owner's request).
+     */
+    const val FILES_ACCESS = "com.example.scanpro.permission.FILES_ACCESS"
+
     fun wanted(): List<String> = buildList {
         add(Manifest.permission.CAMERA)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+        // Up to Android 10 reading shared storage is an ordinary runtime permission, asked with the others.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) add(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
-    fun missing(context: Context): List<String> =
-        wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+    fun missing(context: Context): List<String> = buildList {
+        addAll(wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED })
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !PhonePdfSource.hasAccess(context)) add(FILES_ACCESS)
+    }
 }
 
 /**
@@ -291,16 +304,46 @@ private fun WelcomeDots(count: Int, current: Int) {
     }
 }
 
-/** The second welcome page: why the app would like each permission it does not have yet, then Android's own dialogs. */
+/**
+ * The second welcome page: why the app would like each permission it does not have yet, then Android's own dialogs
+ * and, on Android 11 and newer, the "All files access" settings page; the app opens when the person comes back.
+ */
 @Composable
 private fun PermissionsPage(onDone: () -> Unit) {
     val context = LocalContext.current
     // Fixed while the page is up, so the rows don't change under Android's dialogs as each answer comes in.
     val asked = remember { StartupPermissions.missing(context) }
+    val runtime = remember(asked) { asked.filter { it != StartupPermissions.FILES_ACCESS } }
+    val wantsFilesPage = StartupPermissions.FILES_ACCESS in asked
+    // Waiting for the person to come back from the settings page.
+    var waitingForSettings by rememberSaveable { mutableStateOf(false) }
+
+    fun finish() {
+        // Asked here, so the one-time prompt for people who passed the welcome before (ScanProApp) never repeats it.
+        FilesAccessPrompts.markStartFilesAsked(context)
+        onDone()
+    }
+    fun openFilesPage() {
+        if (PhonePdfSource.openAllFilesAccessSettings(context)) waitingForSettings = true else finish()
+    }
+
     // Whatever the answers, the app opens next; a "no" is asked again where that permission is needed.
-    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { onDone() }
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (wantsFilesPage && !PhonePdfSource.hasAccess(context)) openFilesPage() else finish()
+    }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, waitingForSettings) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME && waitingForSettings) {
+                waitingForSettings = false
+                finish()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var requested by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(asked) { if (asked.isEmpty()) onDone() }
+    LaunchedEffect(asked) { if (asked.isEmpty()) finish() }
     OnboardingPage(
         heroIcon = Icons.Rounded.PhotoCamera,
         heroTone = TileTone.Indigo,
@@ -316,6 +359,14 @@ private fun PermissionsPage(onDone: () -> Unit) {
                     Icons.Rounded.Notifications, TileTone.Amber,
                     stringResource(R.string.ui_permission_notifications_title), stringResource(R.string.ui_permission_notifications_body)
                 )
+                Manifest.permission.READ_EXTERNAL_STORAGE -> OnboardingPoint(
+                    Icons.Rounded.Folder, TileTone.Teal,
+                    stringResource(R.string.ui_permission_files_title), stringResource(R.string.ui_permission_files_body_dialog)
+                )
+                StartupPermissions.FILES_ACCESS -> OnboardingPoint(
+                    Icons.Rounded.Folder, TileTone.Teal,
+                    stringResource(R.string.ui_permission_files_title), stringResource(R.string.ui_permission_files_body_settings)
+                )
                 else -> null
             }
         },
@@ -324,10 +375,10 @@ private fun PermissionsPage(onDone: () -> Unit) {
         primaryEnabled = !requested,
         onPrimary = {
             requested = true
-            request.launch(asked.toTypedArray())
+            if (runtime.isNotEmpty()) request.launch(runtime.toTypedArray()) else openFilesPage()
         },
         secondary = stringResource(R.string.ui_permissions_not_now),
-        onSecondary = onDone
+        onSecondary = { finish() }
     )
 }
 
