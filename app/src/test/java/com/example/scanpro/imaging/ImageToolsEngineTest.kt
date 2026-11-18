@@ -84,7 +84,9 @@ class ImageToolsEngineTest {
         saveBitmap(bmp, Bitmap.CompressFormat.JPEG, sourceFile)
         val originalSize = sourceFile.length()
 
-        val targetBytes = 50 * 1024L // 50 KB
+        // Half the picture's own size: a target it does not already meet. (F193: a target the original already meets
+        // keeps the original, full resolution and all, instead of shrinking it anyway.)
+        val targetBytes = originalSize / 2
         val outFile = File(testDir, "compressed.jpg")
         val config = ImageCompressConfig(
             targetSizeBytes = targetBytes,
@@ -96,6 +98,7 @@ class ImageToolsEngineTest {
         assertEquals(1, result.pageCount)
         assertEquals(originalSize, result.originalSizeBytes)
         assertTrue("Output file should be substantially smaller than original", outFile.length() < originalSize)
+        assertTrue("Output must meet the target", outFile.length() <= targetBytes)
 
         val decoded = BitmapFactory.decodeFile(outFile.absolutePath)
         assertNotNull("Compressed file must be a valid image", decoded)

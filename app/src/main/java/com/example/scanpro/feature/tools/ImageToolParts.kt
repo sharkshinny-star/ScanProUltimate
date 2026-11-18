@@ -183,9 +183,9 @@ internal fun estimateTargetSize(image: LoadedImage, maxSide: Int, format: ImageE
         val bytes = found?.second ?: ImageToolsEngine.encodeBytes(sample, format, 10)
         if (sample !== image.preview) sample.recycle()
         last = ImageEstimate((bytes.size / (k * k)).toLong(), w, h, BitmapFactory.decodeByteArray(bytes, 0, bytes.size), k < 0.999f)
-        if (found != null) return last!!
+        if (found != null) return last
         val next = (side * 0.8f).toInt().coerceAtLeast(320)
-        if (next == side) return last!!
+        if (next == side) return last
         side = next
     }
     return last!!

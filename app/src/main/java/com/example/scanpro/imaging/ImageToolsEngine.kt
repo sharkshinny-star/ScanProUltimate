@@ -398,7 +398,7 @@ object ImageToolsEngine {
                     break
                 }
                 val floor = encodeBytes(bitmap, format, if (format == ImageExportFormat.PNG) 100 else 10)
-                if (smallest == null || floor.size < smallest!!.size) smallest = floor
+                if (smallest == null || floor.size < smallest.size) smallest = floor
             } finally {
                 bitmap.recycle()
             }

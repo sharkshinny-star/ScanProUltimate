@@ -250,7 +250,7 @@ internal fun ConvertImageDialog(
     val source = img?.format
     // The usual conversion away from what the picture is: JPG and WebP to PNG, PNG to JPG (or WebP when transparent).
     val defaultFormat = when (source) {
-        ImageExportFormat.PNG -> if (img?.transparent == true) ImageExportFormat.WEBP else ImageExportFormat.JPEG
+        ImageExportFormat.PNG -> if (img.transparent) ImageExportFormat.WEBP else ImageExportFormat.JPEG
         null -> ImageExportFormat.JPEG
         else -> ImageExportFormat.PNG
     }

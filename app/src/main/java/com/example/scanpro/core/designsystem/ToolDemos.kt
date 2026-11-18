@@ -87,7 +87,12 @@ fun ToolDemo(scene: DemoScene, modifier: Modifier = Modifier, stillAt: Float = 0
     val motion = rememberMotionEnabled()
     val inspection = androidx.compose.ui.platform.LocalInspectionMode.current
     val clock = remember { mutableLongStateOf(-1L) }
+    // The stage flips up into place when it first appears, like a sheet laid down on a desk.
+    val entrance = remember(scene) { androidx.compose.animation.core.Animatable(if (motion && !inspection) 0f else 1f) }
     if (motion && !inspection) {
+        LaunchedEffect(scene) {
+            entrance.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.72f, stiffness = 170f))
+        }
         LaunchedEffect(scene) {
             var start = -1L
             while (true) withInfiniteAnimationFrameMillis { now ->
@@ -100,18 +105,46 @@ fun ToolDemo(scene: DemoScene, modifier: Modifier = Modifier, stillAt: Float = 0
     val measurer = rememberTextMeasurer()
     Canvas(
         modifier.graphicsLayer {
+            val e = entrance.value
+            alpha = e.coerceIn(0f, 1f)
             if (scene.tilt) {
                 val elapsed = clock.longValue
                 val sway = if (elapsed < 0) 0f else sin(elapsed / 2600.0 * 2 * PI).toFloat()
-                rotationX = 16f
+                // A slow camera: a little orbit around the desk and a gentle push in and out.
+                val dolly = if (elapsed < 0) 0f else sin(elapsed / 4100.0 * 2 * PI).toFloat()
+                rotationX = 16f + 46f * (1f - e)
                 rotationY = -8f + 5f * sway
+                scaleX = (0.9f + 0.1f * e) * (1f + 0.015f * dolly)
+                scaleY = scaleX
                 cameraDistance = 14f * density
+            } else {
+                scaleX = 0.94f + 0.06f * e
+                scaleY = scaleX
             }
         }
     ) {
         val elapsed = clock.longValue
         val t = if (elapsed < 0) stillAt else (elapsed % scene.periodMillis).toFloat() / scene.periodMillis
+        if (scene.tilt) drawStage(colours)
         scene.draw(this, DemoFrame(t, colours, measurer, still = elapsed < 0))
+    }
+}
+
+/** The desk the scene sits on: a faint spotlight from above and a soft shadow on the floor, so the pages stand on something. */
+private fun DrawScope.drawStage(c: DemoColours) {
+    val centre = Offset(size.width / 2f, size.height * 0.52f)
+    drawCircle(
+        androidx.compose.ui.graphics.Brush.radialGradient(listOf(c.accent.copy(alpha = 0.07f), Color.Transparent), center = centre, radius = size.minDimension * 0.75f),
+        radius = size.minDimension * 0.75f,
+        center = centre
+    )
+    val floor = Offset(size.width / 2f, size.height * 0.93f)
+    androidx.compose.ui.graphics.drawscope.scale(1f, 0.18f, pivot = floor) {
+        drawCircle(
+            androidx.compose.ui.graphics.Brush.radialGradient(listOf(Color.Black.copy(alpha = 0.16f), Color.Transparent), center = floor, radius = size.width * 0.42f),
+            radius = size.width * 0.42f,
+            center = floor
+        )
     }
 }
 
@@ -162,12 +195,38 @@ fun pageAt(centre: Offset, height: Float): Rect {
 fun DrawScope.mainPage(scale: Float = 0.78f, dx: Float = 0f, dy: Float = 0f): Rect =
     pageAt(Offset(size.width / 2f + dx, size.height / 2f + dy), size.height * scale)
 
-/** A sheet of paper with a soft shadow under it ([lift] raises it off the desk) and a folded corner. */
+/**
+ * A sheet of paper lying on the desk: a soft shadow built from layers (wider and fainter the higher [lift] raises the
+ * sheet), the paper's edge, light falling from the top left, and a folded corner.
+ */
 fun DrawScope.drawPaper(page: Rect, c: DemoColours, lift: Float = 0f, alpha: Float = 1f, paper: Color = c.paper) {
     val corner = CornerRadius(page.width * 0.04f)
-    val drop = page.height * (0.025f + 0.05f * lift)
-    drawRoundRect(c.shadow.copy(alpha = c.shadow.alpha * alpha * (1f - 0.35f * lift)), page.topLeft + Offset(drop * 0.4f, drop), page.size, corner)
+    val drop = page.height * (0.02f + 0.06f * lift)
+    val spread = page.width * (0.012f + 0.03f * lift)
+    // Soft shadow: four layers, each a little wider and fainter, approximate a blur without a render effect.
+    for (k in 0 until 4) {
+        val grow = spread * k
+        val layerAlpha = c.shadow.alpha * alpha * (0.42f - k * 0.09f) * (1f - 0.3f * lift)
+        drawRoundRect(
+            c.shadow.copy(alpha = layerAlpha.coerceAtLeast(0f)),
+            Offset(page.left - grow + drop * 0.35f, page.top - grow + drop),
+            Size(page.width + grow * 2f, page.height + grow * 2f),
+            CornerRadius(corner.x + grow)
+        )
+    }
+    // The paper's thickness: a sliver of darker edge along the bottom and right.
+    val edge = page.height * 0.008f
+    drawRoundRect(lerp(paper, Color.Black, 0.18f).copy(alpha = paper.alpha * alpha), page.topLeft + Offset(edge * 0.6f, edge), page.size, corner)
     drawRoundRect(paper.copy(alpha = paper.alpha * alpha), page.topLeft, page.size, corner)
+    // Light from the top left: a touch brighter there, a touch darker at the far corner.
+    drawRoundRect(
+        androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(Color.White.copy(alpha = 0.16f * alpha), Color.Transparent, Color.Black.copy(alpha = 0.05f * alpha)),
+            start = page.topLeft,
+            end = page.bottomRight
+        ),
+        page.topLeft, page.size, corner
+    )
     drawRoundRect(c.ink.copy(alpha = 0.10f * alpha), page.topLeft, page.size, corner, style = Stroke(1f))
     val fold = page.width * 0.16f
     val path = Path().apply {
@@ -177,6 +236,8 @@ fun DrawScope.drawPaper(page: Rect, c: DemoColours, lift: Float = 0f, alpha: Flo
         close()
     }
     drawPath(path, c.ink.copy(alpha = 0.10f * alpha))
+    // The fold's own small shadow on the page.
+    drawLine(c.ink.copy(alpha = 0.08f * alpha), Offset(page.right - fold, page.top + fold), Offset(page.right, page.top + fold), 1.5f)
 }
 
 /** Relative widths of the text lines on a page. */
