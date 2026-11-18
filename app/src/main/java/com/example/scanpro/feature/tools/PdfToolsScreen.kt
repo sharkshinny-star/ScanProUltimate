@@ -132,6 +132,10 @@ fun PdfToolsScreen(
     var showConvertImageDialog by rememberSaveable { mutableStateOf(false) }
     var showResizeImageDialog by rememberSaveable { mutableStateOf(false) }
     var showPdfToImagesDialog by rememberSaveable { mutableStateOf(false) }
+    // Office to PDF, Extract images and Repair open their own pages first (F195), so the result is known before running.
+    var officeUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var showExtractImagesPage by rememberSaveable { mutableStateOf(false) }
+    var showRepairPage by rememberSaveable { mutableStateOf(false) }
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
     var showSplitDialog by rememberSaveable { mutableStateOf(false) }
     var showOrganizerSheet by rememberSaveable { mutableStateOf(false) }
@@ -284,7 +288,7 @@ fun PdfToolsScreen(
             "pdf2img" -> showPdfToImagesDialog = true
             "protect" -> showPasswordDialog = true
             "unlock" -> viewModel.inspectForUnlock(uri)
-            "repair" -> viewModel.repair(uri)
+            "repair" -> showRepairPage = true
             "split" -> showSplitDialog = true
             "organize", "extract", "rotate" -> { organizerMode = tool; showOrganizerSheet = true }
             "viewer" -> onOpenPdfViewer(uri, viewModel.displayName(uri))
@@ -312,7 +316,7 @@ fun PdfToolsScreen(
             "redact_box" -> showRedactBoxesEditor = true
             "nup" -> showNupDialog = true
             "header_footer" -> showHeaderFooterDialog = true
-            "extract_images" -> viewModel.extractImages(uri)
+            "extract_images" -> showExtractImagesPage = true
             "pdf_info" -> viewModel.openPdfInfo(uri)
         }
     }
@@ -332,7 +336,7 @@ fun PdfToolsScreen(
         openTool(target.tool, target.uri)
     }
     val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) viewModel.officeToPdf(uri)
+        if (uri != null) officeUri = uri
     }
     val printFallback by viewModel.printFallback.collectAsStateWithLifecycle()
     val activityContext = LocalContext.current
@@ -373,7 +377,7 @@ fun PdfToolsScreen(
                 ordering = request.uris
             }
             com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.IMAGES_TO_PDF -> imagesToOrder = request.uris
-            com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.OFFICE_TO_PDF -> request.uris.firstOrNull()?.let(viewModel::officeToPdf)
+            com.example.scanpro.feature.phonepdfs.PhoneFilesToTools.OFFICE_TO_PDF -> request.uris.firstOrNull()?.let { officeUri = it }
         }
     }
     ordering?.let { picked ->
@@ -401,7 +405,7 @@ fun PdfToolsScreen(
     }
     imagesToConvert?.let { images ->
         ImagesToPdfDialog(
-            count = images.size,
+            images = images,
             onDismiss = {
                 // The ordered copies live in cache; deleting them is file work, so not on the main thread.
                 cropScope.launch(Dispatchers.IO) {
@@ -412,9 +416,19 @@ fun PdfToolsScreen(
                 }
                 imagesToConvert = null
             },
-            onConfirm = { size, quality ->
+            onConfirm = { size, quality, margin ->
                 imagesToConvert = null
-                viewModel.imagesToPdf(images, size, quality)
+                viewModel.imagesToPdf(images, size, quality, margin)
+            }
+        )
+    }
+    officeUri?.let { picked ->
+        OfficeToPdfPage(
+            uri = picked,
+            onDismiss = { officeUri = null },
+            onConfirm = {
+                officeUri = null
+                viewModel.officeToPdf(picked)
             }
         )
     }
@@ -685,6 +699,22 @@ fun PdfToolsScreen(
                 )
             }
 
+            if (showExtractImagesPage && uri != null) {
+                ExtractImagesPage(
+                    uri = uri,
+                    onDismiss = { showExtractImagesPage = false },
+                    onConfirm = { showExtractImagesPage = false; viewModel.extractImages(uri) }
+                )
+            }
+
+            if (showRepairPage && uri != null) {
+                RepairPage(
+                    uri = uri,
+                    onDismiss = { showRepairPage = false },
+                    onConfirm = { showRepairPage = false; viewModel.repair(uri) }
+                )
+            }
+
             if (showPdfToImagesDialog && uri != null) {
                 PdfToImagesDialog(
                     uri = uri,
@@ -909,6 +939,7 @@ fun PdfToolsScreen(
                 key(session.uri) {
                     PdfInfoDialog(
                         info = session.info,
+                        uri = session.uri,
                         onDismiss = viewModel::closePdfInfo,
                         onSave = { edit -> viewModel.saveMetadata(session.uri, edit, removeAll = false) },
                         onRemoveAll = { viewModel.saveMetadata(session.uri, null, removeAll = true) }

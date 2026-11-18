@@ -580,7 +580,9 @@ object PdfToolsEngine {
         pageSize: PdfPageSize = PdfPageSize.AUTO,
         quality: PdfQuality = PdfQuality.BALANCED,
         outputFile: File,
-        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        /** The white border around each picture, in points. */
+        margin: Float = PdfExporter.MARGIN
     ): PdfToolResult = withContext(BackgroundWork.tools) {
         userRequire(imageUris.isNotEmpty(), R.string.tools_err_no_images)
         outputFile.parentFile?.mkdirs()
@@ -632,7 +634,8 @@ object PdfToolsEngine {
                     // Decoding is the slow part, so Cancel is honoured between pages here too.
                     if (!coroutineContext.isActive) throw InterruptedException("Images to PDF operation cancelled")
                     onProgress(number, total, creating)
-                }
+                },
+                margin = margin
             )
 
             return@withContext PdfToolResult(
@@ -674,7 +677,7 @@ object PdfToolsEngine {
                 ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
                     openRenderer(pfd, tempFile).use { renderer ->
                         val totalPages = renderer.pageCount
-                        val chosen = pages?.asSequence()?.filter { it in 1..totalPages }?.distinct()?.sorted()?.toList() ?: (1..totalPages).toList()
+                        val chosen = PdfToImagesMath.chosenPages(pages, totalPages)
                         userRequire(chosen.isNotEmpty(), R.string.tools_err_pages_missing)
                         chosen.forEachIndexed { step, pageNumber ->
                             val i = pageNumber - 1
@@ -682,10 +685,8 @@ object PdfToolsEngine {
                             onProgress(step + 1, chosen.size, AppStrings.get(R.string.tools_progress_exporting_page, pageNumber, format.extension.uppercase()))
 
                             renderer.openPage(i).use { page ->
-                                // Capped so a poster-sized page can't run out of memory.
-                                val scale = minOf(scale, 4000f / maxOf(page.width, page.height).coerceAtLeast(1))
-                                val width = (page.width * scale).toInt().coerceAtLeast(1)
-                                val height = (page.height * scale).toInt().coerceAtLeast(1)
+                                // Capped so a poster-sized page can't run out of memory; the tool page shows the same sizes.
+                                val (width, height) = PdfToImagesMath.pixelSize(page.width, page.height, scale)
                                 val canvas = bitmap?.takeIf { it.width == width && it.height == height }
                                     ?: createBitmap(width, height).also { bitmap?.recycle(); bitmap = it }
                                 // PdfRenderer draws onto what is there: transparent pixels turn black in a JPEG, and a
@@ -693,18 +694,18 @@ object PdfToolsEngine {
                                 canvas.eraseColor(Color.WHITE)
                                 page.render(canvas, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
-                                val imgFile = File(outputDir, "$base page ${(i + 1).toString().padStart(3, '0')}.${format.extension}")
+                                val imgFile = File(outputDir, PdfToImagesMath.fileName(base, i + 1, totalPages, format.extension))
                                 FileOutputStream(imgFile).buffered().use { out ->
                                     if (format == ImageExportFormat.JPEG) {
-                                        canvas.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                                        canvas.compress(Bitmap.CompressFormat.JPEG, PdfToImagesMath.JPEG_QUALITY, out)
                                     } else if (format == ImageExportFormat.PNG) {
                                         canvas.compress(Bitmap.CompressFormat.PNG, 100, out)
                                     } else {
                                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                                            canvas.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out)
+                                            canvas.compress(Bitmap.CompressFormat.WEBP_LOSSY, PdfToImagesMath.WEBP_QUALITY, out)
                                         } else {
                                             @Suppress("DEPRECATION")
-                                            canvas.compress(Bitmap.CompressFormat.WEBP, 90, out)
+                                            canvas.compress(Bitmap.CompressFormat.WEBP, PdfToImagesMath.WEBP_QUALITY, out)
                                         }
                                     }
                                 }

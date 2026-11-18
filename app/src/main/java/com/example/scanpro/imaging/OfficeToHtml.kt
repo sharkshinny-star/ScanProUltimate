@@ -73,7 +73,9 @@ object OfficeToHtml {
         val fileTooLong: String,
         /** Takes the cell limit already formatted, for example "20,000". */
         val workbookTruncated: (cells: String) -> String,
-        val fileTruncated: (cells: String) -> String
+        val fileTruncated: (cells: String) -> String,
+        /** Takes the slide limit, for example "500". */
+        val slidesTruncated: (slides: String) -> String = { "Only the first $it slides are shown; the rest were not converted." }
     ) {
         companion object {
             val ENGLISH = Notes(
@@ -401,10 +403,12 @@ object OfficeToHtml {
             val listed = newDom(presentation).documentElement.firstDescendant("sldIdLst")?.children().orEmpty()
                 .mapNotNull { slideId -> slideId.getAttributeNS(REL_NS, "id").takeIf { it.isNotEmpty() }?.let { rels[it]?.first } }
                 .filter { zip.containsKey(it) }
-            val slides = listed.ifEmpty {
+            val all = listed.ifEmpty {
                 zip.keys.filter { Regex("ppt/slides/slide\\d+\\.xml").matches(it) }
                     .sortedBy { it.substringAfter("slide").substringBefore(".xml").toIntOrNull() ?: 0 }
-            }.take(MAX_SLIDES)
+            }
+            // Slides past the limit used to be dropped without a word (F195): the PDF now says so on its last page.
+            val slides = all.take(MAX_SLIDES)
             if (slides.isEmpty()) return page(title, "<p class=\"note\">${note(currentNotes().fileEmpty)}</p>")
 
             val sb = StringBuilder()
@@ -429,6 +433,9 @@ object OfficeToHtml {
                     }
                 }
                 sb.append("</section>\n")
+            }
+            if (all.size > slides.size) {
+                sb.append("<p class=\"note\">").append(note(currentNotes().slidesTruncated(MAX_SLIDES.toString()))).append("</p>\n")
             }
             return page(title, sb)
         }

@@ -89,7 +89,8 @@ object HtmlToPdf {
                 if (continuation.isActive) continuation.resume(view)
             }
         }
-        continuation.invokeOnCancellation { view.destroy() }
+        // The cancel can arrive on any thread, and a WebView may only be destroyed on the one that made it (main).
+        continuation.invokeOnCancellation { android.os.Handler(android.os.Looper.getMainLooper()).post { view.destroy() } }
         view.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
     }
 }
