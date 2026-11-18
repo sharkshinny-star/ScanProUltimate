@@ -8,6 +8,8 @@ the device benchmark (`ScanDetectionBenchmarkTest`, see `BUILD_AND_TEST.md`) rem
 cd scripts/scan-bench && gradle -q run --args="extra"
 ```
 
+`gradle -q run --args="extra colour"` also runs every scene with its colour map, the way the app does for a captured photo (the live camera has none), and prints that result on a second line with its own summary.
+
 Other arguments: `only=shadow`, `dump=/some/dir` (images with true and found outlines), `time` (median detection time).
 
 `gradle -q run --args="enhance"` scores the page filters (`MatFilters.kt`, compiled unchanged) instead: a known page

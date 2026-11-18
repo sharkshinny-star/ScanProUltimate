@@ -93,9 +93,40 @@ object DocumentEdgeDetector {
      * a shadow scores 0.2 to 0.45 there and does.
      */
     private const val LINE_SEARCH_BELOW = 0.5f
+    /**
+     * F175, colour source: the least gap between the mean colour strengths of the two sides of the Otsu split
+     * (chroma map units: CIE a/b distance times 2) for the split to count as page against surface, and the smallest
+     * share of the frame each side must cover. Wood against neutral paper is about 60; a grey or white desk is near 0.
+     */
+    private const val CHROMA_MIN_GAP = 24.0
+    private const val CHROMA_MIN_SHARE = 0.08
+    private const val CHROMA_WEIGHT = 0.96
 
-    fun detect(grayInput: Mat): DocumentDetection {
+    /**
+     * Colour strength of every pixel: the distance of its CIE a and b from neutral, times 2, as an 8-bit map the size
+     * of [rgba]. A shadow darkens a page but leaves it neutral, so against a coloured surface the page edge stays
+     * visible here where the brightness edge is lost (F175). The live camera path has no colour and passes none.
+     */
+    fun chromaMap(rgba: Mat): Mat {
+        val rgb = Mat(); val lab = Mat(); val ab = ArrayList<Mat>(); val a = Mat(); val b = Mat(); val magnitude = Mat()
+        try {
+            Imgproc.cvtColor(rgba, rgb, Imgproc.COLOR_RGBA2RGB)
+            Imgproc.cvtColor(rgb, lab, Imgproc.COLOR_RGB2Lab)
+            Core.split(lab, ab)
+            ab[1].convertTo(a, CvType.CV_32F, 1.0, -128.0)
+            ab[2].convertTo(b, CvType.CV_32F, 1.0, -128.0)
+            Core.magnitude(a, b, magnitude)
+            val out = Mat()
+            magnitude.convertTo(out, CvType.CV_8U, 2.0)
+            return out
+        } finally {
+            rgb.release(); lab.release(); ab.forEach(Mat::release); a.release(); b.release(); magnitude.release()
+        }
+    }
+
+    fun detect(grayInput: Mat, chroma: Mat? = null): DocumentDetection {
         require(grayInput.channels() == 1) { "DocumentEdgeDetector expects a grayscale Mat" }
+        require(chroma == null || (chroma.channels() == 1 && chroma.size() == grayInput.size())) { "The colour map must match the grayscale Mat" }
 
         val working = resizeForAnalysis(grayInput)
         val processed = Mat()
@@ -115,6 +146,9 @@ object DocumentEdgeDetector {
         val faintEdges = Mat()
         val faintClosed = Mat()
         val thinEdges = Mat()
+        val chromaWork = Mat()
+        val chromaHigh = Mat()
+        val chromaLow = Mat()
 
         try {
             Imgproc.GaussianBlur(working, processed, Size(5.0, 5.0), 0.0)
@@ -250,6 +284,33 @@ object DocumentEdgeDetector {
                 ))
             }
 
+            // F175: colour source (only when the caller has colour, i.e. a captured photo). A shadow over most of one
+            // side leaves that side of the page about as bright as the wood behind it, so no brightness source can
+            // see its edge, but the page stays neutral while the surface is coloured. Split the colour-strength map
+            // at its Otsu level and search both halves for the page; the usual page score then prefers the whole
+            // page over its lit part. Skipped unless the two halves really differ (a grey or white desk has no colour
+            // edge) and each covers a real share of the frame.
+            if (chroma != null) {
+                Imgproc.resize(chroma, chromaWork, working.size(), 0.0, 0.0, Imgproc.INTER_AREA)
+                Imgproc.GaussianBlur(chromaWork, chromaWork, Size(7.0, 7.0), 0.0)
+                Imgproc.threshold(chromaWork, chromaHigh, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
+                Core.bitwise_not(chromaHigh, chromaLow)
+                val highShare = Core.countNonZero(chromaHigh) / frameArea
+                if (highShare in CHROMA_MIN_SHARE..(1.0 - CHROMA_MIN_SHARE)) {
+                    val gap = Core.mean(chromaWork, chromaHigh).`val`[0] - Core.mean(chromaWork, chromaLow).`val`[0]
+                    if (gap >= CHROMA_MIN_GAP) {
+                        for (mask in listOf(chromaHigh, chromaLow)) {
+                            Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel)
+                            Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel)
+                        }
+                        searchSources(listOf(
+                            Source(chromaLow, CHROMA_WEIGHT, Imgproc.RETR_EXTERNAL, precise = false),
+                            Source(chromaHigh, CHROMA_WEIGHT, Imgproc.RETR_EXTERNAL, precise = false)
+                        ))
+                    }
+                }
+            }
+
             // F168: an outline broken by a hard shadow never closes, so no contour above traces it, and the best
             // outline is then only the lit part of the page, or nothing. Rebuild the page from its straight sides,
             // weighted by how much of the perimeter really has an edge. Only when no confident outline closed: a
@@ -342,6 +403,9 @@ object DocumentEdgeDetector {
             edgesAdaptive.release()
             combinedEdges.release()
             kernel.release()
+            chromaWork.release()
+            chromaHigh.release()
+            chromaLow.release()
             bigKernel.release()
             brightMask.release()
             darkMask.release()
@@ -376,13 +440,17 @@ object DocumentEdgeDetector {
     fun detect(bitmap: Bitmap): DocumentDetection {
         val rgba = Mat()
         val gray = Mat()
+        var chroma: Mat? = null
         try {
             Utils.bitmapToMat(bitmap, rgba)
             Imgproc.cvtColor(rgba, gray, Imgproc.COLOR_RGBA2GRAY)
-            return detect(gray)
+            // A captured photo has colour, which finds a page edge a shadow has hidden from the brightness (F175).
+            chroma = runCatching { chromaMap(rgba) }.getOrNull()
+            return detect(gray, chroma)
         } finally {
             rgba.release()
             gray.release()
+            chroma?.release()
         }
     }
 

@@ -65,7 +65,7 @@ class ScanDetectionBenchmarkTest {
         listOf(
             "clean_a4_desk", "strong_perspective", "receipt_dark_desk", "low_contrast_grey_desk", "white_page_white_table",
             "hard_shadow_across_page", "shadow_band_lower_half", "shadow_on_tilted_page", "shadow_corner_wedge",
-            "shadow_sharp_edged"
+            "shadow_sharp_edged", "shadow_most_of_left", "shadow_most_of_right_sharp"
         ).forEach { name ->
             val r = results.first { it.name == name }
             assertTrue("$name: no page found", r.found)
@@ -139,6 +139,9 @@ class ScanDetectionBenchmarkTest {
         // F169: a wedge of shadow over the top-left corner, and a shadow with a sharp edge (a phone held close).
         scene("shadow_corner_wedge", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(-100f, -100f, 420f, 420f, soft = 0.1f)),
         scene("shadow_sharp_edged", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(0f, 200f, 400f, 130f, soft = 0.01f)),
+        // F175: a shadow over most of one side, so the page's edge there is as dark as the wood: only colour sees it.
+        scene("shadow_most_of_left", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(-40f, 0f, 420f, 0f)),
+        scene("shadow_most_of_right_sharp", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), shadow = ShadowBand(160f, 0f, 420f, 0f, soft = 0.02f)),
         scene("noisy_and_soft", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), noisy = true),
         scene("book_spread", Desk.WOOD, quad(190f, 170f, 1090f, 150f, 1110f, 800f, 170f, 820f), spread = true),
         scene("dim_light", Desk.WOOD, quad(370f, 100f, 910f, 110f, 900f, 860f, 380f, 850f), dim = true)

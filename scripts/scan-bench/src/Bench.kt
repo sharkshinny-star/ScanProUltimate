@@ -4,7 +4,9 @@
  * the device scenes; on 2026-11-17 the two agreed to within 0.3 percentage points of corner error on every scene.
  *
  * Arguments: "extra" adds shadow cases (x_) and scenes with no page (n_); "only=<text>" filters scenes by name;
- * "dump=<dir>" writes each scene with the true outline (green) and the detected one (red); "time" prints detection time.
+ * "dump=<dir>" writes each scene with the true outline (green) and the detected one (red); "time" prints detection time;
+ * "colour" also runs every scene with its colour map, as the app does for a captured photo (the live camera has none),
+ * and prints that result on a second line (F175).
  */
 import com.example.scanpro.imaging.OpenCvRuntime
 import com.example.scanpro.scanner.DocumentEdgeDetector
@@ -190,6 +192,12 @@ fun scenes(extra: Boolean): List<Scene> = listOf(
     scene("x_shadow_sharp_band", Desk.WOOD, A4, shadow = Shadow(0.0, 250.0, 60.0, 320.0, soft = 0.02f)),
     scene("x_shadow_sharp_desk_too", Desk.WOOD, A4, shadow = Shadow(0.0, 200.0, 400.0, 130.0, pageOnly = false, soft = 0.01f)),
     scene("x_shadow_sharp_grey", Desk.GREY, A4, shadow = Shadow(0.0, 200.0, 400.0, 130.0, soft = 0.01f)),
+    // F175: a shadow over most of one side (the failing case recorded as R56): the page's own edge is dark on that side.
+    scene("x_shadow_most_of_left", Desk.WOOD, A4, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
+    scene("x_shadow_most_of_top", Desk.WOOD, A4, shadow = Shadow(0.0, -40.0, 0.0, 520.0)),
+    scene("x_shadow_most_of_right_sharp", Desk.WOOD, A4, shadow = Shadow(160.0, 0.0, 420.0, 0.0, soft = 0.02f)),
+    scene("x_shadow_most_of_left_grey", Desk.GREY, A4, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
+    scene("x_shadow_most_of_bottom_white", Desk.WHITE, A4, shadow = Shadow(0.0, 220.0, 0.0, 560.0)),
     scene("n_wood_only", Desk.WOOD, A4, noPage = true),
     scene("n_mat_only", Desk.MAT, A4, noPage = true),
     scene("n_white_only", Desk.WHITE, A4, noPage = true),
@@ -215,10 +223,12 @@ fun main(args: Array<String>) {
     }
     if ("enhance" in args) { enhanceBench(args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")); return }
     val extra = "extra" in args
+    val colour = "colour" in args
     val dump = args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")
     val only = args.firstOrNull { it.startsWith("only=") }?.removePrefix("only=")
     println("scene | found | err% | IoU | ms | conf")
     val rows = mutableListOf<Triple<String, Double, Double>>()
+    val colourRows = mutableListOf<Triple<String, Double, Double>>()
     scenes(extra).filter { only == null || only in it.name }.forEach { s ->
         DocumentEdgeDetector.detect(s.gray)
         var det = DocumentEdgeDetector.detect(s.gray)
@@ -229,8 +239,28 @@ fun main(args: Array<String>) {
         val err = s.truth.indices.map { hypot(found[it].x - s.truth[it].x, found[it].y - s.truth[it].y) }.average() / hypot(W.toDouble(), H.toDouble()) * 100
         val o = iou(s.truth, found)
         rows += Triple(s.name, err, o)
+        if (s.name.startsWith("n_") && colour) {
+            val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
+            val c = DocumentEdgeDetector.detect(s.gray, DocumentEdgeDetector.chromaMap(rgba))
+            println("    colour: NEG conf ${"%.2f".format(c.confidence)} convincing ${c.isConvincingPage} area ${"%.2f".format(c.areaRatio)}")
+        }
         if (s.name.startsWith("n_")) { println("${s.name} | NEG conf ${"%.2f".format(det.confidence)} convincing ${det.isConvincingPage} area ${"%.2f".format(det.areaRatio)}"); return@forEach }
         println("${s.name} | true | ${"%.2f".format(err)} | ${"%.3f".format(o)} | ${"%.1f".format(times[3])} | ${"%.2f".format(det.confidence)}")
+        if (colour) {
+            val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
+            val chroma = DocumentEdgeDetector.chromaMap(rgba)
+            DocumentEdgeDetector.detect(s.gray, chroma)
+            var cdet = DocumentEdgeDetector.detect(s.gray, chroma)
+            val ctimes = List(7) { val t = System.nanoTime(); cdet = DocumentEdgeDetector.detect(s.gray, chroma); (System.nanoTime() - t) / 1e6 }.sorted()
+            val cq = cdet.quad
+            if (cq == null) { println("    colour: not found"); colourRows += Triple(s.name, 100.0, 0.0) } else {
+                val cf = listOf(cq.topLeft, cq.topRight, cq.bottomRight, cq.bottomLeft).map { P(it.x * W.toDouble(), it.y * H.toDouble()) }
+                val cerr = s.truth.indices.map { hypot(cf[it].x - s.truth[it].x, cf[it].y - s.truth[it].y) }.average() / hypot(W.toDouble(), H.toDouble()) * 100
+                val co = iou(s.truth, cf)
+                colourRows += Triple(s.name, cerr, co)
+                println("    colour: err ${"%.2f".format(cerr)} | IoU ${"%.3f".format(co)} | ${"%.1f".format(ctimes[3])} ms | conf ${"%.2f".format(cdet.confidence)}")
+            }
+        }
         if (dump != null) {
             val out = s.color.clone()
             Imgproc.polylines(out, listOf(MatOfPoint(*s.truth.map { Point(it.x, it.y) }.toTypedArray())), true, Scalar(0.0, 200.0, 0.0), 2)
@@ -241,6 +271,12 @@ fun main(args: Array<String>) {
     val bench = rows.filter { !it.first.startsWith("x_") && !it.first.startsWith("n_") }
     if (bench.isEmpty()) return
     println("bench: mean IoU ${"%.3f".format(bench.map { it.third }.average())}, worst err ${"%.2f".format(bench.maxOf { it.second })}")
+    if (colour) {
+        val cb = colourRows.filter { !it.first.startsWith("x_") && !it.first.startsWith("n_") }
+        val cx = colourRows.filter { it.first.startsWith("x_") }
+        println("colour bench: mean IoU ${"%.3f".format(cb.map { it.third }.average())}, worst err ${"%.2f".format(cb.maxOf { it.second })}")
+        if (cx.isNotEmpty()) println("colour extra: mean IoU ${"%.3f".format(cx.map { it.third }.average())}, under 2% err: ${cx.count { it.second < 2.0 }}/${cx.size}")
+    }
     val x = rows.filter { it.first.startsWith("x_") }
     if (x.isNotEmpty()) println("extra: mean IoU ${"%.3f".format(x.map { it.third }.average())}, under 2% err: ${x.count { it.second < 2.0 }}/${x.size}")
 }
