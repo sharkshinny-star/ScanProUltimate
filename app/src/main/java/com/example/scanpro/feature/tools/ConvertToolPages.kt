@@ -185,7 +185,7 @@ internal fun ConvertOutcomeRow(
         modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            SizeColumn(stringResource(R.string.img_tool_now), nowTitle, nowDetail, Modifier.weight(1f))
+            OutcomeColumn(stringResource(R.string.img_tool_now), nowTitle, nowDetail, Modifier.weight(1f))
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
@@ -193,7 +193,7 @@ internal fun ConvertOutcomeRow(
                 modifier = Modifier.padding(horizontal = 8.dp).size(20.dp)
             )
             Column(Modifier.weight(1f)) {
-                SizeColumn(stringResource(R.string.img_tool_after), afterTitle ?: "…", afterDetail)
+                OutcomeColumn(stringResource(R.string.img_tool_after), afterTitle ?: "…", afterDetail)
                 if (afterBytes != null && beforeBytes > 0) {
                     val change = ((afterBytes - beforeBytes) * 100f / beforeBytes).roundToInt()
                     if (change != 0) {
