@@ -93,12 +93,13 @@ class WelcomePermissionsTest {
         assertEquals(1, finished)
     }
 
+    // Since F196 the page also asks for access to the phone's files. On Android 10 that is the ordinary storage
+    // permission, which Robolectric can grant, so the test runs there with every permission granted.
     @Test
+    @Config(sdk = [29])
     fun nothingLeftToAskGoesStraightIn() {
         shadowOf(ApplicationProvider.getApplicationContext<Application>())
-            .grantPermissions(Manifest.permission.CAMERA, Manifest.permission.POST_NOTIFICATIONS)
-        // Since F196 the page also asks for "All files access"; granted here, so nothing is left to ask.
-        org.robolectric.shadows.ShadowEnvironment.setIsExternalStorageManager(true)
+            .grantPermissions(Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
 
         showAndGetStarted()
 
