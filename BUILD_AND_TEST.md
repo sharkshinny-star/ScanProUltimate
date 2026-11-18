@@ -47,6 +47,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-18, CI run 177 on `b5f5192`, F191 Files)
+
+- `:app:compileDebugKotlin` FAILED: `PhonePdfsScreen.kt:529`, "No value passed for parameter 'onClick'" (the `StorageRow` helper took a trailing lambda as its last parameter, `subtitle`). Fixed by moving `onClick` last; the next CI run is the check. Runs 178 and 180 (another session's pushes) failed on the same file.
+
 ## Latest results (2026-11-18, F194 Edit PDF text, commit ab4512e, Linux cloud container)
 
 - `PdfTextEditorTest` on the desktop JVM with Apache PDFBox 2.0.27 (the app's `PdfTextEditor.kt` with `com.tom_roush.pdfbox` renamed to `org.apache.pdfbox`; a throwaway Gradle project): 7 run, 7 passed. The pdfbox-android 2.0.27 AAR was checked with `javap` for every overridden or called method (`showGlyph` with the unicode argument, `showForm`, `processOperator`, `PDFStreamParser(PDContentStream)`, `ContentStreamWriter`, `PDVectorFont.hasGlyph`, `PDColor.toRGB`).
