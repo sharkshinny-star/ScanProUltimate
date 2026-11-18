@@ -201,6 +201,7 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
     val requestAccess = rememberPhoneFilesAccessRequest(onResult = viewModel::checkAccess)
     val shareTitle = stringResource(R.string.phone_pdfs_share)
     val openWithTitle = stringResource(R.string.phone_files_open_with)
+    val noPickerApp = stringResource(R.string.phone_files_no_app)
     var previewing by remember { mutableStateOf<PhoneFile?>(null) }
     val processed by viewModel.processed.collectAsStateWithLifecycle()
     // A file from Google Drive, Dropbox, OneDrive or any other storage app, through the phone's own picker.
@@ -246,7 +247,7 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
                 },
                 onOpenCloud = {
                     runCatching { cloudPicker.launch(PhoneFiles.MIME_TYPES.values.flatten().distinct().toTypedArray()) }
-                        .onFailure { Toast.makeText(context, context.getString(R.string.phone_files_no_app), Toast.LENGTH_SHORT).show() }
+                        .onFailure { Toast.makeText(context, noPickerApp, Toast.LENGTH_SHORT).show() }
                 },
                 onSelectionAction = { action ->
                     val files = state.selection
