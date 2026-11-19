@@ -12,10 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -24,6 +26,19 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.sp
+import com.example.scanpro.R
+import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -47,7 +62,15 @@ enum class HeaderScene(val millis: Int) {
     /** A white and blue semi-high-speed train with a long sloped nose. */
     TRAIN(3600),
     /** A zombie shuffling slowly across, arms out. */
-    ZOMBIE(11000)
+    ZOMBIE(11000),
+    /** A small propeller plane towing a banner with the app's name. */
+    PLANE(6500),
+    /** A rocket that sits smoking on its pad, then lifts off out of the top. */
+    ROCKET(5200),
+    /** An elephant in a red and gold cloth, walking across. */
+    ELEPHANT(9500),
+    /** A paper plane folded from a scanned page, gliding up and down. */
+    PAPER_PLANE(4800)
 }
 
 /** The empty pause between two scenes. */
@@ -55,35 +78,49 @@ private const val REST_MILLIS = 1600
 
 /**
  * A small decoration for Home's top bar (owner's request, 2026-11-19): one scene at random, a pause, then another, a
- * different one each time. Drawn with shapes only, nothing downloaded. Time is read in the draw phase, so a frame only
- * redraws this canvas. It is not read out, and with animations turned off in the phone's settings it stays empty.
+ * different one each time; a tap moves on to the next. Behind them a little sky for the time of day ([hour], 0 to 23):
+ * a sun and clouds, or a moon and stars. Drawn with shapes only, nothing downloaded. Time is read in the draw phase, so
+ * a frame only redraws this canvas. It is not read out. With animations turned off in the phone's settings only the
+ * still sky is drawn.
  *
  * [still] draws one scene at a fixed point of its pass (0 to 1), for screenshots.
  */
 @Composable
-fun HeaderSceneStrip(modifier: Modifier = Modifier, still: Pair<HeaderScene, Float>? = null) {
+fun HeaderSceneStrip(
+    modifier: Modifier = Modifier,
+    still: Pair<HeaderScene, Float>? = null,
+    hour: Int = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+) {
     val motion = rememberMotionEnabled()
     val inspection = LocalInspectionMode.current
+    val animated = still == null && motion && !inspection
     val scene = remember { mutableStateOf(still?.first ?: HeaderScene.entries.random()) }
-    // Below zero: resting, nothing is drawn.
+    // Below zero: resting, only the sky is drawn.
     val progress = remember { mutableFloatStateOf(still?.second ?: -1f) }
     val mirrored = remember { mutableStateOf(still == null && Random.nextBoolean()) }
-    if (still == null && motion && !inspection) {
+    // Milliseconds since the strip appeared, for the sky, which never rests.
+    val clock = remember { mutableLongStateOf(0L) }
+    val skip = remember { mutableStateOf(false) }
+    if (animated) {
         LaunchedEffect(Unit) {
+            var first = -1L
             var start = -1L
             while (true) withInfiniteAnimationFrameMillis { now ->
+                if (first < 0) first = now
                 if (start < 0) start = now
+                clock.longValue = now - first
                 val elapsed = now - start
                 val length = scene.value.millis
                 when {
-                    elapsed <= length -> progress.floatValue = elapsed / length.toFloat()
-                    elapsed <= length + REST_MILLIS -> progress.floatValue = -1f
-                    else -> {
+                    skip.value || elapsed > length + REST_MILLIS -> {
+                        skip.value = false
                         scene.value = (HeaderScene.entries - scene.value).random()
                         mirrored.value = Random.nextBoolean()
                         start = now
                         progress.floatValue = 0f
                     }
+                    elapsed <= length -> progress.floatValue = elapsed / length.toFloat()
+                    else -> progress.floatValue = -1f
                 }
             }
         }
@@ -94,14 +131,32 @@ fun HeaderSceneStrip(modifier: Modifier = Modifier, still: Pair<HeaderScene, Flo
         brand = MaterialTheme.colorScheme.primary,
         paper = MaterialTheme.colorScheme.surfaceContainerLowest
     )
-    Canvas(modifier.clipToBounds().clearAndSetSemantics { }) {
+    // The banner the plane tows carries the app's name.
+    val measurer = rememberTextMeasurer()
+    val name = stringResource(R.string.core_recommend_app_subject)
+    val banner = remember(measurer, name) {
+        measurer.measure(name, TextStyle(color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold), maxLines = 1)
+    }
+    val interaction = remember { MutableInteractionSource() }
+    Canvas(
+        modifier
+            .clipToBounds()
+            // A tap moves on to another scene. No ripple and nothing announced: it is a toy, not a control.
+            .clickable(interactionSource = interaction, indication = null, enabled = animated) { skip.value = true }
+            .clearAndSetSemantics { }
+    ) {
+        if (size.width < size.height) return@Canvas
+        sky(hour, clock.longValue, palette)
         val p = progress.floatValue
-        if (p < 0f || size.width < size.height) return@Canvas
+        if (p < 0f) return@Canvas
         val u = size.height
         when (val current = scene.value) {
             HeaderScene.MONKEY -> monkey(p, palette, left = mirrored.value)
             HeaderScene.MONKEY_PLAY -> monkeyPlay(p, palette, left = mirrored.value)
             HeaderScene.BIRDS -> birds(p, palette)
+            HeaderScene.PLANE -> plane(p, palette, banner)
+            HeaderScene.ROCKET -> rocket(p, palette, left = mirrored.value)
+            HeaderScene.PAPER_PLANE -> scale(scaleX = if (mirrored.value) -1f else 1f, scaleY = 1f) { paperPlane(p, palette) }
             else -> {
                 // A faint road (or rail), so the wheels have something to run on.
                 drawLine(palette.soft.copy(alpha = 0.18f), Offset(0f, GROUND * u), Offset(size.width, GROUND * u), strokeWidth = 0.015f * u)
@@ -120,6 +175,7 @@ fun HeaderSceneStrip(modifier: Modifier = Modifier, still: Pair<HeaderScene, Flo
                         HeaderScene.LORRY -> lorry(x, p, palette)
                         HeaderScene.TRAIN -> train(x, palette)
                         HeaderScene.ZOMBIE -> zombie(x, p, palette)
+                        HeaderScene.ELEPHANT -> elephant(x, p)
                         else -> auto(x, p, palette)
                     }
                 }
@@ -816,7 +872,7 @@ private fun DrawScope.zombie(x: Float, p: Float, c: ScenePalette) {
     // Each step lurches the body forward and down a little.
     val lurch = sin(step)
     val middle = x + 0.3f * u
-    val hip = Offset(middle, ground - 0.36f * u + kotlin.math.abs(lurch) * 0.012f * u)
+    val hip = Offset(middle, ground - 0.36f * u + abs(lurch) * 0.012f * u)
     drawOval(Color.Black.copy(alpha = 0.15f), Offset(middle - 0.17f * u, ground - 0.03f * u), Size(0.36f * u, 0.06f * u))
     // Legs: the far one drags stiff behind, the near one takes the short steps.
     val dragFoot = Offset(middle - 0.11f * u - lurch * 0.02f * u, ground - 0.02f * u)
@@ -875,5 +931,300 @@ private fun DrawScope.zombie(x: Float, p: Float, c: ScenePalette) {
             }
             drawLine(shade, head + Offset(0.075f * u, -0.06f * u), head + Offset(0.055f * u, -0.035f * u), strokeWidth = 0.008f * u, cap = StrokeCap.Round)
         }
+    }
+}
+
+/**
+ * The sky behind the scenes: by day (6 to 17) a sun with slowly turning rays and two clouds drifting; otherwise a
+ * crescent moon and a few stars that twinkle. Kept pale, so the scenes in front stay the subject.
+ */
+private fun DrawScope.sky(hour: Int, millis: Long, c: ScenePalette) {
+    val u = size.height
+    val seconds = millis / 1000f
+    val orb = Offset(size.width - 0.42f * u, 0.27f * u)
+    if (hour in 6..17) {
+        val gold = Color(0xFFFFC53D)
+        drawCircle(Brush.radialGradient(listOf(gold.copy(alpha = 0.35f), gold.copy(alpha = 0f)), center = orb, radius = 0.34f * u), 0.34f * u, orb)
+        rotate(seconds * 8f, pivot = orb) {
+            for (i in 0 until 8) {
+                val angle = i * PI.toFloat() / 4f
+                val direction = Offset(cos(angle), sin(angle))
+                drawLine(gold.copy(alpha = 0.8f), orb + direction * (0.17f * u), orb + direction * (0.23f * u), strokeWidth = 0.022f * u, cap = StrokeCap.Round)
+            }
+        }
+        drawCircle(Brush.radialGradient(listOf(Color(0xFFFFE58A), gold), center = orb - Offset(0.03f * u, 0.03f * u), radius = 0.16f * u), 0.125f * u, orb)
+    } else {
+        val stars = listOf(0.08f to 0.2f, 0.22f to 0.42f, 0.37f to 0.14f, 0.52f to 0.34f, 0.66f to 0.18f, 0.93f to 0.5f)
+        stars.forEachIndexed { i, (along, down) ->
+            val twinkle = 0.45f + 0.4f * sin(seconds * 2.2f + i * 1.9f)
+            val centre = Offset(along * size.width, down * u)
+            val arm = (0.025f + 0.012f * (i % 2)) * u
+            drawLine(c.soft.copy(alpha = twinkle), centre - Offset(arm, 0f), centre + Offset(arm, 0f), strokeWidth = 0.012f * u, cap = StrokeCap.Round)
+            drawLine(c.soft.copy(alpha = twinkle), centre - Offset(0f, arm), centre + Offset(0f, arm), strokeWidth = 0.012f * u, cap = StrokeCap.Round)
+        }
+        val moon = Color(0xFFF4E6B0)
+        drawCircle(Brush.radialGradient(listOf(moon.copy(alpha = 0.3f), moon.copy(alpha = 0f)), center = orb, radius = 0.3f * u), 0.3f * u, orb)
+        // A crescent: the disc with a bite taken out of it.
+        val crescent = Path.combine(
+            PathOperation.Difference,
+            Path().apply { addOval(Rect(orb, 0.125f * u)) },
+            Path().apply { addOval(Rect(orb + Offset(0.07f * u, -0.04f * u), 0.11f * u)) }
+        )
+        drawPath(crescent, Brush.linearGradient(listOf(Color(0xFFFFF6CF), moon.darker(0.12f)), start = orb - Offset(0.12f * u, 0.12f * u), end = orb + Offset(0.1f * u, 0.12f * u)))
+    }
+    // Clouds drift across and come round again; fainter at night.
+    val tint = (if (hour in 6..17) c.soft.copy(alpha = 0.2f) else c.soft.copy(alpha = 0.12f))
+    val lap = size.width + 1.2f * u
+    for (i in 0..1) {
+        val x = ((seconds * (0.035f + i * 0.02f) * u * 4f + i * 0.55f * lap) % lap) - 0.6f * u
+        val y = (0.2f + i * 0.2f) * u
+        val k = (1f - i * 0.25f) * u
+        drawRoundRect(tint, Offset(x, y), Size(0.5f * k, 0.11f * k), CornerRadius(0.055f * k))
+        drawCircle(tint, 0.09f * k, Offset(x + 0.16f * k, y + 0.01f * k))
+        drawCircle(tint, 0.12f * k, Offset(x + 0.3f * k, y - 0.01f * k))
+    }
+}
+
+/** A small propeller plane flying left to right, towing a rippling banner with the app's name. */
+private fun DrawScope.plane(p: Float, c: ScenePalette, banner: TextLayoutResult) {
+    val u = size.height
+    val bannerWidth = 0.95f * u
+    val whole = 0.75f * u + 0.3f * u + bannerWidth
+    // The nose's position: from fully off the left to fully off the right.
+    val nose = -0.1f * u + (size.width + whole + 0.2f * u) * p
+    val y = 0.42f * u + sin(p * 2f * PI.toFloat() * 2f) * 0.06f * u
+    val tail = nose - 0.75f * u
+    // Banner: a strip whose edges ripple, on two ropes from the tail.
+    val start = tail - 0.3f * u - bannerWidth
+    fun ripple(x: Float) = sin((x - start) / u * 7f - p * 60f) * 0.022f * u
+    val cloth = Path().apply {
+        val steps = 12
+        moveTo(start, y - 0.11f * u + ripple(start))
+        for (i in 1..steps) { val x = start + bannerWidth * i / steps; lineTo(x, y - 0.11f * u + ripple(x)) }
+        for (i in steps downTo 0) { val x = start + bannerWidth * i / steps; lineTo(x, y + 0.11f * u + ripple(x)) }
+        close()
+    }
+    drawLine(c.soft, Offset(tail, y), Offset(start + bannerWidth, y - 0.11f * u + ripple(start + bannerWidth)), strokeWidth = 0.008f * u)
+    drawLine(c.soft, Offset(tail, y), Offset(start + bannerWidth, y + 0.11f * u + ripple(start + bannerWidth)), strokeWidth = 0.008f * u)
+    drawPath(cloth, Brush.horizontalGradient(listOf(c.brand.darker(0.2f), c.brand, c.brand.lighter(0.15f)), startX = start, endX = start + bannerWidth))
+    drawPath(cloth, Color.White.copy(alpha = 0.5f), style = Stroke(width = 0.01f * u))
+    val fit = minOf(0.15f * u / banner.size.height, (bannerWidth - 0.1f * u) / banner.size.width)
+    val textAt = Offset(start + bannerWidth / 2f, y + ripple(start + bannerWidth / 2f))
+    scale(fit, fit, pivot = textAt) {
+        drawText(banner, topLeft = textAt - Offset(banner.size.width / 2f, banner.size.height / 2f))
+    }
+
+    // Plane: tailplane and fin, fuselage, cockpit glass, a stripe, the wing, wheels and the propeller's blur.
+    val white = Color(0xFFF7F8FA)
+    drawPath(
+        Path().apply { moveTo(tail + 0.02f * u, y - 0.02f * u); lineTo(tail - 0.03f * u, y - 0.2f * u); lineTo(tail + 0.1f * u, y - 0.2f * u); lineTo(tail + 0.2f * u, y - 0.04f * u); close() },
+        c.brand
+    )
+    val fuselage = Path().apply {
+        moveTo(tail, y - 0.01f * u)
+        cubicTo(tail + 0.2f * u, y - 0.1f * u, nose - 0.25f * u, y - 0.13f * u, nose - 0.06f * u, y - 0.07f * u)
+        quadraticTo(nose, y - 0.02f * u, nose - 0.04f * u, y + 0.06f * u)
+        cubicTo(nose - 0.25f * u, y + 0.1f * u, tail + 0.25f * u, y + 0.08f * u, tail, y + 0.02f * u)
+        close()
+    }
+    drawPath(fuselage, Brush.verticalGradient(listOf(Color.White, white, Color(0xFFBCC3CC)), startY = y - 0.13f * u, endY = y + 0.1f * u))
+    drawLine(c.brand, Offset(tail + 0.08f * u, y + 0.005f * u), Offset(nose - 0.08f * u, y + 0.005f * u), strokeWidth = 0.022f * u, cap = StrokeCap.Round)
+    drawPath(
+        Path().apply {
+            moveTo(nose - 0.3f * u, y - 0.105f * u); quadraticTo(nose - 0.2f * u, y - 0.11f * u, nose - 0.13f * u, y - 0.05f * u)
+            lineTo(nose - 0.3f * u, y - 0.05f * u); close()
+        },
+        Brush.verticalGradient(listOf(Glass, GlassDeep), startY = y - 0.11f * u, endY = y - 0.05f * u)
+    )
+    drawRoundRect(Brush.verticalGradient(listOf(white, Color(0xFFAEB6C0))), Offset(nose - 0.47f * u, y + 0.02f * u), Size(0.3f * u, 0.05f * u), CornerRadius(0.025f * u))
+    drawRoundRect(white, Offset(tail - 0.02f * u, y - 0.03f * u), Size(0.16f * u, 0.03f * u), CornerRadius(0.015f * u))
+    drawLine(DarkMetal, Offset(nose - 0.3f * u, y + 0.07f * u), Offset(nose - 0.32f * u, y + 0.14f * u), strokeWidth = 0.012f * u)
+    drawCircle(Tyre, 0.035f * u, Offset(nose - 0.32f * u, y + 0.15f * u))
+    drawCircle(DarkMetal, 0.03f * u, Offset(nose - 0.02f * u, y))
+    drawOval(c.soft.copy(alpha = 0.3f), Offset(nose - 0.015f * u, y - 0.16f * u), Size(0.03f * u, 0.32f * u))
+    val blade = sin(p * 400f) * 0.15f * u
+    drawLine(DarkMetal.copy(alpha = 0.7f), Offset(nose, y - blade), Offset(nose, y + blade), strokeWidth = 0.014f * u, cap = StrokeCap.Round)
+}
+
+/** A rocket on its pad: smoke builds, it trembles, then climbs out of the top faster and faster. */
+private fun DrawScope.rocket(p: Float, c: ScenePalette, left: Boolean) {
+    val u = size.height
+    val ground = GROUND * u
+    val centre = size.width * (if (left) 0.3f else 0.58f)
+    val lit = p > 0.12f
+    val flight = ((p - 0.3f) / 0.5f).coerceIn(0f, 1f)
+    val climb = flight * flight * 1.7f * u
+    val tremble = if (lit && flight == 0f) sin(p * 900f) * 0.006f * u else 0f
+    drawLine(c.soft.copy(alpha = 0.18f), Offset(0f, ground), Offset(size.width, ground), strokeWidth = 0.015f * u)
+    drawRect(DarkMetal, Offset(centre - 0.16f * u, ground - 0.03f * u), Size(0.32f * u, 0.03f * u))
+    // Gantry beside the pad.
+    drawLine(Steel, Offset(centre - 0.2f * u, ground), Offset(centre - 0.2f * u, ground - 0.5f * u), strokeWidth = 0.018f * u)
+    for (i in 1..4) drawLine(Steel, Offset(centre - 0.2f * u, ground - i * 0.11f * u), Offset(centre - 0.13f * u, ground - i * 0.11f * u + 0.04f * u), strokeWidth = 0.01f * u)
+    // Smoke rolling out along the ground from the moment it lights, thinning once the rocket has gone.
+    if (lit) {
+        val grow = ((p - 0.12f) / 0.4f).coerceIn(0f, 1f)
+        val fade = 1f - ((p - 0.75f) / 0.25f).coerceIn(0f, 1f)
+        for (i in -4..4) {
+            val spread = i / 4f
+            val radius = (0.05f + 0.1f * grow * (1f - abs(spread) * 0.5f)) * u * (0.85f + 0.15f * sin(p * 30f + i))
+            drawCircle(
+                Color(0xFFB8BEC6).copy(alpha = 0.55f * fade),
+                radius,
+                Offset(centre + spread * grow * 0.55f * u, ground - radius * 0.7f)
+            )
+        }
+    }
+    val base = Offset(centre + tremble, ground - 0.03f * u - climb)
+    // Flame under the engine, flickering, longer once it is climbing.
+    if (lit) {
+        val flicker = 0.8f + 0.2f * sin(p * 700f)
+        val long = (0.12f + 0.2f * flight) * u * flicker
+        val flame = Path().apply {
+            moveTo(base.x - 0.045f * u, base.y)
+            quadraticTo(base.x - 0.06f * u, base.y + long * 0.5f, base.x, base.y + long)
+            quadraticTo(base.x + 0.06f * u, base.y + long * 0.5f, base.x + 0.045f * u, base.y)
+            close()
+        }
+        drawPath(flame, Brush.verticalGradient(listOf(Color(0xFFFFF3B0), Color(0xFFFF9B21), Color(0x00FF5A1F)), startY = base.y, endY = base.y + long))
+    }
+    // Fins, body, nose cone, a porthole and the brand's band.
+    for (side in listOf(-1f, 1f)) {
+        drawPath(
+            Path().apply {
+                moveTo(base.x + side * 0.05f * u, base.y - 0.16f * u)
+                lineTo(base.x + side * 0.13f * u, base.y + 0.01f * u)
+                lineTo(base.x + side * 0.05f * u, base.y - 0.02f * u)
+                close()
+            },
+            Color(0xFFE2572B)
+        )
+    }
+    val body = Path().apply {
+        moveTo(base.x - 0.06f * u, base.y)
+        lineTo(base.x - 0.06f * u, base.y - 0.36f * u)
+        cubicTo(base.x - 0.06f * u, base.y - 0.48f * u, base.x - 0.02f * u, base.y - 0.54f * u, base.x, base.y - 0.57f * u)
+        cubicTo(base.x + 0.02f * u, base.y - 0.54f * u, base.x + 0.06f * u, base.y - 0.48f * u, base.x + 0.06f * u, base.y - 0.36f * u)
+        lineTo(base.x + 0.06f * u, base.y)
+        close()
+    }
+    drawPath(body, Brush.horizontalGradient(listOf(Color(0xFFC9CED6), Color.White, Color(0xFFDDE1E7), Color(0xFF9AA3AD)), startX = base.x - 0.06f * u, endX = base.x + 0.06f * u))
+    drawPath(
+        Path().apply {
+            moveTo(base.x - 0.055f * u, base.y - 0.42f * u)
+            cubicTo(base.x - 0.04f * u, base.y - 0.5f * u, base.x - 0.015f * u, base.y - 0.545f * u, base.x, base.y - 0.57f * u)
+            cubicTo(base.x + 0.015f * u, base.y - 0.545f * u, base.x + 0.04f * u, base.y - 0.5f * u, base.x + 0.055f * u, base.y - 0.42f * u)
+            close()
+        },
+        Color(0xFFE2572B)
+    )
+    drawRect(c.brand, Offset(base.x - 0.06f * u, base.y - 0.2f * u), Size(0.12f * u, 0.04f * u))
+    drawCircle(DarkMetal, 0.034f * u, Offset(base.x, base.y - 0.31f * u))
+    drawCircle(Brush.radialGradient(listOf(Glass, GlassDeep), center = Offset(base.x - 0.01f * u, base.y - 0.32f * u), radius = 0.04f * u), 0.025f * u, Offset(base.x, base.y - 0.31f * u))
+    drawRect(DarkMetal, Offset(base.x - 0.045f * u, base.y - 0.01f * u), Size(0.09f * u, 0.025f * u))
+}
+
+/** An elephant walking to the right in a red and gold cloth: legs in step, trunk and tail swinging, an ear flapping. */
+private fun DrawScope.elephant(x: Float, p: Float) {
+    val u = size.height
+    val ground = GROUND * u
+    val hide = Color(0xFF8B929C)
+    val dark = hide.darker(0.28f)
+    val step = p * 2f * PI.toFloat() * 8f
+    val sway = sin(step)
+    val bob = abs(sway) * 0.012f * u
+    val left = x + 0.1f * u
+    fun at(along: Float, up: Float) = Offset(left + along * u, ground - up * u + bob)
+    drawOval(Color.Black.copy(alpha = 0.15f), Offset(left + 0.05f * u, ground - 0.03f * u), Size(1.05f * u, 0.07f * u))
+    // Tail with its tuft.
+    val tuft = at(-0.03f, 0.28f) + Offset(-sway * 0.04f * u, 0f)
+    drawLine(dark, at(0.07f, 0.55f), tuft, strokeWidth = 0.022f * u, cap = StrokeCap.Round)
+    drawCircle(Color(0xFF3F434B), 0.022f * u, tuft)
+    // Four legs: the far pair darker, each pair stepping opposite the other.
+    fun leg(along: Float, stride: Float, colour: Color) {
+        val foot = Offset(left + along * u + stride * 0.07f * u, ground - maxOf(stride, 0f) * 0.02f * u)
+        drawLine(colour, at(along, 0.36f), foot - Offset(0f, 0.05f * u), strokeWidth = 0.14f * u, cap = StrokeCap.Round)
+        drawRoundRect(colour, foot - Offset(0.075f * u, 0.07f * u), Size(0.15f * u, 0.07f * u), CornerRadius(0.02f * u))
+        for (toe in -1..1) drawArc(Color(0xFFE9E3D5), 180f, 180f, true, foot + Offset(toe * 0.045f * u - 0.018f * u, -0.03f * u), Size(0.036f * u, 0.04f * u))
+    }
+    leg(0.25f, -sway, dark)
+    leg(0.66f, sway, dark)
+    // Body.
+    drawOval(Brush.verticalGradient(listOf(hide.lighter(0.18f), hide, dark), startY = at(0f, 0.74f).y, endY = at(0f, 0.28f).y), at(0.05f, 0.74f), Size(0.72f * u, 0.46f * u))
+    leg(0.17f, sway, hide.darker(0.08f))
+    leg(0.58f, -sway, hide.darker(0.08f))
+    // The cloth over its back: red, a gold border, a row of gold discs and a fringe.
+    val cloth = Path().apply {
+        moveTo(at(0.22f, 0.71f).x, at(0.22f, 0.71f).y)
+        quadraticTo(at(0.4f, 0.78f).x, at(0.4f, 0.78f).y, at(0.58f, 0.72f).x, at(0.58f, 0.72f).y)
+        lineTo(at(0.6f, 0.44f).x, at(0.6f, 0.44f).y)
+        lineTo(at(0.2f, 0.44f).x, at(0.2f, 0.44f).y)
+        close()
+    }
+    drawPath(cloth, Brush.verticalGradient(listOf(Color(0xFFD93030), Color(0xFF9E1B1B)), startY = at(0f, 0.76f).y, endY = at(0f, 0.44f).y))
+    drawPath(cloth, Color(0xFFF2B705), style = Stroke(width = 0.022f * u))
+    for (i in 0..3) drawCircle(Color(0xFFF2B705), 0.022f * u, at(0.27f + i * 0.09f, 0.58f))
+    for (i in 0..7) drawLine(Color(0xFFF2B705), at(0.21f + i * 0.055f, 0.44f), at(0.21f + i * 0.055f, 0.4f) + Offset(-sway * 0.008f * u, 0f), strokeWidth = 0.012f * u, cap = StrokeCap.Round)
+    // Head, with the ear flapping over the shoulder.
+    val head = at(0.86f, 0.6f)
+    rotate(sway * 7f, pivot = head + Offset(-0.1f * u, -0.1f * u)) {
+        drawOval(Brush.verticalGradient(listOf(dark.lighter(0.1f), dark.darker(0.15f))), head + Offset(-0.26f * u, -0.17f * u), Size(0.24f * u, 0.36f * u))
+        drawOval(Color(0xFFC49A93).copy(alpha = 0.5f), head + Offset(-0.22f * u, -0.1f * u), Size(0.15f * u, 0.24f * u))
+    }
+    drawCircle(Brush.radialGradient(listOf(hide.lighter(0.22f), hide, dark), center = head - Offset(0.05f * u, 0.07f * u), radius = 0.3f * u), 0.185f * u, head)
+    // Trunk: thick at the face, thinner to the tip, which swings and curls.
+    val tip = head + Offset(0.2f * u + sway * 0.04f * u, 0.4f * u)
+    val trunk = Path().apply {
+        moveTo(head.x + 0.12f * u, head.y + 0.03f * u)
+        cubicTo(head.x + 0.26f * u, head.y + 0.12f * u, head.x + 0.14f * u + sway * 0.03f * u, head.y + 0.34f * u, tip.x, tip.y)
+        quadraticTo(tip.x + 0.06f * u, tip.y + 0.01f * u, tip.x + 0.07f * u, tip.y - 0.05f * u)
+    }
+    drawPath(trunk, dark, style = Stroke(width = 0.1f * u, cap = StrokeCap.Round))
+    drawPath(trunk, hide, style = Stroke(width = 0.075f * u, cap = StrokeCap.Round))
+    // Tusk, eye with a glint, and a gold ornament on the forehead.
+    drawPath(
+        Path().apply { moveTo(head.x + 0.07f * u, head.y + 0.1f * u); quadraticTo(head.x + 0.2f * u, head.y + 0.2f * u, head.x + 0.26f * u, head.y + 0.1f * u) },
+        Color(0xFFFFF8E7), style = Stroke(width = 0.035f * u, cap = StrokeCap.Round)
+    )
+    drawCircle(Color(0xFF22252B), 0.02f * u, head + Offset(0.06f * u, -0.03f * u))
+    drawCircle(Color.White, 0.007f * u, head + Offset(0.066f * u, -0.036f * u))
+    drawPath(
+        Path().apply {
+            moveTo(head.x - 0.02f * u, head.y - 0.17f * u); lineTo(head.x + 0.1f * u, head.y - 0.13f * u)
+            lineTo(head.x + 0.05f * u, head.y - 0.06f * u); close()
+        },
+        Color(0xFFF2B705)
+    )
+    drawCircle(Color(0xFFD93030), 0.014f * u, head + Offset(0.045f * u, -0.12f * u))
+}
+
+/** A paper plane folded from a scanned page, gliding to the right on a rising and falling path, a dotted trail behind. */
+private fun DrawScope.paperPlane(p: Float, c: ScenePalette) {
+    val u = size.height
+    val span = size.width + 0.8f * u
+    fun where(t: Float) = Offset(-0.4f * u + span * t, 0.46f * u + sin(t * 2f * PI.toFloat() * 2f) * 0.2f * u)
+    val here = where(p)
+    val ahead = where(p + 0.01f)
+    for (i in 1..7) {
+        val past = where(p - i * 0.016f)
+        drawCircle(c.soft.copy(alpha = 0.5f * (1f - i / 8f)), 0.012f * u, past)
+    }
+    val tilt = atan2(ahead.y - here.y, ahead.x - here.x) * 180f / PI.toFloat()
+    rotate(tilt, pivot = here) {
+        val nose = here + Offset(0.2f * u, 0f)
+        val top = here + Offset(-0.16f * u, -0.11f * u)
+        val fold = here + Offset(-0.08f * u, 0.01f * u)
+        val keel = here + Offset(-0.1f * u, 0.1f * u)
+        val bottom = here + Offset(-0.16f * u, 0.04f * u)
+        fun facet(a: Offset, b: Offset, d: Offset, colour: Color) = drawPath(Path().apply { moveTo(a.x, a.y); lineTo(b.x, b.y); lineTo(d.x, d.y); close() }, colour)
+        facet(nose, fold, bottom, Color(0xFFD5DAE2))
+        facet(nose, fold, keel, Color(0xFFAEB6C2))
+        facet(nose, top, fold, Color.White)
+        // What was printed on the page, and the scan line, running along the wing.
+        drawLine(c.brand.copy(alpha = 0.45f), here + Offset(-0.1f * u, -0.055f * u), here + Offset(0.02f * u, -0.02f * u), strokeWidth = 0.01f * u, cap = StrokeCap.Round)
+        drawLine(ScanGreen, here + Offset(-0.12f * u, -0.035f * u), here + Offset(0.08f * u, -0.008f * u), strokeWidth = 0.016f * u, cap = StrokeCap.Round)
+        drawPath(
+            Path().apply { moveTo(nose.x, nose.y); lineTo(top.x, top.y); lineTo(fold.x, fold.y); lineTo(keel.x, keel.y); lineTo(nose.x, nose.y); lineTo(bottom.x, bottom.y); lineTo(fold.x, fold.y) },
+            c.brand, style = Stroke(width = 0.01f * u)
+        )
     }
 }

@@ -55,14 +55,23 @@ class HeaderScenesScreenshotTest(private val dark: Boolean) {
         outDir.mkdirs()
     }
 
-    @Test
-    fun scenes() {
+    /** Every scene, in two pictures (the list is too long for one screen): a day sky on the first, night on the second. */
+    @Test fun scenesFirstHalf() = shoot("header-scenes-1", HeaderScene.entries.take(7), hour = 10)
+
+    @Test fun scenesSecondHalf() = shoot("header-scenes-2", HeaderScene.entries.drop(7), hour = 22)
+
+    private fun shoot(name: String, scenes: List<HeaderScene>, hour: Int) {
         compose.setContent {
             ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Column(Modifier.padding(8.dp)) {
-                        HeaderScene.entries.forEach { scene ->
-                            HeaderSceneStrip(Modifier.fillMaxWidth().height(86.dp), still = scene to if (scene == HeaderScene.TRAIN) 0.3f else 0.45f)
+                        scenes.forEach { scene ->
+                            val at = when (scene) {
+                                HeaderScene.TRAIN -> 0.3f
+                                HeaderScene.ROCKET -> 0.5f
+                                else -> 0.45f
+                            }
+                            HeaderSceneStrip(Modifier.fillMaxWidth().height(104.dp), still = scene to at, hour = hour)
                         }
                     }
                 }
@@ -70,6 +79,6 @@ class HeaderScenesScreenshotTest(private val dark: Boolean) {
         }
         compose.waitForIdle()
         val image = compose.onRoot().captureToImage().asAndroidBitmap()
-        File(outDir, "header-scenes-${if (dark) "dark" else "light"}.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        File(outDir, "$name-${if (dark) "dark" else "light"}.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 }

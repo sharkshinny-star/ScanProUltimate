@@ -52,8 +52,8 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 ## Latest results (2026-11-19, F218 header scenes, cloud container with the Android SDK)
 
-- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true --max-workers=1`: **1,059 tests, 0 failed, 2 skipped** (result XML). `:app:lintDebug`: **0 errors**, 160 warnings (none in `HeaderScenes.kt`). With two workers the test daemon was killed for memory once; one worker is reliable here.
-- Rendered and looked at: `header-scenes-{light,dark}.png` (each scene frozen part-way), `02-home-light.png`.
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true --max-workers=1`: **1,061 tests, 0 failed, 2 skipped** (result XML). `:app:lintDebug`: **0 errors**, 160 warnings (none in `HeaderScenes.kt`). With two workers the test daemon was killed for memory once; one worker is reliable here.
+- Rendered and looked at: `header-scenes-{1,2}-{light,dark}.png` (each scene frozen part-way), `02-home-light.png`.
 - NOT run: `bundleRelease` (left to CI), anything on a device (the scenes' motion is unverified: R86).
 
 ## Latest results (2026-11-19, F217 Settings and Files layout, cloud container with the Android SDK)
