@@ -1017,7 +1017,9 @@ class PdfToolsViewModel @Inject constructor(
         launchTool(R.string.meta_progress_saving, R.string.meta_err_save) {
             val meta = session.meta
             // The copy keeps the file's own extension, so it opens in the same apps.
-            val ext = meta.fileName.substringAfterLast('.', "").takeIf { it.isNotBlank() && it.length <= 8 } ?: meta.format.extension.ifBlank { "bin" }
+            // The name comes from another app's provider, so only letters and digits are kept: no "/" can reach the path.
+            val ext = meta.fileName.substringAfterLast('.', "").filter { it.isLetterOrDigit() }.takeIf { it.isNotBlank() && it.length <= 8 }
+                ?: meta.format.extension.filter { it.isLetterOrDigit() }.ifBlank { "bin" }
             val suffix = when {
                 edit.removeAll -> "no metadata"
                 edit.removeLocation -> "no location"

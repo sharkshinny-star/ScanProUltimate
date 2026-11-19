@@ -157,4 +157,47 @@ class MetadataCoreTest {
     val j = String(MetadataStrip.withoutXmpAndIptc(jpeg), Charsets.ISO_8859_1)
     ok(j.contains("KEEPEXIF") && !j.contains("<GPS>") && !j.contains("IPTC"), "xmp and iptc gone, exif kept")
     }
+
+    @Test
+    fun hostileInputsAreRefusedNotFollowed() {
+        // A PNG chunk length near 2 GB must not wrap round to a small end.
+        fun u32(n: Long) = bytes(((n shr 24) and 0xFF).toInt(), ((n shr 16) and 0xFF).toInt(), ((n shr 8) and 0xFF).toInt(), (n and 0xFF).toInt())
+        val png = bytes(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A) + u32(0x7FFFFFF0L) + ascii("tEXt") + ByteArray(64)
+        val refused = runCatching { MetadataStrip.png(png) }.exceptionOrNull()
+        ok(refused is IllegalArgumentException, "png length wrap refused: $refused")
+
+        val dir = tmp.newFolder("hostile")
+        fun zipWith(name: String, entries: List<Pair<String, ByteArray>>): File = File(dir, name).also { f ->
+            ZipOutputStream(f.outputStream()).use { z -> entries.forEach { (n, b) -> z.putNextEntry(ZipEntry(n)); z.write(b); z.closeEntry() } }
+        }
+        // A DOCTYPE in the properties part is never followed: the part is skipped, the file reports no properties.
+        val evil = """<?xml version="1.0"?><!DOCTYPE x [<!ENTITY a "aaaaaaaaaa">]><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>&a;</dc:title></cp:coreProperties>"""
+        val bomb = zipWith("bomb.docx", listOf("docProps/core.xml" to evil.toByteArray()))
+        val outcome = runCatching { OfficeMetadata.readOoxml(bomb) }
+        ok(outcome.isFailure, "a part with a DOCTYPE is refused")
+
+        // A part over the size limit is not read into memory.
+        val huge = zipWith("huge.docx", listOf("docProps/core.xml" to ByteArray(5 * 1024 * 1024) { ' '.code.toByte() }))
+        val (fields, writable) = OfficeMetadata.readOoxml(huge)
+        ok(!writable && fields.isEmpty(), "an oversized part is skipped")
+    }
+
+    @Test
+    fun aStoredEntryIsCopiedWithoutBeingReadIntoMemory() {
+        val dir = tmp.newFolder("stored")
+        val big = ByteArray(3 * 1024 * 1024) { (it % 251).toByte() }
+        val src = File(dir, "src.docx")
+        ZipOutputStream(src.outputStream()).use { z ->
+            z.putNextEntry(ZipEntry("media/video.bin").apply { method = ZipEntry.STORED; size = big.size.toLong(); compressedSize = size; crc = CRC32().apply { update(big) }.value })
+            z.write(big); z.closeEntry()
+            z.putNextEntry(ZipEntry("docProps/core.xml")); z.write("""<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>T</dc:title></cp:coreProperties>""".toByteArray()); z.closeEntry()
+        }
+        val out = File(dir, "out.docx")
+        OfficeMetadata.writeOoxml(src, out, MetadataEdit(values = mapOf("office.title" to "New")))
+        ZipFile(out).use { z ->
+            val e = z.getEntry("media/video.bin")
+            eq(ZipEntry.STORED, e.method, "still stored")
+            ok(z.getInputStream(e).readBytes().contentEquals(big), "bytes identical")
+        }
+    }
 }

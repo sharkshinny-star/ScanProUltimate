@@ -85,12 +85,35 @@ object OfficeMetadata {
         runCatching { setFeature("http://xml.org/sax/features/external-parameter-entities", false) }
     }
 
-    private fun parse(bytes: ByteArray): Document = secureFactory().newDocumentBuilder().parse(bytes.inputStream())
+    /**
+     * Parses a property part. Parts of Office, OpenDocument and EPUB files never have a DOCTYPE or an entity, so one is
+     * refused outright: Android's XML parser may ignore the feature switches above, and entities are how a "billion
+     * laughs" part blows up in memory.
+     */
+    private fun parse(bytes: ByteArray): Document {
+        val head = String(bytes, 0, minOf(bytes.size, 4096), Charsets.ISO_8859_1)
+        require(!head.contains("<!DOCTYPE", ignoreCase = true) && !head.contains("<!ENTITY", ignoreCase = true)) { "Unexpected DOCTYPE" }
+        return secureFactory().newDocumentBuilder().parse(bytes.inputStream())
+    }
 
+    /**
+     * A part's bytes, or null when it is missing or larger than [MAX_PART_BYTES]. The size in the zip's directory is
+     * only a claim, so the read itself is capped: a part that says it is small and unpacks to gigabytes is refused too.
+     */
     private fun ZipFile.part(name: String): ByteArray? {
         val entry = getEntry(name) ?: return null
         if (entry.size > MAX_PART_BYTES) return null
-        return getInputStream(entry).use { it.readBytes() }
+        // InputStream.readNBytes needs Android 13; this reads in pieces and stops one byte past the limit.
+        val out = ByteArrayOutputStream()
+        getInputStream(entry).use { input ->
+            val buffer = ByteArray(16 * 1024)
+            while (out.size() <= MAX_PART_BYTES) {
+                val n = input.read(buffer)
+                if (n < 0) break
+                out.write(buffer, 0, n)
+            }
+        }
+        return if (out.size() > MAX_PART_BYTES) null else out.toByteArray()
     }
 
     private fun Document.first(ns: String, local: String): Element? = getElementsByTagNameNS(ns, local).item(0) as? Element
@@ -185,14 +208,22 @@ object OfficeMetadata {
                 val bytes = replaced[entry.name]
                 val copy = ZipEntry(entry.name).apply { time = entry.time; comment = entry.comment }
                 if (entry.method == ZipEntry.STORED) {
-                    // Stored entries (EPUB's mimetype, some pictures) must say their size and checksum up front.
-                    val data = bytes ?: zip.getInputStream(entry).use { it.readBytes() }
+                    // Stored entries (EPUB's mimetype, pictures kept uncompressed) must say their size and checksum up
+                    // first. A replaced one is small and measured; any other says so in the source's own directory,
+                    // so it is streamed, not read into memory (a stored video in a PPTX can be hundreds of MB). If the
+                    // directory lied, the writer refuses the entry rather than writing a damaged file.
+                    if (bytes != null) {
+                        copy.size = bytes.size.toLong()
+                        copy.compressedSize = bytes.size.toLong()
+                        copy.crc = CRC32().apply { update(bytes) }.value
+                    } else {
+                        copy.size = entry.size
+                        copy.compressedSize = entry.size
+                        copy.crc = entry.crc
+                    }
                     copy.method = ZipEntry.STORED
-                    copy.size = data.size.toLong()
-                    copy.compressedSize = data.size.toLong()
-                    copy.crc = CRC32().apply { update(data) }.value
                     out.putNextEntry(copy)
-                    out.write(data)
+                    if (bytes != null) out.write(bytes) else zip.getInputStream(entry).use { it.copyTo(out, 64 * 1024) }
                 } else {
                     copy.method = ZipEntry.DEFLATED
                     out.putNextEntry(copy)
@@ -255,15 +286,24 @@ object OfficeMetadata {
 
     /** A ZIP's contents: how many files, their total size, its comment, and the first entries. Read only. */
     fun readZip(file: File): List<MetaField> = ZipFile(file).use { zip ->
-        val entries = zip.entries().toList()
-        val files = entries.filter { !it.isDirectory }
+        // A crafted zip can list millions of entries: counted as they come, and only the first few are kept.
+        var folders = 0
+        var fileCount = 0
+        var unpacked = 0L
+        val firstFiles = ArrayList<ZipEntry>(LISTED_ENTRIES)
+        for (e in zip.entries()) {
+            if (e.isDirectory) { folders++; continue }
+            fileCount++
+            unpacked += e.size.coerceAtLeast(0)
+            if (firstFiles.size < LISTED_ENTRIES) firstFiles += e
+        }
         val fields = mutableListOf(
-            MetaField("zip.entries", MetaGroup.CONTENTS, "Files", files.size.toString(), source = "ZIP"),
-            MetaField("zip.folders", MetaGroup.CONTENTS, "Folders", (entries.size - files.size).toString(), source = "ZIP"),
-            MetaField("zip.unpacked", MetaGroup.CONTENTS, "Size unpacked (bytes)", files.sumOf { it.size.coerceAtLeast(0) }.toString(), source = "ZIP"),
+            MetaField("zip.entries", MetaGroup.CONTENTS, "Files", fileCount.toString(), source = "ZIP"),
+            MetaField("zip.folders", MetaGroup.CONTENTS, "Folders", folders.toString(), source = "ZIP"),
+            MetaField("zip.unpacked", MetaGroup.CONTENTS, "Size unpacked (bytes)", unpacked.toString(), source = "ZIP"),
         )
         zip.comment?.takeIf { it.isNotBlank() }?.let { fields += MetaField("zip.comment", MetaGroup.CONTENTS, "Comment", it, source = "ZIP") }
-        files.take(LISTED_ENTRIES).forEachIndexed { i, e ->
+        firstFiles.forEachIndexed { i, e ->
             fields += MetaField("zip.entry.$i", MetaGroup.CONTENTS, e.name, "${e.size.coerceAtLeast(0)} bytes", source = "ZIP contents")
         }
         fields

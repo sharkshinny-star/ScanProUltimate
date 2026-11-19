@@ -57,8 +57,9 @@ object MetadataStrip {
         while (i + 12 <= input.size) {
             val length = readInt(input, i)
             val type = String(input, i + 4, 4, Charsets.ISO_8859_1)
+            // Compared without adding, so a length near 2 GB cannot wrap round to a small "end".
+            require(length >= 0 && length <= input.size - i - 12) { "Damaged PNG" }
             val end = i + 12 + length
-            require(length >= 0 && end <= input.size) { "Damaged PNG" }
             // A capital first letter marks a critical chunk (header, palette, picture data, end): always kept.
             val critical = type[0].isUpperCase()
             if (critical || type in PNG_KEEP_ANCILLARY) out.write(input, i, end - i)
@@ -78,9 +79,8 @@ object MetadataStrip {
         while (i + 8 <= input.size) {
             val type = String(input, i, 4, Charsets.ISO_8859_1)
             val length = readIntLe(input, i + 4)
-            val padded = length + (length and 1)
-            val end = i + 8 + padded
-            require(length >= 0 && end <= input.size) { "Damaged WebP" }
+            require(length >= 0 && length <= input.size - i - 8 - (length and 1)) { "Damaged WebP" }
+            val end = i + 8 + length + (length and 1)
             if (type != "EXIF" && type != "XMP ") {
                 if (type == "VP8X") vp8xAt = out.size()
                 out.write(input, i, end - i)
@@ -134,8 +134,8 @@ object MetadataStrip {
         while (i + 12 <= input.size) {
             val length = readInt(input, i)
             val type = String(input, i + 4, 4, Charsets.ISO_8859_1)
+            require(length >= 0 && length <= input.size - i - 12) { "Damaged PNG" }
             val end = i + 12 + length
-            require(length >= 0 && end <= input.size) { "Damaged PNG" }
             val xmp = type == "iTXt" && startsWith(input, i + 8, end, "XML:com.adobe.xmp")
             if (!xmp) out.write(input, i, end - i)
             i = end
@@ -152,8 +152,8 @@ object MetadataStrip {
         while (i + 8 <= input.size) {
             val type = String(input, i, 4, Charsets.ISO_8859_1)
             val length = readIntLe(input, i + 4)
+            require(length >= 0 && length <= input.size - i - 8 - (length and 1)) { "Damaged WebP" }
             val end = i + 8 + length + (length and 1)
-            require(length >= 0 && end <= input.size) { "Damaged WebP" }
             if (type != "XMP ") {
                 if (type == "VP8X") vp8xAt = out.size()
                 out.write(input, i, end - i)
