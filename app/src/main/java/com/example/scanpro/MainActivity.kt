@@ -482,7 +482,8 @@ class MainActivity : FragmentActivity() {
      * providers are refused, so another app can't point the importer at ScanPro's private files.
      */
     private fun isAllowedExternalUri(uri: Uri): Boolean =
-        uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority?.startsWith(packageName) != true
+        uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority != packageName &&
+            uri.authority?.startsWith("$packageName.") != true
 
     /**
      * Launcher shortcuts, published at runtime: a static shortcuts.xml cannot name the package, which differs

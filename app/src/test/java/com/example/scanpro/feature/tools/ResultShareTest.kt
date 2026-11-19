@@ -47,4 +47,12 @@ class ResultShareTest {
         val entries = (1..MAX_SHARED_PARTS + 1).map { "p$it.png" to "x" }.toTypedArray()
         assertNull(unpackForSharing(cache, zipOf(*entries)))
     }
+
+    @Test
+    fun repeatedNamesAreKeptNotOverwritten() {
+        val cache = tmp.newFolder("cache")
+        val parts = unpackForSharing(cache, zipOf("a/page.jpg" to "one", "b/page.jpg" to "two"))!!
+        assertEquals(2, parts.map { it.name }.distinct().size)
+        assertEquals(listOf("one", "two"), parts.map { it.readText() })
+    }
 }
