@@ -410,7 +410,7 @@ internal fun PageNumbersPdfDialog(
         }
 
         // Leaving the cover plain is a rarer wish: folded away, still applied while folded.
-        MoreOptions {
+        MoreOptions(summary = if (skipCover) stringResource(R.string.tools_page_numbers_skip_cover) else null) {
             Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
                 Row(
                     Modifier

@@ -167,7 +167,7 @@ internal fun HeaderFooterDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (Pdf
         }
         // Alignment, size and the first page are seldom changed, and the preview above shows them: folded away,
         // still applied while folded.
-        MoreOptions {
+        MoreOptions(summary = if (skipFirst) stringResource(R.string.tools_hf_skip_first) else null) {
             ToolSection(stringResource(R.string.edit_hf_section_look)) {
                 SegmentedChoice(
                     options = listOf(
