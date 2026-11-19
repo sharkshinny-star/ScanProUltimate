@@ -890,7 +890,8 @@ fun PdfToolsScreen(
                 CropPdfDialog(
                     uri = uri,
                     onDismiss = { showCropPdfDialog = false },
-                    onConfirm = { options -> showCropPdfDialog = false; viewModel.cropPdf(uri, options) }
+                    onConfirm = { options -> showCropPdfDialog = false; viewModel.cropPdf(uri, options) },
+                    onConfirmPlan = { plan -> showCropPdfDialog = false; viewModel.cropPdfPlan(uri, plan) }
                 )
             }
 

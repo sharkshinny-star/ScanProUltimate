@@ -936,6 +936,12 @@ class PdfToolsViewModel @Inject constructor(
             com.example.scanpro.imaging.PdfCropTools.cropPdf(context, uri, options, named(uri, "cropped"), ::report)
         }
 
+    /** Crop chosen by hand: one crop for all pages, or a crop of its own on some (F241). */
+    fun cropPdfPlan(uri: Uri, plan: com.example.scanpro.imaging.CropPlan) =
+        launchTool(R.string.tools_crop_pdf_progress, R.string.tools_crop_pdf_err_failed) {
+            com.example.scanpro.imaging.PdfCropTools.cropPdfPlan(context, uri, plan, named(uri, "cropped"), ::report)
+        }
+
     fun redact(uri: Uri, terms: List<String>, matchCase: Boolean) =
         launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
             // A file name holding a redacted word would give it away: such a copy is named by the time instead.

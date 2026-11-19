@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -21,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -38,9 +38,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.concurrent.BackgroundWork
+import com.example.scanpro.imaging.CropPlan
 import com.example.scanpro.imaging.PdfCropTools
 import com.example.scanpro.imaging.PdfRedactTools
-import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -49,23 +49,25 @@ import kotlinx.coroutines.withContext
 /** Auto trim's content box on the first page, once looked for; [box] is null for a blank page. */
 private class FoundContent(val box: RectF?)
 
-/** Margins offered in one tap for all four sides, in millimetres. */
-private val MARGIN_PRESETS = listOf(5, 10, 15, 20)
-
 /**
- * Crop PDF pages (F172, page F212): the first page with the crop frame drawn where it will fall (auto-trim finds the
- * content exactly as the tool does), the page size before and after in millimetres, and the button held back with the
- * reason when the margins would leave less than the tool accepts.
+ * Crop PDF pages (F172, page F212, by hand F241). Auto trim: the first page with the crop frame drawn where it will
+ * fall (auto-trim finds the content exactly as the tool does) and the page size before and after. By hand: a frame to
+ * drag on any page, kept the same on every page or set page by page, with a preview of the page as it will come out
+ * ([ManualCropSection]). The button is held back, with the reason, while nothing would change.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun CropPdfDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (PdfCropTools.CropOptions) -> Unit) {
+internal fun CropPdfDialog(
+    uri: Uri,
+    onDismiss: () -> Unit,
+    onConfirm: (PdfCropTools.CropOptions) -> Unit,
+    onConfirmPlan: (CropPlan) -> Unit
+) {
     var auto by rememberSaveable { mutableStateOf(true) }
     var padding by rememberSaveable { mutableFloatStateOf(3f) }
-    var top by rememberSaveable { mutableFloatStateOf(0f) }
-    var bottom by rememberSaveable { mutableFloatStateOf(0f) }
-    var left by rememberSaveable { mutableFloatStateOf(0f) }
-    var right by rememberSaveable { mutableFloatStateOf(0f) }
+    // By hand: the crop of every page, whether a drag changes all pages or this one, and the page shown.
+    var plan by remember(uri) { mutableStateOf(CropPlan()) }
+    var allPages by rememberSaveable { mutableStateOf(true) }
+    var pageIndex by rememberSaveable { mutableIntStateOf(0) }
     val facts by rememberPdfFacts(uri)
     val f = facts
     val widthPt = f?.pageWidthPt?.toFloat() ?: 0f
@@ -82,93 +84,72 @@ internal fun CropPdfDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (PdfCropT
     val content = found?.box
 
     val k = PdfCropTools.PT_PER_MM
-    val keep: RectF? = when {
-        !known -> null
-        auto -> content?.let { c ->
-            val p = padding * k
-            RectF((c.left - p).coerceAtLeast(0f), (c.top - p).coerceAtLeast(0f), (c.right + p).coerceAtMost(widthPt), (c.bottom + p).coerceAtMost(heightPt))
-        }
-        else -> RectF(left * k, top * k, widthPt - right * k, heightPt - bottom * k)
+    val keep: RectF? = if (!known || !auto) null else content?.let { c ->
+        val p = padding * k
+        RectF((c.left - p).coerceAtLeast(0f), (c.top - p).coerceAtLeast(0f), (c.right + p).coerceAtMost(widthPt), (c.bottom + p).coerceAtMost(heightPt))
     }
-    val minSide = PdfCropTools.MIN_SIDE_PT
-    val tooSmall = !auto && keep != null && (keep.width() < minSide || keep.height() < minSide)
-    val noMargins = !auto && top + bottom + left + right <= 0f
-    val options = if (auto) {
-        PdfCropTools.CropOptions(PdfCropTools.Mode.AUTO, paddingMm = padding)
-    } else {
-        PdfCropTools.CropOptions(PdfCropTools.Mode.MARGINS, topMm = top, bottomMm = bottom, leftMm = left, rightMm = right)
-    }
-    // Each side may take up to 45 % of the page (100 mm at most), so the two opposite sides can never meet.
-    val maxSide = { pt: Float -> if (pt <= 0f) 60f else floor(pt / k * 0.45f).coerceIn(5f, 100f) }
-    val maxVertical = maxSide(heightPt)
-    val maxHorizontal = maxSide(widthPt)
+    val pages = f?.pageCount
+    val nothingChosen = !auto && (pages == null || plan.croppedCount(pages) == 0)
 
     ToolPage(
         title = stringResource(R.string.tools_card_crop_pdf),
         onClose = onDismiss,
         actionLabel = stringResource(R.string.tools_crop_pdf_action),
-        onAction = { onConfirm(options) },
-        actionEnabled = !tooSmall && !noMargins && f?.pageCount != null,
+        onAction = {
+            if (auto) onConfirm(PdfCropTools.CropOptions(PdfCropTools.Mode.AUTO, paddingMm = padding)) else onConfirmPlan(plan)
+        },
+        actionEnabled = pages != null && !nothingChosen,
         actionSupport = when {
-            f != null && f.pageCount == null -> stringResource(R.string.edit_err_cannot_read)
-            noMargins -> stringResource(R.string.edit_crop_err_no_margins)
-            tooSmall -> stringResource(R.string.edit_crop_err_too_small, (minSide / k).roundToInt())
+            f != null && pages == null -> stringResource(R.string.edit_err_cannot_read)
+            nothingChosen && pages != null -> stringResource(R.string.edit_crop_nothing_chosen)
             else -> null
         },
         demoToolId = "crop_pdf"
     ) {
         PickedFileRow(uri)
-        val frame = MaterialTheme.colorScheme.primary
-        val marks: (DrawScope.(Rect) -> Unit)? = if (keep == null || !known) null else fun DrawScope.(page: Rect) {
-            val s = page.width / widthPt
-            val kept = Rect(page.left + keep.left * s, page.top + keep.top * s, page.left + keep.right * s, page.top + keep.bottom * s)
-            dimOutside(page, kept, Color.Black.copy(alpha = 0.5f))
-            drawCropFrame(kept, frame)
-        }
-        PdfResultPreview(f, result = marks)
-        if (f != null) {
-            PdfOutcomeRow(f, f.pageCount?.let { PdfOutcome(it, f.sizeBytes, approximate = true) })
-        }
-        if (known && keep != null) {
-            Text(
-                stringResource(R.string.edit_crop_size_change, mmSize(widthPt, heightPt), mmSize(keep.width(), keep.height())),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.fillMaxWidth()
-            )
-        } else if (auto && found != null && content == null) {
-            ToolHint(stringResource(R.string.edit_crop_first_blank))
-        }
-
+        // How first: the two ways look different enough that the rest of the page follows from it.
         ToolSection(stringResource(R.string.edit_crop_section_how)) {
             SegmentedChoice(
-                options = listOf(true to stringResource(R.string.tools_crop_pdf_mode_auto), false to stringResource(R.string.tools_crop_pdf_mode_margins)),
+                options = listOf(true to stringResource(R.string.tools_crop_pdf_mode_auto), false to stringResource(R.string.edit_crop_mode_manual)),
                 selected = auto,
                 onSelect = { auto = it }
             )
-            if (auto) {
-                MillimetreSlider(stringResource(R.string.tools_crop_pdf_padding), padding, 0f..15f) { padding = it }
-                ToolHint(stringResource(R.string.edit_crop_auto_hint))
-            } else {
-                Text(stringResource(R.string.edit_crop_all_sides), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MARGIN_PRESETS.forEach { mm ->
-                        val v = mm.toFloat()
-                        FilterChip(
-                            selected = top == v && bottom == v && left == v && right == v,
-                            onClick = {
-                                top = v.coerceAtMost(maxVertical); bottom = v.coerceAtMost(maxVertical)
-                                left = v.coerceAtMost(maxHorizontal); right = v.coerceAtMost(maxHorizontal)
-                            },
-                            label = { Text(stringResource(R.string.tools_crop_pdf_mm, mm)) }
-                        )
-                    }
-                }
-                MillimetreSlider(stringResource(R.string.tools_crop_pdf_top), top, 0f..maxVertical) { top = it }
-                MillimetreSlider(stringResource(R.string.tools_crop_pdf_bottom), bottom, 0f..maxVertical) { bottom = it }
-                MillimetreSlider(stringResource(R.string.tools_crop_pdf_left), left, 0f..maxHorizontal) { left = it }
-                MillimetreSlider(stringResource(R.string.tools_crop_pdf_right), right, 0f..maxHorizontal) { right = it }
+        }
+        if (auto) {
+            val frame = MaterialTheme.colorScheme.primary
+            val marks: (DrawScope.(Rect) -> Unit)? = if (keep == null) null else fun DrawScope.(page: Rect) {
+                val s = page.width / widthPt
+                val kept = Rect(page.left + keep.left * s, page.top + keep.top * s, page.left + keep.right * s, page.top + keep.bottom * s)
+                dimOutside(page, kept, Color.Black.copy(alpha = 0.5f))
+                drawCropFrame(kept, frame)
             }
+            PdfResultPreview(f, result = marks)
+            if (known && keep != null) {
+                Text(
+                    stringResource(R.string.edit_crop_size_change, mmSize(widthPt, heightPt), mmSize(keep.width(), keep.height())),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else if (found != null && content == null) {
+                ToolHint(stringResource(R.string.edit_crop_first_blank))
+            }
+            MillimetreSlider(stringResource(R.string.tools_crop_pdf_padding), padding, 0f..15f) { padding = it }
+            ToolHint(stringResource(R.string.edit_crop_auto_hint))
+        } else if (pages != null && pages > 0) {
+            ManualCropSection(
+                uri = uri,
+                pageCount = pages,
+                plan = plan,
+                onPlanChange = { plan = it },
+                allPages = allPages,
+                onAllPagesChange = { allPages = it },
+                pageIndex = pageIndex,
+                onPageChange = { pageIndex = it.coerceIn(0, pages - 1) }
+            )
+        }
+        if (f != null) {
+            PdfOutcomeRow(f, f.pageCount?.let { PdfOutcome(it, f.sizeBytes, approximate = true) })
         }
         ToolSection(stringResource(R.string.edit_section_what_happens)) {
             ToolHint(stringResource(R.string.tools_crop_pdf_body))

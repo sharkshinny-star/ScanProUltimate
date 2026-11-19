@@ -234,6 +234,59 @@ object PdfCropTools {
         return changed
     }
 
+    /**
+     * The new crop box of every page under [plan] (crop chosen by hand, F241), or null where the page is left alone:
+     * kept whole, or a crop narrower or shorter than [MIN_SIDE_PT] (the editor never makes one, a damaged page might).
+     */
+    internal fun planBoxes(shapes: List<PageShape>, plan: CropPlan): List<PDRectangle?> = shapes.mapIndexed { i, page ->
+        val crop = plan.forPage(i)
+        if (crop.isWhole) return@mapIndexed null
+        val dw = page.displayWidth
+        val dh = page.displayHeight
+        val left = crop.left.coerceIn(0f, 1f) * dw
+        val top = crop.top.coerceIn(0f, 1f) * dh
+        val right = crop.right.coerceIn(0f, 1f) * dw
+        val bottom = crop.bottom.coerceIn(0f, 1f) * dh
+        if (right - left < MIN_SIDE_PT || bottom - top < MIN_SIDE_PT) return@mapIndexed null
+        displayRectToUserSpace(page, left, top, right, bottom)
+    }
+
+    /** Crops each page as [plan] says (the same crop on all pages, or one of its own on some). */
+    suspend fun cropPdfPlan(
+        context: Context,
+        inputUri: Uri,
+        plan: CropPlan,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "crop_in_${UUID.randomUUID()}.pdf")
+        try {
+            PdfToolsEngine.openPdf(temp).use { doc ->
+                val total = doc.numberOfPages
+                userRequire(total > 0, R.string.tools_err_no_pages)
+                onProgress(1, 2, AppStrings.get(R.string.tools_crop_pdf_progress))
+                val shapes = List(total) { i -> doc.getPage(i).let { PageShape(it.cropBox, it.rotation) } }
+                val changed = applyCropBoxes(doc, planBoxes(shapes, plan))
+                userRequire(changed > 0, R.string.tools_crop_pdf_err_nothing)
+                outputFile.parentFile?.mkdirs()
+                doc.save(outputFile)
+                onProgress(2, 2, AppStrings.get(R.string.tools_crop_pdf_progress))
+                PdfToolResult(
+                    outputFile = outputFile,
+                    pageCount = total,
+                    originalSizeBytes = temp.length(),
+                    outputSizeBytes = outputFile.length(),
+                    message = AppStrings.plural(R.plurals.tools_crop_pdf_done, changed, changed)
+                )
+            }
+        } catch (error: Throwable) {
+            outputFile.delete()
+            throw error
+        } finally {
+            temp.delete()
+        }
+    }
+
     suspend fun cropPdf(
         context: Context,
         inputUri: Uri,
