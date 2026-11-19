@@ -76,7 +76,28 @@ data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Ma
 /** What the Tools screen shows while and after a tool runs. */
 private const val REPORT_INTERVAL_MS = 66L
 
-data class ToolProgress(val title: String, val subtitle: String? = null, val current: Int = 0, val total: Int = 0)
+data class ToolProgress(
+    val title: String,
+    val subtitle: String? = null,
+    val current: Int = 0,
+    val total: Int = 0,
+    /** 0 while the tool works. Once it has finished: how long, in milliseconds, the card stays to play its finish. */
+    val finishMillis: Int = 0
+)
+
+/**
+ * How long the progress card stays once a tool has finished. Many tools take a fraction of a second, and the card
+ * used to flash by; the owner asked that the animation be seen. So the card is on screen for at least
+ * [MIN_VISIBLE_MS] in all, and even a long task keeps it for [FINISH_MS] at the end, while the ring closes and the tick
+ * is drawn. Nothing is held when the phone's animations are turned off.
+ */
+internal object ToolFinish {
+    const val MIN_VISIBLE_MS = com.example.scanpro.core.designsystem.PROCESSING_LOOP_MS
+    const val FINISH_MS = 700L
+
+    fun holdMillis(visibleForMillis: Long, animationsOn: Boolean): Long =
+        if (!animationsOn) 0L else maxOf(MIN_VISIBLE_MS - visibleForMillis.coerceAtLeast(0L), FINISH_MS)
+}
 
 /**
  * A PDF in a merge that needs its password: file [index] of [uris], shown as [fileName]. [wrongPassword] is true when
@@ -200,6 +221,8 @@ class PdfToolsViewModel @Inject constructor(
     fun clearPasswordNeeded() { _passwordNeeded.value = null }
 
     fun cancel() {
+        // Once the work is done and the card is playing its finish, there is nothing left to stop.
+        if (_progress.value?.let { it.finishMillis > 0 } == true) return
         job?.cancel()
     }
 
@@ -241,6 +264,7 @@ class PdfToolsViewModel @Inject constructor(
         _result.value = null
         _failure.value = null
         _progress.value = ToolProgress(title = label)
+        val shownAt = android.os.SystemClock.uptimeMillis()
         endedWithQuestion = false
         job = viewModelScope.launch {
             try {
@@ -251,6 +275,8 @@ class PdfToolsViewModel @Inject constructor(
                 val result = operations.keepAlive(label) {
                     withContext(BackgroundWork.tools) { work()?.let { it.copy(outputFile = results.keep(it.outputFile)) } }
                 }
+                // The result is already kept; the card now plays its finish before the result screen takes over.
+                if (result != null) playFinish(shownAt)
                 _result.value = result
                 // The unlocked copy a tool read from has served its purpose once the result is kept.
                 if (result != null) releaseWorkingCopy()
@@ -276,6 +302,19 @@ class PdfToolsViewModel @Inject constructor(
                 _progress.value = null
             }
         }
+    }
+
+    /** Keeps the progress card on screen for [ToolFinish.holdMillis], telling it to play its finish meanwhile. */
+    private suspend fun playFinish(shownAt: Long) {
+        val animationsOn = runCatching {
+            android.provider.Settings.Global.getFloat(
+                context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+            ) > 0f
+        }.getOrDefault(true)
+        val hold = ToolFinish.holdMillis(android.os.SystemClock.uptimeMillis() - shownAt, animationsOn)
+        if (hold <= 0L) return
+        _progress.update { it?.copy(finishMillis = hold.toInt()) }
+        kotlinx.coroutines.delay(hold)
     }
 
     private fun bundled(files: List<File>, prefix: String, @PluralsRes message: Int): suspend () -> PdfToolResult? = {

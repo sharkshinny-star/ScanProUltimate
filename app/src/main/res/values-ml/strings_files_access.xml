@@ -72,7 +72,6 @@
     <string name="phone_files_processed">ScanPro-ൽ നിർമ്മിച്ചവ</string>
     <string name="phone_files_cloud_title">ക്ലൗഡ് ഡ്രൈവുകളും മറ്റ് ആപ്പുകളും</string>
     <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… എന്നിവയിൽ നിന്ന് തുറക്കുക</string>
-    <string name="phone_files_cloud_hint">നിങ്ങളുടെ ഫോണിന്റെ ഫയൽ പിക്കർ ഉപയോഗിക്കുന്നു. ScanPro ഒന്നിലും സൈൻ ഇൻ ചെയ്യില്ല.</string>
     <string name="phone_files_all_files">എല്ലാ ഫയലുകളും</string>
     <string name="phone_files_up">ഒരു ഫോൾഡർ മുകളിലേക്ക്</string>
 </resources>

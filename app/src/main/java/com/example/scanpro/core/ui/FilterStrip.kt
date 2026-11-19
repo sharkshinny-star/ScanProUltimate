@@ -36,7 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -94,13 +93,11 @@ fun FilterStrip(
         items(PageFilter.entries, key = { it.name }, contentType = { "filter_item" }) { filter ->
             val isSelected = filter == selected
 
-            val cardElevation by animateDpAsState(
-                targetValue = if (isSelected) 4.dp else 0.dp,
-                animationSpec = spring(dampingRatio = 0.7f, stiffness = 600f),
-                label = "elevation"
-            )
+            // The chosen card is drawn at full size and the others a little smaller. It used to grow to 104 %, past its
+            // own cell: the row clips its items, so the chosen card's border was cut at the top and, for the first
+            // filter, at the left edge. (Its animated shadow was cut by the card's own clip and never showed.)
             val cardScale by animateFloatAsState(
-                targetValue = if (isSelected) 1.04f else 1.0f,
+                targetValue = if (isSelected) 1.0f else 0.94f,
                 animationSpec = spring(dampingRatio = 0.7f, stiffness = 600f),
                 label = "scale"
             )
@@ -140,7 +137,6 @@ fun FilterStrip(
                 Box(
                     Modifier
                         .size(width = 66.dp, height = 82.dp)
-                        .shadow(cardElevation, RoundedCornerShape(10.dp), clip = false)
                         .border(borderWidth, borderColor, RoundedCornerShape(10.dp))
                         .padding(3.dp)
                         .clip(RoundedCornerShape(7.dp))

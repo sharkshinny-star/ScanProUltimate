@@ -74,7 +74,6 @@
     <string name="phone_files_processed">Made in ScanPro</string>
     <string name="phone_files_cloud_title">Cloud drives and other apps</string>
     <string name="phone_files_cloud_open">Open from Google Drive, Dropbox, OneDrive…</string>
-    <string name="phone_files_cloud_hint">Uses your phone\'s file picker. ScanPro never signs in to anything.</string>
     <string name="phone_files_all_files">All files</string>
     <string name="phone_files_up">Up one folder</string>
 </resources>

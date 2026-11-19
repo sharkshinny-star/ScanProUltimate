@@ -72,7 +72,6 @@
     <string name="phone_files_processed">ScanPro में बनी फ़ाइलें</string>
     <string name="phone_files_cloud_title">क्लाउड ड्राइव और दूसरे ऐप</string>
     <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… से खोलें</string>
-    <string name="phone_files_cloud_hint">आपके फ़ोन का फ़ाइल पिकर इस्तेमाल होता है। ScanPro कहीं साइन इन नहीं करता।</string>
     <string name="phone_files_all_files">सभी फ़ाइलें</string>
     <string name="phone_files_up">एक फ़ोल्डर ऊपर</string>
 </resources>
