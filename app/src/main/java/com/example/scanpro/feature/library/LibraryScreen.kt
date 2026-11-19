@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.rememberScrollState
 
 import androidx.compose.foundation.verticalScroll
@@ -487,7 +488,11 @@ internal fun LibraryScreen(
                     title = {
                         when {
                             selecting -> TitleWithStatus(pluralStringResource(R.plurals.lib_title_selected_count, selected.size, selected.size), if (busy) busyLabel else null)
-                            isHome -> BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                            isHome -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                                // The space beside the name: a small scene, a different one at random each time.
+                                com.example.scanpro.core.designsystem.HeaderSceneStrip(Modifier.weight(1f).padding(start = 8.dp).height(52.dp))
+                            }
                             isSearch -> Text(stringResource(R.string.common_search))
                             else -> TitleWithStatus(
                                 stringResource(R.string.lib_title_files),
@@ -1572,12 +1577,14 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
     val perRow = minOf(if (com.example.scanpro.navigation.isWideWindow()) 8 else 4, actions.size.coerceAtLeast(1))
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         actions.chunked(perRow).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Equal heights from the tallest label (2026-11-19); every tile used to keep room for a second line.
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { action ->
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .clip(RoundedCornerShape(18.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
@@ -1591,7 +1598,6 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
                             style = MaterialTheme.typography.labelMedium,
                             textAlign = TextAlign.Center,
                             maxLines = 2,
-                            minLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
                             lineHeight = MaterialTheme.typography.labelMedium.lineHeight
