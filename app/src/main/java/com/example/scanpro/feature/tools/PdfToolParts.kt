@@ -180,46 +180,79 @@ internal fun PdfOutcomeRow(before: PdfFacts, after: PdfOutcome?) {
  * The first page large, with the result drawn on it: [result] paints over the page in its own coordinates (the rect
  * the page occupies) and [resultFilter] tints it (greyscale, invert). A switch underneath shows Original or Result, so
  * the person sees where the header goes, what is blacked out or how the sheet is laid out before running the tool.
+ *
+ * Given the file's [uri], a PDF of several pages can be swiped through (owner, 2026-11-19): the other pages are
+ * rendered only when reached, with [resultFilter] on every page. [result] is drawn on the first page only unless
+ * [resultOnEveryPage], because most tools work it out for the first page (a redaction box, a crop).
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 internal fun PdfResultPreview(
     facts: PdfFacts?,
     result: (DrawScope.(page: Rect) -> Unit)? = null,
     resultFilter: ColorFilter? = null,
     height: androidx.compose.ui.unit.Dp = 300.dp,
+    uri: Uri? = null,
+    resultOnEveryPage: Boolean = false,
 ) {
     var showOriginal by rememberSaveable { mutableStateOf(false) }
     val hasResult = result != null || resultFilter != null
-    val description = stringResource(if (hasResult && !showOriginal) R.string.img_tool_result else R.string.img_tool_original)
-    val pageColour = MaterialTheme.colorScheme.outlineVariant
+    val pageCount = facts?.pageCount ?: 0
+    val swipeable = uri != null && pageCount > 1 && facts?.firstPage != null
+    val context = LocalContext.current
+    // Opened only for a PDF that can be swiped, and closed with the preview.
+    val session by produceState<PdfPreviewSession?>(null, uri, swipeable) {
+        if (!swipeable || uri == null) return@produceState
+        val opened = runCatching { PdfPreviewSession.open(context, uri) }.getOrNull() ?: return@produceState
+        value = opened
+        awaitDispose { opened.close() }
+    }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(height)
-                .clip(RoundedCornerShape(20.dp))
-                .padding(4.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            val bitmap = facts?.firstPage
-            if (bitmap == null) {
-                if (facts == null) FileLoadingAnimation(size = 88.dp)
-            } else {
-                val image = remember(bitmap) { bitmap.asImageBitmap() }
-                Canvas(Modifier.fillMaxSize().semantics { contentDescription = description }) {
-                    val scale = minOf(size.width / bitmap.width, size.height / bitmap.height)
-                    val w = bitmap.width * scale
-                    val h = bitmap.height * scale
-                    val page = Rect(Offset((size.width - w) / 2f, (size.height - h) / 2f), Size(w, h))
-                    drawRoundRect(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.12f), page.topLeft + Offset(0f, 6f), page.size, CornerRadius(6f))
-                    drawImage(
-                        image,
-                        dstOffset = IntOffset(page.left.roundToInt(), page.top.roundToInt()),
-                        dstSize = IntSize(w.roundToInt(), h.roundToInt()),
-                        colorFilter = if (showOriginal) null else resultFilter
+        val frame = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(20.dp))
+            .padding(4.dp)
+        if (swipeable) {
+            val pager = androidx.compose.foundation.pager.rememberPagerState { pageCount }
+            androidx.compose.foundation.pager.HorizontalPager(state = pager, modifier = frame) { index ->
+                val bitmap = if (index == 0) facts?.firstPage else {
+                    val rendered by produceState<Bitmap?>(null, session, index) {
+                        val open = session ?: return@produceState
+                        value = withContext(Dispatchers.IO) { open.render(index, PREVIEW_PAGE_WIDTH) }
+                    }
+                    rendered
+                }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (bitmap == null) FileLoadingAnimation(size = 72.dp)
+                    else PreviewPageCanvas(
+                        bitmap,
+                        filter = if (showOriginal) null else resultFilter,
+                        overlay = if (showOriginal || (index > 0 && !resultOnEveryPage)) null else result,
+                        description = stringResource(R.string.viewer_page_of, index + 1, pageCount)
                     )
-                    drawRect(pageColour, page.topLeft, page.size, style = Stroke(1f))
-                    if (!showOriginal) result?.invoke(this, page)
+                }
+            }
+            // Where the person is, and that there is more to see.
+            Text(
+                stringResource(R.string.viewer_page_of, pager.currentPage + 1, pageCount) +
+                    if (pager.currentPage == 0) " · " + stringResource(R.string.tools_preview_swipe_hint) else "",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        } else {
+            Box(frame, contentAlignment = Alignment.Center) {
+                val bitmap = facts?.firstPage
+                if (bitmap == null) {
+                    if (facts == null) FileLoadingAnimation(size = 88.dp)
+                } else {
+                    PreviewPageCanvas(
+                        bitmap,
+                        filter = if (showOriginal) null else resultFilter,
+                        overlay = if (showOriginal) null else result,
+                        description = stringResource(if (hasResult && !showOriginal) R.string.img_tool_result else R.string.img_tool_original)
+                    )
                 }
             }
         }
@@ -230,6 +263,36 @@ internal fun PdfResultPreview(
                 onSelect = { showOriginal = it }
             )
         }
+    }
+}
+
+/** Width the swiped-to pages are rendered at: the same as the first page in [loadPdfFacts]. */
+private const val PREVIEW_PAGE_WIDTH = 900
+
+/** One page fitted into the space, with a soft shadow and an outline, tinted by [filter] and painted on by [overlay]. */
+@Composable
+private fun PreviewPageCanvas(
+    bitmap: Bitmap,
+    filter: ColorFilter?,
+    overlay: (DrawScope.(page: Rect) -> Unit)?,
+    description: String
+) {
+    val pageColour = MaterialTheme.colorScheme.outlineVariant
+    val image = remember(bitmap) { bitmap.asImageBitmap() }
+    Canvas(Modifier.fillMaxSize().semantics { contentDescription = description }) {
+        val scale = minOf(size.width / bitmap.width, size.height / bitmap.height)
+        val w = bitmap.width * scale
+        val h = bitmap.height * scale
+        val page = Rect(Offset((size.width - w) / 2f, (size.height - h) / 2f), Size(w, h))
+        drawRoundRect(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.12f), page.topLeft + Offset(0f, 6f), page.size, CornerRadius(6f))
+        drawImage(
+            image,
+            dstOffset = IntOffset(page.left.roundToInt(), page.top.roundToInt()),
+            dstSize = IntSize(w.roundToInt(), h.roundToInt()),
+            colorFilter = filter
+        )
+        drawRect(pageColour, page.topLeft, page.size, style = Stroke(1f))
+        overlay?.invoke(this, page)
     }
 }
 

@@ -209,7 +209,7 @@ internal fun RecolourPdfPage(uri: Uri, invert: Boolean, onDismiss: () -> Unit, o
         demoToolId = if (invert) "invert_pdf" else "greyscale"
     ) {
         PickedFileRow(uri)
-        PdfResultPreview(f, resultFilter = filter)
+        PdfResultPreview(f, resultFilter = filter, uri = uri)
         if (f != null) {
             PdfOutcomeRow(f, if (pages == null || estimate == null) null else PdfOutcome(pages, estimate * pages, approximate = true))
         }
