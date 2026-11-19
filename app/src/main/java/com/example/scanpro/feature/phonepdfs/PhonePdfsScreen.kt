@@ -429,23 +429,17 @@ internal fun PhoneFilesList(
                 FilterChip(selected = state.filter == filter, onClick = { onFilterChange(filter) }, label = { Text(stringResource(filterLabel(filter))) })
             }
         }
-        // One line under the chips (2026-11-19): how many files, then the sort order and the list/grid switch. It was a
-        // second row of chips, which pushed the files down and scrolled sideways on a narrow phone.
-        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                if (shown != null) pluralStringResource(R.plurals.phone_files_count, shown.size, shown.size) else "",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
+        // The count, the sort order and the list/grid switch share one line. Above the storage tiles that line sits
+        // with the "All files" heading, where the list starts (owner, 2026-11-19: too much space above the tiles).
+        val controls: @Composable (String?) -> Unit = { heading ->
+            ListControls(
+                heading = heading,
+                count = shown?.let { pluralStringResource(R.plurals.phone_files_count, it.size, it.size) },
+                sort = state.sort, ascending = state.ascending, grid = state.grid,
+                onSortChange = onSortChange, onGridChange = onGridChange
             )
-            SortMenu(state.sort, state.ascending, onSortChange)
-            IconButton(onClick = { onGridChange(!state.grid) }) {
-                Icon(
-                    if (state.grid) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
-                    contentDescription = stringResource(if (state.grid) R.string.phone_files_show_list else R.string.phone_files_show_grid)
-                )
-            }
         }
+        if (!overview) controls(null)
         if (state.browsingFolders) FolderPathBar(path = state.folderPath.orEmpty(), onOpen = onOpenFolder)
         PullToRefreshBox(isRefreshing = state.loading && shown != null, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
             when {
@@ -469,7 +463,8 @@ internal fun PhoneFilesList(
                                 processedCount = processedCount,
                                 onOpenFolder = onOpenFolder,
                                 onOpenProcessed = onOpenProcessed,
-                                onOpenCloud = onOpenCloud
+                                onOpenCloud = onOpenCloud,
+                                controls = { controls(stringResource(R.string.phone_files_all_files)) }
                             )
                         }
                     }
@@ -519,13 +514,13 @@ private fun StorageOverview(
     processedCount: Int,
     onOpenFolder: (String?) -> Unit,
     onOpenProcessed: () -> Unit,
-    onOpenCloud: () -> Unit
+    onOpenCloud: () -> Unit,
+    controls: @Composable () -> Unit
 ) {
     val downloads = remember(all) { PhoneFiles.downloadsFolder(all) }
     val downloadsCount = remember(all, downloads) { downloads?.let { PhoneFiles.countUnder(all, it) } ?: 0 }
-    Column(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-        OverviewHeading(stringResource(R.string.phone_files_my_storage))
-        // Side by side (2026-11-19): three stacked rows and the cloud row filled the screen before the first file.
+    Column(Modifier.fillMaxWidth()) {
+        // Side by side, and small (owner, 2026-11-19): the files are what the tab is for.
         Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StorageTile(Icons.Rounded.PhoneAndroid, TileTone.Indigo, stringResource(R.string.phone_files_internal_storage), all.size, Modifier.weight(1f).fillMaxHeight()) { onOpenFolder("") }
             if (downloads != null) {
@@ -534,30 +529,80 @@ private fun StorageOverview(
             StorageTile(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount, Modifier.weight(1f).fillMaxHeight(), onOpenProcessed)
         }
         Spacer(Modifier.height(5.dp))
-        StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, subtitle = stringResource(R.string.phone_files_cloud_hint), onClick = onOpenCloud)
-        OverviewHeading(stringResource(R.string.phone_files_all_files))
+        CloudRow(onOpenCloud)
+        // The list's heading and its controls hang 16 dp outside the list's own padding, like the line they replace.
+        controls()
     }
 }
 
-/** One place files are kept, as a tile: its icon, how many files, its name. Three sit side by side. */
+/** Other apps' files: the phone's own picker, which lists Google Drive, Dropbox, OneDrive and any other storage app. */
+@Composable
+private fun CloudRow(onOpenCloud: () -> Unit) {
+    StorageRow(
+        Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_title), null,
+        subtitle = stringResource(R.string.phone_files_cloud_open), onClick = onOpenCloud
+    )
+}
+
+/** One place files are kept, as a small tile: its icon beside how many files, its name under them. Three sit side by side. */
 @Composable
 private fun StorageTile(icon: ImageVector, tone: TileTone, title: String, count: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(14.dp)
     Surface(
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = modifier.clip(shape).clickable(role = Role.Button, onClick = onClick)
     ) {
-        Column(Modifier.heightIn(min = 104.dp).padding(12.dp)) {
-            IconTile(icon, tone, size = 36.dp, corner = 12.dp, iconSize = 18.dp)
-            Spacer(Modifier.height(8.dp))
-            Text(count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Column(Modifier.heightIn(min = 56.dp).padding(horizontal = 10.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(icon, tone, size = 26.dp, corner = 8.dp, iconSize = 15.dp)
+                Spacer(Modifier.width(8.dp))
+                Text(count.toString(), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+            Spacer(Modifier.height(3.dp))
             Text(
                 title,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** How many files are listed, the sort order and the list/grid switch, on one line; over the whole list it carries the heading too. */
+@Composable
+private fun ListControls(
+    heading: String?,
+    count: String?,
+    sort: PhoneFileSort,
+    ascending: Boolean,
+    grid: Boolean,
+    onSortChange: (PhoneFileSort) -> Unit,
+    onGridChange: (Boolean) -> Unit
+) {
+    Row(
+        // In the list the row already has the list's 16 dp at each side; alone above the list it needs its own.
+        Modifier.fillMaxWidth().padding(start = if (heading != null) 4.dp else 20.dp, end = if (heading != null) 0.dp else 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (heading != null) {
+            Text(heading, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(
+            count.orEmpty(),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier.weight(1f)
+        )
+        SortMenu(sort, ascending, onSortChange)
+        IconButton(onClick = { onGridChange(!grid) }) {
+            Icon(
+                if (grid) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
+                contentDescription = stringResource(if (grid) R.string.phone_files_show_list else R.string.phone_files_show_grid)
             )
         }
     }
@@ -594,8 +639,7 @@ private fun SortMenu(sort: PhoneFileSort, ascending: Boolean, onSortChange: (Pho
 private fun StorageOverviewWithoutAccess(processedCount: Int, onOpenProcessed: () -> Unit, onOpenCloud: () -> Unit) {
     OverviewHeading(stringResource(R.string.phone_files_my_storage))
     StorageRow(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount.toString(), onClick = onOpenProcessed)
-    OverviewHeading(stringResource(R.string.phone_files_cloud_title))
-    StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, subtitle = stringResource(R.string.phone_files_cloud_hint), onClick = onOpenCloud)
+    CloudRow(onOpenCloud)
 }
 
 @Composable
@@ -614,14 +658,16 @@ private fun StorageRow(icon: ImageVector, tone: TileTone, title: String, count: 
     Surface(
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(shape).clickable(role = Role.Button, onClick = onClick)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(shape).clickable(role = Role.Button, onClick = onClick)
     ) {
-        Row(Modifier.heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconTile(icon, tone, size = 40.dp, corner = 12.dp, iconSize = 20.dp)
-            Spacer(Modifier.width(14.dp))
+        Row(Modifier.heightIn(min = 48.dp).padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconTile(icon, tone, size = 30.dp, corner = 9.dp, iconSize = 16.dp)
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (subtitle != null) {
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
             if (count != null) Text(count, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

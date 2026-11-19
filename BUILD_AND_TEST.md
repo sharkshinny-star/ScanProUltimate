@@ -53,6 +53,17 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F227 header scenes and F228 Files spacing, merged with F221–F224, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true --max-workers=1`: **1,149 tests, 0 failed, 2 skipped** (result XML). `:app:lintDebug`: **0 errors**, 165 warnings.
+- Rendered and looked at: `files-08-overview-light.png`, `header-scenes-{1,2}-{light,dark}.png`.
+- NOT run: `bundleRelease` (left to CI), anything on a device.
+
+## Latest results (2026-11-19, F227 header scenes, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true --max-workers=1`: **1,061 tests, 0 failed, 2 skipped** (result XML). `:app:lintDebug`: **0 errors**, 160 warnings (none in `HeaderScenes.kt`). With two workers the test daemon was killed for memory once; one worker is reliable here.
+- Rendered and looked at: `header-scenes-{1,2}-{light,dark}.png` (each scene frozen part-way), `02-home-light.png`.
+- NOT run: `bundleRelease` (left to CI), anything on a device (the scenes' motion is unverified: R89).
 ## Latest results (2026-11-19, F225 Play bundle without All files access, cloud container, SDK installed in the session)
 
 - On the merge `e44128fc` (F221–F224 of other sessions plus F225): `:app:testDebugUnitTest` **1,145 tests, 0 failed, 155 skipped** (result XML, screenshots flag off).
