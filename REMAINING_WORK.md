@@ -1,13 +1,13 @@
 # Remaining work
 
-Everything still open on `claude/awesome-clarke-ussjo3`, as of 2026-11-19 (`0138cff`, after F216): 32 open items (11 P1, 16 P2, 5 P3).
+Everything still open on `claude/awesome-clarke-ussjo3`, as of 2026-11-19 (after F216 and F205): 32 open items (11 P1, 16 P2, 5 P3).
 Rewritten by hand from the "Open" table in `AUDIT_FINDINGS.md`, which holds the full problem description and evidence for
 each ID; that table is the source of truth. When an item closes there, remove it here, and change the date above.
 
 Nearly every item is a check on a phone: cloud sessions have no device, so recent work is verified by unit tests,
 JVM renders and the desktop scan benchmark only. Several rows say "not compiled" because their session had no Android
-SDK; everything up to F214 has since been built and unit-tested (CI run 225 on `a2460c0`: unit tests and lint passed; a
-full local run on F204, `aef6f4e`: 1,051 tests, 0 failed). F215 and F216 came after those runs (R83, R85).
+SDK; everything up to F215 has since been built and unit-tested (full local run on F205, `6bb662b`: 1,055 tests,
+0 failed, 2 skipped, lint 0 errors). F216 was not in that run (R85).
 
 ## 1. Needs the owner
 
@@ -41,8 +41,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
   - Next: On the phone, release build: (1) an ID card on wood, on a dark desk and in the hand, in Document mode and ID card mode: outline on the whole card, not below its header band; ID card mode saves the card alone when it is outlined, the guide's contents otherwise; (2) an open book: one steady outline, no flipping between one page and the spread; (3) a page lying still: outline does not tremble, does not blink off on a blurred frame, and follows a moved phone without lag; (4) `ScanProAnalyzer` frame rate still smooth (colour edges and the wider straight-edge search add about 1.5 to 4 ms a frame on the desktop). If anything is still wrong, ask for 3 or 4 photos of it from the phone's own camera and run them through `scripts/scan-bench`.
 - **R80** (F210–F212; Device check). Page, convert and edit tool upgrades pass their unit tests in CI; none of the screens has been seen on a phone.
   - Next: Run one tool of each group end to end on a real PDF; check the estimate against the result; Redact text on a file with comments and form fields, then search the output for the words in a desktop PDF reader.
-- **R71** (F194, F198, F199; Device check). Edit PDF text: the engine is tested on the desktop; the editor and its page preview have not been seen on a phone.
-  - Next: On the phone: Tools › Edit PDF on a text PDF (a bill or a letter from Word): tap a line, change a word, Apply (the page should redraw with the change in the same font), change bold, size and colour, add new text with Add text (on an upright and a turned page), Save, open the result and search for the old word (it should not be found). Also a PDF made by a phone scanner app (often a picture: the editor should say there's no text) and a rotated page.
+- **R71** (F194, F198, F199, F204, F205; Device check). Edit PDF text: the engine is tested on the desktop; the editor and its page preview have not been seen on a phone.
+  - Next: On the phone: Tools › Edit PDF on a text PDF (a bill or a letter from Word): tap a line, change a word, Apply (the page should redraw with the change in the same font), change bold, size and colour, add new text with Add text (on an upright and a turned page), Save, open the result and search for the old word (it should not be found). Also a PDF made by a phone scanner app (often a picture: the editor should say there's no text) and a rotated page. F205: pinch to zoom and drag the page, then tap a small line (the right line should open); Find and replace a word that is on several pages; open Changes, remove one, tap another to jump to its page; Undo and Redo; Move a line with the arrows; Save with your own file name and check the file is called that.
 - **R70** (F195–F197; Device check / Play policy). First-launch permission page, widget, tool demos, tilting cards and the result screen have not been seen on a phone; Play needs the All files access declaration.
   - Next: (1) Fresh install: the welcome permission page lists Files on your phone; Allow asks camera and notifications, then opens All files access; coming back opens the app; Not now opens it too. An existing install with no access sees the one-time Files prompt once, before What's new and the tour. (2) Play Console: asking for All files access at start needs the MANAGE_EXTERNAL_STORAGE declaration (document management); without it the update may be rejected. (3) Widget: add it, resize through 2 cells, one row, two rows; every button opens the right place; colours follow the wallpaper on Android 12+, readable in dark mode. (4) Tool demos: How it works card and introductions play the scene; the stage flips in; with animations off a still frame shows. (5) Cards tilt towards the finger on Tools and Files (check the direction feels right) without stopping scrolling or long press. (6) Result screen shows Original → Result and the page count.
 - **R69** (F193; Device check). Rebuilt image tools (Compress, Convert, Resize, Crop) have not been seen on a phone; their estimates are unchecked against real results.

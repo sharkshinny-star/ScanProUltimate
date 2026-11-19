@@ -81,6 +81,31 @@ class ToolsLandingScreenshotTest(private val dark: Boolean) {
         File(outDir, "edit-pdf-options-${if (dark) "dark" else "light"}.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    /** Edit PDF text: the list of changes made so far (F205), apart from its dialog window. */
+    @Test
+    fun editPdfChanges() {
+        val edit = com.example.scanpro.imaging.PdfTextEditor::Edit
+        val edits = listOf(
+            edit(0, 3, "Total due: 1,480.00", com.example.scanpro.imaging.PdfTextEditor.Family.ORIGINAL, true, false, 11f, null, 0f, 0f, com.example.scanpro.imaging.PdfTextEditor.Align.LEFT, false, 0f, 0f),
+            edit(0, 7, "", com.example.scanpro.imaging.PdfTextEditor.Family.ORIGINAL, false, false, 10f, null, 0f, 0f, com.example.scanpro.imaging.PdfTextEditor.Align.LEFT, false, 0f, 0f),
+            edit(1, com.example.scanpro.imaging.PdfTextEditor.NEW, "Paid in full on 19 November", com.example.scanpro.imaging.PdfTextEditor.Family.SANS, false, true, 12f, null, 80f, 300f, com.example.scanpro.imaging.PdfTextEditor.Align.LEFT, false, 0f, 0f)
+        )
+        val before = mapOf((0 to 3) to "Total due: 1,250.00", (0 to 7) to "Draft: not for circulation")
+        compose.setContent {
+            ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
+                androidx.compose.material3.Surface(androidx.compose.ui.Modifier.fillMaxSize()) {
+                    com.example.scanpro.feature.tools.ChangesList(
+                        edits = edits, before = before, onOpen = {}, onRemove = {},
+                        modifier = androidx.compose.ui.Modifier.padding(24.dp)
+                    )
+                }
+            }
+        }
+        repeat(4) { compose.mainClock.advanceTimeBy(300); Thread.sleep(100) }
+        val image = compose.onRoot().captureToImage().asAndroidBitmap()
+        File(outDir, "edit-pdf-changes-${if (dark) "dark" else "light"}.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     private fun render(name: String) {
         compose.setContent {
             ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) { PdfToolsScreen(recentPdfs = emptyList()) }

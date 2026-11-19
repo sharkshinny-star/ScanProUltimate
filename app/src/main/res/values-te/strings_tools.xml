@@ -541,7 +541,7 @@
     <string name="tools_tile_edit_pdf">PDF మార్చండి</string>
     <string name="tools_desc_edit_pdf">పదాలు, ఫాంట్, బోల్డ్, పరిమాణం మార్చండి</string>
     <string name="hint_tool_edit_pdf">టెక్స్ట్‌లోని ఏ వరుసనైనా ట్యాప్ చేసి దాని పదాలు, ఫాంట్, బోల్డ్, ఇటాలిక్ లేదా పరిమాణం మార్చండి. మీరు టైప్ చేసే అక్షరాలు PDF ఫాంట్‌లో ఉంటే అదే ఫాంట్ ఉంటుంది. కొత్త PDF సేవ్ అవుతుంది; అసలు ఫైల్ మారదు.</string>
-    <string name="tools_edit_hint">మార్చడానికి ఏ టెక్స్ట్‌నైనా ట్యాప్ చేయండి</string>
+    <string name="tools_edit_hint">మార్చడానికి ఏ టెక్స్ట్‌నైనా ట్యాప్ చేయండి. జూమ్ చేయడానికి పించ్ చేయండి.</string>
     <string name="tools_edit_save">PDF సేవ్ చేయండి</string>
     <string name="tools_edit_no_text">ఈ పేజీలో టెక్స్ట్ లేదు. స్కాన్ చేసిన పేజీ ఒక చిత్రం: ముందు \"వెతకదగినదిగా చేయండి\" వాడండి.</string>
     <string name="tools_edit_err_open">ఈ PDFని మార్చడానికి తెరవలేకపోయాము.</string>
@@ -607,4 +607,34 @@
     <string name="tools_edit_wrap">పొడవైన టెక్స్ట్ తర్వాతి వరుసకు</string>
     <string name="tools_edit_align_hint">ఎడమ, మధ్య, కుడి కొత్త పదాలను పాత పదాలు ఉన్న చోటే ఉంచుతాయి. పేజీ కంటే పొడవైన టెక్స్ట్ తర్వాతి వరుసలకు వెళ్తుంది; కింద ఉన్న వరుసలు కదలవు.</string>
     <string name="tools_edit_align_hint_new">ఎడమ: మీరు ట్యాప్ చేసిన చోట పదాలు మొదలవుతాయి; మధ్య: అక్కడ మధ్యలో ఉంటాయి; కుడి: అక్కడ ముగుస్తాయి. పేజీ కంటే పొడవైన టెక్స్ట్ తర్వాతి వరుసలకు వెళ్తుంది.</string>
+    <string name="tools_edit_find_replace">వెతికి మార్చండి</string>
+    <string name="tools_edit_find_label">వెతకండి</string>
+    <string name="tools_edit_replace_label">దీనితో మార్చండి</string>
+    <string name="tools_edit_match_case">పెద్ద-చిన్న అక్షరాలు సరిపోల్చు</string>
+    <string name="tools_edit_replace_all">అన్నీ మార్చండి</string>
+    <string name="tools_edit_no_matches">\"%1$s\"కి సరిపోయే టెక్స్ట్ లేదు.</string>
+    <string name="tools_edit_redo">మళ్లీ చేయండి</string>
+    <string name="tools_edit_changes_title">మార్పులు</string>
+    <string name="tools_edit_change_page">పేజీ %1$d</string>
+    <string name="tools_edit_change_added">జోడించబడింది</string>
+    <string name="tools_edit_change_deleted">తొలగించబడింది</string>
+    <string name="tools_edit_change_remove">ఈ మార్పును తీసేయండి</string>
+    <string name="tools_edit_save_title">మార్చిన PDF సేవ్ చేయండి</string>
+    <string name="tools_edit_save_name">ఫైల్ పేరు</string>
+    <string name="tools_edit_save_note">మీ మార్పులతో కొత్త PDF సేవ్ అవుతుంది. అసలు ఫైల్ మారదు.</string>
+    <string name="tools_edit_move">జరపండి</string>
+    <string name="tools_edit_move_left">ఎడమకు జరపండి</string>
+    <string name="tools_edit_move_right">కుడికి జరపండి</string>
+    <string name="tools_edit_move_up">పైకి జరపండి</string>
+    <string name="tools_edit_move_down">కిందికి జరపండి</string>
+    <string name="tools_edit_zoom_reset">పూర్తి పేజీ</string>
+    <string name="tools_edit_find_hint">ఈ PDFలో అన్ని చోట్లా పదాలను మారుస్తుంది; ప్రతి వరుస ఫాంట్ అలాగే ఉంటుంది.</string>
+    <plurals name="tools_edit_replaced">
+        <item quantity="one">%1$d వరుసలో మార్చబడింది.</item>
+        <item quantity="other">%1$d వరుసల్లో మార్చబడింది.</item>
+    </plurals>
+    <plurals name="tools_edit_changes">
+        <item quantity="one">%1$d మార్పు</item>
+        <item quantity="other">%1$d మార్పులు</item>
+    </plurals>
 </resources>

@@ -107,7 +107,10 @@ internal object PdfTextEditor {
          * text (never narrower than the old words were). The lines below are not moved, so wrapped text can run over
          * them. A line break typed in [text] always starts a new line.
          */
-        val wrap: Boolean = false
+        val wrap: Boolean = false,
+        /** Moved from where it would sit by this much, in display points: right and down are positive. */
+        val dx: Float = 0f,
+        val dy: Float = 0f
     ) {
         val isNew: Boolean get() = index == NEW
     }
@@ -183,7 +186,7 @@ internal object PdfTextEditor {
                     else chooseStandard(null, addition, unicodeOnce)
                     if (choice == null) { skipped++; continue }
                     val (ux, uy, vx, vy) = analysis.shape.upright()
-                    val (ox, oy) = analysis.shape.toPage(addition.x, addition.y)
+                    val (ox, oy) = analysis.shape.toPage(addition.x + addition.dx, addition.y + addition.dy)
                     val wrapWidth = if (addition.wrap) (rightEdge(analysis) - addition.x).coerceAtLeast(MIN_WRAP_WIDTH) else null
                     drawLines(
                         stream, addition.text, choice, addition.size, addition.colour ?: near?.span?.colour ?: 0,
@@ -623,14 +626,29 @@ internal object PdfTextEditor {
             val across = bx - ax > 0.99f && abs(by - ay) < 0.1f
             if (across) maxOf(old, rightEdge(analysis) - data.span.left, MIN_WRAP_WIDTH) else maxOf(old, MIN_WRAP_WIDTH)
         }
+        // A move asked for, from display points to the page's own directions.
+        val (zeroX, zeroY) = analysis.shape.toPage(0f, 0f)
+        val (movedX, movedY) = analysis.shape.toPage(edit.dx, edit.dy)
         drawLines(
             stream, edit.text, choice, edit.size, edit.colour ?: data.span.colour, ux, uy, vx, vy,
-            data.offsetX + m.translateX, data.offsetY + m.translateY, box = wrapWidth ?: old, wrapWidth = wrapWidth, align = edit.align
+            data.offsetX + m.translateX + (movedX - zeroX), data.offsetY + m.translateY + (movedY - zeroY),
+            box = wrapWidth ?: old, wrapWidth = wrapWidth, align = edit.align
         )
     }
 
     /** Baseline to baseline, in font sizes, for text that runs onto further lines. */
     private const val LINE_SPACING = 1.2f
+
+    /**
+     * [text] with every [query] in it replaced by [replacement], or null when it holds none. The query is taken as
+     * plain text (not a pattern); capital and small letters count as the same unless [matchCase].
+     */
+    fun replaceIn(text: String, query: String, replacement: String, matchCase: Boolean): String? {
+        if (query.isEmpty()) return null
+        val pattern = Regex(Regex.escape(query), if (matchCase) emptySet() else setOf(RegexOption.IGNORE_CASE))
+        if (!pattern.containsMatchIn(text)) return null
+        return pattern.replace(text, Regex.escapeReplacement(replacement))
+    }
 
     /** Lines are never broken narrower than this (points): a sliver beside the page edge would give a word a line. */
     private const val MIN_WRAP_WIDTH = 60f
