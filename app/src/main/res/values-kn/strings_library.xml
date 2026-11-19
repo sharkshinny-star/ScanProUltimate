@@ -256,4 +256,9 @@
     <string name="home_recent_files">ಇತ್ತೀಚಿನ ಫೈಲ್‌ಗಳು</string>
     <string name="home_recent_opened">ತೆರೆದವು</string>
     <string name="home_recent_scans">ಸ್ಕ್ಯಾನ್‌ಗಳು</string>
+    <string name="settings_section_about">ScanPro ಬಗ್ಗೆ</string>
+    <string name="settings_group_more">ಇನ್ನಷ್ಟು</string>
+    <string name="settings_about_tagline">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಕೆಲಸ ಮಾಡುವ ಡಾಕ್ಯುಮೆಂಟ್ ಸ್ಕ್ಯಾನರ್ ಮತ್ತು PDF ಟೂಲ್‌ಕಿಟ್.</string>
+    <string name="settings_about_open_source">ಓಪನ್-ಸೋರ್ಸ್ ಸಾಫ್ಟ್‌ವೇರ್</string>
+    <string name="settings_about_open_source_body">ScanPro ಈ ಲೈಬ್ರರಿಗಳ ಮೇಲೆ ನಿರ್ಮಿತವಾಗಿದೆ. ಇವುಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡುವ ಎಲ್ಲರಿಗೂ ಧನ್ಯವಾದಗಳು.</string>
 </resources>

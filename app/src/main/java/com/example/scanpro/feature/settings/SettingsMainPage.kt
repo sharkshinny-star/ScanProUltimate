@@ -20,8 +20,10 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Feedback
 import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +48,7 @@ import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.BrandMark
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.formatBytes
+import com.example.scanpro.core.ui.sharePlayStoreListing
 import com.example.scanpro.data.OversizedPdfs
 
 /**
@@ -68,8 +71,14 @@ internal enum class SettingsPage(@StringRes val title: Int, val icon: ImageVecto
     SHORTCUTS(R.string.settings_section_shortcuts, Icons.Rounded.Widgets, TileTone.Sky, 2,
         listOf(R.string.settings_shortcuts_summary)),
     SUPPORT(R.string.settings_section_support, Icons.Rounded.Feedback, TileTone.Coral, 2,
-        listOf(R.string.settings_whats_new_title, R.string.settings_report_issue_title, R.string.settings_rate_title))
+        listOf(R.string.settings_whats_new_title, R.string.settings_report_issue_title, R.string.settings_rate_title)),
+    // Group 3 is "More" on the main page, with Share ScanPro under it (2026-11-19, owner's request).
+    ABOUT(R.string.settings_section_about, Icons.Rounded.Info, TileTone.Slate, 3,
+        listOf(R.string.settings_about_open_source))
 }
+
+/** The main page's last group: About, then Share ScanPro straight from the list. */
+private const val MORE_GROUP = 3
 
 /** What the main page shows besides the list of pages. */
 internal class SettingsOverview(
@@ -89,7 +98,7 @@ internal class SettingsOverview(
     val defaultOcrScript: com.example.scanpro.data.OcrScript = com.example.scanpro.data.OcrScript.LATIN
 )
 
-/** The calm first page: the library on one row, then the pages in three groups, then the version. */
+/** The calm first page: the library on one row, then the pages in groups (the last, More, ends with Share ScanPro), then the version. */
 @Composable
 internal fun SettingsMainPage(
     overview: SettingsOverview,
@@ -99,8 +108,9 @@ internal fun SettingsMainPage(
     onDismissFreeSpace: () -> Unit
 ) = SettingsPageColumn {
     LibraryCard(overview, onOpenFiles, onFreeUpSpace, onDismissFreeSpace)
-    SettingsPage.entries.groupBy { it.group }.values.forEach { pages ->
-        SettingsGroup {
+    val context = LocalContext.current
+    SettingsPage.entries.groupBy { it.group }.forEach { (group, pages) ->
+        SettingsGroup(header = if (group == MORE_GROUP) stringResource(R.string.settings_group_more) else null) {
             pages.forEach { page ->
                 val state = pageSummary(page, overview)
                 SettingsRow(
@@ -111,6 +121,16 @@ internal fun SettingsMainPage(
                     summaryMaxLines = if (state != null) 2 else 1,
                     trailing = { Chevron() },
                     onClick = { onOpenPage(page) }
+                )
+            }
+            if (group == MORE_GROUP) {
+                SettingsRow(
+                    title = stringResource(R.string.settings_share_with_friends),
+                    icon = Icons.Rounded.Share,
+                    tone = TileTone.Coral,
+                    summary = stringResource(R.string.settings_share_subtitle),
+                    summaryMaxLines = 1,
+                    onClick = { sharePlayStoreListing(context) }
                 )
             }
         }
@@ -128,6 +148,8 @@ private fun pageSummary(page: SettingsPage, overview: SettingsOverview): String?
         pluralStringResource(R.plurals.settings_trash_retention_days, overview.trashRetentionDays, overview.trashRetentionDays)
     )
     SettingsPage.NOTIFICATIONS -> if (overview.canPostNotifications) null else stringResource(R.string.settings_notifications_off_title)
+    SettingsPage.ABOUT -> stringResource(R.string.settings_version, BuildConfig.VERSION_NAME) + " · " +
+        stringResource(R.string.settings_about_open_source)
     SettingsPage.SCANNING -> scanningSummary(overview.defaultScanMode, overview.pdfQuality, overview.defaultOcrScript)
     else -> null
 }
