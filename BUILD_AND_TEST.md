@@ -50,6 +50,7 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Runs 285 and 287 (`e87cd142`, `8b332165`): FAILED in 15 s at "Source audit": 600 missing translations (the 120 strings of F234-F243 in hi, kn, ml, ta, te). Nothing after that step ran. Fixed in F245 (`b222f194`).
 - Run 289 (`b222f194`): source audit and Room schema check passed; `:app:compileDebugKotlin` FAILED with one error (an internal type exposed by the public `PageNumbersConfig`, F242). Fixed in F246. Unit tests and lint were not reached. Not yet known: whether anything else in F234-F244 fails to compile or fails a test.
 - Run 291 (`d0cd51ea`, 6 min 51 s): audit, Room check and `:app:compileDebugKotlin` PASSED (the app code of F234-F246 compiles, with the usual deprecation and unnecessary-safe-call warnings); `:app:compileDebugUnitTestKotlin` FAILED with one error in a test I wrote (F242, a missing `suspend`). Fixed in F247. Unit tests and lint still not reached.
+- Run 293 (`c0b4c1ff`, 5 min): audit, compile and the unit-test compile passed; `:app:testDebugUnitTest` ran and reported no failure; `:app:lintDebug` FAILED with 6 errors (5 plurals untranslated, F248; the sixth not shown in the log). Play bundle and APK steps skipped.
 
 ## Latest results (2026-11-19, F234 Files search in the top bar, Linux cloud container)
 

@@ -54,4 +54,12 @@
     <string name="meta_section_privacy">प्राइवेसी</string>
     <string name="meta_show_fewer">कम दिखाएँ</string>
     <string name="meta_will_be_removed">हटा दी जाएगी</string>
+    <plurals name="meta_action_save_changes">
+        <item quantity="one">%1$d बदलाव के साथ कॉपी सेव करें</item>
+        <item quantity="other">%1$d बदलावों के साथ कॉपी सेव करें</item>
+    </plurals>
+    <plurals name="meta_show_all">
+        <item quantity="one">सभी %1$d दिखाएँ</item>
+        <item quantity="other">सभी %1$d दिखाएँ</item>
+    </plurals>
 </resources>

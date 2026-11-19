@@ -90,4 +90,12 @@
     <string name="edit_crop_status_shared_page">ಎಲ್ಲಾ ಪುಟಗಳ ಕ್ರಾಪ್ ಬಳಸುತ್ತದೆ; ಎಳೆದರೆ ಇದಕ್ಕೆ ಪ್ರತ್ಯೇಕ ಕ್ರಾಪ್ ಆಗುತ್ತದೆ</string>
     <string name="edit_crop_status_whole">ಈ ಪುಟವನ್ನು ಪೂರ್ಣವಾಗಿ ಉಳಿಸಲಾಗಿದೆ</string>
     <string name="edit_crop_use_shared">ಎಲ್ಲಾ ಪುಟಗಳ ಕ್ರಾಪ್ ಬಳಸಿ</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d ಪುಟಕ್ಕೆ ತನ್ನದೇ ಆದ ಕ್ರಾಪ್ ಇದೆ ಮತ್ತು ಅದನ್ನೇ ಉಳಿಸಿಕೊಳ್ಳುತ್ತದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳಿಗೆ ತಮ್ಮದೇ ಆದ ಕ್ರಾಪ್ ಇದೆ ಮತ್ತು ಅವುಗಳನ್ನೇ ಉಳಿಸಿಕೊಳ್ಳುತ್ತವೆ</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%2$d ಪುಟದಲ್ಲಿ %1$d ಕ್ರಾಪ್ ಆಗುತ್ತದೆ</item>
+        <item quantity="other">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ಕ್ರಾಪ್ ಆಗುತ್ತವೆ</item>
+    </plurals>
 </resources>

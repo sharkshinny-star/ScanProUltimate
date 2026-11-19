@@ -209,4 +209,8 @@
     <string name="cvt_ximg_tick">ఈ చిత్రాన్ని ఎంచుకోండి</string>
     <string name="cvt_ximg_untick">ఎంపిక నుండి తొలగించండి</string>
     <string name="cvt_ximg_view_larger">చిత్రాన్ని పెద్దగా చూడండి</string>
+    <plurals name="cvt_ximg_pick_done">
+        <item quantity="one">పూర్తయింది · %1$d ఎంచుకున్నారు</item>
+        <item quantity="other">పూర్తయింది · %1$d ఎంచుకున్నారు</item>
+    </plurals>
 </resources>

@@ -90,4 +90,12 @@
     <string name="edit_crop_status_shared_page">అన్ని పేజీల క్రాప్‌ను వాడుతోంది; లాగితే దానికి స్వంత క్రాప్ వస్తుంది</string>
     <string name="edit_crop_status_whole">ఈ పేజీ పూర్తిగా ఉంచబడింది</string>
     <string name="edit_crop_use_shared">అన్ని పేజీల క్రాప్‌ను వాడండి</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d పేజీకి దాని స్వంత క్రాప్ ఉంది, అదే ఉంటుంది</item>
+        <item quantity="other">%1$d పేజీలకు వాటి స్వంత క్రాప్ ఉంది, అవే ఉంటాయి</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%2$d పేజీలో %1$d క్రాప్ అవుతుంది</item>
+        <item quantity="other">%2$d పేజీలలో %1$d క్రాప్ అవుతాయి</item>
+    </plurals>
 </resources>

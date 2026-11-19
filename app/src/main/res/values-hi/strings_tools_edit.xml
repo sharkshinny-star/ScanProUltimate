@@ -90,4 +90,12 @@
     <string name="edit_crop_status_shared_page">सभी पेजों वाला क्रॉप लग रहा है; खींचने पर इसका अपना क्रॉप बन जाएगा</string>
     <string name="edit_crop_status_whole">यह पेज पूरा रखा गया है</string>
     <string name="edit_crop_use_shared">सभी पेजों वाला क्रॉप लगाएँ</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d पेज का अपना क्रॉप है और वही रहेगा</item>
+        <item quantity="other">%1$d पेजों का अपना क्रॉप है और वही रहेगा</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%2$d में से %1$d पेज क्रॉप होगा</item>
+        <item quantity="other">%2$d में से %1$d पेज क्रॉप होंगे</item>
+    </plurals>
 </resources>

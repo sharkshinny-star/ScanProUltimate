@@ -54,4 +54,12 @@
     <string name="meta_section_privacy">தனியுரிமை</string>
     <string name="meta_show_fewer">குறைவாகக் காட்டு</string>
     <string name="meta_will_be_removed">நீக்கப்படும்</string>
+    <plurals name="meta_action_save_changes">
+        <item quantity="one">%1$d மாற்றத்துடன் நகலைச் சேமி</item>
+        <item quantity="other">%1$d மாற்றங்களுடன் நகலைச் சேமி</item>
+    </plurals>
+    <plurals name="meta_show_all">
+        <item quantity="one">அனைத்து %1$d காட்டு</item>
+        <item quantity="other">அனைத்து %1$d காட்டு</item>
+    </plurals>
 </resources>

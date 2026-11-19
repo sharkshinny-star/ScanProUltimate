@@ -209,4 +209,8 @@
     <string name="cvt_ximg_tick">இந்தப் படத்தைத் தேர்ந்தெடு</string>
     <string name="cvt_ximg_untick">தேர்விலிருந்து நீக்கு</string>
     <string name="cvt_ximg_view_larger">படத்தைப் பெரிதாகப் பார்</string>
+    <plurals name="cvt_ximg_pick_done">
+        <item quantity="one">முடிந்தது · %1$d தேர்ந்தெடுக்கப்பட்டது</item>
+        <item quantity="other">முடிந்தது · %1$d தேர்ந்தெடுக்கப்பட்டன</item>
+    </plurals>
 </resources>

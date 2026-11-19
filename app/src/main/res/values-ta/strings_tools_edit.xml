@@ -90,4 +90,12 @@
     <string name="edit_crop_status_shared_page">அனைத்துப் பக்கச் செதுக்கலைப் பயன்படுத்துகிறது; இழுத்தால் தனிச் செதுக்கல் உருவாகும்</string>
     <string name="edit_crop_status_whole">இந்தப் பக்கம் முழுமையாக வைக்கப்படும்</string>
     <string name="edit_crop_use_shared">அனைத்துப் பக்கச் செதுக்கலைப் பயன்படுத்து</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d பக்கத்திற்குத் தனிச் செதுக்கல் உள்ளது; அது அப்படியே இருக்கும்</item>
+        <item quantity="other">%1$d பக்கங்களுக்குத் தனிச் செதுக்கல் உள்ளது; அவை அப்படியே இருக்கும்</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%2$d பக்கத்தில் %1$d செதுக்கப்படும்</item>
+        <item quantity="other">%2$d பக்கங்களில் %1$d செதுக்கப்படும்</item>
+    </plurals>
 </resources>

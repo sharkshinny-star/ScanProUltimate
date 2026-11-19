@@ -209,4 +209,8 @@
     <string name="cvt_ximg_tick">इस तस्वीर को चुनें</string>
     <string name="cvt_ximg_untick">चयन से हटाएँ</string>
     <string name="cvt_ximg_view_larger">तस्वीर बड़ी करके देखें</string>
+    <plurals name="cvt_ximg_pick_done">
+        <item quantity="one">हो गया · %1$d चुनी गई</item>
+        <item quantity="other">हो गया · %1$d चुनी गईं</item>
+    </plurals>
 </resources>

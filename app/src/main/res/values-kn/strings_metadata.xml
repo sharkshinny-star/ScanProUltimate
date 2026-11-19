@@ -54,4 +54,12 @@
     <string name="meta_section_privacy">ಗೌಪ್ಯತೆ</string>
     <string name="meta_show_fewer">ಕಡಿಮೆ ತೋರಿಸಿ</string>
     <string name="meta_will_be_removed">ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ</string>
+    <plurals name="meta_action_save_changes">
+        <item quantity="one">%1$d ಬದಲಾವಣೆಯೊಂದಿಗೆ ಪ್ರತಿಯನ್ನು ಉಳಿಸಿ</item>
+        <item quantity="other">%1$d ಬದಲಾವಣೆಗಳೊಂದಿಗೆ ಪ್ರತಿಯನ್ನು ಉಳಿಸಿ</item>
+    </plurals>
+    <plurals name="meta_show_all">
+        <item quantity="one">ಎಲ್ಲಾ %1$d ತೋರಿಸಿ</item>
+        <item quantity="other">ಎಲ್ಲಾ %1$d ತೋರಿಸಿ</item>
+    </plurals>
 </resources>
