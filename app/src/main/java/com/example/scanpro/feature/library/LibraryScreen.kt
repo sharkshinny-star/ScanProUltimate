@@ -394,6 +394,10 @@ internal fun LibraryScreen(
     val isHome = mode == ScanProDestinations.HOME
     val isSearch = mode == ScanProDestinations.SEARCH
     var phoneFilesTab by rememberSaveable { mutableStateOf(false) }
+    // On this phone has its own search, sort and grid switch, and lists other files than the documents the top bar
+    // counts: while it shows, the bar keeps only its title and menu (two searches and two sorts on one screen read
+    // as clutter, and the bar's ones acted on the tab that was not showing).
+    val onPhoneTab = phoneFilesPane != null && phoneFilesTab
     // Files keeps the saved layout; Search is always a list. The saved sort orders both.
     val gridMode = mode == ScanProDestinations.FILES && savedGrid
     var moveToFolderOpen by rememberSaveable { mutableStateOf(false) }
@@ -481,7 +485,8 @@ internal fun LibraryScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopBarWithProgress(busy, onStop = onStop) {
+            // Home's title is the greeting, so the banner carries the task's words there; the other titles show them.
+            TopBarWithProgress(busy, onStop = onStop, status = if (isHome) busyLabel else null) {
                 TopAppBar(
                     colors = topBarColors,
                     scrollBehavior = scrollBehavior,
@@ -494,7 +499,7 @@ internal fun LibraryScreen(
                                 stringResource(R.string.lib_title_files),
                                 when {
                                     busy -> busyLabel
-                                    overview.documentCount == 0 -> null
+                                    overview.documentCount == 0 || onPhoneTab -> null
                                     else -> pluralStringResource(R.plurals.lib_document_count, overview.documentCount, overview.documentCount)
                                 }
                             )
@@ -572,12 +577,12 @@ internal fun LibraryScreen(
                                 }
                             }
                         } else {
-                            if (!isSearch && !isHome) {
+                            if (!isSearch && !isHome && !onPhoneTab) {
                                 IconButton(onClick = onSearch) {
                                     Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.common_search))
                                 }
                             }
-                            if (!isHome) Box {
+                            if (!isHome && !onPhoneTab) Box {
                                 IconButton(onClick = { sortMenuOpen = true }) {
                                     Icon(Icons.AutoMirrored.Rounded.Sort, contentDescription = stringResource(R.string.lib_cd_sort))
                                 }
@@ -606,7 +611,7 @@ internal fun LibraryScreen(
                                     }
                                 }
                             }
-                            if (mode == ScanProDestinations.FILES) IconButton(onClick = { onGridChange(!gridMode) }) {
+                            if (mode == ScanProDestinations.FILES && !onPhoneTab) IconButton(onClick = { onGridChange(!gridMode) }) {
                                 Icon(
                                     if (gridMode) Icons.AutoMirrored.Rounded.ViewList else Icons.Rounded.GridView,
                                     contentDescription = stringResource(if (gridMode) R.string.lib_cd_show_as_list else R.string.lib_cd_show_as_grid)
@@ -725,8 +730,8 @@ internal fun LibraryScreen(
                             }
                         }
                     }
-                    if (phoneFilesPane != null && phoneFilesTab && !selecting) {
-                        phoneFilesPane()
+                    if (onPhoneTab && !selecting) {
+                        phoneFilesPane?.invoke()
                         return@Column
                     }
                     if (isSearch) {

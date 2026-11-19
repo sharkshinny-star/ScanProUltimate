@@ -46,11 +46,11 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 <!-- BEGIN open-items: written by scripts/remaining-work.py from AUDIT_FINDINGS.md; do not edit by hand -->
 
-35 open items: 13 P1, 17 P2, 5 P3.
+36 open items: 13 P1, 18 P2, 5 P3.
 
 ### P1
 
-- **R87** (Device check; F221–F223). The 2026-11-19 animation, layout, rating and How-it-works changes were checked with rendered screens and unit tests only; no frame of motion was seen.
+- **R88** (Device check; F222–F224). The 2026-11-19 animation, layout, rating and How-it-works changes were checked with rendered screens and unit tests only; no frame of motion was seen.
   - Next: On a phone, release build: switch tabs and watch the highlight move; in the review of a 3-page scan switch Crop, Filters, Adjust, Reorder (page glides, no jump), in portrait and landscape; pick each filter (no cut border); open the camera from Home's QR code and Book pills (mode underlined and in view); save a scan and rate it with 5, then (Settings > Rate) with 2 stars (thanks at once; problem form, email opens with the rating line); after Clear data, open Merge and Compress (How it works open the first time, folded the second).
 - **R81** (Device check; F213). Detection changes measured on the desktop benchmark only (generated scenes, no real camera frames); the owner's report (paper, book, ID card, jumpy outline) was not reproduced on a phone.
   - Next: On the phone, release build: (1) an ID card on wood, on a dark desk and in the hand, in Document mode and ID card mode: outline on the whole card, not below its header band; ID card mode saves the card alone when it is outlined, the guide's contents otherwise; (2) an open book: one steady outline, no flipping between one page and the spread; (3) a page lying still: outline does not tremble, does not blink off on a blurred frame, and follows a moved phone without lag; (4) `ScanProAnalyzer` frame rate still smooth (colour edges and the wider straight-edge search add about 1.5 to 4 ms a frame on the desktop). If anything is still wrong, ask for 3 or 4 photos of it from the phone's own camera and run them through `scripts/scan-bench`.
@@ -79,6 +79,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P2
 
+- **R87** (Device check (F221); `core/designsystem/Components.kt` (`TaskBanner`), …). The task banner and the bar above it were looked at as two still renders only, never moving or on a phone. The Files change (no search, sort or grid switch in the top bar while On this phone shows) compiles and the unit suite passes, but was not rendered or seen.
+  - Next: On a phone: start a long task (Re-read text on a long document, or import a large PDF) and look at Home, Files and the document screen: after 0.7 s the banner slides open with the task's words and Stop, the bar sweeps without an empty moment, Stop stops the task and the banner closes. Files › On this phone: the top bar shows the title and the menu only; My documents still has search, sort and the grid switch. Ask the owner for a screenshot of the screen that looks cluttered before changing more.
 - **R86** (Device check (F219); `feature/tools/ProcessingOverlay.kt`, `core/designsystem/LoadingAnimations.kt`, …). The progress card's new layout, arrival, two-second minimum and finish were checked with unit tests and JVM renders only (eleven still frames looked at).
   - Next: On a phone, release build: (1) a quick tool on a small PDF (Rotate, Protect, Compress): the card stays about two seconds, the ring closes to 100% with the figure counting up, the tick is drawn, "Done" stands where Cancel was, then the result shows; say whether two seconds feels right when several quick tools are run one after another; (2) Merge several large files: real progress, then the short 0.7 s finish; (3) Cancel and Back still ask while the tool works and do nothing during the finish; (4) the card is centred upright, shows the dial beside the text with the phone on its side, and is larger on a tablet; largest font size; (5) with animations turned off (Developer options) the card neither arrives nor waits; (6) Images to PDF: the small veil animation (light behind the page) still looks right.
 - **R83** (Device check; F215). Small items compiled and unit-tested in CI only.
