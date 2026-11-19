@@ -904,8 +904,9 @@ fun PdfToolsScreen(
             if (showEditPdf && uri != null) {
                 EditPdfTextEditor(
                     uri = uri,
+                    suggestedName = remember(uri) { viewModel.displayName(uri) + " edited" },
                     onDismiss = { showEditPdf = false },
-                    onSave = { edits -> showEditPdf = false; viewModel.editPdfText(uri, edits) }
+                    onSave = { edits, name -> showEditPdf = false; viewModel.editPdfText(uri, edits, name) }
                 )
             }
 

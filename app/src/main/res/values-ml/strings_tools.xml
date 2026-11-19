@@ -541,7 +541,7 @@
     <string name="tools_tile_edit_pdf">PDF മാറ്റുക</string>
     <string name="tools_desc_edit_pdf">വാക്കുകൾ, ഫോണ്ട്, ബോൾഡ്, വലുപ്പം മാറ്റുക</string>
     <string name="hint_tool_edit_pdf">ടെക്സ്റ്റിന്റെ ഏത് വരിയിലും ടാപ്പ് ചെയ്ത് വാക്കുകൾ, ഫോണ്ട്, ബോൾഡ്, ഇറ്റാലിക് അല്ലെങ്കിൽ വലുപ്പം മാറ്റാം. നിങ്ങൾ ടൈപ്പ് ചെയ്യുന്ന അക്ഷരങ്ങൾ PDF-ന്റെ ഫോണ്ടിൽ ഉണ്ടെങ്കിൽ അതേ ഫോണ്ട് നിലനിൽക്കും. പുതിയ PDF സേവ് ചെയ്യും; ഒറിജിനൽ മാറില്ല.</string>
-    <string name="tools_edit_hint">മാറ്റാൻ ഏത് ടെക്സ്റ്റിലും ടാപ്പ് ചെയ്യുക</string>
+    <string name="tools_edit_hint">മാറ്റാൻ ഏത് ടെക്സ്റ്റിലും ടാപ്പ് ചെയ്യുക. സൂം ചെയ്യാൻ പിഞ്ച് ചെയ്യുക.</string>
     <string name="tools_edit_save">PDF സേവ് ചെയ്യുക</string>
     <string name="tools_edit_no_text">ഈ പേജിൽ ടെക്സ്റ്റ് ഇല്ല. സ്കാൻ ചെയ്ത പേജ് ഒരു ചിത്രമാണ്: ആദ്യം \"തിരയാവുന്നതാക്കുക\" ഉപയോഗിക്കുക.</string>
     <string name="tools_edit_err_open">ഈ PDF മാറ്റാൻ തുറക്കാനായില്ല.</string>
@@ -607,4 +607,34 @@
     <string name="tools_edit_wrap">നീണ്ട ടെക്സ്റ്റ് അടുത്ത വരിയിലേക്ക്</string>
     <string name="tools_edit_align_hint">ഇടത്, നടുവിൽ, വലത് എന്നിവ പുതിയ വാക്കുകൾ പഴയവ ഉണ്ടായിരുന്നിടത്ത് വയ്ക്കുന്നു. പേജിനേക്കാൾ നീണ്ട ടെക്സ്റ്റ് അടുത്ത വരികളിലേക്ക് പോകും; താഴെയുള്ള വരികൾ നീങ്ങില്ല.</string>
     <string name="tools_edit_align_hint_new">ഇടത്: നിങ്ങൾ ടാപ്പ് ചെയ്തിടത്ത് വാക്കുകൾ തുടങ്ങും; നടുവിൽ: അവിടെ നടുവിലാകും; വലത്: അവിടെ അവസാനിക്കും. പേജിനേക്കാൾ നീണ്ട ടെക്സ്റ്റ് അടുത്ത വരികളിലേക്ക് പോകും.</string>
+    <string name="tools_edit_find_replace">കണ്ടെത്തി മാറ്റുക</string>
+    <string name="tools_edit_find_label">കണ്ടെത്തുക</string>
+    <string name="tools_edit_replace_label">ഇതുകൊണ്ട് മാറ്റുക</string>
+    <string name="tools_edit_match_case">വലിയ-ചെറിയ അക്ഷരം ഒത്തുനോക്കുക</string>
+    <string name="tools_edit_replace_all">എല്ലാം മാറ്റുക</string>
+    <string name="tools_edit_no_matches">\"%1$s\" എന്നതുമായി ചേരുന്ന ടെക്സ്റ്റ് ഇല്ല.</string>
+    <string name="tools_edit_redo">വീണ്ടും ചെയ്യുക</string>
+    <string name="tools_edit_changes_title">മാറ്റങ്ങൾ</string>
+    <string name="tools_edit_change_page">പേജ് %1$d</string>
+    <string name="tools_edit_change_added">ചേർത്തു</string>
+    <string name="tools_edit_change_deleted">മായ്ച്ചു</string>
+    <string name="tools_edit_change_remove">ഈ മാറ്റം നീക്കുക</string>
+    <string name="tools_edit_save_title">മാറ്റിയ PDF സേവ് ചെയ്യുക</string>
+    <string name="tools_edit_save_name">ഫയലിന്റെ പേര്</string>
+    <string name="tools_edit_save_note">നിങ്ങളുടെ മാറ്റങ്ങളോടെ പുതിയ PDF സേവ് ചെയ്യും. ഒറിജിനൽ മാറില്ല.</string>
+    <string name="tools_edit_move">നീക്കുക</string>
+    <string name="tools_edit_move_left">ഇടത്തേക്ക് നീക്കുക</string>
+    <string name="tools_edit_move_right">വലത്തേക്ക് നീക്കുക</string>
+    <string name="tools_edit_move_up">മുകളിലേക്ക് നീക്കുക</string>
+    <string name="tools_edit_move_down">താഴേക്ക് നീക്കുക</string>
+    <string name="tools_edit_zoom_reset">മുഴുവൻ പേജ്</string>
+    <string name="tools_edit_find_hint">ഈ PDF-ൽ എല്ലായിടത്തും വാക്കുകൾ മാറ്റുന്നു; ഓരോ വരിയുടെയും ഫോണ്ട് അതേപടി നിൽക്കും.</string>
+    <plurals name="tools_edit_replaced">
+        <item quantity="one">%1$d വരിയിൽ മാറ്റി.</item>
+        <item quantity="other">%1$d വരികളിൽ മാറ്റി.</item>
+    </plurals>
+    <plurals name="tools_edit_changes">
+        <item quantity="one">%1$d മാറ്റം</item>
+        <item quantity="other">%1$d മാറ്റങ്ങൾ</item>
+    </plurals>
 </resources>

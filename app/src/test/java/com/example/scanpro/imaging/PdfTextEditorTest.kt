@@ -350,4 +350,25 @@ class PdfTextEditorTest {
         assertEquals(listOf("a", "", "b c"), PdfTextEditor.layout("a\n\nb c", null, width))
         assertEquals(listOf("no wrapping here at all"), PdfTextEditor.layout("no wrapping here at all", null, width))
     }
+    @Test fun aMovedLineSitsWhereItWasMovedTo() {
+        sample().use { doc0 ->
+            val hello = PdfTextEditor.spans(doc0, 0)[0]
+            PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, hello.index, "Hello World", bold = false, italic = false, size = 12f, dx = 30f, dy = -8f)))
+            reload(doc0).use { doc ->
+                val after = PdfTextEditor.spans(doc, 0).filter { it.text == "Hello World" }
+                assertEquals("the old words are gone, not doubled", 1, after.size)
+                assertEquals(hello.left + 30f, after[0].left, 0.5f)
+                assertEquals(hello.bottom - 8f, after[0].bottom, 0.5f)
+            }
+        }
+    }
+
+    @Test fun replaceInTakesTheQueryAsPlainText() {
+        assertEquals("Total: 200 (200)", PdfTextEditor.replaceIn("Total: 100 (100)", "100", "200", matchCase = true))
+        assertEquals("Dear Ms Rao", PdfTextEditor.replaceIn("Dear mr Rao", "MR", "Ms", matchCase = false))
+        assertEquals(null, PdfTextEditor.replaceIn("Dear mr Rao", "MR", "Ms", matchCase = true))
+        // Signs that mean something in a pattern are just letters here, in the query and in the replacement.
+        assertEquals("cost: $5", PdfTextEditor.replaceIn("cost: (a.b)", "(a.b)", "$5", matchCase = true))
+        assertEquals(null, PdfTextEditor.replaceIn("anything", "", "x", matchCase = false))
+    }
 }
