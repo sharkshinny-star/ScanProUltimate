@@ -56,7 +56,7 @@ import kotlin.math.sin
  */
 
 /** What a tool starts from, for the left-hand side of [ToolFlowIllustration]. */
-enum class HintInput { Pdf, Pdfs, Image, Images, Office }
+enum class HintInput { Pdf, Pdfs, Image, Images, Office, AnyFile }
 
 /**
  * What a tool does, as a little production line: the file it starts from on the left, dots flowing into the tool's
@@ -298,6 +298,7 @@ private fun DrawScope.drawToolInput(
     when (input) {
         HintInput.Pdf, HintInput.Pdfs -> drawFileLabel(measurer, "PDF", front, PdfMark)
         HintInput.Office -> drawFileLabel(measurer, "DOC", front, brand.gradientStart)
+        HintInput.AnyFile -> drawFileLabel(measurer, "FILE", front, brand.gradientStart)
         else -> Unit
     }
 }
@@ -338,6 +339,6 @@ private fun DrawScope.drawInputGlyph(rect: Rect, input: HintInput, brand: ScanPr
             drawSheet(rect, brand.paper, brand.ink, shadow, lines = 3)
             drawRoundRect(brand.gradientStart, rect.topLeft, Size(rect.width, rect.height * 0.12f), CornerRadius(rect.width * 0.08f))
         }
-        HintInput.Pdf, HintInput.Pdfs -> drawSheet(rect, brand.paper, brand.ink, shadow, lines = 4)
+        HintInput.Pdf, HintInput.Pdfs, HintInput.AnyFile -> drawSheet(rect, brand.paper, brand.ink, shadow, lines = 4)
     }
 }

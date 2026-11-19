@@ -198,6 +198,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.exifinterface)
+    // File info and metadata (F243): every tag of pictures, RAW, video and sound (read), and audio tags (write).
+    implementation(libs.metadata.extractor)
+    implementation(libs.jaudiotagger)
 
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)

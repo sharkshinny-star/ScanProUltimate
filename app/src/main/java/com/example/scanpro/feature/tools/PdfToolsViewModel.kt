@@ -120,6 +120,9 @@ data class BlankPagesFound(val uri: Uri, val pageCount: Int, val blankPages: Lis
 /** PDF info and metadata: the details of [uri] being looked at. */
 data class PdfInfoSession(val uri: Uri, val info: com.example.scanpro.imaging.PdfInfo)
 
+/** A file open in File info and metadata, with what was read from it. */
+data class FileInfoSession(val uri: Uri, val meta: com.example.scanpro.imaging.metadata.FileMetadata)
+
 /** Where unlocked working copies of protected PDFs live while a tool uses them; swept at start-up. */
 const val WORKING_COPY_DIR = "tool_input"
 
@@ -994,6 +997,42 @@ class PdfToolsViewModel @Inject constructor(
             val copies = chosen.filter { it.isFile }.map { it.copyTo(File(dir, it.name), overwrite = true) }
             previewDir.deleteRecursively()
             bundled(copies, "$base images", R.plurals.tools_ximg_done)()
+        }
+    }
+
+    private val _fileInfo = MutableStateFlow<FileInfoSession?>(null)
+    /** The file open in File info and metadata (F243). */
+    val fileInfo: StateFlow<FileInfoSession?> = _fileInfo.asStateFlow()
+    fun closeFileInfo() { _fileInfo.value = null }
+
+    fun openFileInfo(uri: Uri) = launchTool(R.string.meta_progress_reading, R.string.meta_err_read) {
+        _fileInfo.value = FileInfoSession(uri, com.example.scanpro.imaging.metadata.FileMetadataEngine.read(context, uri))
+        endedWithQuestion = true
+        null
+    }
+
+    /** Saves a copy of the open file with [edit] applied; the original is never changed. */
+    fun saveFileInfo(session: FileInfoSession, edit: com.example.scanpro.imaging.metadata.MetadataEdit) {
+        _fileInfo.value = null
+        launchTool(R.string.meta_progress_saving, R.string.meta_err_save) {
+            val meta = session.meta
+            // The copy keeps the file's own extension, so it opens in the same apps.
+            val ext = meta.fileName.substringAfterLast('.', "").takeIf { it.isNotBlank() && it.length <= 8 } ?: meta.format.extension.ifBlank { "bin" }
+            val suffix = when {
+                edit.removeAll -> "no metadata"
+                edit.removeLocation -> "no location"
+                edit.removePersonal -> "no personal details"
+                else -> "edited"
+            }
+            com.example.scanpro.imaging.metadata.FileMetadataEngine.write(context, session.uri, meta, edit, named(session.uri, suffix, ext))
+        }
+    }
+
+    /** Writes the open file's details as JSON or CSV. */
+    fun exportFileInfo(session: FileInfoSession, json: Boolean) {
+        _fileInfo.value = null
+        launchTool(R.string.meta_progress_exporting, R.string.meta_err_export) {
+            com.example.scanpro.imaging.metadata.FileMetadataEngine.export(session.meta, json, named(session.uri, "details", if (json) "json" else "csv"))
         }
     }
 

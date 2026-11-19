@@ -20,6 +20,7 @@ internal class ToolIntro(@StringRes val description: Int, val input: HintInput) 
             HintInput.Image -> R.string.hint_tool_step_pick_image
             HintInput.Images -> R.string.hint_tool_step_pick_images
             HintInput.Office -> R.string.hint_tool_step_pick_office
+            HintInput.AnyFile -> R.string.hint_tool_step_pick_any
         }
 }
 
@@ -59,7 +60,7 @@ internal fun toolIntro(toolId: String): ToolIntro? = when (toolId) {
     "nup" -> ToolIntro(R.string.hint_tool_nup, HintInput.Pdf)
     "header_footer" -> ToolIntro(R.string.hint_tool_header_footer, HintInput.Pdf)
     "extract_images" -> ToolIntro(R.string.hint_tool_extract_images, HintInput.Pdf)
-    "pdf_info" -> ToolIntro(R.string.hint_tool_pdf_info, HintInput.Pdf)
+    "pdf_info" -> ToolIntro(R.string.hint_tool_pdf_info, HintInput.AnyFile)
     else -> null
 }
 

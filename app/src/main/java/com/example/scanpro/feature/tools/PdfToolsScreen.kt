@@ -150,6 +150,7 @@ fun PdfToolsScreen(
     var showHeaderFooterDialog by rememberSaveable { mutableStateOf(false) }
     val blankPagesFound by viewModel.blankPages.collectAsStateWithLifecycle()
     val pdfInfo by viewModel.pdfInfo.collectAsStateWithLifecycle()
+    val fileInfo by viewModel.fileInfo.collectAsStateWithLifecycle()
 
     var activeCropSourcePath by rememberSaveable { mutableStateOf<String?>(null) }
     var activeCropUri by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -313,7 +314,7 @@ fun PdfToolsScreen(
             "nup" -> showNupDialog = true
             "header_footer" -> showHeaderFooterDialog = true
             "extract_images" -> showExtractImagesPage = true
-            "pdf_info" -> viewModel.openPdfInfo(uri)
+            "pdf_info" -> viewModel.openFileInfo(uri)
         }
     }
     fun startTool(tool: String, uri: Uri) {
@@ -333,6 +334,10 @@ fun PdfToolsScreen(
     }
     val officePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) officeUri = uri
+    }
+    // File info and metadata (F243) takes any file, not only PDFs, and opens it straight away.
+    val anyFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) viewModel.openFileInfo(uri)
     }
     val printFallback by viewModel.printFallback.collectAsStateWithLifecycle()
     val activityContext = LocalContext.current
@@ -435,6 +440,7 @@ fun PdfToolsScreen(
             "merge" -> multiPdfPicker.launch(arrayOf("application/pdf"))
             "img2pdf" -> imagesPicker.launch("image/*")
             "office" -> officePicker.launch(OFFICE_MIME_TYPES)
+            "pdf_info" -> anyFilePicker.launch(arrayOf("*/*"))
             "crop_img", "compress_img", "resize_img" -> singleImagePicker.launch("image/*")
             "convert_img" -> multiImagePicker.launch("image/*")
             else -> singlePdfPicker.launch(arrayOf("application/pdf"))
@@ -929,6 +935,18 @@ fun PdfToolsScreen(
                 )
             }
 
+            fileInfo?.let { session ->
+                // Keyed by the file, so pending edits never carry over to the next file.
+                key(session.uri) {
+                    FileInfoScreen(
+                        session = session,
+                        onDismiss = viewModel::closeFileInfo,
+                        onSave = { edit -> viewModel.saveFileInfo(session, edit) },
+                        onExport = { json -> viewModel.exportFileInfo(session, json) }
+                    )
+                }
+            }
+
             pdfInfo?.let { session ->
                 // Keyed by the file, so the fields start from its details and not from the last PDF's edits.
                 key(session.uri) {
@@ -1146,7 +1164,11 @@ internal fun mimeFor(file: File): String = when (file.extension.lowercase()) {
     "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-    else -> "application/pdf"
+    "pdf" -> "application/pdf"
+    "json" -> "application/json"
+    "csv" -> "text/csv"
+    // Any other file a tool hands back (File info saves copies of every kind): its own type, never "PDF" by default.
+    else -> android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase()) ?: "application/octet-stream"
 }
 
 /** Keeps the files picked for Merge or Images to PDF through a rotation (null when nothing is picked). */

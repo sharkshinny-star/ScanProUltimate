@@ -191,7 +191,7 @@ private val TOOL_KEYWORDS = mapOf(
     "redact_box" to "black out draw box area rectangle hide picture photo signature stamp cover region",
     "header_footer" to "header footer top bottom title date stamp text every page",
     "extract_images" to "pictures photos jpg png save get images",
-    "pdf_info" to "metadata properties details title author privacy remove clean exif producer",
+    "pdf_info" to "metadata properties details title author privacy remove clean exif producer file info photo picture gps location camera music mp3 tags id3 video codec docx word excel powerpoint epub zip json csv",
     "crop_img" to "trim cut photo",
     "compress_img" to "shrink reduce photo kb mb size",
     "convert_img" to "jpg jpeg png webp format change",
