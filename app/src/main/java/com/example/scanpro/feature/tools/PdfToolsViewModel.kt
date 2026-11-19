@@ -977,6 +977,20 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Saves only the pictures the person ticked in the picker. They were already extracted to [previewDir] for the
+     * picker, so nothing is read from the PDF again: the chosen ones are copied into a fresh folder (the result
+     * bundle deletes its inputs), then the whole preview folder goes.
+     */
+    fun saveChosenImages(uri: Uri, previewDir: File, chosen: List<File>) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        inScratchDir("$base images") { dir ->
+            val copies = chosen.filter { it.isFile }.map { it.copyTo(File(dir, it.name), overwrite = true) }
+            previewDir.deleteRecursively()
+            bundled(copies, "$base images", R.plurals.tools_ximg_done)()
+        }
+    }
+
     private val _pdfInfo = MutableStateFlow<PdfInfoSession?>(null)
     /** The details of the PDF open in PDF info and metadata. */
     val pdfInfo: StateFlow<PdfInfoSession?> = _pdfInfo.asStateFlow()

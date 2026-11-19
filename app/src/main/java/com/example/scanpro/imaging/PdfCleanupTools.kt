@@ -623,6 +623,9 @@ object PdfCleanupTools {
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
+    /** One saved picture and the 1-based page it was first found on. */
+    class ExtractedImage(val file: File, val page: Int)
+
     suspend fun extractImages(
         context: Context,
         inputUri: Uri,
@@ -630,7 +633,16 @@ object PdfCleanupTools {
         onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
         /** Told how many pictures could not be decoded on this phone (JPEG 2000, JBIG2), so the result can say so. */
         onSkipped: (count: Int) -> Unit = {}
-    ): List<File> = withContext(BackgroundWork.tools) {
+    ): List<File> = extractImagesWithPages(context, inputUri, outputDir, onProgress, onSkipped).map { it.file }
+
+    /** [extractImages], each picture with its page, so the picker can say where a picture came from. */
+    suspend fun extractImagesWithPages(
+        context: Context,
+        inputUri: Uri,
+        outputDir: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        onSkipped: (count: Int) -> Unit = {}
+    ): List<ExtractedImage> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "ximg_in_${UUID.randomUUID()}.pdf")
         val base = PdfToolsEngine.sourceBaseName(context, inputUri)
@@ -638,7 +650,7 @@ object PdfCleanupTools {
             PdfToolsEngine.loadPdf(temp).use { doc ->
                 val total = doc.numberOfPages
                 val seen = HashSet<COSBase>()
-                val files = mutableListOf<File>()
+                val files = mutableListOf<ExtractedImage>()
                 // The same picture embedded twice as separate objects (a logo on every page of a merged PDF) is saved
                 // once: identical bytes, identical file.
                 val digests = HashSet<String>()
@@ -656,7 +668,7 @@ object PdfCleanupTools {
                             if (!tiny) skipped++
                             continue
                         }
-                        if (digests.add(digestOf(saved))) files += saved else saved.delete()
+                        if (digests.add(digestOf(saved))) files += ExtractedImage(saved, i + 1) else saved.delete()
                     }
                 }
                 if (skipped > 0) onSkipped(skipped)

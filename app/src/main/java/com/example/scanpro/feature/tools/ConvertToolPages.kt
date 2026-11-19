@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -734,14 +736,34 @@ private fun officeKeptHint(kind: OfficeToHtml.Kind): Int = when (kind) {
 // Extract images
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Extract images' page: how many pictures the PDF holds, in which formats and about how large, before saving them. */
+/**
+ * Extract images' page: how many pictures the PDF holds, in which formats and about how large, before saving them.
+ * "Choose pictures" opens a picker to save only some; left alone, every picture is saved as before.
+ */
 @Composable
-internal fun ExtractImagesPage(uri: Uri, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+internal fun ExtractImagesPage(
+    uri: Uri,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    /** Called with the picker's folder and the chosen files; the folder is the caller's to clean up from then on. */
+    onConfirmChosen: (previewDir: File, chosen: List<File>) -> Unit
+) {
     val facts by rememberPdfFacts(uri)
     val surveyed by rememberPdfSurvey(uri) { PdfImageSurvey.of(it) }
     val result = surveyed
     val survey = (result as? Survey.Ready<PdfImageSurvey>)?.value
-    val pictures = survey?.pictures ?: 0
+    var preview by remember(uri) { mutableStateOf<ExtractPreview?>(null) }
+    var chosen by remember(uri) { mutableStateOf<Set<Int>>(emptySet()) }
+    var pickerOpen by remember(uri) { mutableStateOf(false) }
+    var handedOver by remember(uri) { mutableStateOf(false) }
+    // Pictures saved only for the picker are removed again when the page closes without using them.
+    DisposableEffect(uri) {
+        onDispose { if (!handedOver) preview?.dir?.deleteRecursively() }
+    }
+    val picked = preview
+    val surveyPictures = survey?.pictures ?: 0
+    // Once the picker has run, its count (which also drops unreadable pictures) is the truth.
+    val pictures = if (picked != null) chosen.size else surveyPictures
     val formats = survey?.let { s ->
         listOfNotNull(
             s.jpeg.takeIf { it > 0 }?.let { "$it JPG" },
@@ -753,13 +775,19 @@ internal fun ExtractImagesPage(uri: Uri, onDismiss: () -> Unit, onConfirm: () ->
         title = stringResource(R.string.tools_card_extract_images),
         onClose = onDismiss,
         actionLabel = if (pictures > 0) pluralStringResource(R.plurals.cvt_ximg_action, pictures, pictures) else stringResource(R.string.tools_card_extract_images),
-        onAction = onConfirm,
+        onAction = {
+            if (picked != null) {
+                handedOver = true
+                onConfirmChosen(picked.dir, picked.images.filterIndexed { index, _ -> index in chosen }.map { it.file })
+            } else onConfirm()
+        },
         actionEnabled = pictures > 0,
         actionSupport = when (result) {
             null -> stringResource(R.string.cvt_ximg_looking)
             Survey.Locked -> stringResource(R.string.cvt_pdf_locked)
             Survey.Failed -> stringResource(R.string.cvt_pdf_unreadable)
-            is Survey.Ready -> if (pictures == 0) stringResource(R.string.tools_ximg_err_none)
+            is Survey.Ready -> if (surveyPictures == 0) stringResource(R.string.tools_ximg_err_none)
+                else if (pictures == 0) stringResource(R.string.cvt_ximg_none_ticked)
                 else if (pictures > 1) stringResource(R.string.cvt_ximg_zip) else null
         },
         demoToolId = "extract_images"
@@ -768,20 +796,59 @@ internal fun ExtractImagesPage(uri: Uri, onDismiss: () -> Unit, onConfirm: () ->
         facts?.let { before ->
             val after = when {
                 result == null -> null
-                survey == null || pictures == 0 -> PdfOutcome(pages = null, bytes = null)
-                else -> PdfOutcome(pages = pictures, bytes = survey.storedBytes, approximate = true, files = pictures, pagesLabel = formats)
+                survey == null || surveyPictures == 0 || pictures == 0 -> PdfOutcome(pages = null, bytes = null)
+                // A subset is sized in proportion: the pictures differ, so this stays an approximation.
+                else -> PdfOutcome(pages = pictures, bytes = survey.storedBytes * pictures / surveyPictures, approximate = true, files = pictures, pagesLabel = formats.takeIf { picked == null })
             }
             PdfOutcomeRow(before, after)
         }
-        if (survey != null && pictures > 0) {
+        // Keyed on what the PDF holds, not on what is ticked: with nothing ticked the picker must stay reachable.
+        if (survey != null && surveyPictures > 0) {
             FactsCard {
-                FactRow(stringResource(R.string.cvt_ximg_fact_pictures), pictures.toString())
+                FactRow(stringResource(R.string.cvt_ximg_fact_pictures), surveyPictures.toString())
                 FactRow(stringResource(R.string.cvt_ximg_fact_pages), survey.pagesWithPictures.toString())
                 if (!formats.isNullOrEmpty()) FactRow(stringResource(R.string.cvt_ximg_fact_formats), formats)
             }
+            ChoosePicturesRow(
+                summary = when {
+                    picked == null -> stringResource(R.string.cvt_ximg_choose_unopened)
+                    chosen.size == picked.images.size -> stringResource(R.string.cvt_ximg_all_selected, picked.images.size)
+                    else -> stringResource(R.string.cvt_ximg_selected_of, chosen.size, picked.images.size)
+                },
+                onClick = { pickerOpen = true }
+            )
             ToolHint(stringResource(R.string.cvt_ximg_hint))
             if (survey.tiny > 0) ToolHint(pluralStringResource(R.plurals.cvt_ximg_tiny, survey.tiny, survey.tiny))
             if (survey.maybeUnreadable > 0) ImageToolNotice(pluralStringResource(R.plurals.cvt_ximg_unreadable, survey.maybeUnreadable, survey.maybeUnreadable))
+        }
+    }
+    if (pickerOpen) {
+        ExtractImagesPicker(
+            uri = uri,
+            preview = preview,
+            selected = chosen,
+            onLoaded = { loaded -> preview = loaded; chosen = loaded.images.indices.toSet() },
+            onSelectedChange = { chosen = it },
+            onDismiss = { pickerOpen = false }
+        )
+    }
+}
+
+/** The row under the facts that opens the picture picker, with what is selected now. */
+@Composable
+private fun ChoosePicturesRow(summary: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.cvt_ximg_choose_title), style = MaterialTheme.typography.titleMedium)
+                Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

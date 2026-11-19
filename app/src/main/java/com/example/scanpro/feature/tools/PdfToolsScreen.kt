@@ -699,7 +699,8 @@ fun PdfToolsScreen(
                 ExtractImagesPage(
                     uri = uri,
                     onDismiss = { showExtractImagesPage = false },
-                    onConfirm = { showExtractImagesPage = false; viewModel.extractImages(uri) }
+                    onConfirm = { showExtractImagesPage = false; viewModel.extractImages(uri) },
+                    onConfirmChosen = { dir, chosen -> showExtractImagesPage = false; viewModel.saveChosenImages(uri, dir, chosen) }
                 )
             }
 
