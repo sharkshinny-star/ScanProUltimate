@@ -95,8 +95,18 @@
     <string name="settings_smart_titles_title">Smart titles</string>
     <string name="settings_smart_titles_body">Name new scans from the text they contain</string>
     <string name="settings_name_pattern_title">Name pattern</string>
-    <string name="settings_name_pattern_body">Automatic, or your own with {text}, {mode}, {date} and {time}, e.g. \"{mode} {date}\"</string>
+    <string name="settings_name_pattern_body">Leave it automatic, pick a suggestion, or write your own: type any words and add tags where the details go.</string>
     <string name="settings_name_pattern_label">Pattern</string>
+    <string name="name_pattern_example">Next scan: %1$s</string>
+    <string name="name_pattern_unknown">Not a tag, kept as typed: %1$s</string>
+    <string name="name_pattern_add_tag">Add a tag</string>
+    <string name="name_pattern_tag_text">Page text</string>
+    <string name="name_pattern_tag_mode">Scan type</string>
+    <string name="name_pattern_tag_date">Date</string>
+    <string name="name_pattern_tag_time">Time</string>
+    <string name="name_pattern_suggestions">Suggestions</string>
+    <!-- A made-up first line of a page, used only to show what a name pattern would give. -->
+    <string name="name_pattern_sample_text">Invoice Acme</string>
     <string name="settings_app_lock_title">App lock</string>
     <string name="settings_app_lock_body">Unlock with fingerprint, face or your screen lock</string>
     <string name="settings_share_with_friends">Share ScanPro</string>

@@ -15,7 +15,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.example.scanpro.R
-import com.example.scanpro.core.designsystem.TextInputDialog
 import com.example.scanpro.data.OcrScript
 import com.example.scanpro.data.PageFilter
 import com.example.scanpro.data.PdfQuality
@@ -97,25 +96,22 @@ internal fun ScanningPage(
     }
 
     SettingsGroup(header = stringResource(R.string.settings_group_advanced)) {
-        // Name pattern (R34): tokens {text} {mode} {date} {time}; blank keeps the automatic name.
+        // Name pattern (R34): tokens {text} {mode} {date} {time}; blank keeps the automatic name. The summary
+        // shows the name a scan would get, not the braces.
         var patternOpen by rememberSaveable { mutableStateOf(false) }
+        val sample = rememberNamePatternSample()
         SettingsRow(
             title = stringResource(R.string.settings_name_pattern_title),
             icon = Icons.Rounded.DriveFileRenameOutline,
-            summary = namePattern.ifBlank { stringResource(R.string.settings_default_filter_automatic) },
+            summary = if (namePattern.isBlank()) stringResource(R.string.settings_default_filter_automatic)
+                else stringResource(R.string.name_pattern_example, sample.name(namePattern)),
             summaryMaxLines = 1,
             onClick = { patternOpen = true }
         )
         if (patternOpen) {
-            // The explanation that used to be a three-line hint under the row now sits above the field.
-            TextInputDialog(
-                title = stringResource(R.string.settings_name_pattern_title),
-                initial = namePattern,
-                label = stringResource(R.string.settings_name_pattern_label),
-                allowBlank = true,
-                message = stringResource(R.string.settings_name_pattern_body),
-                onDismiss = { patternOpen = false }
-            ) { onNamePatternChange(it); patternOpen = false }
+            NamePatternDialog(initial = namePattern, onDismiss = { patternOpen = false }) {
+                onNamePatternChange(it); patternOpen = false
+            }
         }
     }
 }

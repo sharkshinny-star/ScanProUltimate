@@ -87,7 +87,9 @@ internal fun CompressImageDialog(
     onCrop: () -> Unit,
     onConfirm: (ImageCompressConfig) -> Unit
 ) {
-    val image by rememberLoadedImage(context, uri)
+    val load by rememberImageLoad(context, uri)
+    val image = (load as? ImageLoad.Ready)?.image
+    val unreadable = load is ImageLoad.Failed
     // 0: a target size; 1: a quality.
     var mode by rememberSaveable { mutableIntStateOf(0) }
     // 0 until the person picks: then a preset in kB, or -1 for a typed size.
@@ -145,15 +147,20 @@ internal fun CompressImageDialog(
         },
         actionEnabled = img != null && !targetTooBig && !targetMissing,
         actionSupport = when {
+            unreadable -> stringResource(R.string.img_tool_unreadable_short)
             targetTooBig -> stringResource(R.string.tools_compress_err_target_larger, formatBytes(context, originalBytes))
             targetMissing -> stringResource(R.string.tools_compress_err_target_positive)
             else -> null
         }
     ) {
-        ImagePreviewCard(img, estimate, onCrop, loading = img != null && estimate == null && !targetMissing)
+        ImagePreviewCard(img, estimate, onCrop, loading = img != null && estimate == null && !targetMissing, failed = unreadable)
         if (img != null) BeforeAfterRow(context, img, estimate, format)
         val noGain = img != null && originalBytes > 0 && estimate?.let { it.bytes >= originalBytes } == true
-        if (noGain) ImageToolNotice(stringResource(R.string.img_compress_no_gain))
+        if (noGain) ImageToolNotice(
+            // The original is kept only when the format stays the same; in another format the larger file is written.
+            if (img?.format == format) stringResource(R.string.img_compress_no_gain)
+            else stringResource(R.string.img_compress_larger_as, formatLabel(format))
+        )
 
         ToolSection(stringResource(R.string.img_section_make_smaller)) {
             SegmentedChoice(
@@ -193,6 +200,9 @@ internal fun CompressImageDialog(
                     )
                 }
                 ToolHint(stringResource(R.string.img_compress_target_hint))
+            } else if (format == ImageExportFormat.PNG) {
+                // PNG keeps every pixel, so there is no quality to lower: only the resolution below changes its size.
+                ToolHint(stringResource(R.string.img_compress_png_no_quality))
             } else {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(85 to R.string.img_quality_high, 70 to R.string.img_quality_balanced, 45 to R.string.img_quality_small).forEach { (q, label) ->
@@ -221,12 +231,12 @@ internal fun CompressImageDialog(
 
         ToolSection(stringResource(R.string.img_section_format)) {
             SegmentedChoice(
-                options = listOf(ImageExportFormat.JPEG to "JPG", ImageExportFormat.WEBP to "WebP"),
+                options = listOf(ImageExportFormat.JPEG to "JPG", ImageExportFormat.PNG to "PNG", ImageExportFormat.WEBP to "WebP"),
                 selected = format,
                 onSelect = { pickedFormat = it }
             )
             if (img?.transparent == true && format == ImageExportFormat.JPEG) ImageToolNotice(stringResource(R.string.img_transparency_white))
-            ToolHint(stringResource(R.string.tools_compress_img_help))
+            ToolHint(stringResource(if (format == ImageExportFormat.PNG) R.string.img_compress_png_hint else R.string.tools_compress_img_help))
         }
     }
 }
@@ -241,7 +251,9 @@ internal fun ConvertImageDialog(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val single = uris.size == 1
-    val image by rememberLoadedImage(context, uris.first())
+    val load by rememberImageLoad(context, uris.first())
+    val image = (load as? ImageLoad.Ready)?.image
+    val unreadable = load is ImageLoad.Failed
     // Null until picked: then a format, or PDF (exportPdf).
     var pickedFormat by rememberSaveable { mutableStateOf<ImageExportFormat?>(null) }
     var exportPdf by rememberSaveable { mutableStateOf(false) }
@@ -273,10 +285,11 @@ internal fun ConvertImageDialog(
         actionLabel = if (exportPdf) stringResource(R.string.img_convert_make_pdf) else stringResource(R.string.img_convert_action, formatLabel(format)),
         onAction = { if (exportPdf) onConvertToPdf() else onConfirm(format, chosenQuality) },
         actionEnabled = !sameFormat && (img != null || !single),
-        actionSupport = if (sameFormat) stringResource(R.string.img_convert_already, formatLabel(source)) else null
+        actionSupport = if (single && unreadable) stringResource(R.string.img_tool_unreadable_short)
+            else if (sameFormat) stringResource(R.string.img_convert_already, formatLabel(source)) else null
     ) {
         if (single) {
-            ImagePreviewCard(img, estimate, onCrop = { onCropImage(0) }, loading = img != null && estimate == null && !exportPdf)
+            ImagePreviewCard(img, estimate, onCrop = { onCropImage(0) }, loading = img != null && estimate == null && !exportPdf, failed = unreadable)
             if (img != null && !exportPdf) BeforeAfterRow(context, img, estimate, format)
         } else {
             ToolSection(pluralStringResource(R.plurals.img_pictures_count, uris.size, uris.size)) {
@@ -433,7 +446,9 @@ internal fun ResizeImageDialog(
     onCrop: () -> Unit,
     onConfirm: (ImageResizeConfig) -> Unit
 ) {
-    val image by rememberLoadedImage(context, uri)
+    val load by rememberImageLoad(context, uri)
+    val image = (load as? ImageLoad.Ready)?.image
+    val unreadable = load is ImageLoad.Failed
     // 0: by percentage; 1: to a size in pixels.
     var mode by rememberSaveable { mutableIntStateOf(0) }
     var percent by rememberSaveable { mutableIntStateOf(50) }
@@ -499,12 +514,13 @@ internal fun ResizeImageDialog(
         onAction = { onConfirm(ImageResizeConfig(targetWidth = boxW, targetHeight = boxH, outputFormat = format, fit = usedFit)) },
         actionEnabled = img != null && valid && !unchanged,
         actionSupport = when {
+            unreadable -> stringResource(R.string.img_tool_unreadable_short)
             img != null && !valid -> stringResource(R.string.tools_err_invalid_dimensions)
             unchanged -> stringResource(R.string.tools_resize_img_unchanged)
             else -> null
         }
     ) {
-        ImagePreviewCard(img, estimate, onCrop, loading = img != null && estimate == null && valid)
+        ImagePreviewCard(img, estimate, onCrop, loading = img != null && estimate == null && valid, failed = unreadable)
         if (img != null) BeforeAfterRow(context, img, estimate, format)
         if (enlarging) ImageToolNotice(stringResource(R.string.img_resize_enlarge_warning))
 

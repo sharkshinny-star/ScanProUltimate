@@ -142,6 +142,26 @@
     <string name="cvt_ximg_fact_pages">Pages with pictures</string>
     <string name="cvt_ximg_fact_formats">Formats</string>
     <string name="cvt_ximg_hint">JPG pictures are saved exactly as stored, with no quality lost; the others, and any with see-through parts, are saved as PNG. A picture used on many pages is saved once.</string>
+    <string name="cvt_ximg_choose_title">Choose pictures</string>
+    <string name="cvt_ximg_choose_unopened">Save all of them, or tick only the ones you want</string>
+    <string name="cvt_ximg_none_ticked">Tick at least one picture to save</string>
+    <string name="cvt_ximg_all_selected">All %1$d selected</string>
+    <string name="cvt_ximg_selected_of">%1$d of %2$d selected</string>
+    <string name="cvt_ximg_select_all">Select all</string>
+    <string name="cvt_ximg_select_none">Clear</string>
+    <string name="cvt_ximg_preparing">Preparing the pictures…</string>
+    <string name="cvt_ximg_prepare_failed">The pictures couldn\'t be read. Close this and try again.</string>
+    <string name="cvt_ximg_picture_of">Picture %1$d of %2$d</string>
+    <string name="cvt_ximg_from_page">Page %1$d</string>
+    <string name="cvt_ximg_view_larger">View picture larger</string>
+    <string name="cvt_ximg_tick">Select this picture</string>
+    <string name="cvt_ximg_untick">Remove from the selection</string>
+    <string name="cvt_ximg_in_selection">Selected</string>
+    <string name="cvt_ximg_not_in_selection">Not selected</string>
+    <plurals name="cvt_ximg_pick_done">
+        <item quantity="one">Done · %1$d selected</item>
+        <item quantity="other">Done · %1$d selected</item>
+    </plurals>
     <plurals name="cvt_ximg_action">
         <item quantity="one">Save %1$d picture</item>
         <item quantity="other">Save %1$d pictures</item>

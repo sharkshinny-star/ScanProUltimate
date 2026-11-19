@@ -217,8 +217,22 @@ data class PageNumbersConfig(
     val format: PageNumberFormat = PageNumberFormat.PAGE_N_OF_M,
     val skipFirstPage: Boolean = false,
     val marginPt: Float = 36f,
-    val fontSizePt: Float = 11f
+    /** On an A4 page; larger pages get it larger (see PageNumberGeometry.sizeScale). */
+    val fontSizePt: Float = 11f,
+    /** 0xAARRGGBB; the dark grey numbers always had by default. Transparency is ignored. */
+    val colourArgb: Int = DEFAULT_PAGE_NUMBER_COLOUR,
+    /**
+     * SANS, SERIF and MONO are the PDF standard fonts Helvetica (Arial's twin), Times (Times New Roman's) and Courier,
+     * which every reader has; the fonts the app carries (Roboto, Inter, Montserrat, Gelasio) are embedded. ORIGINAL
+     * means SANS here.
+     */
+    val font: PdfTextEditor.Family = PdfTextEditor.Family.SANS,
+    val bold: Boolean = false,
+    val italic: Boolean = false,
+    val underline: Boolean = false,
 )
+
+const val DEFAULT_PAGE_NUMBER_COLOUR: Int = 0xFF333333.toInt()
 
 /**
  * Merge reached file [index] (0-based), [uri], which needs a password to open: none was given for it, or
@@ -944,6 +958,32 @@ object PdfToolsEngine {
         }
     }
 
+    /** Smallest and largest page-number size offered (points, on an A4 page). */
+    const val MIN_PAGE_NUMBER_PT = 6f
+    const val MAX_PAGE_NUMBER_PT = 36f
+    /** The underline sits this far below the baseline and is this thick, as fractions of the font size. */
+    internal const val UNDERLINE_DROP = 0.14f
+    internal const val UNDERLINE_THICKNESS = 0.06f
+
+    /**
+     * The font page numbers are written in (F242): a standard PDF font for Sans (Helvetica), Serif (Times) and Mono
+     * (Courier), or one the app carries, embedded (only the letters used). Helvetica if a carried font cannot be read.
+     */
+    private fun pageNumberFont(context: Context, doc: PDDocument, config: PageNumbersConfig): com.tom_roush.pdfbox.pdmodel.font.PDFont {
+        val b = config.bold
+        val i = config.italic
+        fun standard(regular: PDType1Font, bold: PDType1Font, italic: PDType1Font, boldItalic: PDType1Font) =
+            if (b && i) boldItalic else if (b) bold else if (i) italic else regular
+        val helvetica = standard(PDType1Font.HELVETICA, PDType1Font.HELVETICA_BOLD, PDType1Font.HELVETICA_OBLIQUE, PDType1Font.HELVETICA_BOLD_OBLIQUE)
+        return when (config.font) {
+            PdfTextEditor.Family.SERIF -> standard(PDType1Font.TIMES_ROMAN, PDType1Font.TIMES_BOLD, PDType1Font.TIMES_ITALIC, PDType1Font.TIMES_BOLD_ITALIC)
+            PdfTextEditor.Family.MONO -> standard(PDType1Font.COURIER, PDType1Font.COURIER_BOLD, PDType1Font.COURIER_OBLIQUE, PDType1Font.COURIER_BOLD_OBLIQUE)
+            else -> if (config.font.carried) {
+                runCatching { CarriedFonts(context).load(doc, config.font, b, i) }.getOrNull() ?: helvetica
+            } else helvetica
+        }
+    }
+
     /**
      * Adds page numbers to pages of a PDF document with position and formatting controls.
      */
@@ -963,8 +1003,11 @@ object PdfToolsEngine {
                 val totalPages = doc.numberOfPages
                 userRequire(totalPages > 0, R.string.tools_err_no_pages)
 
-                val font = PDType1Font.HELVETICA
-                val baseFontSize = config.fontSizePt.coerceIn(8f, 24f)
+                val font = pageNumberFont(context, doc, config)
+                val baseFontSize = config.fontSizePt.coerceIn(MIN_PAGE_NUMBER_PT, MAX_PAGE_NUMBER_PT)
+                val red = ((config.colourArgb shr 16) and 0xFF) / 255f
+                val green = ((config.colourArgb shr 8) and 0xFF) / 255f
+                val blue = (config.colourArgb and 0xFF) / 255f
                 val baseMargin = config.marginPt.coerceIn(12f, 100f)
 
                 var numberedCount = 0
@@ -997,12 +1040,24 @@ object PdfToolsEngine {
                     val sin = Math.sin(spot.angleRad).toFloat()
 
                     PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
-                        cs.setNonStrokingColor(0.2f, 0.2f, 0.2f)
+                        // Drawn in a frame turned and moved to the number's spot, so the underline turns with it.
+                        cs.saveGraphicsState()
+                        cs.transform(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
+                        cs.setNonStrokingColor(red, green, blue)
                         cs.beginText()
                         cs.setFont(font, fontSize)
-                        cs.setTextMatrix(Matrix(cos, sin, -sin, cos, box.lowerLeftX + spot.x, box.lowerLeftY + spot.y))
+                        cs.newLineAtOffset(0f, 0f)
                         cs.showText(text)
                         cs.endText()
+                        if (config.underline) {
+                            val y = -fontSize * UNDERLINE_DROP
+                            cs.setStrokingColor(red, green, blue)
+                            cs.setLineWidth(fontSize * UNDERLINE_THICKNESS)
+                            cs.moveTo(0f, y)
+                            cs.lineTo(textWidth, y)
+                            cs.stroke()
+                        }
+                        cs.restoreGraphicsState()
                     }
                     numberedCount++
                 }

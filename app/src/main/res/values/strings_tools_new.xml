@@ -109,7 +109,7 @@
     <string name="tools_tile_crop_pdf">Crop pages</string>
     <string name="tools_desc_crop_pdf">Trim margins or white space</string>
     <string name="hint_tool_crop_pdf">Trim the margins of every page, automatically around the content or by the millimetre. The text layer is kept.</string>
-    <string name="tools_crop_pdf_body">Auto trims each page to its content with a little padding; Margins cuts the amount you set from every page as it is shown. Nothing is deleted, so the pages can be uncropped later with Repair.</string>
+    <string name="tools_crop_pdf_body">Auto trims each page to its content with a little padding; By hand keeps what you frame, the same on every page or page by page. Nothing is deleted, so the pages can be uncropped later with Repair.</string>
     <string name="tools_crop_pdf_mode_auto">Auto trim</string>
     <string name="tools_crop_pdf_mode_margins">Margins</string>
     <string name="tools_crop_pdf_padding">Padding around content</string>

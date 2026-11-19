@@ -6,6 +6,11 @@
     <string name="img_tool_crop">Crop</string>
     <string name="img_tool_now">Now</string>
     <string name="img_tool_after">After</string>
+    <string name="img_tool_unreadable">This picture couldn\'t be opened. Close this and pick it again, or try another picture.</string>
+    <string name="img_tool_unreadable_short">The picture couldn\'t be opened</string>
+    <string name="img_compress_png_hint">PNG keeps every pixel exactly. Best for screenshots, drawings and pictures with see-through parts; photos are usually smaller as JPG or WebP.</string>
+    <string name="img_compress_png_no_quality">PNG has no quality setting: it keeps every pixel. To make it smaller, lower the resolution below, or use a target size.</string>
+    <string name="img_compress_larger_as">As %1$s this picture would be larger than it is now. For a photo, JPG or WebP makes it smaller.</string>
     <string name="img_tool_estimating">Working out the result…</string>
     <string name="img_tool_about">About %1$s</string>
     <string name="img_tool_smaller">%1$d%% smaller</string>

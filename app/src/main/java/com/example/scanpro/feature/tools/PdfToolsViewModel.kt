@@ -936,6 +936,12 @@ class PdfToolsViewModel @Inject constructor(
             com.example.scanpro.imaging.PdfCropTools.cropPdf(context, uri, options, named(uri, "cropped"), ::report)
         }
 
+    /** Crop chosen by hand: one crop for all pages, or a crop of its own on some (F241). */
+    fun cropPdfPlan(uri: Uri, plan: com.example.scanpro.imaging.CropPlan) =
+        launchTool(R.string.tools_crop_pdf_progress, R.string.tools_crop_pdf_err_failed) {
+            com.example.scanpro.imaging.PdfCropTools.cropPdfPlan(context, uri, plan, named(uri, "cropped"), ::report)
+        }
+
     fun redact(uri: Uri, terms: List<String>, matchCase: Boolean) =
         launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
             // A file name holding a redacted word would give it away: such a copy is named by the time instead.
@@ -974,6 +980,20 @@ class PdfToolsViewModel @Inject constructor(
                 if (skipped == 0) result
                 else result.copy(message = result.message + " " + context.resources.getQuantityString(R.plurals.ximg_skipped, skipped, skipped))
             }
+        }
+    }
+
+    /**
+     * Saves only the pictures the person ticked in the picker. They were already extracted to [previewDir] for the
+     * picker, so nothing is read from the PDF again: the chosen ones are copied into a fresh folder (the result
+     * bundle deletes its inputs), then the whole preview folder goes.
+     */
+    fun saveChosenImages(uri: Uri, previewDir: File, chosen: List<File>) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
+        val base = PdfToolsEngine.sourceBaseName(context, uri)
+        inScratchDir("$base images") { dir ->
+            val copies = chosen.filter { it.isFile }.map { it.copyTo(File(dir, it.name), overwrite = true) }
+            previewDir.deleteRecursively()
+            bundled(copies, "$base images", R.plurals.tools_ximg_done)()
         }
     }
 

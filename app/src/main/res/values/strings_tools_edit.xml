@@ -17,6 +17,34 @@
     <string name="edit_crop_section_how">How to crop</string>
     <string name="edit_crop_err_no_margins">Set a margin on at least one side.</string>
     <string name="edit_crop_err_too_small">These margins leave less than %1$d mm of the first page.</string>
+    <string name="edit_crop_mode_manual">By hand</string>
+    <string name="edit_crop_apply_to">A drag changes</string>
+    <string name="edit_crop_scope_all">All pages</string>
+    <string name="edit_crop_scope_page">This page</string>
+    <string name="edit_crop_adjust">Adjust</string>
+    <string name="edit_crop_preview">Preview</string>
+    <string name="edit_crop_frame_description">The page with the crop frame; drag its corners or sides</string>
+    <string name="edit_crop_drag_hint">Drag a corner or side to choose what to keep; drag inside the frame to move it.</string>
+    <string name="edit_crop_status_shared_all">The same crop on every page</string>
+    <string name="edit_crop_status_keeps_own">This page has its own crop and keeps it</string>
+    <string name="edit_crop_status_shared_page">Uses the all-pages crop; a drag gives it its own</string>
+    <string name="edit_crop_status_own">This page has its own crop</string>
+    <string name="edit_crop_status_whole">This page is kept whole</string>
+    <string name="edit_crop_page_size">Page %1$d: %2$s → %3$s</string>
+    <string name="edit_crop_reset_all_pages">Reset</string>
+    <string name="edit_crop_reset_page">Reset this page</string>
+    <string name="edit_crop_use_shared">Use the all-pages crop</string>
+    <string name="edit_crop_start_over">Start over</string>
+    <string name="edit_crop_same_everywhere">Use this crop on them too</string>
+    <string name="edit_crop_nothing_chosen">Drag the frame to choose what to keep</string>
+    <plurals name="edit_crop_own_count">
+        <item quantity="one">%1$d page has its own crop and keeps it.</item>
+        <item quantity="other">%1$d pages have their own crop and keep it.</item>
+    </plurals>
+    <plurals name="edit_crop_pages_cropped">
+        <item quantity="one">%1$d of %2$d page will be cropped</item>
+        <item quantity="other">%1$d of %2$d pages will be cropped</item>
+    </plurals>
     <string name="edit_crop_size_change">Page 1: %1$s → %2$s</string>
     <string name="edit_crop_first_blank">Page 1 looks blank, so it is left as it is. Pages with content are trimmed.</string>
     <string name="edit_crop_auto_hint">The frame shows what auto trim keeps of page 1; every page gets its own frame.</string>

@@ -174,6 +174,26 @@ class PageToolsUpgradeTest {
         assertTrue("font $size", size > 40f)
     }
 
+    @Test
+    fun theChosenFontAndStyleAreWritten() = runBlocking {
+        // F242: Times New Roman bold italic is the standard Times-BoldItalic; Roboto is embedded; underline keeps the text.
+        fun fontOfNumber(config: PageNumbersConfig): String {
+            val out = File(dir, "styled-${System.nanoTime()}.pdf")
+            PdfToolsEngine.addPageNumbers(context, Uri.fromFile(pagesWithText(1, PDRectangle.A4, "styled")), config, out)
+            var name = ""
+            val stripper = object : PDFTextStripper() {
+                override fun writeString(string: String, textPositions: List<TextPosition>) {
+                    if (string.startsWith("Page 1 of 1")) name = textPositions.first().font.name.orEmpty()
+                }
+            }
+            PDDocument.load(out).use { doc -> stripper.getText(doc) }
+            return name
+        }
+        assertEquals("Times-BoldItalic", fontOfNumber(PageNumbersConfig(font = PdfTextEditor.Family.SERIF, bold = true, italic = true)))
+        assertEquals("Helvetica", fontOfNumber(PageNumbersConfig(underline = true, colourArgb = 0xFFC62828.toInt())))
+        assertTrue(fontOfNumber(PageNumbersConfig(font = PdfTextEditor.Family.ROBOTO)).contains("Roboto"))
+    }
+
     // ---- Remove blank pages ----
 
     @Test
