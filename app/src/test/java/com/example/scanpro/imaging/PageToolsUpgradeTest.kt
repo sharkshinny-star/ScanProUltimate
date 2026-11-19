@@ -177,7 +177,7 @@ class PageToolsUpgradeTest {
     @Test
     fun theChosenFontAndStyleAreWritten() = runBlocking {
         // F242: Times New Roman bold italic is the standard Times-BoldItalic; Roboto is embedded; underline keeps the text.
-        fun fontOfNumber(config: PageNumbersConfig): String {
+        suspend fun fontOfNumber(config: PageNumbersConfig): String {
             val out = File(dir, "styled-${System.nanoTime()}.pdf")
             PdfToolsEngine.addPageNumbers(context, Uri.fromFile(pagesWithText(1, PDRectangle.A4, "styled")), config, out)
             var name = ""
