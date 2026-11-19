@@ -23,6 +23,7 @@ had ever been built).
 ./gradlew :app:testDebugUnitTest                  # JVM unit tests
 ./gradlew :app:lintDebug                          # Android lint (config: app/lint.xml)
 ./gradlew :app:bundleRelease                      # Play bundle, R8 on, with :translate as on-demand module
+bash scripts/setup-upload-key.sh                  # once, on the owner's computer: upload key + SCANPRO_* signing values (outside the repo)
 ./gradlew -Pscanpro.sideload=true :app:assembleRelease   # per-ABI + universal APKs, translation built in
 scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release
 python3 -I scripts/remaining-work.py              # rewrite the open-items block of REMAINING_WORK.md from AUDIT_FINDINGS.md (--check: only compare)

@@ -26,7 +26,9 @@ the two trees merged is recorded.
    set `scanpro.privacyPolicyUrl=<url>` in `gradle.properties` (not set as of 2026-11-19), so the Settings link appears.
 6. **A native speaker's read** of the Hindi, Kannada, Malayalam, Tamil and Telugu strings written by an assistant
    (R19, R36, R44, R52, R53, R69); start with `TRANSLATION_REVIEW.md`. The F188 strings are English only in those five (R65).
-7. **Release signing** has never been validated; builds are unsigned as configured.
+7. **Release signing** has never been validated; builds are unsigned as configured. On the Mac run
+   `bash scripts/setup-upload-key.sh` (F219: makes the upload key outside the repo and sets the `SCANPRO_*` values in
+   `~/.gradle/gradle.properties`), then build the bundle and check it is signed.
 8. **Undo history across sessions:** design written, nothing built (`UNDO_PERSISTENCE_DESIGN.md`); it waits on three
    answers (keep up to 20 earlier text states in plain app-private storage, the limits, and a Recycle-bin document's history).
 9. **GitHub housekeeping (checked 2026-11-19):** Dependabot pull requests #15 (Gradle wrapper 9.9.0) and #16 (ZXing core
