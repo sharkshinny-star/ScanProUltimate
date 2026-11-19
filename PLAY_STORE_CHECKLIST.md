@@ -6,7 +6,7 @@ This checklist is intentionally conservative. Complete it against the Play Conso
 
 - [ ] Replace `com.example.scanpro` with the final reverse-DNS application ID **before** first production upload.
 - [ ] Replace the temporary product name/branding where desired; do not use CamScanner trademarks, screenshots, icons, or copied store text.
-- [ ] Create and protect the upload keystore (`bash scripts/setup-upload-key.sh` on your own computer, F219). Prefer Play App Signing for the production signing key.
+- [ ] Create and protect the upload keystore (`bash scripts/setup-upload-key.sh` on your own computer, F220). Prefer Play App Signing for the production signing key.
 - [ ] Set production `versionCode` / `versionName` and keep them monotonically increasing.
 - [ ] Build an Android App Bundle (`.aab`) from the release variant.
 - [ ] Verify R8/minification release build on physical devices.

@@ -51,6 +51,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F219 tools progress card, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,077 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 160 warnings (none in the changed files). Quality audit PASS.
+- New: `ToolProgressCardTest` 9/9 (always runs), `ProcessingOverlayScreenshotTest` 11 renders (with the screenshots flag). Rendered and looked at: `progress_card_*` (phone light, dark, no count, narrow, large text, on its side, tablet, and the arriving, closing, ripple and finished frames).
+- NOT run: `bundleRelease` (left to CI), anything on a device; the animation was judged from still frames, never seen moving (R86).
+
 ## Latest results (2026-11-19, F217 Settings and Files layout, cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,053 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 159 warnings (none new in the changed files). Quality audit PASS.
