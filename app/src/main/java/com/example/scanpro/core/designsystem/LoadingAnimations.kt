@@ -342,10 +342,12 @@ private val GEAR = gearPath()
  * dial of fine ticks, with a soft glow under it and a pulsing head trailing sparks; while [progress] is null
  * the arc circles instead, and it eases into the filling arc when the tool starts reporting, so the ring
  * never jumps. Inside, a page (with a second one tilted behind it) floats while the scan line passes over it,
- * lighting each line as it crosses; a gear turns on a badge centred under the page and turns into a tick
- * when the work reaches 100%. Everything is drawn symmetric about the centre and inside the canvas, so a
- * rounded or clipping parent never cuts the glow. With animations off only the ring moves, and only when
- * the real progress does.
+ * lighting each line as it crosses, over a soft light that breathes behind them; a gear turns on a badge
+ * centred under the page. At 100% the gear gives way to a tick that is drawn stroke by stroke while a ring of
+ * light leaves the dial. One pass of the scan line (down and back) takes [PROCESSING_LOOP_MS], the shortest
+ * time the tools keep this animation on screen, so even an instant task shows one whole pass. Everything is
+ * drawn symmetric about the centre and inside the canvas, so a rounded or clipping parent never cuts the glow.
+ * With animations off only the ring moves, and only when the real progress does.
  */
 @Composable
 fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: Dp = 124.dp) {
@@ -371,7 +373,7 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
     )
     val done by animateFloatAsState(
         targetValue = if (progress != null && progress >= 1f) 1f else 0f,
-        animationSpec = tween(if (motion) 320 else 0),
+        animationSpec = tween(if (motion) PROCESSING_DONE_MS else 0),
         label = "processingDone"
     )
     val semantics = if (progress != null) Modifier.progressSemantics(progress.coerceIn(0f, 1f)) else Modifier.progressSemantics()
@@ -464,6 +466,30 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
             drawCircle(brand.scanLine, radius = stroke * 0.42f, center = head)
         }
 
+        // The finish: a ring of light leaves the dial and fades. It stops short of the canvas edge.
+        if (done > 0f && done < 1f) {
+            val room = s / 2f - radius - stroke * 0.3f
+            drawCircle(
+                brand.scanLine.copy(alpha = 0.6f * (1f - done)),
+                radius = radius + room * smoothStep(done),
+                center = centre,
+                style = Stroke(width = stroke * 0.5f * (1f - done) + 1f)
+            )
+        }
+
+        // A soft light behind the pages, breathing slowly, so they read as lifted off the card.
+        val glow = if (motion) 0.5f - 0.5f * cos(tau * cycle(t, PROCESSING_LOOP_MS)) else 0.5f
+        val glowReach = radius * 0.94f
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(lerp(brand.gradientEnd, brand.scanLine, done).copy(alpha = 0.09f + 0.07f * glow + 0.1f * done), Color.Transparent),
+                center = centre,
+                radius = glowReach
+            ),
+            radius = glowReach,
+            center = centre
+        )
+
         // The pages: lifted a touch above the centre so the page and the badge under it sit centred together.
         val bob = if (motion) sin(tau * cycle(t, 2_600L)) else 0f
         val pageHeight = s * 0.4f
@@ -480,7 +506,7 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
         drawPath(sheet, palette.sheet)
         if (palette.edge.alpha > 0f) drawPath(sheet, palette.edge, style = Stroke(width = s * 0.012f))
         drawPath(corner, palette.fold)
-        val p = if (motion) cycle(t, 2_400L) else 0.25f
+        val p = if (motion) cycle(t, PROCESSING_LOOP_MS) else 0.25f
         val down = p < 0.5f
         val travel = smoothStep(if (down) p * 2f else (1f - p) * 2f)
         val beamY = page.top + page.height * (0.12f + 0.62f * travel)
@@ -518,14 +544,20 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
             }
             if (done > 0f) {
                 val r = badgeRadius
+                // Drawn as a pen would: the short stroke down first, then the long one up.
+                val from = Offset(-0.42f * r, 0.02f * r)
+                val corner = Offset(-0.12f * r, 0.32f * r)
+                val to = Offset(0.44f * r, -0.28f * r)
+                val firstStroke = (done / TICK_FIRST_STROKE).coerceIn(0f, 1f)
+                val secondStroke = ((done - TICK_FIRST_STROKE) / (1f - TICK_FIRST_STROKE)).coerceIn(0f, 1f)
                 val tick = Path().apply {
-                    moveTo(-0.42f * r, 0.02f * r)
-                    lineTo(-0.12f * r, 0.32f * r)
-                    lineTo(0.44f * r, -0.28f * r)
+                    moveTo(from.x, from.y)
+                    lineTo(blend(from.x, corner.x, firstStroke), blend(from.y, corner.y, firstStroke))
+                    if (secondStroke > 0f) lineTo(blend(corner.x, to.x, secondStroke), blend(corner.y, to.y, secondStroke))
                 }
                 drawPath(
                     tick,
-                    MintInk.copy(alpha = done),
+                    MintInk.copy(alpha = (done * 3f).coerceAtMost(1f)),
                     style = Stroke(width = r * 0.22f, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
                 )
             }
@@ -535,6 +567,15 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
 
 /** Dark green ink for marks drawn on the mint scan-line colour. */
 private val MintInk = Color(0xFF04281E)
+
+/** One pass of the scan line over the page, down and back; also the shortest time a tool shows [ProcessingAnimation]. */
+const val PROCESSING_LOOP_MS = 2_000L
+
+/** How long the finish (gear to tick, ring of light) takes once the progress reaches 100%. */
+const val PROCESSING_DONE_MS = 450
+
+/** The share of the finish spent on the tick's short first stroke. */
+private const val TICK_FIRST_STROKE = 0.4f
 
 private fun blend(from: Float, to: Float, fraction: Float): Float = from + (to - from) * fraction
 

@@ -42,7 +42,7 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 <!-- BEGIN open-items: written by scripts/remaining-work.py from AUDIT_FINDINGS.md; do not edit by hand -->
 
-32 open items: 11 P1, 16 P2, 5 P3.
+33 open items: 11 P1, 17 P2, 5 P3.
 
 ### P1
 
@@ -71,6 +71,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P2
 
+- **R86** (Device check (F219); `feature/tools/ProcessingOverlay.kt`, `core/designsystem/LoadingAnimations.kt`, …). The progress card's new layout, arrival, two-second minimum and finish were checked with unit tests and JVM renders only (eleven still frames looked at).
+  - Next: On a phone, release build: (1) a quick tool on a small PDF (Rotate, Protect, Compress): the card stays about two seconds, the ring closes to 100% with the figure counting up, the tick is drawn, "Done" stands where Cancel was, then the result shows; say whether two seconds feels right when several quick tools are run one after another; (2) Merge several large files: real progress, then the short 0.7 s finish; (3) Cancel and Back still ask while the tool works and do nothing during the finish; (4) the card is centred upright, shows the dial beside the text with the phone on its side, and is larger on a tablet; largest font size; (5) with animations turned off (Developer options) the card neither arrives nor waits; (6) Images to PDF: the small veil animation (light behind the page) still looks right.
 - **R83** (Device check; F215). Small items compiled and unit-tested in CI only.
   - Next: On the phone: (1) start a long Compress or Merge, pull down the notification, tap Cancel: the tool stops with "cancelled" and the notification goes; the same for a queued document edit; (2) long-press the launcher icon: Scan now, Bugs or issues and Don't remove still work (after one app launch on an upgraded install); (3) Sign PDF on a digitally signed PDF shows the notice; (4) Translate into a new language asks once before downloading; (5) a very large honest PDF (200+ MB) still runs through Compress and Merge (scratch cap).
 - **R82** (Look check; F214). The decluttered Tools tab, PDF tool pages and scan review compiled in CI only; nobody has seen them.
