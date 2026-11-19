@@ -23,6 +23,21 @@
     </plurals>
 
     <!-- Page numbers -->
+    <string name="pages_numbers_look">Style</string>
+    <string name="pages_numbers_font">Font</string>
+    <string name="pages_numbers_font_twins">Written as Helvetica or Times, the twins of Arial and Times New Roman that every PDF reader has: the same shapes and widths, so nothing has to be added to the file.</string>
+    <string name="pages_numbers_style">Look</string>
+    <string name="pages_numbers_regular">Regular</string>
+    <string name="pages_numbers_bold">Bold</string>
+    <string name="pages_numbers_italic">Italic</string>
+    <string name="pages_numbers_underline">Underline</string>
+    <string name="pages_numbers_size">Size</string>
+    <string name="pages_numbers_size_value">%1$d pt</string>
+    <string name="pages_numbers_colour">Colour</string>
+    <string name="pages_numbers_colour_grey">Dark grey</string>
+    <string name="pages_numbers_colour_red">Red</string>
+    <string name="pages_numbers_colour_green">Green</string>
+    <string name="pages_numbers_closeup">Close-up</string>
     <string name="pages_numbers_where">Where</string>
     <string name="pages_numbers_edge_top">Top</string>
     <string name="pages_numbers_edge_bottom">Bottom</string>

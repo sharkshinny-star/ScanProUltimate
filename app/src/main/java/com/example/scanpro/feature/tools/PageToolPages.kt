@@ -1,5 +1,17 @@
 package com.example.scanpro.feature.tools
 
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.material3.Slider
+import androidx.compose.material.icons.filled.FormatBold
+import androidx.compose.material.icons.filled.FormatItalic
+import androidx.compose.material.icons.filled.FormatUnderlined
+import com.example.scanpro.core.designsystem.InkColourRow
+import com.example.scanpro.imaging.PdfTextEditor
+import com.example.scanpro.imaging.DEFAULT_PAGE_NUMBER_COLOUR
+import com.example.scanpro.imaging.PdfToolsEngine
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -308,9 +320,19 @@ internal fun PageNumbersPdfDialog(
     var position by rememberSaveable { mutableStateOf(PageNumberPosition.BOTTOM_CENTER) }
     var format by rememberSaveable { mutableStateOf(PageNumberFormat.PAGE_N_OF_M) }
     var skipCover by rememberSaveable { mutableStateOf(false) }
+    // Style (F242): font, bold / italic / underline, size and colour, all shown live on the page and in the close-up.
+    var font by rememberSaveable { mutableStateOf(PdfTextEditor.Family.SANS) }
+    var bold by rememberSaveable { mutableStateOf(false) }
+    var italic by rememberSaveable { mutableStateOf(false) }
+    var underline by rememberSaveable { mutableStateOf(false) }
+    var sizePt by rememberSaveable { mutableFloatStateOf(11f) }
+    var colourArgb by rememberSaveable { mutableIntStateOf(DEFAULT_PAGE_NUMBER_COLOUR) }
     val loaded = facts
     val pages = loaded?.pageCount
-    val config = PageNumbersConfig(position = position, format = format, skipFirstPage = skipCover)
+    val config = PageNumbersConfig(
+        position = position, format = format, skipFirstPage = skipCover, fontSizePt = sizePt,
+        colourArgb = colourArgb, font = font, bold = bold, italic = italic, underline = underline
+    )
 
     // With the cover skipped, the preview shows page 2: the first page that gets a number.
     val secondPage by produceState<Bitmap?>(null, uri, skipCover, pages) {
@@ -329,7 +351,16 @@ internal fun PageNumbersPdfDialog(
     val total = pages ?: 1
     val numbered = if (pages == null) 0 else if (skipCover) pages - 1 else pages
     val measurer = rememberTextMeasurer()
-    val ink = Color(0xFF333333)
+    val ink = Color(colourArgb)
+    // The look on screen: the very font file for the fonts the app carries; for Helvetica, Times and Courier the
+    // phone's own sans, serif and mono, which are close but not the same letters.
+    val numberStyle = TextStyle(
+        color = ink,
+        fontFamily = fontOf(font),
+        fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+        fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+        textDecoration = if (underline) TextDecoration.Underline else null
+    )
 
     val problem = when {
         loaded == null -> stringResource(R.string.pages_reading_pdf)
@@ -357,7 +388,7 @@ internal fun PageNumbersPdfDialog(
                 val grow = PageNumberGeometry.sizeScale(widthPt, heightPt)
                 val margin = config.marginPt * grow
                 val text = PageNumberGeometry.text(format, shownPage, total)
-                val style = TextStyle(color = ink, fontSize = 11.sp)
+                val style = numberStyle.copy(fontSize = 11.sp)
                 val unit = measurer.measure(text, style)
                 // Width of the text per point of font size, from the measured layout at 11 sp.
                 val widthPerPoint = unit.size.width / 11.sp.toPx()
@@ -376,6 +407,8 @@ internal fun PageNumbersPdfDialog(
             }
         )
         if (skipCover && pages != null && pages > 1) ToolHint(stringResource(R.string.pages_numbers_preview_page_two))
+        // On a whole page the number is a few pixels high: here it is large enough to judge font, style and colour.
+        NumberCloseUp(PageNumberGeometry.text(format, shownPage, total), numberStyle)
 
         ToolSection(stringResource(R.string.pages_numbers_where)) {
             SegmentedChoice(
@@ -391,6 +424,16 @@ internal fun PageNumbersPdfDialog(
                 ),
                 selected = position.column,
                 onSelect = { position = numberPosition(position.atTop, it) }
+            )
+        }
+
+        ToolSection(stringResource(R.string.pages_numbers_look)) {
+            NumberStyleControls(
+                font = font, onFont = { font = it },
+                bold = bold, italic = italic, underline = underline,
+                onStyle = { b, i, u -> bold = b; italic = i; underline = u },
+                sizePt = sizePt, onSize = { sizePt = it },
+                colour = ink, onColour = { colourArgb = it.toArgb() }
             )
         }
 
@@ -430,6 +473,125 @@ internal fun PageNumbersPdfDialog(
             PdfOutcomeRow(loaded, PdfOutcome(pages = pages, bytes = loaded.sizeBytes.takeIf { it > 0 }?.let { it + numbered * 220L }))
         }
     }
+}
+
+/** The fonts offered for page numbers, in this order. */
+private val NUMBER_FONTS = listOf(
+    PdfTextEditor.Family.SANS, PdfTextEditor.Family.SERIF, PdfTextEditor.Family.MONO, PdfTextEditor.Family.ROBOTO,
+    PdfTextEditor.Family.INTER, PdfTextEditor.Family.MONTSERRAT, PdfTextEditor.Family.GELASIO
+)
+
+/** A font's name as shown; font names are proper names and are not translated. */
+private fun numberFontName(family: PdfTextEditor.Family): String = when (family) {
+    PdfTextEditor.Family.SERIF -> "Times New Roman"
+    PdfTextEditor.Family.MONO -> "Courier"
+    PdfTextEditor.Family.ROBOTO -> "Roboto"
+    PdfTextEditor.Family.INTER -> "Inter"
+    PdfTextEditor.Family.MONTSERRAT -> "Montserrat"
+    PdfTextEditor.Family.GELASIO -> "Gelasio"
+    else -> "Arial"
+}
+
+/** Colours offered in one tap; the last swatch opens the full picker (any colour, or a hex code). */
+private val NUMBER_COLOURS = listOf(
+    R.string.pages_numbers_colour_grey to Color(DEFAULT_PAGE_NUMBER_COLOUR),
+    R.string.doc_ink_black to Color(0xFF000000),
+    R.string.doc_ink_blue to Color(0xFF1A47B8),
+    R.string.pages_numbers_colour_red to Color(0xFFC62828),
+    R.string.pages_numbers_colour_green to Color(0xFF2E7D32)
+)
+
+/** The number large on a strip of paper, in the chosen style. */
+@Composable
+private fun NumberCloseUp(text: String, style: TextStyle) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.pages_numbers_closeup),
+                style = MaterialTheme.typography.labelMedium,
+                color = Color(0xFF6B6B6B),
+                modifier = Modifier.weight(1f)
+            )
+            Text(text, style = style.copy(fontSize = 22.sp), maxLines = 1)
+        }
+    }
+}
+
+/** Font, style, size and colour for page numbers: chips, a slider and swatches, each a tap or a drag. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NumberStyleControls(
+    font: PdfTextEditor.Family,
+    onFont: (PdfTextEditor.Family) -> Unit,
+    bold: Boolean,
+    italic: Boolean,
+    underline: Boolean,
+    onStyle: (bold: Boolean, italic: Boolean, underline: Boolean) -> Unit,
+    sizePt: Float,
+    onSize: (Float) -> Unit,
+    colour: Color,
+    onColour: (Color) -> Unit,
+) {
+    val label = MaterialTheme.typography.labelLarge
+    Text(stringResource(R.string.pages_numbers_font), style = label)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        NUMBER_FONTS.forEach { family ->
+            // Each name in its own font, so the choice is seen, not read.
+            FilterChip(
+                selected = font == family,
+                onClick = { onFont(family) },
+                label = { Text(numberFontName(family), fontFamily = fontOf(family)) }
+            )
+        }
+    }
+    if (font == PdfTextEditor.Family.SANS || font == PdfTextEditor.Family.SERIF) {
+        ToolHint(stringResource(R.string.pages_numbers_font_twins))
+    }
+
+    Text(stringResource(R.string.pages_numbers_style), style = label)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        FilterChip(
+            selected = !bold && !italic && !underline,
+            onClick = { onStyle(false, false, false) },
+            label = { Text(stringResource(R.string.pages_numbers_regular)) }
+        )
+        FilterChip(
+            selected = bold,
+            onClick = { onStyle(!bold, italic, underline) },
+            leadingIcon = { Icon(Icons.Default.FormatBold, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            label = { Text(stringResource(R.string.pages_numbers_bold), fontWeight = FontWeight.Bold) }
+        )
+        FilterChip(
+            selected = italic,
+            onClick = { onStyle(bold, !italic, underline) },
+            leadingIcon = { Icon(Icons.Default.FormatItalic, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            label = { Text(stringResource(R.string.pages_numbers_italic), fontStyle = FontStyle.Italic) }
+        )
+        FilterChip(
+            selected = underline,
+            onClick = { onStyle(bold, italic, !underline) },
+            leadingIcon = { Icon(Icons.Default.FormatUnderlined, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            label = { Text(stringResource(R.string.pages_numbers_underline), textDecoration = TextDecoration.Underline) }
+        )
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.pages_numbers_size), style = label, modifier = Modifier.weight(1f))
+        Text(stringResource(R.string.pages_numbers_size_value, sizePt.roundToInt()), style = MaterialTheme.typography.labelLarge)
+    }
+    Slider(
+        value = sizePt,
+        onValueChange = { onSize(it.roundToInt().toFloat()) },
+        valueRange = PdfToolsEngine.MIN_PAGE_NUMBER_PT..PdfToolsEngine.MAX_PAGE_NUMBER_PT
+    )
+
+    Text(stringResource(R.string.pages_numbers_colour), style = label)
+    InkColourRow(presets = NUMBER_COLOURS, selected = colour, onSelect = onColour)
 }
 
 // ---------------------------------------------------------------------------------------------------------------

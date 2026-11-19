@@ -150,7 +150,7 @@ private val GelasioFamily = carriedFamily(R.font.gelasio_regular, R.font.gelasio
 private val MontserratFamily = carriedFamily(R.font.montserrat_regular, R.font.montserrat_bold, R.font.montserrat_italic, R.font.montserrat_bold_italic)
 
 /** The screen's font for a sample of [family]: the very file that goes into the PDF for the fonts the app carries. */
-private fun fontOf(family: PdfTextEditor.Family): FontFamily = when (family) {
+internal fun fontOf(family: PdfTextEditor.Family): FontFamily = when (family) {
     PdfTextEditor.Family.SERIF -> FontFamily.Serif
     PdfTextEditor.Family.MONO -> FontFamily.Monospace
     PdfTextEditor.Family.SANS -> FontFamily.SansSerif
