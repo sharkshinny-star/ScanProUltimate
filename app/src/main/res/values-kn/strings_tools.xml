@@ -600,4 +600,11 @@
     <string name="tools_subtitle_optimise">ಫೈಲ್‌ಗಳನ್ನು ಚಿಕ್ಕದು, ಹುಡುಕಬಹುದಾದ ಅಥವಾ ಸರಳ ಮಾಡಿ</string>
     <string name="tools_subtitle_convert">ಫೈಲ್‌ಗಳನ್ನು PDF ಗೆ ಮತ್ತು ಮರಳಿ ಬದಲಿಸಿ</string>
     <string name="tools_subtitle_secure">ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಮತ್ತು ಫೈಲ್ ವಿವರಗಳು</string>
+    <string name="tools_edit_align">ಸ್ಥಾನ</string>
+    <string name="tools_edit_align_left">ಎಡ</string>
+    <string name="tools_edit_align_centre">ಮಧ್ಯ</string>
+    <string name="tools_edit_align_right">ಬಲ</string>
+    <string name="tools_edit_wrap">ಉದ್ದ ಪಠ್ಯ ಮುಂದಿನ ಸಾಲಿಗೆ</string>
+    <string name="tools_edit_align_hint">ಎಡ, ಮಧ್ಯ ಮತ್ತು ಬಲ ಹೊಸ ಪದಗಳನ್ನು ಹಳೆಯ ಪದಗಳಿದ್ದ ಜಾಗದಲ್ಲಿ ಇಡುತ್ತವೆ. ಪುಟಕ್ಕಿಂತ ಉದ್ದದ ಪಠ್ಯ ಮುಂದಿನ ಸಾಲುಗಳಿಗೆ ಹೋಗುತ್ತದೆ; ಕೆಳಗಿನ ಸಾಲುಗಳು ಚಲಿಸುವುದಿಲ್ಲ.</string>
+    <string name="tools_edit_align_hint_new">ಎಡ: ನೀವು ಟ್ಯಾಪ್ ಮಾಡಿದಲ್ಲಿಂದ ಪದಗಳು ಶುರುವಾಗುತ್ತವೆ; ಮಧ್ಯ: ಅಲ್ಲಿ ಮಧ್ಯದಲ್ಲಿರುತ್ತವೆ; ಬಲ: ಅಲ್ಲಿ ಮುಗಿಯುತ್ತವೆ. ಪುಟಕ್ಕಿಂತ ಉದ್ದದ ಪಠ್ಯ ಮುಂದಿನ ಸಾಲುಗಳಿಗೆ ಹೋಗುತ್ತದೆ.</string>
 </resources>

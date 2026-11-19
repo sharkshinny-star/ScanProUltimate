@@ -2,7 +2,10 @@ package com.example.scanpro.ui.screenshots
 
 import android.app.Application
 import android.graphics.Bitmap
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -54,6 +57,29 @@ class ToolsLandingScreenshotTest(private val dark: Boolean) {
 
     @Test
     fun tools() = render("tools-landing-tall")
+
+    /** Edit PDF's options for one line (the dialog's content on a page of its own; a Dialog can't be captured here). */
+    @Test
+    @Config(qualifiers = "w360dp-h800dp-xxhdpi")
+    fun editPdfOptions() {
+        val span = com.example.scanpro.imaging.PdfTextEditor.Span(
+            page = 0, index = 3, text = "Total due: 1,250.00", left = 300f, top = 400f, right = 520f, bottom = 416f,
+            fontName = "Arial-BoldMT", fontSize = 11f, bold = true, italic = false, colour = 0x1A3FB8
+        )
+        compose.setContent {
+            ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
+                androidx.compose.material3.Surface(androidx.compose.ui.Modifier.fillMaxSize()) {
+                    com.example.scanpro.feature.tools.EditSpanForm(
+                        span = span, existing = null, onDismiss = {}, onApply = {}, onUndo = null,
+                        modifier = androidx.compose.ui.Modifier.padding(24.dp)
+                    )
+                }
+            }
+        }
+        repeat(4) { compose.mainClock.advanceTimeBy(300); Thread.sleep(100) }
+        val image = compose.onRoot().captureToImage().asAndroidBitmap()
+        File(outDir, "edit-pdf-options-${if (dark) "dark" else "light"}.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
 
     private fun render(name: String) {
         compose.setContent {

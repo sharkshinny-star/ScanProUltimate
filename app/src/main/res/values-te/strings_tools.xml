@@ -600,4 +600,11 @@
     <string name="tools_subtitle_optimise">ఫైల్‌లను చిన్నవిగా, వెతకదగినవిగా లేదా సరళంగా చేయండి</string>
     <string name="tools_subtitle_convert">ఫైల్‌లను PDFగా మరియు తిరిగి మార్చండి</string>
     <string name="tools_subtitle_secure">పాస్‌వర్డ్‌లు మరియు ఫైల్ వివరాలు</string>
+    <string name="tools_edit_align">స్థానం</string>
+    <string name="tools_edit_align_left">ఎడమ</string>
+    <string name="tools_edit_align_centre">మధ్య</string>
+    <string name="tools_edit_align_right">కుడి</string>
+    <string name="tools_edit_wrap">పొడవైన టెక్స్ట్ తర్వాతి వరుసకు</string>
+    <string name="tools_edit_align_hint">ఎడమ, మధ్య, కుడి కొత్త పదాలను పాత పదాలు ఉన్న చోటే ఉంచుతాయి. పేజీ కంటే పొడవైన టెక్స్ట్ తర్వాతి వరుసలకు వెళ్తుంది; కింద ఉన్న వరుసలు కదలవు.</string>
+    <string name="tools_edit_align_hint_new">ఎడమ: మీరు ట్యాప్ చేసిన చోట పదాలు మొదలవుతాయి; మధ్య: అక్కడ మధ్యలో ఉంటాయి; కుడి: అక్కడ ముగుస్తాయి. పేజీ కంటే పొడవైన టెక్స్ట్ తర్వాతి వరుసలకు వెళ్తుంది.</string>
 </resources>

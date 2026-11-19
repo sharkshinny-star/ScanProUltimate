@@ -49,6 +49,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F204 Edit PDF position and wrap, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,051 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 20/20.
+- `edit-pdf-options-{light,dark}.png` rendered and looked at.
+- NOT run: anything on a device.
+
 ## Latest results (2026-11-19, F215 minor list, Linux cloud container, no Android SDK)
 
 - CI run 225 on `a2460c0` (F213 detection, F214 declutter, merged with F201–F202): source audit, Room schema check and **unit tests and lint passed** (6 min). Its Play bundle step was still running when the F215 push replaced the run, so the bundle and sideload APKs for this code are checked by the F215 run, not by 225.

@@ -635,4 +635,11 @@
     <string name="tools_subtitle_optimise">Make files smaller, searchable or simpler</string>
     <string name="tools_subtitle_convert">Turn files into PDF and back</string>
     <string name="tools_subtitle_secure">Passwords and file details</string>
+    <string name="tools_edit_align">Position</string>
+    <string name="tools_edit_align_left">Left</string>
+    <string name="tools_edit_align_centre">Centre</string>
+    <string name="tools_edit_align_right">Right</string>
+    <string name="tools_edit_wrap">Wrap long text</string>
+    <string name="tools_edit_align_hint">Left, centre and right place the new words where the old ones were. Wrap moves text that is too long for the page onto new lines; the lines below it do not move.</string>
+    <string name="tools_edit_align_hint_new">Left starts the words where you tapped, Centre centres them on it, Right ends them there. Wrap moves text that is too long for the page onto new lines.</string>
 </resources>

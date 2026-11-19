@@ -600,4 +600,11 @@
     <string name="tools_subtitle_optimise">கோப்புகளைச் சிறியதாக, தேடக்கூடியதாக அல்லது எளிதாக்கு</string>
     <string name="tools_subtitle_convert">கோப்புகளை PDF ஆகவும் PDF-இலிருந்தும் மாற்று</string>
     <string name="tools_subtitle_secure">கடவுச்சொற்கள், கோப்பு விவரங்கள்</string>
+    <string name="tools_edit_align">இடம்</string>
+    <string name="tools_edit_align_left">இடது</string>
+    <string name="tools_edit_align_centre">நடு</string>
+    <string name="tools_edit_align_right">வலது</string>
+    <string name="tools_edit_wrap">நீண்ட உரை அடுத்த வரிக்கு</string>
+    <string name="tools_edit_align_hint">இடது, நடு, வலது ஆகியவை புதிய சொற்களைப் பழைய சொற்கள் இருந்த இடத்தில் வைக்கும். பக்கத்தைவிட நீண்ட உரை அடுத்த வரிகளுக்குச் செல்லும்; கீழே உள்ள வரிகள் நகராது.</string>
+    <string name="tools_edit_align_hint_new">இடது: நீங்கள் தட்டிய இடத்தில் சொற்கள் தொடங்கும்; நடு: அங்கே நடுவில் இருக்கும்; வலது: அங்கே முடியும். பக்கத்தைவிட நீண்ட உரை அடுத்த வரிகளுக்குச் செல்லும்.</string>
 </resources>

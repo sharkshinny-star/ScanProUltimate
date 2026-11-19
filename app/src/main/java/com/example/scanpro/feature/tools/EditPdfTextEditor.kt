@@ -31,9 +31,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
+import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
+import androidx.compose.material.icons.automirrored.filled.FormatAlignRight
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.WrapText
+import androidx.compose.material.icons.filled.FormatAlignCenter
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.Remove
@@ -92,10 +97,10 @@ import kotlinx.coroutines.withContext
 /** The edits survive a rotation: each as its fields in a flat list. */
 private val EditsSaver = listSaver<MutableList<PdfTextEditor.Edit>, Any>(
     save = { edits ->
-        edits.flatMap { listOf(it.page, it.index, it.text, it.family.name, it.bold, it.italic, it.size, it.colour ?: -1, it.x, it.y) }
+        edits.flatMap { listOf(it.page, it.index, it.text, it.family.name, it.bold, it.italic, it.size, it.colour ?: -1, it.x, it.y, it.align.name, it.wrap) }
     },
     restore = { flat ->
-        flat.chunked(10).map { f ->
+        flat.chunked(12).map { f ->
             PdfTextEditor.Edit(
                 page = f[0] as Int,
                 index = f[1] as Int,
@@ -106,7 +111,9 @@ private val EditsSaver = listSaver<MutableList<PdfTextEditor.Edit>, Any>(
                 size = f[6] as Float,
                 colour = (f[7] as Int).takeIf { it >= 0 },
                 x = f[8] as Float,
-                y = f[9] as Float
+                y = f[9] as Float,
+                align = PdfTextEditor.Align.valueOf(f[10] as String),
+                wrap = f[11] as Boolean
             )
         }.toMutableStateList()
     }
@@ -279,7 +286,8 @@ internal fun EditPdfTextEditor(uri: Uri, onDismiss: () -> Unit, onSave: (List<Pd
                     edits.removeAll { it.page == edit.page && it.index == edit.index }
                     // Unchanged in every way: nothing to save for this line.
                     val untouched = edit.text == span.text && edit.family == PdfTextEditor.Family.ORIGINAL && edit.bold == span.bold &&
-                        edit.italic == span.italic && kotlin.math.abs(edit.size - span.fontSize) < 0.05f && edit.colour == null
+                        edit.italic == span.italic && kotlin.math.abs(edit.size - span.fontSize) < 0.05f && edit.colour == null &&
+                        edit.align == PdfTextEditor.Align.LEFT && !edit.wrap
                     if (!untouched) edits.add(edit)
                     editing = null
                 },
@@ -352,8 +360,7 @@ private fun PageWithSpans(
     }
 }
 
-/** One line of text: its words, font (the PDF's own or a standard one), bold, italic and size. */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+/** One line of text: its words, font (the PDF's own or a standard one), bold, italic, size, position and colour. */
 @Composable
 private fun EditSpanDialog(
     span: PdfTextEditor.Span,
@@ -362,6 +369,27 @@ private fun EditSpanDialog(
     onApply: (PdfTextEditor.Edit) -> Unit,
     onUndo: (() -> Unit)?
 ) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+            EditSpanForm(span, existing, onDismiss, onApply, onUndo, Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 12.dp))
+        }
+    }
+}
+
+/**
+ * The dialog's content, apart from its window so it can be drawn in a screenshot test: the words on top, the options
+ * in a scrolling column, and Cancel and Apply always in view below them.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+internal fun EditSpanForm(
+    span: PdfTextEditor.Span,
+    existing: PdfTextEditor.Edit?,
+    onDismiss: () -> Unit,
+    onApply: (PdfTextEditor.Edit) -> Unit,
+    onUndo: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
     var text by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.text ?: span.text) }
     var family by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.family ?: PdfTextEditor.Family.ORIGINAL) }
     var bold by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.bold ?: span.bold) }
@@ -369,18 +397,32 @@ private fun EditSpanDialog(
     var size by rememberSaveable(span.page, span.index) { mutableFloatStateOf(existing?.size ?: span.fontSize) }
     // Null: the colour the line already has.
     var colour by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.colour) }
+    var align by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.align ?: PdfTextEditor.Align.LEFT) }
+    var wrap by rememberSaveable(span.page, span.index) { mutableStateOf(existing?.wrap ?: false) }
     val isNew = span.index == PdfTextEditor.NEW
     fun shown(points: Float) = if (points % 1f == 0f) points.toInt().toString() else String.format(Locale.getDefault(), "%.1f", points)
-    val edit = { value: String -> PdfTextEditor.Edit(span.page, span.index, value, family, bold, italic, size, colour) }
+    val edit = { value: String -> PdfTextEditor.Edit(span.page, span.index, value, family, bold, italic, size, colour, align = align, wrap = wrap) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(if (isNew) R.string.tools_edit_new_title else R.string.tools_edit_dialog_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier) {
+        Row(Modifier.padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(if (isNew) R.string.tools_edit_new_title else R.string.tools_edit_dialog_title),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f)
+            )
+            // Beside the title, always in view: it used to sit under the options, below the fold on a phone.
+            if (!isNew) IconButton(onClick = { onApply(edit("")) }) {
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.tools_edit_delete), tint = MaterialTheme.colorScheme.error)
+            }
+        }
+        run {
+            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = text,
-                    onValueChange = { text = it.replace('\n', ' ').take(500) },
+                    // Enter starts a new line in the PDF too.
+                    onValueChange = { text = it.take(1000) },
+                    minLines = 1,
+                    maxLines = 6,
                     label = { Text(stringResource(R.string.tools_edit_text_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -434,6 +476,32 @@ private fun EditSpanDialog(
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tools_edit_larger))
                     }
                 }
+                Text(stringResource(R.string.tools_edit_align), style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        Triple(PdfTextEditor.Align.LEFT, R.string.tools_edit_align_left, Icons.AutoMirrored.Filled.FormatAlignLeft),
+                        Triple(PdfTextEditor.Align.CENTRE, R.string.tools_edit_align_centre, Icons.Default.FormatAlignCenter),
+                        Triple(PdfTextEditor.Align.RIGHT, R.string.tools_edit_align_right, Icons.AutoMirrored.Filled.FormatAlignRight)
+                    ).forEach { (option, label, icon) ->
+                        FilterChip(
+                            selected = align == option,
+                            onClick = { align = option },
+                            label = { Text(stringResource(label)) },
+                            leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        )
+                    }
+                    FilterChip(
+                        selected = wrap,
+                        onClick = { wrap = !wrap },
+                        label = { Text(stringResource(R.string.tools_edit_wrap)) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.WrapText, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                }
+                Text(
+                    stringResource(if (isNew) R.string.tools_edit_align_hint_new else R.string.tools_edit_align_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Text(stringResource(R.string.tools_edit_colour), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     val options = listOf<Pair<Int?, Int>>(
@@ -466,13 +534,14 @@ private fun EditSpanDialog(
                         }
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (!isNew) TextButton(onClick = { onApply(edit("")) }) { Text(stringResource(R.string.tools_edit_delete)) }
-                    if (onUndo != null) TextButton(onClick = onUndo) { Text(stringResource(R.string.tools_edit_undo_change)) }
-                }
             }
-        },
-        confirmButton = { TextButton(onClick = { onApply(edit(text.trim())) }) { Text(stringResource(R.string.common_apply)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
-    )
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (onUndo != null) TextButton(onClick = onUndo) { Text(stringResource(R.string.tools_edit_undo_change)) }
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = { onApply(edit(text.trim())) }) { Text(stringResource(R.string.common_apply)) }
+        }
+    }
 }

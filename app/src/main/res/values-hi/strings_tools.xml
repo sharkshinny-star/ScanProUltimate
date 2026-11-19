@@ -600,4 +600,11 @@
     <string name="tools_subtitle_optimise">फ़ाइलें छोटी, खोजने योग्य या सरल बनाएँ</string>
     <string name="tools_subtitle_convert">फ़ाइलों को PDF में और PDF से बदलें</string>
     <string name="tools_subtitle_secure">पासवर्ड और फ़ाइल की जानकारी</string>
+    <string name="tools_edit_align">स्थान</string>
+    <string name="tools_edit_align_left">बाएँ</string>
+    <string name="tools_edit_align_centre">बीच में</string>
+    <string name="tools_edit_align_right">दाएँ</string>
+    <string name="tools_edit_wrap">लंबा टेक्स्ट अगली पंक्ति में</string>
+    <string name="tools_edit_align_hint">बाएँ, बीच में और दाएँ से नए शब्द वहीं रखे जाते हैं जहाँ पुराने थे। पेज से लंबा टेक्स्ट अगली पंक्तियों में चला जाता है; नीचे की पंक्तियाँ नहीं हिलतीं।</string>
+    <string name="tools_edit_align_hint_new">बाएँ: शब्द वहीं से शुरू होते हैं जहाँ आपने टैप किया; बीच में: उस जगह के बीच में; दाएँ: वहीं खत्म होते हैं। पेज से लंबा टेक्स्ट अगली पंक्तियों में चला जाता है।</string>
 </resources>
