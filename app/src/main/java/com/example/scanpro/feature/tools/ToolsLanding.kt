@@ -35,6 +35,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -109,6 +112,14 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     fun togglePin(id: String) {
         pinned = if (id in pinned) pinned - id else pinned + id
         save()
+    }
+
+    /** Groups opened with "Show all" while the Tools tab is on screen; not saved, so each visit starts tidy. */
+    var openSections by mutableStateOf(emptySet<String>())
+        private set
+
+    fun toggleSection(id: String) {
+        openSections = if (id in openSections) openSections - id else openSections + id
     }
 
     /** Called when a tool is opened: it moves to the front of the recent list, which keeps the last four. */
@@ -318,33 +329,58 @@ private fun Modifier.panel(part: PanelPart): Modifier {
     return this.background(MaterialTheme.colorScheme.surfaceContainerLow, shape)
 }
 
-/** A group's heading at the top of its panel: name, how many tools, and a few words on what they are for. */
+/**
+ * A group's heading at the top of its panel: its name and a few words on what its tools are for, on one line each.
+ * Declutter (2026-11-19): the count badge on every panel went; a folded panel's "Show all (n)" says how many there are.
+ */
 @Composable
-private fun PanelHeading(text: String, subtitle: String?, count: Int?) {
+private fun PanelHeading(text: String, subtitle: String?) {
     Column(
         Modifier
             .fillMaxWidth()
             .padding(top = 16.dp)
             .panel(PanelPart.TOP)
-            .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 8.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
-            if (count != null) {
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    count.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
-                        .padding(horizontal = 8.dp, vertical = 1.dp)
-                )
-            }
-        }
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.semantics { heading() }
+        )
         if (subtitle != null) {
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** How many rows of tiles a group shows before its "Show all (n)" (declutter, 2026-11-19). */
+private const val PANEL_ROWS = 2
+
+/** The foot of a folded group's panel: "Show all (n)" opens the rest of its tools, "Show fewer" folds them again. */
+@Composable
+private fun PanelShowAll(open: Boolean, total: Int, onToggle: () -> Unit) {
+    androidx.compose.foundation.layout.Box(
+        Modifier
+            .fillMaxWidth()
+            .panel(PanelPart.BOTTOM)
+            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+    ) {
+        TextButton(onClick = onToggle, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(
+                if (open) stringResource(R.string.tools_results_show_less) else stringResource(R.string.tools_results_show_all, total),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(if (open) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -441,10 +477,9 @@ private fun ToolCard(
         modifier
             // Tilts towards the finger and springs back, like a physical tile (F197).
             .pressTilt(interaction)
-            .clip(RoundedCornerShape(20.dp))
-            // On the group's panel: a compact tile is just its icon and name (no box of its own); a wide card for large
-            // text stands out a little from the panel.
-            .background(if (compact) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface)
+            .clip(RoundedCornerShape(16.dp))
+            // On the group's panel a tile has no box of its own, wide or compact (declutter, 2026-11-19: the wide card's
+            // own surface made a card inside a card).
             .combinedClickable(
                 interactionSource = interaction,
                 indication = ripple(),
@@ -459,7 +494,7 @@ private fun ToolCard(
                 contentDescription = if (description != null) "$name. $description" else name
                 customActions = listOf(CustomAccessibilityAction(pinLabel) { onTogglePin(); true })
             }
-            .padding(start = if (compact) 8.dp else 14.dp, end = if (compact) 8.dp else 12.dp, top = 14.dp, bottom = if (compact) 12.dp else 14.dp),
+            .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = if (compact) Alignment.CenterHorizontally else Alignment.Start
     ) {
         if (compact) {
@@ -494,7 +529,7 @@ private fun ToolCard(
                 Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             name,
             style = MaterialTheme.typography.titleSmall,
@@ -503,12 +538,12 @@ private fun ToolCard(
             overflow = TextOverflow.Ellipsis
         )
         if (description != null) {
-            Spacer(Modifier.height(2.dp))
+            // One line at most; the whole line is still read out (see the semantics above).
             Text(
                 description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -570,9 +605,9 @@ private fun ToolCardRow(
             .fillMaxWidth()
             .panel(if (last) PanelPart.BOTTOM else PanelPart.MIDDLE)
             .padding(horizontal = 8.dp)
-            .padding(bottom = if (last) 12.dp else 4.dp)
+            .padding(bottom = if (last) 12.dp else 8.dp)
             .height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(if (perRow >= 3) 4.dp else 8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         tools.forEach { tool ->
             ToolCard(
@@ -717,12 +752,22 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
     // (the whole section used to be one item).
     TOOL_SECTIONS.filter { it.tiles.isNotEmpty() && (category == ALL_CATEGORIES || it.id == category) }.forEach { section ->
         item(key = "section-${section.id}", contentType = "tools-header") {
-            PanelHeading(stringResource(section.title), section.subtitle.takeIf { it != 0 }?.let { stringResource(it) }, section.tiles.size)
+            PanelHeading(stringResource(section.title), section.subtitle.takeIf { it != 0 }?.let { stringResource(it) })
         }
-        val rows = section.tiles.chunked(perRow)
+        // Declutter (2026-11-19): with every group shown, each shows its first two rows (the catalogue lists the
+        // most-used tools first) and "Show all (n)" for the rest. A group chosen with its chip shows all of its tools.
+        val limit = perRow * PANEL_ROWS
+        val foldable = category == ALL_CATEGORIES && section.tiles.size > limit
+        val open = !foldable || section.id in memory.openSections
+        val rows = (if (open) section.tiles else section.tiles.take(limit)).chunked(perRow)
         rows.forEachIndexed { index, row ->
             item(key = "section-${section.id}-$index", contentType = "tools-row") {
-                ToolCardRow(row, perRow, memory, onLaunch, last = index == rows.lastIndex)
+                ToolCardRow(row, perRow, memory, onLaunch, last = !foldable && index == rows.lastIndex)
+            }
+        }
+        if (foldable) {
+            item(key = "section-${section.id}-more", contentType = "tools-more") {
+                PanelShowAll(open = open, total = section.tiles.size, onToggle = { memory.toggleSection(section.id) })
             }
         }
     }

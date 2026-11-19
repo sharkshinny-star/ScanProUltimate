@@ -54,7 +54,7 @@ fun path(t: List<P>) = Path2D.Double().apply { moveTo(t[0].x, t[0].y); for (i in
 fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248, 247, 242), receipt: Boolean = false,
           shadow: Shadow? = null, noisy: Boolean = false, spread: Boolean = false, dim: Boolean = false, noPage: Boolean = false,
           photo: Boolean = false, warm: Boolean = false, objects: List<(Graphics2D) -> Unit> = emptyList(),
-          border: Int = 0, borderInset: Int = 0): Scene {
+          border: Int = 0, borderInset: Int = 0, card: Boolean = false): Scene {
     val random = Random(name.hashCode().toLong())
     var img = BufferedImage(W, H, BufferedImage.TYPE_INT_RGB)
     val g = img.createGraphics(); g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -74,11 +74,11 @@ fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248
         Core.multiply(f, inv3, f); f.convertTo(bgr, CvType.CV_8UC3)
     }
     // Page, flat then warped.
-    val fw = if (receipt) 360 else if (spread) 1400 else 800
-    val fh = if (receipt) 1500 else if (spread) 1000 else 1131
+    val fw = if (card) 856 else if (receipt) 360 else if (spread) 1400 else 800
+    val fh = if (card) 540 else if (receipt) 1500 else if (spread) 1000 else 1131
     val flat = BufferedImage(fw, fh, BufferedImage.TYPE_INT_RGB)
     val pg = flat.createGraphics(); pg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-    drawPage(pg, fw, fh, pageColor, receipt, spread, random)
+    if (card) drawCard(pg, fw, fh, pageColor, random) else drawPage(pg, fw, fh, pageColor, receipt, spread, random)
     if (border > 0) {
         // A printed dark frame (a certificate, a form): [border] px thick, [borderInset] px in from the paper's edge.
         pg.color = Color(28, 28, 34)
@@ -94,7 +94,15 @@ fun scene(name: String, desk: Desk, truth: List<P>, pageColor: Color = Color(248
     val dst = MatOfPoint2f(*truth.map { Point(it.x, it.y) }.toTypedArray())
     val hm = Imgproc.getPerspectiveTransform(src, dst)
     val warped = Mat(); Imgproc.warpPerspective(bufToMat(flat), warped, hm, Size(W.toDouble(), H.toDouble()), Imgproc.INTER_LINEAR)
-    val pmask = Mat.zeros(H, W, CvType.CV_8U); Imgproc.fillPoly(pmask, listOf(MatOfPoint(*truth.map { Point(it.x, it.y) }.toTypedArray())), Scalar(255.0), Imgproc.LINE_AA)
+    val pmask = Mat.zeros(H, W, CvType.CV_8U)
+    if (card) {
+        // A plastic card has rounded corners (radius about 3.2 mm of 85.6 mm): the mask is a rounded rectangle warped like the card.
+        val flatMask = BufferedImage(fw, fh, BufferedImage.TYPE_INT_RGB); val mg = flatMask.createGraphics()
+        mg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        mg.color = Color.WHITE; mg.fillRoundRect(0, 0, fw, fh, 64, 64); mg.dispose()
+        val warpedMask = Mat(); Imgproc.warpPerspective(bufToMat(flatMask), warpedMask, hm, Size(W.toDouble(), H.toDouble()), Imgproc.INTER_LINEAR)
+        Imgproc.cvtColor(warpedMask, pmask, Imgproc.COLOR_BGR2GRAY)
+    } else Imgproc.fillPoly(pmask, listOf(MatOfPoint(*truth.map { Point(it.x, it.y) }.toTypedArray())), Scalar(255.0), Imgproc.LINE_AA)
     run {
         val a = Mat(); pmask.convertTo(a, CvType.CV_32F, 1 / 255.0); val a3 = Mat(); Core.merge(listOf(a, a, a), a3)
         val inv3 = Mat(); Core.subtract(Mat(H, W, CvType.CV_32FC3, Scalar(1.0, 1.0, 1.0)), a3, inv3)
@@ -177,6 +185,21 @@ fun drawPage(g: Graphics2D, w: Int, h: Int, pageColor: Color, receipt: Boolean, 
     }
 }
 
+/** An ID-1 card: a tinted face with a darker header band, a portrait, a chip and a few lines of small print. */
+fun drawCard(g: Graphics2D, w: Int, h: Int, cardColor: Color, random: Random) {
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+    g.paint = GradientPaint(0f, 0f, cardColor, w.toFloat(), h.toFloat(), cardColor.darker()); g.fillRect(0, 0, w, h)
+    g.color = Color(cardColor.red / 2, cardColor.green / 2, (cardColor.blue * 3 / 4).coerceAtMost(255)); g.fillRect(0, 0, w, 86)
+    g.color = Color(245, 245, 242); g.font = Font(Font.SANS_SERIF, Font.BOLD, 40); g.drawString("IDENTITY CARD", 40, 60)
+    g.color = Color(215, 190, 160); g.fillRect(48, 130, 230, 300)
+    g.color = Color(120, 90, 70); g.fillOval(100, 160, 125, 140); g.fillRoundRect(80, 300, 165, 150, 60, 60)
+    g.color = Color(214, 178, 90); g.fillRoundRect(640, 150, 110, 84, 14, 14)
+    g.color = Color(30, 30, 36); g.font = Font(Font.SANS_SERIF, Font.PLAIN, 24)
+    val lines = listOf("SURNAME  SAMPLE", "GIVEN NAMES  ALEX", "DATE OF BIRTH  01 01 1990", "NUMBER  ${random.nextInt(900000) + 100000}", "EXPIRES  01 01 2030")
+    lines.forEachIndexed { i, text -> g.drawString(text, 320, 160 + i * 52) }
+    g.color = Color(60, 60, 66); g.font = Font(Font.MONOSPACED, Font.PLAIN, 30); g.drawString("ID<<SAMPLE<<ALEX<<<<<<<<<<<<<<<", 40, 500)
+}
+
 /** Desk clutter for the no-page scenes: things a page detector must not take for a page. */
 fun laptop(g: Graphics2D) { g.color = Color(58, 58, 62); g.fillRoundRect(250, 180, 760, 520, 24, 24); g.color = Color(30, 34, 44); g.fillRect(280, 205, 700, 440)
     g.color = Color(200, 210, 225); g.fillRect(320, 240, 620, 360) }
@@ -253,6 +276,16 @@ fun scenes(extra: Boolean): List<Scene> = listOf(
     scene("c_dark_border_inset", Desk.WOOD, A4, border = 26, borderInset = 22),
     scene("c_dark_border_white_desk", Desk.WHITE, A4, border = 34, pageColor = Color(250, 250, 248)),
     scene("c_dark_border_shadow_left", Desk.WOOD, A4, border = 34, shadow = Shadow(-40.0, 0.0, 420.0, 0.0)),
+    // ID cards (2026-11-19): small, tinted, rounded corners, a portrait and a chip; the live camera and ID card mode must outline them.
+    scene("k_card_blue_wood", Desk.WOOD, quad(330.0, 290.0, 960.0, 285.0, 965.0, 690.0, 325.0, 695.0), pageColor = Color(196, 214, 236), card = true),
+    scene("k_card_white_grey", Desk.GREY, quad(330.0, 290.0, 960.0, 285.0, 965.0, 690.0, 325.0, 695.0), pageColor = Color(242, 242, 238), card = true),
+    scene("k_card_green_dark", Desk.DARK, quad(330.0, 290.0, 960.0, 285.0, 965.0, 690.0, 325.0, 695.0), pageColor = Color(190, 220, 190), card = true),
+    scene("k_card_blue_white", Desk.WHITE, quad(330.0, 290.0, 960.0, 285.0, 965.0, 690.0, 325.0, 695.0), pageColor = Color(196, 214, 236), card = true),
+    scene("k_card_far_wood", Desk.WOOD, quad(470.0, 350.0, 830.0, 346.0, 834.0, 580.0, 466.0, 584.0), pageColor = Color(196, 214, 236), card = true),
+    scene("k_card_tilted_wood", Desk.WOOD, rotated(640.0, 480.0, 640.0, 404.0, 14.0), pageColor = Color(196, 214, 236), card = true),
+    scene("k_card_in_guide_wood", Desk.WOOD, quad(90.0, 150.0, 1190.0, 145.0, 1195.0, 840.0, 85.0, 845.0), pageColor = Color(196, 214, 236), card = true),
+    scene("k_card_shadow_wood", Desk.WOOD, quad(330.0, 290.0, 960.0, 285.0, 965.0, 690.0, 325.0, 695.0), pageColor = Color(196, 214, 236), card = true, shadow = Shadow(-80.0, -80.0, 300.0, 300.0, soft = 0.1f)),
+    scene("k_card_warm_wood", Desk.WOOD, quad(330.0, 290.0, 960.0, 285.0, 965.0, 690.0, 325.0, 695.0), pageColor = Color(196, 214, 236), card = true, warm = true),
     scene("n_wood_only", Desk.WOOD, A4, noPage = true),
     scene("n_mat_only", Desk.MAT, A4, noPage = true),
     scene("n_white_only", Desk.WHITE, A4, noPage = true),
@@ -284,19 +317,21 @@ fun main(args: Array<String>) {
         println("time: median-of-scenes %.2f ms, mean %.2f ms, max %.2f".format(med.sorted()[med.size / 2], med.average(), med.max()))
         return
     }
+    if ("jitter" in args) { jitterBench("extra" in args, args.firstOrNull { it.startsWith("only=") }?.removePrefix("only=")); return }
     if ("enhance" in args) { enhanceBench(args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")); return }
     val extra = "extra" in args
     val colour = "colour" in args
     // "live": the colour map at a quarter of the frame's size, as the live camera makes it (LiveChroma), not full size.
     val live = "live" in args
-    fun chromaOf(rgba: Mat): Mat {
-        val full = DocumentEdgeDetector.chromaMap(rgba)
+    fun quarter(full: Mat): Mat {
         if (!live) return full
         val small = Mat()
         Imgproc.resize(full, small, org.opencv.core.Size(full.cols() / 4.0, full.rows() / 4.0), 0.0, 0.0, Imgproc.INTER_AREA)
         full.release()
         return small
     }
+    fun chromaOf(rgba: Mat): Mat = quarter(DocumentEdgeDetector.chromaMap(rgba))
+    fun planesOf(rgba: Mat): Mat = quarter(DocumentEdgeDetector.colourPlanes(rgba))
     val dump = args.firstOrNull { it.startsWith("dump=") }?.removePrefix("dump=")
     val only = args.firstOrNull { it.startsWith("only=") }?.removePrefix("only=")
     println("scene | found | err% | IoU | ms | conf")
@@ -314,22 +349,25 @@ fun main(args: Array<String>) {
         rows += Triple(s.name, err, o)
         if (s.name.startsWith("n_") && colour) {
             val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
-            val c = DocumentEdgeDetector.detect(s.gray, chromaOf(rgba))
+            val c = DocumentEdgeDetector.detect(s.gray, chromaOf(rgba), planesOf(rgba))
             println("    colour: NEG conf ${"%.2f".format(c.confidence)} convincing ${c.isConvincingPage} area ${"%.2f".format(c.areaRatio)} framed ${c.framedSides}")
         }
         if (s.name.startsWith("n_")) { println("${s.name} | NEG conf ${"%.2f".format(det.confidence)} convincing ${det.isConvincingPage} area ${"%.2f".format(det.areaRatio)} framed ${det.framedSides}"); return@forEach }
         println("${s.name} | true | ${"%.2f".format(err)} | ${"%.3f".format(o)} | ${"%.1f".format(times[3])} | ${"%.2f".format(det.confidence)} | framed ${det.framedSides}")
+        var colourFound: List<P>? = null
         if (colour) {
             val rgba = Mat(); Imgproc.cvtColor(s.color, rgba, Imgproc.COLOR_BGR2RGBA)
             val chroma = chromaOf(rgba)
-            DocumentEdgeDetector.detect(s.gray, chroma)
-            var cdet = DocumentEdgeDetector.detect(s.gray, chroma)
-            val ctimes = List(7) { val t = System.nanoTime(); cdet = DocumentEdgeDetector.detect(s.gray, chroma); (System.nanoTime() - t) / 1e6 }.sorted()
+            val planes = planesOf(rgba)
+            DocumentEdgeDetector.detect(s.gray, chroma, planes)
+            var cdet = DocumentEdgeDetector.detect(s.gray, chroma, planes)
+            val ctimes = List(7) { val t = System.nanoTime(); cdet = DocumentEdgeDetector.detect(s.gray, chroma, planes); (System.nanoTime() - t) / 1e6 }.sorted()
             val cq = cdet.quad
             if (cq == null) { println("    colour: not found"); colourRows += Triple(s.name, 100.0, 0.0) } else {
                 val cf = listOf(cq.topLeft, cq.topRight, cq.bottomRight, cq.bottomLeft).map { P(it.x * W.toDouble(), it.y * H.toDouble()) }
                 val cerr = s.truth.indices.map { hypot(cf[it].x - s.truth[it].x, cf[it].y - s.truth[it].y) }.average() / hypot(W.toDouble(), H.toDouble()) * 100
                 val co = iou(s.truth, cf)
+                colourFound = cf
                 colourRows += Triple(s.name, cerr, co)
                 println("    colour: err ${"%.2f".format(cerr)} | IoU ${"%.3f".format(co)} | ${"%.1f".format(ctimes[3])} ms | conf ${"%.2f".format(cdet.confidence)} | framed ${cdet.framedSides}")
             }
@@ -338,10 +376,15 @@ fun main(args: Array<String>) {
             val out = s.color.clone()
             Imgproc.polylines(out, listOf(MatOfPoint(*s.truth.map { Point(it.x, it.y) }.toTypedArray())), true, Scalar(0.0, 200.0, 0.0), 2)
             Imgproc.polylines(out, listOf(MatOfPoint(*found.map { Point(it.x, it.y) }.toTypedArray())), true, Scalar(0.0, 0.0, 255.0), 3)
+            // With colour: the colour result in blue, over the grey-only one in red.
+            colourFound?.let { cf -> Imgproc.polylines(out, listOf(MatOfPoint(*cf.map { Point(it.x, it.y) }.toTypedArray())), true, Scalar(255.0, 60.0, 0.0), 3) }
             Imgcodecs.imwrite("$dump/${s.name}.jpg", out)
         }
     }
-    val bench = rows.filter { it.first.take(2) !in listOf("x_", "n_", "c_") }
+    val kRows = rows.filter { it.first.startsWith("k_") }
+    if (kRows.isNotEmpty()) println("card cases (grey-only): mean IoU ${"%.3f".format(kRows.map { it.third }.average())}, under 2% err: ${kRows.count { it.second < 2.0 }}/${kRows.size}")
+    if (colour) { val kc = colourRows.filter { it.first.startsWith("k_") }; if (kc.isNotEmpty()) println("card cases (colour): mean IoU ${"%.3f".format(kc.map { it.third }.average())}, under 2% err: ${kc.count { it.second < 2.0 }}/${kc.size}") }
+    val bench = rows.filter { it.first.take(2) !in listOf("x_", "n_", "c_", "k_") }
     if (bench.isEmpty()) return
     println("bench: mean IoU ${"%.3f".format(bench.map { it.third }.average())}, worst err ${"%.2f".format(bench.maxOf { it.second })}")
     val cRows = rows.filter { it.first.startsWith("c_") }
@@ -349,11 +392,52 @@ fun main(args: Array<String>) {
     if (colour) {
         val cc = colourRows.filter { it.first.startsWith("c_") }
         if (cc.isNotEmpty()) println("colour cases (colour): mean IoU ${"%.3f".format(cc.map { it.third }.average())}, under 2% err: ${cc.count { it.second < 2.0 }}/${cc.size}")
-        val cb = colourRows.filter { it.first.take(2) !in listOf("x_", "n_", "c_") }
+        val cb = colourRows.filter { it.first.take(2) !in listOf("x_", "n_", "c_", "k_") }
         val cx = colourRows.filter { it.first.startsWith("x_") }
         println("colour bench: mean IoU ${"%.3f".format(cb.map { it.third }.average())}, worst err ${"%.2f".format(cb.maxOf { it.second })}")
         if (cx.isNotEmpty()) println("colour extra: mean IoU ${"%.3f".format(cx.map { it.third }.average())}, under 2% err: ${cx.count { it.second < 2.0 }}/${cx.size}")
     }
     val x = rows.filter { it.first.startsWith("x_") }
     if (x.isNotEmpty()) println("extra: mean IoU ${"%.3f".format(x.map { it.third }.average())}, under 2% err: ${x.count { it.second < 2.0 }}/${x.size}")
+}
+
+/**
+ * How steady the outline is from frame to frame (2026-11-19): each scene is turned into 24 "camera frames" (sensor
+ * noise and a small exposure flicker, the page not moving) and detected with colour as the live camera does. Counted
+ * for the detector's own outlines and for what [OutlineTracker] draws from them: frames with no outline, jumps (a
+ * corner more than [OutlineTracker.JUMP] from where it was in the previous frame) and trembling (mean corner movement between frames,
+ * in thousandths of the frame).
+ */
+fun jitterBench(extra: Boolean, only: String?) {
+    val frames = 24
+    var rawMissing = 0; var rawJumps = 0; var shownMissing = 0; var shownJumps = 0
+    val rawTremble = mutableListOf<Double>(); val shownTremble = mutableListOf<Double>()
+    println("scene | raw: missing jumps tremble | shown: missing jumps tremble")
+    scenes(extra).filter { !it.name.startsWith("n_") && (only == null || only in it.name) }.forEach { s ->
+        val random = Random(s.name.hashCode().toLong() + 7)
+        val tracker = com.example.scanpro.scanner.OutlineTracker()
+        var previousRaw: com.example.scanpro.data.CropQuad? = null
+        var previousShown: com.example.scanpro.data.CropQuad? = null
+        var rm = 0; var rj = 0; var sm = 0; var sj = 0
+        val rt = mutableListOf<Double>(); val st = mutableListOf<Double>()
+        repeat(frames) { i ->
+            val frame = s.color.clone()
+            addNoise(frame, random, 5.0, 0.97 + random.nextDouble() * 0.06)
+            val gray = Mat(); Imgproc.cvtColor(frame, gray, Imgproc.COLOR_BGR2GRAY)
+            val rgba = Mat(); Imgproc.cvtColor(frame, rgba, Imgproc.COLOR_BGR2RGBA)
+            fun quarter(full: Mat): Mat { val small = Mat(); Imgproc.resize(full, small, Size(full.cols() / 4.0, full.rows() / 4.0), 0.0, 0.0, Imgproc.INTER_AREA); full.release(); return small }
+            val chroma = quarter(DocumentEdgeDetector.chromaMap(rgba)); val planes = quarter(DocumentEdgeDetector.colourPlanes(rgba))
+            val raw = DocumentEdgeDetector.detect(gray, chroma, planes).quad
+            frame.release(); gray.release(); rgba.release(); chroma.release(); planes.release()
+            val shown = tracker.update(raw, i * 66L)
+            if (raw == null) rm++ else previousRaw?.let { p -> val d = com.example.scanpro.scanner.OutlineTracker.cornerDistance(p, raw).toDouble(); if (com.example.scanpro.scanner.OutlineTracker.farthestCorner(p, raw) > com.example.scanpro.scanner.OutlineTracker.JUMP) rj++ else rt += d * 1000 }
+            if (shown == null) sm++ else previousShown?.let { p -> val d = com.example.scanpro.scanner.OutlineTracker.cornerDistance(p, shown).toDouble(); if (com.example.scanpro.scanner.OutlineTracker.farthestCorner(p, shown) > com.example.scanpro.scanner.OutlineTracker.JUMP) sj++ else st += d * 1000 }
+            if (raw != null) previousRaw = raw
+            if (shown != null) previousShown = shown
+        }
+        println("${s.name} | $rm $rj ${"%.2f".format(rt.average())} | $sm $sj ${"%.2f".format(st.average())}")
+        rawMissing += rm; rawJumps += rj; shownMissing += sm; shownJumps += sj; rawTremble += rt; shownTremble += st
+    }
+    println("jitter raw: missing $rawMissing, jumps $rawJumps, tremble ${"%.2f".format(rawTremble.average())} (worst ${"%.2f".format(rawTremble.maxOrNull() ?: 0.0)})")
+    println("jitter shown: missing $shownMissing, jumps $shownJumps, tremble ${"%.2f".format(shownTremble.average())} (worst ${"%.2f".format(shownTremble.maxOrNull() ?: 0.0)})")
 }

@@ -32,7 +32,9 @@ Related: [Compatibility (device matrix)](PLAYSTORE_COMPATIBILITY_REPORT.md) · [
 | `44375015645` | `3692fbf` | Cancelled by a newer push |
 | `44376563792` (PR) | `dda768a` (docs on top of `3692fbf`) | **Failed before compiling**: plugin `org.jetbrains.kotlin.plugin.compose` 2.4.21 not resolved from Google or Maven Central (likely a repository/network fault, NOT VERIFIED). Code status: pending CI (coordinator adds the next result) |
 
-Last green runs on the branch: push `44323159144`, PR `44353049118` (`a8f220c`). Nothing after `a8f220c` has a full green run yet.
+| 219 / `44385336522` | `07b2e0e` | **Passed**: source audit, unit tests and lint, Play bundle (test build with `-Pscanpro.allowMissingPolicy=true`), Room schemas, sideload APKs, size report. Test count and sizes not read from the log |
+
+Last green run on the branch: 219 (`07b2e0e`). Commits after it (F213 detection, F214 declutter, 2026-11-19) are pending their own CI run.
 
 ## 3. Tests added in this release (all pending CI)
 

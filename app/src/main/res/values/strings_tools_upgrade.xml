@@ -4,6 +4,7 @@
     <string name="tool_demo_how_it_works">How it works</string>
     <string name="tool_demo_shown">Shown</string>
     <string name="tool_demo_hidden">Hidden</string>
+    <string name="tools_more_options">More options</string>
     <string name="pdf_outcome_size_unknown">Size known after</string>
     <plurals name="pdf_outcome_pages">
         <item quantity="one">%1$d page</item>

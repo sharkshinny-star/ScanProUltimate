@@ -51,10 +51,27 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 ## Latest results (2026-11-19, F203 Tools tab fixes, cloud container with the Android SDK)
 
+- After merging the other session's F213–F214 (detection, decluttered Tools tab) with F203: `./gradlew :app:testDebugUnitTest :app:lintDebug`: 1,039 tests, 0 failed, 86 skipped; lint 0 errors. The merged Tools tab was rendered again (light, dark, Hindi) and looked at: two rows and "Show all" per group from F214, with F203's three-line names, Fill form icon and viewer row.
 - `./gradlew :app:testDebugUnitTest :app:lintDebug --no-configuration-cache`: 1,022 tests, 0 failed, 86 skipped; lint 0 errors.
 - `--tests '*ToolsLandingScreenshotTest*' -Pscanpro.screenshots=true`: `tools-landing-tall-{light,dark}.png` and `tools-landing-tall-hi-{light,dark}.png` rendered and looked at.
 - NOT run: anything on a device.
 
+## Latest results (2026-11-19, F213 detection and F214 declutter, Linux cloud container, no Android SDK)
+
+- Desktop detector benchmark, `cd scripts/scan-bench && gradle -q run --args="extra colour live"` (71 page scenes, 12 no-page scenes):
+  ID cards (new `k_` scenes) 9 of 9 under 2% corner error with colour, mean IoU 0.965 (before F213: 4 of 9); grey-only 6 of 9.
+  Main bench mean IoU 0.986, worst error 0.58% (unchanged); with colour 0.982 and 0.74%. Colour cases 17 of 17 grey-only (was 16) and with colour. Extra shadow cases 21 of 21 grey-only (was 19) and with colour. No-page scenes: same verdicts as before.
+- `gradle -q run --args="time"`: median 7.8 ms, mean 8.2 ms, max 12.9 ms grey-only (F170: 6.6 ms median); with colour about 12 ms a scene (was about 8).
+- `gradle -q run --args="extra jitter"` (new: 24 noisy frames of each scene): detector's own outlines 9 jumps, trembling 2.23; as drawn through `OutlineTracker` 1 jump, trembling 0.47 (thousandths of the frame); no missing frames either way.
+- `OutlineTrackerTest` (13), `LiveChromaTest` (8), `PageQualityTest` and `PageFramingTest` (14 together): 35 passed, 0 failed, in a temporary desktop JVM project against the benchmark's stubs and desktop OpenCV 4.9. Not run in the app build here.
+- `python3 -I scripts/ci/scanpro-quality-audit.py`: PASS (2482 strings).
+- **Not run locally:** `:app:compileDebugKotlin`, `testDebugUnitTest`, `lintDebug`, `bundleRelease` (no Android SDK in this container); the CI run for this commit is the compile and test check. Nothing was seen on a phone (R81, R82).
+
+## Latest results (2026-11-18, CI run 219 on `07b2e0e`, run id `44385336522`)
+
+- All steps passed: source audit, Room schema check, unit tests and lint (6.5 min), Play bundle (`bundleRelease -Pscanpro.allowMissingPolicy=true`, test build, no policy URL), exported Room schemas, sideload APKs, size report. Whole job about 19.5 minutes.
+- Test count and bundle/APK sizes were not read from the log. First full green run since `a8f220c`: F193, F195–F197 and F210–F212 now compile and their unit tests pass.
+- Not covered: any device test, signing with the release key, the 16 KB check of the packaged bundle (release-check workflow not yet on the default branch).
 ## Latest results (2026-11-19, F202 crop editor rotation, cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest --tests '*CropEditorDialogTest*' --tests '*QuadMathTest*'`: 2/2 and 13/13. `:app:lintDebug`: 0 errors.

@@ -61,4 +61,36 @@ internal object LiveChroma {
         }
         return true
     }
+
+    /**
+     * The frame's two colour-difference planes at the map's size, interleaved (Cb then Cr for each cell) into [out]
+     * (at least 2 x [width] x [height] bytes), for [DocumentEdgeDetector]'s colour edges (2026-11-19): each cell is the
+     * mean of the four colour samples its [STEP] x [STEP] block covers. False, with [out] untouched, when an array is
+     * too short for the frame.
+     */
+    fun planes(
+        frameWidth: Int, frameHeight: Int,
+        u: ByteArray, v: ByteArray, uvRowStride: Int, uvPixelStride: Int,
+        out: ByteArray
+    ): Boolean {
+        val w = width(frameWidth)
+        val h = height(frameHeight)
+        if (w <= 0 || h <= 0 || out.size < 2 * w * h) return false
+        val lastUv = (2 * (h - 1) + 1) * uvRowStride + (2 * (w - 1) + 1) * uvPixelStride
+        if (uvRowStride <= 0 || uvPixelStride <= 0 || lastUv >= u.size || lastUv >= v.size) return false
+        var o = 0
+        for (qy in 0 until h) {
+            val row0 = 2 * qy * uvRowStride
+            val row1 = row0 + uvRowStride
+            for (qx in 0 until w) {
+                val a = 2 * qx * uvPixelStride
+                val b = a + uvPixelStride
+                out[o++] = (((u[row0 + a].toInt() and 0xFF) + (u[row0 + b].toInt() and 0xFF) +
+                    (u[row1 + a].toInt() and 0xFF) + (u[row1 + b].toInt() and 0xFF) + 2) / 4).toByte()
+                out[o++] = (((v[row0 + a].toInt() and 0xFF) + (v[row0 + b].toInt() and 0xFF) +
+                    (v[row1 + a].toInt() and 0xFF) + (v[row1 + b].toInt() and 0xFF) + 2) / 4).toByte()
+            }
+        }
+        return true
+    }
 }

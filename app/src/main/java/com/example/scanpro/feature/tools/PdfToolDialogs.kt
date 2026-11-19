@@ -151,14 +151,6 @@ internal fun PasswordDialog(
                     PickedFileRow(fileUri)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
-                // Protect: the file as it is now and as it will be (same pages, a little larger for the encryption).
-                if (isProtect && fileUri != null && alreadyProtected == false) {
-                    val facts by rememberPdfFacts(fileUri)
-                    facts?.let { known ->
-                        PdfOutcomeRow(known, known.pageCount?.let { PdfOutcome(it, known.sizeBytes + PROTECT_OVERHEAD_BYTES, approximate = true) })
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                }
                 if (alreadyProtected == null) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
                         com.example.scanpro.core.designsystem.ProcessingDots(MaterialTheme.colorScheme.primary)
@@ -225,14 +217,7 @@ internal fun PasswordDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                if (isProtect && password.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    PasswordStrength(password)
-                }
-                if (isProtect) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ToolHint(stringResource(R.string.edit_protect_what_happens))
-                }
+                // The error sits right under the fields it is about.
                 if (errorText != null) {
                     Text(
                         errorText!!,
@@ -240,6 +225,23 @@ internal fun PasswordDialog(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 4.dp)
                     )
+                }
+                if (isProtect && password.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PasswordStrength(password)
+                }
+                // Protect: the file as it is now and as it will be (same pages, a little larger for the encryption),
+                // after the choice it depends on.
+                if (isProtect && fileUri != null) {
+                    val facts by rememberPdfFacts(fileUri)
+                    facts?.let { known ->
+                        Spacer(modifier = Modifier.height(16.dp))
+                        PdfOutcomeRow(known, known.pageCount?.let { PdfOutcome(it, known.sizeBytes + PROTECT_OVERHEAD_BYTES, approximate = true) })
+                    }
+                }
+                if (isProtect) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ToolHint(stringResource(R.string.edit_protect_what_happens))
                 }
             }
         }
