@@ -66,6 +66,17 @@ is the reference. (2) Add the same list to the privacy policy (`PRIVACY_POLICY_T
 paragraph; keep the two consistent). (3) The `INTERNET` permission exists only for translation model downloads; say so in
 the "Data collected" explanations if the form asks.
 
+### Health apps declaration (2026-11-19, F175)
+
+Play Console > Policy > App content > Health apps must be answered by every app, including apps with no health features.
+ScanPro's only health-adjacent feature is the drink-water reminder: a timed notification with "I drank" and "Skip"
+buttons that both only dismiss it. Nothing is logged, no intake, goal or history is kept, and Health Connect is not
+used. Google's pages do not name water reminders; the agent's reading is that a plain reminder is not a tool "for
+tracking dietary intake" (the Nutrition and weight management category), so "no health features" is defensible, and
+ticking that category is the cautious alternative. The owner decides. Do not add logging of the answers, daily totals or
+goals without revisiting this: that would make it a hydration tracker, which does belong in that category. Keep health
+claims out of the notice text and the store listing.
+
 ## 4. Scanner quality acceptance
 
 - [ ] A4/Letter pages: straight-on, 15°, 30°, and strong perspective angles.

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.scanpro.R
 import com.example.scanpro.core.notifications.AppNotifications
+import com.example.scanpro.core.notifications.HydrationSchedule
 import com.example.scanpro.core.operations.OperationRunner
 import com.example.scanpro.core.operations.UiMessage
 import com.example.scanpro.data.DEFAULT_TRASH_RETENTION_DAYS
@@ -170,6 +171,8 @@ class SettingsViewModel @Inject constructor(
     val notifyWater = settings.hydrationReminders.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
     /** Through [com.example.scanpro.work.HydrationReminders], so the queued reminder starts or stops with the switch. */
     fun setNotifyWater(value: Boolean) { viewModelScope.launch { hydration.setEnabled(value) } }
+    val waterTiming = settings.hydrationTiming.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HydrationSchedule.Timing())
+    fun setWaterTiming(value: HydrationSchedule.Timing) { viewModelScope.launch { hydration.setTiming(value) } }
     /** Whether Android lets the app post notifications at all (permission and the app-wide switch). */
     fun canPostNotifications(): Boolean = notifications.canPost()
     fun notificationSettingsIntent() = notifications.systemSettingsIntent()

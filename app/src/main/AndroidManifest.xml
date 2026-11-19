@@ -112,10 +112,10 @@
                 android:resource="@xml/scan_widget_info" />
         </receiver>
 
-        <!-- "Turn off" on a drink-water notice stops the reminders without opening the app. Not exported:
+        <!-- "I drank" and "Skip" on a drink-water notice put it away without opening the app. Not exported:
              only ScanPro's own PendingIntent may fire it. -->
         <receiver
-            android:name=".work.HydrationOffReceiver"
+            android:name=".work.HydrationActionReceiver"
             android:exported="false" />
 
         <service

@@ -235,15 +235,19 @@ sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional remin
 routed by `AppViewModel.destinationRequest` below the app-lock gate. No document names; neutral text when app lock is on.
 Runtime permissions (camera, notifications on 13+) are asked once after the welcome on first launch (`StartupPermissions` in `ui/WelcomeScreen.kt`), then again in context if refused.
 
-**Drink-water reminders (F157).** `core/notifications/HydrationSchedule` (pure, tested) places three notices a day with
-widening gaps: one hour after the day starts at 09:00, then two hours on, then three (10:00, 12:00, 15:00 local time).
-`work/HydrationReminders` (Hilt singleton) keeps exactly one delayed `HydrationWorker` in a unique WorkManager queue:
-each run shows the notice (skipped when more than 45 min late: phone off, Doze) and queues the next with
-`APPEND_OR_REPLACE`, so no exact-alarm or boot permission is needed and the queue survives restarts
-(`ScanProApplication` re-syncs it at start). Channel `drink_water`; the notice carries a "Turn off" action
-(`HydrationOffReceiver`, not exported) and times itself out after an hour. Preference `notify_drink_water`
-(`SettingsStore.hydrationReminders`, default on; the switch sits in Settings > Notifications and goes through
-`HydrationReminders.setEnabled`, which starts or stops the queue with the flag).
+**Drink-water reminders (F157, timings F175).** `core/notifications/HydrationSchedule` (pure, tested) places the
+notices from the user's `Timing`: the first reminder of the day, the time after which there are none, and the gap
+between them (default 09:00, 18:00 and three hours: 09:00, 12:00, 15:00, 18:00 local time; values are clamped, the gap
+to at least an hour). `work/HydrationReminders` (Hilt singleton) keeps exactly one delayed `HydrationWorker` in a unique
+WorkManager queue: each run shows the notice (skipped when more than 45 min late, or when its time is no longer one of
+the day's reminders) and queues the next with `APPEND_OR_REPLACE`, so no exact-alarm or boot permission is needed and
+the queue survives restarts (`ScanProApplication` re-syncs it at start). Channel `drink_water`; the notice carries "I
+drank" and "Skip" (`HydrationActionReceiver`, not exported), which both only put it away: nothing about the answer is
+stored, so the app keeps no record of drinking (a plain reminder, not a tracker, for Play's Health apps declaration;
+see `PLAY_STORE_CHECKLIST.md` section 3). It times itself out after an hour. Preferences `notify_drink_water`
+(`SettingsStore.hydrationReminders`, default on) and `drink_water_first_minute` / `drink_water_last_minute` /
+`drink_water_every_minutes` (`SettingsStore.hydrationTiming`); the switch and the three timing rows sit in Settings >
+Notifications and go through `HydrationReminders.setEnabled` / `setTiming`, which restart the queue.
 
 **Default PDF app (F157).** Android has no role an app can request for PDFs, so `core/ui/DefaultPdfApp` resolves who
 handles `ACTION_VIEW application/pdf` (`OURS` / `UNSET` / `OTHER`), and `ask()` opens ScanPro's own one-page sample PDF so

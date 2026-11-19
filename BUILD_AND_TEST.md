@@ -41,6 +41,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-19, F175 drink-water reminder timings, Linux cloud container)
+
+- `:app:compileDebugKotlin` passed; `:app:testDebugUnitTest` 935 tests (`HydrationScheduleTest` rewritten, 10 tests, 5 more than before), 0 failed, 82 skipped (counted from the result XML); `python3 -I scripts/ci/scanpro-quality-audit.py` PASS.
+- NOT run: `:app:lintDebug` (ten attempts, each stopped by Maven Central answering HTTP 429 for a `:translate` dependency), `:app:bundleRelease`, sideload `assembleRelease`, anything on a device (R57). CI runs lint and the release bundle on the push.
+- SDK installed again in `/opt/android-sdk` with `sdkmanager` (cmdline-tools 13114758, platform `android-37.0`, Build-Tools 36.0.0, licences accepted as before). Maven Central rate-limited this container throughout: the compile needed five attempts with `--max-workers=1`.
+
 ## Latest results (2026-11-18, F174 Redact areas, Linux cloud container)
 
 - `:app:testDebugUnitTest` 930 tests (5 new: `RedactBoxesEditorTest`, two more in `PdfCropRedactToolsTest`), 0 failed, 82 skipped; `:app:lintDebug` 0 errors, 96 warnings (none in the new files); `:app:compileDebugAndroidTestKotlin` passed; `:app:bundleRelease` passed, `app-release.aab` 49,886,534 bytes (47.6 MiB, +35 KB).
