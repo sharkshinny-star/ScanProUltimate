@@ -88,6 +88,21 @@ class TaskBannerTest {
         File(outDir, "task_banner-light.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    /** Three moments of the snake under the bar: coming in, mid-way, and leaving while the next one comes in. */
+    @Test
+    fun rendersSnake() {
+        assumeTrue("Pass -Pscanpro.screenshots=true to render screenshots", System.getProperty("scanpro.screenshots") == "true")
+        val outDir = File(System.getProperty("user.dir"), "build/screenshots").apply { mkdirs() }
+        show(status = "Reading text on 12 pages…")
+        var at = 0L
+        for (moment in listOf(700L, 1_300L, 2_050L)) {
+            compose.mainClock.advanceTimeBy(moment - at)
+            at = moment
+            val image = compose.onRoot().captureToImage().asAndroidBitmap()
+            File(outDir, "task_snake-$moment.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        }
+    }
+
     @Test
     fun rendersDarkLongText() {
         assumeTrue("Pass -Pscanpro.screenshots=true to render screenshots", System.getProperty("scanpro.screenshots") == "true")

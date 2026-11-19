@@ -614,10 +614,15 @@ fun LoadingShimmer(
 }
 
 /**
- * The strip under an app bar while a document task runs: a band in the brand colours with a bright mint head,
- * sweeping across like the scan line, and a fainter band half a sweep behind it, so the strip is never empty
- * between two sweeps (one band alone left it blank for a moment at each end). Fills the space it is given
- * (normally 4 dp high).
+ * The strip under an app bar while a document task runs: a snake in the brand colours slithering from left to
+ * right along a wavy track, its body tapering to the tail and its head mint (2026-11-19, the owner: "instead of a
+ * line make it a snake moving"). The body follows one fixed wave, as a real snake follows its own track, so it reads
+ * as moving forward rather than as a wobbling line. As the tail leaves on the right the head is already coming in
+ * on the left, so the strip is never empty.
+ *
+ * Give it the usual 4 dp of height: the snake is drawn around that line and reaches about 4 dp above and below it,
+ * over the app bar's bottom padding and the gap under the strip, so nothing in the layout has to move to make room.
+ * With animations off it is a still, part-filled bar.
  */
 @Composable
 fun ScanBeamProgressBar(modifier: Modifier = Modifier) {
@@ -627,51 +632,64 @@ fun ScanBeamProgressBar(modifier: Modifier = Modifier) {
     val track = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
     Canvas(modifier.progressSemantics()) {
         val radius = CornerRadius(size.height / 2f)
-        drawRoundRect(track, cornerRadius = radius)
         if (!motion) {
+            drawRoundRect(track, cornerRadius = radius)
             drawRoundRect(brand.gradientStart.copy(alpha = 0.5f), cornerRadius = radius)
             return@Canvas
         }
-        val band = size.width * 0.42f
-        val t = clock.longValue
-        clipPathRoundRect(radius) {
-            // The echo first, so the leading band is drawn over it where they meet.
-            for (echo in listOf(true, false)) {
-                val phase = cycle(t + if (echo) BEAM_SWEEP_MS / 2 else 0L, BEAM_SWEEP_MS)
-                val head = -band * 0.2f + (size.width + band * 1.2f) * smoothStep(phase)
-                val strength = if (echo) 0.4f else 1f
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        0f to Color.Transparent,
-                        0.45f to brand.gradientStart.copy(alpha = strength),
-                        0.85f to brand.gradientEnd.copy(alpha = strength),
-                        1f to brand.scanLine.copy(alpha = strength),
-                        startX = head - band,
-                        endX = head
-                    ),
-                    topLeft = Offset(head - band, 0f),
-                    size = Size(band, size.height)
-                )
-                if (!echo) {
-                    // The head: a short bright tip, so the eye has something to follow.
-                    val tip = size.height * 2.5f
-                    drawRect(
-                        brush = Brush.horizontalGradient(
-                            listOf(Color.Transparent, Color.White.copy(alpha = 0.75f)),
-                            startX = head - tip,
-                            endX = head
-                        ),
-                        topLeft = Offset(head - tip, 0f),
-                        size = Size(tip, size.height)
+        val mid = size.height / 2f
+        // A faint line where the snake runs, so the strip still reads as a bar.
+        drawLine(track, Offset(0f, mid), Offset(size.width, mid), strokeWidth = size.height * 0.45f, cap = StrokeCap.Round)
+
+        val body = size.height * SNAKE_BODY
+        val swing = size.height * SNAKE_SWING
+        val wave = size.height * SNAKE_WAVE
+        val length = minOf(size.width * 0.36f, size.height * 46f)
+        val tau = 2f * PI.toFloat()
+        fun trackY(x: Float): Float = mid + swing * sin(tau * x / wave)
+
+        // One lap takes the head from the left edge to a body's length past the right one: the moment the tail
+        // is gone, the head is back at the left.
+        run {
+            val head = (size.width + length) * cycle(clock.longValue, SNAKE_LAP_MS)
+            val tail = head - length
+            var x0 = tail
+            var y0 = trackY(x0)
+            for (i in 1..SNAKE_SEGMENTS) {
+                val along = i / SNAKE_SEGMENTS.toFloat()
+                val x1 = tail + length * along
+                val y1 = trackY(x1)
+                if (x1 >= -body && x0 <= size.width + body) {
+                    val colour = if (along < 0.7f) lerp(brand.gradientStart, brand.gradientEnd, along / 0.7f)
+                    else lerp(brand.gradientEnd, brand.scanLine, (along - 0.7f) / 0.3f)
+                    drawLine(
+                        // The tail thins and fades out; the body is full width from the middle on.
+                        color = colour.copy(alpha = (along * 3f).coerceAtMost(1f)),
+                        start = Offset(x0, y0),
+                        end = Offset(x1, y1),
+                        strokeWidth = body * (0.3f + 0.7f * smoothStep(along * 1.6f)),
+                        cap = StrokeCap.Round
                     )
                 }
+                x0 = x1
+                y0 = y1
             }
+            // The head: a little wider than the body, with a glint for an eye.
+            val headCentre = Offset(head, trackY(head))
+            drawCircle(brand.scanLine, radius = body * 0.72f, center = headCentre)
+            drawCircle(Color.White.copy(alpha = 0.9f), radius = body * 0.2f, center = Offset(head + body * 0.2f, headCentre.y - body * 0.18f))
         }
     }
 }
 
-/** One sweep of [ScanBeamProgressBar] from edge to edge. */
-private const val BEAM_SWEEP_MS = 1_400L
+/** The snake's trip across [ScanBeamProgressBar], from first showing its head to hiding its tail. */
+private const val SNAKE_LAP_MS = 2_200L
+
+/** The snake's measures, as multiples of the strip's height: body thickness, how far it swings, one wave's length. */
+private const val SNAKE_BODY = 0.95f
+private const val SNAKE_SWING = 0.85f
+private const val SNAKE_WAVE = 8f
+private const val SNAKE_SEGMENTS = 56
 
 /**
  * A small ring in the brand colours, circling with a mint head: the busy mark beside a line of text, where the
@@ -714,11 +732,6 @@ fun TaskRing(modifier: Modifier = Modifier, size: Dp = 24.dp) {
             )
         }
     }
-}
-
-private inline fun DrawScope.clipPathRoundRect(radius: CornerRadius, block: DrawScope.() -> Unit) {
-    val path = Path().apply { addRoundRect(androidx.compose.ui.geometry.RoundRect(Rect(Offset.Zero, size), radius)) }
-    clipPath(path) { block() }
 }
 
 /**

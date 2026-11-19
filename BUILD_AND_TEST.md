@@ -53,10 +53,17 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
-## Latest results (2026-11-19, F229 About list and version wording, cloud container with the Android SDK)
+## Latest results (2026-11-19, F230 About list and version wording, cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest --max-workers=1`: **1,149 tests, 0 failed** (159 screenshot tests skipped without `-Pscanpro.screenshots=true`; `SettingsPagesScreenshotTest` was run with it separately). `:app:lintDebug`: **0 errors**, 165 warnings.
 - NOT run: `bundleRelease`, anything on a device.
+## Latest results (2026-11-19, F229 snake loading strip, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true` (one worker): **1,146 tests, 0 failed, 2 skipped** (result XML); `./gradlew :app:lintDebug`: **0 errors**, 165 warnings (none in the changed file). That run was on the tree at `bd5b6b8` plus this change (and a Files change of this session that was then dropped in favour of the other session's F226).
+- After merging the twelve commits other sessions pushed meanwhile: main and test code compile; `TaskBannerTest` 6/6 and `ToolProgressCardTest` 9/9 pass. The full suite was not repeated on that tree.
+- Rendered and looked at: `task_snake-{700,1300,2050}`, `task_banner-dark`.
+- An earlier run with two workers was killed for lack of memory (the Gradle daemon disappeared and left a 4.6 GB test worker behind); with `--max-workers=1`, after `./gradlew --stop` and killing the orphan, it passed.
+- NOT run: `bundleRelease` (left to CI), anything on a device (R87).
 
 ## Latest results (2026-11-19, F227 header scenes and F228 Files spacing, merged with F221–F224, cloud container with the Android SDK)
 
