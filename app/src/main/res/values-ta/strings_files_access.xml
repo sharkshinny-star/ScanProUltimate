@@ -69,7 +69,7 @@
     <string name="phone_files_my_storage">என் சேமிப்பகம்</string>
     <string name="phone_files_internal_storage">உள் சேமிப்பகம்</string>
     <string name="phone_files_downloads">பதிவிறக்கங்கள்</string>
-    <string name="phone_files_processed">செயலாக்கிய கோப்புகள்</string>
+    <string name="phone_files_processed">ScanPro-வில் உருவானவை</string>
     <string name="phone_files_cloud_title">கிளவுட் டிரைவ்களும் பிற ஆப்களும்</string>
     <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… இலிருந்து திற</string>
     <string name="phone_files_cloud_hint">உங்கள் போனின் கோப்புத் தேர்வியைப் பயன்படுத்துகிறது. ScanPro எதிலும் உள்நுழையாது.</string>

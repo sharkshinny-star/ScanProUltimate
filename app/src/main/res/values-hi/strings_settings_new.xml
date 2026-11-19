@@ -32,9 +32,4 @@
         <item quantity="other">%d दस्तावेज़</item>
     </plurals>
     <string name="settings_recycle_bin_summary">%1$s · %2$s तक रखे जाते हैं</string>
-    <string name="settings_library_summary">%1$s · %2$s इस्तेमाल</string>
-    <plurals name="settings_library_documents">
-        <item quantity="one">%d दस्तावेज़</item>
-        <item quantity="other">%d दस्तावेज़</item>
-    </plurals>
 </resources>

@@ -35,9 +35,4 @@
     <!-- Main page, Recycle bin row: "3 documents · kept for 30 days". -->
     <string name="settings_recycle_bin_summary">%1$s · kept for %2$s</string>
     <!-- Main page, library row: "24 documents · 48 MB used". -->
-    <string name="settings_library_summary">%1$s · %2$s used</string>
-    <plurals name="settings_library_documents">
-        <item quantity="one">%d document</item>
-        <item quantity="other">%d documents</item>
-    </plurals>
 </resources>
