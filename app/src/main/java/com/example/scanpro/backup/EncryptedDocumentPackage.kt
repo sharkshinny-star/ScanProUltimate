@@ -121,6 +121,8 @@ class EncryptedDocumentPackage(private val context: Context) {
         private const val MAX_RESTORE_BYTES = 2L * 1024 * 1024 * 1024
         /** The encrypted file itself: the unpacked limit plus room for chunk tags and zip headers. */
         private const val MAX_PACKAGE_BYTES = MAX_RESTORE_BYTES + MAX_RESTORE_BYTES / 16
+        /** Largest version 1 (single-stream) package that is decrypted; version 2 has no such limit. */
+        private const val MAX_LEGACY_PACKAGE_BYTES = 128L * 1024 * 1024
         /** A 300-page document with sources and signatures needs a few thousand; millions of empty entries would exhaust the file system. */
         private const val MAX_ENTRIES = 20_000
         /** OCR text and edit settings of the largest documents fit in a few MB; the manifest is read into memory whole. */
@@ -243,7 +245,9 @@ class EncryptedDocumentPackage(private val context: Context) {
                     val noncePrefix = ByteArray(ChunkedAead.PREFIX_BYTES).also(input::readFully)
                     ChunkedAead.Reader(input, key, noncePrefix)
                 } else {
-                    // Version 1 packages: one GCM stream (kept so older backups still restore).
+                    // Version 1 packages: one GCM stream (kept so older backups still restore). Android decrypts GCM
+                    // in memory before releasing any data, so a large one is refused instead of exhausting memory.
+                    if (encrypted.length() > MAX_LEGACY_PACKAGE_BYTES) throw BackupTooLargeException()
                     val iv = ByteArray(12).also(input::readFully)
                     val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
                         init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))

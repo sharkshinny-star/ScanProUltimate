@@ -34,6 +34,8 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
+    <!-- allowBackup stays true only so the device-transfer rules apply; backup_rules.xml and data_extraction_rules.xml
+         exclude every cloud backup, so nothing leaves the phone. Keep both files in step with any new storage. -->
     <application
         android:name=".ScanProApplication"
         android:allowBackup="true"
