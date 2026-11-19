@@ -192,4 +192,21 @@
         <item quantity="one">%1$d புலம் நிரப்பப்பட்டு படிவம் தட்டையாக்கப்பட்டது</item>
         <item quantity="other">%1$d புலங்கள் நிரப்பப்பட்டு படிவம் தட்டையாக்கப்பட்டது</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="cvt_ximg_all_selected">அனைத்து %1$d தேர்ந்தெடுக்கப்பட்டன</string>
+    <string name="cvt_ximg_choose_title">படங்களைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="cvt_ximg_choose_unopened">அனைத்தையும் சேமிக்கவும், அல்லது வேண்டியவற்றை மட்டும் தேர்வு செய்யவும்</string>
+    <string name="cvt_ximg_from_page">பக்கம் %1$d</string>
+    <string name="cvt_ximg_in_selection">தேர்ந்தெடுக்கப்பட்டது</string>
+    <string name="cvt_ximg_none_ticked">சேமிக்க குறைந்தது ஒரு படத்தைத் தேர்வு செய்யவும்</string>
+    <string name="cvt_ximg_not_in_selection">தேர்ந்தெடுக்கப்படவில்லை</string>
+    <string name="cvt_ximg_picture_of">படம் %1$d / %2$d</string>
+    <string name="cvt_ximg_prepare_failed">படங்களைப் படிக்க முடியவில்லை. இதை மூடிவிட்டு மீண்டும் முயலவும்.</string>
+    <string name="cvt_ximg_preparing">படங்களைத் தயார் செய்கிறது…</string>
+    <string name="cvt_ximg_select_all">அனைத்தையும் தேர்ந்தெடு</string>
+    <string name="cvt_ximg_select_none">அழி</string>
+    <string name="cvt_ximg_selected_of">%1$d / %2$d தேர்ந்தெடுக்கப்பட்டது</string>
+    <string name="cvt_ximg_tick">இந்தப் படத்தைத் தேர்ந்தெடு</string>
+    <string name="cvt_ximg_untick">தேர்விலிருந்து நீக்கு</string>
+    <string name="cvt_ximg_view_larger">படத்தைப் பெரிதாகப் பார்</string>
 </resources>

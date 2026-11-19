@@ -264,4 +264,14 @@
     <string name="settings_stat_documents">ஆவணங்கள்</string>
     <string name="settings_stat_storage">பயன்படுத்திய சேமிப்பகம்</string>
     <string name="settings_stat_recycle_bin">மறுசுழற்சி தொட்டியில்</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">டேக் சேர்</string>
+    <string name="name_pattern_example">அடுத்த ஸ்கேன்: %1$s</string>
+    <string name="name_pattern_sample_text">இன்வாய்ஸ் Acme</string>
+    <string name="name_pattern_suggestions">பரிந்துரைகள்</string>
+    <string name="name_pattern_tag_date">தேதி</string>
+    <string name="name_pattern_tag_mode">ஸ்கேன் வகை</string>
+    <string name="name_pattern_tag_text">பக்க உரை</string>
+    <string name="name_pattern_tag_time">நேரம்</string>
+    <string name="name_pattern_unknown">டேக் அல்ல, தட்டச்சு செய்தபடியே வைக்கப்பட்டது: %1$s</string>
 </resources>

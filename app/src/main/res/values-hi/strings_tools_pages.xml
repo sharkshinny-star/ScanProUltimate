@@ -91,4 +91,20 @@
     <string name="pages_compress_target_unreachable">यह PDF ज़्यादा से ज़्यादा लगभग %1$s तक छोटा हो सकता है, इसलिए इससे छोटा लक्ष्य शायद पूरा न हो।</string>
     <string name="pages_compress_target_text_warning">इतना छोटा आकार पाने के लिए पेज तस्वीरों के रूप में सहेजे जा सकते हैं: तब उनका टेक्स्ट खोजा या कॉपी नहीं किया जा सकेगा।</string>
     <string name="pages_compress_estimate_failed">इस PDF का अनुमान नहीं निकल सका। काम पूरा होने पर असली आकार दिखाया जाएगा।</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_numbers_bold">बोल्ड</string>
+    <string name="pages_numbers_closeup">क्लोज़-अप</string>
+    <string name="pages_numbers_colour">रंग</string>
+    <string name="pages_numbers_colour_green">हरा</string>
+    <string name="pages_numbers_colour_grey">गहरा स्लेटी</string>
+    <string name="pages_numbers_colour_red">लाल</string>
+    <string name="pages_numbers_font">फ़ॉन्ट</string>
+    <string name="pages_numbers_font_twins">Helvetica या Times के रूप में लिखा गया, जो Arial और Times New Roman के जुड़वाँ हैं और हर PDF रीडर में होते हैं: वही आकार और चौड़ाई, इसलिए फ़ाइल में कुछ जोड़ना नहीं पड़ता।</string>
+    <string name="pages_numbers_italic">इटैलिक</string>
+    <string name="pages_numbers_look">स्टाइल</string>
+    <string name="pages_numbers_regular">सामान्य</string>
+    <string name="pages_numbers_size">साइज़</string>
+    <string name="pages_numbers_size_value">%1$d pt</string>
+    <string name="pages_numbers_style">लुक</string>
+    <string name="pages_numbers_underline">रेखांकित</string>
 </resources>

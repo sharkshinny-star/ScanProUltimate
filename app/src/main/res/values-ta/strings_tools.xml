@@ -723,4 +723,6 @@
         <item quantity="one">%d வரி எழுத்துகள் சரியாக இணைய வடிவங்களாக வரையப்பட்டது.</item>
         <item quantity="other">%d வரிகள் எழுத்துகள் சரியாக இணைய வடிவங்களாக வரையப்பட்டன.</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tools_preview_swipe_hint">மற்றவற்றுக்கு ஸ்வைப் செய்யவும்</string>
 </resources>

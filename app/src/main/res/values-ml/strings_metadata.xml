@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="meta_action_hint">മാറ്റാൻ പെൻസിൽ ഉള്ള വിശദാംശത്തിൽ ടാപ്പ് ചെയ്യുക</string>
+    <string name="meta_action_save">ഒരു പകർപ്പ് സേവ് ചെയ്യുക</string>
+    <string name="meta_clear_search">തിരച്ചിൽ മായ്ക്കുക</string>
+    <string name="meta_done_exported">%1$d വിശദാംശങ്ങൾ എക്സ്പോർട്ട് ചെയ്തു.</string>
+    <string name="meta_done_removed_all">മെറ്റാഡാറ്റ ഇല്ലാതെ ഒരു പകർപ്പ് സേവ് ചെയ്തു. ചിത്രം, ടെക്സ്റ്റ് അല്ലെങ്കിൽ ശബ്ദം മാറിയിട്ടില്ല.</string>
+    <string name="meta_done_removed_location">ലൊക്കേഷൻ ഇല്ലാതെ ഒരു പകർപ്പ് സേവ് ചെയ്തു.</string>
+    <string name="meta_done_removed_personal">വ്യക്തിഗത വിവരങ്ങൾ ഇല്ലാതെ ഒരു പകർപ്പ് സേവ് ചെയ്തു.</string>
+    <string name="meta_done_saved">നിങ്ങളുടെ മാറ്റങ്ങളോടെ ഒരു പകർപ്പ് സേവ് ചെയ്തു. ഒറിജിനൽ മാറിയിട്ടില്ല.</string>
+    <string name="meta_edit_field">%1$s മാറ്റുക</string>
+    <string name="meta_edit_hint">നീക്കം ചെയ്യാൻ ഇത് ശൂന്യമായി വിടുക.</string>
+    <string name="meta_empty">സജ്ജമാക്കിയിട്ടില്ല</string>
+    <string name="meta_err_export">വിശദാംശങ്ങൾ എക്സ്പോർട്ട് ചെയ്യാനായില്ല.</string>
+    <string name="meta_err_nothing_to_save">ഒന്നും മാറ്റിയിട്ടില്ല.</string>
+    <string name="meta_err_read">ഈ ഫയലിന്റെ വിശദാംശങ്ങൾ വായിക്കാനായില്ല.</string>
+    <string name="meta_err_save">ഈ വിശദാംശങ്ങളോടെ ഒരു പകർപ്പ് സേവ് ചെയ്യാനായില്ല.</string>
+    <string name="meta_export_hint">മുഴുവൻ %1$d വിശദാംശങ്ങളും, സ്പ്രെഡ്ഷീറ്റിനോ മറ്റൊരു പ്രോഗ്രാമിനോ വേണ്ടി.</string>
+    <string name="meta_formats_note">പേര് മാത്രമല്ല, ഉള്ളടക്കം നോക്കിയും %1$d തരം ഫയലുകൾ തിരിച്ചറിയുന്നു.</string>
+    <string name="meta_group_audio">ശബ്ദം</string>
+    <string name="meta_group_camera">ക്യാമറ</string>
+    <string name="meta_group_contents">ഉള്ളടക്കം</string>
+    <string name="meta_group_document">ഡോക്യുമെന്റ്</string>
+    <string name="meta_group_file">ഫയൽ</string>
+    <string name="meta_group_image">ചിത്രം</string>
+    <string name="meta_group_location">ലൊക്കേഷൻ</string>
+    <string name="meta_group_tags">എല്ലാ ടാഗുകളും</string>
+    <string name="meta_group_video">വീഡിയോ</string>
+    <string name="meta_is_location">ലൊക്കേഷൻ</string>
+    <string name="meta_is_personal">വ്യക്തിഗത വിവരം</string>
+    <string name="meta_privacy_hint">ഓരോന്നും ഉടൻ ഒരു പകർപ്പ് ഉണ്ടാക്കുന്നു; ഒറിജിനൽ അതേപടി നിൽക്കും. ചിത്രം, ടെക്സ്റ്റ് അല്ലെങ്കിൽ ശബ്ദം മാറില്ല.</string>
+    <string name="meta_progress_exporting">വിശദാംശങ്ങൾ എക്സ്പോർട്ട് ചെയ്യുന്നു…</string>
+    <string name="meta_progress_reading">ഫയലിന്റെ വിശദാംശങ്ങൾ വായിക്കുന്നു…</string>
+    <string name="meta_progress_saving">ഒരു പകർപ്പ് സേവ് ചെയ്യുന്നു…</string>
+    <string name="meta_read_only">വായിക്കാൻ മാത്രം</string>
+    <string name="meta_readonly_archive">ഈ ആർക്കൈവ് തരത്തിന്റെ ഉള്ളടക്കം പട്ടികപ്പെടുത്തിയിട്ടില്ല; അതിന്റെ സ്വന്തം വിശദാംശങ്ങൾ കാണിക്കുന്നു.</string>
+    <string name="meta_readonly_audio_format">ഈ ശബ്ദ ഫോർമാറ്റിന്റെ ടാഗുകൾ വായിക്കാം, പക്ഷേ മാറ്റാനാകില്ല.</string>
+    <string name="meta_readonly_audio_old_android">സംഗീത ടാഗുകൾ മാറ്റാൻ Android 8 അല്ലെങ്കിൽ പുതിയത് വേണം. ടാഗുകൾ വായിക്കാം.</string>
+    <string name="meta_readonly_format">ഇത്തരം ഫയലിന്റെ വിശദാംശങ്ങൾ വായിക്കാം, പക്ഷേ ഇവിടെ മാറ്റാനാകില്ല.</string>
+    <string name="meta_readonly_image_format">JPEG, PNG, WebP ചിത്രങ്ങൾ മാത്രമേ മാറ്റാനാകൂ; ഇതിന്റെ വിശദാംശങ്ങൾ വായിക്കാൻ മാത്രം.</string>
+    <string name="meta_readonly_legacy_office">Word, Excel, PowerPoint 97-2003 ഫയലുകൾ: ഫയലിന്റെ സ്വന്തം വിശദാംശങ്ങൾ മാത്രം വായിക്കാം. ഡോക്യുമെന്റ് പ്രോപ്പർട്ടികൾ കാണാനും മാറ്റാനും ഇത് DOCX, XLSX അല്ലെങ്കിൽ PPTX ആയി സേവ് ചെയ്യുക.</string>
+    <string name="meta_readonly_no_properties">ഈ ഡോക്യുമെന്റിൽ എഴുതാൻ പ്രോപ്പർട്ടീസ് ഭാഗം ഇല്ല, അതിനാൽ വിശദാംശങ്ങൾ വായിക്കാൻ മാത്രം.</string>
+    <string name="meta_readonly_pdf_locked">ഈ PDF തുറക്കാൻ പാസ്‌വേഡ് വേണം, അതിനാൽ ഫയലിന്റെ സ്വന്തം വിശദാംശങ്ങൾ മാത്രം വായിക്കാം. ബാക്കിയുള്ളവ കാണാനും മാറ്റാനും ആദ്യം ഇത് അൺലോക്ക് ചെയ്യുക.</string>
+    <string name="meta_readonly_raw">ക്യാമറ RAW ഫയലുകൾ വായിക്കാൻ മാത്രം: മാറ്റിയാൽ ചിത്രത്തിന്റെ ഡാറ്റ കേടാകാം.</string>
+    <string name="meta_readonly_unreadable">ഈ ഫയൽ കേടായതായി തോന്നുന്നു, അതിനാൽ ചില വിശദാംശങ്ങൾ മാത്രം വായിക്കാനായി, ഒന്നും മാറ്റാനാകില്ല.</string>
+    <string name="meta_readonly_video">വീഡിയോ വിശദാംശങ്ങൾ വായിക്കാൻ മാത്രം: വീഡിയോയുടെ ടാഗുകൾ സുരക്ഷിതമായി മാറ്റിയെഴുതാൻ ഇതുവരെ സാധിക്കില്ല.</string>
+    <string name="meta_remove_all">മെറ്റാഡാറ്റ മുഴുവൻ നീക്കുക</string>
+    <string name="meta_remove_location">ലൊക്കേഷൻ നീക്കുക</string>
+    <string name="meta_remove_personal">വ്യക്തിഗത വിവരങ്ങൾ നീക്കുക</string>
+    <string name="meta_search_hint">വിശദാംശങ്ങൾ തിരയുക</string>
+    <string name="meta_search_none">ഒരു വിശദാംശവും ചേരുന്നില്ല.</string>
+    <string name="meta_section_export">എക്സ്പോർട്ട്</string>
+    <string name="meta_section_privacy">സ്വകാര്യത</string>
+    <string name="meta_show_fewer">കുറച്ച് കാണിക്കുക</string>
+    <string name="meta_will_be_removed">നീക്കം ചെയ്യും</string>
+</resources>

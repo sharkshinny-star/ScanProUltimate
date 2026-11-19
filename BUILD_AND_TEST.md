@@ -45,6 +45,11 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest CI results (2026-11-19, branch `claude/awesome-clarke-ussjo3`, GitHub Actions "Android CI")
+
+- Runs 285 and 287 (`e87cd142`, `8b332165`): FAILED in 15 s at "Source audit": 600 missing translations (the 120 strings of F234-F243 in hi, kn, ml, ta, te). Nothing after that step ran. Fixed in F245 (`b222f194`).
+- Run 289 (`b222f194`): source audit and Room schema check passed; `:app:compileDebugKotlin` FAILED with one error (an internal type exposed by the public `PageNumbersConfig`, F242). Fixed in F246. Unit tests and lint were not reached. Not yet known: whether anything else in F234-F244 fails to compile or fails a test.
+
 ## Latest results (2026-11-19, F234 Files search in the top bar, Linux cloud container)
 
 - `:app:testDebugUnitTest` 1,163 tests, 0 failed, 0 errors, 163 skipped (counted from the result XML); `:app:lintDebug` passed, 0 errors, 166 warnings.

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="meta_action_hint">பென்சில் குறியுள்ள விவரத்தைத் தொட்டு மாற்றவும்</string>
+    <string name="meta_action_save">நகலைச் சேமி</string>
+    <string name="meta_clear_search">தேடலை அழி</string>
+    <string name="meta_done_exported">%1$d விவரங்கள் ஏற்றுமதி செய்யப்பட்டன.</string>
+    <string name="meta_done_removed_all">மெட்டாடேட்டா இல்லாமல் ஒரு நகல் சேமிக்கப்பட்டது. படம், உரை அல்லது ஒலி மாறவில்லை.</string>
+    <string name="meta_done_removed_location">இருப்பிடம் இல்லாமல் ஒரு நகல் சேமிக்கப்பட்டது.</string>
+    <string name="meta_done_removed_personal">தனிப்பட்ட விவரங்கள் இல்லாமல் ஒரு நகல் சேமிக்கப்பட்டது.</string>
+    <string name="meta_done_saved">உங்கள் மாற்றங்களுடன் ஒரு நகல் சேமிக்கப்பட்டது. அசல் கோப்பு மாறவில்லை.</string>
+    <string name="meta_edit_field">%1$s ஐ மாற்று</string>
+    <string name="meta_edit_hint">நீக்க, காலியாக விடவும்.</string>
+    <string name="meta_empty">அமைக்கப்படவில்லை</string>
+    <string name="meta_err_export">விவரங்களை ஏற்றுமதி செய்ய முடியவில்லை.</string>
+    <string name="meta_err_nothing_to_save">எதுவும் மாற்றப்படவில்லை.</string>
+    <string name="meta_err_read">இந்தக் கோப்பின் விவரங்களைப் படிக்க முடியவில்லை.</string>
+    <string name="meta_err_save">இந்த விவரங்களுடன் நகலைச் சேமிக்க முடியவில்லை.</string>
+    <string name="meta_export_hint">மொத்தம் %1$d விவரங்கள், விரிதாள் அல்லது வேறொரு நிரலுக்காக.</string>
+    <string name="meta_formats_note">பெயரை மட்டுமல்லாமல், உள்ளடக்கத்தைக் கொண்டும் %1$d வகைக் கோப்புகளை அடையாளம் காணும்.</string>
+    <string name="meta_group_audio">ஒலி</string>
+    <string name="meta_group_camera">கேமரா</string>
+    <string name="meta_group_contents">உள்ளடக்கம்</string>
+    <string name="meta_group_document">ஆவணம்</string>
+    <string name="meta_group_file">கோப்பு</string>
+    <string name="meta_group_image">படம்</string>
+    <string name="meta_group_location">இருப்பிடம்</string>
+    <string name="meta_group_tags">அனைத்து டேக்குகள்</string>
+    <string name="meta_group_video">வீடியோ</string>
+    <string name="meta_is_location">இருப்பிடம்</string>
+    <string name="meta_is_personal">தனிப்பட்ட விவரம்</string>
+    <string name="meta_privacy_hint">ஒவ்வொன்றும் உடனே ஒரு நகலை உருவாக்கும்; அசல் அப்படியே இருக்கும். படம், உரை அல்லது ஒலி மாறாது.</string>
+    <string name="meta_progress_exporting">விவரங்களை ஏற்றுமதி செய்கிறது…</string>
+    <string name="meta_progress_reading">கோப்பின் விவரங்களைப் படிக்கிறது…</string>
+    <string name="meta_progress_saving">நகலைச் சேமிக்கிறது…</string>
+    <string name="meta_read_only">படிக்க மட்டும்</string>
+    <string name="meta_readonly_archive">இந்த ஆர்க்கைவ் வகையின் உள்ளடக்கம் பட்டியலிடப்படாது; அதன் சொந்த விவரங்கள் காட்டப்படும்.</string>
+    <string name="meta_readonly_audio_format">இந்த ஒலி வடிவத்தின் டேக்குகளைப் படிக்கலாம், மாற்ற முடியாது.</string>
+    <string name="meta_readonly_audio_old_android">இசை டேக்குகளை மாற்ற Android 8 அல்லது அதற்குப் பிந்தையது தேவை. டேக்குகளைப் படிக்கலாம்.</string>
+    <string name="meta_readonly_format">இந்த வகைக் கோப்பின் விவரங்களைப் படிக்கலாம், ஆனால் இங்கே மாற்ற முடியாது.</string>
+    <string name="meta_readonly_image_format">JPEG, PNG, WebP படங்களை மட்டுமே மாற்ற முடியும்; இந்தப் படத்தின் விவரங்கள் படிக்க மட்டும்.</string>
+    <string name="meta_readonly_legacy_office">Word, Excel, PowerPoint 97-2003 கோப்புகள்: கோப்பின் சொந்த விவரங்களை மட்டுமே படிக்க முடியும். ஆவணப் பண்புகளைப் பார்க்கவும் மாற்றவும் அதை DOCX, XLSX அல்லது PPTX ஆகச் சேமிக்கவும்.</string>
+    <string name="meta_readonly_no_properties">இந்த ஆவணத்தில் எழுதுவதற்கான பண்புகள் பகுதி இல்லை, அதனால் அதன் விவரங்கள் படிக்க மட்டும்.</string>
+    <string name="meta_readonly_pdf_locked">இந்த PDF ஐத் திறக்கக் கடவுச்சொல் தேவை, அதனால் கோப்பின் சொந்த விவரங்களை மட்டுமே படிக்க முடியும். மற்றவற்றைப் பார்க்கவும் மாற்றவும் முதலில் அதைத் திறக்கவும்.</string>
+    <string name="meta_readonly_raw">கேமரா RAW கோப்புகள் படிக்க மட்டும்: அவற்றை மாற்றினால் படத் தரவு சேதமடையலாம்.</string>
+    <string name="meta_readonly_unreadable">இந்தக் கோப்பு சேதமடைந்ததுபோல் தெரிகிறது, அதனால் சில விவரங்களை மட்டுமே படிக்க முடிந்தது; எதையும் மாற்ற முடியாது.</string>
+    <string name="meta_readonly_video">வீடியோ விவரங்கள் படிக்க மட்டும்: வீடியோவின் டேக்குகளைப் பாதுகாப்பாக மாற்றும் வசதி இன்னும் இல்லை.</string>
+    <string name="meta_remove_all">அனைத்து மெட்டாடேட்டாவையும் நீக்கு</string>
+    <string name="meta_remove_location">இருப்பிடத்தை நீக்கு</string>
+    <string name="meta_remove_personal">தனிப்பட்ட விவரங்களை நீக்கு</string>
+    <string name="meta_search_hint">விவரங்களில் தேடு</string>
+    <string name="meta_search_none">பொருந்தும் விவரம் இல்லை.</string>
+    <string name="meta_section_export">ஏற்றுமதி</string>
+    <string name="meta_section_privacy">தனியுரிமை</string>
+    <string name="meta_show_fewer">குறைவாகக் காட்டு</string>
+    <string name="meta_will_be_removed">நீக்கப்படும்</string>
+</resources>

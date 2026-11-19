@@ -192,4 +192,21 @@
         <item quantity="one">%1$d ఫీల్డ్ నింపి ఫారమ్ ఫ్లాటెన్ చేయబడింది</item>
         <item quantity="other">%1$d ఫీల్డ్‌లు నింపి ఫారమ్ ఫ్లాటెన్ చేయబడింది</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="cvt_ximg_all_selected">అన్ని %1$d ఎంచుకున్నారు</string>
+    <string name="cvt_ximg_choose_title">చిత్రాలను ఎంచుకోండి</string>
+    <string name="cvt_ximg_choose_unopened">అన్నింటినీ సేవ్ చేయండి, లేదా మీకు కావలసినవాటిని మాత్రమే టిక్ చేయండి</string>
+    <string name="cvt_ximg_from_page">పేజీ %1$d</string>
+    <string name="cvt_ximg_in_selection">ఎంచుకున్నది</string>
+    <string name="cvt_ximg_none_ticked">సేవ్ చేయడానికి కనీసం ఒక చిత్రాన్ని టిక్ చేయండి</string>
+    <string name="cvt_ximg_not_in_selection">ఎంచుకోలేదు</string>
+    <string name="cvt_ximg_picture_of">చిత్రం %1$d / %2$d</string>
+    <string name="cvt_ximg_prepare_failed">చిత్రాలను చదవడం సాధ్యం కాలేదు. దీన్ని మూసివేసి మళ్లీ ప్రయత్నించండి.</string>
+    <string name="cvt_ximg_preparing">చిత్రాలను సిద్ధం చేస్తోంది…</string>
+    <string name="cvt_ximg_select_all">అన్నీ ఎంచుకోండి</string>
+    <string name="cvt_ximg_select_none">క్లియర్</string>
+    <string name="cvt_ximg_selected_of">%2$d లో %1$d ఎంచుకున్నారు</string>
+    <string name="cvt_ximg_tick">ఈ చిత్రాన్ని ఎంచుకోండి</string>
+    <string name="cvt_ximg_untick">ఎంపిక నుండి తొలగించండి</string>
+    <string name="cvt_ximg_view_larger">చిత్రాన్ని పెద్దగా చూడండి</string>
 </resources>

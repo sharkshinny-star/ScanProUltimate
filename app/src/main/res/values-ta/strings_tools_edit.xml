@@ -69,4 +69,25 @@
         <item quantity="one">%1$d கையொப்பம் அல்லது உரை</item>
         <item quantity="other">%1$d கையொப்பங்கள் அல்லது உரைகள்</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_crop_adjust">சரிசெய்</string>
+    <string name="edit_crop_apply_to">இழுத்தால் மாறுவது</string>
+    <string name="edit_crop_drag_hint">எதை வைத்திருக்க வேண்டும் என்பதைத் தேர்வு செய்ய ஒரு மூலையை அல்லது பக்கத்தை இழுக்கவும்; சட்டத்தை நகர்த்த அதன் உள்ளே இழுக்கவும்.</string>
+    <string name="edit_crop_frame_description">செதுக்கும் சட்டத்துடன் பக்கம்; அதன் மூலைகளை அல்லது பக்கங்களை இழுக்கவும்</string>
+    <string name="edit_crop_mode_manual">கையால்</string>
+    <string name="edit_crop_nothing_chosen">எதை வைத்திருக்க வேண்டும் என்பதைத் தேர்வு செய்ய சட்டத்தை இழுக்கவும்</string>
+    <string name="edit_crop_page_size">பக்கம் %1$d: %2$s → %3$s</string>
+    <string name="edit_crop_preview">முன்னோட்டம்</string>
+    <string name="edit_crop_reset_all_pages">மீட்டமை</string>
+    <string name="edit_crop_reset_page">இந்தப் பக்கத்தை மீட்டமை</string>
+    <string name="edit_crop_same_everywhere">இந்தச் செதுக்கலை மற்றவற்றிலும் பயன்படுத்து</string>
+    <string name="edit_crop_scope_all">அனைத்துப் பக்கங்கள்</string>
+    <string name="edit_crop_scope_page">இந்தப் பக்கம்</string>
+    <string name="edit_crop_start_over">மீண்டும் தொடங்கு</string>
+    <string name="edit_crop_status_keeps_own">இந்தப் பக்கத்திற்குத் தனிச் செதுக்கல் உள்ளது; அது அப்படியே இருக்கும்</string>
+    <string name="edit_crop_status_own">இந்தப் பக்கத்திற்குத் தனிச் செதுக்கல் உள்ளது</string>
+    <string name="edit_crop_status_shared_all">எல்லாப் பக்கங்களிலும் ஒரே செதுக்கல்</string>
+    <string name="edit_crop_status_shared_page">அனைத்துப் பக்கச் செதுக்கலைப் பயன்படுத்துகிறது; இழுத்தால் தனிச் செதுக்கல் உருவாகும்</string>
+    <string name="edit_crop_status_whole">இந்தப் பக்கம் முழுமையாக வைக்கப்படும்</string>
+    <string name="edit_crop_use_shared">அனைத்துப் பக்கச் செதுக்கலைப் பயன்படுத்து</string>
 </resources>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="meta_action_hint">बदलने के लिए पेंसिल वाली जानकारी पर टैप करें</string>
+    <string name="meta_action_save">कॉपी सेव करें</string>
+    <string name="meta_clear_search">खोज साफ़ करें</string>
+    <string name="meta_done_exported">%1$d जानकारियाँ एक्सपोर्ट की गईं।</string>
+    <string name="meta_done_removed_all">मेटाडेटा के बिना कॉपी सेव हो गई। तस्वीर, टेक्स्ट या आवाज़ वैसी ही है।</string>
+    <string name="meta_done_removed_location">स्थान की जानकारी के बिना कॉपी सेव हो गई।</string>
+    <string name="meta_done_removed_personal">निजी जानकारी के बिना कॉपी सेव हो गई।</string>
+    <string name="meta_done_saved">आपके बदलावों के साथ कॉपी सेव हो गई। मूल फ़ाइल वैसी ही है।</string>
+    <string name="meta_edit_field">%1$s बदलें</string>
+    <string name="meta_edit_hint">हटाने के लिए इसे खाली छोड़ दें।</string>
+    <string name="meta_empty">सेट नहीं है</string>
+    <string name="meta_err_export">जानकारी एक्सपोर्ट नहीं हो सकी।</string>
+    <string name="meta_err_nothing_to_save">कुछ भी बदला नहीं गया है।</string>
+    <string name="meta_err_read">इस फ़ाइल की जानकारी पढ़ी नहीं जा सकी।</string>
+    <string name="meta_err_save">इस जानकारी के साथ कॉपी सेव नहीं हो सकी।</string>
+    <string name="meta_export_hint">सभी %1$d जानकारियाँ, स्प्रेडशीट या किसी दूसरे प्रोग्राम के लिए।</string>
+    <string name="meta_formats_note">%1$d तरह की फ़ाइलें सिर्फ़ नाम से नहीं, बल्कि उनकी सामग्री से पहचानता है।</string>
+    <string name="meta_group_audio">आवाज़</string>
+    <string name="meta_group_camera">कैमरा</string>
+    <string name="meta_group_contents">सामग्री</string>
+    <string name="meta_group_document">दस्तावेज़</string>
+    <string name="meta_group_file">फ़ाइल</string>
+    <string name="meta_group_image">तस्वीर</string>
+    <string name="meta_group_location">स्थान</string>
+    <string name="meta_group_tags">सभी टैग</string>
+    <string name="meta_group_video">वीडियो</string>
+    <string name="meta_is_location">स्थान</string>
+    <string name="meta_is_personal">निजी जानकारी</string>
+    <string name="meta_privacy_hint">हर विकल्प तुरंत कॉपी बनाता है; मूल फ़ाइल जैसी है वैसी रहती है। तस्वीर, टेक्स्ट या आवाज़ खुद नहीं बदलती।</string>
+    <string name="meta_progress_exporting">जानकारी एक्सपोर्ट हो रही है…</string>
+    <string name="meta_progress_reading">फ़ाइल की जानकारी पढ़ी जा रही है…</string>
+    <string name="meta_progress_saving">कॉपी सेव हो रही है…</string>
+    <string name="meta_read_only">सिर्फ़ पढ़ने के लिए</string>
+    <string name="meta_readonly_archive">इस तरह के आर्काइव की सामग्री नहीं दिखाई जाती; उसकी अपनी जानकारी दिखाई गई है।</string>
+    <string name="meta_readonly_audio_format">इस आवाज़ फ़ॉर्मैट के टैग पढ़े जा सकते हैं, पर बदले नहीं जा सकते।</string>
+    <string name="meta_readonly_audio_old_android">संगीत के टैग बदलने के लिए Android 8 या उससे नया वर्शन चाहिए। टैग पढ़े जा सकते हैं।</string>
+    <string name="meta_readonly_format">इस तरह की फ़ाइल की जानकारी पढ़ी जा सकती है, पर यहाँ बदली नहीं जा सकती।</string>
+    <string name="meta_readonly_image_format">सिर्फ़ JPEG, PNG और WebP तस्वीरें बदली जा सकती हैं; इस तस्वीर की जानकारी सिर्फ़ पढ़ी जा सकती है।</string>
+    <string name="meta_readonly_legacy_office">Word, Excel और PowerPoint 97-2003 फ़ाइलें: सिर्फ़ फ़ाइल की अपनी जानकारी पढ़ी जा सकती है। दस्तावेज़ के गुण देखने और बदलने के लिए इसे DOCX, XLSX या PPTX में सेव करें।</string>
+    <string name="meta_readonly_no_properties">इस दस्तावेज़ में गुण लिखने की जगह नहीं है, इसलिए इसकी जानकारी सिर्फ़ पढ़ी जा सकती है।</string>
+    <string name="meta_readonly_pdf_locked">इस PDF को खोलने के लिए पासवर्ड चाहिए, इसलिए सिर्फ़ फ़ाइल की अपनी जानकारी पढ़ी जा सकती है। बाकी देखने और बदलने के लिए पहले इसे अनलॉक करें।</string>
+    <string name="meta_readonly_raw">कैमरा RAW फ़ाइलें सिर्फ़ पढ़ने के लिए हैं: इन्हें बदलने से तस्वीर का डेटा ख़राब हो सकता है।</string>
+    <string name="meta_readonly_unreadable">यह फ़ाइल ख़राब लगती है, इसलिए इसकी कुछ ही जानकारी पढ़ी जा सकी और कुछ भी बदला नहीं जा सकता।</string>
+    <string name="meta_readonly_video">वीडियो की जानकारी सिर्फ़ पढ़ने के लिए है: वीडियो के टैग सुरक्षित तरीके से बदलना अभी उपलब्ध नहीं है।</string>
+    <string name="meta_remove_all">सारा मेटाडेटा हटाएँ</string>
+    <string name="meta_remove_location">स्थान हटाएँ</string>
+    <string name="meta_remove_personal">निजी जानकारी हटाएँ</string>
+    <string name="meta_search_hint">जानकारी खोजें</string>
+    <string name="meta_search_none">कोई जानकारी मेल नहीं खाती।</string>
+    <string name="meta_section_export">एक्सपोर्ट</string>
+    <string name="meta_section_privacy">प्राइवेसी</string>
+    <string name="meta_show_fewer">कम दिखाएँ</string>
+    <string name="meta_will_be_removed">हटा दी जाएगी</string>
+</resources>

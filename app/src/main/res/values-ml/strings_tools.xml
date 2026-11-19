@@ -723,4 +723,6 @@
         <item quantity="one">%d വരി അക്ഷരങ്ങൾ ശരിയായി ചേരാൻ രൂപങ്ങളായി വരച്ചു.</item>
         <item quantity="other">%d വരികൾ അക്ഷരങ്ങൾ ശരിയായി ചേരാൻ രൂപങ്ങളായി വരച്ചു.</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tools_preview_swipe_hint">മറ്റുള്ളവയ്ക്ക് സ്വൈപ്പ് ചെയ്യുക</string>
 </resources>

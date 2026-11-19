@@ -56,4 +56,10 @@
     <string name="img_crop_rotate">తిప్పండి</string>
     <string name="img_crop_flip">అద్దం</string>
     <string name="img_crop_reset">రీసెట్</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_compress_larger_as">ఈ చిత్రం %1$s గా ఇప్పటి కంటే పెద్దదిగా అవుతుంది. ఫోటో అయితే JPG లేదా WebP తో చిన్నదిగా అవుతుంది.</string>
+    <string name="img_compress_png_hint">PNG ప్రతి పిక్సెల్‌ను అలాగే ఉంచుతుంది. స్క్రీన్‌షాట్‌లు, డ్రాయింగ్‌లు, పారదర్శక భాగాలున్న చిత్రాలకు ఉత్తమం; ఫోటోలు సాధారణంగా JPG లేదా WebP లో చిన్నగా ఉంటాయి.</string>
+    <string name="img_compress_png_no_quality">PNG కి క్వాలిటీ సెట్టింగ్ లేదు: ఇది ప్రతి పిక్సెల్‌ను అలాగే ఉంచుతుంది. చిన్నదిగా చేయడానికి, కింద రిజల్యూషన్ తగ్గించండి లేదా లక్ష్య పరిమాణాన్ని వాడండి.</string>
+    <string name="img_tool_unreadable">ఈ చిత్రాన్ని తెరవడం సాధ్యం కాలేదు. దీన్ని మూసివేసి మళ్లీ ఎంచుకోండి, లేదా మరో చిత్రాన్ని ప్రయత్నించండి.</string>
+    <string name="img_tool_unreadable_short">చిత్రాన్ని తెరవడం సాధ్యం కాలేదు</string>
 </resources>

@@ -56,4 +56,10 @@
     <string name="img_crop_rotate">சுழற்று</string>
     <string name="img_crop_flip">கண்ணாடி</string>
     <string name="img_crop_reset">மீட்டமை</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_compress_larger_as">%1$s ஆக மாற்றினால் இந்தப் படம் இப்போதையதை விடப் பெரிதாகும். புகைப்படத்திற்கு, JPG அல்லது WebP சிறிதாக்கும்.</string>
+    <string name="img_compress_png_hint">PNG ஒவ்வொரு பிக்சலையும் அப்படியே வைத்திருக்கும். ஸ்கிரீன்ஷாட்கள், வரைபடங்கள், ஊடுருவித் தெரியும் பகுதிகள் உள்ள படங்களுக்கு ஏற்றது; புகைப்படங்கள் பொதுவாக JPG அல்லது WebP ஆக இருந்தால் சிறிதாகும்.</string>
+    <string name="img_compress_png_no_quality">PNG-க்குத் தர அமைப்பு இல்லை: அது ஒவ்வொரு பிக்சலையும் வைத்திருக்கும். சிறிதாக்க, கீழே தெளிவுத்திறனைக் குறைக்கவும், அல்லது இலக்கு அளவைப் பயன்படுத்தவும்.</string>
+    <string name="img_tool_unreadable">இந்தப் படத்தைத் திறக்க முடியவில்லை. இதை மூடிவிட்டு மீண்டும் தேர்வு செய்யவும், அல்லது வேறு படத்தை முயலவும்.</string>
+    <string name="img_tool_unreadable_short">படத்தைத் திறக்க முடியவில்லை</string>
 </resources>

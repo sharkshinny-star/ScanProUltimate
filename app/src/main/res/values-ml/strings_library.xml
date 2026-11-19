@@ -264,4 +264,14 @@
     <string name="settings_stat_documents">ഡോക്യുമെന്റുകൾ</string>
     <string name="settings_stat_storage">ഉപയോഗിച്ച സ്റ്റോറേജ്</string>
     <string name="settings_stat_recycle_bin">റീസൈക്കിൾ ബിന്നിൽ</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">ഒരു ടാഗ് ചേർക്കുക</string>
+    <string name="name_pattern_example">അടുത്ത സ്കാൻ: %1$s</string>
+    <string name="name_pattern_sample_text">ഇൻവോയ്സ് Acme</string>
+    <string name="name_pattern_suggestions">നിർദേശങ്ങൾ</string>
+    <string name="name_pattern_tag_date">തീയതി</string>
+    <string name="name_pattern_tag_mode">സ്കാൻ തരം</string>
+    <string name="name_pattern_tag_text">പേജ് ടെക്സ്റ്റ്</string>
+    <string name="name_pattern_tag_time">സമയം</string>
+    <string name="name_pattern_unknown">ടാഗ് അല്ല, ടൈപ്പ് ചെയ്തതുപോലെ സൂക്ഷിച്ചു: %1$s</string>
 </resources>

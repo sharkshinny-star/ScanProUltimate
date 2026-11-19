@@ -205,6 +205,25 @@ enum class PageNumberPosition {
     BOTTOM_CENTER, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_CENTER, TOP_RIGHT, TOP_LEFT
 }
 
+/**
+ * The fonts page numbers can be written in. SANS, SERIF and MONO are the PDF standard fonts Helvetica (Arial's twin),
+ * Times (Times New Roman's) and Courier, which every reader has; the others are carried by the app and embedded.
+ * Its own list, not Edit PDF's, because [PageNumbersConfig] is public and Edit PDF's editor is not.
+ */
+enum class PageNumberFont { SANS, SERIF, MONO, ROBOTO, INTER, MONTSERRAT, GELASIO }
+
+/** The matching font of Edit PDF's editor, which has the files and the on-screen look of each. */
+internal val PageNumberFont.editorFamily: PdfTextEditor.Family
+    get() = when (this) {
+        PageNumberFont.SANS -> PdfTextEditor.Family.SANS
+        PageNumberFont.SERIF -> PdfTextEditor.Family.SERIF
+        PageNumberFont.MONO -> PdfTextEditor.Family.MONO
+        PageNumberFont.ROBOTO -> PdfTextEditor.Family.ROBOTO
+        PageNumberFont.INTER -> PdfTextEditor.Family.INTER
+        PageNumberFont.MONTSERRAT -> PdfTextEditor.Family.MONTSERRAT
+        PageNumberFont.GELASIO -> PdfTextEditor.Family.GELASIO
+    }
+
 enum class PageNumberFormat {
     PAGE_N_OF_M,
     N_SLASH_M,
@@ -221,12 +240,7 @@ data class PageNumbersConfig(
     val fontSizePt: Float = 11f,
     /** 0xAARRGGBB; the dark grey numbers always had by default. Transparency is ignored. */
     val colourArgb: Int = DEFAULT_PAGE_NUMBER_COLOUR,
-    /**
-     * SANS, SERIF and MONO are the PDF standard fonts Helvetica (Arial's twin), Times (Times New Roman's) and Courier,
-     * which every reader has; the fonts the app carries (Roboto, Inter, Montserrat, Gelasio) are embedded. ORIGINAL
-     * means SANS here.
-     */
-    val font: PdfTextEditor.Family = PdfTextEditor.Family.SANS,
+    val font: PageNumberFont = PageNumberFont.SANS,
     val bold: Boolean = false,
     val italic: Boolean = false,
     val underline: Boolean = false,
@@ -976,11 +990,10 @@ object PdfToolsEngine {
             if (b && i) boldItalic else if (b) bold else if (i) italic else regular
         val helvetica = standard(PDType1Font.HELVETICA, PDType1Font.HELVETICA_BOLD, PDType1Font.HELVETICA_OBLIQUE, PDType1Font.HELVETICA_BOLD_OBLIQUE)
         return when (config.font) {
-            PdfTextEditor.Family.SERIF -> standard(PDType1Font.TIMES_ROMAN, PDType1Font.TIMES_BOLD, PDType1Font.TIMES_ITALIC, PDType1Font.TIMES_BOLD_ITALIC)
-            PdfTextEditor.Family.MONO -> standard(PDType1Font.COURIER, PDType1Font.COURIER_BOLD, PDType1Font.COURIER_OBLIQUE, PDType1Font.COURIER_BOLD_OBLIQUE)
-            else -> if (config.font.carried) {
-                runCatching { CarriedFonts(context).load(doc, config.font, b, i) }.getOrNull() ?: helvetica
-            } else helvetica
+            PageNumberFont.SERIF -> standard(PDType1Font.TIMES_ROMAN, PDType1Font.TIMES_BOLD, PDType1Font.TIMES_ITALIC, PDType1Font.TIMES_BOLD_ITALIC)
+            PageNumberFont.MONO -> standard(PDType1Font.COURIER, PDType1Font.COURIER_BOLD, PDType1Font.COURIER_OBLIQUE, PDType1Font.COURIER_BOLD_OBLIQUE)
+            PageNumberFont.SANS -> helvetica
+            else -> runCatching { CarriedFonts(context).load(doc, config.font.editorFamily, b, i) }.getOrNull() ?: helvetica
         }
     }
 

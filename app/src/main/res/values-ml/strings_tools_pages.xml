@@ -91,4 +91,20 @@
     <string name="pages_compress_target_unreachable">ഈ PDF ഏകദേശം %1$s വരെ മാത്രമേ ചെറുതാകാൻ സാധ്യതയുള്ളൂ, അതിനാൽ അതിലും ചെറിയ ലക്ഷ്യം എത്തിയേക്കില്ല.</string>
     <string name="pages_compress_target_text_warning">ഇത്ര ചെറിയ വലിപ്പത്തിലെത്താൻ പേജുകൾ ചിത്രങ്ങളായി സേവ് ചെയ്തേക്കാം: അപ്പോൾ അവയിലെ ടെക്സ്റ്റ് തിരയാനോ പകർത്താനോ കഴിയില്ല.</string>
     <string name="pages_compress_estimate_failed">ഈ PDF-ന് ഒരു കണക്ക് കണ്ടെത്താൻ കഴിഞ്ഞില്ല. പൂർത്തിയാകുമ്പോൾ യഥാർത്ഥ വലിപ്പം കാണിക്കും.</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_numbers_bold">ബോൾഡ്</string>
+    <string name="pages_numbers_closeup">ക്ലോസ്-അപ്പ്</string>
+    <string name="pages_numbers_colour">നിറം</string>
+    <string name="pages_numbers_colour_green">പച്ച</string>
+    <string name="pages_numbers_colour_grey">കടും ചാരനിറം</string>
+    <string name="pages_numbers_colour_red">ചുവപ്പ്</string>
+    <string name="pages_numbers_font">ഫോണ്ട്</string>
+    <string name="pages_numbers_font_twins">Helvetica അല്ലെങ്കിൽ Times ആയി എഴുതുന്നു; ഇവ Arial, Times New Roman എന്നിവയുടെ ഇരട്ടകളാണ്, എല്ലാ PDF റീഡറിലും ഉണ്ട്: ഒരേ രൂപവും വീതിയും, അതിനാൽ ഫയലിൽ ഒന്നും ചേർക്കേണ്ടതില്ല.</string>
+    <string name="pages_numbers_italic">ഇറ്റാലിക്</string>
+    <string name="pages_numbers_look">ശൈലി</string>
+    <string name="pages_numbers_regular">സാധാരണ</string>
+    <string name="pages_numbers_size">വലുപ്പം</string>
+    <string name="pages_numbers_size_value">%1$d pt</string>
+    <string name="pages_numbers_style">രൂപം</string>
+    <string name="pages_numbers_underline">അടിവര</string>
 </resources>

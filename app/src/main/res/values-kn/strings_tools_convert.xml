@@ -192,4 +192,21 @@
         <item quantity="one">%1$d ಕ್ಷೇತ್ರ ತುಂಬಿಸಿ ಫಾರ್ಮ್ ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲಾಗಿದೆ</item>
         <item quantity="other">%1$d ಕ್ಷೇತ್ರಗಳನ್ನು ತುಂಬಿಸಿ ಫಾರ್ಮ್ ಫ್ಲ್ಯಾಟನ್ ಮಾಡಲಾಗಿದೆ</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="cvt_ximg_all_selected">ಎಲ್ಲಾ %1$d ಆಯ್ಕೆಯಾಗಿವೆ</string>
+    <string name="cvt_ximg_choose_title">ಚಿತ್ರಗಳನ್ನು ಆರಿಸಿ</string>
+    <string name="cvt_ximg_choose_unopened">ಎಲ್ಲವನ್ನೂ ಉಳಿಸಿ, ಅಥವಾ ಬೇಕಾದವುಗಳಿಗೆ ಮಾತ್ರ ಟಿಕ್ ಮಾಡಿ</string>
+    <string name="cvt_ximg_from_page">ಪುಟ %1$d</string>
+    <string name="cvt_ximg_in_selection">ಆಯ್ಕೆಯಾಗಿದೆ</string>
+    <string name="cvt_ximg_none_ticked">ಉಳಿಸಲು ಕನಿಷ್ಠ ಒಂದು ಚಿತ್ರಕ್ಕೆ ಟಿಕ್ ಮಾಡಿ</string>
+    <string name="cvt_ximg_not_in_selection">ಆಯ್ಕೆಯಾಗಿಲ್ಲ</string>
+    <string name="cvt_ximg_picture_of">ಚಿತ್ರ %1$d / %2$d</string>
+    <string name="cvt_ximg_prepare_failed">ಚಿತ್ರಗಳನ್ನು ಓದಲಾಗಲಿಲ್ಲ. ಇದನ್ನು ಮುಚ್ಚಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="cvt_ximg_preparing">ಚಿತ್ರಗಳನ್ನು ಸಿದ್ಧಪಡಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="cvt_ximg_select_all">ಎಲ್ಲವನ್ನೂ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="cvt_ximg_select_none">ತೆರವುಗೊಳಿಸಿ</string>
+    <string name="cvt_ximg_selected_of">%1$d / %2$d ಆಯ್ಕೆಯಾಗಿವೆ</string>
+    <string name="cvt_ximg_tick">ಈ ಚಿತ್ರವನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="cvt_ximg_untick">ಆಯ್ಕೆಯಿಂದ ತೆಗೆದುಹಾಕಿ</string>
+    <string name="cvt_ximg_view_larger">ಚಿತ್ರವನ್ನು ದೊಡ್ಡದಾಗಿ ನೋಡಿ</string>
 </resources>

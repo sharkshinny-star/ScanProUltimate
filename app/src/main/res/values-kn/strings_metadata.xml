@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="meta_action_hint">ಬದಲಾಯಿಸಲು ಪೆನ್ಸಿಲ್ ಇರುವ ವಿವರವನ್ನು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="meta_action_save">ಪ್ರತಿಯನ್ನು ಉಳಿಸಿ</string>
+    <string name="meta_clear_search">ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ</string>
+    <string name="meta_done_exported">%1$d ವಿವರಗಳನ್ನು ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಲಾಗಿದೆ.</string>
+    <string name="meta_done_removed_all">ಮೆಟಾಡೇಟಾ ಇಲ್ಲದ ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗಿದೆ. ಚಿತ್ರ, ಪಠ್ಯ ಅಥವಾ ಧ್ವನಿ ಬದಲಾಗಿಲ್ಲ.</string>
+    <string name="meta_done_removed_location">ಸ್ಥಳ ಇಲ್ಲದ ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗಿದೆ.</string>
+    <string name="meta_done_removed_personal">ವೈಯಕ್ತಿಕ ವಿವರಗಳಿಲ್ಲದ ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗಿದೆ.</string>
+    <string name="meta_done_saved">ನಿಮ್ಮ ಬದಲಾವಣೆಗಳೊಂದಿಗೆ ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗಿದೆ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗಿಲ್ಲ.</string>
+    <string name="meta_edit_field">%1$s ಬದಲಾಯಿಸಿ</string>
+    <string name="meta_edit_hint">ತೆಗೆದುಹಾಕಲು ಖಾಲಿ ಬಿಡಿ.</string>
+    <string name="meta_empty">ಹೊಂದಿಸಿಲ್ಲ</string>
+    <string name="meta_err_export">ವಿವರಗಳನ್ನು ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಲಾಗಲಿಲ್ಲ.</string>
+    <string name="meta_err_nothing_to_save">ಏನೂ ಬದಲಾಗಿಲ್ಲ.</string>
+    <string name="meta_err_read">ಈ ಫೈಲ್‌ನ ವಿವರಗಳನ್ನು ಓದಲಾಗಲಿಲ್ಲ.</string>
+    <string name="meta_err_save">ಈ ವಿವರಗಳೊಂದಿಗೆ ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗಲಿಲ್ಲ.</string>
+    <string name="meta_export_hint">ಎಲ್ಲಾ %1$d ವಿವರಗಳು, ಸ್ಪ್ರೆಡ್‌ಶೀಟ್ ಅಥವಾ ಬೇರೆ ಪ್ರೋಗ್ರಾಂಗಾಗಿ.</string>
+    <string name="meta_formats_note">ಹೆಸರಿನಿಂದ ಮಾತ್ರವಲ್ಲ, ವಿಷಯದಿಂದಲೂ %1$d ಫೈಲ್ ಪ್ರಕಾರಗಳನ್ನು ಗುರುತಿಸುತ್ತದೆ.</string>
+    <string name="meta_group_audio">ಧ್ವನಿ</string>
+    <string name="meta_group_camera">ಕ್ಯಾಮೆರಾ</string>
+    <string name="meta_group_contents">ವಿಷಯಗಳು</string>
+    <string name="meta_group_document">ಡಾಕ್ಯುಮೆಂಟ್</string>
+    <string name="meta_group_file">ಫೈಲ್</string>
+    <string name="meta_group_image">ಚಿತ್ರ</string>
+    <string name="meta_group_location">ಸ್ಥಳ</string>
+    <string name="meta_group_tags">ಎಲ್ಲಾ ಟ್ಯಾಗ್‌ಗಳು</string>
+    <string name="meta_group_video">ವೀಡಿಯೊ</string>
+    <string name="meta_is_location">ಸ್ಥಳ</string>
+    <string name="meta_is_personal">ವೈಯಕ್ತಿಕ ವಿವರ</string>
+    <string name="meta_privacy_hint">ಪ್ರತಿಯೊಂದೂ ತಕ್ಷಣ ಪ್ರತಿ ಮಾಡುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ಚಿತ್ರ, ಪಠ್ಯ ಅಥವಾ ಧ್ವನಿ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="meta_progress_exporting">ವಿವರಗಳನ್ನು ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಲಾಗುತ್ತಿದೆ…</string>
+    <string name="meta_progress_reading">ಫೈಲ್‌ನ ವಿವರಗಳನ್ನು ಓದಲಾಗುತ್ತಿದೆ…</string>
+    <string name="meta_progress_saving">ಪ್ರತಿಯನ್ನು ಉಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="meta_read_only">ಓದಲು ಮಾತ್ರ</string>
+    <string name="meta_readonly_archive">ಈ ಆರ್ಕೈವ್ ಪ್ರಕಾರದ ವಿಷಯಗಳನ್ನು ಪಟ್ಟಿ ಮಾಡಲಾಗುವುದಿಲ್ಲ; ಅದರ ಸ್ವಂತ ವಿವರಗಳನ್ನು ತೋರಿಸಲಾಗಿದೆ.</string>
+    <string name="meta_readonly_audio_format">ಈ ಧ್ವನಿ ಫಾರ್ಮ್ಯಾಟ್‌ನ ಟ್ಯಾಗ್‌ಗಳನ್ನು ಓದಬಹುದು, ಆದರೆ ಬದಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="meta_readonly_audio_old_android">ಸಂಗೀತ ಟ್ಯಾಗ್‌ಗಳನ್ನು ಬದಲಾಯಿಸಲು Android 8 ಅಥವಾ ನಂತರದ ಆವೃತ್ತಿ ಬೇಕು. ಟ್ಯಾಗ್‌ಗಳನ್ನು ಓದಬಹುದು.</string>
+    <string name="meta_readonly_format">ಈ ಬಗೆಯ ಫೈಲ್‌ನ ವಿವರಗಳನ್ನು ಓದಬಹುದು, ಆದರೆ ಇಲ್ಲಿ ಬದಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="meta_readonly_image_format">JPEG, PNG ಮತ್ತು WebP ಚಿತ್ರಗಳನ್ನು ಮಾತ್ರ ಬದಲಾಯಿಸಬಹುದು; ಈ ಚಿತ್ರದ ವಿವರಗಳು ಓದಲು ಮಾತ್ರ.</string>
+    <string name="meta_readonly_legacy_office">Word, Excel ಮತ್ತು PowerPoint 97-2003 ಫೈಲ್‌ಗಳು: ಫೈಲ್‌ನ ಸ್ವಂತ ವಿವರಗಳನ್ನು ಮಾತ್ರ ಓದಬಹುದು. ಡಾಕ್ಯುಮೆಂಟ್ ಗುಣಲಕ್ಷಣಗಳನ್ನು ನೋಡಲು ಮತ್ತು ಬದಲಾಯಿಸಲು ಅದನ್ನು DOCX, XLSX ಅಥವಾ PPTX ಆಗಿ ಉಳಿಸಿ.</string>
+    <string name="meta_readonly_no_properties">ಈ ಡಾಕ್ಯುಮೆಂಟ್‌ನಲ್ಲಿ ಬರೆಯಲು ಗುಣಲಕ್ಷಣಗಳ ಭಾಗವಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದರ ವಿವರಗಳು ಓದಲು ಮಾತ್ರ.</string>
+    <string name="meta_readonly_pdf_locked">ಈ PDF ತೆರೆಯಲು ಪಾಸ್‌ವರ್ಡ್ ಬೇಕು, ಆದ್ದರಿಂದ ಫೈಲ್‌ನ ಸ್ವಂತ ವಿವರಗಳನ್ನು ಮಾತ್ರ ಓದಬಹುದು. ಉಳಿದವನ್ನು ನೋಡಲು ಮತ್ತು ಬದಲಾಯಿಸಲು ಮೊದಲು ಅನ್‌ಲಾಕ್ ಮಾಡಿ.</string>
+    <string name="meta_readonly_raw">ಕ್ಯಾಮೆರಾ RAW ಫೈಲ್‌ಗಳು ಓದಲು ಮಾತ್ರ: ಅವುಗಳನ್ನು ಬದಲಾಯಿಸಿದರೆ ಚಿತ್ರದ ಡೇಟಾ ಹಾಳಾಗಬಹುದು.</string>
+    <string name="meta_readonly_unreadable">ಈ ಫೈಲ್ ಹಾಳಾದಂತೆ ತೋರುತ್ತದೆ, ಆದ್ದರಿಂದ ಕೆಲವು ವಿವರಗಳನ್ನು ಮಾತ್ರ ಓದಲಾಯಿತು ಮತ್ತು ಯಾವುದನ್ನೂ ಬದಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="meta_readonly_video">ವೀಡಿಯೊ ವಿವರಗಳು ಓದಲು ಮಾತ್ರ: ವೀಡಿಯೊದ ಟ್ಯಾಗ್‌ಗಳನ್ನು ಸುರಕ್ಷಿತವಾಗಿ ಮರುಬರೆಯುವುದು ಇನ್ನೂ ಬೆಂಬಲಿತವಾಗಿಲ್ಲ.</string>
+    <string name="meta_remove_all">ಎಲ್ಲಾ ಮೆಟಾಡೇಟಾ ತೆಗೆದುಹಾಕಿ</string>
+    <string name="meta_remove_location">ಸ್ಥಳ ತೆಗೆದುಹಾಕಿ</string>
+    <string name="meta_remove_personal">ವೈಯಕ್ತಿಕ ವಿವರಗಳನ್ನು ತೆಗೆದುಹಾಕಿ</string>
+    <string name="meta_search_hint">ವಿವರಗಳನ್ನು ಹುಡುಕಿ</string>
+    <string name="meta_search_none">ಯಾವ ವಿವರವೂ ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ.</string>
+    <string name="meta_section_export">ಎಕ್ಸ್‌ಪೋರ್ಟ್</string>
+    <string name="meta_section_privacy">ಗೌಪ್ಯತೆ</string>
+    <string name="meta_show_fewer">ಕಡಿಮೆ ತೋರಿಸಿ</string>
+    <string name="meta_will_be_removed">ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ</string>
+</resources>

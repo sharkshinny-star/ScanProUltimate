@@ -43,4 +43,6 @@
     <string name="settings_show_intros_title">పరిచయాలను మళ్లీ చూపండి</string>
     <string name="settings_show_intros_subtitle">టూర్, కెమెరా మరియు టూల్ పరిచయాలను మరోసారి చూడండి</string>
     <string name="settings_show_intros_done">పరిచయాలు మళ్లీ కనిపిస్తాయి</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="hint_tool_step_pick_any">ఏదైనా ఫైల్‌ను ఎంచుకోండి: PDF, ఫోటో, డాక్యుమెంట్, పాట, వీడియో లేదా ఆర్కైవ్</string>
 </resources>
