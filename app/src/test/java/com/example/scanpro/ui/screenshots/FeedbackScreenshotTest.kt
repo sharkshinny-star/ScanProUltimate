@@ -20,9 +20,8 @@ import com.example.scanpro.data.ThemeMode
 import com.example.scanpro.feature.feedback.FeedbackAttachment
 import com.example.scanpro.feature.feedback.FeedbackFormContent
 import com.example.scanpro.feature.feedback.FeedbackFormKind
-import com.example.scanpro.feature.feedback.FeedbackReason
 import com.example.scanpro.feature.feedback.IssueCategory
-import com.example.scanpro.feature.feedback.RateExperienceContent
+import com.example.scanpro.feature.feedback.RatePromptContent
 import com.example.scanpro.feature.feedback.RateThanksContent
 import java.io.File
 import org.junit.Assume.assumeTrue
@@ -75,26 +74,26 @@ class FeedbackScreenshotTest(private val dark: Boolean) {
     }
 
     @Test
-    fun rateNothingChosen() = shoot("rate_empty") {
-        RateExperienceContent(0, emptySet(), "", onRate = {}, onToggleReason = {}, onTextChange = {}, onSubmit = {}, onNotNow = {})
-    }
+    fun rateNothingChosen() = shoot("rate_empty") { RatePromptContent(0, onRate = {}, onNotNow = {}) }
 
     @Test
-    fun ratePoorWithOther() = shoot("rate_poor") {
-        RateExperienceContent(
-            2, setOf(FeedbackReason.SLOW, FeedbackReason.OTHER), "Saving a 20-page scan takes a long time",
-            onRate = {}, onToggleReason = {}, onTextChange = {}, onSubmit = {}, onNotNow = {}
+    fun rateFourStars() = shoot("rate_four") { RatePromptContent(4, onRate = {}, onNotNow = {}) }
+
+    @Test
+    fun thanksHappy() = shoot("thanks_rating") { RateThanksContent(5, null, onRateOnPlay = {}, onDone = {}) }
+
+    @Test
+    fun thanksAfterProblemReport() = shoot("thanks_report") {
+        RateThanksContent(2, "Your email app opened with the details filled in", onRateOnPlay = {}, onDone = {})
+    }
+
+    // The low-rating step: the issue form under the rating sheet's own question.
+    @Test
+    fun problemAfterLowRating() = shoot("rate_problem") {
+        FeedbackFormContent(
+            FeedbackFormKind.ISSUE, setOf(IssueCategory.SLOW), "", attachments = emptyList(), title = "Tell us the problem you encountered",
+            onToggleCategory = {}, onTextChange = {}, onAttach = {}, onRemoveAttachment = {}, onClose = {}, onSubmit = {}
         )
-    }
-
-    @Test
-    fun rateLovedIt() = shoot("rate_loved") {
-        RateExperienceContent(5, setOf(FeedbackReason.QUALITY), "", onRate = {}, onToggleReason = {}, onTextChange = {}, onSubmit = {}, onNotNow = {})
-    }
-
-    @Test
-    fun thanksHappy() = shoot("thanks_play") {
-        RateThanksContent(5, "Your email app opened with the details filled in", onRateOnPlay = {}, onDone = {})
     }
 
     @Test

@@ -11,7 +11,7 @@ import android.graphics.Typeface
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.captureToImage
 import androidx.paging.PagingData
@@ -194,6 +194,48 @@ class ScreenScreenshotTest(private val dark: Boolean) {
 
     @Test
     fun lock() = shoot("11-lock") { LockScreen(onUnlock = {}, snackbarHostState = SnackbarHostState()) }
+
+    // The Tools landing through its stateless overload (no view model): search, categories and the tool tiles.
+    @Test
+    fun tools() = shoot("12-tools") {
+        com.example.scanpro.feature.tools.PdfToolsScreen(
+            recentPdfs = emptyList(),
+            bottomBar = { com.example.scanpro.navigation.ScanProBottomBar(ScanProDestinations.TOOLS, onTab = {}) }
+        )
+    }
+
+    // The same screens at 150 % text, on a small phone and in Tamil (long labels): the three ways a layout that looks
+    // right at 360 dp in English usually breaks.
+    @Test
+    fun homeLargeText() = shoot("02c-home-text150") { LargeText { Library(ScanProDestinations.HOME) } }
+
+    @Test
+    fun scanReviewLargeText() = shoot("07c-scan-review-text150") { LargeText { ScanReview() } }
+
+    @Test
+    @Config(qualifiers = "w320dp-h568dp-xhdpi")
+    fun homeSmallPhone() = shoot("02d-home-small") { Library(ScanProDestinations.HOME) }
+
+    @Test
+    @Config(qualifiers = "w320dp-h568dp-xhdpi")
+    fun scanReviewSmallPhone() = shoot("07d-scan-review-small") { ScanReview() }
+
+    @Test
+    @Config(qualifiers = "ta-w360dp-h800dp-xxhdpi")
+    fun homeTamil() = shoot("02e-home-tamil") { Library(ScanProDestinations.HOME) }
+
+    @Test
+    @Config(qualifiers = "ta-w360dp-h800dp-xxhdpi")
+    fun scanReviewTamil() = shoot("07e-scan-review-tamil") { ScanReview() }
+
+    @Composable
+    private fun LargeText(content: @Composable () -> Unit) {
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, 1.5f),
+            content = content
+        )
+    }
 
     @Composable
     private fun Library(mode: String, query: String = "", grid: Boolean = true) {

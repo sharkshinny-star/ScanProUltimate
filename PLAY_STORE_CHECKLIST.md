@@ -14,7 +14,7 @@ This checklist is intentionally conservative. Complete it against the Play Conso
 ## 2. SDK and device compatibility
 
 - [ ] Install the Android SDK/API level required by `compileSdk` in `app/build.gradle.kts`.
-- [ ] Verify the current Play target-API requirement again immediately before release. The project currently targets API 36.
+- [ ] Verify the current Play target-API requirement again immediately before release. The project targets API 37 (`targetSdk = 37`, `compileSdk = 37`), above the API 36 minimum for new apps (checked in the build file 2026-11-19; not run on an Android 17 device, R2).
 - [ ] Test minimum supported Android version (minSdk 24).
 - [ ] Test Android 12, 13, 14, 15, and 16/API 36 where devices/emulators are available.
 - [ ] Test at least one low/mid-range physical phone with 4–6 GB RAM and one recent flagship.
@@ -25,7 +25,8 @@ This checklist is intentionally conservative. Complete it against the Play Conso
 Current intended permissions are deliberately narrow. Re-check the merged release manifest.
 
 - [ ] Camera permission is explained contextually and only requested when entering the custom scanner.
-- [ ] No `MANAGE_EXTERNAL_STORAGE`, broad media permission, contacts, location, microphone, phone, or SMS permission has been introduced.
+- [ ] **Release blocker until filed:** the manifest declares `MANAGE_EXTERNAL_STORAGE` (and `READ_EXTERNAL_STORAGE` up to Android 10) for the optional "Files on this phone" feature (F160–F163). Play rejects the bundle without an All files access declaration and video: file the draft in `PLAY_ALL_FILES_ACCESS.md`, or build the bundle without the permission (`-Pscanpro.allFilesAccess=false`, see `app/build.gradle.kts`). No broad media, contacts, location, microphone, phone or SMS permission is declared (manifest read 2026-11-19).
+- [ ] The hosted privacy policy says the same as the build: sections 2, 10 and 12 of `docs/privacy-policy/index.html` were corrected on 2026-11-19 (they said the app never asks for access to all files, and did not mention the backup and drink-water reminders).
 - [ ] Gallery import uses Android Photo Picker/SAF instead of broad storage access.
 - [ ] File sharing uses `FileProvider`/content URIs with temporary grants.
 - [ ] App-private documents are not silently uploaded.
@@ -157,4 +158,7 @@ See `SCAN_QUALITY_TEST_PLAN.md` for measurable acceptance criteria.
 
 ## 12. Current limitation before store submission
 
-This source package has not been compiled into an APK/AAB in the generation environment because that environment does not contain the Android SDK/Gradle toolchain. Portable Kotlin checks and static resource/source checks are documented in `BUILD_STATUS.md`. A real Gradle build and physical-device validation are mandatory before Play submission.
+The app builds in a cloud container (unit tests, lint, release bundle: see `BUILD_AND_TEST.md` "Latest results"), but that
+container has no phone or emulator and no signing key. Before a production upload the owner still has to: sign the bundle
+with the upload key, install and smoke-test the release build on a phone (see `SMOOTHNESS_CHECK.md` and
+`REMAINING_WORK.md`), host the privacy policy, and file the All files access declaration.
