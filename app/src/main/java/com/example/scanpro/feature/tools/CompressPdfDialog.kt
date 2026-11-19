@@ -194,7 +194,10 @@ internal fun CompressPdfDialog(
                     selected = isCustomTarget,
                     title = stringResource(R.string.tools_compress_preset_custom),
                     subtitle = stringResource(R.string.tools_compress_preset_custom_desc),
-                    onClick = { isCustomTarget = true }
+                    onClick = {
+                        isCustomTarget = !isCustomTarget
+                        if (!isCustomTarget) targetInput = ""
+                    }
                 )
             }
             if (isCustomTarget) {
