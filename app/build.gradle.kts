@@ -1,3 +1,5 @@
+import java.util.zip.ZipFile
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -38,6 +40,9 @@ android {
         // Links shown in Settings. Empty (the default) hides the rows: -Pscanpro.privacyPolicyUrl=... -Pscanpro.termsUrl=...
         buildConfigField("String", "PRIVACY_POLICY_URL", "\"${providers.gradleProperty("scanpro.privacyPolicyUrl").orNull.orEmpty()}\"")
         buildConfigField("String", "TERMS_URL", "\"${providers.gradleProperty("scanpro.termsUrl").orNull.orEmpty()}\"")
+        // "All files access" (MANAGE_EXTERNAL_STORAGE) on by default; -Pscanpro.allFilesAccess=false makes a build without it
+        // (the permission is removed from the manifest below and no screen asks for it), in case Play declines it (F210).
+        buildConfigField("boolean", "ALL_FILES_ACCESS", (providers.gradleProperty("scanpro.allFilesAccess").orNull != "false").toString())
         // 32-bit x86 is only used by old emulators; leaving it out removes ~70 MB of native code from universal APKs.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -296,3 +301,51 @@ androidComponents {
 
 
 
+
+// Play release guard (F210): Google Play requires the privacy policy inside the app as well as in Play Console, and
+// Settings only shows the link when PRIVACY_POLICY_URL is set. A Play bundle without an https:// policy URL now fails
+// instead of shipping without it. Pass -Pscanpro.privacyPolicyUrl=https://... for the real upload; CI and local test
+// bundles opt out with -Pscanpro.allowMissingPolicy=true.
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+    val policyUrl = providers.gradleProperty("scanpro.privacyPolicyUrl").orElse("")
+    val allowMissing = providers.gradleProperty("scanpro.allowMissingPolicy").map { it == "true" }.orElse(false)
+    // All files access (F225): the owner decided on 2026-11-19 that the Play version ships without
+    // MANAGE_EXTERNAL_STORAGE, so a bundle meant for upload must say which it is. "false" is the Play build; "true" is
+    // only for after Google has approved the All files access declaration (PLAY_ALL_FILES_ACCESS.md).
+    val allFilesAccess = providers.gradleProperty("scanpro.allFilesAccess").orElse("")
+    val bundleFile = layout.buildDirectory.file("outputs/bundle/release/app-release.aab")
+    doFirst {
+        if (!allowMissing.get() && !policyUrl.get().startsWith("https://")) {
+            throw GradleException(
+                "Play bundle without a privacy policy link: pass -Pscanpro.privacyPolicyUrl=https://... " +
+                    "(or -Pscanpro.allowMissingPolicy=true for a test bundle that will not be uploaded)."
+            )
+        }
+        if (!allowMissing.get() && allFilesAccess.get() != "false" && allFilesAccess.get() != "true") {
+            throw GradleException(
+                "Play bundle with All files access: the Play version ships without it, so pass " +
+                    "-Pscanpro.allFilesAccess=false (or =true only once Google has approved the All files access " +
+                    "declaration; -Pscanpro.allowMissingPolicy=true for a test bundle that will not be uploaded)."
+            )
+        }
+    }
+    // Proof in the build itself: the bundle built without the access must not declare the permission.
+    doLast {
+        val aab = bundleFile.get().asFile
+        if (allFilesAccess.get() == "false" && aab.exists()) {
+            val declared = ZipFile(aab).use { zip ->
+                val manifest = zip.getEntry("base/manifest/AndroidManifest.xml")
+                    ?: throw GradleException("No base manifest in ${aab.name}; cannot check its permissions.")
+                zip.getInputStream(manifest).use { String(it.readBytes(), Charsets.ISO_8859_1) }
+                    .contains("MANAGE_EXTERNAL_STORAGE")
+            }
+            if (declared) throw GradleException("${aab.name} still declares MANAGE_EXTERNAL_STORAGE; do not upload it.")
+            println("Play bundle check: ${aab.name} does not declare MANAGE_EXTERNAL_STORAGE (All files access).")
+        }
+    }
+}
+
+// The build without "All files access" (F210): its release manifest removes MANAGE_EXTERNAL_STORAGE.
+if (providers.gradleProperty("scanpro.allFilesAccess").orNull == "false") {
+    android.sourceSets.getByName("release").manifest.srcFile("src/noAllFilesAccess/AndroidManifest.xml")
+}

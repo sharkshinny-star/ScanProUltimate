@@ -57,6 +57,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.only
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
@@ -602,6 +610,12 @@ internal fun DocumentDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        // The bottom and side system bars (and a cutout on its side) are kept clear (2026-11-18): with no insets the
+        // snackbar sat behind the navigation bar and, in landscape, the right-hand column of pages under a side bar.
+        // The top bar pads for the status bar itself.
+        contentWindowInsets = WindowInsets.navigationBars
+            .union(WindowInsets.displayCutout)
+            .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
         topBar = {
             TopBarWithProgress(busy, onStop = onStop) {
                 Column {
@@ -650,6 +664,8 @@ internal fun DocumentDetailScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                // So the tabs' imePadding below does not count the navigation bar a second time.
+                .consumeWindowInsets(padding)
         ) {
             when (DocumentTab.entries[tab]) {
                 DocumentTab.PAGES -> LazyVerticalGrid(
@@ -747,6 +763,7 @@ internal fun DocumentDetailScreen(
                 DocumentTab.TEXT -> Column(
                     Modifier
                         .fillMaxSize()
+                        .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)
                 ) {
@@ -845,25 +862,48 @@ internal fun DocumentDetailScreen(
                                     }
                                 }
                             }
+                            val startTranslation = {
+                                detailScope.launch {
+                                    translating = true
+                                    translationResult = try {
+                                        val translator = TranslationFeature.translator(context) { translationProgress = it }
+                                        translationProgress = null
+                                        translator.translate(document.ocrText, translationTarget)
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (error: Exception) {
+                                        // A failure is a message, not a "translation" the user could copy or share.
+                                        android.widget.Toast.makeText(context, R.string.doc_translation_failed, android.widget.Toast.LENGTH_LONG).show()
+                                        ""
+                                    } finally {
+                                        translating = false
+                                        translationProgress = null
+                                    }
+                                }
+                                Unit
+                            }
+                            // The first translation into a language downloads its language pack over whatever connection
+                            // the phone is on (F215): asked once for each language, so mobile data is never used unasked.
+                            val downloadPrefs = remember { context.getSharedPreferences("translation_downloads", android.content.Context.MODE_PRIVATE) }
+                            var askDownloadFor by remember { mutableStateOf<String?>(null) }
+                            askDownloadFor?.let { tag ->
+                                AlertDialog(
+                                    onDismissRequest = { askDownloadFor = null },
+                                    title = { Text(stringResource(R.string.doc_translate_download_title)) },
+                                    text = { Text(stringResource(R.string.doc_translate_download_body, targetLabel)) },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            downloadPrefs.edit().putBoolean(tag, true).apply()
+                                            askDownloadFor = null
+                                            startTranslation()
+                                        }) { Text(stringResource(R.string.doc_translate_download_confirm)) }
+                                    },
+                                    dismissButton = { TextButton(onClick = { askDownloadFor = null }) { Text(stringResource(R.string.common_cancel)) } }
+                                )
+                            }
                             FilledTonalButton(
                                 onClick = {
-                                    detailScope.launch {
-                                        translating = true
-                                        translationResult = try {
-                                            val translator = TranslationFeature.translator(context) { translationProgress = it }
-                                            translationProgress = null
-                                            translator.translate(document.ocrText, translationTarget)
-                                        } catch (cancelled: CancellationException) {
-                                            throw cancelled
-                                        } catch (error: Exception) {
-                                            // A failure is a message, not a "translation" the user could copy or share.
-                                            android.widget.Toast.makeText(context, R.string.doc_translation_failed, android.widget.Toast.LENGTH_LONG).show()
-                                            ""
-                                        } finally {
-                                            translating = false
-                                            translationProgress = null
-                                        }
-                                    }
+                                    if (downloadPrefs.getBoolean(translationTarget, false)) startTranslation() else askDownloadFor = translationTarget
                                 },
                                 enabled = hasText && !translating
                             ) {
@@ -933,6 +973,8 @@ internal fun DocumentDetailScreen(
                 DocumentTab.INSIGHTS -> Column(
                     Modifier
                         .fillMaxSize()
+                        // The Ask field: the keyboard used to cover it and its answer.
+                        .imePadding()
                         .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -1821,9 +1863,12 @@ private fun DocumentLoadingScreen(title: String?, coverPath: String?, coverVersi
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            Column {
-                DocumentTopBar(title = title.orEmpty(), status = null, onBack = onBack)
-                DocumentTabs(selected = DocumentTab.PAGES.ordinal, onSelect = {})
+            // The same 4dp progress strip as the loaded screen, so its pages don't move down 4dp when they arrive.
+            TopBarWithProgress(busy = false) {
+                Column {
+                    DocumentTopBar(title = title.orEmpty(), status = null, onBack = onBack)
+                    DocumentTabs(selected = DocumentTab.PAGES.ordinal, onSelect = {})
+                }
             }
         }
     ) { padding ->

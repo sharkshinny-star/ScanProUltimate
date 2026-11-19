@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tool pages upgrade (F195). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tool_demo_how_it_works">यह कैसे काम करता है</string>
+    <string name="tool_demo_shown">दिख रहा है</string>
+    <string name="tool_demo_hidden">छिपा है</string>
+    <string name="tools_more_options">और विकल्प</string>
+    <string name="pdf_outcome_size_unknown">साइज़ बाद में पता चलेगा</string>
+    <plurals name="pdf_outcome_pages">
+        <item quantity="one">%1$d पेज</item>
+        <item quantity="other">%1$d पेज</item>
+    </plurals>
+    <plurals name="pdf_outcome_files">
+        <item quantity="one">%1$d फ़ाइल</item>
+        <item quantity="other">%1$d फ़ाइलें</item>
+    </plurals>
+</resources>

@@ -63,4 +63,15 @@
     <string name="import_tip_body">ಒಂದು ಫೈಲ್ ಆಯ್ಕೆಮಾಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ, ಹಲವನ್ನು ಆಯ್ಕೆಮಾಡಲು ದೀರ್ಘವಾಗಿ ಒತ್ತಿ, ನಂತರ ಆಮದು ಮಾಡಲು ಮೇಲಿನ ಬಲಭಾಗದಲ್ಲಿ ಆಯ್ಕೆಮಾಡಿ ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
     <string name="import_tip_cancel">ರದ್ದುಮಾಡಿ</string>
     <string name="import_tip_import">ಆಮದು ಮಾಡಿ</string>
+    <string name="phone_files_folders">ಫೋಲ್ಡರ್‌ಗಳು</string>
+    <string name="phone_files_show_grid">ಗ್ರಿಡ್ ಆಗಿ ತೋರಿಸಿ</string>
+    <string name="phone_files_show_list">ಪಟ್ಟಿಯಾಗಿ ತೋರಿಸಿ</string>
+    <string name="phone_files_my_storage">ನನ್ನ ಸಂಗ್ರಹಣೆ</string>
+    <string name="phone_files_internal_storage">ಆಂತರಿಕ ಸಂಗ್ರಹಣೆ</string>
+    <string name="phone_files_downloads">ಡೌನ್‌ಲೋಡ್‌ಗಳು</string>
+    <string name="phone_files_processed">ScanPro ನಲ್ಲಿ ತಯಾರಾದವು</string>
+    <string name="phone_files_cloud_title">ಕ್ಲೌಡ್ ಡ್ರೈವ್‌ಗಳು ಮತ್ತು ಇತರ ಆ್ಯಪ್‌ಗಳು</string>
+    <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… ನಿಂದ ತೆರೆಯಿರಿ</string>
+    <string name="phone_files_all_files">ಎಲ್ಲಾ ಫೈಲ್‌ಗಳು</string>
+    <string name="phone_files_up">ಒಂದು ಫೋಲ್ಡರ್ ಮೇಲೆ</string>
 </resources>

@@ -63,4 +63,15 @@
     <string name="import_tip_body">ஒரு கோப்பைத் தேர்ந்தெடுக்கத் தட்டவும், பலவற்றைத் தேர்ந்தெடுக்க நீண்ட நேரம் அழுத்தவும், பிறகு இறக்க மேலே வலதுபுறத்தில் உள்ள தேர்ந்தெடு என்பதைத் தட்டவும்.</string>
     <string name="import_tip_cancel">ரத்துசெய்</string>
     <string name="import_tip_import">இறக்கு</string>
+    <string name="phone_files_folders">கோப்புறைகள்</string>
+    <string name="phone_files_show_grid">கட்டமாகக் காட்டு</string>
+    <string name="phone_files_show_list">பட்டியலாகக் காட்டு</string>
+    <string name="phone_files_my_storage">என் சேமிப்பகம்</string>
+    <string name="phone_files_internal_storage">உள் சேமிப்பகம்</string>
+    <string name="phone_files_downloads">பதிவிறக்கங்கள்</string>
+    <string name="phone_files_processed">ScanPro-வில் உருவானவை</string>
+    <string name="phone_files_cloud_title">கிளவுட் டிரைவ்களும் பிற ஆப்களும்</string>
+    <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… இலிருந்து திற</string>
+    <string name="phone_files_all_files">எல்லாக் கோப்புகளும்</string>
+    <string name="phone_files_up">ஒரு கோப்புறை மேலே</string>
 </resources>

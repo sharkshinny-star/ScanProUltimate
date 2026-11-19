@@ -112,10 +112,38 @@ private suspend fun copyAttachment(context: Context, source: Uri, index: Int): F
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedbackFormSheet(kind: FeedbackFormKind, onSent: (SupportDelivery) -> Unit, onClose: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onClose, sheetState = sheetState) {
+        FeedbackFormHost(
+            kind = kind,
+            onSent = { delivery ->
+                onSent(delivery)
+                onClose()
+            },
+            onClose = { scope.launch { sheetState.hide() }.invokeOnCompletion { onClose() } }
+        )
+    }
+}
+
+/**
+ * The form with its state, its screenshot picker and its Submit, without a sheet around it: used by
+ * [FeedbackFormSheet] and by the low-rating step of the rating sheet ([RateExperienceSheet]).
+ *
+ * @param title replaces the form's own title and heading (the rating sheet asks one question, not two).
+ * @param preface a first line for the message, for example the rating that led here.
+ */
+@Composable
+internal fun FeedbackFormHost(
+    kind: FeedbackFormKind,
+    onSent: (SupportDelivery) -> Unit,
+    onClose: () -> Unit,
+    title: String? = null,
+    preface: String? = null
+) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var categories by rememberSaveable { mutableStateOf(emptyList<IssueCategory>()) }
     var text by rememberSaveable { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
@@ -138,41 +166,40 @@ fun FeedbackFormSheet(kind: FeedbackFormKind, onSent: (SupportDelivery) -> Unit,
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onClose, sheetState = sheetState) {
-        FeedbackFormContent(
-            kind = kind,
-            categories = categories.toSet(),
-            text = text,
-            attachments = attachments,
-            attachFailed = attachFailed,
-            sending = sending,
-            onToggleCategory = { c -> categories = if (c in categories) categories - c else categories + c },
-            onTextChange = { text = it },
-            onAttach = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-            onRemoveAttachment = { index -> attachments = attachments.filterIndexed { i, _ -> i != index } },
-            onClose = { scope.launch { sheetState.hide() }.invokeOnCompletion { onClose() } },
-            onSubmit = {
-                sending = true
-                scope.launch {
-                    val chosen = IssueCategory.entries.filter { it in categories }.joinToString { resources.getString(it.label) }
-                    val message = if (kind == FeedbackFormKind.ISSUE) {
-                        SupportMessage(
-                            subject = resources.getString(R.string.feedback_email_issue_subject, chosen),
-                            text = resources.getString(R.string.feedback_email_categories, chosen) + "\n\n" + text.trim(),
-                            attachments = attachments.map { it.uri }
-                        )
-                    } else {
-                        SupportMessage(text = text.trim(), attachments = attachments.map { it.uri })
-                    }
-                    val topic = if (kind == FeedbackFormKind.ISSUE) SupportTopic.ISSUE else SupportTopic.FEATURE
-                    val delivery = contactSupport(context, topic, message)
-                    sending = false
-                    onSent(delivery)
-                    onClose()
+    FeedbackFormContent(
+        kind = kind,
+        categories = categories.toSet(),
+        text = text,
+        attachments = attachments,
+        attachFailed = attachFailed,
+        sending = sending,
+        title = title,
+        onToggleCategory = { c -> categories = if (c in categories) categories - c else categories + c },
+        onTextChange = { text = it },
+        onAttach = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+        onRemoveAttachment = { index -> attachments = attachments.filterIndexed { i, _ -> i != index } },
+        onClose = onClose,
+        onSubmit = {
+            sending = true
+            scope.launch {
+                val chosen = IssueCategory.entries.filter { it in categories }.joinToString { resources.getString(it.label) }
+                val lead = preface?.let { it + "\n\n" }.orEmpty()
+                val message = if (kind == FeedbackFormKind.ISSUE) {
+                    SupportMessage(
+                        subject = resources.getString(R.string.feedback_email_issue_subject, chosen),
+                        text = lead + resources.getString(R.string.feedback_email_categories, chosen) + "\n\n" + text.trim(),
+                        attachments = attachments.map { it.uri }
+                    )
+                } else {
+                    SupportMessage(text = lead + text.trim(), attachments = attachments.map { it.uri })
                 }
+                val topic = if (kind == FeedbackFormKind.ISSUE) SupportTopic.ISSUE else SupportTopic.FEATURE
+                val delivery = contactSupport(context, topic, message)
+                sending = false
+                onSent(delivery)
             }
-        )
-    }
+        }
+    )
 }
 
 /** The form without its sheet, so the screenshot tests can draw it. */
@@ -184,6 +211,8 @@ fun FeedbackFormContent(
     attachments: List<FeedbackAttachment>,
     attachFailed: Boolean = false,
     sending: Boolean = false,
+    /** Shown instead of the form's own title and heading. */
+    title: String? = null,
     onToggleCategory: (IssueCategory) -> Unit,
     onTextChange: (String) -> Unit,
     onAttach: () -> Unit,
@@ -201,7 +230,7 @@ fun FeedbackFormContent(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(if (issue) R.string.settings_report_issue_title else R.string.settings_request_features),
+                title ?: stringResource(if (issue) R.string.settings_report_issue_title else R.string.settings_request_features),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f).semantics { heading() }
@@ -210,12 +239,14 @@ fun FeedbackFormContent(
                 Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.feedback_close))
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(if (issue) R.string.feedback_form_issue_heading else R.string.feedback_form_feature_heading),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
+        if (title == null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(if (issue) R.string.feedback_form_issue_heading else R.string.feedback_form_feature_heading),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
         if (issue) {
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

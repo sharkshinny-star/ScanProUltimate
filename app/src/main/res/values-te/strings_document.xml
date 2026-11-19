@@ -270,4 +270,13 @@
     <string name="doc_saved_copy_total">మొత్తం కాపీ చేయండి</string>
     <string name="doc_share_as_word">Word గా షేర్ చేయండి</string>
     <string name="doc_share_as_word_hint">ScanPro కనుగొన్న పదాల నుండి సవరించగల టెక్స్ట్</string>
+    <string name="doc_colour_hex">హెక్స్ కోడ్</string>
+    <string name="doc_colour_palette">రంగుల పాలెట్</string>
+    <string name="doc_colour_picker_title">రంగును ఎంచుకోండి</string>
+    <string name="doc_colour_use">ఈ రంగు వాడండి</string>
+    <string name="doc_ink_custom">మీ రంగు</string>
+    <string name="doc_save_for_next_time_hint">తదుపరి సారి సేవ్ చేసిన సంతకాల నుండి దీన్ని ఎంచుకోండి</string>
+    <string name="doc_translate_download_title">భాషా ప్యాక్ డౌన్‌లోడ్ చేయాలా?</string>
+    <string name="doc_translate_download_body">%1$s లోకి మొదటిసారి అనువదించినప్పుడు దాని భాషా ప్యాక్ Google నుండి డౌన్‌లోడ్ అవుతుంది (ప్రతి భాషకు సుమారు 30 MB), మీ ఫోన్ ఇప్పుడు వాడుతున్న కనెక్షన్ ద్వారా, మొబైల్ డేటాతో సహా. ఆ తర్వాత %1$s లోకి అనువాదం ఆఫ్‌లైన్‌లో పనిచేస్తుంది.</string>
+    <string name="doc_translate_download_confirm">డౌన్‌లోడ్ చేసి అనువదించండి</string>
 </resources>

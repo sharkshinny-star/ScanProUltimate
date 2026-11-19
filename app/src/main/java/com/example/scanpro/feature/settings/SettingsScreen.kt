@@ -233,6 +233,10 @@ fun SettingsScreen(
     val resources = LocalResources.current
     val pageBySection = remember(resources) { SettingsPage.entries.associateBy { resources.getString(it.title) } }
     val motion = rememberMotionEnabled()
+    // The main page's scroll lives out here (2026-11-18): AnimatedContent drops its content's state, so coming back from a
+    // page returned to the top of Settings. A page opens at its top, with the bar in its unscrolled colour.
+    val mainScrollState = rememberScrollState()
+    LaunchedEffect(page) { if (page != null) scrollBehavior.state.contentOffset = 0f }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -273,7 +277,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             label = "settingsPage"
         ) { target ->
-            val scrollState = rememberScrollState()
+            val scrollState = if (target == null) mainScrollState else rememberScrollState()
             val locator = remember(scrollState) { SettingsLocator(scrollState) }
             LaunchedEffect(pendingJump, query, target) {
                 val title = pendingJump ?: return@LaunchedEffect
@@ -372,6 +376,7 @@ fun SettingsScreen(
                             SettingsPage.PRIVACY -> PrivacyPage(appLock = appLock, onAppLockChange = onAppLockChange)
                             SettingsPage.SHORTCUTS -> ShortcutsPage()
                             SettingsPage.SUPPORT -> SupportPage(snackbarHostState)
+                            SettingsPage.ABOUT -> AboutPage(onOpenPrivacy = { page = SettingsPage.PRIVACY })
                         }
                     }
                 }

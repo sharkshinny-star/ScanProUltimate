@@ -32,4 +32,5 @@
     <string name="msg_sign_progress" tools:ignore="PluralsCandidate">പേജ് %1$d / %2$d ഒപ്പിടുന്നു</string>
     <string name="msg_sign_failed">PDF ഒപ്പിടാൻ കഴിഞ്ഞില്ല</string>
     <string name="msg_sign_done" tools:ignore="PluralsCandidate">ഒപ്പിട്ട പകർപ്പ് സേവ് ചെയ്തു. ചേർത്തവ: %1$d</string>
+    <string name="sign_existing_digital_signature">ഈ PDF-ൽ ഇതിനകം ഒരു ഡിജിറ്റൽ ഒപ്പുണ്ട്. ഇവിടെ സേവ് ചെയ്യുന്ന പകർപ്പ് ആ ഒപ്പിന്റെ പരിശോധനയിൽ ഇനി സാധുവാകില്ല. യഥാർത്ഥ ഫയൽ മാറുന്നില്ല.</string>
 </resources>

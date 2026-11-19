@@ -19,6 +19,9 @@ object FirstRunHints {
     /** The introduction a tool shows the first time it is opened. */
     fun toolKey(toolId: String) = "tool_$toolId"
 
+    /** A tool's "How it works" card, which is open the first time the tool's page is shown and folded from then on. */
+    fun demoKey(toolId: String) = "demo_$toolId"
+
     private const val PREFS = "first_run_hints"
     private const val KEY_ARMED = "armed"
     private const val SEEN_PREFIX = "seen_"

@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import com.example.scanpro.core.security.ShortcutToken
 import com.example.scanpro.ui.EmphasizedDecelerate
 import com.example.scanpro.ui.LaunchIntro
 import androidx.core.content.ContextCompat
@@ -413,17 +414,21 @@ class MainActivity : FragmentActivity() {
             ACTION_OPEN_TRASH -> viewModel.requestDestination(ScanProDestinations.TRASH)
             ACTION_OPEN_SETTINGS -> viewModel.requestDestination(ScanProDestinations.SETTINGS)
             ACTION_OPEN_KEPT_SCANS -> viewModel.requestDestination(ScanProDestinations.KEPT_SCANS)
+            ACTION_OPEN_TOOLS -> viewModel.requestDestination(ScanProDestinations.TOOLS)
+            ACTION_OPEN_FILES -> viewModel.requestDestination(ScanProDestinations.FILES)
             ACTION_SCAN_NOW -> {
                 // Launchers rank shortcuts by how often each is used.
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_SCAN_NOW)
                 viewModel.requestScan(intent.getStringExtra(EXTRA_SCAN_MODE).orEmpty())
             }
             ACTION_IMPORT_IMAGES -> imageImportLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            ACTION_REPORT_ISSUE -> {
+            // The two support actions leave the app (an email draft, one with a diagnostics file), so they are
+            // honoured only from the app's own shortcuts (F215); from anywhere else the app simply opens.
+            ACTION_REPORT_ISSUE -> if (ShortcutToken.matches(this, intent)) {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_REPORT_ISSUE)
                 lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.ISSUE) }
             }
-            ACTION_GIVE_FEEDBACK -> {
+            ACTION_GIVE_FEEDBACK -> if (ShortcutToken.matches(this, intent)) {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_GIVE_FEEDBACK)
                 lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.FEEDBACK) }
             }
@@ -591,6 +596,9 @@ class MainActivity : FragmentActivity() {
         const val ACTION_OPEN_TRASH = "com.example.scanpro.action.OPEN_TRASH"
         const val ACTION_OPEN_SETTINGS = "com.example.scanpro.action.OPEN_SETTINGS"
         const val ACTION_OPEN_KEPT_SCANS = "com.example.scanpro.action.OPEN_KEPT_SCANS"
+        /** The widget's Tools and Files buttons (F197). */
+        const val ACTION_OPEN_TOOLS = "com.example.scanpro.action.OPEN_TOOLS"
+        const val ACTION_OPEN_FILES = "com.example.scanpro.action.OPEN_FILES"
         const val EXTRA_DOCUMENT_ID = "documentId"
         /** One launcher shortcut that opens this activity with [action]. */
         private fun launcherShortcut(context: Context, id: String, short: Int, long: Int, action: String) =
@@ -598,7 +606,7 @@ class MainActivity : FragmentActivity() {
                 .setShortLabel(context.getString(short))
                 .setLongLabel(context.getString(long))
                 .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
-                .setIntent(Intent(context, MainActivity::class.java).setAction(action))
+                .setIntent(Intent(context, MainActivity::class.java).setAction(action).putExtra(ShortcutToken.EXTRA, ShortcutToken.of(context)))
                 .build()
 
         /** The "Scan now" shortcut, for Settings to offer pinning it to the home screen (same id as the dynamic one). */

@@ -32,9 +32,4 @@
         <item quantity="other">%d ஆவணங்கள்</item>
     </plurals>
     <string name="settings_recycle_bin_summary">%1$s · %2$s வைக்கப்படும்</string>
-    <string name="settings_library_summary">%1$s · %2$s பயன்பாட்டில்</string>
-    <plurals name="settings_library_documents">
-        <item quantity="one">%d ஆவணம்</item>
-        <item quantity="other">%d ஆவணங்கள்</item>
-    </plurals>
 </resources>

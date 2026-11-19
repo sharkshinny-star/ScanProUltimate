@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tool pages upgrade (F195). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tool_demo_how_it_works">ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു</string>
+    <string name="tool_demo_shown">കാണിക്കുന്നു</string>
+    <string name="tool_demo_hidden">മറച്ചിരിക്കുന്നു</string>
+    <string name="tools_more_options">കൂടുതൽ ഓപ്ഷനുകൾ</string>
+    <string name="pdf_outcome_size_unknown">വലുപ്പം പിന്നീട് അറിയാം</string>
+    <plurals name="pdf_outcome_pages">
+        <item quantity="one">%1$d പേജ്</item>
+        <item quantity="other">%1$d പേജുകൾ</item>
+    </plurals>
+    <plurals name="pdf_outcome_files">
+        <item quantity="one">%1$d ഫയൽ</item>
+        <item quantity="other">%1$d ഫയലുകൾ</item>
+    </plurals>
+</resources>

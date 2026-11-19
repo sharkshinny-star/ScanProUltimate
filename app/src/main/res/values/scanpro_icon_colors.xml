@@ -10,4 +10,9 @@
     <color name="scanpro_widget_button">#3346D3</color>
     <color name="scanpro_widget_icon">#FFFFFF</color>
     <color name="scanpro_widget_text">#FFFFFF</color>
+    <!-- Widget secondary buttons (F197) -->
+    <color name="scanpro_widget_tonal">#E4E7FB</color>
+    <color name="scanpro_widget_tonal_text">#2A37A8</color>
+    <color name="scanpro_widget_heading">#1B1D2A</color>
+    <color name="scanpro_widget_subtle">#5B5F72</color>
 </resources>

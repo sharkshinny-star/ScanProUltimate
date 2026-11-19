@@ -138,7 +138,10 @@ internal fun ImagesToPdfEditor(
 
     val order = rememberSaveable(saver = OrderedImageListSaver) { mutableStateListOf<OrderedImage>() }
     var isLoading by remember { mutableStateOf(false) }
-    var isProcessing by remember { mutableStateOf(false) }
+    // Jobs still running on the photos: "Rotate all" starts one per photo, and the first to finish used to switch the
+    // veil off and enable Continue while the others were still writing their files (F211).
+    var pendingJobs by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    val isProcessing = pendingJobs > 0
     var croppingItem by remember { mutableStateOf<OrderedImage?>(null) }
     var cropFailed by remember { mutableStateOf(false) }
     var actionItem by remember { mutableStateOf<OrderedImage?>(null) }
@@ -160,13 +163,13 @@ internal fun ImagesToPdfEditor(
 
     val addImages = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         if (uris.isNotEmpty()) {
-            isProcessing = true
+            pendingJobs++
             scope.launch {
                 val base = order.size
                 val added = uris.mapIndexedNotNull { i, uri -> stage(uri, base + i) }
                 order.addAll(added)
                 if (added.isNotEmpty()) changed = true
-                isProcessing = false
+                pendingJobs--
             }
         }
     }
@@ -186,10 +189,10 @@ internal fun ImagesToPdfEditor(
 
     fun replaceFile(id: String, transform: (OrderedImage, File) -> OrderedImage, makeFile: (File) -> File) {
         val item = order.firstOrNull { it.id == id } ?: return
-        isProcessing = true
+        pendingJobs++
         scope.launch {
             val result = withContext(Dispatchers.IO) { runCatching { makeFile(item.file) } }
-            isProcessing = false
+            pendingJobs--
             result.onSuccess { dest ->
                 val idx = order.indexOfFirst { it.id == id }
                 if (idx != -1) {
@@ -332,7 +335,7 @@ internal fun ImagesToPdfEditor(
                             }
                         }
                         else -> Column(Modifier.fillMaxSize().widthIn(max = 1200.dp)) {
-                            OrganizerBanner(stringResource(R.string.tools_img2pdf_drag_hint), warning = false)
+                            ReorderHintBanner(stringResource(R.string.tools_img2pdf_drag_hint), com.example.scanpro.core.designsystem.DragHintLayout.Grid)
                             ReorderablePageGrid(
                                 items = order,
                                 key = { it.id },

@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -58,6 +60,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.FitText
 import com.example.scanpro.core.designsystem.ScanProTheme
@@ -90,6 +96,9 @@ private val tabs = listOf(
     Tab(ScanProDestinations.SETTINGS, R.string.common_settings, Icons.Outlined.Settings, Icons.Rounded.Settings),
 )
 
+/** The tab last seen settled on screen; main thread only. A bar composed for another tab animates from it. */
+private var lastSettledTab: String? = null
+
 /** Height of the bar itself, above the navigation-bar inset. */
 private val BarHeight = 68.dp
 private val ScanButtonSize = 60.dp
@@ -102,6 +111,18 @@ private val ScanButtonSize = 60.dp
 @Composable
 fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit, onScan: () -> Unit = {}) {
     if (isWideWindow()) return
+    // Every tab draws its own copy of this bar, so a tab switch used to cut the highlight from one item to the other
+    // (the copies only cross-faded). A new copy now starts on the tab that was showing and moves its highlight to its
+    // own tab, which reads as one bar whose pill travels.
+    val motion = rememberMotionEnabled()
+    val cameFrom = remember { lastSettledTab?.takeIf { motion && it != selectedRoute } }
+    var highlighted by remember { mutableStateOf(cameFrom ?: selectedRoute) }
+    LaunchedEffect(selectedRoute) { highlighted = selectedRoute }
+    // Recorded only once this tab is really the one on screen (a cancelled back gesture never resumes it).
+    LifecycleResumeEffect(selectedRoute) {
+        lastSettledTab = selectedRoute
+        onPauseOrDispose { }
+    }
     Box(Modifier.fillMaxWidth()) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -119,12 +140,14 @@ fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit, onScan: () 
                     Modifier
                         .fillMaxWidth()
                         .height(BarHeight)
-                        .padding(horizontal = 6.dp),
+                        .padding(horizontal = 6.dp)
+                        // TalkBack reads the tabs as one group ("tab 2 of 4").
+                        .selectableGroup(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    tabs.take(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
+                    tabs.take(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, highlighted == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
                     Spacer(Modifier.width(ScanButtonSize + 12.dp))
-                    tabs.drop(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
+                    tabs.drop(2).forEach { tab -> BarItem(tab, selectedRoute == tab.route, highlighted == tab.route, Modifier.weight(1f)) { onTab(tab.route) } }
                 }
                 Spacer(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
             }
@@ -139,9 +162,11 @@ fun ScanProBottomBar(selectedRoute: String, onTab: (String) -> Unit, onScan: () 
 }
 
 @Composable
-private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun BarItem(tab: Tab, isSelected: Boolean, highlighted: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val motion = rememberMotionEnabled()
+    // What is drawn follows the travelling highlight; what a screen reader hears is the real selection.
+    val selected = highlighted
     val tint by animateColorAsState(if (selected) scheme.onSecondaryContainer else scheme.onSurfaceVariant, label = "tint")
     val pill by animateColorAsState(if (selected) scheme.secondaryContainer else Color.Transparent, label = "pill")
     val pillWidth by animateDpAsState(if (selected) 56.dp else 32.dp, spring(stiffness = 600f), label = "pillWidth")
@@ -157,7 +182,7 @@ private fun BarItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
         modifier
             .clip(RoundedCornerShape(16.dp))
             .selectable(
-                selected = selected,
+                selected = isSelected,
                 role = Role.Tab,
                 interactionSource = interaction,
                 indication = ripple(bounded = true, radius = 36.dp),
@@ -223,11 +248,11 @@ fun ScanButton(onClick: () -> Unit, modifier: Modifier = Modifier, size: android
             .shadow(10.dp, CircleShape, ambientColor = brand.gradientStart.copy(alpha = 0.5f), spotColor = brand.gradientEnd.copy(alpha = 0.6f))
             .background(Brush.linearGradient(listOf(brand.gradientStart, brand.gradientEnd)), CircleShape)
             .clip(CircleShape)
-            .selectable(
-                selected = false,
-                role = Role.Button,
+            // clickable, not selectable(selected = false): TalkBack read the button as "not selected".
+            .clickable(
                 interactionSource = interaction,
-                indication = ripple(bounded = true, color = Color.White)
+                indication = ripple(bounded = true, color = Color.White),
+                role = Role.Button
             ) {
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.Confirm)
                 onClick()

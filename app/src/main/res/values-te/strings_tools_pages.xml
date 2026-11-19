@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Page tools (F210). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_reading_pdf">PDF చదువుతోంది…</string>
+    <string name="pages_count_unknown">పేజీలను లెక్కించలేకపోయాం: PDF పాడై ఉండవచ్చు లేదా పాస్‌వర్డ్ అవసరం కావచ్చు. అయినా ప్రయత్నించవచ్చు.</string>
+
+    <string name="pages_split_how">ఎలా విభజించాలి</string>
+    <string name="pages_split_ranges_hint" tools:ignore="TypographyDashes">ప్రతి పరిధి వేరే ఫైల్ అవుతుంది, ఉదాహరణకు 1-3, 4, 8-10</string>
+    <string name="pages_split_overlap">కొన్ని ఫైళ్లు ఒకే పేజీలను పంచుకుంటాయి: ఆ పేజీలు ఒకటి కంటే ఎక్కువ ఫైళ్లలో వస్తాయి.</string>
+    <plurals name="pages_split_zip_hint">
+        <item quantity="one">%1$d ఫైల్ ఒక ZIP ఫైల్‌లో సేవ్ అవుతుంది.</item>
+        <item quantity="other">%1$d ఫైళ్లు కలిసి ఒక ZIP ఫైల్‌లో సేవ్ అవుతాయి.</item>
+    </plurals>
+    <plurals name="pages_split_file_line">
+        <item quantity="one">ఫైల్ %1$d: పేజీ %2$s (%3$d పేజీ)</item>
+        <item quantity="other">ఫైల్ %1$d: పేజీలు %2$s (%3$d పేజీలు)</item>
+    </plurals>
+    <plurals name="pages_split_more_files">
+        <item quantity="one">…మరియు మరో %1$d ఫైల్</item>
+        <item quantity="other">…మరియు మరో %1$d ఫైళ్లు</item>
+    </plurals>
+
+    <string name="pages_numbers_where">ఎక్కడ</string>
+    <string name="pages_numbers_edge_top">పైన</string>
+    <string name="pages_numbers_edge_bottom">కింద</string>
+    <string name="pages_numbers_align_left">ఎడమ</string>
+    <string name="pages_numbers_align_centre">మధ్యలో</string>
+    <string name="pages_numbers_align_right">కుడి</string>
+    <string name="pages_numbers_latin_note">యాప్ భాష ఏదైనా, సంఖ్యలు లాటిన్ అక్షరాలు మరియు అంకెల్లో రాయబడతాయి (ఉదా. Page 3 of 12).</string>
+    <string name="pages_numbers_cover_hint">కవర్ పేజీ ఖాళీగా ఉంటుంది కానీ లెక్కలో చేరుతుంది, కాబట్టి సంఖ్యలు 2 నుండి మొదలవుతాయి.</string>
+    <string name="pages_numbers_only_cover">ఈ PDFలో ఒకే పేజీ ఉంది, మీరు వదిలేయాలని ఎంచుకున్న కవర్: దేనికీ సంఖ్య రాదు.</string>
+    <string name="pages_numbers_preview_page_two">పేజీ 2లో చూపబడింది, సంఖ్య పొందే మొదటి పేజీ.</string>
+    <plurals name="pages_numbers_numbered">
+        <item quantity="one">%1$d పేజీకి సంఖ్య వేయబడుతుంది</item>
+        <item quantity="other">%1$d పేజీలకు సంఖ్యలు వేయబడతాయి</item>
+    </plurals>
+
+    <string name="pages_nup_per_sheet_title">ఒక్కో షీట్‌కు పేజీలు</string>
+    <plurals name="pages_nup_sheets">
+        <item quantity="one">%1$d షీట్</item>
+        <item quantity="other">%1$d షీట్లు</item>
+    </plurals>
+    <string name="pages_nup_scale">ప్రతి పేజీ దాని పరిమాణంలో సుమారు %1$d%% వద్ద ముద్రించబడుతుంది.</string>
+    <string name="pages_nup_small_print">ఇంత చిన్న అక్షరాలను కాగితంపై చదవడం కష్టం కావచ్చు. ఒక్కో షీట్‌కు తక్కువ పేజీలుంటే అవి పెద్దగా ఉంటాయి.</string>
+    <plurals name="pages_nup_last_sheet">
+        <item quantity="one">చివరి షీట్‌లో %1$d పేజీ ఉంటుంది; మిగతా చోటు ఖాళీగా ఉంటుంది.</item>
+        <item quantity="other">చివరి షీట్‌లో %1$d పేజీలు ఉంటాయి; మిగతా చోటు ఖాళీగా ఉంటుంది.</item>
+    </plurals>
+
+    <plurals name="pages_blank_found_count">
+        <item quantity="one">%2$d లో %1$d పేజీ ఖాళీగా కనిపిస్తోంది</item>
+        <item quantity="other">%2$d లో %1$d పేజీలు ఖాళీగా కనిపిస్తున్నాయి</item>
+    </plurals>
+    <string name="pages_blank_review">టిక్ చేసిన పేజీలు తీసివేయబడతాయి. ఉంచుకోవాల్సిన పేజీ టిక్‌ను తీసేయండి.</string>
+    <string name="pages_blank_none_ticked">తీసివేయడానికి కనీసం ఒక పేజీని టిక్ చేయండి.</string>
+    <string name="pages_blank_copy_note">ఇవి కొత్త కాపీలో తీసివేయబడతాయి; అసలు ఫైల్ అలాగే ఉంటుంది.</string>
+
+    <string name="pages_insert_pick_first">పేజీలు తీసుకోవాల్సిన PDFను ఎంచుకోండి.</string>
+    <string name="pages_insert_change_pdf">వేరే PDFను ఎంచుకోండి</string>
+    <plurals name="pages_insert_summary">
+        <item quantity="one">%1$d పేజీ పేజీ %2$d తర్వాత చేరుతుంది, మొత్తం %3$d పేజీలు.</item>
+        <item quantity="other">%1$d పేజీలు పేజీ %2$d తర్వాత చేరుతాయి, మొత్తం %3$d పేజీలు.</item>
+    </plurals>
+    <plurals name="pages_insert_summary_start">
+        <item quantity="one">%1$d పేజీ మొదట్లో చేరుతుంది, మొత్తం %2$d పేజీలు.</item>
+        <item quantity="other">%1$d పేజీలు మొదట్లో చేరుతాయి, మొత్తం %2$d పేజీలు.</item>
+    </plurals>
+
+    <string name="pages_merge_counting">పేజీలు లెక్కిస్తోంది…</string>
+    <string name="pages_merge_summary">%1$s ఉన్న ఒక PDF, సుమారు %2$s</string>
+    <plurals name="pages_merge_not_counted">
+        <item quantity="one">లెక్కించలేదు: లాక్ అయిన లేదా చదవలేని %1$d ఫైల్.</item>
+        <item quantity="other">లెక్కించలేదు: లాక్ అయిన లేదా చదవలేని %1$d ఫైళ్లు.</item>
+    </plurals>
+    <string name="pages_merge_unreadable">చదవలేకపోయాం · %1$s</string>
+
+    <plurals name="pages_org_turned">
+        <item quantity="one">%1$d పేజీ తిప్పబడింది</item>
+        <item quantity="other">%1$d పేజీలు తిప్పబడ్డాయి</item>
+    </plurals>
+    <string name="pages_org_nothing_changed">ముందు ఒక పేజీని జరపండి, తిప్పండి లేదా తీసివేయండి: ఇప్పుడున్నట్లయితే PDF అలాగే వస్తుంది.</string>
+    <string name="pages_org_turn_one">పేజీని తిప్పడానికి దానిపై ట్యాప్ చేయండి: ఇంకా ఏదీ తిప్పలేదు.</string>
+    <string name="pages_org_pick_pages">బయటకు తీయాల్సిన పేజీలపై ట్యాప్ చేయండి.</string>
+
+    <string name="pages_compress_estimating">ప్రతి స్థాయి ఏమి ఇస్తుందో లెక్కిస్తోంది…</string>
+    <string name="pages_compress_level">ఎంత చిన్నగా</string>
+    <string name="pages_compress_no_change">మార్పు లేదు</string>
+    <string name="pages_compress_text_note">ఈ PDF ఎక్కువగా టెక్స్ట్, అది ఇప్పటికే చిన్నది. కంప్రెస్ చేస్తే దాని చిత్రాలు మాత్రమే చిన్నవవుతాయి, కాబట్టి పెద్ద మార్పు ఆశించవద్దు; టెక్స్ట్ స్పష్టంగా, వెతకదగినదిగా ఉంటుంది.</string>
+    <string name="pages_compress_no_gain">ఈ స్థాయిలో ఈ PDF చిన్నదయ్యే అవకాశం తక్కువ, కాబట్టి అదే పరిమాణంలో కాపీ వస్తుంది.</string>
+    <string name="pages_compress_picture_note">ఈ PDFలో టెక్స్ట్ లేయర్ లేదు, కాబట్టి ఈ స్థాయిలో ప్రతి పేజీ మళ్లీ చిత్రంగా సేవ్ అవుతుంది. మొదటి పేజీ ఎలా కనిపిస్తుందో ఫలితం ప్రివ్యూ చూపుతుంది.</string>
+    <string name="pages_compress_target_unreachable">ఈ PDF సుమారు %1$s వరకే చిన్నదయ్యే అవకాశం ఉంది, కాబట్టి అంతకంటే చిన్న లక్ష్యం చేరకపోవచ్చు.</string>
+    <string name="pages_compress_target_text_warning">ఇంత చిన్న పరిమాణం చేరడానికి పేజీలు చిత్రాలుగా సేవ్ కావచ్చు: అప్పుడు వాటి టెక్స్ట్‌ను వెతకడం లేదా కాపీ చేయడం కుదరదు.</string>
+    <string name="pages_compress_estimate_failed">ఈ PDFకు అంచనా లెక్కించలేకపోయాం. పని పూర్తయ్యాక అసలు పరిమాణం చూపబడుతుంది.</string>
+</resources>

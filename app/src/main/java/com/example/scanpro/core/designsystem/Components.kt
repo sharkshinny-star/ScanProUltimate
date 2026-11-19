@@ -37,6 +37,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -305,7 +309,7 @@ fun PasswordInputDialog(
  * task never shifts the screen's content up or down.
  */
 @Composable
-fun TopBarWithProgress(busy: Boolean, onStop: (() -> Unit)? = null, topBar: @Composable () -> Unit) {
+fun TopBarWithProgress(busy: Boolean, onStop: (() -> Unit)? = null, status: String? = null, topBar: @Composable () -> Unit) {
     androidx.compose.foundation.layout.Column {
         topBar()
         Box(Modifier.fillMaxWidth().height(4.dp)) {
@@ -313,12 +317,67 @@ fun TopBarWithProgress(busy: Boolean, onStop: (() -> Unit)? = null, topBar: @Com
             if (busy) ScanBeamProgressBar(Modifier.matchParentSize())
         }
         // A long task (re-reading 300 pages, say) can be stopped from the screen that shows it running.
-        if (busy && onStop != null) {
-            androidx.compose.foundation.layout.Row(
-                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+        // The row slides open and closed (2026-11-18): it used to appear at once and push the whole list 48dp down,
+        // then snap it back when the task ended. With animations off it still appears at once.
+        // Only for a task still running after 0.7 s: rotating or filtering one page is quicker than that, so the row no
+        // longer opens and closes on every small edit in the document screen.
+        val motion = rememberMotionEnabled()
+        var longTask by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        androidx.compose.runtime.LaunchedEffect(busy) {
+            longTask = false
+            if (busy) {
+                kotlinx.coroutines.delay(700)
+                longTask = true
+            }
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = busy && longTask && onStop != null,
+            enter = if (motion) androidx.compose.animation.expandVertically(androidx.compose.animation.core.tween(220)) +
+                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) else androidx.compose.animation.EnterTransition.None,
+            exit = if (motion) androidx.compose.animation.shrinkVertically(androidx.compose.animation.core.tween(200)) +
+                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) else androidx.compose.animation.ExitTransition.None
+        ) {
+            // onStop can turn null while the banner is closing: keep the button but do nothing then.
+            TaskBanner(status = status, onStop = { onStop?.invoke() })
+        }
+    }
+}
+
+/**
+ * What is running, and the way to stop it, in one place: a small circling ring, the task's own words ([status];
+ * "Working on your document…" when the screen has none to give) and a Stop button. It replaces a bare "Stop" at the
+ * right edge under the bar (2026-11-19): on Home, whose title is the greeting, nothing said what was being stopped.
+ */
+@Composable
+internal fun TaskBanner(status: String?, onStop: () -> Unit, modifier: Modifier = Modifier) {
+    androidx.compose.material3.Surface(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        androidx.compose.foundation.layout.Row(
+            Modifier.padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TaskRing(size = 26.dp)
+            androidx.compose.foundation.layout.Spacer(Modifier.width(12.dp))
+            Text(
+                text = status?.takeIf { it.isNotBlank() } ?: stringResource(R.string.operation_notification_working),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite }
+            )
+            androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+            androidx.compose.material3.FilledTonalButton(
+                onClick = onStop,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 6.dp)
             ) {
-                TextButton(onClick = onStop) { Text(stringResource(R.string.common_stop)) }
+                Text(stringResource(R.string.common_stop))
             }
         }
     }

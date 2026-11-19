@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen widget (F197) -->
+    <string name="widget_tools">Tools</string>
+    <string name="widget_files">Files</string>
+    <string name="widget_scan_document">Scan a document</string>
+    <string name="widget_large_subtitle">Scan, sign and convert on your phone</string>
+</resources>

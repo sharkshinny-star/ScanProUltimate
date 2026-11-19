@@ -59,6 +59,9 @@ internal class DocumentStore(
 
     internal val history = EditHistory()
 
+    /** Tests can set this to throw before saving, to check clean-up when a save fails. */
+    internal var onBeforeSave: ((ScanDocument) -> Unit)? = null
+
     /** Draws a page from its photo; a property so tests can stand in for the native image pipeline. */
     internal var pageRenderer: PageRenderer = PageRenderer { source, destination, filter, manualRotationDegrees, crop, adjustments, annotations ->
         ImageProcessor.renderPage(source, destination, filter, manualRotationDegrees, crop, adjustments, annotations)
@@ -197,6 +200,7 @@ internal class DocumentStore(
      * or leaving the document.
      */
     internal fun saveWithStalePdf(document: ScanDocument): ScanDocument {
+        onBeforeSave?.invoke(document)
         val sorted = document.pages.sortedBy { it.position }
         userRequire(sorted.isNotEmpty(), R.string.err_document_has_no_pages)
         val final = document.copy(pages = sorted, updatedAt = now())

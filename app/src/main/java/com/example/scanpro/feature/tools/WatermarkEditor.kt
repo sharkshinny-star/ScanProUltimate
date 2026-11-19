@@ -51,7 +51,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -67,6 +66,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -76,12 +76,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.scanpro.R
-import com.example.scanpro.imaging.PdfPreviewSession
 import com.example.scanpro.imaging.WatermarkConfig
 import com.example.scanpro.imaging.WatermarkGeometry
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /** The first page as a picture, and its size in points, for the watermark to be drawn on. Null parts mean "could not read it". */
 private class PagePreview(val bitmap: Bitmap?, val widthPt: Float, val heightPt: Float)
@@ -124,25 +121,38 @@ internal fun WatermarkEditor(
     var allPages by rememberSaveable { mutableStateOf(true) }
     var range by rememberSaveable { mutableStateOf("") }
 
+    // The picked file once (pages, size, first page): the preview, the page check and the size all come from it.
+    val facts by rememberPdfFacts(uri)
+    val pageCount = facts?.pageCount
     // Any script works: text Helvetica cannot write (Hindi, Tamil, emoji) is stamped as a picture (PdfTextImage, F139).
-    val rangeOk = allPages || RANGE_PATTERN.matches(range)
+    // A range must also name pages that exist ("7-9" on a 5-page PDF is refused here, not after the run).
+    val chosenPages: Int? = when {
+        pageCount == null -> null
+        allPages -> pageCount
+        !RANGE_PATTERN.matches(range) -> null
+        else -> com.example.scanpro.imaging.PageRanges.parse(range, pageCount).getOrNull()?.flatMap { it.toList() }?.toSet()?.size
+    }
+    val rangeOk = allPages || (RANGE_PATTERN.matches(range) && (pageCount == null || chosenPages != null))
     val valid = text.isNotBlank() && rangeOk
 
-    val page by produceState<PagePreview?>(null, uri) {
-        value = withContext(Dispatchers.IO) {
-            runCatching {
-                val session = PdfPreviewSession.open(context, uri)
-                try {
-                    val size = session.pageSizePoints(0)
-                    PagePreview(session.render(0, 900), size?.first?.toFloat() ?: A4_WIDTH, size?.second?.toFloat() ?: A4_HEIGHT)
-                } finally {
-                    session.close()
-                }
-            }.getOrElse {
-                // A protected or unreadable PDF has no preview: a blank sheet still shows where the text will go.
-                PagePreview(null, A4_WIDTH, A4_HEIGHT)
-            }
+    val page = remember(facts) {
+        facts?.let { f ->
+            // A protected or unreadable PDF has no preview: a blank sheet still shows where the text will go.
+            PagePreview(
+                f.firstPage,
+                if (f.pageWidthPt > 0) f.pageWidthPt.toFloat() else A4_WIDTH,
+                if (f.pageHeightPt > 0) f.pageHeightPt.toFloat() else A4_HEIGHT
+            )
         }
+    }
+    val summary: String? = facts?.let { f ->
+        val total = f.pageCount ?: return@let null
+        val on = chosenPages ?: return@let null
+        // Text adds a few hundred bytes per page; a picture of the words (other scripts) is stored once and reused.
+        val pictureText = !com.example.scanpro.imaging.PdfTextImage.canEncode(PDType1Font.HELVETICA_BOLD, text)
+        val bytes = f.sizeBytes + on * (if (tiled) 2_000L else 250L) + if (pictureText) 25_000L else 0L
+        pluralStringResource(R.plurals.edit_wm_pages, total, on, total) + " · " +
+            stringResource(R.string.img_tool_about, com.example.scanpro.core.ui.formatBytes(context, bytes))
     }
 
     // Helvetica Bold, as the writer uses it, so the preview text is the width the saved text will be.
@@ -165,11 +175,23 @@ internal fun WatermarkEditor(
                 topBar = {
                     TopAppBar(
                         title = { Text(stringResource(R.string.tools_watermark_title), style = MaterialTheme.typography.titleLarge) },
-                        navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close)) } }
+                        navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close)) } },
+                        actions = { ToolDemoHelpButton("watermark") }
                     )
                 },
                 bottomBar = {
                     Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 6.dp) {
+                      Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+                        val support = if (!rangeOk) stringResource(R.string.tools_watermark_pages_invalid) else summary
+                        if (support != null) {
+                            Text(
+                                support,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (rangeOk) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp)
+                            )
+                        }
                         Button(
                             onClick = {
                                 onConfirm(
@@ -188,12 +210,13 @@ internal fun WatermarkEditor(
                             },
                             enabled = valid,
                             shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp).height(52.dp)
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).height(52.dp)
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.tools_watermark_action), fontWeight = FontWeight.SemiBold)
                         }
+                      }
                     }
                 }
             ) { padding ->
@@ -340,7 +363,7 @@ private fun PositionGrid(cx: Float, cy: Float, enabled: Boolean, onPick: (Float,
                     val here = enabled && kotlin.math.abs(cx - x) < 0.06f && kotlin.math.abs(cy - y) < 0.06f
                     Box(
                         Modifier
-                            .size(width = 44.dp, height = 36.dp)
+                            .size(width = 44.dp, height = 44.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (here) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest)
                             .then(if (enabled) Modifier.clickable(role = Role.Button) { onPick(x, y) } else Modifier),

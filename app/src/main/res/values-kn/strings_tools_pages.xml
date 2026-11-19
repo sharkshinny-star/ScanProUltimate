@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Page tools (F210). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_reading_pdf">PDF ಓದಲಾಗುತ್ತಿದೆ…</string>
+    <string name="pages_count_unknown">ಪುಟಗಳನ್ನು ಎಣಿಸಲು ಆಗಲಿಲ್ಲ: PDF ಹಾಳಾಗಿರಬಹುದು ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್ ಬೇಕಾಗಬಹುದು. ಆದರೂ ನೀವು ಪ್ರಯತ್ನಿಸಬಹುದು.</string>
+
+    <string name="pages_split_how">ಹೇಗೆ ವಿಭಜಿಸಬೇಕು</string>
+    <string name="pages_split_ranges_hint" tools:ignore="TypographyDashes">ಪ್ರತಿ ಶ್ರೇಣಿಯೂ ಪ್ರತ್ಯೇಕ ಫೈಲ್ ಆಗುತ್ತದೆ, ಉದಾಹರಣೆಗೆ 1-3, 4, 8-10</string>
+    <string name="pages_split_overlap">ಕೆಲವು ಫೈಲ್‌ಗಳು ಒಂದೇ ಪುಟಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳುತ್ತವೆ: ಆ ಪುಟಗಳು ಒಂದಕ್ಕಿಂತ ಹೆಚ್ಚು ಫೈಲ್‌ಗಳಲ್ಲಿ ಬರುತ್ತವೆ.</string>
+    <plurals name="pages_split_zip_hint">
+        <item quantity="one">%1$d ಫೈಲ್ ಅನ್ನು ಒಂದು ZIP ಫೈಲ್‌ನಲ್ಲಿ ಉಳಿಸಲಾಗುತ್ತದೆ.</item>
+        <item quantity="other">%1$d ಫೈಲ್‌ಗಳನ್ನು ಒಟ್ಟಿಗೆ ಒಂದು ZIP ಫೈಲ್‌ನಲ್ಲಿ ಉಳಿಸಲಾಗುತ್ತದೆ.</item>
+    </plurals>
+    <plurals name="pages_split_file_line">
+        <item quantity="one">ಫೈಲ್ %1$d: ಪುಟ %2$s (%3$d ಪುಟ)</item>
+        <item quantity="other">ಫೈಲ್ %1$d: ಪುಟಗಳು %2$s (%3$d ಪುಟಗಳು)</item>
+    </plurals>
+    <plurals name="pages_split_more_files">
+        <item quantity="one">…ಮತ್ತು ಇನ್ನೂ %1$d ಫೈಲ್</item>
+        <item quantity="other">…ಮತ್ತು ಇನ್ನೂ %1$d ಫೈಲ್‌ಗಳು</item>
+    </plurals>
+
+    <string name="pages_numbers_where">ಎಲ್ಲಿ</string>
+    <string name="pages_numbers_edge_top">ಮೇಲೆ</string>
+    <string name="pages_numbers_edge_bottom">ಕೆಳಗೆ</string>
+    <string name="pages_numbers_align_left">ಎಡ</string>
+    <string name="pages_numbers_align_centre">ಮಧ್ಯ</string>
+    <string name="pages_numbers_align_right">ಬಲ</string>
+    <string name="pages_numbers_latin_note">ಆ್ಯಪ್‌ನ ಭಾಷೆ ಯಾವುದೇ ಇರಲಿ, ಸಂಖ್ಯೆಗಳನ್ನು ಲ್ಯಾಟಿನ್ ಅಕ್ಷರ ಮತ್ತು ಅಂಕಿಗಳಲ್ಲಿ ಬರೆಯಲಾಗುತ್ತದೆ (ಉದಾ. Page 3 of 12).</string>
+    <string name="pages_numbers_cover_hint">ಮುಖಪುಟ ಖಾಲಿಯಾಗಿರುತ್ತದೆ ಆದರೆ ಎಣಿಕೆಗೆ ಸೇರುತ್ತದೆ, ಆದ್ದರಿಂದ ಸಂಖ್ಯೆ 2 ರಿಂದ ಆರಂಭವಾಗುತ್ತದೆ.</string>
+    <string name="pages_numbers_only_cover">ಈ PDF ನಲ್ಲಿ ಒಂದೇ ಪುಟವಿದೆ, ನೀವು ಬಿಡಲು ಆರಿಸಿದ ಮುಖಪುಟ: ಯಾವುದಕ್ಕೂ ಸಂಖ್ಯೆ ಬರುವುದಿಲ್ಲ.</string>
+    <string name="pages_numbers_preview_page_two">ಪುಟ 2 ರಲ್ಲಿ ತೋರಿಸಲಾಗಿದೆ, ಸಂಖ್ಯೆ ಪಡೆಯುವ ಮೊದಲ ಪುಟ.</string>
+    <plurals name="pages_numbers_numbered">
+        <item quantity="one">%1$d ಪುಟಕ್ಕೆ ಸಂಖ್ಯೆ ಸೇರುತ್ತದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳಿಗೆ ಸಂಖ್ಯೆ ಸೇರುತ್ತದೆ</item>
+    </plurals>
+
+    <string name="pages_nup_per_sheet_title">ಪ್ರತಿ ಹಾಳೆಗೆ ಪುಟಗಳು</string>
+    <plurals name="pages_nup_sheets">
+        <item quantity="one">%1$d ಹಾಳೆ</item>
+        <item quantity="other">%1$d ಹಾಳೆಗಳು</item>
+    </plurals>
+    <string name="pages_nup_scale">ಪ್ರತಿ ಪುಟವನ್ನು ಅದರ ಗಾತ್ರದ ಸುಮಾರು %1$d%% ನಲ್ಲಿ ಮುದ್ರಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="pages_nup_small_print">ಇಷ್ಟು ಚಿಕ್ಕ ಪಠ್ಯವನ್ನು ಕಾಗದದಲ್ಲಿ ಓದುವುದು ಕಷ್ಟವಾಗಬಹುದು. ಪ್ರತಿ ಹಾಳೆಗೆ ಕಡಿಮೆ ಪುಟಗಳಿದ್ದರೆ ಅದು ದೊಡ್ಡದಾಗಿರುತ್ತದೆ.</string>
+    <plurals name="pages_nup_last_sheet">
+        <item quantity="one">ಕೊನೆಯ ಹಾಳೆಯಲ್ಲಿ %1$d ಪುಟವಿದೆ; ಉಳಿದ ಜಾಗ ಖಾಲಿಯಿರುತ್ತದೆ.</item>
+        <item quantity="other">ಕೊನೆಯ ಹಾಳೆಯಲ್ಲಿ %1$d ಪುಟಗಳಿವೆ; ಉಳಿದ ಜಾಗ ಖಾಲಿಯಿರುತ್ತದೆ.</item>
+    </plurals>
+
+    <plurals name="pages_blank_found_count">
+        <item quantity="one">%2$d ರಲ್ಲಿ %1$d ಪುಟ ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತದೆ</item>
+        <item quantity="other">%2$d ರಲ್ಲಿ %1$d ಪುಟಗಳು ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತವೆ</item>
+    </plurals>
+    <string name="pages_blank_review">ಟಿಕ್ ಮಾಡಿದ ಪುಟಗಳನ್ನು ತೆಗೆಯಲಾಗುತ್ತದೆ. ಇಟ್ಟುಕೊಳ್ಳಬೇಕಾದ ಪುಟದ ಟಿಕ್ ತೆಗೆಯಿರಿ.</string>
+    <string name="pages_blank_none_ticked">ತೆಗೆಯಲು ಕನಿಷ್ಠ ಒಂದು ಪುಟವನ್ನು ಟಿಕ್ ಮಾಡಿ.</string>
+    <string name="pages_blank_copy_note">ಇವುಗಳನ್ನು ಹೊಸ ಪ್ರತಿಯಲ್ಲಿ ತೆಗೆಯಲಾಗುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</string>
+
+    <string name="pages_insert_pick_first">ಪುಟಗಳನ್ನು ತೆಗೆದುಕೊಳ್ಳಬೇಕಾದ PDF ಆರಿಸಿ.</string>
+    <string name="pages_insert_change_pdf">ಬೇರೆ PDF ಆರಿಸಿ</string>
+    <plurals name="pages_insert_summary">
+        <item quantity="one">%1$d ಪುಟ ಪುಟ %2$d ರ ನಂತರ ಸೇರುತ್ತದೆ, ಒಟ್ಟು %3$d ಪುಟಗಳು.</item>
+        <item quantity="other">%1$d ಪುಟಗಳು ಪುಟ %2$d ರ ನಂತರ ಸೇರುತ್ತವೆ, ಒಟ್ಟು %3$d ಪುಟಗಳು.</item>
+    </plurals>
+    <plurals name="pages_insert_summary_start">
+        <item quantity="one">%1$d ಪುಟ ಆರಂಭದಲ್ಲಿ ಸೇರುತ್ತದೆ, ಒಟ್ಟು %2$d ಪುಟಗಳು.</item>
+        <item quantity="other">%1$d ಪುಟಗಳು ಆರಂಭದಲ್ಲಿ ಸೇರುತ್ತವೆ, ಒಟ್ಟು %2$d ಪುಟಗಳು.</item>
+    </plurals>
+
+    <string name="pages_merge_counting">ಪುಟಗಳನ್ನು ಎಣಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="pages_merge_summary">%1$s ಇರುವ ಒಂದು PDF, ಸುಮಾರು %2$s</string>
+    <plurals name="pages_merge_not_counted">
+        <item quantity="one">ಎಣಿಸಿಲ್ಲ: ಲಾಕ್ ಆಗಿರುವ ಅಥವಾ ಓದಲಾಗದ %1$d ಫೈಲ್.</item>
+        <item quantity="other">ಎಣಿಸಿಲ್ಲ: ಲಾಕ್ ಆಗಿರುವ ಅಥವಾ ಓದಲಾಗದ %1$d ಫೈಲ್‌ಗಳು.</item>
+    </plurals>
+    <string name="pages_merge_unreadable">ಓದಲಾಗಲಿಲ್ಲ · %1$s</string>
+
+    <plurals name="pages_org_turned">
+        <item quantity="one">%1$d ಪುಟ ತಿರುಗಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಪುಟಗಳನ್ನು ತಿರುಗಿಸಲಾಗಿದೆ</item>
+    </plurals>
+    <string name="pages_org_nothing_changed">ಮೊದಲು ಒಂದು ಪುಟವನ್ನು ಸರಿಸಿ, ತಿರುಗಿಸಿ ಅಥವಾ ತೆಗೆಯಿರಿ: ಈಗಿರುವಂತೆ PDF ಹಾಗೆಯೇ ಬರುತ್ತದೆ.</string>
+    <string name="pages_org_turn_one">ಪುಟವನ್ನು ತಿರುಗಿಸಲು ಅದರ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ: ಇನ್ನೂ ಯಾವುದನ್ನೂ ತಿರುಗಿಸಿಲ್ಲ.</string>
+    <string name="pages_org_pick_pages">ಹೊರತೆಗೆಯಬೇಕಾದ ಪುಟಗಳ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ.</string>
+
+    <string name="pages_compress_estimating">ಪ್ರತಿ ಮಟ್ಟದಿಂದ ಏನು ಸಿಗುತ್ತದೆ ಎಂದು ಲೆಕ್ಕ ಹಾಕಲಾಗುತ್ತಿದೆ…</string>
+    <string name="pages_compress_level">ಎಷ್ಟು ಚಿಕ್ಕದು</string>
+    <string name="pages_compress_no_change">ಬದಲಾವಣೆ ಇಲ್ಲ</string>
+    <string name="pages_compress_text_note">ಈ PDF ಹೆಚ್ಚಾಗಿ ಪಠ್ಯ, ಅದು ಈಗಾಗಲೇ ಚಿಕ್ಕದು. ಸಂಕುಚನವು ಅದರ ಚಿತ್ರಗಳನ್ನು ಮಾತ್ರ ಚಿಕ್ಕದಾಗಿಸುತ್ತದೆ, ಹಾಗಾಗಿ ಹೆಚ್ಚು ಬದಲಾವಣೆ ನಿರೀಕ್ಷಿಸಬೇಡಿ; ಪಠ್ಯ ಸ್ಪಷ್ಟವಾಗಿ ಮತ್ತು ಹುಡುಕಬಹುದಾಗಿ ಉಳಿಯುತ್ತದೆ.</string>
+    <string name="pages_compress_no_gain">ಈ ಮಟ್ಟದಲ್ಲಿ ಈ PDF ಚಿಕ್ಕದಾಗುವ ಸಾಧ್ಯತೆ ಕಡಿಮೆ, ಹಾಗಾಗಿ ಅದೇ ಗಾತ್ರದ ಪ್ರತಿ ಸಿಗುತ್ತದೆ.</string>
+    <string name="pages_compress_picture_note">ಈ PDF ನಲ್ಲಿ ಪಠ್ಯ ಪದರವಿಲ್ಲ, ಹಾಗಾಗಿ ಈ ಮಟ್ಟದಲ್ಲಿ ಪ್ರತಿ ಪುಟವನ್ನು ಮತ್ತೆ ಚಿತ್ರವಾಗಿ ಉಳಿಸಲಾಗುತ್ತದೆ. ಫಲಿತಾಂಶ ಮುನ್ನೋಟವು ಮೊದಲ ಪುಟ ಹೇಗೆ ಕಾಣುತ್ತದೆ ಎಂದು ತೋರಿಸುತ್ತದೆ.</string>
+    <string name="pages_compress_target_unreachable">ಈ PDF ಸುಮಾರು %1$s ವರೆಗೆ ಮಾತ್ರ ಚಿಕ್ಕದಾಗಬಹುದು, ಹಾಗಾಗಿ ಅದಕ್ಕಿಂತ ಚಿಕ್ಕ ಗುರಿ ತಲುಪದಿರಬಹುದು.</string>
+    <string name="pages_compress_target_text_warning">ಇಷ್ಟು ಚಿಕ್ಕ ಗಾತ್ರ ತಲುಪಲು ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಉಳಿಸಬಹುದು: ಆಗ ಅವುಗಳ ಪಠ್ಯವನ್ನು ಹುಡುಕಲು ಅಥವಾ ನಕಲಿಸಲು ಆಗುವುದಿಲ್ಲ.</string>
+    <string name="pages_compress_estimate_failed">ಈ PDF ಗೆ ಅಂದಾಜು ಲೆಕ್ಕ ಹಾಕಲಾಗಲಿಲ್ಲ. ಕೆಲಸ ಮುಗಿದಾಗ ನಿಜವಾದ ಗಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ.</string>
+</resources>

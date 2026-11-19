@@ -10,7 +10,7 @@
     <string name="tools_desc_greyscale">रंगीन पेजों को ग्रे बनाएँ</string>
     <string name="tools_card_flatten">PDF फ़्लैटन करें</string>
     <string name="tools_tile_flatten">फ़्लैटन</string>
-    <string name="tools_desc_flatten">फ़ॉर्म और टिप्पणियाँ स्थायी करें</string>
+    <string name="tools_desc_flatten">फ़ॉर्म के जवाब और टिप्पणियाँ पेज का हिस्सा बनाएँ</string>
     <string name="tools_card_extract_images">इमेज निकालें</string>
     <string name="tools_desc_extract_images">PDF के अंदर की तस्वीरें सहेजें</string>
     <string name="tools_card_pdf_info">PDF जानकारी और मेटाडेटा</string>
@@ -90,7 +90,7 @@
 
     <string name="hint_tool_blank_pages">स्कैन किए गए PDF के खाली पेज ढूँढें और सूची जाँचने के बाद उन्हें हटाएँ।</string>
     <string name="hint_tool_greyscale">सस्ती छपाई या छोटी फ़ाइल के लिए रंगीन PDF को ग्रे रंगों में बदलें।</string>
-    <string name="hint_tool_flatten">फ़ॉर्म के जवाब, टिप्पणियाँ और स्टैम्प पेजों में बना दें, ताकि कोई उन्हें बदल न सके।</string>
+    <string name="hint_tool_flatten">फ़ॉर्म के जवाब, टिप्पणियाँ और स्टैम्प पेजों में बना दें, ताकि उन्हें फ़ील्ड या टिप्पणी के रूप में बदला न जा सके। PDF एडिटर से पेज खुद अब भी बदला जा सकता है।</string>
     <string name="hint_tool_extract_images">PDF के अंदर की हर तस्वीर को अलग इमेज फ़ाइल के रूप में सहेजें।</string>
     <string name="hint_tool_pdf_info">PDF की छिपी जानकारी देखें, शीर्षक या लेखक बदलें, या निजता के लिए सब हटा दें।</string>
 

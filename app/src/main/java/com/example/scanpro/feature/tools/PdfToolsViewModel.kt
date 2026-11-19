@@ -76,7 +76,28 @@ data class FormSession(val uri: Uri, val fields: List<FormField>, val values: Ma
 /** What the Tools screen shows while and after a tool runs. */
 private const val REPORT_INTERVAL_MS = 66L
 
-data class ToolProgress(val title: String, val subtitle: String? = null, val current: Int = 0, val total: Int = 0)
+data class ToolProgress(
+    val title: String,
+    val subtitle: String? = null,
+    val current: Int = 0,
+    val total: Int = 0,
+    /** 0 while the tool works. Once it has finished: how long, in milliseconds, the card stays to play its finish. */
+    val finishMillis: Int = 0
+)
+
+/**
+ * How long the progress card stays once a tool has finished. Many tools take a fraction of a second, and the card
+ * used to flash by; the owner asked that the animation be seen. So the card is on screen for at least
+ * [MIN_VISIBLE_MS] in all, and even a long task keeps it for [FINISH_MS] at the end, while the ring closes and the tick
+ * is drawn. Nothing is held when the phone's animations are turned off.
+ */
+internal object ToolFinish {
+    const val MIN_VISIBLE_MS = com.example.scanpro.core.designsystem.PROCESSING_LOOP_MS
+    const val FINISH_MS = 700L
+
+    fun holdMillis(visibleForMillis: Long, animationsOn: Boolean): Long =
+        if (!animationsOn) 0L else maxOf(MIN_VISIBLE_MS - visibleForMillis.coerceAtLeast(0L), FINISH_MS)
+}
 
 /**
  * A PDF in a merge that needs its password: file [index] of [uris], shown as [fileName]. [wrongPassword] is true when
@@ -200,6 +221,8 @@ class PdfToolsViewModel @Inject constructor(
     fun clearPasswordNeeded() { _passwordNeeded.value = null }
 
     fun cancel() {
+        // Once the work is done and the card is playing its finish, there is nothing left to stop.
+        if (_progress.value?.let { it.finishMillis > 0 } == true) return
         job?.cancel()
     }
 
@@ -241,6 +264,7 @@ class PdfToolsViewModel @Inject constructor(
         _result.value = null
         _failure.value = null
         _progress.value = ToolProgress(title = label)
+        val shownAt = android.os.SystemClock.uptimeMillis()
         endedWithQuestion = false
         job = viewModelScope.launch {
             try {
@@ -251,6 +275,8 @@ class PdfToolsViewModel @Inject constructor(
                 val result = operations.keepAlive(label) {
                     withContext(BackgroundWork.tools) { work()?.let { it.copy(outputFile = results.keep(it.outputFile)) } }
                 }
+                // The result is already kept; the card now plays its finish before the result screen takes over.
+                if (result != null) playFinish(shownAt)
                 _result.value = result
                 // The unlocked copy a tool read from has served its purpose once the result is kept.
                 if (result != null) releaseWorkingCopy()
@@ -276,6 +302,19 @@ class PdfToolsViewModel @Inject constructor(
                 _progress.value = null
             }
         }
+    }
+
+    /** Keeps the progress card on screen for [ToolFinish.holdMillis], telling it to play its finish meanwhile. */
+    private suspend fun playFinish(shownAt: Long) {
+        val animationsOn = runCatching {
+            android.provider.Settings.Global.getFloat(
+                context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+            ) > 0f
+        }.getOrDefault(true)
+        val hold = ToolFinish.holdMillis(android.os.SystemClock.uptimeMillis() - shownAt, animationsOn)
+        if (hold <= 0L) return
+        _progress.update { it?.copy(finishMillis = hold.toInt()) }
+        kotlinx.coroutines.delay(hold)
     }
 
     private fun bundled(files: List<File>, prefix: String, @PluralsRes message: Int): suspend () -> PdfToolResult? = {
@@ -709,13 +748,19 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun imagesToPdf(uris: List<Uri>, pageSize: PdfPageSize = PdfPageSize.AUTO, quality: PdfQuality = PdfQuality.BALANCED) =
+    fun imagesToPdf(
+        uris: List<Uri>,
+        pageSize: PdfPageSize = PdfPageSize.AUTO,
+        quality: PdfQuality = PdfQuality.BALANCED,
+        margin: com.example.scanpro.imaging.ImageMargin = com.example.scanpro.imaging.ImageMargin.SMALL
+    ) =
         launchTool(context.resources.getQuantityString(R.plurals.msg_tools_converting_images, uris.size, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
             val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm", java.util.Locale.getDefault()).format(java.util.Date())
             try {
                 PdfToolsEngine.imagesToPdf(
                     context, uris, pageSize, quality,
-                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report
+                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report,
+                    margin.points
                 )
             } finally {
                 withContext(Dispatchers.IO) {
@@ -752,6 +797,7 @@ class PdfToolsViewModel @Inject constructor(
             fileTooLong = context.getString(R.string.tools_office_note_too_long),
             workbookTruncated = { cells -> context.getString(R.string.tools_office_note_workbook_truncated, cells) },
             fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) },
+            slidesTruncated = { slides -> context.getString(R.string.office_note_slides_truncated, slides) },
         )
         val html = withContext(Dispatchers.IO) {
             try {
@@ -778,6 +824,12 @@ class PdfToolsViewModel @Inject constructor(
         val sourceSize = runCatching {
             resolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
         }.getOrNull() ?: 0L
+        // A PDF the phone's own viewer cannot open, or one with no pages, is not a result (F211): it used to be kept
+        // and reported as "Converted: 0 pages".
+        if (pages <= 0) {
+            output.delete()
+            userError(R.string.office_err_empty_result)
+        }
         PdfToolResult(output, pages, sourceSize, output.length(), context.resources.getQuantityString(R.plurals.msg_tools_office_done, pages, pages))
     }
 
@@ -807,6 +859,12 @@ class PdfToolsViewModel @Inject constructor(
         launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
             val out = named(uri, "cropped", format.extension)
             ImageToolsEngine.cropImage(context, uri, quad, out, format, ::report)
+        }
+
+    /** Crop image: a straight cut with turn and mirror, kept in the picture's own format (a PNG keeps its transparency). */
+    fun cropImageRect(uri: Uri, spec: com.example.scanpro.imaging.ImageCropSpec) =
+        launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
+            ImageToolsEngine.cropImageRect(context, uri, spec, java.io.File(context.cacheDir, "exports"), null, ::report)
         }
 
     fun watermarkPdf(uri: Uri, config: WatermarkConfig) =
@@ -880,8 +938,28 @@ class PdfToolsViewModel @Inject constructor(
 
     fun redact(uri: Uri, terms: List<String>, matchCase: Boolean) =
         launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
-            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, named(uri, "redacted"), ::report)
+            // A file name holding a redacted word would give it away: such a copy is named by the time instead.
+            val base = PdfToolsEngine.sourceBaseName(context, uri)
+            val out = if (terms.any { it.isNotBlank() && base.contains(it.trim(), ignoreCase = true) }) {
+                PdfToolsEngine.outputLocation(context, "redacted ${nameStamp()}.pdf")
+            } else {
+                named(uri, "redacted")
+            }
+            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, out, ::report)
         }
+
+    /** Edit PDF text (F193): writes a copy of [uri] with [edits] applied, called [name] when one is given. */
+    internal fun editPdfText(uri: Uri, edits: List<com.example.scanpro.imaging.PdfTextEditor.Edit>, name: String = "") =
+        launchTool(R.string.tools_edit_progress, R.string.tools_edit_err_failed) {
+            val chosen = name.trim().removeSuffix(".pdf").trim()
+            val output = if (chosen.isEmpty()) named(uri, "edited")
+            else PdfToolsEngine.outputLocation(context, com.example.scanpro.data.fileSafeName(chosen) + ".pdf")
+            com.example.scanpro.imaging.PdfTextEditTool.save(context, uri, edits, output)
+        }
+
+    fun invertColors(uri: Uri) = launchTool(R.string.tools_invert_progress, R.string.tools_invert_err_failed) {
+        com.example.scanpro.imaging.PdfCleanupTools.invertColors(context, uri, named(uri, "inverted"), ::report)
+    }
 
     fun flatten(uri: Uri) = launchTool(R.string.tools_flatten_progress, R.string.tools_flatten_err_failed) {
         com.example.scanpro.imaging.PdfCleanupTools.flatten(context, uri, named(uri, "flattened"), ::report)
@@ -890,8 +968,12 @@ class PdfToolsViewModel @Inject constructor(
     fun extractImages(uri: Uri) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
         val base = PdfToolsEngine.sourceBaseName(context, uri)
         inScratchDir("$base images") { dir ->
-            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report)
-            bundled(files, "$base images", R.plurals.tools_ximg_done)()
+            var skipped = 0
+            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report) { skipped = it }
+            bundled(files, "$base images", R.plurals.tools_ximg_done)()?.let { result ->
+                if (skipped == 0) result
+                else result.copy(message = result.message + " " + context.resources.getQuantityString(R.plurals.ximg_skipped, skipped, skipped))
+            }
         }
     }
 

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Edit and secure tools (F212). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_err_cannot_read">ಈ PDF ಅನ್ನು ಓದಲಾಗುತ್ತಿಲ್ಲ. ಇದಕ್ಕೆ ಪಾಸ್‌ವರ್ಡ್ ಇದ್ದರೆ, ಮೊದಲು ಅನ್‌ಲಾಕ್ ಮಾಡಿ.</string>
+    <string name="edit_section_what_happens">ಏನಾಗುತ್ತದೆ</string>
+    <string name="edit_section_found">ಈ PDF ನಲ್ಲಿ ಸಿಕ್ಕಿದ್ದು</string>
+    <string name="edit_size_mm">%1$d × %2$d ಮಿ.ಮೀ</string>
+
+    <string name="edit_recolour_estimate_note">ಗಾತ್ರವನ್ನು ಮೊದಲ ಪುಟದಿಂದ ಲೆಕ್ಕಹಾಕಲಾಗಿದೆ; ಫೋಟೋಗಳಿರುವ ಪುಟಗಳು ದೊಡ್ಡದಾಗಿ ಬರುತ್ತವೆ.</string>
+
+    <string name="edit_flatten_marked">ಗುರುತಿಸಿದವು: ಪುಟದ ಭಾಗವಾಗುವ ಪುಟ 1 ರ ಫೀಲ್ಡ್‌ಗಳು ಮತ್ತು ಟಿಪ್ಪಣಿಗಳು.</string>
+    <string name="edit_flatten_fields">ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳು</string>
+    <string name="edit_flatten_comments">ಟಿಪ್ಪಣಿಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳು</string>
+    <string name="edit_flatten_what_happens">ತಮ್ಮದೇ ರೂಪ ಇರುವ ಫಾರ್ಮ್ ಉತ್ತರಗಳು, ಟಿಪ್ಪಣಿಗಳು, ಹೈಲೈಟ್‌ಗಳು ಮತ್ತು ಸ್ಟ್ಯಾಂಪ್‌ಗಳನ್ನು ಪುಟಗಳೊಳಗೆ ಚಿತ್ರಿಸಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಅವನ್ನು ಫೀಲ್ಡ್ ಅಥವಾ ಟಿಪ್ಪಣಿಯಾಗಿ ಬದಲಿಸಲಾಗುವುದಿಲ್ಲ. ಉತ್ತರಗಳು ಓದಬಹುದಾದ, ಆಯ್ಕೆಮಾಡಬಹುದಾದ ಪಠ್ಯವಾಗಿಯೇ ಉಳಿಯುತ್ತವೆ, ಮತ್ತು PDF ಎಡಿಟರ್‌ನಿಂದ ಪುಟದ ವಿಷಯವನ್ನು ಇನ್ನೂ ಬದಲಿಸಬಹುದು. ಲಿಂಕ್‌ಗಳು ಮತ್ತು ತಮ್ಮದೇ ರೂಪ ಇಲ್ಲದ ಟಿಪ್ಪಣಿಗಳು ಹಾಗೆಯೇ ಉಳಿಯುತ್ತವೆ. ಏನೂ ಮರೆಯಾಗುವುದಿಲ್ಲ: ಪದಗಳನ್ನು ತೆಗೆದುಹಾಕಲು Redact ಬಳಸಿ.</string>
+    <string name="edit_flatten_links">ಲಿಂಕ್‌ಗಳು (ಉಳಿಯುತ್ತವೆ)</string>
+
+    <string name="edit_crop_section_how">ಹೇಗೆ ಕ್ರಾಪ್ ಮಾಡಬೇಕು</string>
+    <string name="edit_crop_err_no_margins">ಕನಿಷ್ಠ ಒಂದು ಬದಿಯಲ್ಲಿ ಅಂಚು ಹೊಂದಿಸಿ.</string>
+    <string name="edit_crop_err_too_small">ಈ ಅಂಚುಗಳ ನಂತರ ಮೊದಲ ಪುಟದಲ್ಲಿ %1$d ಮಿ.ಮೀ ಗಿಂತ ಕಡಿಮೆ ಉಳಿಯುತ್ತದೆ.</string>
+    <string name="edit_crop_size_change">ಪುಟ 1: %1$s → %2$s</string>
+    <string name="edit_crop_first_blank">ಪುಟ 1 ಖಾಲಿಯಾಗಿರುವಂತಿದೆ, ಆದ್ದರಿಂದ ಅದು ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ವಿಷಯ ಇರುವ ಪುಟಗಳನ್ನು ಕತ್ತರಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="edit_crop_auto_hint">ಆಟೋ ಟ್ರಿಮ್ ಪುಟ 1 ರಲ್ಲಿ ಏನನ್ನು ಉಳಿಸುತ್ತದೆ ಎಂದು ಫ್ರೇಮ್ ತೋರಿಸುತ್ತದೆ; ಪ್ರತಿ ಪುಟಕ್ಕೂ ತನ್ನದೇ ಫ್ರೇಮ್ ಇರುತ್ತದೆ.</string>
+    <string name="edit_crop_all_sides">ಎಲ್ಲಾ ಬದಿಗಳು</string>
+    <string name="edit_crop_not_redaction">ಕ್ರಾಪ್ ಮಾಡುವುದರಿಂದ ಕತ್ತರಿಸಿದ ಭಾಗಗಳು ಮರೆಯಾಗುತ್ತವೆ, ಅಳಿಸುವುದಿಲ್ಲ; ಯಾರಾದರೂ ಅದನ್ನು ಹಿಂತಿರುಗಿಸಬಹುದು. ಏನನ್ನಾದರೂ ಶಾಶ್ವತವಾಗಿ ತೆಗೆದುಹಾಕಲು Redact ಬಳಸಿ.</string>
+
+    <string name="edit_redact_reading">ಪ್ರತಿ ಪುಟದ ಪಠ್ಯವನ್ನು ಓದಲಾಗುತ್ತಿದೆ…</string>
+    <string name="edit_redact_need_words">ಕಪ್ಪಾಗಿಸಬೇಕಾದ ಪದಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ.</string>
+    <string name="edit_redact_no_text">ಈ PDF ನಲ್ಲಿ ಹುಡುಕಬಹುದಾದ ಪಠ್ಯವಿಲ್ಲ (ಇದು ಸ್ಕ್ಯಾನ್‌ನಂತಿದೆ). ಮೊದಲು Make searchable ಚಲಾಯಿಸಿ, ಅಥವಾ Redact areas ಬಳಸಿ.</string>
+    <string name="edit_redact_found">%2$s ನಲ್ಲಿ %1$s ಸಿಕ್ಕಿವೆ</string>
+    <plurals name="edit_redact_matches">
+        <item quantity="one">%1$d ಹೊಂದಾಣಿಕೆ</item>
+        <item quantity="other">%1$d ಹೊಂದಾಣಿಕೆಗಳು</item>
+    </plurals>
+    <string name="edit_redact_none_on_first">ಪುಟ 1 ರಲ್ಲಿ ಹೊಂದಾಣಿಕೆಗಳಿಲ್ಲ; ಅವು ಮುಂದಿನ ಪುಟಗಳಲ್ಲಿವೆ.</string>
+    <string name="edit_redact_search_rules">Match case ಆನ್ ಇಲ್ಲದಿದ್ದರೆ ದೊಡ್ಡಕ್ಷರ, ಸಣ್ಣಕ್ಷರ ಮತ್ತು ಉಚ್ಚಾರ ಚಿಹ್ನೆಗಳನ್ನು ಗಮನಿಸುವುದಿಲ್ಲ. ಎರಡು ಸಾಲುಗಳಲ್ಲಿ ಮುರಿದ ಪದಗಳು, ಟಿಪ್ಪಣಿಗಳು ಮತ್ತು ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳ ಪದಗಳೂ ಸಿಗುತ್ತವೆ.</string>
+
+    <string name="edit_redact_box_summary">%2$s ನಲ್ಲಿ %1$s</string>
+    <plurals name="edit_redact_box_areas">
+        <item quantity="one">%1$d ಭಾಗ</item>
+        <item quantity="other">%1$d ಭಾಗಗಳು</item>
+    </plurals>
+
+    <string name="edit_hf_err_empty">ಹೆಡರ್, ಫೂಟರ್ ಅಥವಾ ಎರಡನ್ನೂ ಬರೆಯಿರಿ.</string>
+    <string name="edit_hf_err_only_page_skipped">ಈ PDF ನಲ್ಲಿ ಒಂದೇ ಪುಟವಿದೆ, ಮತ್ತು ಮೊದಲ ಪುಟವನ್ನು ಬಿಡಲಾಗುತ್ತಿದೆ.</string>
+    <string name="edit_hf_first_skipped">ಮೊದಲ ಪುಟವನ್ನು ಬಿಡಲಾಗಿದೆ, ಅದು ಹಾಗೆಯೇ ಇರುತ್ತದೆ; ಉಳಿದ ಪುಟಗಳಿಗೆ ಪಠ್ಯ ಸೇರುತ್ತದೆ.</string>
+    <string name="edit_hf_shrunk">ಪಠ್ಯವು ಪುಟದ ಅಗಲಕ್ಕಿಂತ ಉದ್ದವಾಗಿದೆ, ಆದ್ದರಿಂದ ಹೊಂದುವಂತೆ ಚಿಕ್ಕದು ಮಾಡಲಾಗಿದೆ: %1$d pt.</string>
+    <string name="edit_hf_section_text">ಪಠ್ಯ</string>
+    <string name="edit_hf_quick_footer">ಫೂಟರ್‌ಗಾಗಿ ಪುಟ ಸಂಖ್ಯೆಗಳು</string>
+    <string name="edit_hf_quick_page_of">ಪುಟ {page} / {total}</string>
+    <string name="edit_hf_section_look">ಸ್ಥಾನ ಮತ್ತು ಗಾತ್ರ</string>
+    <string name="edit_hf_size_small">ಚಿಕ್ಕದು</string>
+    <string name="edit_hf_size_medium">ಮಧ್ಯಮ</string>
+    <string name="edit_hf_size_large">ದೊಡ್ಡದು</string>
+
+    <plurals name="edit_wm_pages">
+        <item quantity="one">%2$d ಪುಟದಲ್ಲಿ %1$d ರ ಮೇಲೆ ವಾಟರ್‌ಮಾರ್ಕ್</item>
+        <item quantity="other">%2$d ಪುಟಗಳಲ್ಲಿ %1$d ರ ಮೇಲೆ ವಾಟರ್‌ಮಾರ್ಕ್</item>
+    </plurals>
+
+    <string name="edit_protect_what_happens">ಫೈಲ್ ಅನ್ನು AES-256 ನಿಂದ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಲಾಗುತ್ತದೆ. ಪಾಸ್‌ವರ್ಡ್ ಇರುವವರು ಅದನ್ನು ತೆರೆಯಬಹುದು, ಮುದ್ರಿಸಬಹುದು, ನಕಲಿಸಬಹುದು ಮತ್ತು ಬದಲಿಸಬಹುದು; ಅದಿಲ್ಲದೆ ಯಾರೂ ತೆರೆಯಲಾರರು. ಪಾಸ್‌ವರ್ಡ್ ಅನ್ನು ಸುರಕ್ಷಿತವಾಗಿಡಿ: ಅದನ್ನು ಮರಳಿ ಪಡೆಯಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="edit_protect_strength">ಬಲ: %1$s (ಸುಮಾರು %2$d ಬಿಟ್‌ಗಳು)</string>
+    <string name="edit_protect_strength_weak">ದುರ್ಬಲ</string>
+    <string name="edit_protect_strength_fair">ಪರವಾಗಿಲ್ಲ</string>
+    <string name="edit_protect_strength_good">ಒಳ್ಳೆಯದು</string>
+    <string name="edit_protect_strength_strong">ಬಲವಾದದ್ದು</string>
+
+    <string name="edit_sign_summary">%2$s ನಲ್ಲಿ %1$s</string>
+    <plurals name="edit_sign_stamps">
+        <item quantity="one">%1$d ಸಹಿ ಅಥವಾ ಪಠ್ಯ</item>
+        <item quantity="other">%1$d ಸಹಿಗಳು ಅಥವಾ ಪಠ್ಯಗಳು</item>
+    </plurals>
+</resources>

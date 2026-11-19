@@ -28,6 +28,13 @@
         <item name="android:gravity">center</item>
         <item name="android:background">@drawable/widget_button_background</item>
     </style>
+    <!-- The secondary buttons: tonal, so Scan stands out (F197). -->
+    <style name="ScanProWidgetTonalButton" parent="ScanProWidgetButton">
+        <item name="android:background">@drawable/widget_tonal_background</item>
+    </style>
+    <style name="ScanProWidgetTonalLabel" parent="ScanProWidgetLabel">
+        <item name="android:textColor">@color/scanpro_widget_tonal_text</item>
+    </style>
     <style name="ScanProWidgetLabel">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>

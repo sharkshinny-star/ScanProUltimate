@@ -12,7 +12,7 @@
     <string name="tools_desc_greyscale">Turn colour pages grey</string>
     <string name="tools_card_flatten">Flatten PDF</string>
     <string name="tools_tile_flatten">Flatten</string>
-    <string name="tools_desc_flatten">Lock forms and comments in place</string>
+    <string name="tools_desc_flatten">Make form answers and comments part of the page</string>
     <string name="tools_card_extract_images">Extract images</string>
     <string name="tools_desc_extract_images">Save the pictures inside a PDF</string>
     <string name="tools_card_pdf_info">PDF info and metadata</string>
@@ -101,7 +101,7 @@
     <!-- First-use introductions of the new tools. -->
     <string name="hint_tool_blank_pages">Find the empty pages in a scanned PDF and remove them, after you check the list.</string>
     <string name="hint_tool_greyscale">Turn a colour PDF into shades of grey, for cheaper printing or a smaller file.</string>
-    <string name="hint_tool_flatten">Draw form answers, comments and stamps into the pages so nobody can change them.</string>
+    <string name="hint_tool_flatten">Draw form answers, comments and stamps into the pages, so they can no longer be edited as fields or comments. A PDF editor can still change the page itself.</string>
     <string name="hint_tool_extract_images">Save every picture inside a PDF as its own image file.</string>
     <string name="hint_tool_pdf_info">See a PDF\'s hidden details, edit the title or author, or remove them all for privacy.</string>
     <!-- Crop PDF pages and Redact text (F172). -->

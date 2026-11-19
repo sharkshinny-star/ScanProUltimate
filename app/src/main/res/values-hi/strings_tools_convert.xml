@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Convert and info tools (F211). Machine translation into Hindi, not yet reviewed by a speaker. -->
+    <string name="cvt_reading_pdf">PDF पढ़ा जा रहा है…</string>
+    <string name="cvt_pdf_unreadable">यह PDF खुल नहीं रहा। पहले PDF ठीक करें आज़माएँ।</string>
+    <string name="cvt_pdf_locked">इस PDF को पासवर्ड चाहिए। पहले इसे अनलॉक करें।</string>
+    <string name="cvt_checking_pages">देखा जा रहा है कि किन पेजों पर टेक्स्ट है…</string>
+    <string name="cvt_up_to">%1$s तक</string>
+    <string name="cvt_portrait">खड़ा</string>
+    <string name="cvt_landscape">आड़ा</string>
+    <plurals name="cvt_pictures">
+        <item quantity="one">%1$d तस्वीर</item>
+        <item quantity="other">%1$d तस्वीरें</item>
+    </plurals>
+    <string name="cvt_dpi_screen">स्क्रीन: मैसेज के लिए छोटी फ़ाइलें</string>
+    <string name="cvt_dpi_standard">सामान्य: किसी भी फ़ोन या कंप्यूटर पर साफ़</string>
+    <string name="cvt_dpi_sharp">तीखा: बारीक अक्षर ज़ूम करके पढ़ें</string>
+    <string name="cvt_dpi_print">प्रिंट: बड़ी फ़ाइलें, छपाई के लायक</string>
+    <string name="cvt_dpi_pixels">%1$d dpi पर हर तस्वीर %2$s की होगी।</string>
+    <string name="cvt_format_jpg">JPG: स्कैन और फ़ोटो के लिए सबसे छोटी फ़ाइलें।</string>
+    <string name="cvt_format_png">PNG: बिना नुकसान, टेक्स्ट और रेखाएँ साफ़ रहती हैं; फ़ाइलें बड़ी।</string>
+    <string name="cvt_format_webp">WebP: JPG से छोटी, पर कुछ पुराने ऐप इसे नहीं खोलते।</string>
+    <string name="cvt_pages_type">निर्यात करने वाले पेज लिखें, जैसे 1–3, 7</string>
+    <string name="cvt_pdf2img_mixed">पेजों का आकार अलग-अलग है; सबसे बड़ी तस्वीर दिखाई गई है।</string>
+    <string name="cvt_pdf2img_single">एक %1$s तस्वीर, शेयर के लिए तैयार</string>
+    <plurals name="cvt_pdf2img_zip">
+        <item quantity="one">%1$d %2$s तस्वीर, एक zip फ़ाइल में</item>
+        <item quantity="other">%1$d %2$s तस्वीरें, एक साथ एक zip फ़ाइल में</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_action">
+        <item quantity="one">%1$d तस्वीर निर्यात करें</item>
+        <item quantity="other">%1$d तस्वीरें निर्यात करें</item>
+    </plurals>
+    <plurals name="cvt_pdf2img_capped">
+        <item quantity="one">%1$d पेज इस रिज़ॉल्यूशन के लिए बहुत बड़ा है, इसलिए उसकी तस्वीर लंबी ओर %2$d px की बनेगी।</item>
+        <item quantity="other">%1$d पेज इस रिज़ॉल्यूशन के लिए बहुत बड़े हैं, इसलिए उनकी तस्वीरें लंबी ओर %2$d px की बनेंगी।</item>
+    </plurals>
+    <plurals name="cvt_pages_chosen">
+        <item quantity="one">%1$d पेज चुना गया</item>
+        <item quantity="other">%1$d पेज चुने गए</item>
+    </plurals>
+    <string name="cvt_reading_images">तस्वीरें पढ़ी जा रही हैं…</string>
+    <string name="cvt_img2pdf_orientation">हर पेज अपनी तस्वीर के हिसाब से खड़ा या आड़ा होता है।</string>
+    <string name="cvt_img2pdf_quality_hint">तस्वीरें लंबी ओर %1$d px तक रखी जाती हैं; इससे बड़ी तस्वीरें छोटी की जाती हैं।</string>
+    <string name="cvt_margin">हाशिया</string>
+    <string name="cvt_margin_none">कोई नहीं</string>
+    <string name="cvt_margin_small">छोटा</string>
+    <string name="cvt_margin_large">बड़ा</string>
+    <string name="cvt_margin_hint">हर तस्वीर के चारों ओर %1$d mm सफ़ेद जगह।</string>
+    <plurals name="cvt_img2pdf_support">
+        <item quantity="one">%1$d पेज उसकी तस्वीर के साथ</item>
+        <item quantity="other">%1$d पेज, हर पेज पर एक तस्वीर, आपके रखे क्रम में</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_unreadable">
+        <item quantity="one">%1$d तस्वीर पढ़ी नहीं जा सकी और छोड़ दी गई है।</item>
+        <item quantity="other">%1$d तस्वीरें पढ़ी नहीं जा सकीं और छोड़ दी गई हैं।</item>
+    </plurals>
+    <plurals name="cvt_img2pdf_soft">
+        <item quantity="one">%1$d तस्वीर में अपने पेज पर %2$d डॉट प्रति इंच से कम हैं; छपने पर धुंधली लग सकती है।</item>
+        <item quantity="other">%1$d तस्वीरों में अपने पेज पर %2$d डॉट प्रति इंच से कम हैं; छपने पर धुंधली लग सकती हैं।</item>
+    </plurals>
+    <string name="cvt_office_reading">फ़ाइल पढ़ी जा रही है…</string>
+    <string name="cvt_office_action">PDF में बदलें</string>
+    <string name="cvt_office_support">इसी फ़ोन पर बदला जाता है; कुछ भी अपलोड नहीं होता।</string>
+    <string name="cvt_office_after_pdf">PDF</string>
+    <string name="cvt_office_pages_later">पेज बदलते समय गिने जाते हैं</string>
+    <string name="cvt_office_legacy">यह पुरानी Office फ़ाइल (.doc, .xls या .ppt) है या पासवर्ड से बंद है। इसे Office या Google Docs में खोलकर .docx, .xlsx या .pptx के रूप में सहेजें, फिर वह कॉपी बदलें।</string>
+    <string name="cvt_office_kind_docx">Word दस्तावेज़</string>
+    <string name="cvt_office_kind_xlsx">Excel वर्कबुक</string>
+    <string name="cvt_office_kind_pptx">PowerPoint प्रस्तुति</string>
+    <string name="cvt_office_kind_text">टेक्स्ट फ़ाइल</string>
+    <string name="cvt_office_kind_csv">CSV तालिका</string>
+    <string name="cvt_office_kind_html">वेब पेज</string>
+    <string name="cvt_office_kind_unknown">फ़ाइल</string>
+    <string name="cvt_office_fact_slides">स्लाइड</string>
+    <string name="cvt_office_fact_sheets">शीट</string>
+    <string name="cvt_office_fact_lines">पंक्तियाँ</string>
+    <string name="cvt_office_fact_pictures">तस्वीरें</string>
+    <string name="cvt_office_fact_paper">काग़ज़</string>
+    <string name="cvt_office_paper_value">A4, 16 mm हाशिया</string>
+    <string name="cvt_office_kept_docx">टेक्स्ट, शीर्षक, सूचियाँ, तालिकाएँ और तस्वीरें रहती हैं। पेज A4 के हिसाब से बनते हैं, इसलिए Word से अलग जगह टूट सकते हैं; टेक्स्ट बॉक्स, आकृतियाँ और चार्ट नहीं बनते।</string>
+    <string name="cvt_office_kept_xlsx">हर दिखने वाली शीट अपने मानों के साथ एक तालिका बनती है। चार्ट, सेल में तस्वीरें और रंग नहीं बनते।</string>
+    <string name="cvt_office_kept_pptx">हर स्लाइड अपने टेक्स्ट और तस्वीरों के साथ एक पेज बनती है, स्लाइड के क्रम में। डिज़ाइन, पृष्ठभूमि, चार्ट और एनिमेशन नहीं बनते।</string>
+    <string name="cvt_office_kept_text">टेक्स्ट जैसा है वैसा, पंक्ति दर पंक्ति रहता है; CSV फ़ाइलें तालिका बनती हैं।</string>
+    <string name="cvt_office_kept_html">पेज का टेक्स्ट, तालिकाएँ और उसमें रखी तस्वीरें रहती हैं। इंटरनेट से कुछ भी लोड नहीं होता।</string>
+    <string name="office_note_slides_truncated">केवल पहली %1$s स्लाइड बदली गई हैं; बाकी छोड़ दी गई हैं।</string>
+    <string name="office_err_empty_result">बदलने पर कोई पेज नहीं बना। फ़ाइल खाली या ख़राब हो सकती है।</string>
+    <plurals name="cvt_office_slides">
+        <item quantity="one">कम से कम %1$d पेज, हर स्लाइड का एक</item>
+        <item quantity="other">कम से कम %1$d पेज, हर स्लाइड का एक</item>
+    </plurals>
+    <plurals name="cvt_office_sheets">
+        <item quantity="one">%1$d शीट तालिका के रूप में</item>
+        <item quantity="other">%1$d शीट, हर एक तालिका के रूप में</item>
+    </plurals>
+    <plurals name="cvt_office_lines">
+        <item quantity="one">टेक्स्ट की %1$d पंक्ति</item>
+        <item quantity="other">टेक्स्ट की %1$d पंक्तियाँ</item>
+    </plurals>
+    <plurals name="cvt_office_hidden_sheets">
+        <item quantity="one">%1$d छिपी शीट छोड़ दी गई है, जैसे Excel छापते समय छोड़ता है।</item>
+        <item quantity="other">%1$d छिपी शीट छोड़ दी गई हैं, जैसे Excel छापते समय छोड़ता है।</item>
+    </plurals>
+    <string name="cvt_text_after_word">Word दस्तावेज़</string>
+    <string name="cvt_text_after_text">टेक्स्ट फ़ाइल</string>
+    <string name="cvt_text_fact_layer">टेक्स्ट वाले पेज (कॉपी होंगे)</string>
+    <string name="cvt_text_fact_ocr">टेक्स्ट पहचान से पढ़े जाने वाले पेज</string>
+    <string name="cvt_text_locked">इस PDF पर पासवर्ड है; आपसे पूछा जाएगा।</string>
+    <string name="cvt_ocr_support">जिन पेजों पर पहले से टेक्स्ट है, वे वैसे ही रहते हैं।</string>
+    <string name="cvt_ocr_nothing">हर पेज पर पहले से टेक्स्ट है, इसलिए यह PDF पहले से खोजने योग्य है।</string>
+    <plurals name="cvt_text_after_sheets">
+        <item quantity="one">%1$d शीट</item>
+        <item quantity="other">%1$d शीट, हर पेज की एक</item>
+    </plurals>
+    <plurals name="cvt_text_ocr_support">
+        <item quantity="one">%1$d पेज टेक्स्ट पहचान से पढ़ा जाएगा, जिसमें कुछ सेकंड लगते हैं।</item>
+        <item quantity="other">%1$d पेज टेक्स्ट पहचान से पढ़े जाएँगे, हर एक में कुछ सेकंड लगते हैं।</item>
+    </plurals>
+    <plurals name="cvt_ocr_action">
+        <item quantity="one">%1$d पेज पढ़ें</item>
+        <item quantity="other">%1$d पेज पढ़ें</item>
+    </plurals>
+    <string name="cvt_ximg_looking">तस्वीरें खोजी जा रही हैं…</string>
+    <string name="cvt_ximg_zip">एक साथ एक zip फ़ाइल में शेयर होंगी</string>
+    <string name="cvt_ximg_fact_pictures">तस्वीरें</string>
+    <string name="cvt_ximg_fact_pages">तस्वीरों वाले पेज</string>
+    <string name="cvt_ximg_fact_formats">फ़ॉर्मैट</string>
+    <string name="cvt_ximg_hint">JPG तस्वीरें ठीक वैसी ही सहेजी जाती हैं जैसी रखी हैं, बिना गुणवत्ता खोए; बाकी, और पारदर्शी हिस्सों वाली, PNG में सहेजी जाती हैं। कई पेजों पर आई तस्वीर एक बार सहेजी जाती है।</string>
+    <plurals name="cvt_ximg_action">
+        <item quantity="one">%1$d तस्वीर सहेजें</item>
+        <item quantity="other">%1$d तस्वीरें सहेजें</item>
+    </plurals>
+    <plurals name="cvt_ximg_tiny">
+        <item quantity="one">%1$d बहुत छोटी इमेज (रेखा, बुलेट या खाली जगह) छोड़ दी गई है।</item>
+        <item quantity="other">%1$d बहुत छोटी इमेज (रेखाएँ, बुलेट, खाली जगह) छोड़ दी गई हैं।</item>
+    </plurals>
+    <plurals name="cvt_ximg_unreadable">
+        <item quantity="one">%1$d तस्वीर JPEG 2000 या JBIG2 में है, जिसे यह फ़ोन शायद न खोल पाए। ऐसा हुआ तो वह छोड़ दी जाएगी और नतीजे में बताया जाएगा।</item>
+        <item quantity="other">%1$d तस्वीरें JPEG 2000 या JBIG2 में हैं, जिन्हें यह फ़ोन शायद न खोल पाए। ऐसा हुआ तो वे छोड़ दी जाएँगी और नतीजे में बताया जाएगा।</item>
+    </plurals>
+    <plurals name="ximg_skipped">
+        <item quantity="one">%1$d तस्वीर इस फ़ोन पर पढ़ी नहीं जा सकी और छोड़ दी गई।</item>
+        <item quantity="other">%1$d तस्वीरें इस फ़ोन पर पढ़ी नहीं जा सकीं और छोड़ दी गईं।</item>
+    </plurals>
+    <string name="cvt_info_page_size">पेज का आकार</string>
+    <string name="cvt_info_mixed_sizes">कुछ पेजों का आकार अलग है।</string>
+    <string name="cvt_info_bytes">%1$s बाइट</string>
+    <string name="cvt_info_security">सुरक्षा</string>
+    <string name="cvt_info_encrypted">पासवर्ड या पाबंदियाँ</string>
+    <string name="cvt_info_not_encrypted">कोई पासवर्ड या पाबंदी नहीं</string>
+    <string name="cvt_info_form_fields">फ़ॉर्म फ़ील्ड</string>
+    <string name="cvt_info_none">कोई नहीं</string>
+    <string name="cvt_info_save_support">नई जानकारी के साथ एक कॉपी सहेजता है; मूल फ़ाइल नहीं बदलती।</string>
+    <string name="cvt_info_change_to_save">कॉपी सहेजने के लिए नीचे कोई जानकारी बदलें।</string>
+    <string name="cvt_repair_checking">फ़ाइल जाँची जा रही है…</string>
+    <string name="cvt_repair_action">PDF ठीक करें</string>
+    <string name="cvt_repair_viewer">फ़ोन का PDF व्यूअर</string>
+    <string name="cvt_repair_structure">फ़ाइल की संरचना</string>
+    <string name="cvt_repair_cannot_open">नहीं खुलती</string>
+    <string name="cvt_repair_damaged">ख़राब</string>
+    <string name="cvt_repair_password">पासवर्ड चाहिए</string>
+    <string name="cvt_repair_nothing">इस फ़ाइल में कुछ भी पेज के रूप में नहीं पढ़ा जा सकता, इसलिए वापस पाने को कुछ नहीं है।</string>
+    <string name="cvt_repair_not_pdf">यह फ़ाइल PDF नहीं है, इसलिए ठीक करने को कुछ नहीं है।</string>
+    <string name="cvt_repair_plan_missing">संरचना में फ़ोन द्वारा दिखाए जा सकने वाले %2$d में से केवल %1$d पेज हैं। ठीक करने पर पेज तस्वीरों के रूप में दोबारा बनते हैं ताकि कोई न छूटे; फिर उनका टेक्स्ट चुना नहीं जा सकेगा।</string>
+    <plurals name="cvt_repair_opens">
+        <item quantity="one">खुलती है, %1$d पेज</item>
+        <item quantity="other">खुलती है, %1$d पेज</item>
+    </plurals>
+    <plurals name="cvt_repair_reads">
+        <item quantity="one">पढ़ी जा सकती है, %1$d पेज</item>
+        <item quantity="other">पढ़ी जा सकती है, %1$d पेज</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_clean">
+        <item quantity="one">संरचना पढ़ी जा सकती है: ठीक करने पर उसके %1$d पेज और टेक्स्ट के साथ नई कॉपी बनती है।</item>
+        <item quantity="other">संरचना पढ़ी जा सकती है: ठीक करने पर सभी %1$d पेज और उनके टेक्स्ट के साथ नई कॉपी बनती है।</item>
+    </plurals>
+    <plurals name="cvt_repair_plan_pictures">
+        <item quantity="one">संरचना टूटी है, पर फ़ोन अब भी %1$d पेज दिखा सकता है। वह तस्वीर के रूप में दोबारा बनेगा, इसलिए उसका टेक्स्ट चुना नहीं जा सकेगा।</item>
+        <item quantity="other">संरचना टूटी है, पर फ़ोन अब भी %1$d पेज दिखा सकता है। वे तस्वीरों के रूप में दोबारा बनेंगे, इसलिए उनका टेक्स्ट चुना नहीं जा सकेगा।</item>
+    </plurals>
+    <plurals name="tools_repair_partial">
+        <item quantity="one">PDF दोबारा बना, पर %2$d में से केवल %1$d पेज वापस मिल सका।</item>
+        <item quantity="other">PDF दोबारा बना, पर %2$d में से केवल %1$d पेज वापस मिल सके।</item>
+    </plurals>
+    <string name="tools_form_saved_no_changes">फ़ॉर्म सहेजा गया (कोई बदलाव नहीं)</string>
+    <string name="tools_form_err_flatten_font">कुछ जवाबों में ऐसे अक्षर हैं जो इस फ़ॉर्म का फ़ॉन्ट नहीं दिखा सकता, इसलिए फ़ॉर्म को फ़्लैट नहीं किया जा सकता। इसे फ़्लैट किए बिना सहेजें: PDF व्यूअर उन्हें दिखाएँगे।</string>
+    <plurals name="tools_form_filled">
+        <item quantity="one">%1$d फ़ील्ड भरा</item>
+        <item quantity="other">%1$d फ़ील्ड भरे</item>
+    </plurals>
+    <plurals name="tools_form_filled_flattened">
+        <item quantity="one">%1$d फ़ील्ड भरा और फ़ॉर्म फ़्लैट किया</item>
+        <item quantity="other">%1$d फ़ील्ड भरे और फ़ॉर्म फ़्लैट किया</item>
+    </plurals>
+</resources>

@@ -32,4 +32,5 @@
     <string name="msg_sign_progress" tools:ignore="PluralsCandidate">Signing page %1$d of %2$d</string>
     <string name="msg_sign_failed">Could not sign the PDF</string>
     <string name="msg_sign_done" tools:ignore="PluralsCandidate">Signed copy saved. Items added: %1$d</string>
+    <string name="sign_existing_digital_signature">This PDF already has a digital signature. The copy you save here will no longer pass that signature\'s check. The original file is not changed.</string>
 </resources>

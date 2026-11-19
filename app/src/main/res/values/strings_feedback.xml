@@ -3,8 +3,6 @@
      Nothing is sent by the app itself: each screen opens the user's email app with the message filled in. -->
 <resources>
     <!-- Rate your experience -->
-    <string name="feedback_rate_title">Rate your experience</string>
-    <string name="feedback_rate_question">How was your overall experience?</string>
     <string name="feedback_face_awful">Awful</string>
     <string name="feedback_face_poor">Poor</string>
     <string name="feedback_face_okay">Okay</string>
@@ -12,27 +10,12 @@
     <string name="feedback_face_loved">Loved it</string>
     <!-- TalkBack label for one face: its word, then its place in the row, e.g. "Poor, 2 of 5". -->
     <string name="feedback_face_description">%1$s, %2$d of 5</string>
-    <string name="feedback_follow_low">What went wrong?</string>
-    <string name="feedback_follow_mid">What could we do better?</string>
-    <string name="feedback_follow_high">What did you like most?</string>
-    <string name="feedback_choose_any">Choose any that apply</string>
-    <string name="feedback_reason_blurry">Scans look blurry or dark</string>
-    <string name="feedback_reason_edges">Edges cropped wrongly</string>
-    <string name="feedback_reason_slow">Too slow</string>
-    <string name="feedback_reason_hard_to_find">Hard to find things</string>
-    <string name="feedback_reason_crashed">App crashed or froze</string>
-    <string name="feedback_reason_quality">Scan quality</string>
-    <string name="feedback_reason_tools">PDF tools</string>
-    <string name="feedback_reason_easy">Easy to use</string>
-    <string name="feedback_reason_fast">Fast</string>
-    <string name="feedback_reason_text">Text recognition</string>
-    <string name="feedback_reason_other">Other</string>
-    <string name="feedback_tell_more">Tell us more</string>
-    <string name="feedback_tell_more_optional">Anything else? (optional)</string>
-    <string name="feedback_submit">Submit feedback</string>
     <string name="feedback_submit_note">Opens your email app with your feedback filled in</string>
     <string name="feedback_not_now">Not now</string>
     <string name="feedback_thanks_title">Thank you!</string>
+    <string name="feedback_enjoying_title">Enjoying ScanPro?</string>
+    <string name="feedback_enjoying_body">Tap a star to rate the app.</string>
+    <string name="feedback_thanks_rating_title">Thank you for your rating!</string>
     <string name="feedback_thanks_body">Your feedback helps us make ScanPro better.</string>
     <string name="feedback_play_body">Glad you like it! A rating on Google Play helps other people find ScanPro.</string>
     <string name="feedback_rate_on_play">Rate ScanPro on Google Play</string>
@@ -40,9 +23,7 @@
     <string name="feedback_close">Close</string>
 
     <!-- The email a rating opens. The user sees it in their email app before sending. -->
-    <string name="feedback_email_subject">ScanPro rating: %1$d/5 (%2$s)</string>
     <string name="feedback_email_rating">Rating: %1$d/5 (%2$s)</string>
-    <string name="feedback_email_comments">Comments:</string>
     <string name="feedback_email_categories">Categories: %1$s</string>
     <string name="feedback_email_issue_subject">ScanPro issue: %1$s</string>
 

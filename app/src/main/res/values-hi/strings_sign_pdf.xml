@@ -32,4 +32,5 @@
     <string name="msg_sign_progress" tools:ignore="PluralsCandidate">पृष्ठ %1$d / %2$d पर हस्ताक्षर हो रहे हैं</string>
     <string name="msg_sign_failed">PDF पर हस्ताक्षर नहीं हो सके</string>
     <string name="msg_sign_done" tools:ignore="PluralsCandidate">हस्ताक्षर की गई प्रति सहेजी गई। जोड़े गए आइटम: %1$d</string>
+    <string name="sign_existing_digital_signature">इस PDF में पहले से डिजिटल हस्ताक्षर है। यहाँ सहेजी गई कॉपी उस हस्ताक्षर की जाँच में अब मान्य नहीं रहेगी। मूल फ़ाइल नहीं बदलती।</string>
 </resources>

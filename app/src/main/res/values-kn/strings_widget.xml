@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen widget (F197). Machine translation, not yet reviewed by a speaker. -->
+    <string name="widget_tools">ಟೂಲ್‌ಗಳು</string>
+    <string name="widget_files">ಫೈಲ್‌ಗಳು</string>
+    <string name="widget_scan_document">ದಾಖಲೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="widget_large_subtitle">ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲೇ ಸ್ಕ್ಯಾನ್, ಸಹಿ ಮತ್ತು ಪರಿವರ್ತನೆ</string>
+</resources>

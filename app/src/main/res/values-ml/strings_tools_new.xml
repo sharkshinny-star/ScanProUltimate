@@ -10,7 +10,7 @@
     <string name="tools_desc_greyscale">നിറമുള്ള പേജുകൾ ചാരനിറമാക്കുക</string>
     <string name="tools_card_flatten">PDF ഫ്ലാറ്റൻ ചെയ്യുക</string>
     <string name="tools_tile_flatten">ഫ്ലാറ്റൻ</string>
-    <string name="tools_desc_flatten">ഫോമുകളും കമന്റുകളും സ്ഥിരമാക്കുക</string>
+    <string name="tools_desc_flatten">ഫോം ഉത്തരങ്ങളും കമന്റുകളും പേജിന്റെ ഭാഗമാക്കുക</string>
     <string name="tools_card_extract_images">ചിത്രങ്ങൾ എടുക്കുക</string>
     <string name="tools_desc_extract_images">PDF-നുള്ളിലെ ചിത്രങ്ങൾ സേവ് ചെയ്യുക</string>
     <string name="tools_card_pdf_info">PDF വിവരവും മെറ്റാഡാറ്റയും</string>
@@ -90,7 +90,7 @@
 
     <string name="hint_tool_blank_pages">സ്കാൻ ചെയ്ത PDF-ലെ ശൂന്യ പേജുകൾ കണ്ടെത്തി, പട്ടിക പരിശോധിച്ച ശേഷം നീക്കുക.</string>
     <string name="hint_tool_greyscale">ചെലവ് കുറഞ്ഞ പ്രിന്റിനോ ചെറിയ ഫയലിനോ നിറമുള്ള PDF ചാരനിറങ്ങളിലേക്ക് മാറ്റുക.</string>
-    <string name="hint_tool_flatten">ഫോം ഉത്തരങ്ങളും കമന്റുകളും സ്റ്റാമ്പുകളും പേജുകളിൽ തന്നെ വരയ്ക്കുക, ആർക്കും മാറ്റാനാവാത്ത വിധം.</string>
+    <string name="hint_tool_flatten">ഫോം ഉത്തരങ്ങളും കമന്റുകളും സ്റ്റാമ്പുകളും പേജുകളിൽ തന്നെ വരയ്ക്കുക; അവ ഇനി ഫീൽഡോ കമന്റോ ആയി മാറ്റാനാവില്ല. PDF എഡിറ്റർ ഉപയോഗിച്ച് പേജ് തന്നെ ഇപ്പോഴും മാറ്റാം.</string>
     <string name="hint_tool_extract_images">PDF-നുള്ളിലെ ഓരോ ചിത്രവും പ്രത്യേക ചിത്ര ഫയലായി സേവ് ചെയ്യുക.</string>
     <string name="hint_tool_pdf_info">PDF-ന്റെ മറഞ്ഞ വിവരങ്ങൾ കാണുക, ശീർഷകമോ രചയിതാവോ മാറ്റുക, അല്ലെങ്കിൽ സ്വകാര്യതയ്ക്കായി എല്ലാം നീക്കുക.</string>
 

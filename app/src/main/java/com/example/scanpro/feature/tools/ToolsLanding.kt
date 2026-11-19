@@ -5,15 +5,10 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.ripple
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -35,6 +30,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -72,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.IconTile
+import com.example.scanpro.core.designsystem.pressTilt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -82,9 +81,11 @@ import kotlinx.coroutines.withContext
  */
 @Stable
 internal class ToolsMemory(private val context: Context, private val scope: kotlinx.coroutines.CoroutineScope) {
-    var pinned by mutableStateOf<List<String>>(emptyList())
+    // Start from the lists read on an earlier visit (2026-11-18): starting empty made Quick access pop in a frame later
+    // on every visit to Tools, pushing every section below it about 90dp down.
+    var pinned by mutableStateOf(cached?.first ?: emptyList())
         private set
-    var recent by mutableStateOf<List<String>>(emptyList())
+    var recent by mutableStateOf(cached?.second ?: emptyList())
         private set
 
     /** Reads the saved lists off the main thread (the first preferences read is a disk read). */
@@ -98,6 +99,7 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
         }
         pinned = p
         recent = r
+        cached = p to r
     }
 
     fun isPinned(id: String) = id in pinned
@@ -107,6 +109,14 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
         save()
     }
 
+    /** Groups opened with "Show all" while the Tools tab is on screen; not saved, so each visit starts tidy. */
+    var openSections by mutableStateOf(emptySet<String>())
+        private set
+
+    fun toggleSection(id: String) {
+        openSections = if (id in openSections) openSections - id else openSections + id
+    }
+
     /** Called when a tool is opened: it moves to the front of the recent list, which keeps the last four. */
     fun used(id: String) {
         recent = (listOf(id) + recent.filter { it != id }).take(MAX_RECENT)
@@ -114,6 +124,7 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
     }
 
     private fun save() {
+        cached = pinned to recent
         val p = pinned.joinToString(",")
         val r = recent.joinToString(",")
         scope.launch(Dispatchers.IO) {
@@ -126,6 +137,9 @@ internal class ToolsMemory(private val context: Context, private val scope: kotl
         const val KEY_PINNED = "pinned"
         const val KEY_RECENT = "recent"
         const val MAX_RECENT = 4
+
+        /** The last lists read or saved in this process, so the next visit has them on its first frame. */
+        @Volatile var cached: Pair<List<String>, List<String>>? = null
         val KNOWN_IDS: Set<String> by lazy { (TOOL_SECTIONS.flatMap { it.tools } + VIEWER_TOOL).map { it.id }.toSet() }
     }
 }
@@ -168,6 +182,8 @@ private val TOOL_KEYWORDS = mapOf(
     "repair" to "fix broken damaged corrupt will not open recover",
     "blank_pages" to "empty white delete remove clean up scan",
     "greyscale" to "grayscale black white monochrome grey gray colour color print ink",
+    "edit_pdf" to "edit change text words font bold italic size typo correct fix rewrite modify",
+    "invert_pdf" to "invert negative dark mode night reading black background white text colours colors reverse",
     "flatten" to "lock form fields annotations comments stamps uneditable merge layers",
     "crop_pdf" to "trim margins cut edges white space borders auto page size",
     "redact" to "black out hide remove words censor private sensitive erase text names numbers",
@@ -290,6 +306,80 @@ internal suspend fun androidx.compose.foundation.lazy.LazyListState.scrollToKey(
     }
 }
 
+/** Which part of a group's panel an item is: the heading on top, rows of tools, the last row. */
+private enum class PanelPart { TOP, MIDDLE, BOTTOM }
+
+/**
+ * Layout revamp (2026-11-18): each group of tools sits on one rounded panel, drawn by its list items in turn (heading,
+ * rows, last row), so the page reads as a few tidy blocks instead of a wall of separate grey cards.
+ */
+@Composable
+private fun Modifier.panel(part: PanelPart): Modifier {
+    val radius = 24.dp
+    val shape = when (part) {
+        PanelPart.TOP -> RoundedCornerShape(topStart = radius, topEnd = radius)
+        PanelPart.MIDDLE -> androidx.compose.ui.graphics.RectangleShape
+        PanelPart.BOTTOM -> RoundedCornerShape(bottomStart = radius, bottomEnd = radius)
+    }
+    return this.background(MaterialTheme.colorScheme.surfaceContainerLow, shape)
+}
+
+/**
+ * A group's heading at the top of its panel: its name and a few words on what its tools are for, on one line each.
+ * Declutter (2026-11-19): the count badge on every panel went; a folded panel's "Show all (n)" says how many there are.
+ */
+@Composable
+private fun PanelHeading(text: String, subtitle: String?) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .panel(PanelPart.TOP)
+            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.semantics { heading() }
+        )
+        if (subtitle != null) {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** How many rows of tiles a group shows before its "Show all (n)" (declutter, 2026-11-19). */
+private const val PANEL_ROWS = 2
+
+/** The foot of a folded group's panel: "Show all (n)" opens the rest of its tools, "Show fewer" folds them again. */
+@Composable
+private fun PanelShowAll(open: Boolean, total: Int, onToggle: () -> Unit) {
+    androidx.compose.foundation.layout.Box(
+        Modifier
+            .fillMaxWidth()
+            .panel(PanelPart.BOTTOM)
+            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+    ) {
+        TextButton(onClick = onToggle, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(
+                if (open) stringResource(R.string.tools_results_show_less) else stringResource(R.string.tools_results_show_all, total),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(if (open) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
 /** A heading on the Tools page, with how many tools it holds (F140). */
 @Composable
 private fun SectionTitle(text: String, modifier: Modifier = Modifier, count: Int? = null) {
@@ -329,6 +419,8 @@ internal val TOOL_DESCRIPTIONS: Map<String, Int> = mapOf(
     "repair" to R.string.tools_desc_repair,
     "blank_pages" to R.string.tools_desc_blank_pages,
     "greyscale" to R.string.tools_desc_greyscale,
+    "edit_pdf" to R.string.tools_desc_edit_pdf,
+    "invert_pdf" to R.string.tools_desc_invert_pdf,
     "flatten" to R.string.tools_desc_flatten,
     "crop_pdf" to R.string.tools_desc_crop_pdf,
     "redact" to R.string.tools_desc_redact,
@@ -376,13 +468,13 @@ private fun ToolCard(
     val pinLabel = stringResource(if (pinned) R.string.tools_unpin_action else R.string.tools_pin_action)
     val haptic = LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, spring(stiffness = Spring.StiffnessMediumLow), label = "toolPress")
     Column(
         modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            // Tilts towards the finger and springs back, like a physical tile (F197).
+            .pressTilt(interaction)
+            .clip(RoundedCornerShape(16.dp))
+            // On the group's panel a tile has no box of its own, wide or compact (declutter, 2026-11-19: the wide card's
+            // own surface made a card inside a card).
             .combinedClickable(
                 interactionSource = interaction,
                 indication = ripple(),
@@ -397,7 +489,7 @@ private fun ToolCard(
                 contentDescription = if (description != null) "$name. $description" else name
                 customActions = listOf(CustomAccessibilityAction(pinLabel) { onTogglePin(); true })
             }
-            .padding(start = if (compact) 8.dp else 14.dp, end = if (compact) 8.dp else 12.dp, top = 14.dp, bottom = if (compact) 12.dp else 14.dp),
+            .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = if (compact) Alignment.CenterHorizontally else Alignment.Start
     ) {
         if (compact) {
@@ -417,7 +509,9 @@ private fun ToolCard(
                 name,
                 style = MaterialTheme.typography.labelLarge,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                maxLines = 2,
+                // Three lines: "PDF to Word, Excel or text" and "Pages per sheet (N-up)" were cut off at two, and the
+                // names are longer still in the Indian languages.
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
             return@Column
@@ -430,7 +524,7 @@ private fun ToolCard(
                 Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             name,
             style = MaterialTheme.typography.titleSmall,
@@ -439,15 +533,56 @@ private fun ToolCard(
             overflow = TextOverflow.Ellipsis
         )
         if (description != null) {
-            Spacer(Modifier.height(2.dp))
+            // One line at most; the whole line is still read out (see the semantics above).
             Text(
                 description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = com.example.scanpro.core.ui.cardTitleLines(),
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+/** A tool on a panel of its own, the full width: icon, name, what it does. A long press pins or unpins it. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun WideToolRow(tool: PdfToolCard, pinned: Boolean, onClick: () -> Unit, onTogglePin: () -> Unit) {
+    val name = stringResource(tool.title)
+    val description = TOOL_DESCRIPTIONS[tool.id]?.let { stringResource(it) }
+    val pinLabel = stringResource(if (pinned) R.string.tools_unpin_action else R.string.tools_pin_action)
+    val haptic = LocalHapticFeedback.current
+    val shape = RoundedCornerShape(24.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .combinedClickable(
+                role = Role.Button,
+                onClickLabel = name,
+                onClick = onClick,
+                onLongClickLabel = pinLabel,
+                onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onTogglePin() }
+            )
+            .semantics {
+                contentDescription = if (description != null) "$name. $description" else name
+                customActions = listOf(CustomAccessibilityAction(pinLabel) { onTogglePin(); true })
+            }
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconTile(tool.icon, tool.tone, size = 48.dp, corner = 15.dp, iconSize = 24.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (description != null) {
+                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        if (pinned) Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
     }
 }
 
@@ -457,14 +592,17 @@ private fun ToolCardRow(
     tools: List<PdfToolCard>,
     perRow: Int,
     memory: ToolsMemory,
-    onLaunch: (PdfToolCard) -> Unit
+    onLaunch: (PdfToolCard) -> Unit,
+    last: Boolean = true
 ) {
     Row(
         Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .padding(bottom = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+            .panel(if (last) PanelPart.BOTTOM else PanelPart.MIDDLE)
+            .padding(horizontal = 8.dp)
+            .padding(bottom = if (last) 12.dp else 8.dp)
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         tools.forEach { tool ->
             ToolCard(
@@ -609,28 +747,43 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
     // (the whole section used to be one item).
     TOOL_SECTIONS.filter { it.tiles.isNotEmpty() && (category == ALL_CATEGORIES || it.id == category) }.forEach { section ->
         item(key = "section-${section.id}", contentType = "tools-header") {
-            SectionTitle(stringResource(section.title), count = section.tiles.size)
+            PanelHeading(stringResource(section.title), section.subtitle.takeIf { it != 0 }?.let { stringResource(it) })
         }
-        section.tiles.chunked(perRow).forEachIndexed { index, row ->
+        // Declutter (2026-11-19): with every group shown, each shows its first two rows (the catalogue lists the
+        // most-used tools first) and "Show all (n)" for the rest. A group chosen with its chip shows all of its tools.
+        val limit = perRow * PANEL_ROWS
+        val foldable = category == ALL_CATEGORIES && section.tiles.size > limit
+        val open = !foldable || section.id in memory.openSections
+        val rows = (if (open) section.tiles else section.tiles.take(limit)).chunked(perRow)
+        rows.forEachIndexed { index, row ->
             item(key = "section-${section.id}-$index", contentType = "tools-row") {
-                ToolCardRow(row, perRow, memory, onLaunch)
+                ToolCardRow(row, perRow, memory, onLaunch, last = !foldable && index == rows.lastIndex)
+            }
+        }
+        if (foldable) {
+            item(key = "section-${section.id}-more", contentType = "tools-more") {
+                PanelShowAll(open = open, total = section.tiles.size, onToggle = { memory.toggleSection(section.id) })
             }
         }
     }
 
     if (category == ALL_CATEGORIES) {
-        item(key = "viewer-header", contentType = "tools-header") {
-            SectionTitle(stringResource(R.string.tools_section_read))
-        }
-        item(key = "viewer", contentType = "tools-row") {
+        item(key = "viewer", contentType = "tools-viewer") {
             Column {
-                ToolCardRow(listOf(VIEWER_TOOL), perRow, memory, onLaunch)
+                // One tool does not make a group: a panel with a heading and a single tile looked half empty, so the
+                // viewer is one wide row saying what it does.
+                WideToolRow(
+                    tool = VIEWER_TOOL,
+                    pinned = memory.isPinned(VIEWER_TOOL.id),
+                    onClick = { memory.used(VIEWER_TOOL.id); onLaunch(VIEWER_TOOL) },
+                    onTogglePin = { memory.togglePin(VIEWER_TOOL.id) }
+                )
                 if (memory.pinned.isEmpty()) {
                     Text(
                         stringResource(R.string.tools_pin_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        modifier = Modifier.padding(start = 4.dp, top = 8.dp)
                     )
                 }
             }

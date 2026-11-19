@@ -247,6 +247,16 @@ class PdfCleanupToolsTest {
         }
     }
 
+    @Test
+    fun toInvertedColorsInvertsRgbValues() {
+        val bitmap = solid(10, 10, Color.rgb(255, 255, 255))
+        PdfCleanupTools.toInvertedColors(bitmap)
+        val pixel = bitmap.getPixel(0, 0)
+        assertEquals(0, Color.red(pixel))
+        assertEquals(0, Color.green(pixel))
+        assertEquals(0, Color.blue(pixel))
+    }
+
     // ---- helpers ----
 
     private fun page(doc: PDDocument) = PDPage(PDRectangle.A4).also { doc.addPage(it) }

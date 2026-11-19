@@ -256,4 +256,12 @@
     <string name="home_recent_files">അടുത്തിടെയുള്ള ഫയലുകൾ</string>
     <string name="home_recent_opened">തുറന്നവ</string>
     <string name="home_recent_scans">സ്കാനുകൾ</string>
+    <string name="settings_section_about">ScanPro-നെക്കുറിച്ച്</string>
+    <string name="settings_group_more">കൂടുതൽ</string>
+    <string name="settings_about_tagline">നിങ്ങളുടെ ഫോണിൽ ഓഫ്‌ലൈനായി പ്രവർത്തിക്കുന്ന ഡോക്യുമെന്റ് സ്കാനറും PDF ടൂൾകിറ്റും.</string>
+    <string name="settings_group_general">പൊതുവായവ</string>
+    <string name="settings_group_data">ഡാറ്റയും സ്വകാര്യതയും</string>
+    <string name="settings_stat_documents">ഡോക്യുമെന്റുകൾ</string>
+    <string name="settings_stat_storage">ഉപയോഗിച്ച സ്റ്റോറേജ്</string>
+    <string name="settings_stat_recycle_bin">റീസൈക്കിൾ ബിന്നിൽ</string>
 </resources>
