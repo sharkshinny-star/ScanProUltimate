@@ -40,15 +40,14 @@ Keep this identical to `docs/privacy-policy/index.html` §4 and §12.
 
 ## 3. App access
 
-**All functionality is available without special access.** No login. Note for reviewers: "Files on this phone" needs the
-user to grant All files access on Android 11+ (default build); Translate downloads a module on first use; the app lock
+**All functionality is available without special access.** No login. Note for reviewers: the Play build has no All files access (F225); Translate downloads a module on first use; the app lock
 is off by default.
 
 ## 4. Target audience and content
 
 | Question | Draft | Status |
 |---|---|---|
-| Target age groups | 18 and over (or 13+); not designed for children | **OWNER**. Must match the policy's children section (§14 placeholder). Choosing under-13 groups brings the Families policy |
+| Target age groups | 13–15, 16–17, 18 and over; not designed for children | Decided by the owner 2026-11-19 (F218); matches the policy's children section. Choosing under-13 groups brings the Families policy |
 | Appeals to children? | No (document scanner and PDF tools) | **OWNER** |
 
 ## 5. Foreground service (dataSync)
@@ -71,7 +70,11 @@ Source: [FGS requirements](https://support.google.com/googleplay/android-develop
 - Google recommends user-initiated data transfer jobs only for **network** transfers; ScanPro's work is local, so dataSync
   fits Google's listed uses (VERIFIED from the page). Long-term option: WorkManager or `mediaProcessing`.
 
-## 6. All files access (`MANAGE_EXTERNAL_STORAGE`) — only if the default build is uploaded
+## 6. All files access (`MANAGE_EXTERNAL_STORAGE`) — NOT NEEDED for the Play build
+
+**Owner decision 2026-11-19 (F225): the Play bundle is built with `-Pscanpro.allFilesAccess=false` and does not declare the
+permission, so this declaration is not filed.** If the Console asks for it, the wrong bundle was uploaded. The draft below is
+kept only in case the access is put back later.
 
 Source: [Use of All files access](https://support.google.com/googleplay/android-developer/answer/10467955). Based on the root
 `PLAY_ALL_FILES_ACCESS.md`, corrected for two stale lines there (PS-12). **OWNER** decides whether to file this or to
@@ -124,7 +127,7 @@ the user's browser (after a preview) and has no in-app browser. **OWNER** answer
 | Government app | No | — |
 | COVID-19 contact tracing / status | No | — |
 | Generative AI | No generative AI features (dependency grep) | — |
-| Advertising ID | Not used (no ads or analytics SDK); confirm the merged manifest has no `AD_ID` permission | NOT VERIFIED until the merged manifest is read |
+| Advertising ID | Not used (no ads or analytics SDK) | Checked 2026-11-19: the base manifest of the bundle built for F225 has no `AD_ID` permission |
 | Trader status (EEA/UK) | **OWNER/LEGAL**: trader or non-trader. A trader's address and phone become public from 1 Mar 2027 | Required for new accounts at creation; existing accounts by 1 Feb 2027 |
-| Privacy policy URL | Hosted `docs/privacy-policy/index.html` | **Not hosted** (PS-01) |
+| Privacy policy URL | `https://sharkshinny-star.github.io/scanpro-privacy/` (`docs/privacy-policy/index.html`, fields filled in F218 except the developer name) | **Not hosted yet** (PS-01) |
 | Developer verification / app registration | Creating the app registers `com.scanpro.app` | **OWNER** |
