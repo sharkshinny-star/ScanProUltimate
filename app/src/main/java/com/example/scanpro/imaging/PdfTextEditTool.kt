@@ -66,7 +66,7 @@ internal class PdfTextEditSession private constructor(private val source: File, 
                     imported.mediaBox = original.mediaBox
                     imported.cropBox = original.cropBox
                     imported.rotation = original.rotation
-                    outcome = PdfTextEditor.apply(single, mine.map { it.copy(page = 0) }, ::phoneUnicodeFont, PhoneTextShaper)
+                    outcome = PdfTextEditor.apply(single, mine.map { it.copy(page = 0) }, ::phoneUnicodeFont, PhoneTextShaper, CarriedFonts(context))
                     single.save(preview)
                 }
             }
@@ -145,7 +145,7 @@ internal object PhoneTextShaper : PdfTextEditor.Shaper {
     private fun paint(family: PdfTextEditor.Family, bold: Boolean, italic: Boolean) = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         textSize = EM
         val base = when (family) {
-            PdfTextEditor.Family.SERIF -> android.graphics.Typeface.SERIF
+            PdfTextEditor.Family.SERIF, PdfTextEditor.Family.GELASIO -> android.graphics.Typeface.SERIF
             PdfTextEditor.Family.MONO -> android.graphics.Typeface.MONOSPACE
             else -> android.graphics.Typeface.SANS_SERIF
         }
@@ -194,6 +194,37 @@ internal object PhoneTextShaper : PdfTextEditor.Shaper {
     }
 }
 
+/**
+ * The fonts the app carries for Edit PDF (F207): Roboto, Inter, Montserrat and Gelasio (a free serif drawn to the
+ * measure of Georgia, which is not free to ship), each in regular, bold, italic and bold italic. The files in
+ * `res/font` hold Latin letters, punctuation and money signs only (about 70 KB each); text they can't show falls back
+ * to a standard font. PDFBox embeds just the letters used.
+ */
+internal class CarriedFonts(private val context: Context) : PdfTextEditor.FontSource {
+    override fun load(doc: PDDocument, family: PdfTextEditor.Family, bold: Boolean, italic: Boolean): com.tom_roush.pdfbox.pdmodel.font.PDFont? {
+        val resource = resourceOf(family, bold, italic) ?: return null
+        return context.resources.openRawResource(resource).use { com.tom_roush.pdfbox.pdmodel.font.PDType0Font.load(doc, it, true) }
+    }
+
+    companion object {
+        /** The font file for [family] in the weight and slant asked for; null for a family the app carries no file for. */
+        fun resourceOf(family: PdfTextEditor.Family, bold: Boolean, italic: Boolean): Int? = when (family) {
+            PdfTextEditor.Family.ROBOTO -> pick(bold, italic, R.font.roboto_regular, R.font.roboto_bold, R.font.roboto_italic, R.font.roboto_bold_italic)
+            PdfTextEditor.Family.INTER -> pick(bold, italic, R.font.inter_regular, R.font.inter_bold, R.font.inter_italic, R.font.inter_bold_italic)
+            PdfTextEditor.Family.GELASIO -> pick(bold, italic, R.font.gelasio_regular, R.font.gelasio_bold, R.font.gelasio_italic, R.font.gelasio_bold_italic)
+            PdfTextEditor.Family.MONTSERRAT -> pick(bold, italic, R.font.montserrat_regular, R.font.montserrat_bold, R.font.montserrat_italic, R.font.montserrat_bold_italic)
+            else -> null
+        }
+
+        private fun pick(bold: Boolean, italic: Boolean, regular: Int, boldFont: Int, italicFont: Int, boldItalic: Int): Int = when {
+            bold && italic -> boldItalic
+            bold -> boldFont
+            italic -> italicFont
+            else -> regular
+        }
+    }
+}
+
 internal object PdfTextEditTool {
     /** Writes [outputFile]: the PDF at [uri] with [edits] applied. */
     suspend fun save(context: Context, uri: Uri, edits: List<PdfTextEditor.Edit>, outputFile: File): PdfToolResult =
@@ -202,7 +233,7 @@ internal object PdfTextEditTool {
             try {
                 val (pages, outcome) = PDDocument.load(temp, MemoryUsageSetting.setupTempFileOnly()).use { document ->
                     if (document.isEncrypted) document.isAllSecurityToBeRemoved = true
-                    val outcome = PdfTextEditor.apply(document, edits, ::phoneUnicodeFont, PhoneTextShaper)
+                    val outcome = PdfTextEditor.apply(document, edits, ::phoneUnicodeFont, PhoneTextShaper, CarriedFonts(context))
                     outputFile.parentFile?.mkdirs()
                     document.save(outputFile)
                     document.numberOfPages to outcome

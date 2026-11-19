@@ -1,5 +1,6 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.rememberScrollState
 
 import androidx.compose.foundation.verticalScroll
@@ -22,14 +23,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -493,7 +492,11 @@ internal fun LibraryScreen(
                     title = {
                         when {
                             selecting -> TitleWithStatus(pluralStringResource(R.plurals.lib_title_selected_count, selected.size, selected.size), if (busy) busyLabel else null)
-                            isHome -> BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                            isHome -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                BrandLockup(subtitle = stringResource(com.example.scanpro.core.designsystem.greetingRes()))
+                                // The space beside the name: a small scene, a different one at random each time.
+                                com.example.scanpro.core.designsystem.HeaderSceneStrip(Modifier.weight(1f).padding(start = 8.dp).height(52.dp))
+                            }
                             isSearch -> Text(stringResource(R.string.common_search))
                             else -> TitleWithStatus(
                                 stringResource(R.string.lib_title_files),

@@ -57,7 +57,21 @@ import kotlin.math.hypot
  * Pure PDFBox and Kotlin, no Android, so it is unit tested on the desktop JVM.
  */
 internal object PdfTextEditor {
-    enum class Family { ORIGINAL, SANS, SERIF, MONO }
+    /**
+     * The font asked for: the PDF's own, a standard PDF font (sans, serif, monospaced: nothing is embedded for these),
+     * or one of the fonts the app carries, which is embedded in the PDF (only the letters used).
+     */
+    enum class Family {
+        ORIGINAL, SANS, SERIF, MONO, ROBOTO, INTER, GELASIO, MONTSERRAT;
+
+        /** True for a font the app carries as a file. */
+        val carried: Boolean get() = this == ROBOTO || this == INTER || this == GELASIO || this == MONTSERRAT
+    }
+
+    /** Gives a carried font ([Family.carried]) for a document, in the weight and slant asked for; null if it has none. */
+    fun interface FontSource {
+        fun load(doc: PDDocument, family: Family, bold: Boolean, italic: Boolean): PDFont?
+    }
 
     /**
      * Where the new words sit in the place the old ones had: starting where they started, centred on it, or ending
@@ -190,7 +204,15 @@ internal object PdfTextEditor {
      * Applies [edits] to [doc] in place. Edits naming a span that is no longer there are skipped. [unicodeFont] gives a
      * font for text no standard font can show (null when there is none).
      */
-    fun apply(doc: PDDocument, edits: List<Edit>, unicodeFont: (PDDocument) -> PDFont? = { null }, shaper: Shaper? = null): Outcome {
+    fun apply(
+        doc: PDDocument, edits: List<Edit>, unicodeFont: (PDDocument) -> PDFont? = { null }, shaper: Shaper? = null, fonts: FontSource? = null
+    ): Outcome {
+        // Each carried font is loaded into the document once, however many edits use it.
+        val loaded = HashMap<Triple<Family, Boolean, Boolean>, PDFont?>()
+        val carried: (Family, Boolean, Boolean) -> PDFont? = { family, bold, italic ->
+            if (fonts == null || !family.carried) null
+            else loaded.getOrPut(Triple(family, bold, italic)) { runCatching { fonts.load(doc, family, bold, italic) }.getOrNull() }
+        }
         var applied = 0
         var same = 0
         var similar = 0
@@ -218,7 +240,7 @@ internal object PdfTextEditor {
                 val data = analysis.spans.getOrNull(edit.index)
                 // The font is chosen before anything is cut: a line whose new text no font can draw is left as it was,
                 // rather than cut out and not written back.
-                val choice = if (data == null || edit.text.isEmpty()) null else chooseFont(page, data, edit, unicodeOnce, shaper)
+                val choice = if (data == null || edit.text.isEmpty()) null else chooseFont(page, data, edit, unicodeOnce, shaper, carried)
                 if (data == null || (edit.text.isNotEmpty() && choice == null)) { skipped++; continue }
                 chosen += Planned(edit, data, choice, analysis)
                 val ops = opsOfEdit.getOrPut(edit) { HashSet() }
@@ -275,8 +297,8 @@ internal object PdfTextEditor {
                 for (addition in additions) {
                     // The nearest line's font stands for "the PDF's font" here, and its colour when none was chosen.
                     val near = analysis.spans.minByOrNull { distance(it.span, addition.x, addition.y) }
-                    val choice = if (near != null) chooseFont(page, near, addition, unicodeOnce, shaper)
-                    else chooseStandard(null, addition, unicodeOnce, shaper)
+                    val choice = if (near != null) chooseFont(page, near, addition, unicodeOnce, shaper, carried)
+                    else chooseStandard(null, addition, unicodeOnce, shaper, carried)
                     if (choice == null) { skipped++; continue }
                     val (ux, uy, vx, vy) = analysis.shape.upright()
                     val (ox, oy) = analysis.shape.toPage(addition.x + addition.dx, addition.y + addition.dy)
@@ -781,10 +803,12 @@ internal object PdfTextEditor {
         }.getOrDefault(0f)
     }
 
-    private fun chooseFont(page: PDPage, data: SpanData, edit: Edit, unicode: () -> PDFont?, shaper: Shaper?): FontChoice? {
+    private fun chooseFont(
+        page: PDPage, data: SpanData, edit: Edit, unicode: () -> PDFont?, shaper: Shaper?, carried: (Family, Boolean, Boolean) -> PDFont?
+    ): FontChoice? {
         val text = edit.text
         val original = data.positions.first().font
-        if (shaper != null && needsShaping(text)) return chooseStandard(original, edit, unicode, shaper)
+        if (shaper != null && needsShaping(text)) return chooseStandard(original, edit, unicode, shaper, carried)
         if (edit.family == Family.ORIGINAL && original != null) {
             if (edit.bold == data.span.bold && edit.italic == data.span.italic && canShow(original, text)) {
                 return FontChoice(original, same = true, synthBold = false, synthItalic = false)
@@ -798,18 +822,32 @@ internal object PdfTextEditor {
                 }
             if (sibling != null) return FontChoice(sibling, same = true, synthBold = false, synthItalic = false)
         }
-        return chooseStandard(original, edit, unicode, shaper)
+        return chooseStandard(original, edit, unicode, shaper, carried)
     }
 
-    /** A standard font of the family asked for (or like [original]), else the phone's wide font. */
-    private fun chooseStandard(original: PDFont?, edit: Edit, unicode: () -> PDFont?, shaper: Shaper?): FontChoice? {
+    /**
+     * The carried font asked for when it has the letters; else a standard font of the family asked for (or like
+     * [original]); else the phone's wide font. A font that was asked for by name counts as the same font: only a
+     * stand-in for the PDF's own is a similar one.
+     */
+    private fun chooseStandard(
+        original: PDFont?, edit: Edit, unicode: () -> PDFont?, shaper: Shaper?, carried: (Family, Boolean, Boolean) -> PDFont?
+    ): FontChoice? {
         val text = edit.text
-        val family = if (edit.family == Family.ORIGINAL) guessFamily(original) else edit.family
+        val family = when {
+            edit.family == Family.ORIGINAL -> guessFamily(original)
+            edit.family == Family.GELASIO -> Family.SERIF
+            edit.family.carried -> Family.SANS
+            else -> edit.family
+        }
         if (shaper != null && needsShaping(text)) {
             return FontChoice(null, same = false, synthBold = false, synthItalic = false, shaper = shaper, family = family, bold = edit.bold, italic = edit.italic)
         }
+        carried(edit.family, edit.bold, edit.italic)?.takeIf { canShow(it, text) }?.let {
+            return FontChoice(it, same = true, synthBold = false, synthItalic = false)
+        }
         val standard = standardFont(family, edit.bold, edit.italic)
-        if (canShow(standard, text)) return FontChoice(standard, same = false, synthBold = false, synthItalic = false)
+        if (canShow(standard, text)) return FontChoice(standard, same = edit.family == family, synthBold = false, synthItalic = false)
         val wide = unicode() ?: return null
         if (!canShow(wide, text)) return null
         return FontChoice(wide, same = false, synthBold = edit.bold, synthItalic = edit.italic)

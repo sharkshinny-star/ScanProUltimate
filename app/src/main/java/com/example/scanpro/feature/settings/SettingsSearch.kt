@@ -121,8 +121,7 @@ private val SETTING_ENTRIES = listOf(
     SettingEntry(R.string.settings_feedback, R.string.settings_feedback_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_report_issue_title, R.string.settings_report_issue_subtitle, R.string.settings_section_support),
     SettingEntry(R.string.settings_request_features, null, R.string.settings_section_support),
-    SettingEntry(R.string.settings_share_with_friends, R.string.settings_share_subtitle, R.string.settings_section_support),
-    SettingEntry(R.string.settings_about_open_source, R.string.settings_about_open_source_body, R.string.settings_section_about)
+    SettingEntry(R.string.settings_share_with_friends, R.string.settings_share_subtitle, R.string.settings_section_support)
 )
 
 internal class SettingHit(val title: String, val section: String, val subtitle: String?)

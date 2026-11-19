@@ -71,8 +71,14 @@ internal enum class SettingsPage(@StringRes val title: Int, val icon: ImageVecto
     SUPPORT(R.string.settings_section_support, Icons.Rounded.Feedback, TileTone.Coral, MORE_GROUP,
         listOf(R.string.settings_whats_new_title, R.string.settings_report_issue_title, R.string.settings_rate_title)),
     ABOUT(R.string.settings_section_about, Icons.Rounded.Info, TileTone.Slate, MORE_GROUP,
-        listOf(R.string.settings_about_open_source))
+        listOf(R.string.settings_privacy_title))
 }
+
+/**
+ * The version as people see it in Settings and About: without the "-debug" a debug build adds (owner, 2026-11-19).
+ * Support emails, crash reports and diagnostics keep the full name and the build type.
+ */
+internal val DISPLAY_VERSION: String = BuildConfig.VERSION_NAME.removeSuffix("-debug")
 
 /** The main page's last group: shortcuts, support and About, then Share ScanPro straight from the list. */
 private const val MORE_GROUP = 2
@@ -148,7 +154,7 @@ private fun pageSummary(page: SettingsPage, overview: SettingsOverview): String?
         pluralStringResource(R.plurals.settings_trash_retention_days, overview.trashRetentionDays, overview.trashRetentionDays)
     )
     SettingsPage.NOTIFICATIONS -> if (overview.canPostNotifications) null else stringResource(R.string.settings_notifications_off_title)
-    SettingsPage.ABOUT -> stringResource(R.string.settings_version, BuildConfig.VERSION_NAME)
+    SettingsPage.ABOUT -> stringResource(R.string.settings_version, DISPLAY_VERSION)
     SettingsPage.SCANNING -> scanningSummary(overview.defaultScanMode, overview.pdfQuality, overview.defaultOcrScript)
     else -> null
 }
@@ -240,7 +246,7 @@ private fun AboutFooter() {
         BrandMark(size = 32.dp)
         Spacer(Modifier.height(4.dp))
         Text(
-            stringResource(R.string.core_recommend_app_subject) + " · " + stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+            stringResource(R.string.core_recommend_app_subject) + " · " + stringResource(R.string.settings_version, DISPLAY_VERSION),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

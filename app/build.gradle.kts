@@ -1,3 +1,5 @@
+import java.util.zip.ZipFile
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -307,12 +309,38 @@ androidComponents {
 tasks.matching { it.name == "bundleRelease" }.configureEach {
     val policyUrl = providers.gradleProperty("scanpro.privacyPolicyUrl").orElse("")
     val allowMissing = providers.gradleProperty("scanpro.allowMissingPolicy").map { it == "true" }.orElse(false)
+    // All files access (F225): the owner decided on 2026-11-19 that the Play version ships without
+    // MANAGE_EXTERNAL_STORAGE, so a bundle meant for upload must say which it is. "false" is the Play build; "true" is
+    // only for after Google has approved the All files access declaration (PLAY_ALL_FILES_ACCESS.md).
+    val allFilesAccess = providers.gradleProperty("scanpro.allFilesAccess").orElse("")
+    val bundleFile = layout.buildDirectory.file("outputs/bundle/release/app-release.aab")
     doFirst {
         if (!allowMissing.get() && !policyUrl.get().startsWith("https://")) {
             throw GradleException(
                 "Play bundle without a privacy policy link: pass -Pscanpro.privacyPolicyUrl=https://... " +
                     "(or -Pscanpro.allowMissingPolicy=true for a test bundle that will not be uploaded)."
             )
+        }
+        if (!allowMissing.get() && allFilesAccess.get() != "false" && allFilesAccess.get() != "true") {
+            throw GradleException(
+                "Play bundle with All files access: the Play version ships without it, so pass " +
+                    "-Pscanpro.allFilesAccess=false (or =true only once Google has approved the All files access " +
+                    "declaration; -Pscanpro.allowMissingPolicy=true for a test bundle that will not be uploaded)."
+            )
+        }
+    }
+    // Proof in the build itself: the bundle built without the access must not declare the permission.
+    doLast {
+        val aab = bundleFile.get().asFile
+        if (allFilesAccess.get() == "false" && aab.exists()) {
+            val declared = ZipFile(aab).use { zip ->
+                val manifest = zip.getEntry("base/manifest/AndroidManifest.xml")
+                    ?: throw GradleException("No base manifest in ${aab.name}; cannot check its permissions.")
+                zip.getInputStream(manifest).use { String(it.readBytes(), Charsets.ISO_8859_1) }
+                    .contains("MANAGE_EXTERNAL_STORAGE")
+            }
+            if (declared) throw GradleException("${aab.name} still declares MANAGE_EXTERNAL_STORAGE; do not upload it.")
+            println("Play bundle check: ${aab.name} does not declare MANAGE_EXTERNAL_STORAGE (All files access).")
         }
     }
 }

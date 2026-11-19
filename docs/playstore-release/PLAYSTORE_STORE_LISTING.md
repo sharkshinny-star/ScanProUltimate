@@ -27,14 +27,15 @@ Alternative: `ScanPro` (7). The launcher label stays `ScanPro` (`app_name`).
 Scan documents to PDF, recognise text and work with PDFs on your phone.
 ```
 
-## 3. Full description (2947 / 4,000)
+## 3. Full description (2705 / 4,000)
 
 Rules followed: no superlatives; OCR described as imperfect; Sign PDF described as a visual signature; UPI described as a
 QR generator and hand-off (no payments); ML Kit diagnostics and downloads disclosed; the All files access feature is
-described prominently, as Play requires for that permission.
+not in the Play build and so is not described.
 
-If the build **without** All files access is uploaded (`-Pscanpro.allFilesAccess=false`), delete the "FILES ON YOUR PHONE"
-section (240 characters; the description is then 2705 characters).
+Owner decision 2026-11-19 (F225): the Play build has **no** All files access (`-Pscanpro.allFilesAccess=false`), so the
+"FILES ON YOUR PHONE" section and the matching release-note line are removed below. If the declaration is ever filed and
+approved, put this back after the scan-history line: `FILES ON YOUR PHONE / • With your permission, list and open the PDFs, images, Word, Excel and other documents already on your phone, and send them to the PDF tools. ScanPro only reads these files; everything else works without this permission`
 
 ```
 ScanPro turns your phone into a document scanner and PDF toolkit. Your scans, recognised text and documents are kept in the app's private storage on your phone. There is no account and no advertising.
@@ -66,9 +67,6 @@ QR AND BARCODES
 • Create QR codes, including a UPI payment code for your own UPI ID. ScanPro does not make payments: paying opens the UPI app you choose
 • Keep a scan history, stored encrypted on your phone, or turn it off
 
-FILES ON YOUR PHONE
-• With your permission, list and open the PDFs, images, Word, Excel and other documents already on your phone, and send them to the PDF tools. ScanPro only reads these files; everything else works without this permission
-
 PRIVACY AND SECURITY
 • Optional app lock with your biometrics or screen lock, and locked folders
 • Password-protected backups you can export and restore
@@ -98,9 +96,9 @@ translation download and OCR language packs arrive through Play as described.
 
 | Asset | Spec ([Preview assets](https://support.google.com/googleplay/android-developer/answer/9866151)) | Status |
 |---|---|---|
-| App icon | 512 × 512 px, 32-bit PNG with alpha, ≤ 1024 KB | Not made (adaptive launcher icon exists in `app/src/main/res/mipmap-anydpi-v26`; export it at 512 px) |
-| Feature graphic | 1024 × 500 px, JPEG or 24-bit PNG, no alpha | Not made |
-| Phone screenshots | 2–8, JPEG or 24-bit PNG, no alpha, shortest side 320–3840 px, long side ≤ 2 × short side | Not captured |
+| App icon | 512 × 512 px, 32-bit PNG with alpha, ≤ 1024 KB | Made 2026-11-19: `assets/play-icon-512.png` (rendered from the launcher icon's vector paths and gradients, full square, 175 KB; the owner has not approved it yet) |
+| Feature graphic | 1024 × 500 px, JPEG or 24-bit PNG, no alpha | Made 2026-11-19: `assets/play-feature-graphic-1024x500.png` (icon glyph, name, "Scan, sign and organise documents on your phone", brand gradient, RGB without alpha; the owner has not approved it yet) |
+| Phone screenshots | 2–8, JPEG or 24-bit PNG, no alpha, shortest side 320–3840 px, long side ≤ 2 × short side | Seven made 2026-11-19 in `assets/screenshots/` (1080 × 1920, RGB): captioned renders of the app's own screens from the Robolectric screenshot tests with sample documents (library, search, PDF tools, organise pages, document, QR, app lock). Not phone captures: no camera shot, no status bar; the owner should add a real camera capture as the first image and has not approved these yet |
 | 7" and 10" tablet screenshots | Same rules; needed for tablet visibility | Not captured |
 | Promo video | Optional public or unlisted YouTube URL, ads off | Optional |
 
@@ -121,12 +119,11 @@ optionally repeat in Hindi. No device frames or text that claims rankings.
 Tablet: the same screens in landscape on a 10" tablet once large-screen layouts are checked (R2).
 Robolectric screenshots (`ScreenScreenshotTest`, `-Pscanpro.screenshots=true`) are for review only, not for the store.
 
-## 7. Release notes for 4.2.0 (355 characters; Play's per-language limit is 500: NOT VERIFIED in this session's sources)
+## 7. Release notes for 4.2.0 (260 characters; Play's per-language limit is 500: NOT VERIFIED in this session's sources)
 
 ```
 • Redaction now checks each saved copy and refuses to keep it if a redacted word is still inside the file
 • Rebuilt page, image, convert and edit tools, each with a preview of the result before it runs
-• Files on your phone: see and open the documents already on your phone (with your permission)
 • Resizable home-screen widget
 • Fixes and clearer wording
 ```

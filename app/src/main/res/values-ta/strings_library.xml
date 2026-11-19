@@ -259,8 +259,6 @@
     <string name="settings_section_about">ScanPro பற்றி</string>
     <string name="settings_group_more">மேலும்</string>
     <string name="settings_about_tagline">உங்கள் ஃபோனில் ஆஃப்லைனில் இயங்கும் ஆவண ஸ்கேனர் மற்றும் PDF கருவித்தொகுப்பு.</string>
-    <string name="settings_about_open_source">ஓப்பன் சோர்ஸ் மென்பொருள்</string>
-    <string name="settings_about_open_source_body">ScanPro இந்த லைப்ரரிகளைக் கொண்டு உருவாக்கப்பட்டது. இவற்றில் பணியாற்றும் அனைவருக்கும் நன்றி.</string>
     <string name="settings_group_general">பொது</string>
     <string name="settings_group_data">தரவு மற்றும் தனியுரிமை</string>
     <string name="settings_stat_documents">ஆவணங்கள்</string>

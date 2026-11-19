@@ -1,6 +1,6 @@
 # Google Play: All files access declaration (draft)
 
-Status: **not filed.** Only the owner can do this in Play Console; nothing here has been submitted. Written 2026-11-17 from
+Status: **not needed for the Play build** (owner decision 2026-11-19, F225: Play ships without the permission, `-Pscanpro.allFilesAccess=false`). Kept in case the access is put back later. **Not filed.** Only the owner can do this in Play Console; nothing here has been submitted. Written 2026-11-17 from
 the code on `claude/awesome-clarke-ussjo3`. Check each statement against the app before pasting it.
 
 ## Where
