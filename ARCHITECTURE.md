@@ -228,6 +228,8 @@ A biometric UI gate should not be marketed as full at-rest encryption of every l
 
 ## 12. Notifications
 
+- Cancel from the notification (F215): `OperationForegroundService`'s notification carries a Cancel action; the service calls `cancelHandler`, which `OperationRunner` sets to `cancelAll()` (the queued operation's job and the jobs registered by `keepAlive`). `core/security/ShortcutToken` is the per-install secret the launcher shortcuts carry; `MainActivity` requires it for the two support actions only.
+
 `core/notifications/AppNotifications` (Hilt singleton) posts local notices only: finished/failed task while the app is out of
 sight (`appVisible` is set by `MainActivity.onStart/onStop`), and optional reminders. Channels `results`, `failures`,
 `reminders`; one fixed id per kind. Preferences in `SettingsStore` (`notify_finished`, `notify_failures` default on;

@@ -47,7 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import android.graphics.Typeface
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -167,6 +166,10 @@ fun SignPdfScreen(
                     val selected = state.selected
                     val placement = state.placements.getOrNull(selected)
                     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                        // Said before anything is placed, and kept in view: the saved copy loses the file's digital signature.
+                        if (state.digitallySigned) {
+                            Box(Modifier.padding(bottom = 4.dp)) { ImageToolNotice(stringResource(R.string.sign_existing_digital_signature)) }
+                        }
                         if (placement == null && state.placements.isNotEmpty()) {
                             // What Save will write: so many stamps on so many pages, not only the page on screen.
                             val onPages = state.placements.map { it.pageIndex }.distinct().size

@@ -57,3 +57,7 @@ Privacy policy legal fields and hosting (PS-01), the All files access decision a
 device testing (PS-05), Console declarations (PS-06), "nothing uploaded" strings (PS-07), support e-mail (PS-08),
 versionCode (PS-10), Files tab gating (PS-11), root `PLAY_ALL_FILES_ACCESS.md` stale lines (PS-12). See
 [Manual actions](PLAYSTORE_MANUAL_ACTIONS.md).
+
+## Added 2026-11-19 (F215)
+
+Security audit follow-ups: S9 (Sign PDF now warns when the file has a digital signature), S18 (support shortcut actions need a per-install token), S20 (PDF scratch file capped at eight times the file size, at least 1 GB); platform audit: translation language pack download is asked once per language; the progress notification has a Cancel action. Compiled and unit-tested by CI only; on a phone NOT VERIFIED (`AUDIT_FINDINGS.md` R83).

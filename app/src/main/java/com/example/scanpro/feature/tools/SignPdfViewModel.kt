@@ -45,6 +45,8 @@ data class SignUiState(
     val sourceName: String = "",
     val pageCount: Int = 0,
     val wasProtected: Boolean = false,
+    /** The file already carries a digital signature, which the saved copy will no longer validate (F215). */
+    val digitallySigned: Boolean = false,
     val page: Int = 0,
     val placements: List<SignPlacement> = emptyList(),
     /** Index into [placements] of the stamp being edited, or -1. */
@@ -92,12 +94,14 @@ class SignPdfViewModel @Inject constructor(
                     throw error
                 }
                 val name = withContext(Dispatchers.IO) { PdfToolsEngine.sourceBaseName(context, uri) }
+                val signed = withContext(Dispatchers.IO) { SignPdfEngine.hasDigitalSignature(copy.file) }
                 _state.value = SignUiState(
                     visible = true,
                     file = copy.file,
                     sourceName = name,
                     pageCount = pages,
-                    wasProtected = copy.wasProtected
+                    wasProtected = copy.wasProtected,
+                    digitallySigned = signed
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled

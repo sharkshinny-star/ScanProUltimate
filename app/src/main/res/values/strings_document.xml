@@ -318,4 +318,7 @@
     <string name="doc_saved_copy_total">Copy total</string>
     <string name="doc_share_as_word">Share as Word</string>
     <string name="doc_share_as_word_hint">Editable text from the words ScanPro found</string>
+    <string name="doc_translate_download_title">Download the language pack?</string>
+    <string name="doc_translate_download_body">Translating into %1$s the first time downloads its language pack from Google (about 30 MB for each language), over the connection your phone is using now, mobile data included. After that, translation into %1$s works offline.</string>
+    <string name="doc_translate_download_confirm">Download and translate</string>
 </resources>

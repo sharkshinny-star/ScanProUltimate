@@ -10,7 +10,7 @@
     <string name="tools_desc_greyscale">రంగు పేజీలను బూడిద రంగులోకి మార్చండి</string>
     <string name="tools_card_flatten">PDF ఫ్లాటెన్ చేయండి</string>
     <string name="tools_tile_flatten">ఫ్లాటెన్</string>
-    <string name="tools_desc_flatten">ఫారమ్‌లు, వ్యాఖ్యలను స్థిరంగా చేయండి</string>
+    <string name="tools_desc_flatten">ఫారమ్ సమాధానాలు, వ్యాఖ్యలను పేజీలో భాగం చేయండి</string>
     <string name="tools_card_extract_images">చిత్రాలను సంగ్రహించండి</string>
     <string name="tools_desc_extract_images">PDF లోపలి చిత్రాలను సేవ్ చేయండి</string>
     <string name="tools_card_pdf_info">PDF సమాచారం మరియు మెటాడేటా</string>
@@ -90,7 +90,7 @@
 
     <string name="hint_tool_blank_pages">స్కాన్ చేసిన PDFలోని ఖాళీ పేజీలను కనుగొని, జాబితాను తనిఖీ చేసిన తర్వాత తీసివేయండి.</string>
     <string name="hint_tool_greyscale">తక్కువ ఖర్చుతో ప్రింట్ చేయడానికి లేదా చిన్న ఫైల్ కోసం రంగు PDFని బూడిద ఛాయల్లోకి మార్చండి.</string>
-    <string name="hint_tool_flatten">ఫారమ్ సమాధానాలు, వ్యాఖ్యలు, స్టాంప్‌లను పేజీల్లోనే గీయండి, ఎవరూ మార్చలేనట్లుగా.</string>
+    <string name="hint_tool_flatten">ఫారమ్ సమాధానాలు, వ్యాఖ్యలు, స్టాంప్‌లను పేజీల్లోనే గీయండి; వాటిని ఇక ఫీల్డ్ లేదా వ్యాఖ్యగా మార్చలేరు. PDF ఎడిటర్‌తో పేజీనే ఇంకా మార్చవచ్చు.</string>
     <string name="hint_tool_extract_images">PDF లోపలి ప్రతి చిత్రాన్ని ప్రత్యేక చిత్ర ఫైల్‌గా సేవ్ చేయండి.</string>
     <string name="hint_tool_pdf_info">PDF దాచిన వివరాలను చూడండి, శీర్షిక లేదా రచయితను మార్చండి, లేదా గోప్యత కోసం అన్నీ తీసివేయండి.</string>
 

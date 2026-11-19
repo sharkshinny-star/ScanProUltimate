@@ -51,7 +51,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -77,12 +76,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.scanpro.R
-import com.example.scanpro.imaging.PdfPreviewSession
 import com.example.scanpro.imaging.WatermarkConfig
 import com.example.scanpro.imaging.WatermarkGeometry
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /** The first page as a picture, and its size in points, for the watermark to be drawn on. Null parts mean "could not read it". */
 private class PagePreview(val bitmap: Bitmap?, val widthPt: Float, val heightPt: Float)
