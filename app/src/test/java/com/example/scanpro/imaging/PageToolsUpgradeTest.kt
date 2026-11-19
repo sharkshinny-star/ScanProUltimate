@@ -189,9 +189,9 @@ class PageToolsUpgradeTest {
             PDDocument.load(out).use { doc -> stripper.getText(doc) }
             return name
         }
-        assertEquals("Times-BoldItalic", fontOfNumber(PageNumbersConfig(font = PdfTextEditor.Family.SERIF, bold = true, italic = true)))
+        assertEquals("Times-BoldItalic", fontOfNumber(PageNumbersConfig(font = PageNumberFont.SERIF, bold = true, italic = true)))
         assertEquals("Helvetica", fontOfNumber(PageNumbersConfig(underline = true, colourArgb = 0xFFC62828.toInt())))
-        assertTrue(fontOfNumber(PageNumbersConfig(font = PdfTextEditor.Family.ROBOTO)).contains("Roboto"))
+        assertTrue(fontOfNumber(PageNumbersConfig(font = PageNumberFont.ROBOTO)).contains("Roboto"))
     }
 
     // ---- Remove blank pages ----

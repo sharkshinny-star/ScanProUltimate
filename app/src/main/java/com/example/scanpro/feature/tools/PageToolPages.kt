@@ -9,7 +9,8 @@ import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatUnderlined
 import com.example.scanpro.core.designsystem.InkColourRow
-import com.example.scanpro.imaging.PdfTextEditor
+import com.example.scanpro.imaging.PageNumberFont
+import com.example.scanpro.imaging.editorFamily
 import com.example.scanpro.imaging.DEFAULT_PAGE_NUMBER_COLOUR
 import com.example.scanpro.imaging.PdfToolsEngine
 import android.graphics.Bitmap
@@ -321,7 +322,7 @@ internal fun PageNumbersPdfDialog(
     var format by rememberSaveable { mutableStateOf(PageNumberFormat.PAGE_N_OF_M) }
     var skipCover by rememberSaveable { mutableStateOf(false) }
     // Style (F242): font, bold / italic / underline, size and colour, all shown live on the page and in the close-up.
-    var font by rememberSaveable { mutableStateOf(PdfTextEditor.Family.SANS) }
+    var font by rememberSaveable { mutableStateOf(PageNumberFont.SANS) }
     var bold by rememberSaveable { mutableStateOf(false) }
     var italic by rememberSaveable { mutableStateOf(false) }
     var underline by rememberSaveable { mutableStateOf(false) }
@@ -356,7 +357,7 @@ internal fun PageNumbersPdfDialog(
     // phone's own sans, serif and mono, which are close but not the same letters.
     val numberStyle = TextStyle(
         color = ink,
-        fontFamily = fontOf(font),
+        fontFamily = fontOf(font.editorFamily),
         fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
         fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
         textDecoration = if (underline) TextDecoration.Underline else null
@@ -477,18 +478,18 @@ internal fun PageNumbersPdfDialog(
 
 /** The fonts offered for page numbers, in this order. */
 private val NUMBER_FONTS = listOf(
-    PdfTextEditor.Family.SANS, PdfTextEditor.Family.SERIF, PdfTextEditor.Family.MONO, PdfTextEditor.Family.ROBOTO,
-    PdfTextEditor.Family.INTER, PdfTextEditor.Family.MONTSERRAT, PdfTextEditor.Family.GELASIO
+    PageNumberFont.SANS, PageNumberFont.SERIF, PageNumberFont.MONO, PageNumberFont.ROBOTO,
+    PageNumberFont.INTER, PageNumberFont.MONTSERRAT, PageNumberFont.GELASIO
 )
 
 /** A font's name as shown; font names are proper names and are not translated. */
-private fun numberFontName(family: PdfTextEditor.Family): String = when (family) {
-    PdfTextEditor.Family.SERIF -> "Times New Roman"
-    PdfTextEditor.Family.MONO -> "Courier"
-    PdfTextEditor.Family.ROBOTO -> "Roboto"
-    PdfTextEditor.Family.INTER -> "Inter"
-    PdfTextEditor.Family.MONTSERRAT -> "Montserrat"
-    PdfTextEditor.Family.GELASIO -> "Gelasio"
+private fun numberFontName(family: PageNumberFont): String = when (family) {
+    PageNumberFont.SERIF -> "Times New Roman"
+    PageNumberFont.MONO -> "Courier"
+    PageNumberFont.ROBOTO -> "Roboto"
+    PageNumberFont.INTER -> "Inter"
+    PageNumberFont.MONTSERRAT -> "Montserrat"
+    PageNumberFont.GELASIO -> "Gelasio"
     else -> "Arial"
 }
 
@@ -526,8 +527,8 @@ private fun NumberCloseUp(text: String, style: TextStyle) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NumberStyleControls(
-    font: PdfTextEditor.Family,
-    onFont: (PdfTextEditor.Family) -> Unit,
+    font: PageNumberFont,
+    onFont: (PageNumberFont) -> Unit,
     bold: Boolean,
     italic: Boolean,
     underline: Boolean,
@@ -545,11 +546,11 @@ private fun NumberStyleControls(
             FilterChip(
                 selected = font == family,
                 onClick = { onFont(family) },
-                label = { Text(numberFontName(family), fontFamily = fontOf(family)) }
+                label = { Text(numberFontName(family), fontFamily = fontOf(family.editorFamily)) }
             )
         }
     }
-    if (font == PdfTextEditor.Family.SANS || font == PdfTextEditor.Family.SERIF) {
+    if (font == PageNumberFont.SANS || font == PageNumberFont.SERIF) {
         ToolHint(stringResource(R.string.pages_numbers_font_twins))
     }
 
