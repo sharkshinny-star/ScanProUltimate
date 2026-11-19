@@ -600,4 +600,11 @@
     <string name="tools_subtitle_optimise">ഫയലുകൾ ചെറുതോ തിരയാവുന്നതോ ലളിതമോ ആക്കുക</string>
     <string name="tools_subtitle_convert">ഫയലുകൾ PDF ആക്കുക, തിരിച്ചും</string>
     <string name="tools_subtitle_secure">പാസ്‌വേഡുകളും ഫയൽ വിവരങ്ങളും</string>
+    <string name="tools_edit_align">സ്ഥാനം</string>
+    <string name="tools_edit_align_left">ഇടത്</string>
+    <string name="tools_edit_align_centre">നടുവിൽ</string>
+    <string name="tools_edit_align_right">വലത്</string>
+    <string name="tools_edit_wrap">നീണ്ട ടെക്സ്റ്റ് അടുത്ത വരിയിലേക്ക്</string>
+    <string name="tools_edit_align_hint">ഇടത്, നടുവിൽ, വലത് എന്നിവ പുതിയ വാക്കുകൾ പഴയവ ഉണ്ടായിരുന്നിടത്ത് വയ്ക്കുന്നു. പേജിനേക്കാൾ നീണ്ട ടെക്സ്റ്റ് അടുത്ത വരികളിലേക്ക് പോകും; താഴെയുള്ള വരികൾ നീങ്ങില്ല.</string>
+    <string name="tools_edit_align_hint_new">ഇടത്: നിങ്ങൾ ടാപ്പ് ചെയ്തിടത്ത് വാക്കുകൾ തുടങ്ങും; നടുവിൽ: അവിടെ നടുവിലാകും; വലത്: അവിടെ അവസാനിക്കും. പേജിനേക്കാൾ നീണ്ട ടെക്സ്റ്റ് അടുത്ത വരികളിലേക്ക് പോകും.</string>
 </resources>

@@ -53,6 +53,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 - `python3 -I scripts/ci/scanpro-quality-audit.py` PASS. `./gradlew :app:compileDebugKotlin` **not run successfully**: the Android Gradle Plugin cannot be resolved here. Not compiled, no tests run; CI compiles it and `SettingsPagesScreenshotTest` opens the new page (R85).
 
+## Latest results (2026-11-19, F204 Edit PDF position and wrap, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,051 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 20/20.
+- `edit-pdf-options-{light,dark}.png` rendered and looked at.
+- NOT run: anything on a device.
+
 ## Latest results (2026-11-19, F215 minor list, Linux cloud container, no Android SDK)
 
 - CI run 225 on `a2460c0` (F213 detection, F214 declutter, merged with F201–F202): source audit, Room schema check and **unit tests and lint passed** (6 min). Its Play bundle step was still running when the F215 push replaced the run, so the bundle and sideload APKs for this code are checked by the F215 run, not by 225.

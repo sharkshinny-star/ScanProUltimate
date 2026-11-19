@@ -274,4 +274,80 @@ class PdfTextEditorTest {
             reload(doc0).use { doc -> assertEquals(0xC62828, PdfTextEditor.spans(doc, 0).first { it.text == "Red words" }.colour) }
         }
     }
+    @Test fun rightAlignedWordsEndWhereTheOldOnesEnded() {
+        sample().use { doc0 ->
+            val total = PdfTextEditor.spans(doc0, 0)[1]
+            PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, total.index, "Total: 5", bold = true, italic = false, size = 18f, align = PdfTextEditor.Align.RIGHT)))
+            reload(doc0).use { doc ->
+                val after = PdfTextEditor.spans(doc, 0).first { it.text == "Total: 5" }
+                assertEquals(total.right, after.right, 0.6f)
+                assertTrue(after.left > total.left + 5f)
+            }
+        }
+    }
+
+    @Test fun centredWordsKeepTheMiddleOfTheOldOnes() {
+        sample().use { doc0 ->
+            val hello = PdfTextEditor.spans(doc0, 0)[0]
+            PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, hello.index, "Hi", bold = false, italic = false, size = 12f, align = PdfTextEditor.Align.CENTRE)))
+            reload(doc0).use { doc ->
+                val after = PdfTextEditor.spans(doc, 0).first { it.text == "Hi" }
+                assertEquals((hello.left + hello.right) / 2f, (after.left + after.right) / 2f, 0.6f)
+            }
+        }
+    }
+
+    @Test fun aLongLineWrapsAtThePagesRightEdge() {
+        sample().use { doc0 ->
+            val hello = PdfTextEditor.spans(doc0, 0)[0]
+            val long = "This sentence is much longer than the two words it replaces and has to run onto a second line to stay on the page it is written on"
+            // Without wrapping it runs off the page (A4 is 595 points wide).
+            sample().use { plain ->
+                PdfTextEditor.apply(plain, listOf(PdfTextEditor.Edit(0, hello.index, long, bold = false, italic = false, size = 12f)))
+                reload(plain).use { d -> assertTrue(PdfTextEditor.spans(d, 0).maxOf { it.right } > 595f) }
+            }
+            PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, hello.index, long, bold = false, italic = false, size = 12f, wrap = true)))
+            reload(doc0).use { doc ->
+                val lines = PdfTextEditor.spans(doc, 0).filter { it.fontSize == 12f }.sortedBy { it.top }
+                assertEquals(2, lines.size)
+                assertEquals(long, lines.joinToString(" ") { it.text })
+                lines.forEach { assertEquals(hello.left, it.left, 0.6f); assertTrue("right edge ${it.right}", it.right <= 523.5f) }
+                assertEquals(12f * 1.2f, lines[1].bottom - lines[0].bottom, 0.3f)
+            }
+        }
+    }
+
+    @Test fun aTypedLineBreakStartsANewLine() {
+        sample().use { doc0 ->
+            val hello = PdfTextEditor.spans(doc0, 0)[0]
+            PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, hello.index, "First line\nSecond", bold = false, italic = false, size = 12f, align = PdfTextEditor.Align.RIGHT)))
+            reload(doc0).use { doc ->
+                val spans = PdfTextEditor.spans(doc, 0)
+                val first = spans.first { it.text == "First line" }
+                val second = spans.first { it.text == "Second" }
+                assertEquals(14.4f, second.bottom - first.bottom, 0.3f)
+                // Both end where "Hello World" ended.
+                assertEquals(hello.right, first.right, 0.6f)
+                assertEquals(hello.right, second.right, 0.6f)
+            }
+        }
+    }
+
+    @Test fun newTextCanBeCentredOnTheTap() {
+        sample().use { doc0 ->
+            PdfTextEditor.apply(doc0, listOf(PdfTextEditor.Edit(0, PdfTextEditor.NEW, "Centred title", family = PdfTextEditor.Family.SANS, bold = true, italic = false, size = 16f, x = 297f, y = 300f, align = PdfTextEditor.Align.CENTRE)))
+            reload(doc0).use { doc ->
+                val s = PdfTextEditor.spans(doc, 0).first { it.text == "Centred title" }
+                assertEquals(297f, (s.left + s.right) / 2f, 0.6f)
+            }
+        }
+    }
+
+    @Test fun layoutBreaksAtSpacesAndInsideAWordTooLongForALine() {
+        val width: (String) -> Float = { it.length * 10f }
+        assertEquals(listOf("one two", "three"), PdfTextEditor.layout("one two three", 75f, width))
+        assertEquals(listOf("abcdefgh", "ij kl"), PdfTextEditor.layout("abcdefghij kl", 80f, width))
+        assertEquals(listOf("a", "", "b c"), PdfTextEditor.layout("a\n\nb c", null, width))
+        assertEquals(listOf("no wrapping here at all"), PdfTextEditor.layout("no wrapping here at all", null, width))
+    }
 }
