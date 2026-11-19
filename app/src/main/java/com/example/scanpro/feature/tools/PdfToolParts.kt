@@ -236,13 +236,27 @@ internal fun PdfResultPreview(
 /**
  * "How it works": the tool's own demonstration, with a word on what it does ([about] when the page gives one, else
  * the tool's one-line introduction). Folded when the page opens (declutter, 2026-11-19: it used to open at full height
- * above the file); one tap shows it, and it stays as left while the page is open.
+ * above the file), except on a new user's first visit to the tool; one tap shows or hides it, and it stays as left while
+ * the page is open.
  */
 @Composable
 internal fun ToolDemoCard(toolId: String?, about: String? = null) {
     val scene = toolId?.let { toolDemoScene(it) }
     if (scene == null && about == null) return
-    var open by rememberSaveable(toolId) { mutableStateOf(false) }
+    // Open the first time someone new to the app reaches this tool, so they see what it does without hunting for it;
+    // folded on every later visit until they tap it (owner, 2026-11-19). "New" is as for the other introductions
+    // (FirstRunHints: armed by finishing the welcome, re-armed by Settings > Show introductions again), so someone
+    // updating from an older version is not shown every card again.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val firstVisit = androidx.compose.runtime.remember(toolId) {
+        toolId != null && com.example.scanpro.data.FirstRunHints.isDue(context, com.example.scanpro.data.FirstRunHints.demoKey(toolId))
+    }
+    var open by rememberSaveable(toolId) { mutableStateOf(firstVisit) }
+    androidx.compose.runtime.LaunchedEffect(toolId) {
+        if (firstVisit && toolId != null) {
+            com.example.scanpro.data.FirstRunHints.markSeen(context, com.example.scanpro.data.FirstRunHints.demoKey(toolId))
+        }
+    }
     val stateText = stringResource(if (open) R.string.tool_demo_shown else R.string.tool_demo_hidden)
     Surface(
         shape = RoundedCornerShape(16.dp),

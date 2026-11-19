@@ -42,10 +42,12 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 <!-- BEGIN open-items: written by scripts/remaining-work.py from AUDIT_FINDINGS.md; do not edit by hand -->
 
-32 open items: 11 P1, 16 P2, 5 P3.
+33 open items: 12 P1, 16 P2, 5 P3.
 
 ### P1
 
+- **R86** (Device check; F218–F220). The 2026-11-19 animation, layout, rating and How-it-works changes were checked with rendered screens and unit tests only; no frame of motion was seen.
+  - Next: On a phone, release build: switch tabs and watch the highlight move; in the review of a 3-page scan switch Crop, Filters, Adjust, Reorder (page glides, no jump), in portrait and landscape; pick each filter (no cut border); open the camera from Home's QR code and Book pills (mode underlined and in view); save a scan and rate it with 5, then (Settings > Rate) with 2 stars (thanks at once; problem form, email opens with the rating line); after Clear data, open Merge and Compress (How it works open the first time, folded the second).
 - **R81** (Device check; F213). Detection changes measured on the desktop benchmark only (generated scenes, no real camera frames); the owner's report (paper, book, ID card, jumpy outline) was not reproduced on a phone.
   - Next: On the phone, release build: (1) an ID card on wood, on a dark desk and in the hand, in Document mode and ID card mode: outline on the whole card, not below its header band; ID card mode saves the card alone when it is outlined, the guide's contents otherwise; (2) an open book: one steady outline, no flipping between one page and the spread; (3) a page lying still: outline does not tremble, does not blink off on a blurred frame, and follows a moved phone without lag; (4) `ScanProAnalyzer` frame rate still smooth (colour edges and the wider straight-edge search add about 1.5 to 4 ms a frame on the desktop). If anything is still wrong, ask for 3 or 4 photos of it from the phone's own camera and run them through `scripts/scan-bench`.
 - **R80** (Device check; F210–F212). Page, convert and edit tool upgrades: unit tests pass in CI run 219; none of the screens has been seen on a phone.

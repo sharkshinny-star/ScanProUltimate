@@ -25,7 +25,7 @@ This checklist is intentionally conservative. Complete it against the Play Conso
 Current intended permissions are deliberately narrow. Re-check the merged release manifest.
 
 - [ ] Camera permission is explained contextually and only requested when entering the custom scanner.
-- [ ] **Release blocker until filed:** the manifest declares `MANAGE_EXTERNAL_STORAGE` (and `READ_EXTERNAL_STORAGE` up to Android 10) for the optional "Files on this phone" feature (F160–F163). Play rejects the bundle without an All files access declaration and video: file the draft in `PLAY_ALL_FILES_ACCESS.md`, or remove the feature and the permission before upload. No broad media, contacts, location, microphone, phone or SMS permission is declared (manifest read 2026-11-19).
+- [ ] **Release blocker until filed:** the manifest declares `MANAGE_EXTERNAL_STORAGE` (and `READ_EXTERNAL_STORAGE` up to Android 10) for the optional "Files on this phone" feature (F160–F163). Play rejects the bundle without an All files access declaration and video: file the draft in `PLAY_ALL_FILES_ACCESS.md`, or build the bundle without the permission (`-Pscanpro.allFilesAccess=false`, see `app/build.gradle.kts`). No broad media, contacts, location, microphone, phone or SMS permission is declared (manifest read 2026-11-19).
 - [ ] The hosted privacy policy says the same as the build: sections 2, 10 and 12 of `docs/privacy-policy/index.html` were corrected on 2026-11-19 (they said the app never asks for access to all files, and did not mention the backup and drink-water reminders).
 - [ ] Gallery import uses Android Photo Picker/SAF instead of broad storage access.
 - [ ] File sharing uses `FileProvider`/content URIs with temporary grants.
