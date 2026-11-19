@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Files access asked at start (F196) -->
+    <string name="ui_permission_files_title">Files on your phone</string>
+    <string name="ui_permission_files_body_settings">To find and open the PDFs, Word and Excel files and photos already on your phone. Read only, and nothing leaves your phone. Android opens a settings page next: turn on “Allow access to manage all files”, then come back.</string>
+    <string name="ui_permission_files_body_dialog">To find and open the PDFs, Word and Excel files and photos already on your phone. Read only, and nothing leaves your phone.</string>
+    <string name="files_start_title">See every document on your phone</string>
+    <string name="files_start_allow">Allow access</string>
+</resources>

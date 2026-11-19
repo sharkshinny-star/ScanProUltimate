@@ -104,4 +104,37 @@ class PhoneFilesTest {
         assertEquals("Download/Bills", PhoneFiles.folderOf("Download/Bills/x.pdf"))
         assertEquals("", PhoneFiles.folderOf("x.pdf"))
     }
+
+    @Test fun foldersListWhatIsDirectlyInsideWithCountsBelow() {
+        val bills = file("Gas.pdf", modified = 9_000, folder = "Download/Bills")
+        val files = all + bills
+        // At the top: one entry per top-level folder, counting every file at any depth below it.
+        val top = PhoneFiles.sortFolders(PhoneFiles.subfolders(files, ""), PhoneFileSort.NAME)
+        assertEquals(listOf("DCIM", "Documents", "Download"), top.map { it.name })
+        assertEquals(3, top.single { it.name == "Download" }.count)
+        assertEquals(9_000L, top.single { it.name == "Download" }.modified)
+        // The files at the top are only those with no folder.
+        assertEquals(setOf(sheet, notes), PhoneFiles.filesIn(files, "").toSet())
+        // Inside Download: its own two files and the Bills folder.
+        assertEquals(setOf(bill, report), PhoneFiles.filesIn(files, "Download").toSet())
+        assertEquals(listOf(PhoneFolder("Bills", "Download/Bills", 1, 9_000)), PhoneFiles.subfolders(files, "/Download/"))
+        assertEquals(3, PhoneFiles.countUnder(files, "Download"))
+        assertEquals(files.size, PhoneFiles.countUnder(files, ""))
+        // "Down" is not a folder, and must not match "Download".
+        assertEquals(0, PhoneFiles.countUnder(files, "Down"))
+    }
+
+    @Test fun foldersSortByNameNewestOrSize() {
+        val folders = listOf(PhoneFolder("b", "b", 5, 100), PhoneFolder("A", "A", 1, 300), PhoneFolder("c", "c", 9, 200))
+        assertEquals(listOf("A", "b", "c"), PhoneFiles.sortFolders(folders, PhoneFileSort.NAME).map { it.name })
+        assertEquals(listOf("A", "c", "b"), PhoneFiles.sortFolders(folders, PhoneFileSort.DATE).map { it.name })
+        assertEquals(listOf("c", "b", "A"), PhoneFiles.sortFolders(folders, PhoneFileSort.SIZE).map { it.name })
+    }
+
+    @Test fun downloadsAndPathSteps() {
+        assertEquals("Download", PhoneFiles.downloadsFolder(all))
+        assertNull(PhoneFiles.downloadsFolder(listOf(sheet, photo)))
+        assertEquals(listOf("Download", "Download/Bills"), PhoneFiles.pathSteps("Download/Bills/").map { it.path })
+        assertEquals(emptyList<PhoneFolder>(), PhoneFiles.pathSteps(""))
+    }
 }

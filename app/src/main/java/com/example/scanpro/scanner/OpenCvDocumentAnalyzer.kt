@@ -62,6 +62,69 @@ class OpenCvDocumentAnalyzer(
         return rowBytes
     }
 
+    private var uBytes = ByteArray(0)
+    private var vBytes = ByteArray(0)
+    private var chromaBytes = ByteArray(0)
+
+    private var planeBytes = ByteArray(0)
+
+    /**
+     * The frame's colour-strength map ([LiveChroma]) and its two colour-difference planes (one 2-channel Mat), each
+     * turned upright and cut to the viewport like the grey image; either is null when the frame has no usable colour
+     * planes. Reads the luma that [grayMatOf] left in the frame buffer, so it must be called after it, for the same frame.
+     */
+    private fun colourMatsOf(image: ImageProxy): Pair<Mat?, Mat?> {
+        val planes = image.planes
+        if (planes.size < 3 || frameBytes.size != image.width * image.height) return null to null
+        fun read(buffer: java.nio.ByteBuffer, into: ByteArray): ByteArray {
+            buffer.rewind()
+            val bytes = if (into.size == buffer.remaining()) into else ByteArray(buffer.remaining())
+            buffer.get(bytes, 0, bytes.size)
+            return bytes
+        }
+        uBytes = read(planes[1].buffer, uBytes)
+        vBytes = read(planes[2].buffer, vBytes)
+        val width = LiveChroma.width(image.width)
+        val height = LiveChroma.height(image.height)
+        if (width <= 0 || height <= 0) return null to null
+        val rowStride = planes[1].rowStride
+        val pixelStride = planes[1].pixelStride
+        if (chromaBytes.size != width * height) chromaBytes = ByteArray(width * height)
+        val chroma = if (!LiveChroma.compute(frameBytes, image.width, image.height, uBytes, vBytes, rowStride, pixelStride, chromaBytes)) null
+        else runCatching { uprightMat(image, height, width, CvType.CV_8UC1, chromaBytes) }.getOrNull()
+        if (planeBytes.size != 2 * width * height) planeBytes = ByteArray(2 * width * height)
+        val colourPlanes = if (!LiveChroma.planes(image.width, image.height, uBytes, vBytes, rowStride, pixelStride, planeBytes)) null
+        else runCatching { uprightMat(image, height, width, CvType.CV_8UC2, planeBytes) }.getOrNull()
+        return chroma to colourPlanes
+    }
+
+    /** [bytes] as a [rows] x [cols] Mat of [type] (a quarter-size map of the frame), turned upright and cut to the viewport. */
+    private fun uprightMat(image: ImageProxy, rows: Int, cols: Int, type: Int, bytes: ByteArray): Mat {
+        val source = Mat(rows, cols, type)
+        try {
+            source.put(0, 0, bytes)
+            val rotateCode = when (image.imageInfo.rotationDegrees) {
+                90 -> Core.ROTATE_90_CLOCKWISE
+                180 -> Core.ROTATE_180
+                270 -> Core.ROTATE_90_COUNTERCLOCKWISE
+                else -> -1
+            }
+            if (rotateCode < 0) return source.croppedToViewport(image, LiveChroma.STEP)
+            val rotated = Mat()
+            try {
+                Core.rotate(source, rotated, rotateCode)
+            } catch (error: Throwable) {
+                rotated.release()
+                throw error
+            }
+            source.release()
+            return rotated.croppedToViewport(image, LiveChroma.STEP)
+        } catch (error: Throwable) {
+            source.release()
+            throw error
+        }
+    }
+
     override fun analyze(image: ImageProxy) {
         if (!enabled || closed) {
             image.close()
@@ -86,8 +149,12 @@ class OpenCvDocumentAnalyzer(
             // Only the part of the frame the preview and the saved photo show is analysed, so the corners that
             // are found describe exactly the pixels the user sees and the capture keeps.
             val gray = toRotatedGrayMat(image).croppedToViewport(image)
+            // The colour-strength map from the same frame (R57); without it the detector works on brightness alone, as before.
+            // Its two colour-difference planes add colour edges (2026-11-19): a card's coloured band or a coloured page
+            // against a surface of the same brightness has no brightness edge at all.
+            val (chroma, colourPlanes) = runCatching { colourMatsOf(image) }.getOrDefault(null to null)
             try {
-                val raw = DocumentEdgeDetector.detect(gray)
+                val raw = DocumentEdgeDetector.detect(gray, chroma, colourPlanes)
                 var result = raw.copy(guidance = steadyGuidance(raw.guidance))
                 // Monotonic clock: unaffected by the user or the network changing the wall-clock time.
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -128,6 +195,8 @@ class OpenCvDocumentAnalyzer(
                 }
             } finally {
                 gray.release()
+                chroma?.release()
+                colourPlanes?.release()
             }
         } catch (error: Throwable) {
             // Analyser failures should never kill the camera pipeline. One bad frame is dropped quietly, but a
@@ -229,9 +298,11 @@ internal class Steadiness {
     }
 }
 
-private fun Mat.croppedToViewport(image: ImageProxy): Mat {
+/** Cuts this upright image to the part of the frame the preview shows; [step] is how many frame pixels one of its pixels covers. */
+private fun Mat.croppedToViewport(image: ImageProxy, step: Int = 1): Mat {
     val rect = image.cropRect
-    val box = rotateBox(IntBox(rect.left, rect.top, rect.right, rect.bottom), image.width, image.height, image.imageInfo.rotationDegrees)
+    val full = rotateBox(IntBox(rect.left, rect.top, rect.right, rect.bottom), image.width, image.height, image.imageInfo.rotationDegrees)
+    val box = if (step == 1) full else IntBox(full.left / step, full.top / step, full.right / step, full.bottom / step)
     val width = box.right - box.left
     val height = box.bottom - box.top
     val coversFrame = box.left <= 0 && box.top <= 0 && width >= cols() && height >= rows()

@@ -24,8 +24,11 @@ internal object MatFilters {
     private const val SHADOW_SIGMA = 30.0
     private const val PAPER_MAX_SATURATION = 59.0
     private const val FINGER_ESTIMATE_SIZE = 800.0
-    /** The illumination estimate never drops below this share of the paper level (see [illuminationEstimate]). */
-    private const val ILLUMINATION_FLOOR = 0.55
+    /** Black and white: with the lighting divided out (paper at 255), anything darker than this is solid ink. */
+    private const val SOLID_INK_LEVEL = 128.0
+    /** A tint on the brightest tones is taken for the light's colour between these saturations (0..255). */
+    private const val CAST_MIN_SATURATION = 12.0
+    private const val CAST_MAX_SATURATION = 80.0
 
     /** True when applying this look would change any pixel. */
     fun changesPixels(filter: PageFilter, adjustments: PageAdjustments): Boolean =
@@ -54,10 +57,10 @@ internal object MatFilters {
     internal fun applyNamedFilter(source: Mat, filter: PageFilter): Mat = when (filter) {
         PageFilter.ORIGINAL -> source
         PageFilter.AUTO -> smartAuto(source)
-        PageFilter.COLOR -> autoDocumentEnhance(source, colorBoost = true)
-        PageFilter.GRAY -> enhancedGrayscale(source)
-        PageFilter.BW -> adaptiveBlackWhite(source)
-        PageFilter.WHITEBOARD -> autoDocumentEnhance(source, colorBoost = true).then { whiteboard(it) }
+        PageFilter.COLOR -> colourDocument(source)
+        PageFilter.GRAY -> greyDocument(source)
+        PageFilter.BW -> blackWhiteDocument(source)
+        PageFilter.WHITEBOARD -> boardBase(source).then { whiteboard(it) }
     }
 
     internal fun applyUserAdjustments(source: Mat, adjustments: PageAdjustments): Mat {
@@ -71,47 +74,172 @@ internal object MatFilters {
      * is not flattened, which washed such pictures out: it gets white balance, automatic levels, a lift if it is
      * underexposed and a light sharpen, like a camera app's auto-enhance.
      */
-    internal fun smartAuto(rgb: Mat): Mat =
-        if (paperFraction(rgb) >= DOCUMENT_PAPER_FRACTION) autoDocument(rgb) else autoPhoto(rgb)
+    internal fun smartAuto(rgb: Mat): Mat {
+        val paper = paperStats(rgb)
+        return if (paper.fraction >= DOCUMENT_PAPER_FRACTION) autoDocument(rgb, paper.gains) else autoPhoto(rgb)
+    }
 
     /** Share of the picture that looks like paper: low saturation and close to the brightest tones in it. */
-    internal fun paperFraction(rgb: Mat): Double {
-        val small = Mat(); val hsv = Mat()
+    internal fun paperFraction(rgb: Mat): Double = paperStats(rgb).fraction
+
+    /** [fraction] of the picture that is paper, and the channel [gains] that take the light's tint off it (null: none). */
+    private class PaperStats(val fraction: Double, val gains: DoubleArray?)
+
+    /**
+     * Paper is judged after the light's tint is taken off (2026-11-18). A white sheet under a warm lamp photographs as
+     * cream, with a saturation just above the paper limit, so it used to count as "not a page": Auto Clean and Colour
+     * then gave it the photo treatment and left it yellow and unevenly lit. The tint is the colour of the brightest
+     * tones; it is only believed up to [CAST_MAX_SATURATION], so a sheet that really is coloured stays a picture.
+     */
+    private fun paperStats(rgb: Mat): PaperStats {
+        val small = Mat()
         try {
             val scale = min(1.0, 256.0 / max(rgb.cols(), rgb.rows()))
             Imgproc.resize(rgb, small, Size(), scale, scale, Imgproc.INTER_AREA)
-            Imgproc.cvtColor(small, hsv, Imgproc.COLOR_RGB2HSV)
-            val bytes = ByteArray((hsv.total() * 3).toInt())
-            hsv[0, 0, bytes]
-            val values = IntArray(bytes.size / 3) { bytes[it * 3 + 2].toInt() and 0xFF }
+            val bytes = ByteArray((small.total() * 3).toInt())
+            small[0, 0, bytes]
+            val n = bytes.size / 3
+            if (n == 0) return PaperStats(0.0, null)
+            fun channel(i: Int, c: Int) = bytes[i * 3 + c].toInt() and 0xFF
+            val values = IntArray(n) { max(channel(it, 0), max(channel(it, 1), channel(it, 2))) }
             val bright = percentile(values, 0.9)
-            var paper = 0
-            for (i in values.indices) {
-                val sat = bytes[i * 3 + 1].toInt() and 0xFF
-                if (sat < 45 && values[i] >= bright * 0.72) paper++
+            // The tint: the median colour of the brightest tones.
+            val histograms = Array(3) { IntArray(256) }
+            var top = 0
+            for (i in 0 until n) if (values[i] >= bright * 0.85) {
+                for (c in 0 until 3) histograms[c][channel(i, c)]++
+                top++
             }
-            return paper.toDouble() / values.size.coerceAtLeast(1)
+            val tint = DoubleArray(3) { c ->
+                var seen = 0
+                var median = 255
+                for (v in 0 until 256) { seen += histograms[c][v]; if (seen * 2 >= top) { median = v; break } }
+                median.toDouble().coerceAtLeast(1.0)
+            }
+            val strongest = tint.max()
+            val tintSaturation = (strongest - tint.min()) / strongest * 255.0
+            val gains = if (tintSaturation in CAST_MIN_SATURATION..CAST_MAX_SATURATION) DoubleArray(3) { strongest / tint[it] } else null
+            var paper = 0
+            for (i in 0 until n) {
+                var hi = 0.0
+                var lo = 255.0
+                for (c in 0 until 3) {
+                    val v = min(255.0, channel(i, c) * (gains?.get(c) ?: 1.0))
+                    if (v > hi) hi = v
+                    if (v < lo) lo = v
+                }
+                val saturation = if (hi <= 0.0) 0.0 else (hi - lo) / hi * 255.0
+                if (saturation < 45 && hi >= bright * 0.72) paper++
+            }
+            return PaperStats(paper.toDouble() / n, gains)
         } finally {
-            small.release(); hsv.release()
+            small.release()
         }
     }
 
-    private fun autoDocument(rgb: Mat): Mat {
-        val flat = removeShadows(rgb)
+    // Ink: pull the darkest few percent to black so faint print reads clearly; paper is already white.
+    private fun autoDocument(rgb: Mat, gains: DoubleArray?): Mat =
+        cleanPage(rgb, gains, inkQuantile = 0.02, inkCap = 110.0, white = 250.0, saturation = 1f, sharpen = 0.45)
+
+    /**
+     * A page of paper with its shadows and colour cast divided out (the paper turns white), the darkest
+     * [inkQuantile] of it pulled to black (never from above [inkCap], so a pale page is not crushed), everything
+     * from [white] up clipped to white, then [saturation] and an unsharp mask of [sharpen]. [gains] take the light's
+     * tint off first (see [paperStats]), so the shadow estimate recognises tinted paper as paper. Leaves [rgb] alone.
+     */
+    private fun cleanPage(
+        rgb: Mat, gains: DoubleArray?, inkQuantile: Double, inkCap: Double, white: Double, saturation: Float, sharpen: Double
+    ): Mat {
+        val flat = if (gains == null) removeShadows(rgb) else {
+            val balanced = Mat()
+            try {
+                Core.multiply(rgb, Scalar(gains[0], gains[1], gains[2]), balanced)
+                removeShadows(balanced)
+            } finally {
+                balanced.release()
+            }
+        }
         try {
-            // Ink: pull the darkest few percent to black so faint print reads clearly; paper is already white.
-            val ink = min(percentileOfGray(flat, 0.02), 110.0)
-            val lut = levelsLut(black = ink, white = 250.0, gains = doubleArrayOf(1.0, 1.0, 1.0), gamma = 1.0)
-            val leveled = Mat()
+            val ink = min(percentileOfGray(flat, inkQuantile), inkCap)
+            val lut = levelsLut(black = ink, white = white, gains = doubleArrayOf(1.0, 1.0, 1.0), gamma = 1.0)
+            var leveled = Mat()
             try {
                 Core.LUT(flat, lut, leveled)
             } finally {
                 lut.release()
             }
-            return unsharp(leveled, amount = 0.45)
+            if (saturation != 1f) leveled = leveled.then { colorMatrix(it, saturation = saturation, contrast = 1f, brightness = 0f) }
+            return unsharp(leveled, amount = sharpen)
         } finally {
             flat.release()
         }
+    }
+
+    /**
+     * Colour (2026-11-18): the paper evened out and lifted to white like Auto Clean, but the colours and the tones in
+     * between kept close to the page: a light black point, a little saturation, a gentle sharpen. It used to even the
+     * light out in Lab and then run CLAHE, which on a flat sheet has nothing to work on but the paper itself: it left
+     * the page mid-grey and mottled, amplified sensor noise and put a bright glow round and inside every solid block
+     * (seen in `scripts/scan-bench` `enhance dump=`). A picture that is not a page (see [paperFraction]) gets the
+     * photo treatment, as in Auto Clean.
+     */
+    internal fun colourDocument(rgb: Mat): Mat {
+        val paper = paperStats(rgb)
+        return if (paper.fraction >= DOCUMENT_PAPER_FRACTION) {
+            cleanPage(rgb, paper.gains, inkQuantile = 0.01, inkCap = 56.0, white = 246.0, saturation = 1.08f, sharpen = 0.35)
+        } else autoPhoto(rgb)
+    }
+
+    /** Greyscale: [colourDocument] with the colour taken out, so the paper is white and even here too. */
+    internal fun greyDocument(rgb: Mat): Mat {
+        val colour = colourDocument(rgb)
+        val gray = Mat()
+        val out = Mat()
+        try {
+            Imgproc.cvtColor(colour, gray, Imgproc.COLOR_RGB2GRAY)
+            Imgproc.cvtColor(gray, out, Imgproc.COLOR_GRAY2RGB)
+            return out
+        } catch (error: Throwable) {
+            out.release()
+            throw error
+        } finally {
+            colour.release(); gray.release()
+        }
+    }
+
+    /**
+     * Black and white (2026-11-18): [adaptiveBlackWhite] for the strokes, plus everything that is solidly dark once
+     * the lighting is divided out. The adaptive rule alone compares each pixel with its neighbourhood, so the inside
+     * of a filled block (a logo, a table header, a stamp, a photo) matched its surroundings and came out white with
+     * only an outline left.
+     */
+    internal fun blackWhiteDocument(rgb: Mat): Mat {
+        val out = adaptiveBlackWhite(rgb)
+        val flat = removeShadows(rgb)
+        val gray = Mat()
+        val solid = Mat()
+        try {
+            Imgproc.cvtColor(flat, gray, Imgproc.COLOR_RGB2GRAY)
+            Imgproc.threshold(gray, solid, SOLID_INK_LEVEL, 255.0, Imgproc.THRESH_BINARY)
+            // A block right at the level would come out speckled; the median makes each neighbourhood one or the other.
+            Imgproc.medianBlur(solid, solid, 5)
+            Imgproc.cvtColor(solid, flat, Imgproc.COLOR_GRAY2RGB)
+            Core.min(out, flat, out)
+            return out
+        } catch (error: Throwable) {
+            out.release()
+            throw error
+        } finally {
+            flat.release(); gray.release(); solid.release()
+        }
+    }
+
+    /** What [whiteboard] works on: a clean page with stronger colours, or the photo treatment for anything else. */
+    private fun boardBase(rgb: Mat): Mat {
+        val paper = paperStats(rgb)
+        return if (paper.fraction >= DOCUMENT_PAPER_FRACTION) {
+            cleanPage(rgb, paper.gains, inkQuantile = 0.02, inkCap = 80.0, white = 244.0, saturation = 1.25f, sharpen = 0.3)
+        } else autoPhoto(rgb)
     }
 
     private fun autoPhoto(rgb: Mat): Mat {
@@ -212,144 +340,6 @@ internal object MatFilters {
     }
 
     /**
-     * Premium document enhancement: normalise uneven illumination in LAB luminance,
-     * apply local contrast (CLAHE), edge-preserving denoise and a restrained unsharp mask.
-     * This improves both visual output and OCR without sending pixels off-device.
-     */
-    /**
-     * An estimate of the illumination on the page, for dividing out shadows: the luminance at a low resolution with
-     * the dark content closed away, then smoothed. A plain blur of the page itself darkens wherever text is dense,
-     * so dividing by it over-brightens a halo around every paragraph (measured by `scripts/scan-bench` `enhance`
-     * before this estimate: a background spread of about 20 grey levels and a glow of about 20 around the strokes;
-     * after: both under 3). The closing kernel is wider than a text line, so ink vanishes from the estimate, while
-     * blocks larger than it (photos, logos) survive; the floor at [ILLUMINATION_FLOOR] of the paper level keeps such
-     * a block dark instead of treating it as a shadow to lift.
-     */
-    private fun illuminationEstimate(luminance: Mat): Mat {
-        val longSide = max(luminance.cols(), luminance.rows()).toDouble()
-        val scale = (SHADOW_ESTIMATE_SIZE / longSide).coerceAtMost(1.0)
-        val small = Mat()
-        val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, Size(21.0, 21.0))
-        val paperMask = Mat()
-        val masked = Mat()
-        val weight = Mat()
-        try {
-            Imgproc.resize(luminance, small, Size(luminance.cols() * scale, luminance.rows() * scale), 0.0, 0.0, Imgproc.INTER_AREA)
-            Imgproc.morphologyEx(small, small, Imgproc.MORPH_CLOSE, kernel)
-            // The paper level is where most of the (closed) page sits. Blocks that stay darker (a photo, a logo)
-            // are masked out and their area filled from the paper around them, so the estimate neither lifts them
-            // to white nor leaves a bright ring on the paper beside them.
-            val histogram = histogramOf(small)
-            val target = small.rows().toLong() * small.cols() * 6 / 10
-            var seen = 0L
-            var paper = 255
-            for (v in 0..255) {
-                seen += histogram[v]
-                if (seen >= target) { paper = v; break }
-            }
-            Imgproc.threshold(small, paperMask, paper * ILLUMINATION_FLOOR, 1.0, Imgproc.THRESH_BINARY)
-            small.convertTo(masked, CvType.CV_32F)
-            paperMask.convertTo(weight, CvType.CV_32F)
-            Core.multiply(masked, weight, masked)
-            Imgproc.GaussianBlur(masked, masked, Size(0.0, 0.0), 10.0)
-            Imgproc.GaussianBlur(weight, weight, Size(0.0, 0.0), 10.0)
-            Core.max(weight, Scalar(1e-4), weight)
-            Core.divide(masked, weight, masked)
-            // A page that is mostly one dark block leaves no paper to fill from; the floor keeps the divide sane.
-            Core.max(masked, Scalar(paper * ILLUMINATION_FLOOR), masked)
-            masked.convertTo(small, CvType.CV_8U)
-            val background = Mat()
-            Imgproc.resize(small, background, luminance.size(), 0.0, 0.0, Imgproc.INTER_LINEAR)
-            return background
-        } finally {
-            small.release()
-            kernel.release()
-            paperMask.release()
-            masked.release()
-            weight.release()
-        }
-    }
-
-    /**
-     * Shifts Lab [a] and [b] so the paper reads neutral grey, killing a warm or cool light cast. The cast is read
-     * from the pixels that are bright in [luminance] (the paper); a page with no cast shifts by nearly nothing.
-     */
-    private fun neutraliseCast(luminance: Mat, a: Mat, b: Mat) {
-        val brightMask = Mat()
-        try {
-            Imgproc.threshold(luminance, brightMask, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU)
-            val meanA = Core.mean(a, brightMask).`val`[0]
-            val meanB = Core.mean(b, brightMask).`val`[0]
-            // At most a gentle pull: a strongly coloured scene (a poster) is not paper to neutralise.
-            val shiftA = (128.0 - meanA).coerceIn(-14.0, 14.0)
-            val shiftB = (128.0 - meanB).coerceIn(-14.0, 14.0)
-            if (kotlin.math.abs(shiftA) > 0.8) Core.add(a, Scalar(shiftA), a)
-            if (kotlin.math.abs(shiftB) > 0.8) Core.add(b, Scalar(shiftB), b)
-        } finally {
-            brightMask.release()
-        }
-    }
-
-    /** The grey-level histogram of a single-channel image, for [percentile]. */
-    private fun histogramOf(gray: Mat): IntArray {
-        val hist = Mat()
-        try {
-            Imgproc.calcHist(listOf(gray), org.opencv.core.MatOfInt(0), Mat(), hist, org.opencv.core.MatOfInt(256), org.opencv.core.MatOfFloat(0f, 256f))
-            val values = FloatArray(256)
-            hist.get(0, 0, values)
-            return IntArray(256) { values[it].toInt() }
-        } finally {
-            hist.release()
-        }
-    }
-
-    internal fun autoDocumentEnhance(rgb: Mat, colorBoost: Boolean): Mat {
-        val lab = Mat()
-        val channels = mutableListOf<Mat>()
-        val background = Mat()
-        val normalized = Mat()
-        val enhanced = Mat()
-        val denoised = Mat()
-        val blurred = Mat()
-        val sharpened = Mat()
-        try {
-            Imgproc.cvtColor(rgb, lab, Imgproc.COLOR_RGB2Lab)
-            Core.split(lab, channels)
-            val luminance = channels[0]
-            // The lighting's colour cast sits in a and b; the paper says how far from neutral it is.
-            neutraliseCast(luminance, channels[1], channels[2])
-
-            // Content-free illumination estimate. Dividing by it suppresses page shadows without the halo a plain
-            // blur leaves around text (see illuminationEstimate).
-            illuminationEstimate(luminance).let { it.copyTo(background); it.release() }
-            Core.divide(luminance, background, normalized, 235.0)
-            val clahe = Imgproc.createCLAHE(if (colorBoost) 2.0 else 2.35, Size(8.0, 8.0))
-            try {
-                clahe.apply(normalized, luminance)
-            } finally {
-                clahe.collectGarbage()
-            }
-            Core.merge(channels, lab)
-            Imgproc.cvtColor(lab, enhanced, Imgproc.COLOR_Lab2RGB)
-
-            Imgproc.bilateralFilter(enhanced, denoised, 5, 34.0, 34.0)
-            Imgproc.GaussianBlur(denoised, blurred, Size(0.0, 0.0), 1.1)
-            Core.addWeighted(denoised, 1.22, blurred, -0.22, 0.0, sharpened)
-            return if (colorBoost) {
-                colorMatrix(sharpened, saturation = 1.10f, contrast = 1.04f, brightness = 1f).also { sharpened.release() }
-            } else {
-                sharpened
-            }
-        } catch (error: Throwable) {
-            sharpened.release()
-            throw error
-        } finally {
-            channels.forEach(Mat::release)
-            lab.release(); background.release(); normalized.release(); enhanced.release(); denoised.release(); blurred.release()
-        }
-    }
-
-    /**
      * Evens out shadows and lighting: every colour channel is divided by an estimate of the bare paper under it.
      * The estimate is made at low resolution from text-free (dilated), low-saturation pixels only, so coloured
      * blocks such as logos and photos keep their colour instead of being washed out to white.
@@ -447,27 +437,6 @@ internal object MatFilters {
         } finally {
             listOf(small, ycc, skin, labels, stats, centroids, keep, part, filled, filledFull, maskFull, open, close)
                 .forEach(Mat::release)
-        }
-    }
-
-    internal fun enhancedGrayscale(rgb: Mat): Mat {
-        val gray = Mat()
-        val background = Mat()
-        val normalized = Mat()
-        val out = Mat()
-        try {
-            Imgproc.cvtColor(rgb, gray, Imgproc.COLOR_RGB2GRAY)
-            illuminationEstimate(gray).let { it.copyTo(background); it.release() }
-            Core.divide(gray, background, normalized, 235.0)
-            val clahe = Imgproc.createCLAHE(2.4, Size(8.0, 8.0))
-            try { clahe.apply(normalized, normalized) } finally { clahe.collectGarbage() }
-            Imgproc.cvtColor(normalized, out, Imgproc.COLOR_GRAY2RGB)
-            return out
-        } catch (error: Throwable) {
-            out.release()
-            throw error
-        } finally {
-            gray.release(); background.release(); normalized.release()
         }
     }
 

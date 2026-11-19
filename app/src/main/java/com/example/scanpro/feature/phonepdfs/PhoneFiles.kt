@@ -148,4 +148,59 @@ object PhoneFiles {
 
     /** The parent folder of [relativePath] for display, e.g. "Download/Bills/x.pdf" gives "Download/Bills". */
     fun folderOf(relativePath: String): String = relativePath.trim('/').substringBeforeLast('/', "")
+
+    /** The files sitting directly in the folder [path] ("" is the top of the phone's storage). */
+    fun filesIn(files: List<PhoneFile>, path: String): List<PhoneFile> {
+        val base = path.trim('/')
+        return files.filter { it.folder.trim('/') == base }
+    }
+
+    /**
+     * The folders directly inside [path] ("" is the top of the storage) that hold listed files, at any depth below
+     * them, with how many and when the newest changed. Folders with no listed file are not shown.
+     */
+    fun subfolders(files: List<PhoneFile>, path: String): List<PhoneFolder> {
+        val base = path.trim('/')
+        val prefix = if (base.isEmpty()) "" else "$base/"
+        val groups = LinkedHashMap<String, MutableList<PhoneFile>>()
+        for (file in files) {
+            val folder = file.folder.trim('/')
+            if (folder.isEmpty() || folder == base || !folder.startsWith(prefix)) continue
+            val name = folder.removePrefix(prefix).substringBefore('/')
+            if (name.isNotEmpty()) groups.getOrPut(name) { ArrayList() } += file
+        }
+        return groups.map { (name, inside) -> PhoneFolder(name, prefix + name, inside.size, inside.maxOf { it.modified }) }
+    }
+
+    /** Folders in the list's order: by name, by newest file, or by how many files they hold. */
+    fun sortFolders(folders: List<PhoneFolder>, sort: PhoneFileSort, ascending: Boolean = defaultAscending(sort)): List<PhoneFolder> {
+        val byName = compareBy<PhoneFolder, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
+        val comparator = when (sort) {
+            PhoneFileSort.NAME -> byName
+            PhoneFileSort.DATE -> compareBy<PhoneFolder> { it.modified }.then(byName)
+            PhoneFileSort.SIZE -> compareBy<PhoneFolder> { it.count }.then(byName)
+        }
+        return folders.sortedWith(if (ascending) comparator else comparator.reversed())
+    }
+
+    /** How many listed files are in [path] or below it. */
+    fun countUnder(files: List<PhoneFile>, path: String): Int {
+        val base = path.trim('/')
+        if (base.isEmpty()) return files.size
+        return files.count { val folder = it.folder.trim('/'); folder == base || folder.startsWith("$base/") }
+    }
+
+    /** The downloads folder as this phone names it ("Download" on most), or null when no listed file is in one. */
+    fun downloadsFolder(files: List<PhoneFile>): String? = files.asSequence()
+        .map { it.folder.trim('/').substringBefore('/') }
+        .firstOrNull { it.equals("Download", ignoreCase = true) || it.equals("Downloads", ignoreCase = true) }
+
+    /** The folders from the top down to [path], for the path bar: "Download/Bills" gives "Download", "Download/Bills". */
+    fun pathSteps(path: String): List<PhoneFolder> {
+        val parts = path.trim('/').split('/').filter { it.isNotEmpty() }
+        return parts.indices.map { i -> PhoneFolder(parts[i], parts.take(i + 1).joinToString("/"), 0, 0) }
+    }
 }
+
+/** A folder in the Folders view: its own [name], its [path] from the top of the storage, and the listed files in or below it. */
+data class PhoneFolder(val name: String, val path: String, val count: Int, val modified: Long)

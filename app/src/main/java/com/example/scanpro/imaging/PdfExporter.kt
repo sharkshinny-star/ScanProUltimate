@@ -31,7 +31,7 @@ object PdfExporter {
     private const val LETTER_HEIGHT = 792
     private const val LEGAL_WIDTH = 612
     private const val LEGAL_HEIGHT = 1008
-    private const val MARGIN = 18f
+    internal const val MARGIN = 18f
     private const val MAX_WORDS_PER_PAGE = 6000
 
     /** A page picture waiting to be placed under the page's text layer, as a JPEG file. */
@@ -41,9 +41,11 @@ object PdfExporter {
      * JPEG quality for the page pictures. Android's PdfDocument stores a drawn bitmap as lossless pixels, which made
      * one scanned page 15 MB; as JPEG it is a few hundred kilobytes and looks the same at these levels.
      */
-    private fun jpegQualityFor(quality: PdfQuality): Int = when (quality) {
-        PdfQuality.HIGH -> 90
-        PdfQuality.BALANCED -> 80
+    internal fun jpegQualityFor(quality: PdfQuality): Int = when (quality) {
+        // Raised 2026-11-18 from 90 and 80 with the page sizes (see PdfQuality): at 80 the edges of small print showed
+        // JPEG ringing.
+        PdfQuality.HIGH -> 92
+        PdfQuality.BALANCED -> 85
         PdfQuality.SMALL -> 65
     }
 
@@ -63,7 +65,9 @@ object PdfExporter {
         pageNumbers: Boolean,
         decode: (path: String, maxDimension: Int) -> Bitmap? = ImageProcessor::decodeScaled,
         beforePage: (number: Int, total: Int) -> Unit = { _, _ -> },
-        pointSizes: List<Pair<Int, Int>>? = null
+        pointSizes: List<Pair<Int, Int>>? = null,
+        /** The white border around each picture, in points (Images to PDF lets the person choose it). */
+        margin: Float = MARGIN
     ) {
         userRequire(pages.isNotEmpty(), R.string.err_document_has_no_pages)
         destination.parentFile?.mkdirs()
@@ -73,10 +77,10 @@ object PdfExporter {
         val scratch = File(destination.parentFile ?: File("."), ".pdf_jpeg_${UUID.randomUUID()}")
         try {
             scratch.mkdirs()
-            val images = write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, scratch, pointSizes)
+            val images = write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, scratch, pointSizes, margin)
             runCatching { embedJpegs(destination, images) }.getOrElse { failure ->
                 android.util.Log.w("PdfExporter", "JPEG embedding failed; wrote the larger lossless PDF instead", failure)
-                write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, null, pointSizes)
+                write(pages, destination, quality, pageSize, searchable, pageNumbers, decode, beforePage, null, pointSizes, margin)
             }
         } finally {
             scratch.deleteRecursively()
@@ -117,7 +121,8 @@ object PdfExporter {
         decode: (path: String, maxDimension: Int) -> Bitmap?,
         beforePage: (number: Int, total: Int) -> Unit,
         jpegDir: File?,
-        pointSizes: List<Pair<Int, Int>>?
+        pointSizes: List<Pair<Int, Int>>?,
+        margin: Float = MARGIN
     ): List<PageImage> {
         val placed = ArrayList<PageImage>()
         val pdf = PdfDocument()
@@ -127,7 +132,7 @@ object PdfExporter {
                 // Fail loudly: silently skipping a page would produce a short PDF with wrong page numbers.
                 val bitmap = decode(pageModel.imagePath, quality.maxImageDimension)
                     ?: userError(R.string.err_could_not_read_pdf_page, index + 1)
-                val layout = layoutPage(pageSize, pointSizes?.getOrNull(index), bitmap.width, bitmap.height, pageNumbers)
+                val layout = layoutPage(pageSize, pointSizes?.getOrNull(index), bitmap.width, bitmap.height, pageNumbers, margin)
                 val pageWidth = layout.pageWidth
                 val pageHeight = layout.pageHeight
                 val info = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
@@ -265,9 +270,9 @@ object PdfExporter {
      * The page for one picture: [pointSize] keeps that size with the picture edge to edge (Compress PDF rebuilding a
      * PDF's own pages); otherwise [pageSize] decides and the picture is centred inside the margin.
      */
-    internal fun layoutPage(pageSize: PdfPageSize, pointSize: Pair<Int, Int>?, imageWidth: Int, imageHeight: Int, pageNumbers: Boolean): PageLayout {
+    internal fun layoutPage(pageSize: PdfPageSize, pointSize: Pair<Int, Int>?, imageWidth: Int, imageHeight: Int, pageNumbers: Boolean, border: Float = MARGIN): PageLayout {
         val (pageWidth, pageHeight) = pointSize ?: pageDimensions(pageSize, imageWidth, imageHeight)
-        val margin = if (pointSize != null) 0f else MARGIN
+        val margin = if (pointSize != null) 0f else border.coerceIn(0f, 72f)
         val bottomReserve = if (pageNumbers) 18f else 0f
         val scale = min(
             (pageWidth - margin * 2) / imageWidth.toFloat(),

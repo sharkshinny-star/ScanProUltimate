@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home-screen widget (F197). Machine translation, not yet reviewed by a speaker. -->
+    <string name="widget_tools">टूल</string>
+    <string name="widget_files">फ़ाइलें</string>
+    <string name="widget_scan_document">दस्तावेज़ स्कैन करें</string>
+    <string name="widget_large_subtitle">अपने फ़ोन पर स्कैन, साइन और कन्वर्ट करें</string>
+</resources>

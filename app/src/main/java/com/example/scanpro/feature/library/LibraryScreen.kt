@@ -1,5 +1,9 @@
 package com.example.scanpro.feature.library
 
+import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.foundation.verticalScroll
+
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.TextButton
@@ -282,7 +286,7 @@ fun LibraryRoute(
         },
         onPhonePdfs = onPhonePdfs,
         // Files on this phone (F168): Home's section, the card above My documents and the On this phone pane.
-        homePhoneFiles = if (mode != ScanProDestinations.HOME) null else {
+        homePhoneFiles = if (mode != ScanProDestinations.HOME || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
             {
                 com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
                     actions = phoneFileActions,
@@ -295,7 +299,7 @@ fun LibraryRoute(
                 )
             }
         },
-        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed) null else {
+        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
             {
                 com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
                     actions = phoneFileActions,
@@ -704,13 +708,16 @@ internal fun LibraryScreen(
             } else {
                 Column(Modifier.fillMaxSize().widthIn(max = 1100.dp)) {
                     // Files: ScanPro's own documents, or every file on the phone (F168).
-                    if (phoneFilesPane != null && !selecting) {
+                    // Kept while selecting, only disabled (2026-11-18): hiding it moved the list 48dp up under the finger
+                    // that had just long-pressed a document.
+                    if (phoneFilesPane != null) {
                         androidx.compose.material3.SingleChoiceSegmentedButtonRow(
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
                         ) {
                             listOf(R.string.phone_files_tab_mine, R.string.phone_files_tab_phone).forEachIndexed { index, label ->
                                 SegmentedButton(
                                     selected = phoneFilesTab == (index == 1),
+                                    enabled = !selecting,
                                     onClick = { phoneFilesTab = index == 1 },
                                     shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 2),
                                     label = { Text(stringResource(label), maxLines = 1, overflow = TextOverflow.Ellipsis) }
@@ -1041,7 +1048,11 @@ private fun EmptyLibrary(
 ) {
     val fresh = query.isBlank() && !favoritesOnly && folder.isBlank()
     Box(Modifier.fillMaxSize().padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(max = 360.dp)) {
+        // Scrolls when it doesn't fit (a phone on its side, a 2x font): the buttons at the bottom were cut off.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.widthIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(vertical = 16.dp)
+        ) {
             IconTile(
                 icon = when {
                     query.isNotBlank() -> Icons.Rounded.Search
@@ -1180,7 +1191,8 @@ private fun HomeDashboard(
             ScanHeroCard(
                 onStartScan = onStartScan,
                 enabled = !busy,
-                compact = documentCount > 0,
+                // Compact until the first library read too: it started full size and shrank on every cold start.
+                compact = documentCount > 0 || overview.revision == 0L,
                 onQuickScan = onQuickScan,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -1275,7 +1287,8 @@ private fun HomeDashboard(
                         now = now
                     )
                 }
-                com.example.scanpro.feature.tools.HomeRecentRow(items)
+                // A fresh row per chip, so a new list starts at its beginning rather than at the old one's scroll.
+                androidx.compose.runtime.key(recentKind) { com.example.scanpro.feature.tools.HomeRecentRow(items) }
             }
         }
         // Files on this phone (F168): the access card until granted or closed, then the newest files with See all.
@@ -1380,15 +1393,16 @@ private fun ScanHeroCard(
     // A scan beam sweeps down the page glyph and back, like the scanner finding a page. Read while drawing,
     // so it never recomposes the card; still when animations are off.
     val motion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
-    val beam = androidx.compose.animation.core.rememberInfiniteTransition(label = "hero").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            androidx.compose.animation.core.tween(2_400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
-            androidx.compose.animation.core.RepeatMode.Reverse
-        ),
-        label = "beam"
-    )
+    // Overhaul 2026-11-18: the beam used to sweep forever, redrawing Home every frame for as long as it was open (battery,
+    // and frames taken from scrolling). It now sweeps down and back once when Home appears, then rests at the top.
+    val beam = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(motion) {
+        if (!motion) return@LaunchedEffect
+        val sweep = androidx.compose.animation.core.tween<Float>(1_400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+        beam.snapTo(0f)
+        beam.animateTo(1f, sweep)
+        beam.animateTo(0f, sweep)
+    }
     Box(
         modifier
             .fillMaxWidth()
@@ -1593,7 +1607,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
 /** Picks an existing folder, types a new one, or takes the documents out of any folder. */
 @Composable
 private fun MoveToFolderDialog(folders: List<String>, count: Int, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
-    var name by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(pluralStringResource(R.plurals.lib_move_documents_title, count, count)) },

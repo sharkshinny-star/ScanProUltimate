@@ -353,26 +353,32 @@ internal class PageOrganiser(private val store: DocumentStore, private val trash
         val source = File(sourceDir, "book_$id.jpg")
         val rendered = File(renderedDir, "book_$id.jpg")
         try {
-            ImageProcessor.saveBitmapJpeg(half, source, 98)
-            ImageProcessor.saveBitmapJpeg(half, rendered, 96)
-        } finally {
-            if (half !== bitmap) half.recycle()
+            try {
+                ImageProcessor.saveBitmapJpeg(half, source, 98)
+                ImageProcessor.saveBitmapJpeg(half, rendered, 96)
+            } finally {
+                if (half !== bitmap) half.recycle()
+            }
+            val read = try {
+                ocr.recognizeDetailed(rendered, script)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                OcrResult("", emptyList())
+            }
+            return ScanPage(
+                id = id,
+                documentId = docId,
+                position = index,
+                sourcePath = source.absolutePath,
+                imagePath = rendered.absolutePath,
+                ocrText = read.text,
+                ocrWords = read.words
+            )
+        } catch (error: Throwable) {
+            source.delete()
+            rendered.delete()
+            throw error
         }
-        val read = try {
-            ocr.recognizeDetailed(rendered, script)
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            OcrResult("", emptyList())
-        }
-        return ScanPage(
-            id = id,
-            documentId = docId,
-            position = index,
-            sourcePath = source.absolutePath,
-            imagePath = rendered.absolutePath,
-            ocrText = read.text,
-            ocrWords = read.words
-        )
     }
 }

@@ -256,4 +256,14 @@
     <string name="home_recent_files">हाल की फ़ाइलें</string>
     <string name="home_recent_opened">खोली गईं</string>
     <string name="home_recent_scans">स्कैन</string>
+    <string name="settings_section_about">ScanPro के बारे में</string>
+    <string name="settings_group_more">और</string>
+    <string name="settings_about_tagline">एक दस्तावेज़ स्कैनर और PDF टूलकिट जो आपके फ़ोन पर ऑफ़लाइन काम करता है।</string>
+    <string name="settings_about_open_source">ओपन-सोर्स सॉफ़्टवेयर</string>
+    <string name="settings_about_open_source_body">ScanPro इन लाइब्रेरी पर बना है। इन पर काम करने वाले सभी लोगों का धन्यवाद।</string>
+    <string name="settings_group_general">सामान्य</string>
+    <string name="settings_group_data">डेटा और गोपनीयता</string>
+    <string name="settings_stat_documents">दस्तावेज़</string>
+    <string name="settings_stat_storage">उपयोग किया गया स्टोरेज</string>
+    <string name="settings_stat_recycle_bin">रीसायकल बिन में</string>
 </resources>

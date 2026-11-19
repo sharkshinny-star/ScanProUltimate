@@ -10,14 +10,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,14 +25,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,20 +51,25 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.Eyebrow
+import com.example.scanpro.core.designsystem.InkColourRow
 import com.example.scanpro.imaging.ImageProcessor
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Ink name resource and colour. */
-private val InkColors = listOf(R.string.doc_ink_black to Color(0xFF111111), R.string.doc_ink_blue to Color(0xFF1A3FB8))
+val InkColors = listOf(
+    R.string.doc_ink_black to Color(0xFF111111),
+    R.string.doc_ink_blue to Color(0xFF1A3FB8),
+    R.string.tools_watermark_color_red to Color(0xFFD32F2F),
+    R.string.tools_watermark_color_grey to Color(0xFF757575)
+)
 
 /**
  * Draw a signature, or tap one saved earlier. New signatures are kept for next time unless unticked;
@@ -118,6 +120,12 @@ fun SignaturePadDialog(
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
                         .semantics { contentDescription = padDescription }
                         .onSizeChanged { padSize = it }
+                        // A tap is a dot (the dot on an i, a full stop): shorter than the touch slop, it used to vanish.
+                        .pointerInput(Unit) {
+                            detectTapGestures { point ->
+                                strokes = strokes + listOf(listOf(point, point))
+                            }
+                        }
                         .pointerInput(Unit) {
                             detectDragGestures(
                                 onDragStart = { start ->
@@ -145,41 +153,41 @@ fun SignaturePadDialog(
                         }
                     }
                 }
+                InkColourRow(
+                    presets = InkColors,
+                    selected = ink,
+                    onSelect = { ink = it },
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                // Its own full-width row: squeezed beside the swatches the label wrapped one letter per line.
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .toggleable(value = keep, role = Role.Checkbox, onValueChange = { keep = it })
+                        .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    InkColors.forEach { (nameRes, color) ->
-                        val chosen = ink == color
-                        val inkDescription = stringResource(R.string.doc_ink_description, stringResource(nameRes))
-                        // The swatch stays 28dp; the 48dp minimum is invisible touch area around it.
-                        Box(
-                            Modifier
-                                .padding(end = 8.dp)
-                                .minimumInteractiveComponentSize()
-                                .size(28.dp)
-                                .background(color, CircleShape)
-                                .border(if (chosen) 3.dp else 1.dp, if (chosen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                                .clickable(role = Role.RadioButton) { ink = color }
-                                .semantics { contentDescription = inkDescription; selected = chosen }
+                    Checkbox(checked = keep, onCheckedChange = null, modifier = Modifier.padding(end = 4.dp))
+                    Column {
+                        Text(stringResource(R.string.doc_save_for_next_time), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            stringResource(R.string.doc_save_for_next_time_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Row(
-                        Modifier.toggleable(value = keep, role = Role.Checkbox, onValueChange = { keep = it }),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(checked = keep, onCheckedChange = null)
-                        Text(stringResource(R.string.doc_save_for_next_time), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp))
                     }
                 }
             }
         },
         confirmButton = {
+            val strokePx = with(androidx.compose.ui.platform.LocalDensity.current) { 4.dp.toPx() }
             TextButton(
                 enabled = strokes.any { it.size > 1 } && padSize.width > 0,
                 onClick = {
-                    onConfirm(signatureBitmap(strokes, padSize, ink.toArgb()), keep)
+                    // The same width as drawn on the pad: a fixed 6px made the placed signature half as thick on a 3x phone.
+                    onConfirm(signatureBitmap(strokes, padSize, ink.toArgb(), strokePx), keep)
                 }
             ) { Text(stringResource(R.string.doc_place_signature)) }
         },
@@ -229,7 +237,7 @@ private fun SavedSignature(file: File, onClick: () -> Unit, onLongClick: () -> U
     }
 }
 
-private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize, inkColor: Int): Bitmap {
+private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize, inkColor: Int, strokePx: Float = 6f): Bitmap {
     val width = size.width.coerceAtLeast(1)
     val height = size.height.coerceAtLeast(1)
     val bitmap = createBitmap(width, height)
@@ -240,7 +248,7 @@ private fun signatureBitmap(strokes: List<List<Offset>>, size: IntSize, inkColor
         style = AndroidPaint.Style.STROKE
         strokeCap = AndroidPaint.Cap.ROUND
         strokeJoin = AndroidPaint.Join.ROUND
-        strokeWidth = 6f
+        strokeWidth = strokePx
     }
     strokes.forEach { stroke ->
         for (i in 1 until stroke.size) {

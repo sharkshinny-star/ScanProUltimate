@@ -164,7 +164,12 @@ fun ScanProApp(
             // A reminder notification's screen (recycle bin, settings), also only once the library is unlocked.
             LaunchedEffect(destinationRequest) {
                 val route = destinationRequest ?: return@LaunchedEffect
-                navController.navigate(route) { launchSingleTop = true }
+                // A tab (the widget's Tools and Files) is switched to like a tap on the bottom bar, not stacked on top.
+                if (route == ScanProDestinations.TOOLS || route == ScanProDestinations.FILES || route == ScanProDestinations.HOME) {
+                    navController.navigateToTopLevel(route)
+                } else {
+                    navController.navigate(route) { launchSingleTop = true }
+                }
                 viewModel.clearDestinationRequest()
             }
 
@@ -280,7 +285,33 @@ fun ScanProApp(
                 }
 
                 // Once, after an update that has something to tell (never together with the welcome or the rating sheet).
-                if (whatsNewDue && !welcomeShowing && !feedbackOpen && launchSettled) {
+                // "All files access", asked once at start (F196, owner's request) for anyone who went through the welcome
+                // before it asked; a new install answers it on the welcome's permission page, which marks it asked.
+                // Comes before What's new, the tour and the default-viewer sheet, never together with them.
+                var filesAskDue by remember {
+                    mutableStateOf(
+                        com.example.scanpro.BuildConfig.ALL_FILES_ACCESS &&
+                            !FilesAccessPrompts.startFilesAsked(context) &&
+                            !com.example.scanpro.feature.phonepdfs.PhonePdfSource.hasAccess(context)
+                    )
+                }
+                val filesAskShowing = filesAskDue && welcomeSeen == true && !feedbackOpen && launchSettled
+                if (filesAskShowing) {
+                    val requestFilesAccess = com.example.scanpro.feature.phonepdfs.rememberPhoneFilesAccessRequest()
+                    FilesAccessStartDialog(
+                        onAllow = {
+                            FilesAccessPrompts.markStartFilesAsked(context)
+                            filesAskDue = false
+                            requestFilesAccess()
+                        },
+                        onNotNow = {
+                            FilesAccessPrompts.markStartFilesAsked(context)
+                            filesAskDue = false
+                        }
+                    )
+                }
+
+                if (whatsNewDue && !welcomeShowing && !feedbackOpen && launchSettled && !filesAskDue) {
                     WhatsNewSheet(
                         onPickColours = {
                             viewModel.markWhatsNewSeen()
@@ -296,7 +327,7 @@ fun ScanProApp(
                 var tourDue by remember(welcomeSeen, currentRoute) {
                     mutableStateOf(welcomeSeen == true && FirstRunHints.isDue(context, FirstRunHints.HOME_TOUR))
                 }
-                val tourAllowed = tourDue && !welcomeShowing && !whatsNewDue && !feedbackOpen && launchSettled &&
+                val tourAllowed = tourDue && !welcomeShowing && !whatsNewDue && !feedbackOpen && launchSettled && !filesAskDue &&
                     currentRoute == ScanProDestinations.HOME
                 // A beat after the welcome has faded away, so the two never overlap.
                 var tourReady by remember { mutableStateOf(false) }
@@ -347,7 +378,7 @@ fun ScanProApp(
                         completedScans = completedScans,
                         alreadyDefault = alreadyDefault,
                         onHome = currentRoute == ScanProDestinations.HOME,
-                        otherPromptDue = welcomeShowing || whatsNewDue || feedbackPrompt || tourDue || importTipOpen || !launchSettled,
+                        otherPromptDue = welcomeShowing || whatsNewDue || feedbackPrompt || tourDue || importTipOpen || !launchSettled || filesAskDue,
                         promptShownThisSession = promptShownThisSession
                     )
                 )

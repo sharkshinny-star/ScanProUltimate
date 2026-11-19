@@ -709,13 +709,19 @@ class PdfToolsViewModel @Inject constructor(
         }
     }
 
-    fun imagesToPdf(uris: List<Uri>, pageSize: PdfPageSize = PdfPageSize.AUTO, quality: PdfQuality = PdfQuality.BALANCED) =
+    fun imagesToPdf(
+        uris: List<Uri>,
+        pageSize: PdfPageSize = PdfPageSize.AUTO,
+        quality: PdfQuality = PdfQuality.BALANCED,
+        margin: com.example.scanpro.imaging.ImageMargin = com.example.scanpro.imaging.ImageMargin.SMALL
+    ) =
         launchTool(context.resources.getQuantityString(R.plurals.msg_tools_converting_images, uris.size, uris.size), context.getString(R.string.msg_tools_convert_images_failed)) {
             val stamp = java.text.SimpleDateFormat("yyyy-MM-dd HH-mm", java.util.Locale.getDefault()).format(java.util.Date())
             try {
                 PdfToolsEngine.imagesToPdf(
                     context, uris, pageSize, quality,
-                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report
+                    PdfToolsEngine.outputLocation(context, context.getString(R.string.tools_images_pdf_name, stamp) + ".pdf"), ::report,
+                    margin.points
                 )
             } finally {
                 withContext(Dispatchers.IO) {
@@ -752,6 +758,7 @@ class PdfToolsViewModel @Inject constructor(
             fileTooLong = context.getString(R.string.tools_office_note_too_long),
             workbookTruncated = { cells -> context.getString(R.string.tools_office_note_workbook_truncated, cells) },
             fileTruncated = { cells -> context.getString(R.string.tools_office_note_file_truncated, cells) },
+            slidesTruncated = { slides -> context.getString(R.string.office_note_slides_truncated, slides) },
         )
         val html = withContext(Dispatchers.IO) {
             try {
@@ -778,6 +785,12 @@ class PdfToolsViewModel @Inject constructor(
         val sourceSize = runCatching {
             resolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
         }.getOrNull() ?: 0L
+        // A PDF the phone's own viewer cannot open, or one with no pages, is not a result (F211): it used to be kept
+        // and reported as "Converted: 0 pages".
+        if (pages <= 0) {
+            output.delete()
+            userError(R.string.office_err_empty_result)
+        }
         PdfToolResult(output, pages, sourceSize, output.length(), context.resources.getQuantityString(R.plurals.msg_tools_office_done, pages, pages))
     }
 
@@ -807,6 +820,12 @@ class PdfToolsViewModel @Inject constructor(
         launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
             val out = named(uri, "cropped", format.extension)
             ImageToolsEngine.cropImage(context, uri, quad, out, format, ::report)
+        }
+
+    /** Crop image: a straight cut with turn and mirror, kept in the picture's own format (a PNG keeps its transparency). */
+    fun cropImageRect(uri: Uri, spec: com.example.scanpro.imaging.ImageCropSpec) =
+        launchTool(R.string.tools_progress_cropping_img, R.string.tools_err_crop_img) {
+            ImageToolsEngine.cropImageRect(context, uri, spec, java.io.File(context.cacheDir, "exports"), null, ::report)
         }
 
     fun watermarkPdf(uri: Uri, config: WatermarkConfig) =
@@ -880,8 +899,28 @@ class PdfToolsViewModel @Inject constructor(
 
     fun redact(uri: Uri, terms: List<String>, matchCase: Boolean) =
         launchTool(R.string.tools_redact_progress, R.string.tools_redact_err_failed) {
-            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, named(uri, "redacted"), ::report)
+            // A file name holding a redacted word would give it away: such a copy is named by the time instead.
+            val base = PdfToolsEngine.sourceBaseName(context, uri)
+            val out = if (terms.any { it.isNotBlank() && base.contains(it.trim(), ignoreCase = true) }) {
+                PdfToolsEngine.outputLocation(context, "redacted ${nameStamp()}.pdf")
+            } else {
+                named(uri, "redacted")
+            }
+            com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, out, ::report)
         }
+
+    /** Edit PDF text (F193): writes a copy of [uri] with [edits] applied, called [name] when one is given. */
+    internal fun editPdfText(uri: Uri, edits: List<com.example.scanpro.imaging.PdfTextEditor.Edit>, name: String = "") =
+        launchTool(R.string.tools_edit_progress, R.string.tools_edit_err_failed) {
+            val chosen = name.trim().removeSuffix(".pdf").trim()
+            val output = if (chosen.isEmpty()) named(uri, "edited")
+            else PdfToolsEngine.outputLocation(context, com.example.scanpro.data.fileSafeName(chosen) + ".pdf")
+            com.example.scanpro.imaging.PdfTextEditTool.save(context, uri, edits, output)
+        }
+
+    fun invertColors(uri: Uri) = launchTool(R.string.tools_invert_progress, R.string.tools_invert_err_failed) {
+        com.example.scanpro.imaging.PdfCleanupTools.invertColors(context, uri, named(uri, "inverted"), ::report)
+    }
 
     fun flatten(uri: Uri) = launchTool(R.string.tools_flatten_progress, R.string.tools_flatten_err_failed) {
         com.example.scanpro.imaging.PdfCleanupTools.flatten(context, uri, named(uri, "flattened"), ::report)
@@ -890,8 +929,12 @@ class PdfToolsViewModel @Inject constructor(
     fun extractImages(uri: Uri) = launchTool(R.string.tools_ximg_progress, R.string.tools_ximg_err_failed) {
         val base = PdfToolsEngine.sourceBaseName(context, uri)
         inScratchDir("$base images") { dir ->
-            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report)
-            bundled(files, "$base images", R.plurals.tools_ximg_done)()
+            var skipped = 0
+            val files = com.example.scanpro.imaging.PdfCleanupTools.extractImages(context, uri, dir, ::report) { skipped = it }
+            bundled(files, "$base images", R.plurals.tools_ximg_done)()?.let { result ->
+                if (skipped == 0) result
+                else result.copy(message = result.message + " " + context.resources.getQuantityString(R.plurals.ximg_skipped, skipped, skipped))
+            }
         }
     }
 

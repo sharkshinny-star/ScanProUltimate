@@ -29,6 +29,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -152,7 +153,7 @@ private val PAGE_LINES = floatArrayOf(0.55f, 1f, 0.82f, 1f, 0.64f)
 private fun lineY(page: Rect, index: Int): Float = page.top + page.height * (0.27f + index * 0.125f)
 
 /** The mint scan line running a little past both edges of the page, with a glow on the side it came from. */
-private fun DrawScope.drawScanBeam(page: Rect, sheet: Path, y: Float, colour: Color, alpha: Float, movingDown: Boolean) {
+private fun DrawScope.drawScanBeam(page: Rect, sheet: Path, y: Float, colour: Color, alpha: Float, movingDown: Boolean, overhangFraction: Float = 0.12f) {
     if (alpha <= 0f) return
     val glow = page.height * 0.2f
     clipPath(sheet) {
@@ -168,7 +169,7 @@ private fun DrawScope.drawScanBeam(page: Rect, sheet: Path, y: Float, colour: Co
             size = Size(page.width, glow)
         )
     }
-    val overhang = page.width * 0.12f
+    val overhang = page.width * overhangFraction
     drawLine(
         color = colour.copy(alpha = alpha),
         start = Offset(page.left - overhang, y),
@@ -337,10 +338,14 @@ private fun gearPath(teeth: Int = 8, inner: Float = 0.76f): Path = Path().apply 
 private val GEAR = gearPath()
 
 /**
- * Shown while a tool or a document task works. The ring fills with the real [progress] (0 to 1) with a
- * mint glow at its leading end, or circles when [progress] is null because the length is not known;
- * inside it the scan line keeps passing over a page, lighting each line as it crosses, and a gear turns.
- * With animations off only the ring moves, and only when the real progress does.
+ * Shown while a tool or a document task works. A thick arc fills with the real [progress] (0 to 1) over a
+ * dial of fine ticks, with a soft glow under it and a pulsing head trailing sparks; while [progress] is null
+ * the arc circles instead, and it eases into the filling arc when the tool starts reporting, so the ring
+ * never jumps. Inside, a page (with a second one tilted behind it) floats while the scan line passes over it,
+ * lighting each line as it crosses; a gear turns on a badge centred under the page and turns into a tick
+ * when the work reaches 100%. Everything is drawn symmetric about the centre and inside the canvas, so a
+ * rounded or clipping parent never cuts the glow. With animations off only the ring moves, and only when
+ * the real progress does.
  */
 @Composable
 fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: Dp = 124.dp) {
@@ -348,7 +353,8 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
     val clock = rememberLoopClock(motion)
     val palette = rememberPagePalette(onDark = false)
     val brand = ScanProTheme.colors
-    val track = MaterialTheme.colorScheme.surfaceContainerHighest
+    val track = MaterialTheme.colorScheme.outlineVariant
+    val halo = MaterialTheme.colorScheme.surfaceContainerHighest
     val badge = MaterialTheme.colorScheme.primary
     val onBadge = MaterialTheme.colorScheme.onPrimary
     // Eases between the real values only; 180 ms keeps the ring level with the "28 / 40" count beside it.
@@ -357,28 +363,55 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
         animationSpec = tween(if (motion) 180 else 0),
         label = "processingProgress"
     )
+    // 0 while the length is unknown, 1 once the tool reports progress: blends the circling arc into the filling one.
+    val known by animateFloatAsState(
+        targetValue = if (progress != null) 1f else 0f,
+        animationSpec = tween(if (motion) 450 else 0),
+        label = "processingKnown"
+    )
+    val done by animateFloatAsState(
+        targetValue = if (progress != null && progress >= 1f) 1f else 0f,
+        animationSpec = tween(if (motion) 320 else 0),
+        label = "processingDone"
+    )
     val semantics = if (progress != null) Modifier.progressSemantics(progress.coerceIn(0f, 1f)) else Modifier.progressSemantics()
     Canvas(modifier.size(size).then(semantics)) {
         val t = clock.longValue
         val s = this.size.minDimension
         val centre = Offset(this.size.width / 2f, this.size.height / 2f)
-        val stroke = s * 0.062f
-        val radius = s / 2f - stroke * 1.4f
+        val stroke = s * 0.058f
+        // Leaves room for the head's glow and sparks, so nothing is drawn outside the canvas.
+        val radius = s / 2f - stroke * 1.85f
+        val tau = 2f * PI.toFloat()
 
-        // Ring: the track, then the arc from the top, indigo at its start to mint at its leading end.
-        drawCircle(track, radius = radius, center = centre, style = Stroke(width = stroke))
-        val start: Float
-        val sweep: Float
-        if (progress != null) {
-            start = -90f
-            sweep = 360f * shown
-        } else {
-            val spin = if (motion) cycle(t, 1_250L) else 0f
-            val breathe = if (motion) 0.5f - 0.5f * cos(2f * PI.toFloat() * cycle(t, 1_800L)) else 0.5f
-            start = -90f + 360f * spin
-            sweep = 50f + 170f * breathe
-        }
+        // The dial: fine ticks around the ring instead of a flat track.
+        val ticks = 48
+        val segment = tau * radius / ticks
+        drawCircle(
+            track.copy(alpha = 0.55f),
+            radius = radius,
+            center = centre,
+            style = Stroke(width = stroke * 0.42f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(segment * 0.42f, segment * 0.58f)))
+        )
+
+        // The arc: circling while the length is unknown, filling from the top once it is known.
+        val spin = if (motion) cycle(t, 1_250L) else 0f
+        val breathe = if (motion) 0.5f - 0.5f * cos(tau * cycle(t, 1_800L)) else 0.5f
+        val start = blend(-90f + 360f * spin, -90f, known)
+        val sweep = blend(50f + 170f * breathe, 360f * shown, known)
         if (sweep > 0.5f) {
+            val arcTopLeft = Offset(centre.x - radius, centre.y - radius)
+            val arcSize = Size(radius * 2f, radius * 2f)
+            // A soft glow under the arc.
+            drawArc(
+                color = brand.gradientEnd.copy(alpha = 0.16f),
+                startAngle = start,
+                sweepAngle = sweep,
+                useCenter = false,
+                topLeft = arcTopLeft,
+                size = arcSize,
+                style = Stroke(width = stroke * 1.9f, cap = StrokeCap.Round)
+            )
             rotate(start, centre) {
                 val end = (sweep / 360f).coerceIn(0.001f, 1f)
                 // Mint carries on a little past the end so the round cap at the head is mint, not indigo.
@@ -395,39 +428,62 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
                     startAngle = 0f,
                     sweepAngle = sweep,
                     useCenter = false,
-                    topLeft = Offset(centre.x - radius, centre.y - radius),
-                    size = Size(radius * 2f, radius * 2f),
+                    topLeft = arcTopLeft,
+                    size = arcSize,
                     style = Stroke(width = stroke, cap = StrokeCap.Round)
                 )
             }
-            // A glowing head on the arc, pulsing so the ring looks alive while a long page is worked on.
-            val headAngle = Math.toRadians((start + sweep).toDouble())
+            // The head: a pulsing glow and a few sparks drifting back along the arc behind it.
+            val headDegrees = start + sweep
+            val headAngle = Math.toRadians(headDegrees.toDouble())
             val head = Offset(centre.x + radius * cos(headAngle).toFloat(), centre.y + radius * sin(headAngle).toFloat())
-            val pulse = if (motion) 0.5f + 0.5f * sin(2f * PI.toFloat() * cycle(t, 900L)) else 0.5f
+            val pulse = if (motion) 0.5f + 0.5f * sin(tau * cycle(t, 900L)) else 0.5f
+            val glowRadius = stroke * (1.25f + 0.45f * pulse)
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(brand.scanLine.copy(alpha = 0.25f + 0.25f * pulse), Color.Transparent),
+                    listOf(brand.scanLine.copy(alpha = 0.28f + 0.25f * pulse), Color.Transparent),
                     center = head,
-                    radius = stroke * (1.9f + 0.6f * pulse)
+                    radius = glowRadius
                 ),
-                radius = stroke * (1.9f + 0.6f * pulse),
+                radius = glowRadius,
                 center = head
             )
+            if (motion && sweep > 24f && done < 1f) {
+                for (k in 0 until 4) {
+                    val phase = cycle(t + k * 260L, 1_040L)
+                    val angle = Math.toRadians((headDegrees - phase * 26f).toDouble())
+                    val wobble = sin(phase * 7f + k * 1.9f) * stroke * 0.8f
+                    val r = radius + wobble
+                    drawCircle(
+                        brand.scanLine.copy(alpha = (1f - phase) * 0.85f * (1f - done)),
+                        radius = stroke * 0.2f * (1f - phase * 0.6f),
+                        center = Offset(centre.x + r * cos(angle).toFloat(), centre.y + r * sin(angle).toFloat())
+                    )
+                }
+            }
             drawCircle(brand.scanLine, radius = stroke * 0.42f, center = head)
         }
 
-        // The page inside the ring, with the scan line going down and back up over it like a copier's.
-        val pageHeight = s * 0.44f
+        // The pages: lifted a touch above the centre so the page and the badge under it sit centred together.
+        val bob = if (motion) sin(tau * cycle(t, 2_600L)) else 0f
+        val pageHeight = s * 0.4f
         val pageWidth = pageHeight * 0.76f
-        val page = Rect(centre.x - pageWidth / 2f, centre.y - pageHeight / 2f, centre.x + pageWidth / 2f, centre.y + pageHeight / 2f)
+        val pageCentre = Offset(centre.x, centre.y - s * 0.03f + bob * s * 0.008f)
+        val page = Rect(pageCentre.x - pageWidth / 2f, pageCentre.y - pageHeight / 2f, pageCentre.x + pageWidth / 2f, pageCentre.y + pageHeight / 2f)
         val (sheet, corner) = sheetPath(page)
+        // A second sheet tilted behind, swaying gently: the file being worked on has more than one page.
+        val sway = if (motion) sin(tau * cycle(t, 3_400L)) * 2.5f else 0f
+        rotate(-9f + sway, pageCentre) {
+            drawPath(sheet, palette.sheet.copy(alpha = 0.75f))
+            drawPath(sheet, palette.edge, style = Stroke(width = s * 0.01f))
+        }
         drawPath(sheet, palette.sheet)
         if (palette.edge.alpha > 0f) drawPath(sheet, palette.edge, style = Stroke(width = s * 0.012f))
         drawPath(corner, palette.fold)
         val p = if (motion) cycle(t, 2_400L) else 0.25f
         val down = p < 0.5f
         val travel = smoothStep(if (down) p * 2f else (1f - p) * 2f)
-        val beamY = page.top + page.height * (0.12f + 0.78f * travel)
+        val beamY = page.top + page.height * (0.12f + 0.62f * travel)
         val left = page.left + page.width * 0.17f
         val maxWidth = page.width * 0.66f
         PAGE_LINES.forEachIndexed { index, width ->
@@ -442,23 +498,45 @@ fun ProcessingAnimation(progress: Float?, modifier: Modifier = Modifier, size: D
                 cap = StrokeCap.Round
             )
         }
-        drawScanBeam(page, sheet, beamY, palette.beam, 1f, movingDown = down)
+        // Stops above the badge and barely overhangs the page, so it never shows as a stray bar beside it.
+        drawScanBeam(page, sheet, beamY, palette.beam, 1f - done, movingDown = down, overhangFraction = 0.05f)
 
-        // A turning gear on a badge at the page's lower corner: the "working" sign.
-        val badgeRadius = s * 0.105f
-        val badgeCentre = Offset(page.right - badgeRadius * 0.15f, page.bottom - badgeRadius * 0.15f)
-        drawCircle(track, radius = badgeRadius * 1.18f, center = badgeCentre)
-        drawCircle(badge, radius = badgeRadius, center = badgeCentre)
+        // The badge, centred under the page: a turning gear that becomes a tick at 100%.
+        val badgeRadius = s * 0.085f
+        val badgeCentre = Offset(page.center.x, page.bottom + s * 0.025f)
+        val pop = 1f + 0.12f * sin(PI.toFloat() * done)
+        drawCircle(halo, radius = badgeRadius * 1.2f * pop, center = badgeCentre)
+        drawCircle(lerp(badge, brand.scanLine, done), radius = badgeRadius * pop, center = badgeCentre)
         val turn = if (motion) 360f * cycle(t, 3_000L) else 0f
         translate(badgeCentre.x, badgeCentre.y) {
-            rotate(turn, Offset.Zero) {
-                val g = badgeRadius * 0.68f
-                scale(g, g, Offset.Zero) { drawPath(GEAR, onBadge) }
+            if (done < 1f) {
+                rotate(turn, Offset.Zero) {
+                    val g = badgeRadius * 0.68f
+                    scale(g, g, Offset.Zero) { drawPath(GEAR, onBadge.copy(alpha = 1f - done)) }
+                }
+                drawCircle(badge.copy(alpha = 1f - done), radius = badgeRadius * 0.24f, center = Offset.Zero)
             }
-            drawCircle(badge, radius = badgeRadius * 0.24f, center = Offset.Zero)
+            if (done > 0f) {
+                val r = badgeRadius
+                val tick = Path().apply {
+                    moveTo(-0.42f * r, 0.02f * r)
+                    lineTo(-0.12f * r, 0.32f * r)
+                    lineTo(0.44f * r, -0.28f * r)
+                }
+                drawPath(
+                    tick,
+                    MintInk.copy(alpha = done),
+                    style = Stroke(width = r * 0.22f, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+                )
+            }
         }
     }
 }
+
+/** Dark green ink for marks drawn on the mint scan-line colour. */
+private val MintInk = Color(0xFF04281E)
+
+private fun blend(from: Float, to: Float, fraction: Float): Float = from + (to - from) * fraction
 
 /**
  * A soft band of light sweeping across a placeholder while the picture behind it loads. Every shimmer on

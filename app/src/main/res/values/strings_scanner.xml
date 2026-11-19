@@ -16,7 +16,7 @@
 
     <!-- Welcome screen (first launch) -->
     <string name="ui_welcome_title">Scan, clean, share.</string>
-    <string name="ui_welcome_tagline">Private by design: no account, nothing uploaded, works offline.</string>
+    <string name="ui_welcome_tagline">Private by design: no account, documents stay on your phone, works offline.</string>
     <string name="ui_welcome_point_scan">Scan anything</string>
     <string name="ui_welcome_point_clean">Clean up and make searchable</string>
     <string name="ui_welcome_point_share">Sign and share</string>

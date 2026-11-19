@@ -56,6 +56,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -383,13 +384,16 @@ fun PdfViewerScreen(
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = {
                     if (isSearchActive) {
+                        // Focused when it opens, so the keyboard comes up (2026-11-18): a second tap was needed before.
+                        val searchFocus = androidx.compose.runtime.remember { androidx.compose.ui.focus.FocusRequester() }
+                        androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { searchFocus.requestFocus() } }
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text(stringResource(R.string.viewer_search_placeholder)) },
                             singleLine = true,
                             // No fixed height: an outlined field needs 56 dp, and 52 dp clipped the bottom of the typed text.
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(searchFocus),
                             trailingIcon = {
                                 if (isSearchingText) {
                                     ProcessingDots(MaterialTheme.colorScheme.primary)
@@ -583,8 +587,11 @@ fun PdfViewerScreen(
                                 detectTransformGestures { _, pan, zoom, _ ->
                                     scale = (scale * zoom).coerceIn(1f, 3.5f)
                                     if (scale > 1f) {
-                                        offsetX += pan.x
-                                        offsetY += pan.y
+                                        // Kept within the zoomed page (2026-11-18): it could be panned right off the screen.
+                                        val maxX = size.width * (scale - 1f) / 2f
+                                        val maxY = size.height * (scale - 1f) / 2f
+                                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
                                     } else {
                                         offsetX = 0f
                                         offsetY = 0f
@@ -614,8 +621,11 @@ fun PdfViewerScreen(
                                 detectTransformGestures { _, pan, zoom, _ ->
                                     scale = (scale * zoom).coerceIn(1f, 3.5f)
                                     if (scale > 1f) {
-                                        offsetX += pan.x
-                                        offsetY += pan.y
+                                        // Kept within the zoomed page (2026-11-18): it could be panned right off the screen.
+                                        val maxX = size.width * (scale - 1f) / 2f
+                                        val maxY = size.height * (scale - 1f) / 2f
+                                        offsetX = (offsetX + pan.x).coerceIn(-maxX, maxX)
+                                        offsetY = (offsetY + pan.y).coerceIn(-maxY, maxY)
                                     } else {
                                         offsetX = 0f
                                         offsetY = 0f

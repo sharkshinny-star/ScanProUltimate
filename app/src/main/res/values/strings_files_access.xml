@@ -65,4 +65,16 @@
     <string name="import_tip_body">Tap to select a file, long-press to select several, then tap Select at the top right to import.</string>
     <string name="import_tip_cancel">Cancel</string>
     <string name="import_tip_import">Import</string>
+    <string name="phone_files_folders">Folders</string>
+    <string name="phone_files_show_grid">Show as grid</string>
+    <string name="phone_files_show_list">Show as list</string>
+    <string name="phone_files_my_storage">My storage</string>
+    <string name="phone_files_internal_storage">Internal storage</string>
+    <string name="phone_files_downloads">Downloads</string>
+    <string name="phone_files_processed">Made in ScanPro</string>
+    <string name="phone_files_cloud_title">Cloud drives and other apps</string>
+    <string name="phone_files_cloud_open">Open from Google Drive, Dropbox, OneDrive…</string>
+    <string name="phone_files_cloud_hint">Uses your phone\'s file picker. ScanPro never signs in to anything.</string>
+    <string name="phone_files_all_files">All files</string>
+    <string name="phone_files_up">Up one folder</string>
 </resources>

@@ -23,6 +23,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import com.example.scanpro.core.designsystem.pressTilt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -295,13 +296,18 @@ internal fun DocumentGridCard(
 ) {
     val (container, border) = cardColors(selected)
     val shape = MaterialTheme.shapes.medium
+    val interaction = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Column(
         Modifier
             .fillMaxWidth()
+            // The card tilts towards the finger as it is pressed, like picking up a page (F197).
+            .pressTilt(interaction)
             .clip(shape)
             .background(container)
             .border(1.5.dp, border, shape)
             .combinedClickable(
+                interactionSource = interaction,
+                indication = androidx.compose.material3.ripple(),
                 onClickLabel = stringResource(R.string.lib_card_open),
                 onLongClickLabel = stringResource(if (selected) R.string.lib_card_deselect else R.string.lib_card_select),
                 onClick = onClick,

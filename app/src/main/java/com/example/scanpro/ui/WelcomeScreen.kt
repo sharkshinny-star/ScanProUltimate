@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.snap
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material3.TextButton
@@ -93,6 +94,8 @@ import com.example.scanpro.core.designsystem.PrivateToolsArt
 import com.example.scanpro.core.designsystem.ReceiptGridArt
 import kotlinx.coroutines.launch
 import com.example.scanpro.core.designsystem.AuroraBackground
+import com.example.scanpro.data.FilesAccessPrompts
+import com.example.scanpro.feature.phonepdfs.PhonePdfSource
 import com.example.scanpro.core.designsystem.BrandLockup
 import com.example.scanpro.core.designsystem.GradientButton
 import com.example.scanpro.core.designsystem.IconTile
@@ -107,13 +110,25 @@ import com.example.scanpro.core.designsystem.rememberMotionEnabled
  * user says no here, each is asked for again where it is used: the camera screen and Settings > Notifications.
  */
 internal object StartupPermissions {
+    /**
+     * Not an Android runtime permission: "All files access" (Android 11+), granted on a system settings page rather
+     * than in a dialog. Listed with the others so the page explains it in the same place (F196, owner's request).
+     */
+    const val FILES_ACCESS = "com.example.scanpro.permission.FILES_ACCESS"
+
     fun wanted(): List<String> = buildList {
         add(Manifest.permission.CAMERA)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+        // Up to Android 10 reading shared storage is an ordinary runtime permission, asked with the others.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) add(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
-    fun missing(context: Context): List<String> =
-        wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+    fun missing(context: Context): List<String> = buildList {
+        addAll(wanted().filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED })
+        if (com.example.scanpro.BuildConfig.ALL_FILES_ACCESS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !PhonePdfSource.hasAccess(context)) {
+            add(FILES_ACCESS)
+        }
+    }
 }
 
 /**
@@ -291,16 +306,46 @@ private fun WelcomeDots(count: Int, current: Int) {
     }
 }
 
-/** The second welcome page: why the app would like each permission it does not have yet, then Android's own dialogs. */
+/**
+ * The second welcome page: why the app would like each permission it does not have yet, then Android's own dialogs
+ * and, on Android 11 and newer, the "All files access" settings page; the app opens when the person comes back.
+ */
 @Composable
 private fun PermissionsPage(onDone: () -> Unit) {
     val context = LocalContext.current
     // Fixed while the page is up, so the rows don't change under Android's dialogs as each answer comes in.
     val asked = remember { StartupPermissions.missing(context) }
+    val runtime = remember(asked) { asked.filter { it != StartupPermissions.FILES_ACCESS } }
+    val wantsFilesPage = StartupPermissions.FILES_ACCESS in asked
+    // Waiting for the person to come back from the settings page.
+    var waitingForSettings by rememberSaveable { mutableStateOf(false) }
+
+    fun finish() {
+        // Asked here, so the one-time prompt for people who passed the welcome before (ScanProApp) never repeats it.
+        FilesAccessPrompts.markStartFilesAsked(context)
+        onDone()
+    }
+    fun openFilesPage() {
+        if (PhonePdfSource.openAllFilesAccessSettings(context)) waitingForSettings = true else finish()
+    }
+
     // Whatever the answers, the app opens next; a "no" is asked again where that permission is needed.
-    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { onDone() }
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (wantsFilesPage && !PhonePdfSource.hasAccess(context)) openFilesPage() else finish()
+    }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, waitingForSettings) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME && waitingForSettings) {
+                waitingForSettings = false
+                finish()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var requested by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(asked) { if (asked.isEmpty()) onDone() }
+    LaunchedEffect(asked) { if (asked.isEmpty()) finish() }
     OnboardingPage(
         heroIcon = Icons.Rounded.PhotoCamera,
         heroTone = TileTone.Indigo,
@@ -316,6 +361,14 @@ private fun PermissionsPage(onDone: () -> Unit) {
                     Icons.Rounded.Notifications, TileTone.Amber,
                     stringResource(R.string.ui_permission_notifications_title), stringResource(R.string.ui_permission_notifications_body)
                 )
+                Manifest.permission.READ_EXTERNAL_STORAGE -> OnboardingPoint(
+                    Icons.Rounded.Folder, TileTone.Teal,
+                    stringResource(R.string.ui_permission_files_title), stringResource(R.string.ui_permission_files_body_dialog)
+                )
+                StartupPermissions.FILES_ACCESS -> OnboardingPoint(
+                    Icons.Rounded.Folder, TileTone.Teal,
+                    stringResource(R.string.ui_permission_files_title), stringResource(R.string.ui_permission_files_body_settings)
+                )
                 else -> null
             }
         },
@@ -324,10 +377,10 @@ private fun PermissionsPage(onDone: () -> Unit) {
         primaryEnabled = !requested,
         onPrimary = {
             requested = true
-            request.launch(asked.toTypedArray())
+            if (runtime.isNotEmpty()) request.launch(runtime.toTypedArray()) else openFilesPage()
         },
         secondary = stringResource(R.string.ui_permissions_not_now),
-        onSecondary = onDone
+        onSecondary = { finish() }
     )
 }
 
@@ -504,28 +557,30 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
     val brand = ScanProTheme.colors
     val scheme = MaterialTheme.colorScheme
     val sweep = rememberInfiniteTransition(label = "scan")
-    val beam by sweep.animateFloat(
+    val beam = sweep.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(2_600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "beam"
     )
-    val glow by sweep.animateFloat(
+    val glow = sweep.animateFloat(
         initialValue = 0.85f,
         targetValue = 1.05f,
         animationSpec = infiniteRepeatable(tween(1_800, easing = LinearEasing), RepeatMode.Reverse),
         label = "glow"
     )
-    val float by sweep.animateFloat(
+    val float = sweep.animateFloat(
         initialValue = -1f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(3_400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "float"
     )
     val motion = rememberMotionEnabled()
-    val beamPosition = if (motion) beam else 0.5f
-    val haloScale = if (motion) glow else 1f
-    val bob = if (motion) float else 0f
+    // Read only inside graphicsLayer and Canvas blocks (2026-11-18): read here, they recomposed the illustration on every
+    // frame of the three endless animations.
+    fun beamPosition() = if (motion) beam.value else 0.5f
+    fun haloScale() = if (motion) glow.value else 1f
+    fun bob() = if (motion) float.value else 0f
     // Lock-on: as the screen comes into view the brackets start loose and white, then snap tight and mint,
     // the way the scanner's own outline does when it finds a page.
     val lock by animateFloatAsState(
@@ -544,24 +599,24 @@ private fun HeroIllustration(icon: ImageVector, tone: TileTone, modifier: Modifi
         Box(
             Modifier
                 .size(sheetWidth * 1.8f)
-                .graphicsLayer { scaleX = haloScale; scaleY = haloScale }
+                .graphicsLayer { scaleX = haloScale(); scaleY = haloScale() }
                 .background(
                     Brush.radialGradient(listOf(brand.gradientEnd.copy(alpha = 0.22f), Color.Transparent)),
                     CircleShape
                 )
         )
         // Two sheets behind, fanned out; the whole stack drifts gently, the back sheets a little more.
-        Box(Modifier.graphicsLayer { translationY = bob * 7.dp.toPx(); rotationZ = bob * 1.2f }) {
+        Box(Modifier.graphicsLayer { translationY = bob() * 7.dp.toPx(); rotationZ = bob() * 1.2f }) {
             Sheet(sheetWidth, sheetHeight, rotation = -9f, offsetX = -backOffsetX - 4.dp, offsetY = 8.dp, alpha = 0.55f, lines = false)
         }
-        Box(Modifier.graphicsLayer { translationY = -bob * 5.dp.toPx(); rotationZ = -bob * 0.8f }) {
+        Box(Modifier.graphicsLayer { translationY = -bob() * 5.dp.toPx(); rotationZ = -bob() * 0.8f }) {
             Sheet(sheetWidth, sheetHeight, rotation = 6f, offsetX = backOffsetX, offsetY = 5.dp, alpha = 0.75f, lines = false)
         }
         // Front sheet with text lines and the beam.
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob * 3.dp.toPx() }) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.graphicsLayer { translationY = bob() * 3.dp.toPx() }) {
             Sheet(sheetWidth, sheetHeight, rotation = 0f, offsetX = 0.dp, offsetY = 0.dp, alpha = 1f, lines = true)
             Canvas(Modifier.size(sheetWidth + 30.dp, sheetHeight)) {
-                val y = size.height * (0.12f + 0.76f * beamPosition)
+                val y = size.height * (0.12f + 0.76f * beamPosition())
                 // Wake of the beam: a faint band fading upwards.
                 drawRect(
                     brush = Brush.verticalGradient(

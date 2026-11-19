@@ -4,6 +4,7 @@ import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.RectF
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -55,7 +56,7 @@ object PdfCleanupTools {
     const val GREYSCALE_JPEG_QUALITY = 82
 
     /** The longest side a greyscale page is drawn at, so a poster-sized page cannot run out of memory. */
-    private const val GREYSCALE_MAX_SIDE = 3500
+    internal const val GREYSCALE_MAX_SIDE = 3500
 
     /** Images smaller than this on either side are icons, bullets or one-pixel spacers, not pictures worth saving. */
     const val MIN_IMAGE_SIDE = 16
@@ -180,6 +181,9 @@ object PdfCleanupTools {
                     onProgress(step + 1, removing.size, AppStrings.get(R.string.tools_blank_progress_removing))
                     doc.removePage(index)
                 }
+                // A link on a kept page that pointed at a removed one still held it (and through its /Parent the old
+                // page tree) in the file, so removing pages hardly made it smaller (F210). Cut such links, as Split does.
+                with(PdfToolsEngine) { doc.dropLinksToMissingPages() }
                 outputFile.parentFile?.mkdirs()
                 doc.save(outputFile)
                 PdfToolResult(
@@ -300,6 +304,107 @@ object PdfCleanupTools {
         }
     }
 
+    // ---- Invert colours (dark PDF for night reading) ----------------------------------------------------------------------------
+
+    /** Inverts the colours of [bitmap] in place (white paper becomes black). */
+    internal fun toInvertedColors(bitmap: Bitmap) {
+        val width = bitmap.width
+        val row = IntArray(width)
+        for (y in 0 until bitmap.height) {
+            bitmap.getPixels(row, 0, width, 0, y, width, 1)
+            for (x in 0 until width) {
+                val p = row[x]
+                val a = (p shr 24) and 0xFF
+                val r = 255 - ((p shr 16) and 0xFF)
+                val g = 255 - ((p shr 8) and 0xFF)
+                val b = 255 - (p and 0xFF)
+                row[x] = (a shl 24) or (r shl 16) or (g shl 8) or b
+            }
+            bitmap.setPixels(row, 0, width, 0, y, width, 1)
+        }
+    }
+
+    internal suspend fun writeInvertedColors(
+        pageCount: Int,
+        pageSize: (Int) -> Pair<Float, Float>,
+        draw: (index: Int, target: Bitmap) -> Unit,
+        outputFile: File,
+        onPage: (Int) -> Unit = {}
+    ) {
+        var bitmap: Bitmap? = null
+        try {
+            PDDocument(MemoryUsageSetting.setupTempFileOnly()).use { out ->
+                val buffer = ByteArrayOutputStream()
+                for (i in 0 until pageCount) {
+                    if (!currentCoroutineContext().isActive) throw InterruptedException("Invert colours cancelled")
+                    onPage(i)
+                    val (widthPt, heightPt) = pageSize(i)
+                    val scale = minOf(GREYSCALE_DPI / 72f, GREYSCALE_MAX_SIDE / maxOf(widthPt, heightPt).coerceAtLeast(1f))
+                    val w = (widthPt * scale).toInt().coerceAtLeast(1)
+                    val h = (heightPt * scale).toInt().coerceAtLeast(1)
+                    val canvas = bitmap?.takeIf { it.width == w && it.height == h }
+                        ?: createBitmap(w, h).also { bitmap?.recycle(); bitmap = it }
+                    canvas.eraseColor(Color.WHITE)
+                    draw(i, canvas)
+                    toInvertedColors(canvas)
+                    buffer.reset()
+                    canvas.compress(Bitmap.CompressFormat.JPEG, GREYSCALE_JPEG_QUALITY, buffer)
+                    val image = JPEGFactory.createFromByteArray(out, buffer.toByteArray())
+                    val page = PDPage(PDRectangle(widthPt, heightPt))
+                    out.addPage(page)
+                    PDPageContentStream(out, page).use { it.drawImage(image, 0f, 0f, widthPt, heightPt) }
+                }
+                outputFile.parentFile?.mkdirs()
+                out.save(outputFile)
+            }
+        } catch (error: Throwable) {
+            outputFile.delete()
+            throw error
+        } finally {
+            bitmap?.recycle()
+        }
+    }
+
+    suspend fun invertColors(
+        context: Context,
+        inputUri: Uri,
+        outputFile: File,
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+    ): PdfToolResult = withContext(BackgroundWork.tools) {
+        val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "invert_in_${UUID.randomUUID()}.pdf")
+        try {
+            val total = ParcelFileDescriptor.open(temp, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
+                PdfToolsEngine.openRenderer(pfd, temp).use { renderer ->
+                    val total = renderer.pageCount
+                    userRequire(total > 0, R.string.tools_err_no_pages)
+                    var open: PdfRenderer.Page? = null
+                    fun page(i: Int): PdfRenderer.Page = open?.takeIf { it.index == i } ?: renderer.openPage(i).also { open?.close(); open = it }
+                    try {
+                        writeInvertedColors(
+                            pageCount = total,
+                            pageSize = { i -> page(i).let { it.width.toFloat() to it.height.toFloat() } },
+                            draw = { i, target -> page(i).render(target, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT) },
+                            outputFile = outputFile,
+                            onPage = { onProgress(it + 1, total, AppStrings.get(R.string.tools_new_progress_page, it + 1, total)) }
+                        )
+                    } finally {
+                        open?.close()
+                    }
+                    total
+                }
+            }
+            PdfToolResult(
+                outputFile = outputFile,
+                pageCount = total,
+                originalSizeBytes = temp.length(),
+                outputSizeBytes = outputFile.length(),
+                message = AppStrings.plural(R.plurals.tools_invert_done, total, total)
+            )
+        } finally {
+            temp.delete()
+        }
+    }
+
     // ---- Flatten --------------------------------------------------------------------------------------------------
 
     /**
@@ -376,6 +481,53 @@ object PdfCleanupTools {
         return Matrix(sx, 0f, 0f, sy, rect.lowerLeftX - minX * sx, rect.lowerLeftY - minY * sy)
     }
 
+    /**
+     * What Flatten would do, worked out without changing anything: the form fields and the comments or stamps that
+     * would be drawn into the pages, the links that stay, and where the first page's fields and comments are (display
+     * points from its top-left corner) so the tool page can mark them. The same choices as [flattenDocument].
+     */
+    class FlattenPreview(val fields: Int, val annotations: Int, val links: Int, val firstPageAreas: List<RectF>)
+
+    internal fun flattenPreview(doc: PDDocument): FlattenPreview {
+        val form = doc.documentCatalog.acroForm
+        val fields = if (form == null) 0 else runCatching { form.fieldTree.count { it.widgets.isNotEmpty() } }.getOrDefault(0)
+        var annotations = 0
+        var links = 0
+        val areas = ArrayList<RectF>()
+        for ((index, page) in doc.pages.withIndex()) {
+            val all = runCatching { page.annotations }.getOrNull() ?: continue
+            for (annotation in all) {
+                val drawn = when {
+                    annotation is PDAnnotationLink -> { links++; false }
+                    annotation is PDAnnotationPopup -> false
+                    annotation.isHidden || annotation.isNoView -> false
+                    annotation is PDAnnotationWidget && form != null -> true
+                    annotation.normalAppearanceStream != null && annotation.rectangle != null -> { annotations++; true }
+                    else -> false
+                }
+                if (!drawn || index != 0) continue
+                val r = annotation.rectangle ?: continue
+                val crop = page.cropBox
+                areas += PdfCropTools.userRectToDisplay(
+                    r.lowerLeftX - crop.lowerLeftX, r.lowerLeftY - crop.lowerLeftY,
+                    r.upperRightX - crop.lowerLeftX, r.upperRightY - crop.lowerLeftY,
+                    page.rotation, crop.width, crop.height
+                )
+            }
+        }
+        return FlattenPreview(fields, annotations, links, areas)
+    }
+
+    /** [flattenPreview] for a picked file: copied aside, read and removed again. */
+    suspend fun previewFlatten(context: Context, inputUri: Uri): FlattenPreview = withContext(BackgroundWork.tools) {
+        val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "flatten_look_${UUID.randomUUID()}.pdf")
+        try {
+            PdfToolsEngine.loadPdf(temp).use { flattenPreview(it) }
+        } finally {
+            temp.delete()
+        }
+    }
+
     suspend fun flatten(
         context: Context,
         inputUri: Uri,
@@ -441,7 +593,9 @@ object PdfCleanupTools {
         val onlyJpeg = filters == COSName.DCT_DECODE ||
             (filters is com.tom_roush.pdfbox.cos.COSArray && filters.size() == 1 && filters.getObject(0) == COSName.DCT_DECODE)
         val cmyk = runCatching { image.colorSpace.numberOfComponents == 4 }.getOrDefault(false)
-        if (onlyJpeg && !cmyk) {
+        // A JPEG with a transparency mask (a logo, a signature) is decoded with its mask and saved as PNG: copied as
+        // stored, its see-through parts came out as a black or white box (F211).
+        if (onlyJpeg && !cmyk && !PdfImageSurvey.hasTransparency(image)) {
             val file = File(dir, "$stem.jpg")
             image.cosObject.createRawInputStream().use { input -> FileOutputStream(file).buffered().use { input.copyTo(it) } }
             return file
@@ -456,11 +610,26 @@ object PdfCleanupTools {
         return file
     }
 
+    private fun digestOf(file: File): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-1")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val n = input.read(buffer)
+                if (n < 0) break
+                digest.update(buffer, 0, n)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
     suspend fun extractImages(
         context: Context,
         inputUri: Uri,
         outputDir: File,
-        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> }
+        onProgress: (current: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        /** Told how many pictures could not be decoded on this phone (JPEG 2000, JBIG2), so the result can say so. */
+        onSkipped: (count: Int) -> Unit = {}
     ): List<File> = withContext(BackgroundWork.tools) {
         outputDir.mkdirs()
         val temp = PdfToolsEngine.copyUriToTemp(context, inputUri, "ximg_in_${UUID.randomUUID()}.pdf")
@@ -470,16 +639,27 @@ object PdfCleanupTools {
                 val total = doc.numberOfPages
                 val seen = HashSet<COSBase>()
                 val files = mutableListOf<File>()
+                // The same picture embedded twice as separate objects (a logo on every page of a merged PDF) is saved
+                // once: identical bytes, identical file.
+                val digests = HashSet<String>()
+                var skipped = 0
                 for (i in 0 until total) {
                     if (!currentCoroutineContext().isActive) throw InterruptedException("Extract images cancelled")
                     onProgress(i + 1, total, AppStrings.get(R.string.tools_new_progress_page, i + 1, total))
                     val images = mutableListOf<PDImageXObject>()
                     runCatching { pageImages(doc.getPage(i), seen, images) }
                     for (image in images) {
-                        // One unreadable image must not cost the others.
-                        runCatching { saveImage(image, outputDir, base, files.size + 1) }.getOrNull()?.let { files += it }
+                        val tiny = runCatching { image.width < MIN_IMAGE_SIDE || image.height < MIN_IMAGE_SIDE }.getOrDefault(true)
+                        // One unreadable image must not cost the others, but it is counted, not passed over in silence.
+                        val saved = runCatching { saveImage(image, outputDir, base, files.size + 1) }.getOrNull()
+                        if (saved == null) {
+                            if (!tiny) skipped++
+                            continue
+                        }
+                        if (digests.add(digestOf(saved))) files += saved else saved.delete()
                     }
                 }
+                if (skipped > 0) onSkipped(skipped)
                 userRequire(files.isNotEmpty(), R.string.tools_ximg_err_none)
                 files
             }

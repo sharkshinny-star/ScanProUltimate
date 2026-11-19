@@ -54,7 +54,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -243,7 +242,9 @@ internal fun ResultDialog(
                                 bitmap = p.bitmap.asImageBitmap(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.height(156.dp)
+                                // The placeholder's size (2026-11-18): sized by the picture, the dialog widened when it
+                                // loaded and the tick and the burst slid sideways mid-animation.
+                                modifier = Modifier.size(width = 118.dp, height = 156.dp)
                             )
                             is ResultPreview.Placeholder -> Box(Modifier.size(width = 118.dp, height = 156.dp), contentAlignment = Alignment.Center) {
                                 Icon(p.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
@@ -275,7 +276,9 @@ internal fun ResultDialog(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    file.extension.uppercase() + " · " + formatBytes(context, result.outputSizeBytes.takeIf { it > 0 } ?: file.length()),
+                    file.extension.uppercase() + " · " + formatBytes(context, result.outputSizeBytes.takeIf { it > 0 } ?: file.length()) +
+                        // How many pages came out, for a PDF (F197): the first thing to check after Split, Merge or N-up.
+                        (if (file.extension.equals("pdf", ignoreCase = true) && result.pageCount > 0) " · " + androidx.compose.ui.res.pluralStringResource(R.plurals.pdf_outcome_pages, result.pageCount, result.pageCount) else ""),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -325,6 +328,27 @@ internal fun ResultDialog(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
+                        }
+                    }
+                }
+
+                // Every other tool: the size before and after, quieter than the compression card (F197), so a result that
+                // grew (a watermark, OCR text) is seen, not discovered later.
+                if (!isCompression && result.originalSizeBytes > 0 && result.outputSizeBytes > 0) {
+                    Spacer(Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SizeColumn(stringResource(R.string.tools_result_original_label), formatBytes(context, result.originalSizeBytes), highlight = false)
+                            Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            SizeColumn(stringResource(R.string.img_tool_result), formatBytes(context, result.outputSizeBytes), highlight = false)
                         }
                     }
                 }

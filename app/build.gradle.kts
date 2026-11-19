@@ -38,6 +38,9 @@ android {
         // Links shown in Settings. Empty (the default) hides the rows: -Pscanpro.privacyPolicyUrl=... -Pscanpro.termsUrl=...
         buildConfigField("String", "PRIVACY_POLICY_URL", "\"${providers.gradleProperty("scanpro.privacyPolicyUrl").orNull.orEmpty()}\"")
         buildConfigField("String", "TERMS_URL", "\"${providers.gradleProperty("scanpro.termsUrl").orNull.orEmpty()}\"")
+        // "All files access" (MANAGE_EXTERNAL_STORAGE) on by default; -Pscanpro.allFilesAccess=false makes a build without it
+        // (the permission is removed from the manifest below and no screen asks for it), in case Play declines it (F210).
+        buildConfigField("boolean", "ALL_FILES_ACCESS", (providers.gradleProperty("scanpro.allFilesAccess").orNull != "false").toString())
         // 32-bit x86 is only used by old emulators; leaving it out removes ~70 MB of native code from universal APKs.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -296,3 +299,25 @@ androidComponents {
 
 
 
+
+// Play release guard (F210): Google Play requires the privacy policy inside the app as well as in Play Console, and
+// Settings only shows the link when PRIVACY_POLICY_URL is set. A Play bundle without an https:// policy URL now fails
+// instead of shipping without it. Pass -Pscanpro.privacyPolicyUrl=https://... for the real upload; CI and local test
+// bundles opt out with -Pscanpro.allowMissingPolicy=true.
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+    val policyUrl = providers.gradleProperty("scanpro.privacyPolicyUrl").orElse("")
+    val allowMissing = providers.gradleProperty("scanpro.allowMissingPolicy").map { it == "true" }.orElse(false)
+    doFirst {
+        if (!allowMissing.get() && !policyUrl.get().startsWith("https://")) {
+            throw GradleException(
+                "Play bundle without a privacy policy link: pass -Pscanpro.privacyPolicyUrl=https://... " +
+                    "(or -Pscanpro.allowMissingPolicy=true for a test bundle that will not be uploaded)."
+            )
+        }
+    }
+}
+
+// The build without "All files access" (F210): its release manifest removes MANAGE_EXTERNAL_STORAGE.
+if (providers.gradleProperty("scanpro.allFilesAccess").orNull == "false") {
+    android.sourceSets.getByName("release").manifest.srcFile("src/noAllFilesAccess/AndroidManifest.xml")
+}

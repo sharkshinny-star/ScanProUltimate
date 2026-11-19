@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Image tools (F193). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_tool_original">യഥാർത്ഥം</string>
+    <string name="img_tool_result">ഫലം</string>
+    <string name="img_tool_crop">ക്രോപ്പ്</string>
+    <string name="img_tool_now">ഇപ്പോൾ</string>
+    <string name="img_tool_after">ശേഷം</string>
+    <string name="img_tool_estimating">ഫലം തയ്യാറാക്കുന്നു…</string>
+    <string name="img_tool_about">ഏകദേശം %1$s</string>
+    <string name="img_tool_smaller">%1$d%% ചെറുത്</string>
+    <string name="img_tool_larger">%1$d%% വലുത്</string>
+    <string name="img_tool_other_format">ചിത്രം</string>
+    <string name="img_transparency_white">JPG-യിൽ സുതാര്യമായ ഭാഗങ്ങൾ വെള്ളയാകും. അവ സുതാര്യമായി നിലനിർത്താൻ PNG അല്ലെങ്കിൽ WebP തിരഞ്ഞെടുക്കുക.</string>
+    <string name="img_section_make_smaller">ചെറുതാക്കേണ്ട രീതി</string>
+    <string name="img_section_resolution">റെസല്യൂഷൻ</string>
+    <string name="img_section_format">ഫോർമാറ്റ്</string>
+    <string name="img_section_quality">ഗുണനിലവാരം</string>
+    <string name="img_section_new_size">പുതിയ വലുപ്പം</string>
+    <string name="img_section_common_sizes">സാധാരണ വലുപ്പങ്ങൾ</string>
+    <string name="img_section_convert_to">ഇതിലേക്ക് മാറ്റുക</string>
+    <string name="img_compress_target_hint">കഴിയുമ്പോൾ പൂർണ്ണ റെസല്യൂഷൻ നിലനിർത്തും; അല്ലെങ്കിൽ ഗുണനിലവാരം കുറയുമെങ്കിൽ മാത്രം അത് കുറയ്ക്കും.</string>
+    <string name="img_compress_already_small">ഈ ചിത്രം ഇതിനകം ചെറുതാണ് (%1$s). താഴെ വലുപ്പം ടൈപ്പ് ചെയ്യുക, അല്ലെങ്കിൽ ഗുണനിലവാരം ഉപയോഗിക്കുക.</string>
+    <string name="img_compress_no_gain">ഈ ചിത്രം ഇതിനകം നന്നായി കംപ്രസ് ചെയ്തതാണ്: ഈ ക്രമീകരണങ്ങൾ കൊണ്ട് ചെറുതാകില്ല, അതിനാൽ യഥാർത്ഥം തന്നെ സൂക്ഷിക്കും. കുറഞ്ഞ ഗുണനിലവാരമോ റെസല്യൂഷനോ ശ്രമിക്കുക.</string>
+    <string name="img_quality_high">ഉയർന്നത്</string>
+    <string name="img_quality_balanced">സന്തുലിതം</string>
+    <string name="img_quality_small">ഏറ്റവും ചെറുത്</string>
+    <string name="img_quality_smaller_file">ചെറിയ ഫയൽ</string>
+    <string name="img_quality_better_picture">മികച്ച ചിത്രം</string>
+    <string name="img_lossless">ലോസ്‌ലെസ്</string>
+    <string name="img_res_original">യഥാർത്ഥം (%1$d px)</string>
+    <string name="img_resolution_hint">ഏറ്റവും നീളമുള്ള വശം. മിക്ക അപ്‌ലോഡ് ഫോമുകൾക്കും മെസേജിംഗ് ആപ്പുകൾക്കും 1920 px-ൽ കൂടുതൽ വേണ്ട.</string>
+    <string name="img_convert_action">%1$s ആക്കുക</string>
+    <string name="img_convert_make_pdf">PDF ഉണ്ടാക്കുക</string>
+    <string name="img_convert_already">ഈ ചിത്രം ഇതിനകം %1$s ആണ്. മറ്റൊരു ഫോർമാറ്റ് തിരഞ്ഞെടുക്കുക.</string>
+    <string name="img_convert_quality_hint" formatted="false">90% അല്ലെങ്കിൽ അതിൽ കൂടുതൽ കണ്ണിന് യഥാർത്ഥം പോലെ തന്നെ തോന്നും.</string>
+    <string name="img_convert_tap_to_crop">ആദ്യം ക്രോപ്പ് ചെയ്യാൻ ചിത്രത്തിലെ ക്രോപ്പ് ബട്ടൺ ടാപ്പ് ചെയ്യുക.</string>
+    <string name="img_crop_picture_n">ചിത്രം %1$d ക്രോപ്പ് ചെയ്യുക</string>
+    <plurals name="img_pictures_count">
+        <item quantity="one">%1$d ചിത്രം</item>
+        <item quantity="other">%1$d ചിത്രങ്ങൾ</item>
+    </plurals>
+    <string name="img_resize_enlarge_warning">ചിത്രം യഥാർത്ഥത്തെക്കാൾ വലുതാക്കുമ്പോൾ പുതിയ വിശദാംശങ്ങൾ ചേരില്ല, അതിനാൽ മങ്ങിയതായി തോന്നാം.</string>
+    <string name="img_resize_linked_hint">അനുപാതം ബന്ധിപ്പിച്ചിരിക്കുന്നു: ഒരു വശം മാറ്റിയാൽ മറ്റേതും മാറും. രണ്ടും സജ്ജമാക്കാൻ ലിങ്ക് ടാപ്പ് ചെയ്യുക.</string>
+    <string name="img_resize_unlinked_hint">അനുപാതം വേർപെടുത്തി: ആകൃതി ചിത്രത്തിൽ നിന്ന് വ്യത്യസ്തമെങ്കിൽ, എങ്ങനെ ചേരണമെന്ന് താഴെ തിരഞ്ഞെടുക്കുക.</string>
+    <string name="img_fit_fit_desc">മുഴുവൻ ചിത്രവും അനുപാതവും നിലനിൽക്കും; ഒരു വശം ചോദിച്ചതിലും ചെറുതാകാം.</string>
+    <string name="img_fit_fill_desc">കൃത്യമായ വലുപ്പം, അനുപാതം നിലനിൽക്കും; ചേരാത്ത അരികുകൾ മുറിച്ചുമാറ്റും.</string>
+    <string name="img_fit_stretch_desc">കൃത്യമായ വലുപ്പം, മുഴുവൻ ചിത്രം; ചേരാൻ ഞെരുക്കുകയോ വലിച്ചുനീട്ടുകയോ ചെയ്യും.</string>
+    <string name="img_format_kept">ഇപ്പോഴത്തെ അതേ ഫോർമാറ്റ് (%1$s).</string>
+    <string name="img_crop_title">ചിത്രം ക്രോപ്പ് ചെയ്യുക</string>
+    <string name="img_crop_done">പൂർത്തിയായി</string>
+    <string name="img_crop_frame">ക്രോപ്പ് ഫ്രെയിം. വലുപ്പം മാറ്റാൻ മൂലകളോ അരികുകളോ വലിക്കുക, നീക്കാൻ ഉള്ളിൽ വലിക്കുക.</string>
+    <string name="img_crop_free">സ്വതന്ത്രം</string>
+    <string name="img_crop_original">യഥാർത്ഥം</string>
+    <string name="img_crop_square">ചതുരം</string>
+    <string name="img_crop_rotate">തിരിക്കുക</string>
+    <string name="img_crop_flip">മിറർ</string>
+    <string name="img_crop_reset">റീസെറ്റ്</string>
+</resources>

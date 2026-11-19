@@ -1,5 +1,7 @@
 package com.example.scanpro.imaging
 
+import kotlin.math.abs
+
 import com.example.scanpro.core.concurrent.BackgroundWork
 import android.content.Context
 import android.net.Uri
@@ -28,7 +30,16 @@ data class PdfInfo(
     val version: String = "",
     val sizeBytes: Long = 0,
     /** The PDF also carries an XMP metadata stream, a second copy of these details that readers may prefer. */
-    val hasXmp: Boolean = false
+    val hasXmp: Boolean = false,
+    /** The first page as it is shown (crop box, turned by its rotation), in points (1/72 inch); 0 when unknown. */
+    val pageWidthPt: Float = 0f,
+    val pageHeightPt: Float = 0f,
+    /** Some pages differ in size from the first one. */
+    val mixedPageSizes: Boolean = false,
+    /** Fillable form fields. */
+    val formFields: Int = 0,
+    /** The file carries encryption: a password to open it, or print and copy restrictions. */
+    val encrypted: Boolean = false
 )
 
 /** The details the user can change. Blank means "not set". */
@@ -43,6 +54,7 @@ object PdfMetadataEngine {
 
     internal fun readInfo(doc: PDDocument, sizeBytes: Long): PdfInfo {
         val info = doc.documentInformation
+        val first = if (doc.numberOfPages > 0) runCatching { shownSize(doc.getPage(0)) }.getOrNull() else null
         return PdfInfo(
             title = info.title.orEmpty().trim(),
             author = info.author.orEmpty().trim(),
@@ -55,8 +67,25 @@ object PdfMetadataEngine {
             pageCount = doc.numberOfPages,
             version = String.format(java.util.Locale.US, "%.1f", doc.version),
             sizeBytes = sizeBytes,
-            hasXmp = doc.documentCatalog.metadata != null
+            hasXmp = doc.documentCatalog.metadata != null,
+            pageWidthPt = first?.first ?: 0f,
+            pageHeightPt = first?.second ?: 0f,
+            mixedPageSizes = first != null && doc.pages.any { page ->
+                val size = shownSize(page)
+                abs(size.first - first.first) > 1f || abs(size.second - first.second) > 1f
+            },
+            formFields = runCatching {
+                doc.documentCatalog.acroForm?.fieldTree?.count { it is com.tom_roush.pdfbox.pdmodel.interactive.form.PDTerminalField } ?: 0
+            }.getOrDefault(0),
+            encrypted = doc.isEncrypted
         )
+    }
+
+    /** A page's size as a viewer shows it: the crop box, with width and height swapped for a quarter turn. */
+    internal fun shownSize(page: com.tom_roush.pdfbox.pdmodel.PDPage): Pair<Float, Float> {
+        val box = page.cropBox
+        val turned = ((page.rotation % 360) + 360) % 180 == 90
+        return if (turned) box.height to box.width else box.width to box.height
     }
 
     /** Applies [edit], or with [removeAll] clears every detail (information dictionary and XMP, page XMP too). */

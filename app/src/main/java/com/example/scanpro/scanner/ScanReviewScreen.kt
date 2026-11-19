@@ -47,6 +47,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
@@ -438,47 +440,9 @@ fun ScanReviewScreen(
                 IconButton(enabled = !blocked, onClick = { menu = true }) {
                     Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.scan_review_more))
                 }
-                val curveOn = stringResource(R.string.scan_review_state_on)
+                // Declutter (2026-11-19): only actions on the scan as a whole live here. No crop and Curve are on the
+                // Crop panel and "Use on all pages" on the Filters panel; listing them here too doubled every choice.
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.scan_review_no_crop)) },
-                        leadingIcon = { Icon(Icons.Default.Fullscreen, contentDescription = null) },
-                        enabled = bitmap != null,
-                        onClick = { menu = false; quads[key] = CropQuad.DEFAULT }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.scan_review_curve)) },
-                        leadingIcon = { Icon(Icons.Default.Gesture, contentDescription = null) },
-                        trailingIcon = { if (curveMode) Icon(Icons.Default.Check, contentDescription = curveOn) },
-                        enabled = bitmap != null && quads[key] != null,
-                        modifier = Modifier.semantics { if (curveMode) stateDescription = curveOn },
-                        onClick = {
-                            menu = false
-                            val image = bitmap ?: return@DropdownMenuItem
-                            val start = quads[key] ?: return@DropdownMenuItem
-                            if (curveMode) {
-                                curveMode = false
-                                quads[key] = start.straightened()
-                            } else {
-                                curveMode = true
-                                // The bend handles live on the Crop view, so it comes up with them.
-                                panel = PANEL_CROP
-                                // Start from the page's own edges; the orange handles then fine-tune each bend.
-                                scope.launch {
-                                    val estimated = withContext(Dispatchers.Default) {
-                                        runCatching { ImageProcessor.estimateCurves(image, start) }.getOrDefault(start)
-                                    }
-                                    if (curveMode && quads[key] == start) quads[key] = estimated
-                                }
-                            }
-                        }
-                    )
-                    if (pages.size > 1 && pages.any { (filters[it.toString()] ?: defaultFilter) != pageFilter }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.scan_review_use_on_all, stringResource(pageFilter.labelRes))) },
-                            onClick = { menu = false; pages.forEach { filters[it.toString()] = pageFilter }; onDefaultFilterChange(pageFilter) }
-                        )
-                    }
                     if (pages.size > 1) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.scan_review_move_earlier)) },
@@ -635,14 +599,14 @@ fun ScanReviewScreen(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     enabled = !blocked && bitmap != null,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     onClick = {
                         val image = bitmap ?: return@OutlinedButton
                         scope.launch { quads[key] = withContext(Dispatchers.Default) { detectQuad(image) } }
@@ -659,8 +623,8 @@ fun ScanReviewScreen(
                 }
                 OutlinedButton(
                     enabled = !blocked && bitmap != null,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     onClick = { quads[key] = CropQuad.DEFAULT }
                 ) {
                     Icon(Icons.Default.Fullscreen, contentDescription = null, Modifier.size(16.dp))
@@ -677,8 +641,9 @@ fun ScanReviewScreen(
                     enabled = !blocked && bitmap != null && quads[key] != null,
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .semantics { if (curveMode) stateDescription = curveOn },
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     colors = if (curveMode) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) else ButtonDefaults.outlinedButtonColors(),
                     onClick = {
                         val image = bitmap ?: return@OutlinedButton
@@ -733,7 +698,7 @@ fun ScanReviewScreen(
                 }
             }
         } else if (panel == PANEL_ADJUST) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                 AdjustmentRow(stringResource(R.string.doc_brightness), sliders.first, !blocked) { setSliders(it, sliders.second, sliders.third) }
                 AdjustmentRow(stringResource(R.string.doc_contrast), sliders.second, !blocked) { setSliders(sliders.first, it, sliders.third) }
                 AdjustmentRow(stringResource(R.string.doc_saturation), sliders.third, !blocked) { setSliders(sliders.first, sliders.second, it) }
@@ -759,7 +724,7 @@ fun ScanReviewScreen(
         } else if (panel == PANEL_REORDER) {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 itemsIndexed(pages, key = { _, uri -> uri.toString() }, contentType = { _, _ -> "review_reorder_item" }) { index, uri ->
@@ -768,13 +733,12 @@ fun ScanReviewScreen(
                         shape = RoundedCornerShape(10.dp),
                         color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(1.dp, if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.padding(vertical = 4.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clickable(enabled = !blocked) { onIndexChange(index) }
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .padding(start = 12.dp)
                         ) {
                             Text(
                                 text = "${index + 1}",
@@ -786,14 +750,14 @@ fun ScanReviewScreen(
                             IconButton(
                                 enabled = !blocked && index > 0,
                                 onClick = { movePage(index, index - 1) },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = stringResource(R.string.scan_review_move_earlier), modifier = Modifier.size(18.dp))
                             }
                             IconButton(
                                 enabled = !blocked && index < pages.lastIndex,
                                 onClick = { movePage(index, index + 1) },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = stringResource(R.string.scan_review_move_later), modifier = Modifier.size(18.dp))
                             }
@@ -1322,13 +1286,13 @@ private fun CropCanvas(
                 }
                 close()
             }
-            drawPath(path, accent.copy(alpha = 0.18f))
-            drawPath(path, Color.White, style = Stroke(width = 2.dp.toPx()))
+            drawPath(path, PageOutlineBlue.copy(alpha = 0.14f))
+            drawPath(path, PageOutlineBlue, style = Stroke(width = 2.dp.toPx()))
             // Corner handles: 30 dp circles with a translucent primary fill, a white ring and a thin primary outer ring.
             points.forEach { centre ->
-                drawCircle(accent.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
+                drawCircle(PageOutlineBlue.copy(alpha = 0.25f), radius = 12.dp.toPx(), center = centre)
                 drawCircle(Color.White, radius = 13.dp.toPx(), center = centre, style = Stroke(width = 2.5.dp.toPx()))
-                drawCircle(accent, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
+                drawCircle(PageOutlineBlue, radius = 15.dp.toPx(), center = centre, style = Stroke(width = 1.5.dp.toPx()))
             }
             if (curveMode) all.drop(4).forEach { drawCircle(Amber, radius = 9.dp.toPx(), center = it) }
             if (dragging && active < 4) {

@@ -12,10 +12,16 @@ declaration that appears when a bundle with `MANAGE_EXTERNAL_STORAGE` is uploade
   `requestLegacyExternalStorage` (read by Android 10 only). See the comment in `app/src/main/AndroidManifest.xml`.
 - Used for one optional feature, **Files on this phone** (`feature/phonepdfs/`): a read-only list of the PDFs, images,
   Word, Excel, PowerPoint and text files in shared storage, on Home and in Files, with filters, search, sort and thumbnails.
-- Not requested at launch. A card explains it, then opens Android's "All files access" page. The app works without it;
-  the user can say Not now or revoke it in system settings.
-- Files are only read. Nothing is changed or deleted without an explicit user action. Nothing is uploaded: the app has no
-  network code, analytics or accounts.
+- Asked for once at start (F196, owner's request, 2026-11-18): on the welcome's permission page, which explains it next to
+  the camera and notifications, or by a one-time prompt for people past the welcome; each leads to Android's "All files
+  access" page. A card in Files explains it too. The app works without it; the user can say Not now or revoke it in
+  system settings.
+- Google's permitted use for "document management" reads "locate, access, and edit compatible file types"; ScanPro's
+  use is read only (the tools write new files through the picker or app storage). That is the main rejection risk.
+  Fallback: a Play build without the permission, `-Pscanpro.allFilesAccess=false` (F210), removes it from the manifest
+  and every prompt for it. See docs/playstore-release/PLAYSTORE_PERMISSIONS_AUDIT.md.
+- Files are only read. Nothing is changed or deleted without an explicit user action. No file name, path or content is uploaded; the app has
+  no analytics or accounts (its only network use is Google's ML Kit models and diagnostics and Play delivery).
 
 ## Suggested answers
 **Permission use case (pick from Play's list):** Document management apps.
@@ -35,7 +41,7 @@ folders, needs to enumerate them. The app still uses the picker everywhere else 
 **Is it required?** No. It is opt-in; the app is fully usable without it.
 
 ## Video (Play asks for one; 30 to 60 seconds, screen recording on a phone)
-1. Fresh install, open the app, finish the welcome. Show that no storage permission was asked.
+1. Fresh install, open the app, go through the welcome to its permission page, which explains "Files on your phone".
 2. Open Files or Home: the card "See every file on your phone" explaining why.
 3. Tap Allow access: Android's "All files access" page, switch ScanPro on, go back.
 4. Files on this phone lists PDFs, images and Office files; use the filter chips and search.
@@ -44,7 +50,7 @@ folders, needs to enumerate them. The app still uses the picker everywhere else 
 
 ## Risks to know before filing
 - Play can refuse "document management" when the Storage Access Framework would do. Be specific about the list view.
-- If it is refused, options (not done): ship the Play bundle without `MANAGE_EXTERNAL_STORAGE` and hide "Files on this
+- If it is refused, options (the build switch is done, F210: `-Pscanpro.allFilesAccess=false`): ship the Play bundle without `MANAGE_EXTERNAL_STORAGE` and hide "Files on this
   phone" there (a build flavour or a manifest overlay), keeping the sideload build as it is; or replace the list with a
   folder the user picks once (SAF tree access) that the app remembers.
 - Review can take days, so file before the release date and do not rely on this for a fixed launch.

@@ -48,6 +48,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -301,7 +302,7 @@ private fun HistoryRow(entry: ScanHistoryEntry, onOpen: () -> Unit, onFavourite:
         DateUtils.getRelativeTimeSpanString(entry.savedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
     }
     ListItem(
-        modifier = Modifier.clickable(role = Role.Button, onClick = onOpen),
+        modifier = Modifier.clickable(role = Role.Button, onClick = onOpen).minimumInteractiveComponentSize(),
         overlineContent = {
             val source = if (entry.created) stringResource(R.string.qrhist_filter_created) + " · " else ""
             Text("$source${titleFor(code)} · $whenScanned")

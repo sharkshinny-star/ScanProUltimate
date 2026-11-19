@@ -63,4 +63,16 @@
     <string name="import_tip_body">ఒక ఫైల్‌ను ఎంచుకోవడానికి నొక్కండి, అనేకం ఎంచుకోవడానికి ఎక్కువసేపు నొక్కండి, తర్వాత ఇంపోర్ట్ చేయడానికి పైన కుడివైపున ఉన్న ఎంచుకోండి నొక్కండి.</string>
     <string name="import_tip_cancel">రద్దు చేయి</string>
     <string name="import_tip_import">ఇంపోర్ట్ చేయి</string>
+    <string name="phone_files_folders">ఫోల్డర్‌లు</string>
+    <string name="phone_files_show_grid">గ్రిడ్‌గా చూపించు</string>
+    <string name="phone_files_show_list">జాబితాగా చూపించు</string>
+    <string name="phone_files_my_storage">నా స్టోరేజ్</string>
+    <string name="phone_files_internal_storage">ఇంటర్నల్ స్టోరేజ్</string>
+    <string name="phone_files_downloads">డౌన్‌లోడ్‌లు</string>
+    <string name="phone_files_processed">ScanPro లో తయారైనవి</string>
+    <string name="phone_files_cloud_title">క్లౌడ్ డ్రైవ్‌లు మరియు ఇతర యాప్‌లు</string>
+    <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… నుండి తెరవండి</string>
+    <string name="phone_files_cloud_hint">మీ ఫోన్ ఫైల్ పికర్‌ను వాడుతుంది. ScanPro దేనికీ సైన్ ఇన్ చేయదు.</string>
+    <string name="phone_files_all_files">అన్ని ఫైల్‌లు</string>
+    <string name="phone_files_up">ఒక ఫోల్డర్ పైకి</string>
 </resources>

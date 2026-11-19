@@ -18,6 +18,7 @@ object FilesAccessPrompts {
     private const val KEY_PHONE_PDFS_CARD_DISMISSED = "phone_pdfs_card_dismissed"
     private const val KEY_PDF_OPENED = "pdf_opened"
     private const val KEY_HOME_FILES_CARD_DISMISSED = "home_files_card_dismissed"
+    private const val KEY_START_FILES_ASKED = "start_files_asked"
 
     private fun prefs(context: Context) =
         (context.applicationContext ?: context).getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -34,6 +35,13 @@ object FilesAccessPrompts {
     /** The same card on Home, closed separately: closing one doesn't hide the other. */
     fun homeFilesCardDismissed(context: Context) = prefs(context).getBoolean(KEY_HOME_FILES_CARD_DISMISSED, false)
     fun dismissHomeFilesCard(context: Context) = prefs(context).edit { putBoolean(KEY_HOME_FILES_CARD_DISMISSED, true) }
+
+    /**
+     * "All files access" has been asked for at start (F196): on the welcome's permission page, or by the one-time
+     * prompt for people who went through the welcome before it asked. Never asked at start again either way.
+     */
+    fun startFilesAsked(context: Context) = prefs(context).getBoolean(KEY_START_FILES_ASKED, false)
+    fun markStartFilesAsked(context: Context) = prefs(context).edit { putBoolean(KEY_START_FILES_ASKED, true) }
 
     /** A PDF has been opened in ScanPro's viewer at least once: one of the moments the default-viewer sheet may follow. */
     fun pdfOpened(context: Context) = prefs(context).getBoolean(KEY_PDF_OPENED, false)

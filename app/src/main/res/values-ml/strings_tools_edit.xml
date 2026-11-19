@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Edit and secure tools (F212). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_err_cannot_read">ഈ PDF വായിക്കാൻ കഴിയുന്നില്ല. ഇതിന് പാസ്‌വേഡ് ഉണ്ടെങ്കിൽ, ആദ്യം അൺലോക്ക് ചെയ്യുക.</string>
+    <string name="edit_section_what_happens">എന്ത് സംഭവിക്കും</string>
+    <string name="edit_section_found">ഈ PDF-ൽ കണ്ടെത്തിയത്</string>
+    <string name="edit_size_mm">%1$d × %2$d മി.മീ</string>
+
+    <string name="edit_recolour_estimate_note">വലുപ്പം ആദ്യ പേജിൽ നിന്ന് കണക്കാക്കിയതാണ്; ഫോട്ടോകളുള്ള പേജുകൾ വലുതായി വരും.</string>
+
+    <string name="edit_flatten_marked">അടയാളപ്പെടുത്തിയവ: പേജിന്റെ ഭാഗമാകുന്ന പേജ് 1-ലെ ഫീൽഡുകളും കമന്റുകളും.</string>
+    <string name="edit_flatten_fields">ഫോം ഫീൽഡുകൾ</string>
+    <string name="edit_flatten_comments">കമന്റുകളും സ്റ്റാമ്പുകളും</string>
+    <string name="edit_flatten_what_happens">സ്വന്തം രൂപമുള്ള ഫോം ഉത്തരങ്ങൾ, കമന്റുകൾ, ഹൈലൈറ്റുകൾ, സ്റ്റാമ്പുകൾ എന്നിവ പേജുകളിലേക്ക് വരച്ചുചേർക്കുന്നു, അതിനാൽ അവ ഫീൽഡോ കമന്റോ ആയി മാറ്റാനാവില്ല. ഉത്തരങ്ങൾ വായിക്കാനും തിരഞ്ഞെടുക്കാനും കഴിയുന്ന ടെക്സ്റ്റായി തുടരും, PDF എഡിറ്റർ ഉപയോഗിച്ച് പേജിന്റെ ഉള്ളടക്കം ഇപ്പോഴും മാറ്റാം. ലിങ്കുകളും സ്വന്തം രൂപമില്ലാത്ത കമന്റുകളും അതുപോലെ നിലനിൽക്കും. ഒന്നും മറയ്ക്കുന്നില്ല: വാക്കുകൾ നീക്കാൻ Redact ഉപയോഗിക്കുക.</string>
+    <string name="edit_flatten_links">ലിങ്കുകൾ (നിലനിൽക്കും)</string>
+
+    <string name="edit_crop_section_how">എങ്ങനെ ക്രോപ്പ് ചെയ്യാം</string>
+    <string name="edit_crop_err_no_margins">കുറഞ്ഞത് ഒരു വശത്തെങ്കിലും മാർജിൻ സജ്ജമാക്കുക.</string>
+    <string name="edit_crop_err_too_small">ഈ മാർജിനുകൾക്ക് ശേഷം ആദ്യ പേജിൽ %1$d മി.മീ-യിൽ താഴെയേ ബാക്കിയുള്ളൂ.</string>
+    <string name="edit_crop_size_change">പേജ് 1: %1$s → %2$s</string>
+    <string name="edit_crop_first_blank">പേജ് 1 ശൂന്യമാണെന്ന് തോന്നുന്നു, അതിനാൽ അത് അതുപോലെ നിലനിൽക്കും. ഉള്ളടക്കമുള്ള പേജുകൾ മുറിക്കും.</string>
+    <string name="edit_crop_auto_hint">ഓട്ടോ ട്രിം പേജ് 1-ൽ എന്ത് നിലനിർത്തുമെന്ന് ഫ്രെയിം കാണിക്കുന്നു; ഓരോ പേജിനും സ്വന്തം ഫ്രെയിം ഉണ്ട്.</string>
+    <string name="edit_crop_all_sides">എല്ലാ വശങ്ങളും</string>
+    <string name="edit_crop_not_redaction">ക്രോപ്പ് ചെയ്യുന്നത് മുറിച്ച ഭാഗങ്ങൾ മറയ്ക്കുന്നു, മായ്ക്കുന്നില്ല; ആർക്കും അത് തിരിച്ചാക്കാം. എന്തെങ്കിലും എന്നേക്കുമായി നീക്കാൻ Redact ഉപയോഗിക്കുക.</string>
+
+    <string name="edit_redact_reading">ഓരോ പേജിലെയും ടെക്സ്റ്റ് വായിക്കുന്നു…</string>
+    <string name="edit_redact_need_words">കറുപ്പിക്കേണ്ട വാക്കുകൾ ടൈപ്പ് ചെയ്യുക.</string>
+    <string name="edit_redact_no_text">ഈ PDF-ൽ തിരയാവുന്ന ടെക്സ്റ്റ് ഇല്ല (ഇതൊരു സ്കാൻ പോലെ തോന്നുന്നു). ആദ്യം Make searchable പ്രവർത്തിപ്പിക്കുക, അല്ലെങ്കിൽ Redact areas ഉപയോഗിക്കുക.</string>
+    <string name="edit_redact_found">%2$s-ൽ %1$s കണ്ടെത്തി</string>
+    <plurals name="edit_redact_matches">
+        <item quantity="one">%1$d പൊരുത്തം</item>
+        <item quantity="other">%1$d പൊരുത്തങ്ങൾ</item>
+    </plurals>
+    <string name="edit_redact_none_on_first">പേജ് 1-ൽ പൊരുത്തങ്ങളില്ല; അവ പിന്നീടുള്ള പേജുകളിലാണ്.</string>
+    <string name="edit_redact_search_rules">Match case ഓണല്ലെങ്കിൽ വലിയക്ഷരവും ചെറിയക്ഷരവും ഉച്ചാരണചിഹ്നങ്ങളും പരിഗണിക്കില്ല. രണ്ട് വരികളിലായി മുറിഞ്ഞ വാക്കുകളും കമന്റുകളിലും ഫോം ഫീൽഡുകളിലുമുള്ള വാക്കുകളും കണ്ടെത്തും.</string>
+
+    <string name="edit_redact_box_summary">%2$s-ൽ %1$s</string>
+    <plurals name="edit_redact_box_areas">
+        <item quantity="one">%1$d ഭാഗം</item>
+        <item quantity="other">%1$d ഭാഗങ്ങൾ</item>
+    </plurals>
+
+    <string name="edit_hf_err_empty">ഹെഡർ, ഫൂട്ടർ അല്ലെങ്കിൽ രണ്ടും എഴുതുക.</string>
+    <string name="edit_hf_err_only_page_skipped">ഈ PDF-ൽ ഒരു പേജേ ഉള്ളൂ, ആദ്യ പേജ് ഒഴിവാക്കുന്നു.</string>
+    <string name="edit_hf_first_skipped">ആദ്യ പേജ് ഒഴിവാക്കി, അത് അതുപോലെ നിലനിൽക്കും; മറ്റുള്ളവയ്ക്ക് ടെക്സ്റ്റ് ലഭിക്കും.</string>
+    <string name="edit_hf_shrunk">ടെക്സ്റ്റ് പേജിന്റെ വീതിയേക്കാൾ നീളമുള്ളതാണ്, അതിനാൽ ചേരാൻ ചെറുതാക്കി: %1$d pt.</string>
+    <string name="edit_hf_section_text">ടെക്സ്റ്റ്</string>
+    <string name="edit_hf_quick_footer">ഫൂട്ടറിനുള്ള പേജ് നമ്പറുകൾ</string>
+    <string name="edit_hf_quick_page_of">പേജ് {page} / {total}</string>
+    <string name="edit_hf_section_look">സ്ഥാനവും വലുപ്പവും</string>
+    <string name="edit_hf_size_small">ചെറുത്</string>
+    <string name="edit_hf_size_medium">ഇടത്തരം</string>
+    <string name="edit_hf_size_large">വലുത്</string>
+
+    <plurals name="edit_wm_pages">
+        <item quantity="one">%2$d പേജിൽ %1$d-ൽ വാട്ടർമാർക്ക്</item>
+        <item quantity="other">%2$d പേജുകളിൽ %1$d-ൽ വാട്ടർമാർക്ക്</item>
+    </plurals>
+
+    <string name="edit_protect_what_happens">ഫയൽ AES-256 ഉപയോഗിച്ച് എൻക്രിപ്റ്റ് ചെയ്യും. പാസ്‌വേഡ് ഉള്ളവർക്ക് അത് തുറക്കാനും പ്രിന്റ് ചെയ്യാനും പകർത്താനും മാറ്റാനും കഴിയും; അതില്ലാതെ ആർക്കും തുറക്കാനാവില്ല. പാസ്‌വേഡ് സുരക്ഷിതമായി സൂക്ഷിക്കുക: അത് വീണ്ടെടുക്കാനാവില്ല.</string>
+    <string name="edit_protect_strength">ശക്തി: %1$s (ഏകദേശം %2$d ബിറ്റുകൾ)</string>
+    <string name="edit_protect_strength_weak">ദുർബലം</string>
+    <string name="edit_protect_strength_fair">കൊള്ളാം</string>
+    <string name="edit_protect_strength_good">നല്ലത്</string>
+    <string name="edit_protect_strength_strong">ശക്തം</string>
+
+    <string name="edit_sign_summary">%2$s-ൽ %1$s</string>
+    <plurals name="edit_sign_stamps">
+        <item quantity="one">%1$d ഒപ്പ് അല്ലെങ്കിൽ ടെക്സ്റ്റ്</item>
+        <item quantity="other">%1$d ഒപ്പുകൾ അല്ലെങ്കിൽ ടെക്സ്റ്റുകൾ</item>
+    </plurals>
+</resources>
