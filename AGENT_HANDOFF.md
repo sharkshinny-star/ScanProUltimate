@@ -31,6 +31,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 ## 2. Completed work (newest first)
 
+- **F202** (2026-11-19): the crop editor turned its photo on the main thread on every Rotate tap (a visible freeze); it is now turned in the background and the outline turns in the frame the new picture appears. Tested with Robolectric; the smoothness itself needs a phone (release build).
 - **F201** (2026-11-19, cce1cd3): bug sweep after the first green CI run (219). Files no longer offers a permission a no-All-files-access build can't get; HD switch only on cameras with larger photos; Sign PDF font names translated; unused strings and `.artifacts/` removed. Full unit suite (1,019) and lint pass locally. What is left open are device checks (R60–R72), which need the phone.
 - **F200** (2026-11-18): Tools tab regrouped into five rounded panels (Organise, Edit and sign, Optimise, Convert, Security) with subtitles; compiles, not yet seen (R72). The cloud container can now compile (Android SDK + local Maven mirror script, not committed).
 - **F199** (2026-11-18): Edit PDF can add new text anywhere (in the nearest line's font) and set a colour; a bug that read every line as black is fixed. Engine 14/14 on the desktop. Note: a push containing any `[skip ci]` commit builds nothing.
