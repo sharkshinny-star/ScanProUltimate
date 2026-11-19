@@ -56,6 +56,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Rendered and looked at: `settings_light_main`, `settings_light_about`, `files-08-overview-{light,dark}`. This run also compiled and tested F216 for the first time.
 - NOT run: `bundleRelease` (left to CI), anything on a device.
 
+## Latest results (2026-11-19, F206 Edit PDF: remaining limits and the Word-like workspace; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,101 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 30/30, `PhoneTextShaperTest` 2/2, `EditPdfScreenshotTest` 38/38. Source audit PASS.
+- Screens: `./gradlew :app:testDebugUnitTest --tests '*EditPdfScreenshotTest*' -Pscanpro.screenshots=true` writes `app/build/screenshots/edit-pdf-01-main-light.png` to `edit-pdf-19-lists-ta-dark.png`; all 19 light ones and five dark ones were looked at as contact sheets beside the owner's design.
+- NOT run: anything on a device (R71, R73: the gestures, the page preview, pushed lines on real PDFs, joined scripts); release builds.
+
 ## Latest results (2026-11-19, F205 Edit PDF zoom, find and replace, changes list, Save name; cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,055 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 22/22. Source audit PASS.
