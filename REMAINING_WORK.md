@@ -46,7 +46,7 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 <!-- BEGIN open-items: written by scripts/remaining-work.py from AUDIT_FINDINGS.md; do not edit by hand -->
 
-34 open items: 12 P1, 17 P2, 5 P3.
+35 open items: 12 P1, 18 P2, 5 P3.
 
 ### P1
 
@@ -77,6 +77,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P2
 
+- **R87** (Device check (F221); `core/designsystem/Components.kt` (`TaskBanner`), …). The task banner and the bar above it were looked at as two still renders only, never moving or on a phone. The Files change (no search, sort or grid switch in the top bar while On this phone shows) compiles and the unit suite passes, but was not rendered or seen.
+  - Next: On a phone: start a long task (Re-read text on a long document, or import a large PDF) and look at Home, Files and the document screen: after 0.7 s the banner slides open with the task's words and Stop, the bar sweeps without an empty moment, Stop stops the task and the banner closes. Files › On this phone: the top bar shows the title and the menu only; My documents still has search, sort and the grid switch. Ask the owner for a screenshot of the screen that looks cluttered before changing more.
 - **R86** (Device check (F219); `feature/tools/ProcessingOverlay.kt`, `core/designsystem/LoadingAnimations.kt`, …). The progress card's new layout, arrival, two-second minimum and finish were checked with unit tests and JVM renders only (eleven still frames looked at).
   - Next: On a phone, release build: (1) a quick tool on a small PDF (Rotate, Protect, Compress): the card stays about two seconds, the ring closes to 100% with the figure counting up, the tick is drawn, "Done" stands where Cancel was, then the result shows; say whether two seconds feels right when several quick tools are run one after another; (2) Merge several large files: real progress, then the short 0.7 s finish; (3) Cancel and Back still ask while the tool works and do nothing during the finish; (4) the card is centred upright, shows the dial beside the text with the phone on its side, and is larger on a tablet; largest font size; (5) with animations turned off (Developer options) the card neither arrives nor waits; (6) Images to PDF: the small veil animation (light behind the page) still looks right.
 - **R83** (Device check; F215). Small items compiled and unit-tested in CI only.
