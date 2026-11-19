@@ -109,6 +109,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.SideEffect
@@ -2249,8 +2250,20 @@ private fun modeHint(mode: ScanMode): Int = when (mode) {
 
 @Composable
 private fun ModeTab(text: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    // The chosen mode scrolls into view. Seven modes do not fit a phone's width, so a camera opened in a mode from
+    // further along (QR code or Book from Home, ID card from the widget, a default mode from Settings) showed the
+    // start of the strip with nothing underlined.
+    val intoView = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    LaunchedEffect(selected) {
+        if (selected) {
+            // One frame first, so the strip has been laid out when this runs for a mode chosen before it opened.
+            androidx.compose.runtime.withFrameNanos { }
+            runCatching { intoView.bringIntoView() }
+        }
+    }
     Column(
         Modifier
+            .bringIntoViewRequester(intoView)
             // As wide as the label: a fillMaxWidth underline in a plain Row otherwise made the first tab take the whole
             // row, and "Both sides" was pushed off screen (only "Front only" showed in ID card mode).
             .width(IntrinsicSize.Max)

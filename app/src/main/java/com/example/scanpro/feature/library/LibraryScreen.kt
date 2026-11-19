@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -1406,14 +1407,13 @@ private fun ScanHeroCard(
                         radius = size.width * 0.5f,
                         center = Offset(size.width * 0.1f, 0f)
                     )
-                    // The brand glyph, large and faint, running off the right edge.
-                    // Kept to the right third so the faint glyph (and its scan line) never runs behind the text.
-                    // Capped by the width too: a large font makes the card taller, and a glyph sized by height alone
-                    // then grew leftwards behind the text and the button.
-                    // The glyph keeps to the part of the card above the mode pills, so its scan line never runs behind them.
+                    // The brand glyph, faint, whole and inside the right third of the card. It used to be larger and run
+                    // off the right edge, which cut its brackets and the moving scan line in half and read as a clipped
+                    // picture. Capped by the width (a large font makes the card taller, and a glyph sized by height
+                    // alone grew leftwards behind the text) and kept above the mode pills.
                     val glyphArea = size.height - if (onQuickScan != null) 64.dp.toPx() else 0f
-                    val glyph = minOf(glyphArea * 1.05f, size.width * 0.75f)
-                    val left = size.width - glyph * 0.62f
+                    val glyph = minOf(glyphArea * 0.96f, size.width * 0.32f)
+                    val left = size.width - glyph - 6.dp.toPx()
                     val top = (glyphArea - glyph) / 2f
                     translate(left = left, top = top) {
                         drawScanGlyph(
@@ -1497,15 +1497,12 @@ private fun ScanHeroCard(
             ) {
                 Icon(Icons.Rounded.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                // One line: at a large font size the label shrinks to fit rather than breaking onto two lines.
-                val labelStyle = MaterialTheme.typography.labelLarge
-                Text(
+                // One line that shrinks to fit. Its lower limit used to be 12 sp, which was not small enough at 150 % text
+                // ("Start scanninc") or for the longer Tamil label: both were cut mid-letter at the button's edge.
+                com.example.scanpro.core.designsystem.FitText(
                     stringResource(R.string.lib_hero_start_scanning),
-                    style = labelStyle,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false,
-                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = labelStyle.fontSize)
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -1558,12 +1555,16 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
     val perRow = minOf(if (com.example.scanpro.navigation.isWideWindow()) 8 else 4, actions.size.coerceAtLeast(1))
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         actions.chunked(perRow).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // The tiles of a row share the height of the tallest one, and each centres its icon and label. Every label
+            // used to reserve two lines, which left a one-line label (all three, in English) sitting above an empty band.
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { action ->
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .clip(RoundedCornerShape(18.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .clickable(enabled = enabled, role = Role.Button, onClick = action.onClick)
@@ -1577,9 +1578,7 @@ private fun QuickActions(enabled: Boolean, actions: List<QuickAction>, modifier:
                             style = MaterialTheme.typography.labelMedium,
                             textAlign = TextAlign.Center,
                             maxLines = 2,
-                            minLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize),
                             lineHeight = MaterialTheme.typography.labelMedium.lineHeight
                         )
                     }

@@ -262,6 +262,7 @@
     <string name="scan_review_folder_label">ഫോൾഡർ</string>
     <string name="scan_review_folder_dialog_title">ഫോൾഡറിൽ സേവ് ചെയ്യുക</string>
     <string name="scan_review_adjust">ക്രമീകരിക്കുക</string>
+    <string name="scan_review_reorder">ക്രമം മാറ്റുക</string>
     <string name="scan_guidance_glare">പേജിൽ തിളക്കമുണ്ട് · ഫോൺ അല്പം ചരിക്കുക</string>
     <string name="scan_quality_blurry">ഈ പേജ് മങ്ങിയതായി തോന്നുന്നു: ചെറിയ ടെക്സ്റ്റ് വായിക്കാൻ ബുദ്ധിമുട്ടായേക്കാം</string>
     <string name="scan_quality_glare">തിളക്കം ഈ പേജിന്റെ ഒരു ഭാഗം മറയ്ക്കുന്നു</string>

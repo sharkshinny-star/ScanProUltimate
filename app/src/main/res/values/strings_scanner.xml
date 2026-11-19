@@ -283,6 +283,7 @@
     <string name="scan_review_folder_label">Folder</string>
     <string name="scan_review_folder_dialog_title">Save in a folder</string>
     <string name="scan_review_adjust">Adjust</string>
+    <string name="scan_review_reorder">Reorder</string>
     <!-- Page quality: live glare hint and the review notice (scanner/PageQuality.kt) -->
     <string name="scan_guidance_glare">Glare on the page · tilt the phone a little</string>
     <string name="scan_quality_blurry">This page looks blurred: small text may be hard to read</string>

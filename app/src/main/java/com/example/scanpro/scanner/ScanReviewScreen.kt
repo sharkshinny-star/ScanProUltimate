@@ -1,6 +1,5 @@
 package com.example.scanpro.scanner
 
-import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.filled.Folder
 import com.example.scanpro.feature.library.FolderPickerDialog
 import androidx.compose.material.icons.filled.Edit
@@ -19,6 +18,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.border
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.layout.ContentScale
@@ -588,6 +592,8 @@ fun ScanReviewScreen(
         } } }
 
         // Thumbnails, filters and sliders; below the page, or beside it in landscape.
+        // False with animations turned off in system settings.
+        val panelMotion = com.example.scanpro.core.designsystem.rememberMotionEnabled()
         val lowerControls: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         // Every page as a thumbnail: tap one to adjust it, "+" takes another page.
         ReviewFilmstrip(
@@ -603,37 +609,27 @@ fun ScanReviewScreen(
 
         // Crop, Filters or Adjust, one panel at a time, as Adobe Scan, CamScanner, OKEN and Lens do: the sliders and
         // crop actions no longer take room from the page while nobody is using them. A dot on Adjust says this page's sliders have moved.
-        Row(
-            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Equal-width tabs, icon above a one-line label. They were chips in a plain row: with more than one page the
+        // fourth chip was left about 40 dp on a 360 dp phone, so its label broke into one letter per line and the row
+        // grew tall enough to push the filters half-way down the screen.
+        ReviewToolTabs(
+            tools = buildList {
+                add(ReviewTool(PANEL_CROP, Icons.Default.Crop, stringResource(R.string.doc_crop)))
+                add(ReviewTool(PANEL_FILTERS, Icons.Default.ColorLens, stringResource(R.string.doc_filters)))
+                add(ReviewTool(PANEL_ADJUST, Icons.Default.Tune, stringResource(R.string.scan_review_adjust), marked = adjustments[key] != null))
+                if (pages.size > 1) add(ReviewTool(PANEL_REORDER, Icons.Default.SwapHoriz, stringResource(R.string.scan_review_reorder)))
+            },
+            selected = panel,
+            onSelect = { panel = it },
+            modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp)
+        )
+        // Each tool's controls have a different height (a row of buttons, the filter strip, four sliders). Swapped in
+        // one frame, the page above jumped to its new size; the height now glides and the page follows it.
+        Column(
+            Modifier.fillMaxWidth().then(
+                if (panelMotion) Modifier.animateContentSize(tween(200, easing = androidx.compose.animation.core.FastOutSlowInEasing)) else Modifier
+            )
         ) {
-            FilterChip(
-                selected = panel == PANEL_CROP,
-                onClick = { panel = PANEL_CROP },
-                leadingIcon = { Icon(Icons.Default.Crop, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.doc_crop)) }
-            )
-            FilterChip(
-                selected = panel == PANEL_FILTERS,
-                onClick = { panel = PANEL_FILTERS },
-                leadingIcon = { Icon(Icons.Default.ColorLens, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.doc_filters)) }
-            )
-            FilterChip(
-                selected = panel == PANEL_ADJUST,
-                onClick = { panel = PANEL_ADJUST },
-                leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, Modifier.size(18.dp)) },
-                label = { Text(stringResource(R.string.scan_review_adjust) + if (adjustments[key] != null) " •" else "") }
-            )
-            if (pages.size > 1) {
-                FilterChip(
-                    selected = panel == PANEL_REORDER,
-                    onClick = { panel = PANEL_REORDER },
-                    leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null, Modifier.size(18.dp)) },
-                    label = { Text(stringResource(R.string.tools_organizer_organize_title).substringBefore(" ")) }
-                )
-            }
-        }
         if (panel == PANEL_CROP) {
             // Dedicated Crop controls directly under the canvas (Adobe Scan style: Auto-detect, No crop, Curve/Straighten).
             Row(
@@ -805,6 +801,7 @@ fun ScanReviewScreen(
                     }
                 }
             }
+        }
         }
 
         message?.let {
@@ -1150,6 +1147,60 @@ private fun SaveOptionCell(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+/** One of the review's tools: which panel it opens, and whether it carries a dot (this page's sliders have moved). */
+private class ReviewTool(val panel: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector, val label: String, val marked: Boolean = false)
+
+/**
+ * The review's tools as one segmented control: every tool gets the same share of the width, so three or four fit on
+ * any phone, in any language and at any font size (the label shrinks before it is cut, and never wraps).
+ */
+@Composable
+private fun ReviewToolTabs(tools: List<ReviewTool>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(scheme.surfaceContainerHigh)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        tools.forEach { tool ->
+            val isSelected = tool.panel == selected
+            val container by androidx.compose.animation.animateColorAsState(
+                if (isSelected) scheme.secondaryContainer else Color.Transparent, tween(160), label = "toolTab"
+            )
+            val content by androidx.compose.animation.animateColorAsState(
+                if (isSelected) scheme.onSecondaryContainer else scheme.onSurfaceVariant, tween(160), label = "toolTabContent"
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(container)
+                    .selectable(selected = isSelected, role = Role.Tab, onClick = { onSelect(tool.panel) })
+                    .heightIn(min = 48.dp)
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box {
+                    Icon(tool.icon, contentDescription = null, tint = content, modifier = Modifier.size(20.dp))
+                    if (tool.marked) {
+                        Box(Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-2).dp).size(7.dp).background(scheme.primary, CircleShape))
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
+                com.example.scanpro.core.designsystem.FitText(
+                    tool.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = content
+                )
+            }
         }
     }
 }

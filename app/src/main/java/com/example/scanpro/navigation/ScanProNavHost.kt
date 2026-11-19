@@ -304,8 +304,10 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Bool
 /** The transition for the screen going out, mirroring [enterFor]. */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.exitFor(pop: Boolean): ExitTransition = when {
     betweenTabs() -> if (pop) fadeOut(tween(TabFadeDuration, easing = FastOutLinearInEasing)) else ExitTransition.KeepUntilTransitionsFinished
-    // Sheet rising on top: the caller screen stays stationary and fully visible underneath.
-    !pop && targetState.isSheetLike() -> ExitTransition.None
+    // Sheet rising on top: the caller screen stays stationary and fully visible underneath. It must be held: an exit
+    // with no animation ends on the first frame and the caller would be removed there, leaving the camera to fade in
+    // over the empty background (a light flash before the dark viewfinder).
+    !pop && targetState.isSheetLike() -> ExitTransition.KeepUntilTransitionsFinished
     // Sheet popping: drops immediately off-screen accelerating downward with zero hesitation.
     pop && initialState.isSheetLike() ->
         fadeOut(tween(CameraExitDuration, easing = FastOutLinearInEasing)) +
