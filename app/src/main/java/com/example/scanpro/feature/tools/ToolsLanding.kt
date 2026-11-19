@@ -479,7 +479,9 @@ private fun ToolCard(
                 name,
                 style = MaterialTheme.typography.labelLarge,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                maxLines = 2,
+                // Three lines: "PDF to Word, Excel or text" and "Pages per sheet (N-up)" were cut off at two, and the
+                // names are longer still in the Indian languages.
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
             return@Column
@@ -510,6 +512,47 @@ private fun ToolCard(
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+/** A tool on a panel of its own, the full width: icon, name, what it does. A long press pins or unpins it. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun WideToolRow(tool: PdfToolCard, pinned: Boolean, onClick: () -> Unit, onTogglePin: () -> Unit) {
+    val name = stringResource(tool.title)
+    val description = TOOL_DESCRIPTIONS[tool.id]?.let { stringResource(it) }
+    val pinLabel = stringResource(if (pinned) R.string.tools_unpin_action else R.string.tools_pin_action)
+    val haptic = LocalHapticFeedback.current
+    val shape = RoundedCornerShape(24.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .combinedClickable(
+                role = Role.Button,
+                onClickLabel = name,
+                onClick = onClick,
+                onLongClickLabel = pinLabel,
+                onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onTogglePin() }
+            )
+            .semantics {
+                contentDescription = if (description != null) "$name. $description" else name
+                customActions = listOf(CustomAccessibilityAction(pinLabel) { onTogglePin(); true })
+            }
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconTile(tool.icon, tool.tone, size = 48.dp, corner = 15.dp, iconSize = 24.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (description != null) {
+                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        if (pinned) Icon(Icons.Default.PushPin, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
     }
 }
 
@@ -685,18 +728,22 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.toolsLanding(
     }
 
     if (category == ALL_CATEGORIES) {
-        item(key = "viewer-header", contentType = "tools-header") {
-            PanelHeading(stringResource(R.string.tools_section_read), stringResource(R.string.tools_subtitle_read), null)
-        }
-        item(key = "viewer", contentType = "tools-row") {
+        item(key = "viewer", contentType = "tools-viewer") {
             Column {
-                ToolCardRow(listOf(VIEWER_TOOL), perRow, memory, onLaunch)
+                // One tool does not make a group: a panel with a heading and a single tile looked half empty, so the
+                // viewer is one wide row saying what it does.
+                WideToolRow(
+                    tool = VIEWER_TOOL,
+                    pinned = memory.isPinned(VIEWER_TOOL.id),
+                    onClick = { memory.used(VIEWER_TOOL.id); onLaunch(VIEWER_TOOL) },
+                    onTogglePin = { memory.togglePin(VIEWER_TOOL.id) }
+                )
                 if (memory.pinned.isEmpty()) {
                     Text(
                         stringResource(R.string.tools_pin_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        modifier = Modifier.padding(start = 4.dp, top = 8.dp)
                     )
                 }
             }

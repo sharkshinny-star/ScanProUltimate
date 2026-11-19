@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.BrandingWatermark
 import androidx.compose.material.icons.automirrored.filled.CallSplit
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.AspectRatio
@@ -106,7 +107,7 @@ internal val TOOL_SECTIONS = listOf(
         "edit", R.string.tools_section_edit_sign, listOf(
             PdfToolCard("edit_pdf", R.string.tools_card_edit_pdf, Icons.Default.EditNote, TileTone.Indigo, label = R.string.tools_tile_edit_pdf),
             PdfToolCard("sign", R.string.tools_card_sign, Icons.Default.Draw, TileTone.Violet),
-            PdfToolCard("fill", R.string.tools_card_fill, Icons.Default.EditNote, TileTone.Violet),
+            PdfToolCard("fill", R.string.tools_card_fill, Icons.AutoMirrored.Filled.FactCheck, TileTone.Violet),
             PdfToolCard("watermark", R.string.tools_card_watermark, Icons.AutoMirrored.Filled.BrandingWatermark, TileTone.Rose, label = R.string.tools_tile_watermark),
             PdfToolCard("page_numbers", R.string.tools_card_page_numbers, Icons.Default.FormatListNumbered, TileTone.Sky, label = R.string.tools_tile_page_numbers),
             PdfToolCard("header_footer", R.string.tools_card_header_footer, Icons.Default.VerticalAlignTop, TileTone.Slate, label = R.string.tools_tile_header_footer),

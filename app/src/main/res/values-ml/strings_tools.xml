@@ -600,5 +600,4 @@
     <string name="tools_subtitle_optimise">ഫയലുകൾ ചെറുതോ തിരയാവുന്നതോ ലളിതമോ ആക്കുക</string>
     <string name="tools_subtitle_convert">ഫയലുകൾ PDF ആക്കുക, തിരിച്ചും</string>
     <string name="tools_subtitle_secure">പാസ്‌വേഡുകളും ഫയൽ വിവരങ്ങളും</string>
-    <string name="tools_subtitle_read">ഈ ഫോണിലെ ഏത് PDF-ഉം തുറക്കുക</string>
 </resources>

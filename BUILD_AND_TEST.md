@@ -49,6 +49,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F203 Tools tab fixes, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug --no-configuration-cache`: 1,022 tests, 0 failed, 86 skipped; lint 0 errors.
+- `--tests '*ToolsLandingScreenshotTest*' -Pscanpro.screenshots=true`: `tools-landing-tall-{light,dark}.png` and `tools-landing-tall-hi-{light,dark}.png` rendered and looked at.
+- NOT run: anything on a device.
+
 ## Latest results (2026-11-19, F202 crop editor rotation, cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest --tests '*CropEditorDialogTest*' --tests '*QuadMathTest*'`: 2/2 and 13/13. `:app:lintDebug`: 0 errors.

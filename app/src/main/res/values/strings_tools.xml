@@ -635,5 +635,4 @@
     <string name="tools_subtitle_optimise">Make files smaller, searchable or simpler</string>
     <string name="tools_subtitle_convert">Turn files into PDF and back</string>
     <string name="tools_subtitle_secure">Passwords and file details</string>
-    <string name="tools_subtitle_read">Open any PDF on this phone</string>
 </resources>

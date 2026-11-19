@@ -47,8 +47,15 @@ class ToolsLandingScreenshotTest(private val dark: Boolean) {
         outDir.mkdirs()
     }
 
+    /** The longest names are in the Indian languages: the same page in Hindi, to see that none is cut off. */
     @Test
-    fun tools() {
+    @Config(qualifiers = "hi-w360dp-h2200dp-xxhdpi")
+    fun toolsHindi() = render("tools-landing-tall-hi")
+
+    @Test
+    fun tools() = render("tools-landing-tall")
+
+    private fun render(name: String) {
         compose.setContent {
             ScanProTheme(themeMode = if (dark) ThemeMode.DARK else ThemeMode.LIGHT) { PdfToolsScreen(recentPdfs = emptyList()) }
         }
@@ -57,6 +64,6 @@ class ToolsLandingScreenshotTest(private val dark: Boolean) {
             compose.waitForIdle()
         }
         val image = compose.onRoot().captureToImage().asAndroidBitmap()
-        File(outDir, "tools-landing-tall-${if (dark) "dark" else "light"}.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        File(outDir, "$name-${if (dark) "dark" else "light"}.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 }

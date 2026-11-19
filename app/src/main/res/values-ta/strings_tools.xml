@@ -600,5 +600,4 @@
     <string name="tools_subtitle_optimise">கோப்புகளைச் சிறியதாக, தேடக்கூடியதாக அல்லது எளிதாக்கு</string>
     <string name="tools_subtitle_convert">கோப்புகளை PDF ஆகவும் PDF-இலிருந்தும் மாற்று</string>
     <string name="tools_subtitle_secure">கடவுச்சொற்கள், கோப்பு விவரங்கள்</string>
-    <string name="tools_subtitle_read">இந்த போனில் உள்ள எந்த PDF-ஐயும் திற</string>
 </resources>
