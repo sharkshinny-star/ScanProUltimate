@@ -91,4 +91,20 @@
     <string name="pages_compress_target_unreachable">ఈ PDF సుమారు %1$s వరకే చిన్నదయ్యే అవకాశం ఉంది, కాబట్టి అంతకంటే చిన్న లక్ష్యం చేరకపోవచ్చు.</string>
     <string name="pages_compress_target_text_warning">ఇంత చిన్న పరిమాణం చేరడానికి పేజీలు చిత్రాలుగా సేవ్ కావచ్చు: అప్పుడు వాటి టెక్స్ట్‌ను వెతకడం లేదా కాపీ చేయడం కుదరదు.</string>
     <string name="pages_compress_estimate_failed">ఈ PDFకు అంచనా లెక్కించలేకపోయాం. పని పూర్తయ్యాక అసలు పరిమాణం చూపబడుతుంది.</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_numbers_bold">బోల్డ్</string>
+    <string name="pages_numbers_closeup">క్లోజ్-అప్</string>
+    <string name="pages_numbers_colour">రంగు</string>
+    <string name="pages_numbers_colour_green">ఆకుపచ్చ</string>
+    <string name="pages_numbers_colour_grey">ముదురు బూడిద</string>
+    <string name="pages_numbers_colour_red">ఎరుపు</string>
+    <string name="pages_numbers_font">ఫాంట్</string>
+    <string name="pages_numbers_font_twins">ప్రతి PDF రీడర్‌లో ఉండే Arial, Times New Roman లకు జంటలైన Helvetica లేదా Times గా రాయబడింది: అదే ఆకారాలు, అదే వెడల్పులు, కాబట్టి ఫైల్‌కు ఏదీ జోడించాల్సిన పని లేదు.</string>
+    <string name="pages_numbers_italic">ఇటాలిక్</string>
+    <string name="pages_numbers_look">శైలి</string>
+    <string name="pages_numbers_regular">సాధారణం</string>
+    <string name="pages_numbers_size">పరిమాణం</string>
+    <string name="pages_numbers_size_value">%1$d pt</string>
+    <string name="pages_numbers_style">రూపం</string>
+    <string name="pages_numbers_underline">అండర్‌లైన్</string>
 </resources>

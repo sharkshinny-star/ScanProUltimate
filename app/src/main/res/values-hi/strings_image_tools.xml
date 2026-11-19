@@ -56,4 +56,10 @@
     <string name="img_crop_rotate">घुमाएँ</string>
     <string name="img_crop_flip">मिरर</string>
     <string name="img_crop_reset">रीसेट</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_compress_larger_as">%1$s के रूप में यह तस्वीर अभी से बड़ी हो जाएगी। फ़ोटो के लिए JPG या WebP से यह छोटी होती है।</string>
+    <string name="img_compress_png_hint">PNG हर पिक्सल को जैसा है वैसा रखता है। स्क्रीनशॉट, ड्रॉइंग और पारदर्शी हिस्सों वाली तस्वीरों के लिए सबसे अच्छा; फ़ोटो आमतौर पर JPG या WebP में छोटी होती हैं।</string>
+    <string name="img_compress_png_no_quality">PNG में क्वालिटी सेटिंग नहीं होती: यह हर पिक्सल रखता है। इसे छोटा करने के लिए नीचे रिज़ॉल्यूशन घटाएँ, या टारगेट साइज़ इस्तेमाल करें।</string>
+    <string name="img_tool_unreadable">यह तस्वीर खोली नहीं जा सकी। इसे बंद करके फिर से चुनें, या कोई दूसरी तस्वीर आज़माएँ।</string>
+    <string name="img_tool_unreadable_short">तस्वीर खोली नहीं जा सकी</string>
 </resources>

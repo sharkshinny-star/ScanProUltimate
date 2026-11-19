@@ -723,4 +723,6 @@
         <item quantity="one">%d లైన్ అక్షరాలు సరిగ్గా కలిసేలా ఆకారాలుగా గీయబడింది.</item>
         <item quantity="other">%d లైన్‌లు అక్షరాలు సరిగ్గా కలిసేలా ఆకారాలుగా గీయబడ్డాయి.</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tools_preview_swipe_hint">ఇతరాల కోసం స్వైప్ చేయండి</string>
 </resources>

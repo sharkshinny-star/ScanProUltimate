@@ -56,4 +56,10 @@
     <string name="img_crop_rotate">തിരിക്കുക</string>
     <string name="img_crop_flip">മിറർ</string>
     <string name="img_crop_reset">റീസെറ്റ്</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_compress_larger_as">%1$s ആയാൽ ഈ ചിത്രം ഇപ്പോഴുള്ളതിനേക്കാൾ വലുതാകും. ഫോട്ടോ ആണെങ്കിൽ JPG അല്ലെങ്കിൽ WebP ആക്കിയാൽ വലുപ്പം കുറയും.</string>
+    <string name="img_compress_png_hint">PNG ഓരോ പിക്സലും അതേപടി നിലനിർത്തുന്നു. സ്ക്രീൻഷോട്ടുകൾ, ഡ്രോയിങ്ങുകൾ, സുതാര്യമായ ഭാഗങ്ങളുള്ള ചിത്രങ്ങൾ എന്നിവയ്ക്ക് ഏറ്റവും നല്ലത്; ഫോട്ടോകൾ സാധാരണയായി JPG അല്ലെങ്കിൽ WebP ആയാൽ ചെറുതാകും.</string>
+    <string name="img_compress_png_no_quality">PNG-ക്ക് ക്വാളിറ്റി സെറ്റിങ് ഇല്ല: അത് ഓരോ പിക്സലും നിലനിർത്തുന്നു. വലുപ്പം കുറയ്ക്കാൻ താഴെ റെസലൂഷൻ കുറയ്ക്കുക, അല്ലെങ്കിൽ ടാർഗെറ്റ് വലുപ്പം ഉപയോഗിക്കുക.</string>
+    <string name="img_tool_unreadable">ഈ ചിത്രം തുറക്കാനായില്ല. ഇത് അടച്ച് വീണ്ടും തിരഞ്ഞെടുക്കുക, അല്ലെങ്കിൽ മറ്റൊരു ചിത്രം ശ്രമിക്കുക.</string>
+    <string name="img_tool_unreadable_short">ചിത്രം തുറക്കാനായില്ല</string>
 </resources>

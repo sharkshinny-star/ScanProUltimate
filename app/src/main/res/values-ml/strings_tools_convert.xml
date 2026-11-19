@@ -192,4 +192,21 @@
         <item quantity="one">%1$d ഫീൽഡ് പൂരിപ്പിച്ച് ഫോം ഫ്ലാറ്റൻ ചെയ്തു</item>
         <item quantity="other">%1$d ഫീൽഡുകൾ പൂരിപ്പിച്ച് ഫോം ഫ്ലാറ്റൻ ചെയ്തു</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="cvt_ximg_all_selected">എല്ലാം തിരഞ്ഞെടുത്തു (%1$d)</string>
+    <string name="cvt_ximg_choose_title">ചിത്രങ്ങൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="cvt_ximg_choose_unopened">എല്ലാം സേവ് ചെയ്യുക, അല്ലെങ്കിൽ വേണ്ടവ മാത്രം ടിക്ക് ചെയ്യുക</string>
+    <string name="cvt_ximg_from_page">പേജ് %1$d</string>
+    <string name="cvt_ximg_in_selection">തിരഞ്ഞെടുത്തു</string>
+    <string name="cvt_ximg_none_ticked">സേവ് ചെയ്യാൻ കുറഞ്ഞത് ഒരു ചിത്രം ടിക്ക് ചെയ്യുക</string>
+    <string name="cvt_ximg_not_in_selection">തിരഞ്ഞെടുത്തിട്ടില്ല</string>
+    <string name="cvt_ximg_picture_of">ചിത്രം %1$d / %2$d</string>
+    <string name="cvt_ximg_prepare_failed">ചിത്രങ്ങൾ വായിക്കാനായില്ല. ഇത് അടച്ച് വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="cvt_ximg_preparing">ചിത്രങ്ങൾ തയ്യാറാക്കുന്നു…</string>
+    <string name="cvt_ximg_select_all">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
+    <string name="cvt_ximg_select_none">മായ്ക്കുക</string>
+    <string name="cvt_ximg_selected_of">%2$d-ൽ %1$d തിരഞ്ഞെടുത്തു</string>
+    <string name="cvt_ximg_tick">ഈ ചിത്രം തിരഞ്ഞെടുക്കുക</string>
+    <string name="cvt_ximg_untick">തിരഞ്ഞെടുപ്പിൽ നിന്ന് നീക്കുക</string>
+    <string name="cvt_ximg_view_larger">ചിത്രം വലുതായി കാണുക</string>
 </resources>

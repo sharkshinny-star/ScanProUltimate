@@ -69,4 +69,25 @@
         <item quantity="one">%1$d हस्ताक्षर या टेक्स्ट</item>
         <item quantity="other">%1$d हस्ताक्षर या टेक्स्ट</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_crop_adjust">ठीक करें</string>
+    <string name="edit_crop_apply_to">एक बार खींचने से बदलता है</string>
+    <string name="edit_crop_drag_hint">क्या रखना है यह चुनने के लिए कोना या किनारा खींचें; फ़्रेम को खिसकाने के लिए उसके अंदर खींचें।</string>
+    <string name="edit_crop_frame_description">क्रॉप फ़्रेम के साथ पेज; इसके कोने या किनारे खींचें</string>
+    <string name="edit_crop_mode_manual">हाथ से</string>
+    <string name="edit_crop_nothing_chosen">क्या रखना है यह चुनने के लिए फ़्रेम खींचें</string>
+    <string name="edit_crop_page_size">पेज %1$d: %2$s → %3$s</string>
+    <string name="edit_crop_preview">झलक</string>
+    <string name="edit_crop_reset_all_pages">रीसेट</string>
+    <string name="edit_crop_reset_page">इस पेज को रीसेट करें</string>
+    <string name="edit_crop_same_everywhere">यही क्रॉप उन पर भी लगाएँ</string>
+    <string name="edit_crop_scope_all">सभी पेज</string>
+    <string name="edit_crop_scope_page">यह पेज</string>
+    <string name="edit_crop_start_over">फिर से शुरू करें</string>
+    <string name="edit_crop_status_keeps_own">इस पेज का अपना क्रॉप है और वही रहेगा</string>
+    <string name="edit_crop_status_own">इस पेज का अपना क्रॉप है</string>
+    <string name="edit_crop_status_shared_all">हर पेज पर एक ही क्रॉप</string>
+    <string name="edit_crop_status_shared_page">सभी पेजों वाला क्रॉप लग रहा है; खींचने पर इसका अपना क्रॉप बन जाएगा</string>
+    <string name="edit_crop_status_whole">यह पेज पूरा रखा गया है</string>
+    <string name="edit_crop_use_shared">सभी पेजों वाला क्रॉप लगाएँ</string>
 </resources>

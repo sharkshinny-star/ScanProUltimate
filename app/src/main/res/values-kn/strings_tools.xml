@@ -723,4 +723,6 @@
         <item quantity="one">%d ಸಾಲನ್ನು ಅಕ್ಷರಗಳು ಸರಿಯಾಗಿ ಸೇರುವಂತೆ ಆಕಾರಗಳಾಗಿ ಬರೆಯಲಾಗಿದೆ.</item>
         <item quantity="other">%d ಸಾಲುಗಳನ್ನು ಅಕ್ಷರಗಳು ಸರಿಯಾಗಿ ಸೇರುವಂತೆ ಆಕಾರಗಳಾಗಿ ಬರೆಯಲಾಗಿದೆ.</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tools_preview_swipe_hint">ಇತರವುಗಳಿಗಾಗಿ ಸ್ವೈಪ್ ಮಾಡಿ</string>
 </resources>

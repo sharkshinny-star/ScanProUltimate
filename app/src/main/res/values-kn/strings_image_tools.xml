@@ -56,4 +56,10 @@
     <string name="img_crop_rotate">ತಿರುಗಿಸಿ</string>
     <string name="img_crop_flip">ಕನ್ನಡಿ</string>
     <string name="img_crop_reset">ಮರುಹೊಂದಿಸಿ</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="img_compress_larger_as">%1$s ಆಗಿ ಈ ಚಿತ್ರ ಈಗಿರುವುದಕ್ಕಿಂತ ದೊಡ್ಡದಾಗುತ್ತದೆ. ಫೋಟೋಗೆ JPG ಅಥವಾ WebP ಬಳಸಿದರೆ ಚಿಕ್ಕದಾಗುತ್ತದೆ.</string>
+    <string name="img_compress_png_hint">PNG ಪ್ರತಿ ಪಿಕ್ಸೆಲ್ ಅನ್ನೂ ಹಾಗೆಯೇ ಉಳಿಸುತ್ತದೆ. ಸ್ಕ್ರೀನ್‌ಶಾಟ್, ರೇಖಾಚಿತ್ರ ಮತ್ತು ಪಾರದರ್ಶಕ ಭಾಗಗಳಿರುವ ಚಿತ್ರಗಳಿಗೆ ಉತ್ತಮ; ಫೋಟೋಗಳು ಸಾಮಾನ್ಯವಾಗಿ JPG ಅಥವಾ WebP ಆಗಿದ್ದರೆ ಚಿಕ್ಕದಾಗುತ್ತವೆ.</string>
+    <string name="img_compress_png_no_quality">PNG ಗೆ ಗುಣಮಟ್ಟದ ಸೆಟ್ಟಿಂಗ್ ಇಲ್ಲ: ಅದು ಪ್ರತಿ ಪಿಕ್ಸೆಲ್ ಅನ್ನೂ ಉಳಿಸುತ್ತದೆ. ಚಿಕ್ಕದಾಗಿಸಲು ಕೆಳಗಿನ ರೆಸಲ್ಯೂಶನ್ ಕಡಿಮೆ ಮಾಡಿ, ಅಥವಾ ಗುರಿ ಗಾತ್ರ ಬಳಸಿ.</string>
+    <string name="img_tool_unreadable">ಈ ಚಿತ್ರವನ್ನು ತೆರೆಯಲಾಗಲಿಲ್ಲ. ಇದನ್ನು ಮುಚ್ಚಿ ಮತ್ತೆ ಆರಿಸಿ, ಅಥವಾ ಬೇರೆ ಚಿತ್ರ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="img_tool_unreadable_short">ಚಿತ್ರವನ್ನು ತೆರೆಯಲಾಗಲಿಲ್ಲ</string>
 </resources>

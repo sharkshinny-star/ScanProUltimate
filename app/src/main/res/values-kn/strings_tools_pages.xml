@@ -91,4 +91,20 @@
     <string name="pages_compress_target_unreachable">ಈ PDF ಸುಮಾರು %1$s ವರೆಗೆ ಮಾತ್ರ ಚಿಕ್ಕದಾಗಬಹುದು, ಹಾಗಾಗಿ ಅದಕ್ಕಿಂತ ಚಿಕ್ಕ ಗುರಿ ತಲುಪದಿರಬಹುದು.</string>
     <string name="pages_compress_target_text_warning">ಇಷ್ಟು ಚಿಕ್ಕ ಗಾತ್ರ ತಲುಪಲು ಪುಟಗಳನ್ನು ಚಿತ್ರಗಳಾಗಿ ಉಳಿಸಬಹುದು: ಆಗ ಅವುಗಳ ಪಠ್ಯವನ್ನು ಹುಡುಕಲು ಅಥವಾ ನಕಲಿಸಲು ಆಗುವುದಿಲ್ಲ.</string>
     <string name="pages_compress_estimate_failed">ಈ PDF ಗೆ ಅಂದಾಜು ಲೆಕ್ಕ ಹಾಕಲಾಗಲಿಲ್ಲ. ಕೆಲಸ ಮುಗಿದಾಗ ನಿಜವಾದ ಗಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ.</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="pages_numbers_bold">ಬೋಲ್ಡ್</string>
+    <string name="pages_numbers_closeup">ಹತ್ತಿರದ ನೋಟ</string>
+    <string name="pages_numbers_colour">ಬಣ್ಣ</string>
+    <string name="pages_numbers_colour_green">ಹಸಿರು</string>
+    <string name="pages_numbers_colour_grey">ಗಾಢ ಬೂದು</string>
+    <string name="pages_numbers_colour_red">ಕೆಂಪು</string>
+    <string name="pages_numbers_font">ಫಾಂಟ್</string>
+    <string name="pages_numbers_font_twins">Helvetica ಅಥವಾ Times ಆಗಿ ಬರೆಯಲಾಗಿದೆ; ಇವು Arial ಮತ್ತು Times New Roman ನ ಜೋಡಿಗಳು, ಪ್ರತಿ PDF ರೀಡರ್‌ನಲ್ಲಿಯೂ ಇರುತ್ತವೆ: ಅದೇ ಆಕಾರ ಮತ್ತು ಅಗಲ, ಹೀಗಾಗಿ ಫೈಲ್‌ಗೆ ಏನನ್ನೂ ಸೇರಿಸಬೇಕಾಗಿಲ್ಲ.</string>
+    <string name="pages_numbers_italic">ಇಟಾಲಿಕ್</string>
+    <string name="pages_numbers_look">ಶೈಲಿ</string>
+    <string name="pages_numbers_regular">ಸಾಮಾನ್ಯ</string>
+    <string name="pages_numbers_size">ಗಾತ್ರ</string>
+    <string name="pages_numbers_size_value">%1$d pt</string>
+    <string name="pages_numbers_style">ನೋಟ</string>
+    <string name="pages_numbers_underline">ಅಡಿಗೆರೆ</string>
 </resources>

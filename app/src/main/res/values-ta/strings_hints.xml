@@ -43,4 +43,6 @@
     <string name="settings_show_intros_title">அறிமுகங்களை மீண்டும் காட்டு</string>
     <string name="settings_show_intros_subtitle">வழிகாட்டியையும் கேமரா, கருவி அறிமுகங்களையும் மீண்டும் ஒருமுறை பாருங்கள்</string>
     <string name="settings_show_intros_done">அறிமுகங்கள் மீண்டும் காட்டப்படும்</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="hint_tool_step_pick_any">எந்தக் கோப்பையும் தேர்வு செய்யலாம்: PDF, புகைப்படம், ஆவணம், பாடல், வீடியோ அல்லது ஆர்க்கைவ்</string>
 </resources>

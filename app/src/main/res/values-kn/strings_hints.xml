@@ -43,4 +43,6 @@
     <string name="settings_show_intros_title">ಪರಿಚಯಗಳನ್ನು ಮತ್ತೆ ತೋರಿಸಿ</string>
     <string name="settings_show_intros_subtitle">ಪ್ರವಾಸ ಮತ್ತು ಕ್ಯಾಮೆರಾ ಹಾಗೂ ಪರಿಕರಗಳ ಪರಿಚಯಗಳನ್ನು ಮತ್ತೊಮ್ಮೆ ನೋಡಿ</string>
     <string name="settings_show_intros_done">ಪರಿಚಯಗಳು ಮತ್ತೆ ಕಾಣಿಸುತ್ತವೆ</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="hint_tool_step_pick_any">ಯಾವುದೇ ಫೈಲ್ ಆರಿಸಿ: PDF, ಫೋಟೋ, ಡಾಕ್ಯುಮೆಂಟ್, ಹಾಡು, ವೀಡಿಯೊ ಅಥವಾ ಆರ್ಕೈವ್</string>
 </resources>

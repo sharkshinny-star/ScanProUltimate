@@ -264,4 +264,14 @@
     <string name="settings_stat_documents">दस्तावेज़</string>
     <string name="settings_stat_storage">उपयोग किया गया स्टोरेज</string>
     <string name="settings_stat_recycle_bin">रीसायकल बिन में</string>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="name_pattern_add_tag">टैग जोड़ें</string>
+    <string name="name_pattern_example">अगला स्कैन: %1$s</string>
+    <string name="name_pattern_sample_text">इनवॉइस Acme</string>
+    <string name="name_pattern_suggestions">सुझाव</string>
+    <string name="name_pattern_tag_date">तारीख़</string>
+    <string name="name_pattern_tag_mode">स्कैन का प्रकार</string>
+    <string name="name_pattern_tag_text">पेज का टेक्स्ट</string>
+    <string name="name_pattern_tag_time">समय</string>
+    <string name="name_pattern_unknown">यह टैग नहीं है, जैसा लिखा वैसा रखा गया: %1$s</string>
 </resources>

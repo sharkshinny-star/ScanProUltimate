@@ -69,4 +69,25 @@
         <item quantity="one">%1$d ಸಹಿ ಅಥವಾ ಪಠ್ಯ</item>
         <item quantity="other">%1$d ಸಹಿಗಳು ಅಥವಾ ಪಠ್ಯಗಳು</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_crop_adjust">ಹೊಂದಿಸಿ</string>
+    <string name="edit_crop_apply_to">ಎಳೆದಾಗ ಬದಲಾಗುವುದು</string>
+    <string name="edit_crop_drag_hint">ಯಾವುದನ್ನು ಉಳಿಸಬೇಕೆಂದು ಆರಿಸಲು ಮೂಲೆ ಅಥವಾ ಬದಿಯನ್ನು ಎಳೆಯಿರಿ; ಚೌಕಟ್ಟನ್ನು ಸರಿಸಲು ಅದರ ಒಳಗೆ ಎಳೆಯಿರಿ.</string>
+    <string name="edit_crop_frame_description">ಕ್ರಾಪ್ ಚೌಕಟ್ಟಿನೊಂದಿಗೆ ಪುಟ; ಅದರ ಮೂಲೆಗಳು ಅಥವಾ ಬದಿಗಳನ್ನು ಎಳೆಯಿರಿ</string>
+    <string name="edit_crop_mode_manual">ಕೈಯಾರೆ</string>
+    <string name="edit_crop_nothing_chosen">ಯಾವುದನ್ನು ಉಳಿಸಬೇಕೆಂದು ಆರಿಸಲು ಚೌಕಟ್ಟನ್ನು ಎಳೆಯಿರಿ</string>
+    <string name="edit_crop_page_size">ಪುಟ %1$d: %2$s → %3$s</string>
+    <string name="edit_crop_preview">ಮುನ್ನೋಟ</string>
+    <string name="edit_crop_reset_all_pages">ಮರುಹೊಂದಿಸಿ</string>
+    <string name="edit_crop_reset_page">ಈ ಪುಟವನ್ನು ಮರುಹೊಂದಿಸಿ</string>
+    <string name="edit_crop_same_everywhere">ಇವುಗಳಿಗೂ ಇದೇ ಕ್ರಾಪ್ ಬಳಸಿ</string>
+    <string name="edit_crop_scope_all">ಎಲ್ಲಾ ಪುಟಗಳು</string>
+    <string name="edit_crop_scope_page">ಈ ಪುಟ</string>
+    <string name="edit_crop_start_over">ಮೊದಲಿನಿಂದ ಆರಂಭಿಸಿ</string>
+    <string name="edit_crop_status_keeps_own">ಈ ಪುಟಕ್ಕೆ ತನ್ನದೇ ಆದ ಕ್ರಾಪ್ ಇದೆ ಮತ್ತು ಅದನ್ನೇ ಉಳಿಸಿಕೊಳ್ಳುತ್ತದೆ</string>
+    <string name="edit_crop_status_own">ಈ ಪುಟಕ್ಕೆ ತನ್ನದೇ ಆದ ಕ್ರಾಪ್ ಇದೆ</string>
+    <string name="edit_crop_status_shared_all">ಎಲ್ಲಾ ಪುಟಗಳಿಗೂ ಒಂದೇ ಕ್ರಾಪ್</string>
+    <string name="edit_crop_status_shared_page">ಎಲ್ಲಾ ಪುಟಗಳ ಕ್ರಾಪ್ ಬಳಸುತ್ತದೆ; ಎಳೆದರೆ ಇದಕ್ಕೆ ಪ್ರತ್ಯೇಕ ಕ್ರಾಪ್ ಆಗುತ್ತದೆ</string>
+    <string name="edit_crop_status_whole">ಈ ಪುಟವನ್ನು ಪೂರ್ಣವಾಗಿ ಉಳಿಸಲಾಗಿದೆ</string>
+    <string name="edit_crop_use_shared">ಎಲ್ಲಾ ಪುಟಗಳ ಕ್ರಾಪ್ ಬಳಸಿ</string>
 </resources>

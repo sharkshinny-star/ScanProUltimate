@@ -192,4 +192,21 @@
         <item quantity="one">%1$d फ़ील्ड भरा और फ़ॉर्म फ़्लैट किया</item>
         <item quantity="other">%1$d फ़ील्ड भरे और फ़ॉर्म फ़्लैट किया</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="cvt_ximg_all_selected">सभी %1$d चुने गए</string>
+    <string name="cvt_ximg_choose_title">तस्वीरें चुनें</string>
+    <string name="cvt_ximg_choose_unopened">सभी सेव करें, या सिर्फ़ अपनी पसंद की तस्वीरों पर टिक करें</string>
+    <string name="cvt_ximg_from_page">पेज %1$d</string>
+    <string name="cvt_ximg_in_selection">चुनी हुई</string>
+    <string name="cvt_ximg_none_ticked">सेव करने के लिए कम से कम एक तस्वीर पर टिक करें</string>
+    <string name="cvt_ximg_not_in_selection">चुनी नहीं गई</string>
+    <string name="cvt_ximg_picture_of">तस्वीर %1$d / %2$d</string>
+    <string name="cvt_ximg_prepare_failed">तस्वीरें पढ़ी नहीं जा सकीं। इसे बंद करके दोबारा कोशिश करें।</string>
+    <string name="cvt_ximg_preparing">तस्वीरें तैयार हो रही हैं…</string>
+    <string name="cvt_ximg_select_all">सभी चुनें</string>
+    <string name="cvt_ximg_select_none">साफ़ करें</string>
+    <string name="cvt_ximg_selected_of">%2$d में से %1$d चुने गए</string>
+    <string name="cvt_ximg_tick">इस तस्वीर को चुनें</string>
+    <string name="cvt_ximg_untick">चयन से हटाएँ</string>
+    <string name="cvt_ximg_view_larger">तस्वीर बड़ी करके देखें</string>
 </resources>

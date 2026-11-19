@@ -69,4 +69,25 @@
         <item quantity="one">%1$d సంతకం లేదా వచనం</item>
         <item quantity="other">%1$d సంతకాలు లేదా వచనాలు</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="edit_crop_adjust">సరిచేయండి</string>
+    <string name="edit_crop_apply_to">డ్రాగ్ చేస్తే మారేది</string>
+    <string name="edit_crop_drag_hint">ఉంచాలనుకున్న భాగాన్ని ఎంచుకోవడానికి మూల లేదా వైపును లాగండి; కదిలించడానికి ఫ్రేమ్ లోపల లాగండి.</string>
+    <string name="edit_crop_frame_description">క్రాప్ ఫ్రేమ్‌తో ఉన్న పేజీ; దాని మూలలు లేదా వైపులను లాగండి</string>
+    <string name="edit_crop_mode_manual">చేతితో</string>
+    <string name="edit_crop_nothing_chosen">ఉంచాలనుకున్న భాగాన్ని ఎంచుకోవడానికి ఫ్రేమ్‌ను లాగండి</string>
+    <string name="edit_crop_page_size">పేజీ %1$d: %2$s → %3$s</string>
+    <string name="edit_crop_preview">ప్రివ్యూ</string>
+    <string name="edit_crop_reset_all_pages">రీసెట్</string>
+    <string name="edit_crop_reset_page">ఈ పేజీని రీసెట్ చేయండి</string>
+    <string name="edit_crop_same_everywhere">ఈ క్రాప్‌ను వాటికి కూడా వర్తింపజేయండి</string>
+    <string name="edit_crop_scope_all">అన్ని పేజీలు</string>
+    <string name="edit_crop_scope_page">ఈ పేజీ</string>
+    <string name="edit_crop_start_over">మళ్లీ మొదలుపెట్టండి</string>
+    <string name="edit_crop_status_keeps_own">ఈ పేజీకి దాని స్వంత క్రాప్ ఉంది, అదే ఉంటుంది</string>
+    <string name="edit_crop_status_own">ఈ పేజీకి దాని స్వంత క్రాప్ ఉంది</string>
+    <string name="edit_crop_status_shared_all">ప్రతి పేజీకి ఒకే క్రాప్</string>
+    <string name="edit_crop_status_shared_page">అన్ని పేజీల క్రాప్‌ను వాడుతోంది; లాగితే దానికి స్వంత క్రాప్ వస్తుంది</string>
+    <string name="edit_crop_status_whole">ఈ పేజీ పూర్తిగా ఉంచబడింది</string>
+    <string name="edit_crop_use_shared">అన్ని పేజీల క్రాప్‌ను వాడండి</string>
 </resources>

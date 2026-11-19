@@ -723,4 +723,6 @@
         <item quantity="one">%d पंक्ति आकृतियों के रूप में बनाई गई ताकि अक्षर ठीक से जुड़ें।</item>
         <item quantity="other">%d पंक्तियां आकृतियों के रूप में बनाई गईं ताकि अक्षर ठीक से जुड़ें।</item>
     </plurals>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="tools_preview_swipe_hint">बाकी देखने के लिए स्वाइप करें</string>
 </resources>

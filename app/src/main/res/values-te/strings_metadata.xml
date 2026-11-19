@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F234-F243 (2026-11-19). Machine translation, not yet reviewed by a speaker. -->
+    <string name="meta_action_hint">మార్చడానికి పెన్సిల్ గుర్తు ఉన్న వివరాన్ని నొక్కండి</string>
+    <string name="meta_action_save">కాపీని సేవ్ చేయండి</string>
+    <string name="meta_clear_search">శోధనను క్లియర్ చేయండి</string>
+    <string name="meta_done_exported">%1$d వివరాలను ఎగుమతి చేసింది.</string>
+    <string name="meta_done_removed_all">మెటాడేటా లేని కాపీని సేవ్ చేసింది. చిత్రం, టెక్స్ట్ లేదా శబ్దం మారలేదు.</string>
+    <string name="meta_done_removed_location">లొకేషన్ లేని కాపీని సేవ్ చేసింది.</string>
+    <string name="meta_done_removed_personal">వ్యక్తిగత వివరాలు లేని కాపీని సేవ్ చేసింది.</string>
+    <string name="meta_done_saved">మీ మార్పులతో కాపీని సేవ్ చేసింది. అసలు ఫైల్ మారలేదు.</string>
+    <string name="meta_edit_field">%1$s మార్చండి</string>
+    <string name="meta_edit_hint">తొలగించడానికి దీన్ని ఖాళీగా ఉంచండి.</string>
+    <string name="meta_empty">సెట్ చేయలేదు</string>
+    <string name="meta_err_export">వివరాలను ఎగుమతి చేయడం సాధ్యం కాలేదు.</string>
+    <string name="meta_err_nothing_to_save">ఏమీ మార్చలేదు.</string>
+    <string name="meta_err_read">ఈ ఫైల్ వివరాలను చదవడం సాధ్యం కాలేదు.</string>
+    <string name="meta_err_save">ఈ వివరాలతో కాపీని సేవ్ చేయడం సాధ్యం కాలేదు.</string>
+    <string name="meta_export_hint">మొత్తం %1$d వివరాలు, స్ప్రెడ్‌షీట్ లేదా మరో ప్రోగ్రామ్ కోసం.</string>
+    <string name="meta_formats_note">పేరుతో మాత్రమే కాకుండా, కంటెంట్‌ను బట్టి %1$d ఫైల్ రకాలను గుర్తిస్తుంది.</string>
+    <string name="meta_group_audio">శబ్దం</string>
+    <string name="meta_group_camera">కెమెరా</string>
+    <string name="meta_group_contents">కంటెంట్</string>
+    <string name="meta_group_document">డాక్యుమెంట్</string>
+    <string name="meta_group_file">ఫైల్</string>
+    <string name="meta_group_image">చిత్రం</string>
+    <string name="meta_group_location">లొకేషన్</string>
+    <string name="meta_group_tags">అన్ని ట్యాగ్‌లు</string>
+    <string name="meta_group_video">వీడియో</string>
+    <string name="meta_is_location">లొకేషన్</string>
+    <string name="meta_is_personal">వ్యక్తిగత వివరం</string>
+    <string name="meta_privacy_hint">ప్రతిదీ వెంటనే ఒక కాపీని తయారు చేస్తుంది; అసలు ఫైల్ అలాగే ఉంటుంది. చిత్రం, టెక్స్ట్ లేదా శబ్దం మారవు.</string>
+    <string name="meta_progress_exporting">వివరాలను ఎగుమతి చేస్తోంది…</string>
+    <string name="meta_progress_reading">ఫైల్ వివరాలను చదువుతోంది…</string>
+    <string name="meta_progress_saving">కాపీని సేవ్ చేస్తోంది…</string>
+    <string name="meta_read_only">చదవడానికి మాత్రమే</string>
+    <string name="meta_readonly_archive">ఈ ఆర్కైవ్ రకం లోపలి విషయాలు చూపబడవు; దాని స్వంత వివరాలు చూపబడతాయి.</string>
+    <string name="meta_readonly_audio_format">ఈ శబ్ద ఫార్మాట్ ట్యాగ్‌లను చదవవచ్చు, కానీ మార్చలేరు.</string>
+    <string name="meta_readonly_audio_old_android">సంగీతం ట్యాగ్‌లను మార్చడానికి Android 8 లేదా కొత్తది కావాలి. ట్యాగ్‌లను చదవవచ్చు.</string>
+    <string name="meta_readonly_format">ఈ రకం ఫైల్ వివరాలను చదవవచ్చు, కానీ ఇక్కడ మార్చలేరు.</string>
+    <string name="meta_readonly_image_format">JPEG, PNG, WebP చిత్రాలను మాత్రమే మార్చవచ్చు; దీని వివరాలు చదవడానికి మాత్రమే.</string>
+    <string name="meta_readonly_legacy_office">Word, Excel, PowerPoint 97-2003 ఫైల్‌లు: ఫైల్ స్వంత వివరాలను మాత్రమే చదవవచ్చు. డాక్యుమెంట్ ప్రాపర్టీలను చూడటానికి, మార్చడానికి దీన్ని DOCX, XLSX లేదా PPTX గా సేవ్ చేయండి.</string>
+    <string name="meta_readonly_no_properties">ఈ డాక్యుమెంట్‌లో రాయడానికి ప్రాపర్టీస్ భాగం లేదు, కాబట్టి దీని వివరాలు చదవడానికి మాత్రమే.</string>
+    <string name="meta_readonly_pdf_locked">ఈ PDF ని తెరవడానికి పాస్‌వర్డ్ కావాలి, కాబట్టి ఫైల్ స్వంత వివరాలను మాత్రమే చదవవచ్చు. మిగిలినవి చూడటానికి, మార్చడానికి ముందుగా దీన్ని అన్‌లాక్ చేయండి.</string>
+    <string name="meta_readonly_raw">కెమెరా RAW ఫైల్‌లు చదవడానికి మాత్రమే: వాటిని మార్చితే చిత్రం డేటా పాడైపోవచ్చు.</string>
+    <string name="meta_readonly_unreadable">ఈ ఫైల్ పాడైనట్లు కనిపిస్తోంది, కాబట్టి కొన్ని వివరాలను మాత్రమే చదవగలిగాం, వేటినీ మార్చలేరు.</string>
+    <string name="meta_readonly_video">వీడియో వివరాలు చదవడానికి మాత్రమే: వీడియో ట్యాగ్‌లను సురక్షితంగా తిరిగి రాయడం ఇంకా సాధ్యం కాదు.</string>
+    <string name="meta_remove_all">మెటాడేటా అంతా తొలగించండి</string>
+    <string name="meta_remove_location">లొకేషన్ తొలగించండి</string>
+    <string name="meta_remove_personal">వ్యక్తిగత వివరాలు తొలగించండి</string>
+    <string name="meta_search_hint">వివరాలను శోధించండి</string>
+    <string name="meta_search_none">ఏ వివరమూ సరిపోలలేదు.</string>
+    <string name="meta_section_export">ఎగుమతి</string>
+    <string name="meta_section_privacy">గోప్యత</string>
+    <string name="meta_show_fewer">తక్కువ చూపండి</string>
+    <string name="meta_will_be_removed">తొలగించబడుతుంది</string>
+</resources>
