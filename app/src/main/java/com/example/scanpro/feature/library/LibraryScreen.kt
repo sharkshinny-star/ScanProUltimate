@@ -285,7 +285,7 @@ fun LibraryRoute(
         },
         onPhonePdfs = onPhonePdfs,
         // Files on this phone (F168): Home's section, the card above My documents and the On this phone pane.
-        homePhoneFiles = if (mode != ScanProDestinations.HOME) null else {
+        homePhoneFiles = if (mode != ScanProDestinations.HOME || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
             {
                 com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
                     actions = phoneFileActions,
@@ -298,7 +298,7 @@ fun LibraryRoute(
                 )
             }
         },
-        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed) null else {
+        filesAccessCard = if (mode != ScanProDestinations.FILES || phonePdfsCardDismissed || !com.example.scanpro.feature.phonepdfs.PhonePdfSource.available) null else {
             {
                 com.example.scanpro.feature.phonepdfs.PhoneFilesHomeSection(
                     actions = phoneFileActions,

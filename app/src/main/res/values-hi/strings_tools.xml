@@ -532,9 +532,6 @@
         <item quantity="one">%1$d पेज का रंग उल्टा किया गया।</item>
         <item quantity="other">%1$d पेजों के रंग उल्टे किए गए।</item>
     </plurals>
-    <string name="tools_wm_color_red">लाल</string>
-    <string name="tools_wm_color_green">हरा</string>
-    <string name="tools_wm_color_purple">बैंगनी</string>
     <string name="tools_protect_already_title">इस PDF में पहले से पासवर्ड है</string>
     <string name="tools_protect_already_body">इसे खोलने वाले को पहले से पासवर्ड चाहिए। दूसरा पासवर्ड लगाने के लिए पहले मौजूदा पासवर्ड हटाएँ, फिर अनलॉक की गई कॉपी को सुरक्षित करें।</string>
     <string name="tools_protect_remove_password_first">पहले पासवर्ड हटाएँ</string>

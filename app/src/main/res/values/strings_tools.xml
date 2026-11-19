@@ -572,9 +572,6 @@
         <item quantity="one">Inverted colours on %1$d page.</item>
         <item quantity="other">Inverted colours on %1$d pages.</item>
     </plurals>
-    <string name="tools_wm_color_red">Red</string>
-    <string name="tools_wm_color_green">Green</string>
-    <string name="tools_wm_color_purple">Purple</string>
     <string name="tools_card_edit_pdf">Edit PDF text</string>
     <string name="tools_tile_edit_pdf">Edit PDF</string>
     <string name="tools_desc_edit_pdf">Change words, font, bold and size</string>

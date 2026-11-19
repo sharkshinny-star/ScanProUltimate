@@ -208,12 +208,25 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
     val cloudPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) openPicked(context, uri, actions, openWithTitle)
     }
+    val openProcessed = {
+        com.example.scanpro.feature.tools.ToolsFocusRequest.pending.value = com.example.scanpro.feature.tools.ToolsFocus.RESULTS
+        actions.onOpenTools()
+    }
+    val openCloud = {
+        runCatching { cloudPicker.launch(PhoneFiles.MIME_TYPES.values.flatten().distinct().toTypedArray()) }
+            .onFailure { Toast.makeText(context, noPickerApp, Toast.LENGTH_SHORT).show() }
+        Unit
+    }
     // Back steps out of the open folder before it leaves the screen.
     androidx.activity.compose.BackHandler(enabled = state.hasAccess == true && state.folderPath != null, onBack = viewModel::folderUp)
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         when (state.hasAccess) {
             null -> Unit
-            false -> AccessExplainer(onAllow = requestAccess, onNotNow = onNotNow)
+            // A build without All files access (see PhonePdfSource.available) offers what needs no permission.
+            false -> if (PhonePdfSource.available) AccessExplainer(onAllow = requestAccess, onNotNow = onNotNow)
+            else Column(Modifier.fillMaxWidth().widthIn(max = 900.dp).padding(horizontal = 16.dp)) {
+                StorageOverviewWithoutAccess(processed.size, openProcessed, openCloud)
+            }
             true -> PhoneFilesList(
                 state = state,
                 onRefresh = viewModel::refresh,
@@ -241,14 +254,8 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
                 onOpenFolder = viewModel::openFolder,
                 onGridChange = viewModel::setGrid,
                 processedCount = processed.size,
-                onOpenProcessed = {
-                    com.example.scanpro.feature.tools.ToolsFocusRequest.pending.value = com.example.scanpro.feature.tools.ToolsFocus.RESULTS
-                    actions.onOpenTools()
-                },
-                onOpenCloud = {
-                    runCatching { cloudPicker.launch(PhoneFiles.MIME_TYPES.values.flatten().distinct().toTypedArray()) }
-                        .onFailure { Toast.makeText(context, noPickerApp, Toast.LENGTH_SHORT).show() }
-                },
+                onOpenProcessed = openProcessed,
+                onOpenCloud = openCloud,
                 onSelectionAction = { action ->
                     val files = state.selection
                     when (action) {
@@ -538,6 +545,15 @@ private fun StorageOverview(
         StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, subtitle = stringResource(R.string.phone_files_cloud_hint), onClick = onOpenCloud)
         OverviewHeading(stringResource(R.string.phone_files_all_files))
     }
+}
+
+/** Files for a build without All files access: the tools' results and other apps' files, no phone-wide list. */
+@Composable
+private fun StorageOverviewWithoutAccess(processedCount: Int, onOpenProcessed: () -> Unit, onOpenCloud: () -> Unit) {
+    OverviewHeading(stringResource(R.string.phone_files_my_storage))
+    StorageRow(Icons.Rounded.TaskAlt, TileTone.Teal, stringResource(R.string.phone_files_processed), processedCount.toString(), onClick = onOpenProcessed)
+    OverviewHeading(stringResource(R.string.phone_files_cloud_title))
+    StorageRow(Icons.Rounded.Cloud, TileTone.Violet, stringResource(R.string.phone_files_cloud_open), null, subtitle = stringResource(R.string.phone_files_cloud_hint), onClick = onOpenCloud)
 }
 
 @Composable
