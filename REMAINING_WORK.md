@@ -20,7 +20,9 @@ the two trees merged is recorded.
 3. **File the Play Console "All files access" declaration (R70, R53).** Draft: `PLAY_ALL_FILES_ACCESS.md`. Without it an
    update that asks for the access at first launch may be rejected.
 4. **Decide R59:** should photographing a document shown on a screen auto-capture?
-5. **Privacy policy:** fill the highlighted fields in `docs/privacy-policy/index.html`, host it at a public HTTPS URL and
+5. **Privacy policy (fields filled in F218):** add the developer name in the two highlighted places of
+   `docs/privacy-policy/index.html` and delete the yellow box, host it at `https://sharkshinny-star.github.io/scanpro-privacy/`
+   (new public repo `scanpro-privacy`, GitHub Pages on) and
    set `scanpro.privacyPolicyUrl=<url>` in `gradle.properties` (not set as of 2026-11-19), so the Settings link appears.
 6. **A native speaker's read** of the Hindi, Kannada, Malayalam, Tamil and Telugu strings written by an assistant
    (R19, R36, R44, R52, R53, R69); start with `TRANSLATION_REVIEW.md`. The F188 strings are English only in those five (R65).
