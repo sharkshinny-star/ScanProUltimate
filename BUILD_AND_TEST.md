@@ -23,6 +23,7 @@ had ever been built).
 ./gradlew :app:testDebugUnitTest                  # JVM unit tests
 ./gradlew :app:lintDebug                          # Android lint (config: app/lint.xml)
 ./gradlew :app:bundleRelease                      # Play bundle, R8 on, with :translate as on-demand module
+bash scripts/setup-upload-key.sh                  # once, on the owner's computer: upload key + SCANPRO_* signing values (outside the repo)
 ./gradlew -Pscanpro.sideload=true :app:assembleRelease   # per-ABI + universal APKs, translation built in
 scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release
 python3 -I scripts/remaining-work.py              # rewrite the open-items block of REMAINING_WORK.md from AUDIT_FINDINGS.md (--check: only compare)
@@ -50,13 +51,18 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
-## Latest results (2026-11-19, F218–F220 UI pass, rating sheet, How it works; merged onto `53890fe`; cloud container with the Android SDK)
+## Latest results (2026-11-19, F219 tools progress card, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,077 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 160 warnings (none in the changed files). Quality audit PASS.
+- New: `ToolProgressCardTest` 9/9 (always runs), `ProcessingOverlayScreenshotTest` 11 renders (with the screenshots flag). Rendered and looked at: `progress_card_*` (phone light, dark, no count, narrow, large text, on its side, tablet, and the arriving, closing, ripple and finished frames).
+- NOT run: `bundleRelease` (left to CI), anything on a device; the animation was judged from still frames, never seen moving (R86).
+## Latest results (2026-11-19, F221–F223 UI pass, rating sheet, How it works; merged onto `53890fe`; cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest :app:lintDebug` on the merged tree: **1,076 tests, 0 failed, 108 skipped** (result XML; the skips are the opt-in render and photo tests); lint **0 errors**, 160 warnings (none new in the changed files). `scripts/ci/scanpro-quality-audit.py` PASS (2,502 strings; it reports "0 tool tiles checked", so its tile check no longer finds the tiles since the Tools regrouping: not fixed here).
 - `ToolDemoCardTest` 5/5, `FeedbackModelTest` 3/3.
 - Rendered and looked at (`-Pscanpro.screenshots=true`, `ScreenScreenshotTest` and `FeedbackScreenshotTest`, 56 images): Home, Files grid and list, Search, document, review (portrait, landscape, 150 % text, 320 dp phone, Tamil), Settings, Recycle bin, Unsaved scans, Lock, Welcome, Tools, and the rating prompt, both thank-yous and the problem step, light and dark. `ScreenScreenshotTest` had been switched to the v2 Compose rule, under which the Files grid and the text-search result render empty (see Known errors); it uses the v1 rule again and both render.
 - `:app:bundleRelease`: the first run stopped at the F210 guard ("Play bundle without a privacy policy link"), after R8 had passed; with `-Pscanpro.allowMissingPolicy=true` it **passed**: `app-release.aab` 50,536,871 bytes (48.2 MiB), **unsigned** (no signing key here), modules `base` and `translate`, ABIs arm64-v8a, armeabi-v7a, x86_64, all 16 64-bit `.so` files with LOAD alignment of 16 KB or more (`readelf -lW`). Merged release manifest: `com.scanpro.app`, versionCode 7, 4.2.0, minSdk 24, targetSdk 37, not debuggable, cleartext off, `MANAGE_EXTERNAL_STORAGE` present (default build). This test bundle carries no policy link and must not be uploaded.
-- NOT run: anything on a device or emulator (the container has no KVM, so no emulator either); the sideload `assembleRelease`; instrumented tests. No animation was seen moving (R86).
+- NOT run: anything on a device or emulator (the container has no KVM, so no emulator either); the sideload `assembleRelease`; instrumented tests. No animation was seen moving (R87).
 - Environment: this session's checkout started at `84bd4a3` (F174), 115 commits behind the branch; it fetched and merged `53890fe` before these runs. Fetch the branch before starting work.
 
 ## Latest results (2026-11-19, F217 Settings and Files layout, cloud container with the Android SDK)
@@ -64,6 +70,13 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - `./gradlew :app:testDebugUnitTest -Pscanpro.screenshots=true`: **1,053 tests, 0 failed, 2 skipped** (result XML). `./gradlew :app:lintDebug`: **0 errors**, 159 warnings (none new in the changed files). Quality audit PASS.
 - Rendered and looked at: `settings_light_main`, `settings_light_about`, `files-08-overview-{light,dark}`. This run also compiled and tested F216 for the first time.
 - NOT run: `bundleRelease` (left to CI), anything on a device.
+
+## Latest results (2026-11-19, F206 Edit PDF: remaining limits and the Word-like workspace; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,101 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 30/30, `PhoneTextShaperTest` 2/2, `EditPdfScreenshotTest` 38/38. Source audit PASS.
+- Screens: `./gradlew :app:testDebugUnitTest --tests '*EditPdfScreenshotTest*' -Pscanpro.screenshots=true` writes `app/build/screenshots/edit-pdf-01-main-light.png` to `edit-pdf-19-lists-ta-dark.png`; all 19 light ones and five dark ones were looked at as contact sheets beside the owner's design.
+- After merging F218–F220 (other session): `:app:testDebugUnitTest :app:lintDebug` on the merged code: 1,121 tests, 0 failed (screenshot renders skipped in this run); lint 0 errors; source audit PASS.
+- NOT run: anything on a device (R71, R73: the gestures, the page preview, pushed lines on real PDFs, joined scripts); release builds.
 
 ## Latest results (2026-11-19, F205 Edit PDF zoom, find and replace, changes list, Save name; cloud container with the Android SDK)
 

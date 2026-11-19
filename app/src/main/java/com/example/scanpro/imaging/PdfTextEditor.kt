@@ -64,7 +64,13 @@ internal object PdfTextEditor {
      * where they ended (a column of amounts stays lined up on the right). For new text: starting at, centred on or
      * ending at the point tapped. With wrapping, within the width the lines are broken to.
      */
-    enum class Align { LEFT, CENTRE, RIGHT }
+    enum class Align { LEFT, CENTRE, RIGHT, JUSTIFY }
+
+    /** A marker before each paragraph of the text: a dot, its number, or an empty tick box. */
+    enum class ListStyle { NONE, BULLET, NUMBER, CHECK }
+
+    /** Small text set below the line (the 2 in H2O) or above it (the 2 in m2). */
+    enum class Script { NONE, SUB, SUPER }
 
     /**
      * Text on one line in one font and size. [left], [top], [right] and [bottom] are display points from the page's
@@ -110,7 +116,31 @@ internal object PdfTextEditor {
         val wrap: Boolean = false,
         /** Moved from where it would sit by this much, in display points: right and down are positive. */
         val dx: Float = 0f,
-        val dy: Float = 0f
+        val dy: Float = 0f,
+        val underline: Boolean = false,
+        val strike: Boolean = false,
+        /** A marker colour behind the words (0xRRGGBB), or none. */
+        val highlight: Int? = null,
+        /** Baseline to baseline, in font sizes, when the text takes more than one line. */
+        val lineSpacing: Float = LINE_SPACING,
+        /** Extra room after every letter, in points (negative brings them closer). */
+        val letterSpacing: Float = 0f,
+        /**
+         * When the new text of a line takes more room downwards than the one line it had, the lines of text below it in
+         * the same column move down to make room, as far as the first gap that takes it up (pictures and ruled lines
+         * are not moved, and nothing is pushed off the page).
+         */
+        val pushBelow: Boolean = true,
+        val list: ListStyle = ListStyle.NONE,
+        val script: Script = Script.NONE,
+        /** Room kept clear at the start and end of each line, in points. */
+        val indentLeft: Float = 0f,
+        val indentRight: Float = 0f,
+        /** Room above the first line and below each paragraph (a typed line break ends one), in points. */
+        val spaceBefore: Float = 0f,
+        val spaceAfter: Float = 0f,
+        /** Tells pieces of added text on one page apart; 0 for a changed line. */
+        val id: Int = 0
     ) {
         val isNew: Boolean get() = index == NEW
     }
@@ -122,7 +152,36 @@ internal object PdfTextEditor {
      * [sameFont]: edits written in the PDF's own font (or its other weight); [similarFont]: in a substitute; [skipped]:
      * edits left out and their line left as it was (no font on the phone can draw the new text, or the line is gone).
      */
-    data class Outcome(val applied: Int, val sameFont: Int, val similarFont: Int, val covered: Int, val skipped: Int = 0)
+    data class Outcome(
+        val applied: Int,
+        val sameFont: Int,
+        val similarFont: Int,
+        val covered: Int,
+        val skipped: Int = 0,
+        /** Where each edit's words now are, for an editor to mark and to open again. */
+        val placed: List<Placed> = emptyList(),
+        /** Lines that were not edited but moved down to make room: page and span index to the points moved. */
+        val moved: Map<Pair<Int, Int>, Float> = emptyMap(),
+        /** Edits drawn as shapes by a [Shaper] (they look right but are no longer text in the PDF). */
+        val shaped: Int = 0
+    )
+
+    /** The box of [edit]'s words as drawn, in display points from the shown page's top-left. */
+    data class Placed(val edit: Edit, val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+    /**
+     * Draws scripts whose letters join and reorder (Hindi, Kannada, Malayalam, Tamil, Telugu, Arabic and others), which
+     * PDFBox cannot set properly: the phone shapes the words and hands back their outlines. Sizes are for text of size 1.
+     */
+    interface Shaper {
+        fun width(text: String, family: Family, bold: Boolean, italic: Boolean): Float
+
+        /** Closed outlines as x0, y0, x1, y1…: x along the baseline from the start of [text], y upwards. */
+        fun outline(text: String, family: Family, bold: Boolean, italic: Boolean): List<FloatArray>
+    }
+
+    /** True when [text] holds letters of a script that needs a [Shaper] to look right. */
+    fun needsShaping(text: String): Boolean = text.any { it.code in 0x0590..0x109F || it.code in 0x1780..0x17FF }
 
     /** Every span on page [pageIndex] (0-based), in reading order. */
     fun spans(doc: PDDocument, pageIndex: Int): List<Span> = analyse(doc, pageIndex).spans.map { it.span }
@@ -131,12 +190,15 @@ internal object PdfTextEditor {
      * Applies [edits] to [doc] in place. Edits naming a span that is no longer there are skipped. [unicodeFont] gives a
      * font for text no standard font can show (null when there is none).
      */
-    fun apply(doc: PDDocument, edits: List<Edit>, unicodeFont: (PDDocument) -> PDFont? = { null }): Outcome {
+    fun apply(doc: PDDocument, edits: List<Edit>, unicodeFont: (PDDocument) -> PDFont? = { null }, shaper: Shaper? = null): Outcome {
         var applied = 0
         var same = 0
         var similar = 0
         var covered = 0
         var skipped = 0
+        var shaped = 0
+        val placed = ArrayList<Placed>()
+        val moved = HashMap<Pair<Int, Int>, Float>()
         var unicode: PDFont? = null
         var unicodeLoaded = false
         val unicodeOnce: () -> PDFont? = {
@@ -150,18 +212,17 @@ internal object PdfTextEditor {
             val removal = HashMap<Int, MutableSet<Int>>()
             val opsOfEdit = HashMap<Edit, MutableSet<Int>>()
             val needsCover = HashSet<Edit>()
-            val chosen = ArrayList<Triple<Edit, SpanData, FontChoice?>>()
+            val chosen = ArrayList<Planned>()
             val additions = pageEdits.filter { it.isNew && it.text.isNotBlank() }
             for (edit in pageEdits.filterNot { it.isNew }.distinctBy { it.index }) {
                 val data = analysis.spans.getOrNull(edit.index)
                 // The font is chosen before anything is cut: a line whose new text no font can draw is left as it was,
                 // rather than cut out and not written back.
-                val choice = if (data == null || edit.text.isEmpty()) null else chooseFont(page, data, edit, unicodeOnce)
+                val choice = if (data == null || edit.text.isEmpty()) null else chooseFont(page, data, edit, unicodeOnce, shaper)
                 if (data == null || (edit.text.isNotEmpty() && choice == null)) { skipped++; continue }
-                chosen += Triple(edit, data, choice)
+                chosen += Planned(edit, data, choice, analysis)
                 val ops = opsOfEdit.getOrPut(edit) { HashSet() }
-                val glyphs = analysis.glyphs.filter { data.covers(it) } + data.positions.mapNotNull { analysis.glyphOf[it] }
-                for (glyph in glyphs) {
+                for (glyph in glyphsOf(analysis, data)) {
                     val ref = glyph.ref
                     if (ref == null) { needsCover += edit; continue }
                     removal.getOrPut(ref.op) { HashSet() } += ref.glyph
@@ -169,35 +230,141 @@ internal object PdfTextEditor {
                 }
             }
             if (chosen.isEmpty() && additions.isEmpty()) continue
-            val failed = if (removal.isEmpty()) emptySet() else rewrite(doc, page, removal, analysis.ops)
+            // Lines pushed down by text that now takes more room, top of the page first so pushes add up.
+            val push = HashMap<Int, Float>()
+            for (plan in chosen.sortedBy { it.data.span.top }) {
+                val block = plan.block ?: continue
+                val extra = block.advance - plan.edit.size.coerceIn(1f, 400f) * plan.edit.lineSpacing
+                if (!plan.edit.pushBelow || extra < 0.5f || !plan.across) continue
+                for (below in linesBelow(analysis, plan.data, maxOf(plan.box, plan.data.span.right - plan.data.span.left), extra)) {
+                    push[below.span.index] = (push[below.span.index] ?: 0f) + extra
+                }
+            }
+            val edited = chosen.map { it.data.span.index }.toSet()
+            val rises = HashMap<Int, MutableMap<Int, Float>>()
+            val opsOfPushed = HashMap<Int, MutableSet<Int>>()
+            for ((index, amount) in push) {
+                if (index in edited) continue
+                val data = analysis.spans[index]
+                val m = data.positions.first().textMatrix
+                val up = hypot(m.shearX, m.scaleY)
+                val firstSize = data.positions.firstNotNullOfOrNull { analysis.glyphOf[it]?.ref }?.let { analysis.ops[it.op]?.fontSize } ?: 0f
+                if (up < 1e-6f || firstSize == 0f) continue
+                for (glyph in glyphsOf(analysis, data)) {
+                    val ref = glyph.ref ?: continue
+                    val size = analysis.ops[ref.op]?.fontSize ?: continue
+                    // Text rise is measured in the text's own units: the points wanted, over how far one unit reaches.
+                    rises.getOrPut(ref.op) { HashMap() }[ref.glyph] = -amount * (if (size < 0f) -1f else 1f) * abs(firstSize) / up
+                    opsOfPushed.getOrPut(index) { HashSet() } += ref.op
+                }
+            }
+            val failed = if (removal.isEmpty() && rises.isEmpty()) emptySet() else rewrite(doc, page, removal, rises, analysis.ops)
             for ((edit, ops) in opsOfEdit) if (ops.any { it in failed }) needsCover += edit
+            for ((index, ops) in opsOfPushed) if (ops.none { it in failed }) moved[pageIndex to index] = push.getValue(index)
             PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { stream ->
-                for ((edit, data, choice) in chosen) {
+                for (plan in chosen) {
+                    val (edit, data, choice) = plan
                     if (edit in needsCover) { cover(stream, data); covered++ }
-                    if (choice == null) { applied++; continue }
-                    draw(stream, data, edit, choice, analysis)
+                    val block = plan.block
+                    if (choice == null || block == null) { applied++; continue }
+                    draw(stream, plan, block, push[data.span.index] ?: 0f)?.let { placed += placedOf(edit, it, analysis.shape) }
                     applied++
+                    if (choice.shaper != null) shaped++
                     if (choice.same) same++ else similar++
                 }
                 for (addition in additions) {
                     // The nearest line's font stands for "the PDF's font" here, and its colour when none was chosen.
                     val near = analysis.spans.minByOrNull { distance(it.span, addition.x, addition.y) }
-                    val choice = if (near != null) chooseFont(page, near, addition, unicodeOnce)
-                    else chooseStandard(null, addition, unicodeOnce)
+                    val choice = if (near != null) chooseFont(page, near, addition, unicodeOnce, shaper)
+                    else chooseStandard(null, addition, unicodeOnce, shaper)
                     if (choice == null) { skipped++; continue }
                     val (ux, uy, vx, vy) = analysis.shape.upright()
                     val (ox, oy) = analysis.shape.toPage(addition.x + addition.dx, addition.y + addition.dy)
                     val wrapWidth = if (addition.wrap) (rightEdge(analysis) - addition.x).coerceAtLeast(MIN_WRAP_WIDTH) else null
-                    drawLines(
-                        stream, addition.text, choice, addition.size, addition.colour ?: near?.span?.colour ?: 0,
-                        ux, uy, vx, vy, ox, oy, box = wrapWidth ?: 0f, wrapWidth = wrapWidth, align = addition.align
-                    )
+                    val block = plan(addition, choice, box = wrapWidth ?: 0f, wrapWidth = wrapWidth)
+                    drawBlock(stream, block, addition, choice, addition.colour ?: near?.span?.colour ?: 0, ux, uy, vx, vy, ox, oy)
+                        ?.let { placed += placedOf(addition, it, analysis.shape) }
                     applied++
+                    if (choice.shaper != null) shaped++
                     if (choice.same) same++ else similar++
                 }
             }
         }
-        return Outcome(applied, same, similar, covered, skipped)
+        return Outcome(applied, same, similar, covered, skipped, placed, moved, shaped)
+    }
+
+    /** One edit of a line already on the page, with its font and the lines its new words make. */
+    private class Planned(val edit: Edit, val data: SpanData, val choice: FontChoice?, analysis: PageAnalysis) {
+        operator fun component1() = edit
+        operator fun component2() = data
+        operator fun component3() = choice
+        private val first = data.positions.first()
+        private val last = data.positions.last()
+        val matrix: Matrix = first.textMatrix
+        val along = unit(matrix.scaleX, matrix.shearY)
+        val up = unit(matrix.shearX, matrix.scaleY)
+        /** How long the old words were along their baseline: the place the new ones are aligned in. */
+        val old: Float = along?.let { (ux, uy) ->
+            ((last.textMatrix.translateX - matrix.translateX) * ux + (last.textMatrix.translateY - matrix.translateY) * uy + last.widthDirAdj).coerceAtLeast(0f)
+        } ?: 0f
+        /** True when the line reads across the page as shown (not up the side or at an angle). */
+        val across: Boolean = along?.let { (ux, uy) ->
+            val (ax, ay) = analysis.shape.toDisplay(0f, 0f)
+            val (bx, by) = analysis.shape.toDisplay(ux, uy)
+            bx - ax > 0.99f && abs(by - ay) < 0.1f
+        } ?: false
+        // Wrapping goes up to the right edge of the page's text; a line at an angle keeps to the length it had.
+        val wrapWidth: Float? = if (!edit.wrap) null
+        else if (across) maxOf(old, rightEdge(analysis) - data.span.left, MIN_WRAP_WIDTH) else maxOf(old, MIN_WRAP_WIDTH)
+        val box: Float = wrapWidth ?: old
+        val shape = analysis.shape
+        val block: Block? = if (choice == null || along == null || up == null) null else plan(edit, choice, box, wrapWidth)
+    }
+
+    /** The letters of a span as drawn: its own and any copy drawn over them (fake bold). */
+    private fun glyphsOf(analysis: PageAnalysis, data: SpanData): List<Glyph> =
+        (analysis.glyphs.filter { data.covers(it) } + data.positions.mapNotNull { analysis.glyphOf[it] }).distinct()
+
+    /**
+     * The lines under [data] that have to move down by [extra] points: those below it that share its column
+     * ([width] from its left end) and read the same way, row by row, until a gap between rows that takes the extra up
+     * or a row that would leave the page.
+     */
+    private fun linesBelow(analysis: PageAnalysis, data: SpanData, width: Float, extra: Float): List<SpanData> {
+        val span = data.span
+        val shown = if (analysis.shape.rotation == 90 || analysis.shape.rotation == 270) analysis.shape.width else analysis.shape.height
+        val m = data.positions.first().textMatrix
+        val direction = unit(m.scaleX, m.shearY) ?: return emptyList()
+        val below = analysis.spans.filter { other ->
+            if (other === data) return@filter false
+            val o = other.positions.first().textMatrix
+            val d = unit(o.scaleX, o.shearY) ?: return@filter false
+            d.first * direction.first + d.second * direction.second > 0.99f &&
+                other.span.top >= span.top + (span.bottom - span.top) * 0.5f &&
+                other.span.right > span.left - 1f && other.span.left < span.left + width + 1f
+        }.sortedBy { it.span.top }
+        val out = ArrayList<SpanData>()
+        var previousBottom = span.bottom
+        var i = 0
+        while (i < below.size) {
+            val top = below[i].span.top
+            var j = i
+            while (j < below.size && below[j].span.top - top < below[i].span.fontSize * 0.5f) j++
+            val row = below.subList(i, j)
+            if (top - previousBottom >= extra) break
+            if (row.maxOf { it.span.bottom } + extra > shown - 6f) break
+            out += row
+            previousBottom = row.maxOf { it.span.bottom }
+            i = j
+        }
+        return out
+    }
+
+    /** [bounds] (min x, min y, max x, max y in the page's own coordinates) as a box on the shown page. */
+    private fun placedOf(edit: Edit, bounds: FloatArray, shape: PageShape): Placed {
+        val (ax, ay) = shape.toDisplay(bounds[0] - shape.x, bounds[1] - shape.y)
+        val (bx, by) = shape.toDisplay(bounds[2] - shape.x, bounds[3] - shape.y)
+        return Placed(edit, minOf(ax, bx), minOf(ay, by), maxOf(ax, bx), maxOf(ay, by))
     }
 
     // ---- reading the page ---------------------------------------------------------------------------------------
@@ -209,7 +376,7 @@ internal object PdfTextEditor {
     private class Glyph(val ref: GlyphRef?, val x: Float, val baseline: Float, val width: Float)
 
     /** The text state a show-text instruction ran with, to work out each letter's advance when cutting it out. */
-    private class OpState(val font: PDFont?, val fontSize: Float, val charSpacing: Float, val wordSpacing: Float)
+    private class OpState(val font: PDFont?, val fontSize: Float, val charSpacing: Float, val wordSpacing: Float, val rise: Float)
 
     /**
      * [offsetX] and [offsetY]: the crop box's lower-left corner. Text extraction gives each letter's matrix relative to
@@ -281,7 +448,7 @@ internal object PdfTextEditor {
                 glyphInOp = 0
                 if (operator.name in SHOW_TEXT) {
                     val state = graphicsState.textState
-                    ops[opIndex] = OpState(state.font, state.fontSize, state.characterSpacing, state.wordSpacing)
+                    ops[opIndex] = OpState(state.font, state.fontSize, state.characterSpacing, state.wordSpacing, state.rise)
                 }
             }
             super.processOperator(operator, operands)
@@ -440,11 +607,15 @@ internal object PdfTextEditor {
     // ---- cutting the old letters out ----------------------------------------------------------------------------
 
     /**
-     * Rewrites the page's content without the letters in [removal] (instruction index to glyph indexes). Each cut letter
-     * leaves a gap of its own width, so nothing after it moves. Returns the instructions that could not be rewritten
-     * (an unknown font, vertical writing); their letters stay and the caller covers them.
+     * Rewrites the page's content without the letters in [removal] (instruction index to glyph indexes), and with the
+     * letters in [rises] lifted by that much text rise (negative lowers them: how a line is moved down without
+     * touching its font). Each cut letter leaves a gap of its own width, so nothing after it moves. Returns the
+     * instructions that could not be rewritten (an unknown font, vertical writing); their letters stay as they were
+     * and the caller covers those it meant to cut.
      */
-    private fun rewrite(doc: PDDocument, page: PDPage, removal: Map<Int, Set<Int>>, ops: Map<Int, OpState>): Set<Int> {
+    private fun rewrite(
+        doc: PDDocument, page: PDPage, removal: Map<Int, Set<Int>>, rises: Map<Int, Map<Int, Float>>, ops: Map<Int, OpState>
+    ): Set<Int> {
         val parser = PDFStreamParser(page)
         parser.parse()
         val tokens = parser.tokens
@@ -456,9 +627,13 @@ internal object PdfTextEditor {
             if (token is Operator) {
                 opIndex++
                 val remove = removal[opIndex]
+                val rise = rises[opIndex]
                 val state = ops[opIndex]
-                val replaced = if (remove != null && state != null) runCatching { withoutGlyphs(token, operands, remove, state) }.getOrNull() else null
-                if (remove != null && replaced == null) failed += opIndex
+                val touched = remove != null || rise != null
+                val replaced = if (touched && state != null) {
+                    runCatching { withoutGlyphs(token, operands, remove.orEmpty(), rise.orEmpty(), state) }.getOrNull()
+                } else null
+                if (touched && replaced == null) failed += opIndex
                 if (replaced != null) out.addAll(replaced) else { out.addAll(operands); out.add(token) }
                 operands.clear()
             } else {
@@ -467,7 +642,7 @@ internal object PdfTextEditor {
         }
         out.addAll(operands)
         // Nothing could be cut: leave the page's content exactly as it was.
-        if (failed.size == removal.size) return failed
+        if (failed.containsAll(removal.keys + rises.keys)) return failed
         val stream = PDStream(doc)
         stream.createOutputStream(COSName.FLATE_DECODE).use { ContentStreamWriter(it).writeTokens(out) }
         page.setContents(stream)
@@ -479,7 +654,7 @@ internal object PdfTextEditor {
      * writing, a font that can't be read). In a TJ array a number n moves the pen back by n/1000 of the font size, so a
      * cut glyph becomes -(its width x 1000 + (character spacing + word spacing) x 1000 / font size).
      */
-    private fun withoutGlyphs(operator: Operator, operands: List<Any>, remove: Set<Int>, state: OpState): List<Any>? {
+    private fun withoutGlyphs(operator: Operator, operands: List<Any>, remove: Set<Int>, rise: Map<Int, Float>, state: OpState): List<Any>? {
         val font = state.font ?: return null
         if (font.isVertical || state.fontSize == 0f) return null
         val prefix = ArrayList<Any>()
@@ -503,7 +678,10 @@ internal object PdfTextEditor {
             "TJ" -> (operands.lastOrNull() as? COSArray)?.toList() ?: return null
             else -> return null
         }
-        val array = COSArray()
+        // The letters go out as one TJ, or as several with a text rise set between them where some are lifted.
+        val out = ArrayList<Any>(prefix)
+        var array = COSArray()
+        var lifted = 0f
         var pending = 0f
         val buffer = ByteArrayOutputStream()
         fun flushNumber() {
@@ -515,6 +693,12 @@ internal object PdfTextEditor {
                 array.add(COSString(buffer.toByteArray()))
                 buffer.reset()
             }
+        }
+        fun flushArray() {
+            flushString()
+            flushNumber()
+            if (array.size() > 0) { out.add(array); out.add(Operator.getOperator("TJ")) }
+            array = COSArray()
         }
         var glyph = 0
         for (element in elements) {
@@ -533,6 +717,13 @@ internal object PdfTextEditor {
                             val space = if (length == 1 && code == 32) wordSpacing else 0f
                             pending -= width * 1000f + (charSpacing + space) * 1000f / state.fontSize
                         } else {
+                            val wanted = rise[glyph] ?: 0f
+                            if (wanted != lifted) {
+                                flushArray()
+                                out.add(COSFloat(state.rise + wanted))
+                                out.add(Operator.getOperator("Ts"))
+                                lifted = wanted
+                            }
                             flushNumber()
                             buffer.write(bytes, start, length)
                         }
@@ -546,9 +737,9 @@ internal object PdfTextEditor {
                 else -> return null
             }
         }
-        flushString()
-        flushNumber()
-        return prefix + listOf(array, Operator.getOperator("TJ"))
+        flushArray()
+        if (lifted != 0f) { out.add(COSFloat(state.rise)); out.add(Operator.getOperator("Ts")) }
+        return out
     }
 
     /** A white box over a span whose letters could not be cut out. */
@@ -577,12 +768,23 @@ internal object PdfTextEditor {
 
     // ---- writing the new words ----------------------------------------------------------------------------------
 
-    /** The font to write with; [synthBold] and [synthItalic] mean the font lacks the weight or slant and it is drawn on. */
-    private class FontChoice(val font: PDFont, val same: Boolean, val synthBold: Boolean, val synthItalic: Boolean)
+    /**
+     * The font to write with; [synthBold] and [synthItalic] mean the font lacks the weight or slant and it is drawn on.
+     * With a [shaper] the words are drawn as its outlines instead and [font] is not used.
+     */
+    private class FontChoice(
+        val font: PDFont?, val same: Boolean, val synthBold: Boolean, val synthItalic: Boolean,
+        val shaper: Shaper? = null, val family: Family = Family.SANS, val bold: Boolean = false, val italic: Boolean = false
+    ) {
+        fun width(text: String, size: Float): Float = runCatching {
+            if (shaper != null) shaper.width(text, family, bold, italic) * size else font!!.getStringWidth(text) / 1000f * size
+        }.getOrDefault(0f)
+    }
 
-    private fun chooseFont(page: PDPage, data: SpanData, edit: Edit, unicode: () -> PDFont?): FontChoice? {
+    private fun chooseFont(page: PDPage, data: SpanData, edit: Edit, unicode: () -> PDFont?, shaper: Shaper?): FontChoice? {
         val text = edit.text
         val original = data.positions.first().font
+        if (shaper != null && needsShaping(text)) return chooseStandard(original, edit, unicode, shaper)
         if (edit.family == Family.ORIGINAL && original != null) {
             if (edit.bold == data.span.bold && edit.italic == data.span.italic && canShow(original, text)) {
                 return FontChoice(original, same = true, synthBold = false, synthItalic = false)
@@ -596,13 +798,16 @@ internal object PdfTextEditor {
                 }
             if (sibling != null) return FontChoice(sibling, same = true, synthBold = false, synthItalic = false)
         }
-        return chooseStandard(original, edit, unicode)
+        return chooseStandard(original, edit, unicode, shaper)
     }
 
     /** A standard font of the family asked for (or like [original]), else the phone's wide font. */
-    private fun chooseStandard(original: PDFont?, edit: Edit, unicode: () -> PDFont?): FontChoice? {
+    private fun chooseStandard(original: PDFont?, edit: Edit, unicode: () -> PDFont?, shaper: Shaper?): FontChoice? {
         val text = edit.text
         val family = if (edit.family == Family.ORIGINAL) guessFamily(original) else edit.family
+        if (shaper != null && needsShaping(text)) {
+            return FontChoice(null, same = false, synthBold = false, synthItalic = false, shaper = shaper, family = family, bold = edit.bold, italic = edit.italic)
+        }
         val standard = standardFont(family, edit.bold, edit.italic)
         if (canShow(standard, text)) return FontChoice(standard, same = false, synthBold = false, synthItalic = false)
         val wide = unicode() ?: return null
@@ -610,34 +815,24 @@ internal object PdfTextEditor {
         return FontChoice(wide, same = false, synthBold = edit.bold, synthItalic = edit.italic)
     }
 
-    private fun draw(stream: PDPageContentStream, data: SpanData, edit: Edit, choice: FontChoice, analysis: PageAnalysis) {
-        val first = data.positions.first()
-        val last = data.positions.last()
-        val m = first.textMatrix
-        val (ux, uy) = unit(m.scaleX, m.shearY) ?: return
-        val (vx, vy) = unit(m.shearX, m.scaleY) ?: return
-        // How long the old words were along their baseline: the place the new ones are aligned in.
-        val old = ((last.textMatrix.translateX - m.translateX) * ux + (last.textMatrix.translateY - m.translateY) * uy + last.widthDirAdj).coerceAtLeast(0f)
-        val wrapWidth = if (!edit.wrap) null else {
-            // Up to the right edge of the page's text, when the line reads across the page as shown; a line at an
-            // angle keeps to the length it had.
-            val (ax, ay) = analysis.shape.toDisplay(0f, 0f)
-            val (bx, by) = analysis.shape.toDisplay(ux, uy)
-            val across = bx - ax > 0.99f && abs(by - ay) < 0.1f
-            if (across) maxOf(old, rightEdge(analysis) - data.span.left, MIN_WRAP_WIDTH) else maxOf(old, MIN_WRAP_WIDTH)
-        }
+    /** Draws [plan]'s new words where the old ones were, [pushed] points lower when a line above made it move. */
+    private fun draw(stream: PDPageContentStream, plan: Planned, block: Block, pushed: Float): FloatArray? {
+        val (ux, uy) = plan.along ?: return null
+        val (vx, vy) = plan.up ?: return null
+        val edit = plan.edit
+        val m = plan.matrix
         // A move asked for, from display points to the page's own directions.
-        val (zeroX, zeroY) = analysis.shape.toPage(0f, 0f)
-        val (movedX, movedY) = analysis.shape.toPage(edit.dx, edit.dy)
-        drawLines(
-            stream, edit.text, choice, edit.size, edit.colour ?: data.span.colour, ux, uy, vx, vy,
-            data.offsetX + m.translateX + (movedX - zeroX), data.offsetY + m.translateY + (movedY - zeroY),
-            box = wrapWidth ?: old, wrapWidth = wrapWidth, align = edit.align
+        val (zeroX, zeroY) = plan.shape.toPage(0f, 0f)
+        val (movedX, movedY) = plan.shape.toPage(edit.dx, edit.dy)
+        return drawBlock(
+            stream, block, edit, plan.choice!!, edit.colour ?: plan.data.span.colour, ux, uy, vx, vy,
+            plan.data.offsetX + m.translateX + (movedX - zeroX) - vx * pushed,
+            plan.data.offsetY + m.translateY + (movedY - zeroY) - vy * pushed
         )
     }
 
-    /** Baseline to baseline, in font sizes, for text that runs onto further lines. */
-    private const val LINE_SPACING = 1.2f
+    /** Baseline to baseline, in font sizes, for text that runs onto further lines, unless an edit says otherwise. */
+    const val LINE_SPACING = 1.2f
 
     /**
      * [text] with every [query] in it replaced by [replacement], or null when it holds none. The query is taken as
@@ -691,48 +886,198 @@ internal object PdfTextEditor {
         return lines
     }
 
+    /** One line as it will be drawn: [along] and [down] from the block's starting point, in points. */
+    private class Row(
+        val text: String, val along: Float, val down: Float, val width: Float,
+        /** Extra room at each space, for a line stretched to both edges. */
+        val gap: Float,
+        /** The paragraph's number (from 1) on its first line, for a list marker; 0 on the other lines. */
+        val marker: Int
+    )
+
+    /** An edit's lines, the size they are drawn at, and how far down the block reaches in all ([advance]). */
+    private class Block(val rows: List<Row>, val size: Float, val raise: Float, val advance: Float)
+
     /**
-     * [text] from the point ([ox], [oy]), its lines running along ([ux], [uy]) with up ([vx], [vy]) and each line
-     * 1.2 sizes below the last. A line is placed in [box] (a length along the baseline from the point) by [align].
+     * Lays [edit]'s text out from its starting point: a line is placed in [box] (a length along the baseline) by the
+     * edit's alignment, after its indents and the room a list marker takes; lines are broken at [wrapWidth] when given.
      */
-    private fun drawLines(
-        stream: PDPageContentStream, text: String, choice: FontChoice, fontSize: Float, rgb: Int,
-        ux: Float, uy: Float, vx: Float, vy: Float, ox: Float, oy: Float,
-        box: Float, wrapWidth: Float?, align: Align
-    ) {
-        val size = fontSize.coerceIn(1f, 400f)
-        val width: (String) -> Float = { s -> runCatching { choice.font.getStringWidth(s) / 1000f * size }.getOrDefault(0f) }
-        val lines = layout(text, wrapWidth, width)
-        val colour = PDColor(
-            floatArrayOf(((rgb shr 16) and 0xFF) / 255f, ((rgb shr 8) and 0xFF) / 255f, (rgb and 0xFF) / 255f),
+    private fun plan(edit: Edit, choice: FontChoice, box: Float, wrapWidth: Float?): Block {
+        val full = edit.size.coerceIn(1f, 400f)
+        val size = if (edit.script == Script.NONE) full else full * 0.62f
+        val raise = when (edit.script) { Script.SUPER -> full * 0.36f; Script.SUB -> -full * 0.14f; Script.NONE -> 0f }
+        val spacing = if (choice.shaper == null) edit.letterSpacing else 0f
+        val width: (String) -> Float = { s -> choice.width(s, size) + spacing * s.length }
+        val hang = if (edit.list == ListStyle.NONE) 0f else full * 1.5f
+        val start = edit.indentLeft.coerceAtLeast(0f) + hang
+        val inner = wrapWidth?.let { (it - start - edit.indentRight.coerceAtLeast(0f)).coerceAtLeast(MIN_WRAP_WIDTH / 2f) }
+        val room = inner ?: (box - start - edit.indentRight.coerceAtLeast(0f)).coerceAtLeast(0f)
+        val rows = ArrayList<Row>()
+        var down = edit.spaceBefore.coerceAtLeast(0f)
+        var number = 0
+        for (paragraph in edit.text.split('\n')) {
+            val lines = layout(paragraph, inner, width)
+            if (paragraph.isNotBlank()) number++
+            lines.forEachIndexed { i, line ->
+                val w = width(line)
+                val spaces = line.count { it == ' ' }
+                val stretch = edit.align == Align.JUSTIFY && inner != null && i < lines.lastIndex && spaces > 0 && w < room
+                val shift = when (edit.align) {
+                    Align.LEFT, Align.JUSTIFY -> 0f
+                    Align.CENTRE -> (room - w) / 2f
+                    Align.RIGHT -> room - w
+                }
+                rows += Row(line, start + shift, down, if (stretch) room else w, if (stretch) (room - w) / spaces else 0f, if (i == 0 && paragraph.isNotBlank()) number else 0)
+                down += full * edit.lineSpacing.coerceIn(0.8f, 4f)
+            }
+            down += edit.spaceAfter.coerceAtLeast(0f)
+        }
+        return Block(rows, size, raise, down)
+    }
+
+    /**
+     * Draws [block] from the point ([ox], [oy]), its lines running along ([ux], [uy]) with up ([vx], [vy]): marker
+     * colour behind, list markers, the words (or their outlines), then underline and strike-through. Returns the box
+     * it takes in the page's own coordinates (min x, min y, max x, max y), or null when nothing was drawn.
+     */
+    private fun drawBlock(
+        stream: PDPageContentStream, block: Block, edit: Edit, choice: FontChoice, rgb: Int,
+        ux: Float, uy: Float, vx: Float, vy: Float, ox: Float, oy: Float
+    ): FloatArray? {
+        val size = block.size
+        val full = edit.size.coerceIn(1f, 400f)
+        val rows = block.rows.filter { it.text.isNotBlank() }
+        if (rows.isEmpty()) return null
+        fun colourOf(value: Int) = PDColor(
+            floatArrayOf(((value shr 16) and 0xFF) / 255f, ((value shr 8) and 0xFF) / 255f, (value and 0xFF) / 255f),
             PDDeviceRGB.INSTANCE
         )
+        val colour = colourOf(rgb)
+        // A point [along] the baseline and [up] from it, for the row [down] from the start.
+        fun px(along: Float, up: Float, down: Float) = ox + ux * along + vx * (up - down)
+        fun py(along: Float, up: Float, down: Float) = oy + uy * along + vy * (up - down)
+        val bounds = floatArrayOf(Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE)
+        fun quad(a0: Float, a1: Float, u0: Float, u1: Float, down: Float, fill: Boolean) {
+            val xs = floatArrayOf(px(a0, u0, down), px(a1, u0, down), px(a1, u1, down), px(a0, u1, down))
+            val ys = floatArrayOf(py(a0, u0, down), py(a1, u0, down), py(a1, u1, down), py(a0, u1, down))
+            if (!fill) {
+                bounds[0] = minOf(bounds[0], xs.min()); bounds[1] = minOf(bounds[1], ys.min())
+                bounds[2] = maxOf(bounds[2], xs.max()); bounds[3] = maxOf(bounds[3], ys.max())
+                return
+            }
+            stream.moveTo(xs[0], ys[0])
+            for (i in 1..3) stream.lineTo(xs[i], ys[i])
+            stream.closePath()
+            stream.fill()
+        }
+        val spacing = if (choice.shaper == null) edit.letterSpacing else 0f
+        val width: (String) -> Float = { s -> choice.width(s, size) + spacing * s.length }
+        // Each row as the pieces shown one after another: the whole line, or its words when it is stretched.
+        fun pieces(row: Row): List<Pair<String, Float>> {
+            if (row.gap == 0f) return listOf(row.text to row.along)
+            var at = row.along
+            return row.text.split(' ').map { word -> (word to at).also { at += width("$word ") + row.gap } }
+        }
+        val markerStart = edit.indentLeft.coerceAtLeast(0f)
+        stream.saveGraphicsState()
+        for (row in rows) {
+            val from = if (row.marker > 0 && edit.list != ListStyle.NONE) markerStart else row.along
+            quad(from, row.along + row.width, block.raise - full * 0.25f, block.raise + full * 0.9f, row.down, fill = false)
+        }
+        edit.highlight?.let { marker ->
+            stream.setNonStrokingColor(colourOf(marker))
+            for (row in rows) quad(row.along, row.along + row.width, block.raise - size * 0.24f, block.raise + size * 0.9f, row.down, fill = true)
+        }
+        stream.setNonStrokingColor(colour)
+        if (edit.list == ListStyle.BULLET || edit.list == ListStyle.CHECK) {
+            for (row in rows.filter { it.marker > 0 }) {
+                if (edit.list == ListStyle.BULLET) {
+                    // A round dot: four curves about its centre, a third of the way up the letters.
+                    val r = full * 0.15f
+                    val k = r * 0.5523f
+                    val ca = markerStart + full * 0.45f
+                    val cu = full * 0.33f
+                    fun to(a: Float, u: Float) = px(ca + a, cu + u, row.down) to py(ca + a, cu + u, row.down)
+                    fun curve(a1: Float, u1: Float, a2: Float, u2: Float, a3: Float, u3: Float) {
+                        val (x1, y1) = to(a1, u1); val (x2, y2) = to(a2, u2); val (x3, y3) = to(a3, u3)
+                        stream.curveTo(x1, y1, x2, y2, x3, y3)
+                    }
+                    to(r, 0f).let { (x, y) -> stream.moveTo(x, y) }
+                    curve(r, k, k, r, 0f, r)
+                    curve(-k, r, -r, k, -r, 0f)
+                    curve(-r, -k, -k, -r, 0f, -r)
+                    curve(k, -r, r, -k, r, 0f)
+                    stream.closePath()
+                    stream.fill()
+                } else {
+                    // An empty tick box: a square with a smaller one taken out of it.
+                    val a0 = markerStart + full * 0.15f
+                    val side = full * 0.62f
+                    val line = full * 0.06f
+                    val xs = floatArrayOf(a0, a0 + side, a0 + side, a0)
+                    val us = floatArrayOf(0f, 0f, side, side)
+                    for (inset in listOf(0f, line)) {
+                        val sx = floatArrayOf(xs[0] + inset, xs[1] - inset, xs[2] - inset, xs[3] + inset)
+                        val su = floatArrayOf(us[0] + inset, us[1] + inset, us[2] - inset, us[3] - inset)
+                        stream.moveTo(px(sx[0], su[0], row.down), py(sx[0], su[0], row.down))
+                        for (i in 1..3) stream.lineTo(px(sx[i], su[i], row.down), py(sx[i], su[i], row.down))
+                        stream.closePath()
+                    }
+                    stream.fillEvenOdd()
+                }
+            }
+        }
         // A slant drawn on for an italic the font doesn't have: the up direction leans forward by about 12 degrees.
         val lean = if (choice.synthItalic) 0.21f else 0f
-        // Colours and line width before the text object: PDFBox refuses some graphics settings inside one.
-        stream.saveGraphicsState()
-        stream.setNonStrokingColor(colour)
-        if (choice.synthBold) {
-            stream.setStrokingColor(colour)
-            stream.setLineWidth(size * 0.035f)
-        }
-        stream.beginText()
-        stream.setFont(choice.font, size)
-        if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL_STROKE)
-        lines.forEachIndexed { index, line ->
-            if (line.isBlank()) return@forEachIndexed
-            val shift = when (align) {
-                Align.LEFT -> 0f
-                Align.CENTRE -> (box - width(line)) / 2f
-                Align.RIGHT -> box - width(line)
+        if (edit.list == ListStyle.NUMBER) {
+            val numbers = choice.font?.takeIf { canShow(it, "0123456789.") } ?: standardFont(Family.SANS, edit.bold, false)
+            stream.beginText()
+            stream.setFont(numbers, full)
+            for (row in rows.filter { it.marker > 0 }) {
+                stream.setTextMatrix(Matrix(ux, uy, vx, vy, px(markerStart, 0f, row.down), py(markerStart, 0f, row.down)))
+                stream.showText("${row.marker}.")
             }
-            val down = index * size * LINE_SPACING
-            stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, ox + ux * shift - vx * down, oy + uy * shift - vy * down))
-            stream.showText(line)
+            stream.endText()
         }
-        if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL)
-        stream.endText()
+        val shaper = choice.shaper
+        if (shaper != null) {
+            for (row in rows) for ((piece, at) in pieces(row)) {
+                val contours = runCatching { shaper.outline(piece, choice.family, choice.bold, choice.italic) }.getOrDefault(emptyList())
+                var any = false
+                for (contour in contours) {
+                    if (contour.size < 6) continue
+                    for (i in contour.indices step 2) {
+                        val x = px(at + contour[i] * size, block.raise + contour[i + 1] * size, row.down)
+                        val y = py(at + contour[i] * size, block.raise + contour[i + 1] * size, row.down)
+                        if (i == 0) stream.moveTo(x, y) else stream.lineTo(x, y)
+                    }
+                    stream.closePath()
+                    any = true
+                }
+                if (any) stream.fill()
+            }
+        } else {
+            // Colours and line width before the text object: PDFBox refuses some graphics settings inside one.
+            if (choice.synthBold) {
+                stream.setStrokingColor(colour)
+                stream.setLineWidth(size * 0.035f)
+            }
+            stream.beginText()
+            stream.setFont(choice.font, size)
+            if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL_STROKE)
+            if (spacing != 0f) stream.setCharacterSpacing(spacing)
+            for (row in rows) for ((piece, at) in pieces(row)) {
+                if (piece.isEmpty()) continue
+                stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, px(at, block.raise, row.down), py(at, block.raise, row.down)))
+                stream.showText(piece)
+            }
+            if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL)
+            stream.endText()
+        }
+        if (edit.underline) for (row in rows) quad(row.along, row.along + row.width, block.raise - size * 0.14f, block.raise - size * 0.08f, row.down, fill = true)
+        if (edit.strike) for (row in rows) quad(row.along, row.along + row.width, block.raise + size * 0.25f, block.raise + size * 0.31f, row.down, fill = true)
         stream.restoreGraphicsState()
+        return bounds
     }
 
     private fun unit(x: Float, y: Float): Pair<Float, Float>? {
