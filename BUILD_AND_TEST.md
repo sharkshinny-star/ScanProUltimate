@@ -52,7 +52,8 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 ## Latest results (2026-11-19, F202 crop editor rotation, cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest --tests '*CropEditorDialogTest*' --tests '*QuadMathTest*'`: 2/2 and 13/13. `:app:lintDebug`: 0 errors.
-- NOT run: the full unit suite on this tree (last full run: F201, 1,019 tests, 0 failed); nothing on a device, so the freeze being gone is not measured.
+- Full unit suite on `2dae3bb` (2026-11-19, owner asked): `./gradlew :app:testDebugUnitTest --no-configuration-cache`: BUILD SUCCESSFUL; 160 test classes, 1,020 tests, 0 failed, 0 errors, 84 skipped (opt-in screenshot and photo tests).
+- NOT run: anything on a device, so the freeze being gone is not measured.
 
 ## Latest results (2026-11-19, F201 bug sweep, commit cce1cd3, cloud container with the Android SDK)
 
