@@ -373,6 +373,7 @@ fun SettingsScreen(
                             SettingsPage.PRIVACY -> PrivacyPage(appLock = appLock, onAppLockChange = onAppLockChange)
                             SettingsPage.SHORTCUTS -> ShortcutsPage()
                             SettingsPage.SUPPORT -> SupportPage(snackbarHostState)
+                            SettingsPage.ABOUT -> AboutPage(onOpenPrivacy = { page = SettingsPage.PRIVACY })
                         }
                     }
                 }

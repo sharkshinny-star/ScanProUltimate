@@ -49,6 +49,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F216 About page and More group, Linux cloud container, no Android SDK)
+
+- `python3 -I scripts/ci/scanpro-quality-audit.py` PASS. `./gradlew :app:compileDebugKotlin` **not run successfully**: the Android Gradle Plugin cannot be resolved here. Not compiled, no tests run; CI compiles it and `SettingsPagesScreenshotTest` opens the new page (R85).
+
 ## Latest results (2026-11-19, F215 minor list, Linux cloud container, no Android SDK)
 
 - CI run 225 on `a2460c0` (F213 detection, F214 declutter, merged with F201–F202): source audit, Room schema check and **unit tests and lint passed** (6 min). Its Play bundle step was still running when the F215 push replaced the run, so the bundle and sideload APKs for this code are checked by the F215 run, not by 225.
