@@ -28,8 +28,10 @@ the two trees merged is recorded.
 8. **Undo history across sessions:** design written, nothing built (`UNDO_PERSISTENCE_DESIGN.md`); it waits on three
    answers (keep up to 20 earlier text states in plain app-private storage, the limits, and a Recycle-bin document's history).
 9. **GitHub housekeeping (checked 2026-11-19):** Dependabot pull requests #15 (Gradle wrapper 9.9.0) and #16 (ZXing core
-   3.5.4) are still open, but the branch already has both versions, so they can be closed. Branch `ccr-d3174e53-3zuive`
-   still exists and can be deleted. Pull request #18 from the working branch is open; `main` was last updated on 2026-11-11.
+   3.5.4) were closed unmerged on 2026-11-19 at the owner's request: the working branch already has both versions.
+   `main` still has Gradle 9.8.2 and ZXing 3.5.3 until the working branch is merged (pull request #18, open; `main` was
+   last updated on 2026-11-11). Branches that can be deleted: `ccr-d3174e53-3zuive`, and the two `dependabot/gradle/…`
+   branches if Dependabot has not removed them.
 10. **On the Mac only (a cloud session cannot see them):** the R50 stash, and an uncommitted 3° rotation in
     `res/layout/widget_scan.xml` that looks like an accidental drag.
 
