@@ -60,6 +60,13 @@ internal object PdfTextEditor {
     enum class Family { ORIGINAL, SANS, SERIF, MONO }
 
     /**
+     * Where the new words sit in the place the old ones had: starting where they started, centred on it, or ending
+     * where they ended (a column of amounts stays lined up on the right). For new text: starting at, centred on or
+     * ending at the point tapped. With wrapping, within the width the lines are broken to.
+     */
+    enum class Align { LEFT, CENTRE, RIGHT }
+
+    /**
      * Text on one line in one font and size. [left], [top], [right] and [bottom] are display points from the page's
      * top-left corner (text extraction's adjusted coordinates, as the Redact tool uses); [colour] is 0xRRGGBB.
      */
@@ -93,7 +100,17 @@ internal object PdfTextEditor {
         val size: Float,
         val colour: Int? = null,
         val x: Float = 0f,
-        val y: Float = 0f
+        val y: Float = 0f,
+        val align: Align = Align.LEFT,
+        /**
+         * Break a line too long for the page onto further lines below, at spaces: up to the right edge of the page's
+         * text (never narrower than the old words were). The lines below are not moved, so wrapped text can run over
+         * them. A line break typed in [text] always starts a new line.
+         */
+        val wrap: Boolean = false,
+        /** Moved from where it would sit by this much, in display points: right and down are positive. */
+        val dx: Float = 0f,
+        val dy: Float = 0f
     ) {
         val isNew: Boolean get() = index == NEW
     }
@@ -158,7 +175,7 @@ internal object PdfTextEditor {
                 for ((edit, data, choice) in chosen) {
                     if (edit in needsCover) { cover(stream, data); covered++ }
                     if (choice == null) { applied++; continue }
-                    draw(stream, data, edit, choice)
+                    draw(stream, data, edit, choice, analysis)
                     applied++
                     if (choice.same) same++ else similar++
                 }
@@ -169,8 +186,12 @@ internal object PdfTextEditor {
                     else chooseStandard(null, addition, unicodeOnce)
                     if (choice == null) { skipped++; continue }
                     val (ux, uy, vx, vy) = analysis.shape.upright()
-                    val (ox, oy) = analysis.shape.toPage(addition.x, addition.y)
-                    drawText(stream, addition.text, choice, addition.size, addition.colour ?: near?.span?.colour ?: 0, ux, uy, vx, vy, ox, oy)
+                    val (ox, oy) = analysis.shape.toPage(addition.x + addition.dx, addition.y + addition.dy)
+                    val wrapWidth = if (addition.wrap) (rightEdge(analysis) - addition.x).coerceAtLeast(MIN_WRAP_WIDTH) else null
+                    drawLines(
+                        stream, addition.text, choice, addition.size, addition.colour ?: near?.span?.colour ?: 0,
+                        ux, uy, vx, vy, ox, oy, box = wrapWidth ?: 0f, wrapWidth = wrapWidth, align = addition.align
+                    )
                     applied++
                     if (choice.same) same++ else similar++
                 }
@@ -589,19 +610,99 @@ internal object PdfTextEditor {
         return FontChoice(wide, same = false, synthBold = edit.bold, synthItalic = edit.italic)
     }
 
-    private fun draw(stream: PDPageContentStream, data: SpanData, edit: Edit, choice: FontChoice) {
-        val m = data.positions.first().textMatrix
+    private fun draw(stream: PDPageContentStream, data: SpanData, edit: Edit, choice: FontChoice, analysis: PageAnalysis) {
+        val first = data.positions.first()
+        val last = data.positions.last()
+        val m = first.textMatrix
         val (ux, uy) = unit(m.scaleX, m.shearY) ?: return
         val (vx, vy) = unit(m.shearX, m.scaleY) ?: return
-        drawText(stream, edit.text, choice, edit.size, edit.colour ?: data.span.colour, ux, uy, vx, vy, data.offsetX + m.translateX, data.offsetY + m.translateY)
+        // How long the old words were along their baseline: the place the new ones are aligned in.
+        val old = ((last.textMatrix.translateX - m.translateX) * ux + (last.textMatrix.translateY - m.translateY) * uy + last.widthDirAdj).coerceAtLeast(0f)
+        val wrapWidth = if (!edit.wrap) null else {
+            // Up to the right edge of the page's text, when the line reads across the page as shown; a line at an
+            // angle keeps to the length it had.
+            val (ax, ay) = analysis.shape.toDisplay(0f, 0f)
+            val (bx, by) = analysis.shape.toDisplay(ux, uy)
+            val across = bx - ax > 0.99f && abs(by - ay) < 0.1f
+            if (across) maxOf(old, rightEdge(analysis) - data.span.left, MIN_WRAP_WIDTH) else maxOf(old, MIN_WRAP_WIDTH)
+        }
+        // A move asked for, from display points to the page's own directions.
+        val (zeroX, zeroY) = analysis.shape.toPage(0f, 0f)
+        val (movedX, movedY) = analysis.shape.toPage(edit.dx, edit.dy)
+        drawLines(
+            stream, edit.text, choice, edit.size, edit.colour ?: data.span.colour, ux, uy, vx, vy,
+            data.offsetX + m.translateX + (movedX - zeroX), data.offsetY + m.translateY + (movedY - zeroY),
+            box = wrapWidth ?: old, wrapWidth = wrapWidth, align = edit.align
+        )
     }
 
-    /** [text] with its baseline starting at [ox], [oy], running along ([ux], [uy]) with up ([vx], [vy]). */
-    private fun drawText(
+    /** Baseline to baseline, in font sizes, for text that runs onto further lines. */
+    private const val LINE_SPACING = 1.2f
+
+    /**
+     * [text] with every [query] in it replaced by [replacement], or null when it holds none. The query is taken as
+     * plain text (not a pattern); capital and small letters count as the same unless [matchCase].
+     */
+    fun replaceIn(text: String, query: String, replacement: String, matchCase: Boolean): String? {
+        if (query.isEmpty()) return null
+        val pattern = Regex(Regex.escape(query), if (matchCase) emptySet() else setOf(RegexOption.IGNORE_CASE))
+        if (!pattern.containsMatchIn(text)) return null
+        return pattern.replace(text, Regex.escapeReplacement(replacement))
+    }
+
+    /** Lines are never broken narrower than this (points): a sliver beside the page edge would give a word a line. */
+    private const val MIN_WRAP_WIDTH = 60f
+
+    /**
+     * The right edge of the page's text, in display points: as far right as any line reaches, or the page's width less
+     * the margin its text keeps on the left when the lines are all short; never past the page.
+     */
+    private fun rightEdge(analysis: PageAnalysis): Float {
+        val shape = analysis.shape
+        val shown = if (shape.rotation == 90 || shape.rotation == 270) shape.height else shape.width
+        val left = (analysis.spans.minOfOrNull { it.span.left } ?: 36f).coerceIn(18f, shown / 3f)
+        val reached = analysis.spans.maxOfOrNull { it.span.right } ?: 0f
+        return maxOf(reached, shown - left).coerceAtMost(shown - 12f)
+    }
+
+    /**
+     * [text] as the lines to draw: a new line at each line break in it and, when [wrapWidth] is given, at a space
+     * wherever the next word would pass it. A word longer than a whole line is broken where it fills one.
+     */
+    internal fun layout(text: String, wrapWidth: Float?, width: (String) -> Float): List<String> {
+        val lines = ArrayList<String>()
+        for (paragraph in text.split('\n')) {
+            if (wrapWidth == null || width(paragraph) <= wrapWidth) { lines += paragraph; continue }
+            var line = ""
+            for (word in paragraph.split(' ')) {
+                val joined = if (line.isEmpty()) word else "$line $word"
+                if (width(joined) <= wrapWidth) { line = joined; continue }
+                if (line.isNotEmpty()) lines += line
+                line = word
+                while (width(line) > wrapWidth && line.length > 1) {
+                    var cut = line.length - 1
+                    while (cut > 1 && width(line.substring(0, cut)) > wrapWidth) cut--
+                    lines += line.substring(0, cut)
+                    line = line.substring(cut)
+                }
+            }
+            lines += line
+        }
+        return lines
+    }
+
+    /**
+     * [text] from the point ([ox], [oy]), its lines running along ([ux], [uy]) with up ([vx], [vy]) and each line
+     * 1.2 sizes below the last. A line is placed in [box] (a length along the baseline from the point) by [align].
+     */
+    private fun drawLines(
         stream: PDPageContentStream, text: String, choice: FontChoice, fontSize: Float, rgb: Int,
-        ux: Float, uy: Float, vx: Float, vy: Float, ox: Float, oy: Float
+        ux: Float, uy: Float, vx: Float, vy: Float, ox: Float, oy: Float,
+        box: Float, wrapWidth: Float?, align: Align
     ) {
         val size = fontSize.coerceIn(1f, 400f)
+        val width: (String) -> Float = { s -> runCatching { choice.font.getStringWidth(s) / 1000f * size }.getOrDefault(0f) }
+        val lines = layout(text, wrapWidth, width)
         val colour = PDColor(
             floatArrayOf(((rgb shr 16) and 0xFF) / 255f, ((rgb shr 8) and 0xFF) / 255f, (rgb and 0xFF) / 255f),
             PDDeviceRGB.INSTANCE
@@ -618,8 +719,17 @@ internal object PdfTextEditor {
         stream.beginText()
         stream.setFont(choice.font, size)
         if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL_STROKE)
-        stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, ox, oy))
-        stream.showText(text)
+        lines.forEachIndexed { index, line ->
+            if (line.isBlank()) return@forEachIndexed
+            val shift = when (align) {
+                Align.LEFT -> 0f
+                Align.CENTRE -> (box - width(line)) / 2f
+                Align.RIGHT -> box - width(line)
+            }
+            val down = index * size * LINE_SPACING
+            stream.setTextMatrix(Matrix(ux, uy, vx + ux * lean, vy + uy * lean, ox + ux * shift - vx * down, oy + uy * shift - vy * down))
+            stream.showText(line)
+        }
         if (choice.synthBold) stream.setRenderingMode(RenderingMode.FILL)
         stream.endText()
         stream.restoreGraphicsState()
@@ -633,7 +743,8 @@ internal object PdfTextEditor {
     /** True when [font] can draw every character of [text]: it encodes them, and an embedded font has their glyphs. */
     internal fun canShow(font: PDFont, text: String): Boolean = runCatching {
         if (font is PDType3Font) return@runCatching false
-        val bytes = font.encode(text)
+        // Line breaks are places to start a new line, not letters to draw.
+        val bytes = font.encode(text.replace("\n", ""))
         if (font.isEmbedded && font is PDVectorFont) {
             val input = ByteArrayInputStream(bytes)
             while (input.available() > 0) if (!font.hasGlyph(font.readCode(input))) return@runCatching false

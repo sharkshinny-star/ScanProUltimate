@@ -37,6 +37,12 @@ internal class PdfTextEditSession private constructor(private val source: File, 
         return spans.getOrPut(page) { runCatching { PdfTextEditor.spans(document, page) }.getOrDefault(emptyList()) }
     }
 
+    /** Every line in the PDF that holds [query], page by page, for Find and replace. */
+    fun find(query: String, matchCase: Boolean): List<PdfTextEditor.Span> {
+        if (query.isEmpty()) return emptyList()
+        return (0 until pageCount).flatMap { page -> spans(page).filter { it.text.contains(query, ignoreCase = !matchCase) } }
+    }
+
     /**
      * [page] at [width] pixels wide, with [edits] (those for this page) applied when there are any; also the page's
      * size in points as shown, which the editor maps the spans with. Null if it can't be drawn.

@@ -541,7 +541,7 @@
     <string name="tools_tile_edit_pdf">PDF ಬದಲಿಸಿ</string>
     <string name="tools_desc_edit_pdf">ಪದಗಳು, ಫಾಂಟ್, ಬೋಲ್ಡ್ ಮತ್ತು ಗಾತ್ರ ಬದಲಿಸಿ</string>
     <string name="hint_tool_edit_pdf">ಪಠ್ಯದ ಯಾವುದೇ ಸಾಲಿನ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ ಅದರ ಪದಗಳು, ಫಾಂಟ್, ಬೋಲ್ಡ್, ಇಟಾಲಿಕ್ ಅಥವಾ ಗಾತ್ರ ಬದಲಿಸಿ. ನೀವು ಬರೆಯುವ ಅಕ್ಷರಗಳು PDF ನ ಫಾಂಟ್‌ನಲ್ಲಿ ಇದ್ದರೆ ಅದೇ ಫಾಂಟ್ ಉಳಿಯುತ್ತದೆ. ಹೊಸ PDF ಉಳಿಸಲಾಗುತ್ತದೆ; ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
-    <string name="tools_edit_hint">ಬದಲಿಸಲು ಯಾವುದೇ ಪಠ್ಯದ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="tools_edit_hint">ಬದಲಿಸಲು ಯಾವುದೇ ಪಠ್ಯದ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ. ಜೂಮ್ ಮಾಡಲು ಪಿಂಚ್ ಮಾಡಿ.</string>
     <string name="tools_edit_save">PDF ಉಳಿಸಿ</string>
     <string name="tools_edit_no_text">ಈ ಪುಟದಲ್ಲಿ ಪಠ್ಯವಿಲ್ಲ. ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಪುಟ ಒಂದು ಚಿತ್ರ: ಮೊದಲು \"ಹುಡುಕಬಹುದಾದಂತೆ ಮಾಡಿ\" ಬಳಸಿ.</string>
     <string name="tools_edit_err_open">ಈ PDF ಅನ್ನು ಬದಲಿಸಲು ತೆರೆಯಲು ಆಗಲಿಲ್ಲ.</string>
@@ -600,4 +600,41 @@
     <string name="tools_subtitle_optimise">ಫೈಲ್‌ಗಳನ್ನು ಚಿಕ್ಕದು, ಹುಡುಕಬಹುದಾದ ಅಥವಾ ಸರಳ ಮಾಡಿ</string>
     <string name="tools_subtitle_convert">ಫೈಲ್‌ಗಳನ್ನು PDF ಗೆ ಮತ್ತು ಮರಳಿ ಬದಲಿಸಿ</string>
     <string name="tools_subtitle_secure">ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಮತ್ತು ಫೈಲ್ ವಿವರಗಳು</string>
+    <string name="tools_edit_align">ಸ್ಥಾನ</string>
+    <string name="tools_edit_align_left">ಎಡ</string>
+    <string name="tools_edit_align_centre">ಮಧ್ಯ</string>
+    <string name="tools_edit_align_right">ಬಲ</string>
+    <string name="tools_edit_wrap">ಉದ್ದ ಪಠ್ಯ ಮುಂದಿನ ಸಾಲಿಗೆ</string>
+    <string name="tools_edit_align_hint">ಎಡ, ಮಧ್ಯ ಮತ್ತು ಬಲ ಹೊಸ ಪದಗಳನ್ನು ಹಳೆಯ ಪದಗಳಿದ್ದ ಜಾಗದಲ್ಲಿ ಇಡುತ್ತವೆ. ಪುಟಕ್ಕಿಂತ ಉದ್ದದ ಪಠ್ಯ ಮುಂದಿನ ಸಾಲುಗಳಿಗೆ ಹೋಗುತ್ತದೆ; ಕೆಳಗಿನ ಸಾಲುಗಳು ಚಲಿಸುವುದಿಲ್ಲ.</string>
+    <string name="tools_edit_align_hint_new">ಎಡ: ನೀವು ಟ್ಯಾಪ್ ಮಾಡಿದಲ್ಲಿಂದ ಪದಗಳು ಶುರುವಾಗುತ್ತವೆ; ಮಧ್ಯ: ಅಲ್ಲಿ ಮಧ್ಯದಲ್ಲಿರುತ್ತವೆ; ಬಲ: ಅಲ್ಲಿ ಮುಗಿಯುತ್ತವೆ. ಪುಟಕ್ಕಿಂತ ಉದ್ದದ ಪಠ್ಯ ಮುಂದಿನ ಸಾಲುಗಳಿಗೆ ಹೋಗುತ್ತದೆ.</string>
+    <string name="tools_edit_find_replace">ಹುಡುಕಿ ಮತ್ತು ಬದಲಿಸಿ</string>
+    <string name="tools_edit_find_label">ಹುಡುಕಿ</string>
+    <string name="tools_edit_replace_label">ಇದರಿಂದ ಬದಲಿಸಿ</string>
+    <string name="tools_edit_match_case">ದೊಡ್ಡ-ಚಿಕ್ಕ ಅಕ್ಷರ ಹೊಂದಿಸಿ</string>
+    <string name="tools_edit_replace_all">ಎಲ್ಲವನ್ನೂ ಬದಲಿಸಿ</string>
+    <string name="tools_edit_no_matches">\"%1$s\" ಗೆ ಹೊಂದುವ ಪಠ್ಯವಿಲ್ಲ.</string>
+    <string name="tools_edit_redo">ಮತ್ತೆ ಮಾಡಿ</string>
+    <string name="tools_edit_changes_title">ಬದಲಾವಣೆಗಳು</string>
+    <string name="tools_edit_change_page">ಪುಟ %1$d</string>
+    <string name="tools_edit_change_added">ಸೇರಿಸಲಾಗಿದೆ</string>
+    <string name="tools_edit_change_deleted">ಅಳಿಸಲಾಗಿದೆ</string>
+    <string name="tools_edit_change_remove">ಈ ಬದಲಾವಣೆ ತೆಗೆಯಿರಿ</string>
+    <string name="tools_edit_save_title">ಬದಲಿಸಿದ PDF ಉಳಿಸಿ</string>
+    <string name="tools_edit_save_name">ಫೈಲ್ ಹೆಸರು</string>
+    <string name="tools_edit_save_note">ನಿಮ್ಮ ಬದಲಾವಣೆಗಳೊಂದಿಗೆ ಹೊಸ PDF ಉಳಿಸಲಾಗುತ್ತದೆ. ಮೂಲ ಫೈಲ್ ಬದಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="tools_edit_move">ಸರಿಸಿ</string>
+    <string name="tools_edit_move_left">ಎಡಕ್ಕೆ ಸರಿಸಿ</string>
+    <string name="tools_edit_move_right">ಬಲಕ್ಕೆ ಸರಿಸಿ</string>
+    <string name="tools_edit_move_up">ಮೇಲಕ್ಕೆ ಸರಿಸಿ</string>
+    <string name="tools_edit_move_down">ಕೆಳಕ್ಕೆ ಸರಿಸಿ</string>
+    <string name="tools_edit_zoom_reset">ಪೂರ್ಣ ಪುಟ</string>
+    <string name="tools_edit_find_hint">ಈ PDF ನಲ್ಲಿ ಎಲ್ಲೆಡೆ ಪದಗಳನ್ನು ಬದಲಿಸುತ್ತದೆ; ಪ್ರತಿ ಸಾಲಿನ ಫಾಂಟ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.</string>
+    <plurals name="tools_edit_replaced">
+        <item quantity="one">%1$d ಸಾಲಿನಲ್ಲಿ ಬದಲಿಸಲಾಗಿದೆ.</item>
+        <item quantity="other">%1$d ಸಾಲುಗಳಲ್ಲಿ ಬದಲಿಸಲಾಗಿದೆ.</item>
+    </plurals>
+    <plurals name="tools_edit_changes">
+        <item quantity="one">%1$d ಬದಲಾವಣೆ</item>
+        <item quantity="other">%1$d ಬದಲಾವಣೆಗಳು</item>
+    </plurals>
 </resources>
