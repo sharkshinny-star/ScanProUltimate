@@ -55,6 +55,13 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - Rendered and looked at: `settings_light_main`, `settings_light_about`, `files-08-overview-{light,dark}`. This run also compiled and tested F216 for the first time.
 - NOT run: `bundleRelease` (left to CI), anything on a device.
 
+## Latest results (2026-11-19, F205 Edit PDF zoom, find and replace, changes list, Save name; cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug -Pscanpro.screenshots=true`: 1,055 tests (screenshot renders included), 0 failed, 2 skipped; lint 0 errors. `PdfTextEditorTest` 22/22. Source audit PASS.
+- `edit-pdf-options-{light,dark}.png` and `edit-pdf-changes-{light,dark}.png` rendered and looked at.
+- After merging F216 (other session, which could not compile it): `:app:testDebugUnitTest :app:lintDebug` on the merged code: 1,055 tests, 0 failed (screenshot renders skipped in this run); lint 0 errors; source audit PASS.
+- NOT run: anything on a device (pinch zoom, drag and the dialogs are unverified: R71); release builds.
+
 ## Latest results (2026-11-19, F216 About page and More group, Linux cloud container, no Android SDK)
 
 - `python3 -I scripts/ci/scanpro-quality-audit.py` PASS. `./gradlew :app:compileDebugKotlin` **not run successfully**: the Android Gradle Plugin cannot be resolved here. Not compiled, no tests run; CI compiles it and `SettingsPagesScreenshotTest` opens the new page (R85).

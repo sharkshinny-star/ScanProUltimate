@@ -576,7 +576,7 @@
     <string name="tools_tile_edit_pdf">Edit PDF</string>
     <string name="tools_desc_edit_pdf">Change words, font, bold and size</string>
     <string name="hint_tool_edit_pdf">Tap any line of text to change its words, font, bold, italic, size or colour, or use Add text to write new words anywhere on the page. The PDF\'s own font is kept whenever it has the letters you type. A new PDF is saved; the original is not changed.</string>
-    <string name="tools_edit_hint">Tap any text to change it</string>
+    <string name="tools_edit_hint">Tap any text to change it. Pinch to zoom in.</string>
     <string name="tools_edit_save">Save PDF</string>
     <string name="tools_edit_no_text">No text on this page. A scanned page is a picture: use Make searchable first.</string>
     <string name="tools_edit_err_open">Couldn\'t open this PDF for editing.</string>
@@ -642,4 +642,34 @@
     <string name="tools_edit_wrap">Wrap long text</string>
     <string name="tools_edit_align_hint">Left, centre and right place the new words where the old ones were. Wrap moves text that is too long for the page onto new lines; the lines below it do not move.</string>
     <string name="tools_edit_align_hint_new">Left starts the words where you tapped, Centre centres them on it, Right ends them there. Wrap moves text that is too long for the page onto new lines.</string>
+    <string name="tools_edit_find_replace">Find and replace</string>
+    <string name="tools_edit_find_label">Find</string>
+    <string name="tools_edit_replace_label">Replace with</string>
+    <string name="tools_edit_match_case">Match capital letters</string>
+    <string name="tools_edit_replace_all">Replace all</string>
+    <string name="tools_edit_no_matches">No text matches \"%1$s\".</string>
+    <string name="tools_edit_redo">Redo</string>
+    <string name="tools_edit_changes_title">Changes</string>
+    <string name="tools_edit_change_page">Page %1$d</string>
+    <string name="tools_edit_change_added">Added</string>
+    <string name="tools_edit_change_deleted">Deleted</string>
+    <string name="tools_edit_change_remove">Remove this change</string>
+    <string name="tools_edit_save_title">Save edited PDF</string>
+    <string name="tools_edit_save_name">File name</string>
+    <string name="tools_edit_save_note">A new PDF is saved with your changes. The original is not changed.</string>
+    <string name="tools_edit_move">Move</string>
+    <string name="tools_edit_move_left">Move left</string>
+    <string name="tools_edit_move_right">Move right</string>
+    <string name="tools_edit_move_up">Move up</string>
+    <string name="tools_edit_move_down">Move down</string>
+    <string name="tools_edit_zoom_reset">Fit page</string>
+    <string name="tools_edit_find_hint">Replaces the words everywhere in this PDF, keeping each line\'s font.</string>
+    <plurals name="tools_edit_replaced">
+        <item quantity="one">Replaced in %1$d line.</item>
+        <item quantity="other">Replaced in %1$d lines.</item>
+    </plurals>
+    <plurals name="tools_edit_changes">
+        <item quantity="one">%1$d change</item>
+        <item quantity="other">%1$d changes</item>
+    </plurals>
 </resources>

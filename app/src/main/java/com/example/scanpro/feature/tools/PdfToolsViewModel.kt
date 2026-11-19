@@ -909,10 +909,13 @@ class PdfToolsViewModel @Inject constructor(
             com.example.scanpro.imaging.PdfRedactTools.redact(context, uri, terms, matchCase, out, ::report)
         }
 
-    /** Edit PDF text (F193): writes a copy of [uri] with [edits] applied. */
-    internal fun editPdfText(uri: Uri, edits: List<com.example.scanpro.imaging.PdfTextEditor.Edit>) =
+    /** Edit PDF text (F193): writes a copy of [uri] with [edits] applied, called [name] when one is given. */
+    internal fun editPdfText(uri: Uri, edits: List<com.example.scanpro.imaging.PdfTextEditor.Edit>, name: String = "") =
         launchTool(R.string.tools_edit_progress, R.string.tools_edit_err_failed) {
-            com.example.scanpro.imaging.PdfTextEditTool.save(context, uri, edits, named(uri, "edited"))
+            val chosen = name.trim().removeSuffix(".pdf").trim()
+            val output = if (chosen.isEmpty()) named(uri, "edited")
+            else PdfToolsEngine.outputLocation(context, com.example.scanpro.data.fileSafeName(chosen) + ".pdf")
+            com.example.scanpro.imaging.PdfTextEditTool.save(context, uri, edits, output)
         }
 
     fun invertColors(uri: Uri) = launchTool(R.string.tools_invert_progress, R.string.tools_invert_err_failed) {
