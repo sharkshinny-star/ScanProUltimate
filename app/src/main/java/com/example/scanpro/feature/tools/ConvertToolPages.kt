@@ -344,15 +344,7 @@ internal fun PdfToImagesDialog(
         demoToolId = "pdf2img"
     ) {
         PickedFileRow(uri)
-        if (pdf != null) {
-            val after = when {
-                chosen.isNullOrEmpty() -> PdfOutcome(pages = null, bytes = null)
-                estimate == null -> null
-                else -> PdfOutcome(pages = count, bytes = estimate?.bytes, approximate = true, files = count, pagesLabel = dimsLabel)
-            }
-            PdfOutcomeRow(pdf.facts, after)
-        }
-        PdfResultPreview(pdf?.facts, height = 220.dp)
+        PdfResultPreview(pdf?.facts, height = 180.dp)
         if (capped > 0) {
             ImageToolNotice(pluralStringResource(R.plurals.cvt_pdf2img_capped, capped, capped, PdfToImagesMath.MAX_SIDE))
         }
@@ -398,21 +390,34 @@ internal fun PdfToImagesDialog(
             )
         }
 
-        ToolSection(stringResource(R.string.tools_pdf2img_format)) {
-            SegmentedChoice(
-                options = listOf(ImageExportFormat.JPEG to "JPG", ImageExportFormat.PNG to "PNG", ImageExportFormat.WEBP to "WebP"),
-                selected = format,
-                onSelect = { format = it }
-            )
-            ToolHint(
-                stringResource(
-                    when (format) {
-                        ImageExportFormat.JPEG -> R.string.cvt_format_jpg
-                        ImageExportFormat.PNG -> R.string.cvt_format_png
-                        else -> R.string.cvt_format_webp
-                    }
+        // JPG suits most people; the other formats are folded away (still applied while folded).
+        val formatChoices = listOf(ImageExportFormat.JPEG to "JPG", ImageExportFormat.PNG to "PNG", ImageExportFormat.WEBP to "WebP")
+        MoreOptions(summary = formatChoices.firstOrNull { it.first == format }?.second) {
+            ToolSection(stringResource(R.string.tools_pdf2img_format)) {
+                SegmentedChoice(
+                    options = formatChoices,
+                    selected = format,
+                    onSelect = { format = it }
                 )
-            )
+                ToolHint(
+                    stringResource(
+                        when (format) {
+                            ImageExportFormat.JPEG -> R.string.cvt_format_jpg
+                            ImageExportFormat.PNG -> R.string.cvt_format_png
+                            else -> R.string.cvt_format_webp
+                        }
+                    )
+                )
+            }
+        }
+
+        if (pdf != null) {
+            val after = when {
+                chosen.isNullOrEmpty() -> PdfOutcome(pages = null, bytes = null)
+                estimate == null -> null
+                else -> PdfOutcome(pages = count, bytes = estimate?.bytes, approximate = true, files = count, pagesLabel = dimsLabel)
+            }
+            PdfOutcomeRow(pdf.facts, after)
         }
     }
 }
@@ -531,19 +536,6 @@ internal fun ImagesToPdfDialog(
         demoToolId = "img2pdf"
     ) {
         if (loaded != null) {
-            val after = estimate
-            ConvertOutcomeRow(
-                nowTitle = pluralStringResource(R.plurals.cvt_pictures, loaded.items.size, loaded.items.size),
-                nowDetail = formatBytes(context, loaded.totalBytes),
-                afterTitle = pluralStringResource(R.plurals.pdf_outcome_pages, loaded.items.size, loaded.items.size),
-                afterDetail = when {
-                    after == null -> stringResource(R.string.img_tool_estimating)
-                    after.bytes == null -> stringResource(R.string.pdf_outcome_size_unknown)
-                    else -> stringResource(R.string.img_tool_about, formatBytes(context, after.bytes))
-                },
-                beforeBytes = loaded.totalBytes,
-                afterBytes = after?.bytes
-            )
             loaded.items.firstOrNull()?.let { first -> PagePlacementPreview(first, loaded.first, size, margin, quality) }
         }
         if (unreadable > 0) ImageToolNotice(pluralStringResource(R.plurals.cvt_img2pdf_unreadable, unreadable, unreadable))
@@ -560,18 +552,6 @@ internal fun ImagesToPdfDialog(
                 else stringResource(R.string.tools_img2pdf_fitted_hint, stringResource(size.labelRes)) + "\n" + stringResource(R.string.cvt_img2pdf_orientation)
             )
         }
-        ToolSection(stringResource(R.string.cvt_margin)) {
-            SegmentedChoice(
-                options = listOf(
-                    ImageMargin.NONE to stringResource(R.string.cvt_margin_none),
-                    ImageMargin.SMALL to stringResource(R.string.cvt_margin_small),
-                    ImageMargin.LARGE to stringResource(R.string.cvt_margin_large)
-                ),
-                selected = margin,
-                onSelect = { margin = it }
-            )
-            ToolHint(stringResource(R.string.cvt_margin_hint, PaperSizes.toMillimetres(margin.points).roundToInt()))
-        }
         ToolSection(stringResource(R.string.tools_img2pdf_quality)) {
             SegmentedChoice(
                 options = PdfQuality.entries.map { it to stringResource(it.labelRes) },
@@ -579,6 +559,37 @@ internal fun ImagesToPdfDialog(
                 onSelect = { quality = it }
             )
             ToolHint(stringResource(R.string.cvt_img2pdf_quality_hint, quality.maxImageDimension))
+        }
+        // The margin is seldom changed and the page preview above already shows it: folded away, still applied.
+        MoreOptions {
+            ToolSection(stringResource(R.string.cvt_margin)) {
+                SegmentedChoice(
+                    options = listOf(
+                        ImageMargin.NONE to stringResource(R.string.cvt_margin_none),
+                        ImageMargin.SMALL to stringResource(R.string.cvt_margin_small),
+                        ImageMargin.LARGE to stringResource(R.string.cvt_margin_large)
+                    ),
+                    selected = margin,
+                    onSelect = { margin = it }
+                )
+                ToolHint(stringResource(R.string.cvt_margin_hint, PaperSizes.toMillimetres(margin.points).roundToInt()))
+            }
+        }
+
+        if (loaded != null) {
+            val after = estimate
+            ConvertOutcomeRow(
+                nowTitle = pluralStringResource(R.plurals.cvt_pictures, loaded.items.size, loaded.items.size),
+                nowDetail = formatBytes(context, loaded.totalBytes),
+                afterTitle = pluralStringResource(R.plurals.pdf_outcome_pages, loaded.items.size, loaded.items.size),
+                afterDetail = when {
+                    after == null -> stringResource(R.string.img_tool_estimating)
+                    after.bytes == null -> stringResource(R.string.pdf_outcome_size_unknown)
+                    else -> stringResource(R.string.img_tool_about, formatBytes(context, after.bytes))
+                },
+                beforeBytes = loaded.totalBytes,
+                afterBytes = after?.bytes
+            )
         }
     }
 }

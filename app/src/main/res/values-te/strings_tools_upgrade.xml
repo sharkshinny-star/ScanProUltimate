@@ -4,6 +4,7 @@
     <string name="tool_demo_how_it_works">ఇది ఎలా పనిచేస్తుంది</string>
     <string name="tool_demo_shown">చూపబడుతోంది</string>
     <string name="tool_demo_hidden">దాచబడింది</string>
+    <string name="tools_more_options">మరిన్ని ఆప్షన్‌లు</string>
     <string name="pdf_outcome_size_unknown">సైజు తర్వాత తెలుస్తుంది</string>
     <plurals name="pdf_outcome_pages">
         <item quantity="one">%1$d పేజీ</item>

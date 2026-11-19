@@ -169,14 +169,7 @@ internal fun SplitDialog(
         demoToolId = "split"
     ) {
         PickedFileRow(uri)
-        if (loaded != null) {
-            if (pages == null) ImageToolNotice(stringResource(R.string.pages_count_unknown))
-            PdfOutcomeRow(
-                loaded,
-                if (problem != null || parts.isEmpty()) null
-                else PdfOutcome(pages = outPages, bytes = shareOf(loaded.sizeBytes, outPages, pages ?: 0), files = parts.size)
-            )
-        }
+        if (loaded != null && pages == null) ImageToolNotice(stringResource(R.string.pages_count_unknown))
         if (pages != null && pages <= 1) {
             ImageToolNotice(stringResource(R.string.tools_split_single_page_desc))
             return@ToolPage
@@ -232,6 +225,14 @@ internal fun SplitDialog(
             }
         }
 
+        // The estimate follows the choice it depends on.
+        if (loaded != null) {
+            PdfOutcomeRow(
+                loaded,
+                if (problem != null || parts.isEmpty()) null
+                else PdfOutcome(pages = outPages, bytes = shareOf(loaded.sizeBytes, outPages, pages ?: 0), files = parts.size)
+            )
+        }
         if (problem == null && parts.isNotEmpty()) {
             ToolSection(pluralStringResource(R.plurals.pdf_outcome_files, parts.size, parts.size)) {
                 SplitFileList(parts)
@@ -377,9 +378,6 @@ internal fun PageNumbersPdfDialog(
             }
         )
         if (skipCover && pages != null && pages > 1) ToolHint(stringResource(R.string.pages_numbers_preview_page_two))
-        if (loaded != null) {
-            PdfOutcomeRow(loaded, PdfOutcome(pages = pages, bytes = loaded.sizeBytes.takeIf { it > 0 }?.let { it + numbered * 220L }))
-        }
 
         ToolSection(stringResource(R.string.pages_numbers_where)) {
             SegmentedChoice(
@@ -411,20 +409,27 @@ internal fun PageNumbersPdfDialog(
             ToolHint(stringResource(R.string.pages_numbers_latin_note))
         }
 
-        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
-            Row(
-                Modifier
-                    .toggleable(value = skipCover, role = Role.Switch, onValueChange = { skipCover = it })
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.tools_page_numbers_skip_cover), style = MaterialTheme.typography.bodyLarge)
-                    Text(stringResource(R.string.pages_numbers_cover_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Leaving the cover plain is a rarer wish: folded away, still applied while folded.
+        MoreOptions(summary = if (skipCover) stringResource(R.string.tools_page_numbers_skip_cover) else null) {
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier
+                        .toggleable(value = skipCover, role = Role.Switch, onValueChange = { skipCover = it })
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.tools_page_numbers_skip_cover), style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.pages_numbers_cover_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(checked = skipCover, onCheckedChange = null)
                 }
-                Spacer(Modifier.width(12.dp))
-                Switch(checked = skipCover, onCheckedChange = null)
             }
+        }
+
+        if (loaded != null) {
+            PdfOutcomeRow(loaded, PdfOutcome(pages = pages, bytes = loaded.sizeBytes.takeIf { it > 0 }?.let { it + numbered * 220L }))
         }
     }
 }
@@ -468,7 +473,8 @@ internal fun NupDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (perSheet: In
         onAction = { onConfirm(perSheet) },
         actionEnabled = problem == null,
         actionSupport = problem,
-        demoToolId = "nup"
+        demoToolId = "nup",
+        about = stringResource(R.string.tools_nup_body)
     ) {
         PdfResultPreview(
             facts = loaded,
@@ -509,13 +515,6 @@ internal fun NupDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (perSheet: In
                 }
             }
         )
-        if (loaded != null) {
-            PdfOutcomeRow(
-                loaded,
-                if (sheets == null || problem != null) null
-                else PdfOutcome(pages = sheets, bytes = loaded.sizeBytes.takeIf { it > 0 }?.let { it + sheets * 400L }, pagesLabel = pluralStringResource(R.plurals.pages_nup_sheets, sheets, sheets))
-            )
-        }
 
         ToolSection(stringResource(R.string.pages_nup_per_sheet_title)) {
             SegmentedChoice(
@@ -529,7 +528,13 @@ internal fun NupDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (perSheet: In
                 val last = pages % perSheet
                 if (last != 0) ToolHint(pluralStringResource(R.plurals.pages_nup_last_sheet, last, last))
             }
-            ToolHint(stringResource(R.string.tools_nup_body))
+        }
+        if (loaded != null) {
+            PdfOutcomeRow(
+                loaded,
+                if (sheets == null || problem != null) null
+                else PdfOutcome(pages = sheets, bytes = loaded.sizeBytes.takeIf { it > 0 }?.let { it + sheets * 400L }, pagesLabel = pluralStringResource(R.plurals.pages_nup_sheets, sheets, sheets))
+            )
         }
     }
 }
@@ -581,15 +586,6 @@ internal fun BlankPagesDialog(found: BlankPagesFound, onDismiss: () -> Unit, onR
         demoToolId = "blank_pages"
     ) {
         PickedFileRow(found.uri)
-        val loaded = facts
-        if (loaded != null) {
-            val kept = found.pageCount - removing.size
-            PdfOutcomeRow(
-                loaded,
-                if (count == 0 || everyPage) PdfOutcome(pages = found.pageCount, bytes = loaded.sizeBytes.takeIf { it > 0 })
-                else PdfOutcome(pages = kept, bytes = shareOf(loaded.sizeBytes, kept, found.pageCount))
-            )
-        }
         when {
             count == 0 -> ImageToolNotice(stringResource(R.string.tools_blank_none_body))
             everyPage -> ImageToolNotice(stringResource(R.string.tools_blank_all_blank))
@@ -607,6 +603,15 @@ internal fun BlankPagesDialog(found: BlankPagesFound, onDismiss: () -> Unit, onR
                 }
                 ToolHint(stringResource(R.string.pages_blank_copy_note))
             }
+        }
+        val loaded = facts
+        if (loaded != null) {
+            val kept = found.pageCount - removing.size
+            PdfOutcomeRow(
+                loaded,
+                if (count == 0 || everyPage) PdfOutcome(pages = found.pageCount, bytes = loaded.sizeBytes.takeIf { it > 0 })
+                else PdfOutcome(pages = kept, bytes = shareOf(loaded.sizeBytes, kept, found.pageCount))
+            )
         }
     }
 }
@@ -727,21 +732,10 @@ internal fun InsertPagesDialog(
         onAction = { if (source != null && problem == null) onConfirm(PageInsertion(source, if (allPages) null else rangeText.trim(), afterPosition)) },
         actionEnabled = problem == null,
         actionSupport = problem,
-        demoToolId = "insert_pages"
+        demoToolId = "insert_pages",
+        // What Insert does is said once, in the folded "How it works", rather than as a paragraph above the choices.
+        about = stringResource(R.string.tools_insert_body)
     ) {
-        ToolHint(stringResource(R.string.tools_insert_body))
-        val base = baseFacts
-        if (base != null) {
-            val before = PdfFacts(keptPages, base.sizeBytes, base.firstPage, base.pageWidthPt, base.pageHeightPt)
-            val extra = sourceFacts
-            val outcome = if (inserting == null || problem != null) null else {
-                val baseShare = shareOf(base.sizeBytes, keptPages, base.pageCount ?: keptPages) ?: 0L
-                val extraShare = extra?.let { shareOf(it.sizeBytes, inserting, it.pageCount ?: inserting) } ?: 0L
-                PdfOutcome(pages = keptPages + inserting, bytes = (baseShare + extraShare).takeIf { it > 0 })
-            }
-            PdfOutcomeRow(before, outcome)
-        }
-
         ToolSection(stringResource(R.string.tools_insert_choose_pdf)) {
             if (source != null) PickedFileRow(source)
             OutlinedButton(onClick = { picker.launch(arrayOf("application/pdf")) }, modifier = Modifier.fillMaxWidth()) {
@@ -796,6 +790,18 @@ internal fun InsertPagesDialog(
             if (inserting != null && afterPosition in 0..keptPages) {
                 InsertRibbon(keptPages, inserting, afterPosition)
             }
+        }
+
+        val base = baseFacts
+        if (base != null) {
+            val before = PdfFacts(keptPages, base.sizeBytes, base.firstPage, base.pageWidthPt, base.pageHeightPt)
+            val extra = sourceFacts
+            val outcome = if (inserting == null || problem != null) null else {
+                val baseShare = shareOf(base.sizeBytes, keptPages, base.pageCount ?: keptPages) ?: 0L
+                val extraShare = extra?.let { shareOf(it.sizeBytes, inserting, it.pageCount ?: inserting) } ?: 0L
+                PdfOutcome(pages = keptPages + inserting, bytes = (baseShare + extraShare).takeIf { it > 0 })
+            }
+            PdfOutcomeRow(before, outcome)
         }
     }
 }

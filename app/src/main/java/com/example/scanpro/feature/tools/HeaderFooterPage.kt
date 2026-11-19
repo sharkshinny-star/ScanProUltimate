@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.scanpro.R
 import com.example.scanpro.imaging.PdfHeaderFooterTools
@@ -116,7 +119,9 @@ internal fun HeaderFooterDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (Pdf
             onlyPageSkipped -> stringResource(R.string.edit_hf_err_only_page_skipped)
             else -> null
         },
-        demoToolId = "header_footer"
+        demoToolId = "header_footer",
+        // Said once, in the folded "How it works", instead of a "What happens" section under the options.
+        about = stringResource(R.string.tools_hf_body)
     ) {
         PickedFileRow(uri)
         val ink = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.SANS_SERIF; color = 0xFF404040.toInt() } }
@@ -136,10 +141,6 @@ internal fun HeaderFooterDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (Pdf
         PdfResultPreview(f, result = marks)
         if (skipFirst && config.hasAny && !onlyPageSkipped) ToolHint(stringResource(R.string.edit_hf_first_skipped))
         if (shrunk != null) ImageToolNotice(stringResource(R.string.edit_hf_shrunk, shrunk.roundToInt().coerceAtLeast(1)))
-        if (f != null) {
-            val perPage = if (lines.any { it.picture }) 3_500L else 150L
-            PdfOutcomeRow(f, pages?.let { PdfOutcome(it, f.sizeBytes + perPage * stamped, approximate = true) })
-        }
 
         ToolSection(stringResource(R.string.edit_hf_section_text)) {
             OutlinedTextField(
@@ -164,32 +165,44 @@ internal fun HeaderFooterDialog(uri: Uri, onDismiss: () -> Unit, onConfirm: (Pdf
                 }
             }
         }
-        ToolSection(stringResource(R.string.edit_hf_section_look)) {
-            SegmentedChoice(
-                options = listOf(
-                    PdfHeaderFooterTools.Align.LEFT.name to stringResource(R.string.tools_hf_align_left),
-                    PdfHeaderFooterTools.Align.CENTER.name to stringResource(R.string.tools_hf_align_centre),
-                    PdfHeaderFooterTools.Align.RIGHT.name to stringResource(R.string.tools_hf_align_right)
-                ),
-                selected = align,
-                onSelect = { align = it }
-            )
-            SegmentedChoice(
-                options = listOf(
-                    HF_SIZES[0] to stringResource(R.string.edit_hf_size_small),
-                    HF_SIZES[1] to stringResource(R.string.edit_hf_size_medium),
-                    HF_SIZES[2] to stringResource(R.string.edit_hf_size_large)
-                ),
-                selected = sizePt,
-                onSelect = { sizePt = it }
-            )
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.tools_hf_skip_first), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(end = 12.dp))
-                Switch(checked = skipFirst, onCheckedChange = { skipFirst = it })
+        // Alignment, size and the first page are seldom changed, and the preview above shows them: folded away,
+        // still applied while folded.
+        MoreOptions(summary = if (skipFirst) stringResource(R.string.tools_hf_skip_first) else null) {
+            ToolSection(stringResource(R.string.edit_hf_section_look)) {
+                SegmentedChoice(
+                    options = listOf(
+                        PdfHeaderFooterTools.Align.LEFT.name to stringResource(R.string.tools_hf_align_left),
+                        PdfHeaderFooterTools.Align.CENTER.name to stringResource(R.string.tools_hf_align_centre),
+                        PdfHeaderFooterTools.Align.RIGHT.name to stringResource(R.string.tools_hf_align_right)
+                    ),
+                    selected = align,
+                    onSelect = { align = it }
+                )
+                SegmentedChoice(
+                    options = listOf(
+                        HF_SIZES[0] to stringResource(R.string.edit_hf_size_small),
+                        HF_SIZES[1] to stringResource(R.string.edit_hf_size_medium),
+                        HF_SIZES[2] to stringResource(R.string.edit_hf_size_large)
+                    ),
+                    selected = sizePt,
+                    onSelect = { sizePt = it }
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .toggleable(value = skipFirst, role = Role.Switch, onValueChange = { skipFirst = it })
+                ) {
+                    Text(stringResource(R.string.tools_hf_skip_first), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(end = 12.dp))
+                    Switch(checked = skipFirst, onCheckedChange = null)
+                }
             }
         }
-        ToolSection(stringResource(R.string.edit_section_what_happens)) {
-            ToolHint(stringResource(R.string.tools_hf_body))
+
+        if (f != null) {
+            val perPage = if (lines.any { it.picture }) 3_500L else 150L
+            PdfOutcomeRow(f, pages?.let { PdfOutcome(it, f.sizeBytes + perPage * stamped, approximate = true) })
         }
     }
 }

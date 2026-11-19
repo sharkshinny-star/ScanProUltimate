@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -233,16 +234,18 @@ internal fun PdfResultPreview(
 }
 
 /**
- * "How it works": the tool's own demonstration at the top of its page, with one line on what it does. Folds away with
- * a tap and stays folded while the page is open.
+ * "How it works": the tool's own demonstration, with a word on what it does ([about] when the page gives one, else
+ * the tool's one-line introduction). Folded when the page opens (declutter, 2026-11-19: it used to open at full height
+ * above the file); one tap shows it, and it stays as left while the page is open.
  */
 @Composable
-internal fun ToolDemoCard(toolId: String) {
-    val scene = toolDemoScene(toolId) ?: return
-    var open by rememberSaveable(toolId) { mutableStateOf(true) }
+internal fun ToolDemoCard(toolId: String?, about: String? = null) {
+    val scene = toolId?.let { toolDemoScene(it) }
+    if (scene == null && about == null) return
+    var open by rememberSaveable(toolId) { mutableStateOf(false) }
     val stateText = stringResource(if (open) R.string.tool_demo_shown else R.string.tool_demo_hidden)
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -250,22 +253,24 @@ internal fun ToolDemoCard(toolId: String) {
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 48.dp)
                     .clickable(role = Role.Button) { open = !open }
                     .semantics { stateDescription = stateText }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.PlayCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.size(10.dp))
+                Spacer(Modifier.size(12.dp))
                 Text(stringResource(R.string.tool_demo_how_it_works), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 Icon(if (open) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
             }
             AnimatedVisibility(open) {
-                Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
-                    ToolDemo(scene, Modifier.fillMaxWidth().height(180.dp))
-                    toolIntro(toolId)?.let {
-                        Spacer(Modifier.height(8.dp))
-                        Text(stringResource(it.description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                    if (scene != null) ToolDemo(scene, Modifier.fillMaxWidth().height(160.dp))
+                    val text = about ?: toolId?.let { id -> toolIntro(id)?.let { stringResource(it.description) } }
+                    if (text != null) {
+                        if (scene != null) Spacer(Modifier.height(8.dp))
+                        Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
