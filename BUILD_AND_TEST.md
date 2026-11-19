@@ -25,6 +25,7 @@ had ever been built).
 ./gradlew :app:bundleRelease                      # Play bundle, R8 on, with :translate as on-demand module
 ./gradlew -Pscanpro.sideload=true :app:assembleRelease   # per-ABI + universal APKs, translation built in
 scripts/ci/size-report.sh app/build/outputs/apk/release app/build/outputs/bundle/release
+python3 -I scripts/remaining-work.py              # rewrite the open-items block of REMAINING_WORK.md from AUDIT_FINDINGS.md (--check: only compare)
 ```
 
 Gradle properties:

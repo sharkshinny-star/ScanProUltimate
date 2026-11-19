@@ -15,7 +15,8 @@ Project reference files (keep them current):
 
 After a fix, feature, dependency or config change, or a build/test run, update the affected files in the same commit:
 
-- new or resolved issue → `AUDIT_FINDINGS.md` (move R* to Fixed with commit and evidence)
+- new or resolved issue → `AUDIT_FINDINGS.md` (move R* to Fixed with commit and evidence), then run
+  `python3 -I scripts/remaining-work.py` so `REMAINING_WORK.md` lists the same open items
 - build or test run → "Latest results" in `BUILD_AND_TEST.md` (date, commit, outcome; say plainly what was not run)
 - structural change or new dependency → `ARCHITECTURE.md`
 - always → "Last updated", "Completed work" and "Unresolved issues" in `AGENT_HANDOFF.md`
