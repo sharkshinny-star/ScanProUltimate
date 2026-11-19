@@ -53,6 +53,11 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F229 snake reverted to the F221 bar, cloud container with the Android SDK)
+
+- `LoadingAnimations.kt` and `TaskBannerTest.kt` restored to their state before `995b275`. Main and test code compile; `TaskBannerTest` 5/5 (2 renders skipped without the screenshots flag) and `ToolProgressCardTest` 9/9 pass.
+- NOT run: the full suite, lint, `bundleRelease`, anything on a device.
+
 ## Latest results (2026-11-19, F230 About list and version wording, cloud container with the Android SDK)
 
 - `./gradlew :app:testDebugUnitTest --max-workers=1`: **1,149 tests, 0 failed** (159 screenshot tests skipped without `-Pscanpro.screenshots=true`; `SettingsPagesScreenshotTest` was run with it separately). `:app:lintDebug`: **0 errors**, 165 warnings.
