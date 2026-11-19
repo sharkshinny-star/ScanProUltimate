@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -14,8 +15,11 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.StrokeCap
@@ -101,6 +105,10 @@ fun HeaderSceneStrip(
     // Milliseconds since the strip appeared, for the sky, which never rests.
     val clock = remember { mutableLongStateOf(0L) }
     val skip = remember { mutableStateOf(false) }
+    // A new number each pass, so a scene varies a little each time it comes round (how many birds, their heights).
+    val seed = remember { mutableIntStateOf(Random.nextInt()) }
+    // Every scene once, in a shuffled order, before any comes round again.
+    val bag = remember { ArrayDeque<HeaderScene>() }
     if (animated) {
         LaunchedEffect(Unit) {
             var first = -1L
@@ -114,8 +122,10 @@ fun HeaderSceneStrip(
                 when {
                     skip.value || elapsed > length + REST_MILLIS -> {
                         skip.value = false
-                        scene.value = (HeaderScene.entries - scene.value).random()
+                        if (bag.isEmpty()) bag.addAll((HeaderScene.entries - scene.value).shuffled())
+                        scene.value = bag.removeFirst()
                         mirrored.value = Random.nextBoolean()
+                        seed.intValue = Random.nextInt()
                         start = now
                         progress.floatValue = 0f
                     }
@@ -129,7 +139,8 @@ fun HeaderSceneStrip(
         ink = MaterialTheme.colorScheme.onSurface,
         soft = MaterialTheme.colorScheme.onSurfaceVariant,
         brand = MaterialTheme.colorScheme.primary,
-        paper = MaterialTheme.colorScheme.surfaceContainerLowest
+        paper = MaterialTheme.colorScheme.surfaceContainerLowest,
+        night = hour !in 6..17
     )
     // The banner the plane tows carries the app's name.
     val measurer = rememberTextMeasurer()
@@ -144,19 +155,31 @@ fun HeaderSceneStrip(
             // A tap moves on to another scene. No ripple and nothing announced: it is a toy, not a control.
             .clickable(interactionSource = interaction, indication = null, enabled = animated) { skip.value = true }
             .clearAndSetSemantics { }
+            // Drawn into a layer of its own, so the edges can be faded out below.
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
     ) {
         if (size.width < size.height) return@Canvas
         sky(hour, clock.longValue, palette)
         val p = progress.floatValue
-        if (p < 0f) return@Canvas
+        if (p >= 0f) scene(scene.value, p, mirrored.value, seed.intValue, palette, banner)
+        // Soft left and right edges: things slide in and out of view instead of being cut off beside the name.
+        drawRect(
+            Brush.horizontalGradient(0f to Color.Transparent, 0.07f to Color.Black, 0.93f to Color.Black, 1f to Color.Transparent),
+            blendMode = BlendMode.DstIn
+        )
+    }
+}
+
+/** One frame of [current], [p] of the way through its pass. */
+private fun DrawScope.scene(current: HeaderScene, p: Float, mirrored: Boolean, seed: Int, palette: ScenePalette, banner: TextLayoutResult) {
         val u = size.height
-        when (val current = scene.value) {
-            HeaderScene.MONKEY -> monkey(p, palette, left = mirrored.value)
-            HeaderScene.MONKEY_PLAY -> monkeyPlay(p, palette, left = mirrored.value)
-            HeaderScene.BIRDS -> birds(p, palette)
+        when (current) {
+            HeaderScene.MONKEY -> monkey(p, palette, left = mirrored)
+            HeaderScene.MONKEY_PLAY -> monkeyPlay(p, palette, left = mirrored)
+            HeaderScene.BIRDS -> birds(p, palette, seed)
             HeaderScene.PLANE -> plane(p, palette, banner)
-            HeaderScene.ROCKET -> rocket(p, palette, left = mirrored.value)
-            HeaderScene.PAPER_PLANE -> scale(scaleX = if (mirrored.value) -1f else 1f, scaleY = 1f) { paperPlane(p, palette) }
+            HeaderScene.ROCKET -> rocket(p, palette, left = mirrored)
+            HeaderScene.PAPER_PLANE -> scale(scaleX = if (mirrored) -1f else 1f, scaleY = 1f) { paperPlane(p, palette) }
             else -> {
                 // A faint road (or rail), so the wheels have something to run on.
                 drawLine(palette.soft.copy(alpha = 0.18f), Offset(0f, GROUND * u), Offset(size.width, GROUND * u), strokeWidth = 0.015f * u)
@@ -166,9 +189,11 @@ fun HeaderSceneStrip(
                     HeaderScene.ZOMBIE -> 0.6f * u
                     else -> 1.4f * u
                 }
-                val x = -length + (size.width + 2 * length) * p
+                // The racing car pulls away, faster and faster; everything else keeps a steady pace.
+                val travel = if (current == HeaderScene.RACE_CAR) p * (0.45f + 0.55f * p) else p
+                val x = -length + (size.width + 2 * length) * travel
                 // Drawn facing right; half the time it comes from the other side.
-                scale(scaleX = if (mirrored.value) -1f else 1f, scaleY = 1f) {
+                scale(scaleX = if (mirrored) -1f else 1f, scaleY = 1f) {
                     when (current) {
                         HeaderScene.RACE_CAR -> raceCar(x, p, palette)
                         HeaderScene.BIKE -> bike(x, p, palette)
@@ -181,10 +206,10 @@ fun HeaderSceneStrip(
                 }
             }
         }
-    }
 }
 
-private class ScenePalette(val ink: Color, val soft: Color, val brand: Color, val paper: Color)
+/** The theme's colours, and whether it is night: headlamps throw their beams only after dark. */
+private class ScenePalette(val ink: Color, val soft: Color, val brand: Color, val paper: Color, val night: Boolean)
 
 /** Where the road is, as a part of the strip's height. */
 private const val GROUND = 0.95f
@@ -348,7 +373,7 @@ private fun DrawScope.bike(x: Float, p: Float, c: ScenePalette) {
     val rear = Offset(at(0.14f, 0f).x, ground - r)
     val front = Offset(at(0.8f, 0f).x, ground - r)
     shadow(rear.x - r, front.x - rear.x + 2 * r)
-    beam(at(0.78f, 0.47f), 0.45f * u, 0.22f * u)
+    if (c.night) beam(at(0.78f, 0.47f), 0.45f * u, 0.22f * u)
 
     // Exhaust, swing arm and frame behind everything else.
     drawLine(Brush.horizontalGradient(listOf(Steel, Chrome)), at(0.02f, 0.2f), at(0.42f, 0.14f), strokeWidth = 0.05f * u, cap = StrokeCap.Round)
@@ -411,7 +436,7 @@ private fun DrawScope.auto(x: Float, p: Float, c: ScenePalette) {
     val rear = Offset(at(0.2f, 0f).x, ground - r)
     val front = Offset(at(0.9f, 0f).x, ground - r)
     shadow(at(-0.03f, 0f).x, 1.06f * length)
-    beam(at(0.97f, 0.36f), 0.42f * u, 0.2f * u)
+    if (c.night) beam(at(0.97f, 0.36f), 0.42f * u, 0.2f * u)
 
     // Inside, seen through the open side: the passenger bench and the driver.
     drawRoundRect(Color(0xFF7A2E2E), at(0.07f, 0.56f), Size(0.2f * length, 0.16f * u), CornerRadius(0.03f * u))
@@ -475,12 +500,15 @@ private fun DrawScope.auto(x: Float, p: Float, c: ScenePalette) {
 }
 
 /** Three birds crossing from right to left: body, head, beak, tail and a wing that beats. */
-private fun DrawScope.birds(p: Float, c: ScenePalette) {
+private fun DrawScope.birds(p: Float, c: ScenePalette, seed: Int = 0) {
     val u = size.height
-    val heights = floatArrayOf(0.3f, 0.56f, 0.42f)
-    val sizes = floatArrayOf(1f, 0.82f, 0.9f)
+    // Two to five birds, at heights and sizes that change each time the scene comes round.
+    val random = Random(seed)
+    val count = 2 + random.nextInt(4)
+    val heights = FloatArray(count) { 0.24f + random.nextFloat() * 0.4f }
+    val sizes = FloatArray(count) { 0.75f + random.nextFloat() * 0.3f }
     val feather = lerp(c.ink, c.soft, 0.35f)
-    for (i in 0..2) {
+    for (i in 0 until count) {
         val k = sizes[i] * u
         // Each a little behind the one before, rising and falling as it goes.
         val x = size.width + 0.3f * u - (size.width + 1.7f * u) * p + i * 0.42f * u
@@ -565,7 +593,7 @@ private fun DrawScope.monkey(p: Float, c: ScenePalette, left: Boolean) {
         drawOval(fur, chest - Offset(0.105f * u, 0.13f * u), Size(0.21f * u, 0.27f * u))
         drawOval(Brush.verticalGradient(listOf(Face, Face.darker(0.12f)), startY = chest.y - 0.07f * u, endY = chest.y + 0.1f * u), chest - Offset(0.06f * u, 0.06f * u), Size(0.12f * u, 0.17f * u))
         drawOval(Face.darker(0.1f), grip - Offset(0.035f * u, 0.02f * u), Size(0.07f * u, 0.045f * u))
-        monkeyHead(Offset(chest.x - 0.085f * u, chest.y - 0.2f * u))
+        monkeyHead(Offset(chest.x - 0.085f * u, chest.y - 0.2f * u), blink = blinking(p, 6.5f))
         // The other arm holds out a scanned page: its shadow, the sheet, lines of text and the green scan line.
         val page = chest + Offset(0.16f * u, -0.12f * u)
         val hand = page + Offset(0.01f * u, 0.14f * u)
@@ -578,7 +606,8 @@ private fun DrawScope.monkey(p: Float, c: ScenePalette, left: Boolean) {
 }
 
 /** The monkey's head: ears, fur, the heart-shaped face, muzzle, eyes with a glint, brows and a smile. */
-private fun DrawScope.monkeyHead(head: Offset) {
+/** [blink] draws the eyes shut. */
+private fun DrawScope.monkeyHead(head: Offset, blink: Boolean = false) {
     val u = size.height
     for (side in listOf(-1f, 1f)) {
         drawCircle(FurDark, 0.045f * u, head + Offset(side * 0.105f * u, -0.005f * u))
@@ -590,9 +619,13 @@ private fun DrawScope.monkeyHead(head: Offset) {
     drawOval(Face, head + Offset(-0.065f * u, 0f), Size(0.13f * u, 0.095f * u))
     for (side in listOf(-1f, 1f)) {
         val eye = head + Offset(side * 0.034f * u, -0.018f * u)
-        drawCircle(Color.White, 0.02f * u, eye)
-        drawCircle(Color(0xFF2A1A12), 0.013f * u, eye + Offset(0.003f * u, 0.002f * u))
-        drawCircle(Color.White, 0.005f * u, eye + Offset(0.007f * u, -0.004f * u))
+        if (blink) {
+            drawLine(Color(0xFF2A1A12), eye - Offset(0.016f * u, 0f), eye + Offset(0.016f * u, 0f), strokeWidth = 0.008f * u, cap = StrokeCap.Round)
+        } else {
+            drawCircle(Color.White, 0.02f * u, eye)
+            drawCircle(Color(0xFF2A1A12), 0.013f * u, eye + Offset(0.003f * u, 0.002f * u))
+            drawCircle(Color.White, 0.005f * u, eye + Offset(0.007f * u, -0.004f * u))
+        }
         drawLine(FurDark, eye + Offset(-0.02f * u, -0.03f * u), eye + Offset(0.02f * u, -0.033f * u), strokeWidth = 0.009f * u, cap = StrokeCap.Round)
     }
     drawCircle(FurDark, 0.006f * u, head + Offset(-0.01f * u, 0.03f * u))
@@ -663,7 +696,7 @@ private fun DrawScope.monkeyPlay(p: Float, c: ScenePalette, left: Boolean) {
     }
     // Head tipped back a little while the page is high.
     val head = chest + Offset(-0.005f * u, -0.21f * u)
-    rotate(-10f * height, pivot = head) { monkeyHead(head) }
+    rotate(-10f * height, pivot = head) { monkeyHead(head, blink = blinking(p, 6.2f)) }
     rotate(360f * toss, pivot = page) { scanPage(page - Offset(0.08f * u, 0.1f * u), c, sin(p * 40f)) }
 }
 
@@ -677,7 +710,7 @@ private fun DrawScope.lorry(x: Float, p: Float, c: ScenePalette) {
     val sway = sin(p * 30f)
     val r = 0.105f * u
     shadow(x - 0.02f * length, 1.04f * length)
-    beam(at(0.995f, 0.3f), 0.4f * u, 0.2f * u)
+    if (c.night) beam(at(0.995f, 0.3f), 0.4f * u, 0.2f * u)
     smoke(at(0.02f, 0.2f), p, reach = 0.4f * u, puffs = 4, strength = 0.28f)
 
     val blue = Color(0xFF1F4E9C)
@@ -856,7 +889,7 @@ private fun DrawScope.train(x: Float, c: ScenePalette) {
     )
     drawRoundRect(Color(0xFF16202E), at(0.868f, 0.52f), Size(0.02f * length, 0.13f * u), CornerRadius(0.02f * u))
     drawOval(Brush.radialGradient(listOf(Color.White, Lamp), center = at(0.985f, 0.24f), radius = 0.05f * u), at(0.972f, 0.27f), Size(0.02f * length, 0.05f * u))
-    beam(at(0.995f, 0.24f), 0.45f * u, 0.18f * u)
+    if (c.night) beam(at(0.995f, 0.24f), 0.45f * u, 0.18f * u)
     drawCircle(TailRed, 0.014f * u, at(0.99f, 0.19f))
 }
 
@@ -919,8 +952,12 @@ private fun DrawScope.zombie(x: Float, p: Float, c: ScenePalette) {
             drawOval(Brush.radialGradient(listOf(skin.lighter(0.2f), skin, shade), center = head - Offset(0.03f * u, 0.04f * u), radius = 0.17f * u), head - Offset(0.095f * u, 0.105f * u), Size(0.19f * u, 0.21f * u))
             drawArc(Color(0xFF2B2E36), 185f, 150f, true, head - Offset(0.098f * u, 0.115f * u), Size(0.19f * u, 0.14f * u))
             drawCircle(shade, 0.035f * u, head + Offset(0.04f * u, -0.01f * u))
-            drawCircle(Color(0xFFFFF7D6), 0.027f * u, head + Offset(0.04f * u, -0.01f * u))
-            drawCircle(Color(0xFF2A1A12), 0.01f * u, head + Offset(0.05f * u, -0.008f * u))
+            if (blinking(p, 11f)) {
+                drawLine(Color(0xFF2A1A12), head + Offset(0.018f * u, -0.01f * u), head + Offset(0.062f * u, -0.01f * u), strokeWidth = 0.009f * u, cap = StrokeCap.Round)
+            } else {
+                drawCircle(Color(0xFFFFF7D6), 0.027f * u, head + Offset(0.04f * u, -0.01f * u))
+                drawCircle(Color(0xFF2A1A12), 0.01f * u, head + Offset(0.05f * u, -0.008f * u))
+            }
             drawCircle(shade, 0.022f * u, head + Offset(-0.02f * u, 0f))
             drawLine(Color(0xFF2A1A12), head + Offset(-0.035f * u, -0.002f * u), head + Offset(-0.005f * u, 0.004f * u), strokeWidth = 0.01f * u, cap = StrokeCap.Round)
             val mouth = head + Offset(-0.01f * u, 0.055f * u)
@@ -1185,8 +1222,12 @@ private fun DrawScope.elephant(x: Float, p: Float) {
         Path().apply { moveTo(head.x + 0.07f * u, head.y + 0.1f * u); quadraticTo(head.x + 0.2f * u, head.y + 0.2f * u, head.x + 0.26f * u, head.y + 0.1f * u) },
         Color(0xFFFFF8E7), style = Stroke(width = 0.035f * u, cap = StrokeCap.Round)
     )
-    drawCircle(Color(0xFF22252B), 0.02f * u, head + Offset(0.06f * u, -0.03f * u))
-    drawCircle(Color.White, 0.007f * u, head + Offset(0.066f * u, -0.036f * u))
+    if (blinking(p, 9.5f)) {
+        drawLine(Color(0xFF22252B), head + Offset(0.04f * u, -0.03f * u), head + Offset(0.08f * u, -0.03f * u), strokeWidth = 0.01f * u, cap = StrokeCap.Round)
+    } else {
+        drawCircle(Color(0xFF22252B), 0.02f * u, head + Offset(0.06f * u, -0.03f * u))
+        drawCircle(Color.White, 0.007f * u, head + Offset(0.066f * u, -0.036f * u))
+    }
     drawPath(
         Path().apply {
             moveTo(head.x - 0.02f * u, head.y - 0.17f * u); lineTo(head.x + 0.1f * u, head.y - 0.13f * u)
@@ -1228,3 +1269,6 @@ private fun DrawScope.paperPlane(p: Float, c: ScenePalette) {
         )
     }
 }
+
+/** Whether a character's eyes are shut at [p] of a pass lasting [seconds]: a quick blink about every three seconds. */
+private fun blinking(p: Float, seconds: Float): Boolean = (p * seconds / 3.1f) % 1f in 0.6f..0.645f
