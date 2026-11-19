@@ -1075,7 +1075,18 @@ object PdfToolsEngine {
     /** Opens a PDF with [password] ("" when there is none); a missing or wrong one throws [InvalidPasswordException]. */
     internal fun openPdf(file: File, password: String = ""): PDDocument =
         // Streams go to a scratch file rather than the heap, so a 200-page scan doesn't take 200 pages of memory.
-        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly()).editable()
+        // The scratch file is capped (F215): a small file built to inflate without end (a "decompression bomb") now
+        // fails with an error at the cap instead of filling the phone's storage.
+        PDDocument.load(file, password, com.tom_roush.pdfbox.io.MemoryUsageSetting.setupTempFileOnly(scratchLimit(file.length()))).editable()
+
+    /**
+     * The most scratch storage a PDF of [fileBytes] may use while a tool works on it: eight times its own size, and
+     * never less than [MIN_SCRATCH_BYTES], so an honest file (even a small one of tightly packed scans) is never
+     * refused.
+     */
+    internal fun scratchLimit(fileBytes: Long): Long = maxOf(MIN_SCRATCH_BYTES, fileBytes.coerceAtLeast(0L) * 8L)
+
+    internal const val MIN_SCRATCH_BYTES = 1024L * 1024L * 1024L
 
     /**
      * A PDF that opens without a password can still carry an owner-password encryption dictionary (print or copy

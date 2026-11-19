@@ -276,4 +276,7 @@
     <string name="doc_colour_use">ഈ നിറം ഉപയോഗിക്കുക</string>
     <string name="doc_ink_custom">ഇഷ്ടമുള്ള നിറം</string>
     <string name="doc_save_for_next_time_hint">അടുത്ത തവണ സേവ് ചെയ്ത ഒപ്പുകളിൽ നിന്ന് ഇത് തിരഞ്ഞെടുക്കാം</string>
+    <string name="doc_translate_download_title">ഭാഷാ പായ്ക്ക് ഡൗൺലോഡ് ചെയ്യണോ?</string>
+    <string name="doc_translate_download_body">%1$s ലേക്ക് ആദ്യമായി വിവർത്തനം ചെയ്യുമ്പോൾ അതിന്റെ ഭാഷാ പായ്ക്ക് Google-ൽ നിന്ന് ഡൗൺലോഡ് ആകും (ഓരോ ഭാഷയ്ക്കും ഏകദേശം 30 MB), നിങ്ങളുടെ ഫോൺ ഇപ്പോൾ ഉപയോഗിക്കുന്ന കണക്ഷനിലൂടെ, മൊബൈൽ ഡാറ്റ ഉൾപ്പെടെ. അതിനുശേഷം %1$s ലേക്കുള്ള വിവർത്തനം ഓഫ്‌ലൈനായി പ്രവർത്തിക്കും.</string>
+    <string name="doc_translate_download_confirm">ഡൗൺലോഡ് ചെയ്ത് വിവർത്തനം ചെയ്യുക</string>
 </resources>

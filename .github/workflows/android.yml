@@ -34,7 +34,9 @@ jobs:
   build:
     # Kill switch: set the repository variable CI_PAUSED to true (Settings > Secrets and variables > Actions >
     # Variables) to stop all runs for the rest of the month without editing files.
-    if: vars.CI_PAUSED != 'true'
+    # Also (F215): a pull request from the working branch is skipped, because every push to that branch already
+    # starts the same build through the push trigger; before this, each push ran the whole job twice.
+    if: vars.CI_PAUSED != 'true' && !(github.event_name == 'pull_request' && github.head_ref == 'claude/awesome-clarke-ussjo3')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

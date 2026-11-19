@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.first
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import com.example.scanpro.core.security.ShortcutToken
 import com.example.scanpro.ui.EmphasizedDecelerate
 import com.example.scanpro.ui.LaunchIntro
 import androidx.core.content.ContextCompat
@@ -421,11 +422,13 @@ class MainActivity : FragmentActivity() {
                 viewModel.requestScan(intent.getStringExtra(EXTRA_SCAN_MODE).orEmpty())
             }
             ACTION_IMPORT_IMAGES -> imageImportLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            ACTION_REPORT_ISSUE -> {
+            // The two support actions leave the app (an email draft, one with a diagnostics file), so they are
+            // honoured only from the app's own shortcuts (F215); from anywhere else the app simply opens.
+            ACTION_REPORT_ISSUE -> if (ShortcutToken.matches(this, intent)) {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_REPORT_ISSUE)
                 lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.ISSUE) }
             }
-            ACTION_GIVE_FEEDBACK -> {
+            ACTION_GIVE_FEEDBACK -> if (ShortcutToken.matches(this, intent)) {
                 ShortcutManagerCompat.reportShortcutUsed(this, SHORTCUT_GIVE_FEEDBACK)
                 lifecycleScope.launch { contactSupport(this@MainActivity, SupportTopic.FEEDBACK) }
             }
@@ -603,7 +606,7 @@ class MainActivity : FragmentActivity() {
                 .setShortLabel(context.getString(short))
                 .setLongLabel(context.getString(long))
                 .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
-                .setIntent(Intent(context, MainActivity::class.java).setAction(action))
+                .setIntent(Intent(context, MainActivity::class.java).setAction(action).putExtra(ShortcutToken.EXTRA, ShortcutToken.of(context)))
                 .build()
 
         /** The "Scan now" shortcut, for Settings to offer pinning it to the home screen (same id as the dynamic one). */

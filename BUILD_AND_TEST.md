@@ -49,6 +49,10 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F215 minor list, Linux cloud container, no Android SDK)
+
+- CI run 225 on `a2460c0` (F213 detection, F214 declutter, merged with F201–F202): source audit, Room schema check and **unit tests and lint passed** (6 min). Its Play bundle step was still running when the F215 push replaced the run, so the bundle and sideload APKs for this code are checked by the F215 run, not by 225.
+- F215 locally: `python3 -I scripts/ci/scanpro-quality-audit.py` PASS; desktop detector benchmark unchanged from the entry below (no detector change beyond a removed debug line). New tests `ShortcutTokenTest` (2) and two in `SignPdfEngineTest` were **not run locally** (they need Robolectric and the Android SDK); the CI run for the F215 commit is their first run. Nothing seen on a phone (R83).
 ## Latest results (2026-11-19, F203 Tools tab fixes, cloud container with the Android SDK)
 
 - After merging the other session's F213–F214 (detection, decluttered Tools tab) with F203: `./gradlew :app:testDebugUnitTest :app:lintDebug`: 1,039 tests, 0 failed, 86 skipped; lint 0 errors. The merged Tools tab was rendered again (light, dark, Hindi) and looked at: two rows and "Show all" per group from F214, with F203's three-line names, Fill form icon and viewer row.

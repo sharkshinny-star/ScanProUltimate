@@ -15,12 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Merge
-import androidx.compose.material.icons.filled.Contrast
-import androidx.compose.material.icons.filled.InvertColors
-import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api

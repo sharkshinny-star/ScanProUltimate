@@ -10,7 +10,7 @@
     <string name="tools_desc_greyscale">வண்ணப் பக்கங்களைச் சாம்பலாக்கு</string>
     <string name="tools_card_flatten">PDF-ஐ ஃபிளாட்டன் செய்</string>
     <string name="tools_tile_flatten">ஃபிளாட்டன்</string>
-    <string name="tools_desc_flatten">படிவங்களையும் கருத்துகளையும் நிலையாக்கு</string>
+    <string name="tools_desc_flatten">படிவப் பதில்களையும் கருத்துகளையும் பக்கத்தின் பகுதியாக்கு</string>
     <string name="tools_card_extract_images">படங்களைப் பிரித்தெடு</string>
     <string name="tools_desc_extract_images">PDF-இல் உள்ள படங்களைச் சேமி</string>
     <string name="tools_card_pdf_info">PDF தகவல் மற்றும் மெட்டாடேட்டா</string>
@@ -90,7 +90,7 @@
 
     <string name="hint_tool_blank_pages">ஸ்கேன் செய்த PDF-இன் வெற்றுப் பக்கங்களைக் கண்டறிந்து, பட்டியலைச் சரிபார்த்த பின் அகற்றவும்.</string>
     <string name="hint_tool_greyscale">குறைந்த செலவில் அச்சிட அல்லது சிறிய கோப்புக்காக வண்ண PDF-ஐச் சாம்பல் நிழல்களாக மாற்றவும்.</string>
-    <string name="hint_tool_flatten">படிவப் பதில்கள், கருத்துகள், முத்திரைகளைப் பக்கங்களிலேயே வரையவும், யாரும் மாற்ற முடியாதபடி.</string>
+    <string name="hint_tool_flatten">படிவப் பதில்கள், கருத்துகள், முத்திரைகளைப் பக்கங்களிலேயே வரையவும்; அவற்றை இனி புலமாகவோ கருத்தாகவோ மாற்ற முடியாது. PDF எடிட்டரால் பக்கத்தையே இன்னும் மாற்றலாம்.</string>
     <string name="hint_tool_extract_images">PDF-இல் உள்ள ஒவ்வொரு படத்தையும் தனிப் படக் கோப்பாகச் சேமிக்கவும்.</string>
     <string name="hint_tool_pdf_info">PDF-இன் மறைந்த விவரங்களைப் பார்க்கவும், தலைப்பு அல்லது ஆசிரியரைத் திருத்தவும், அல்லது தனியுரிமைக்காக அனைத்தையும் அகற்றவும்.</string>
 
