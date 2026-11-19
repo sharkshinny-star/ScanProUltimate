@@ -55,4 +55,12 @@ class ResultShareTest {
         assertEquals(2, parts.map { it.name }.distinct().size)
         assertEquals(listOf("one", "two"), parts.map { it.readText() })
     }
+
+    @Test
+    fun `an entry named like the fallback does not displace an earlier file`() {
+        val cache = tmp.newFolder("cache")
+        val parts = unpackForSharing(cache, zipOf("1_page.jpg" to "one", "a/page.jpg" to "two", "b/page.jpg" to "three"))!!
+        assertEquals(3, parts.map { it.name }.distinct().size)
+        assertEquals(listOf("one", "two", "three"), parts.map { it.readText() })
+    }
 }

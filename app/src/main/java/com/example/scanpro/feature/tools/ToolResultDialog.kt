@@ -145,9 +145,12 @@ internal fun unpackForSharing(cacheDir: File, zip: File): List<File>? = runCatch
             val entry = input.nextEntry ?: break
             if (entry.isDirectory) continue
             if (parts.size >= MAX_SHARED_PARTS) return@runCatching null
-            // A counter prefix on a repeated name keeps two entries from overwriting each other.
+            // A counter prefix on a repeated name keeps two entries from overwriting each other; it counts up
+            // because the prefixed name can be taken as well, by an entry that was really called that.
             val base = File(entry.name).name.ifBlank { "part_${parts.size + 1}" }
-            val out = File(dir, base).takeIf { !it.exists() } ?: File(dir, "${parts.size + 1}_$base")
+            var out = File(dir, base)
+            var attempt = 1
+            while (out.exists()) out = File(dir, "${attempt++}_$base")
             out.outputStream().use { sink ->
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                 while (true) {
