@@ -98,7 +98,7 @@ translation download and OCR language packs arrive through Play as described.
 |---|---|---|
 | App icon | 512 × 512 px, 32-bit PNG with alpha, ≤ 1024 KB | Made 2026-11-19: `assets/play-icon-512.png` (rendered from the launcher icon's vector paths and gradients, full square, 175 KB; the owner has not approved it yet) |
 | Feature graphic | 1024 × 500 px, JPEG or 24-bit PNG, no alpha | Made 2026-11-19: `assets/play-feature-graphic-1024x500.png` (icon glyph, name, "Scan, sign and organise documents on your phone", brand gradient, RGB without alpha; the owner has not approved it yet) |
-| Phone screenshots | 2–8, JPEG or 24-bit PNG, no alpha, shortest side 320–3840 px, long side ≤ 2 × short side | Not captured |
+| Phone screenshots | 2–8, JPEG or 24-bit PNG, no alpha, shortest side 320–3840 px, long side ≤ 2 × short side | Seven made 2026-11-19 in `assets/screenshots/` (1080 × 1920, RGB): captioned renders of the app's own screens from the Robolectric screenshot tests with sample documents (library, search, PDF tools, organise pages, document, QR, app lock). Not phone captures: no camera shot, no status bar; the owner should add a real camera capture as the first image and has not approved these yet |
 | 7" and 10" tablet screenshots | Same rules; needed for tablet visibility | Not captured |
 | Promo video | Optional public or unlisted YouTube URL, ads off | Optional |
 
