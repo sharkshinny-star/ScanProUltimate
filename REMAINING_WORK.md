@@ -20,16 +20,23 @@ the two trees merged is recorded.
 3. **File the Play Console "All files access" declaration (R70, R53).** Draft: `PLAY_ALL_FILES_ACCESS.md`. Without it an
    update that asks for the access at first launch may be rejected.
 4. **Decide R59:** should photographing a document shown on a screen auto-capture?
-5. **Privacy policy:** fill the highlighted fields in `docs/privacy-policy/index.html`, host it at a public HTTPS URL and
+5. **Privacy policy (fields filled in F218):** add the developer name in the two highlighted places of
+   `docs/privacy-policy/index.html` and delete the yellow box, host it at `https://sharkshinny-star.github.io/scanpro-privacy/`
+   (new public repo `scanpro-privacy`, GitHub Pages on) and
    set `scanpro.privacyPolicyUrl=<url>` in `gradle.properties` (not set as of 2026-11-19), so the Settings link appears.
 6. **A native speaker's read** of the Hindi, Kannada, Malayalam, Tamil and Telugu strings written by an assistant
    (R19, R36, R44, R52, R53, R69); start with `TRANSLATION_REVIEW.md`. The F188 strings are English only in those five (R65).
-7. **Release signing** has never been validated; builds are unsigned as configured.
+7. **Release signing** has never been validated; builds are unsigned as configured. On the Mac run
+   `bash scripts/setup-upload-key.sh` (F220: makes the upload key outside the repo and sets the `SCANPRO_*` values in
+   `~/.gradle/gradle.properties`), then build the bundle and check it is signed.
 8. **Undo history across sessions:** design written, nothing built (`UNDO_PERSISTENCE_DESIGN.md`); it waits on three
    answers (keep up to 20 earlier text states in plain app-private storage, the limits, and a Recycle-bin document's history).
 9. **GitHub housekeeping (checked 2026-11-19):** Dependabot pull requests #15 (Gradle wrapper 9.9.0) and #16 (ZXing core
-   3.5.4) are still open, but the branch already has both versions, so they can be closed. Branch `ccr-d3174e53-3zuive`
-   still exists and can be deleted. Pull request #18 from the working branch is open; `main` was last updated on 2026-11-11.
+   3.5.4) were closed unmerged on 2026-11-19 at the owner's request: the working branch already has both versions.
+   `main` still has Gradle 9.8.2 and ZXing 3.5.3 until the working branch is merged (pull request #18, open; `main` was
+   last updated on 2026-11-11). Two branches are left for the owner to delete: `ccr-d3174e53-3zuive` (its tip `6f383c8`
+   is in the working branch) and `dependabot/gradle/gradle-wrapper-9.9.0`. A cloud session cannot: GitHub answers a
+   branch delete from it with HTTP 403. Dependabot removed its ZXing branch itself.
 10. **On the Mac only (a cloud session cannot see them):** the R50 stash, and an uncommitted 3° rotation in
     `res/layout/widget_scan.xml` that looks like an accidental drag.
 
@@ -39,7 +46,7 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 <!-- BEGIN open-items: written by scripts/remaining-work.py from AUDIT_FINDINGS.md; do not edit by hand -->
 
-33 open items: 12 P1, 16 P2, 5 P3.
+34 open items: 12 P1, 17 P2, 5 P3.
 
 ### P1
 
@@ -70,6 +77,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P2
 
+- **R86** (Device check (F219); `feature/tools/ProcessingOverlay.kt`, `core/designsystem/LoadingAnimations.kt`, …). The progress card's new layout, arrival, two-second minimum and finish were checked with unit tests and JVM renders only (eleven still frames looked at).
+  - Next: On a phone, release build: (1) a quick tool on a small PDF (Rotate, Protect, Compress): the card stays about two seconds, the ring closes to 100% with the figure counting up, the tick is drawn, "Done" stands where Cancel was, then the result shows; say whether two seconds feels right when several quick tools are run one after another; (2) Merge several large files: real progress, then the short 0.7 s finish; (3) Cancel and Back still ask while the tool works and do nothing during the finish; (4) the card is centred upright, shows the dial beside the text with the phone on its side, and is larger on a tablet; largest font size; (5) with animations turned off (Developer options) the card neither arrives nor waits; (6) Images to PDF: the small veil animation (light behind the page) still looks right.
 - **R83** (Device check; F215). Small items compiled and unit-tested in CI only.
   - Next: On the phone: (1) start a long Compress or Merge, pull down the notification, tap Cancel: the tool stops with "cancelled" and the notification goes; the same for a queued document edit; (2) long-press the launcher icon: Scan now, Bugs or issues and Don't remove still work (after one app launch on an upgraded install); (3) Sign PDF on a digitally signed PDF shows the notice; (4) Translate into a new language asks once before downloading; (5) a very large honest PDF (200+ MB) still runs through Compress and Merge (scratch cap).
 - **R82** (Look check; F214). The decluttered Tools tab, PDF tool pages and scan review compiled in CI only; nobody has seen them.
