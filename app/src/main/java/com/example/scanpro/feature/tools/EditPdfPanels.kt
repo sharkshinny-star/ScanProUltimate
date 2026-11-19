@@ -118,20 +118,47 @@ internal val THEME_COLOURS = listOf(
 /** The marker colours offered behind text, 0xRRGGBB. */
 internal val HIGHLIGHT_COLOURS = listOf(0xFFF176, 0xB9F0D0, 0xC9D8FF, 0xFFC9D2, 0xE3CFF7)
 
+/** The fonts offered, in the order shown: the PDF's own, the four the app carries, then the standard PDF fonts. */
 private val FAMILIES = listOf(
-    PdfTextEditor.Family.ORIGINAL to R.string.tools_edit_font_same,
-    PdfTextEditor.Family.SANS to R.string.tools_edit_font_sans,
-    PdfTextEditor.Family.SERIF to R.string.tools_edit_font_serif,
-    PdfTextEditor.Family.MONO to R.string.tools_edit_font_mono
+    PdfTextEditor.Family.ORIGINAL, PdfTextEditor.Family.ROBOTO, PdfTextEditor.Family.INTER, PdfTextEditor.Family.GELASIO,
+    PdfTextEditor.Family.MONTSERRAT, PdfTextEditor.Family.SANS, PdfTextEditor.Family.SERIF, PdfTextEditor.Family.MONO
 )
 
-private fun familyLabel(family: PdfTextEditor.Family): Int = FAMILIES.first { it.first == family }.second
+/** A font's name as shown: font names are proper names and are not translated. */
+@Composable
+private fun familyName(family: PdfTextEditor.Family): String = when (family) {
+    PdfTextEditor.Family.ORIGINAL -> stringResource(R.string.tools_edit_font_same)
+    PdfTextEditor.Family.SANS -> stringResource(R.string.tools_edit_font_sans)
+    PdfTextEditor.Family.SERIF -> stringResource(R.string.tools_edit_font_serif)
+    PdfTextEditor.Family.MONO -> stringResource(R.string.tools_edit_font_mono)
+    PdfTextEditor.Family.ROBOTO -> "Roboto"
+    PdfTextEditor.Family.INTER -> "Inter"
+    PdfTextEditor.Family.GELASIO -> "Gelasio"
+    PdfTextEditor.Family.MONTSERRAT -> "Montserrat"
+}
 
+private fun carriedFamily(regular: Int, bold: Int, italic: Int, boldItalic: Int) = FontFamily(
+    androidx.compose.ui.text.font.Font(regular),
+    androidx.compose.ui.text.font.Font(bold, FontWeight.Bold),
+    androidx.compose.ui.text.font.Font(italic, FontWeight.Normal, FontStyle.Italic),
+    androidx.compose.ui.text.font.Font(boldItalic, FontWeight.Bold, FontStyle.Italic)
+)
+
+private val RobotoFamily = carriedFamily(R.font.roboto_regular, R.font.roboto_bold, R.font.roboto_italic, R.font.roboto_bold_italic)
+private val InterFamily = carriedFamily(R.font.inter_regular, R.font.inter_bold, R.font.inter_italic, R.font.inter_bold_italic)
+private val GelasioFamily = carriedFamily(R.font.gelasio_regular, R.font.gelasio_bold, R.font.gelasio_italic, R.font.gelasio_bold_italic)
+private val MontserratFamily = carriedFamily(R.font.montserrat_regular, R.font.montserrat_bold, R.font.montserrat_italic, R.font.montserrat_bold_italic)
+
+/** The screen's font for a sample of [family]: the very file that goes into the PDF for the fonts the app carries. */
 private fun fontOf(family: PdfTextEditor.Family): FontFamily = when (family) {
     PdfTextEditor.Family.SERIF -> FontFamily.Serif
     PdfTextEditor.Family.MONO -> FontFamily.Monospace
     PdfTextEditor.Family.SANS -> FontFamily.SansSerif
     PdfTextEditor.Family.ORIGINAL -> FontFamily.Default
+    PdfTextEditor.Family.ROBOTO -> RobotoFamily
+    PdfTextEditor.Family.INTER -> InterFamily
+    PdfTextEditor.Family.GELASIO -> GelasioFamily
+    PdfTextEditor.Family.MONTSERRAT -> MontserratFamily
 }
 
 private fun number(value: Float): String =
@@ -235,7 +262,7 @@ private fun HomeTab(state: EditorState, calls: EditorCalls) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Outlined(Modifier.weight(1.5f).height(46.dp).clickable(enabled = on) { calls.onSheet(EditorSheet.FONT) }) {
                 Text(
-                    stringResource(familyLabel(shown.family)), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                    familyName(shown.family), fontFamily = fontOf(shown.family), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 14.dp)
                 )
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, modifier = Modifier.padding(end = 8.dp).size(20.dp), tint = MaterialTheme.colorScheme.primary)
@@ -447,7 +474,7 @@ private fun FontSheet(current: PdfTextEditor.Edit, originalColour: Int, onClose:
         Label(stringResource(R.string.tools_edit_font))
         Outlined(Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth()) {
-                FAMILIES.forEach { (family, label) ->
+                FAMILIES.forEach { family ->
                     val chosen = draft.family == family
                     Row(
                         Modifier.fillMaxWidth().clickable(role = Role.RadioButton) { draft = draft.copy(family = family) }
@@ -456,7 +483,7 @@ private fun FontSheet(current: PdfTextEditor.Edit, originalColour: Int, onClose:
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            stringResource(label), fontFamily = fontOf(family), fontWeight = if (chosen) FontWeight.SemiBold else FontWeight.Normal,
+                            familyName(family), fontFamily = fontOf(family), fontWeight = if (chosen) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (chosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f)
                         )
                         Text("Aa " + stringResource(R.string.tools_edit_preview), fontFamily = fontOf(family), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -514,9 +541,9 @@ private fun TypographySheet(current: PdfTextEditor.Edit, originalColour: Int, on
         Label(stringResource(R.string.tools_edit_font) + " · " + stringResource(R.string.tools_edit_size))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Outlined(Modifier.weight(1f).height(46.dp).clickable {
-                draft = draft.copy(family = FAMILIES[(FAMILIES.indexOfFirst { it.first == draft.family } + 1) % FAMILIES.size].first)
+                draft = draft.copy(family = FAMILIES[(FAMILIES.indexOf(draft.family) + 1) % FAMILIES.size])
             }) {
-                Text(stringResource(familyLabel(draft.family)), fontFamily = fontOf(draft.family), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 14.dp))
+                Text(familyName(draft.family), fontFamily = fontOf(draft.family), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 14.dp))
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, modifier = Modifier.padding(end = 8.dp).size(20.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Stepper(
