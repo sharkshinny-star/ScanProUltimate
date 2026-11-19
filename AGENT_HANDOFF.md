@@ -31,6 +31,7 @@ Earlier update (remote branch): 2026-11-10 (QR scanner multi-code, scan history 
 
 ## 2. Completed work (newest first)
 
+- **F201** (2026-11-19, cce1cd3): bug sweep after the first green CI run (219). Files no longer offers a permission a no-All-files-access build can't get; HD switch only on cameras with larger photos; Sign PDF font names translated; unused strings and `.artifacts/` removed. Full unit suite (1,019) and lint pass locally. What is left open are device checks (R60–R72), which need the phone.
 - **F200** (2026-11-18): Tools tab regrouped into five rounded panels (Organise, Edit and sign, Optimise, Convert, Security) with subtitles; compiles, not yet seen (R72). The cloud container can now compile (Android SDK + local Maven mirror script, not committed).
 - **F199** (2026-11-18): Edit PDF can add new text anywhere (in the nearest line's font) and set a colour; a bug that read every line as black is fixed. Engine 14/14 on the desktop. Note: a push containing any `[skip ci]` commit builds nothing.
 - **Docs not in the code commit (rule break, recorded 2026-11-18):** `3cc0326` (Edit PDF tool code, F194) and `96b53bd` (F198 review fixes) were committed without their reference-file updates, which followed in `ab4512e` and `4de55b8`. Pushed history is not rewritten; read those docs commits with them. From now on, code and its four reference-file updates go in one commit.

@@ -49,6 +49,12 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 
 **F188 (2026-11-18, cloud container): not compiled and not run.** `./gradlew :app:compileDebugKotlin` cannot resolve the Android Gradle Plugin there (no SDK or mirror). The new `InkColourPicker.kt` was checked by reading only; CI or the owner's Mac must compile it.
 
+## Latest results (2026-11-19, F201 bug sweep, commit cce1cd3, cloud container with the Android SDK)
+
+- CI run 219 (`07b2e0e`, 2026-11-18): success end to end (source audit, unit tests, lint, Play bundle, sideload APKs). First green run with F181–F211 merged.
+- Local, on the F201 tree: `./gradlew :app:testDebugUnitTest :app:lintDebug --no-configuration-cache`: BUILD SUCCESSFUL; 1,019 tests, 0 failed, 0 errors, 84 skipped; lint 0 errors, 156 warnings. Of these: `PdfTextEditorTest` 14/14 (Robolectric, pdfbox-android), `PhoneFilesTest` 12/12, `LiveChromaTest` 4/4, `MatFiltersGoldenTest` 14/14, `PageAreaDecodeTest` 3/3, `PageFramingTest` 5/5.
+- NOT run: release builds locally, anything on a device.
+
 ## Latest results (2026-11-18, `:app:lintDebug` in the cloud container)
 
 - 2 errors (CI run 215): `PhonePdfsScreen.kt:249` LocalContextGetResourceValueCall (F191 Files, fixed: the message is read with stringResource) and `widget_scan_large.xml:23` UseAppTint (another session's widget, reported to it). After the fix, lint locally: 1 error (the widget), 159 warnings.
