@@ -65,6 +65,17 @@ CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit
 - All steps passed: source audit, Room schema check, unit tests and lint (6.5 min), Play bundle (`bundleRelease -Pscanpro.allowMissingPolicy=true`, test build, no policy URL), exported Room schemas, sideload APKs, size report. Whole job about 19.5 minutes.
 - Test count and bundle/APK sizes were not read from the log. First full green run since `a8f220c`: F193, F195–F197 and F210–F212 now compile and their unit tests pass.
 - Not covered: any device test, signing with the release key, the 16 KB check of the packaged bundle (release-check workflow not yet on the default branch).
+## Latest results (2026-11-19, F202 crop editor rotation, cloud container with the Android SDK)
+
+- `./gradlew :app:testDebugUnitTest --tests '*CropEditorDialogTest*' --tests '*QuadMathTest*'`: 2/2 and 13/13. `:app:lintDebug`: 0 errors.
+- Full unit suite on `2dae3bb` (2026-11-19, owner asked): `./gradlew :app:testDebugUnitTest --no-configuration-cache`: BUILD SUCCESSFUL; 160 test classes, 1,020 tests, 0 failed, 0 errors, 84 skipped (opt-in screenshot and photo tests).
+- NOT run: anything on a device, so the freeze being gone is not measured.
+
+## Latest results (2026-11-19, F201 bug sweep, commit cce1cd3, cloud container with the Android SDK)
+
+- CI run 219 (`07b2e0e`, 2026-11-18): success end to end (source audit, unit tests, lint, Play bundle, sideload APKs). First green run with F181–F211 merged.
+- Local, on the F201 tree: `./gradlew :app:testDebugUnitTest :app:lintDebug --no-configuration-cache`: BUILD SUCCESSFUL; 1,019 tests, 0 failed, 0 errors, 84 skipped; lint 0 errors, 156 warnings. Of these: `PdfTextEditorTest` 14/14 (Robolectric, pdfbox-android), `PhoneFilesTest` 12/12, `LiveChromaTest` 4/4, `MatFiltersGoldenTest` 14/14, `PageAreaDecodeTest` 3/3, `PageFramingTest` 5/5.
+- NOT run: release builds locally, anything on a device.
 
 ## Latest results (2026-11-18, `:app:lintDebug` in the cloud container)
 

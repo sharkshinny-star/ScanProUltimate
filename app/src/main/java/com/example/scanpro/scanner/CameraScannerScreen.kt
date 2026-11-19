@@ -304,6 +304,9 @@ fun CameraScannerScreen(
     // HD capture: the sensor's high-resolution mode and the slower, higher-quality capture. Off by default (fast and
     // light on storage); most modern phones carry a 48 or 50 MP sensor, so it is one tap away in the top bar.
     var hdCapture by remember { mutableStateOf(prefs.getBoolean("hd", false)) }
+    // Whether this camera has photos clearly larger than the standard 12 MP (CaptureSizes.offersHd); the HD switch is
+    // offered only then. Unknown (true) until the camera is bound.
+    var hdOffered by remember { mutableStateOf(true) }
     var overflowOpen by rememberSaveable { mutableStateOf(false) }
     val onLabel = stringResource(R.string.common_on)
     val offLabel = stringResource(R.string.common_off)
@@ -1070,6 +1073,10 @@ fun CameraScannerScreen(
                     else -> CameraSelector.Builder().build()
                 }
                 val camera = provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, capture, analysis)
+                // On a 12 MP camera HD asks for nothing more than standard: the switch would do nothing, so it goes.
+                // An empty list means the camera could not be asked: keep the switch then.
+                val sizes = CaptureSizes.jpegSizes(provider, cameraSelector)
+                hdOffered = sizes.isEmpty() || CaptureSizes.offersHd(sizes)
                 imageCapture = capture
                 boundCamera = camera
                 boundUseCases = listOf(preview, capture, analysis)
@@ -1621,7 +1628,7 @@ fun CameraScannerScreen(
             Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 // HD capture switch: lit mint while on. A scanner has no use for it on a barcode.
-                if (!barcodeMode) {
+                if (!barcodeMode && hdOffered) {
                     val hdLabel = stringResource(R.string.scan_hd_capture)
                     val hdOnMessage = stringResource(R.string.scan_hd_on)
                     val hdOffMessage = stringResource(R.string.scan_hd_off)
@@ -1712,7 +1719,7 @@ fun CameraScannerScreen(
                                 prefs.edit { putString("detect", detectMode.name) }
                             }
                         }
-                        if (!barcodeMode) {
+                        if (!barcodeMode && hdOffered) {
                             SwitchItem(R.string.scan_hd_capture, hdCapture) { hdCapture = !hdCapture; prefs.edit { putBoolean("hd", hdCapture) } }
                         }
                         if (barcodeMode) {

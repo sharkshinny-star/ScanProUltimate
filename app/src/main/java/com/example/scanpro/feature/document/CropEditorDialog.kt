@@ -99,6 +99,9 @@ import kotlin.math.hypot
 private val RotateLeftIcon: ImageVector = Icons.Filled.Rotate90DegreesCcw
 private val RotateRightIcon: ImageVector = Icons.Filled.Rotate90DegreesCw
 
+/** The photo turned for display: [turns] quarter turns clockwise of the photo at [path]. */
+private class TurnedPicture(val bitmap: Bitmap?, val turns: Int, val path: String)
+
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun CropEditorDialog(
@@ -120,17 +123,14 @@ fun CropEditorDialog(
      */
     turns: Int = 0
 ) {
-    val shownInitial = remember(initial, turns) { turnQuad(initial, turns) }
+    // The turn the picture on screen has. It follows [turns] once the turned picture is ready (see below), so for the
+    // moment in between the outline, the picture and everything worked out from them still agree with each other.
+    var shownTurns by rememberSaveable(initial, sourcePath) { mutableIntStateOf(turns) }
+    val shownInitial = remember(initial, shownTurns) { turnQuad(initial, shownTurns) }
     // Held above the dialog and saved, so a rotation keeps the outline the user has drawn. In the turned photo's terms.
     var crop by rememberSaveable(initial, sourcePath, saver = CropStateSaver) { mutableStateOf(shownInitial) }
-    var shownTurns by rememberSaveable(initial, sourcePath) { mutableIntStateOf(turns) }
-    if (shownTurns != turns) {
-        // Rotate was tapped: the outline being drawn turns with the picture.
-        crop = turnQuad(crop, turns - shownTurns)
-        shownTurns = turns
-    }
     // Back to the unturned photo. An untouched outline is handed back exactly as it came, so it is not taken for an edit.
-    fun toSource(shown: CropQuad) = if (shown == shownInitial) initial else turnQuad(shown, -turns)
+    fun toSource(shown: CropQuad) = if (shown == shownInitial) initial else turnQuad(shown, -shownTurns)
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     var panelHeightPx by remember { mutableIntStateOf(0) }
     // Back and the arrow ask first once the outline differs from where it started.
@@ -185,14 +185,27 @@ fun CropEditorDialog(
                 result
             }
         }
-        // Turned here rather than on reload, so the picture and the outline turn in the same frame.
-        val bitmap = remember(unturned, turns) {
+        // The picture is turned off the main thread (2026-11-19): turning a 2000 px photo during composition froze the
+        // editor for a moment on every tap of Rotate. Until the turned picture is ready the old one stays up with its
+        // outline; the outline then turns in the same frame the new picture is first shown.
+        val turned by produceState<TurnedPicture?>(initialValue = null, unturned, turns, sourcePath) {
             val base = unturned
             val quarter = ((turns % 4) + 4) % 4
-            if (base == null || quarter == 0) base
-            else runCatching {
-                Bitmap.createBitmap(base, 0, 0, base.width, base.height, android.graphics.Matrix().apply { postRotate(90f * quarter) }, true)
-            }.getOrDefault(base)
+            val picture = if (base == null || quarter == 0) base else withContext(Dispatchers.Default) {
+                runCatching {
+                    // Quarter turns move whole pixels: no filtering needed, which is also faster.
+                    Bitmap.createBitmap(base, 0, 0, base.width, base.height, android.graphics.Matrix().apply { postRotate(90f * quarter) }, false)
+                }.getOrDefault(base)
+            }
+            value = TurnedPicture(picture, turns, sourcePath)
+        }
+        val bitmap = turned?.bitmap
+        turned?.let { ready ->
+            if (ready.path == sourcePath && ready.turns == turns && shownTurns != turns) {
+                // Rotate was tapped and its picture has arrived: the outline being drawn turns with it.
+                crop = turnQuad(crop, turns - shownTurns)
+                shownTurns = turns
+            }
         }
         val scope = rememberCoroutineScope()
         val latestCrop by rememberUpdatedState(crop)

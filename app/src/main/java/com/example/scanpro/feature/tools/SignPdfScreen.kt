@@ -414,10 +414,10 @@ private fun SignTextDialog(onDismiss: () -> Unit, onConfirm: (String, Color, Typ
     var color by remember { mutableStateOf(com.example.scanpro.feature.document.InkColors.first().second) }
     var typeface by remember { mutableStateOf<Typeface?>(Typeface.DEFAULT) }
     val fonts = listOf(
-        "Sans" to Typeface.DEFAULT,
-        "Serif" to Typeface.SERIF,
-        "Mono" to Typeface.MONOSPACE,
-        "Bold" to Typeface.DEFAULT_BOLD
+        stringResource(R.string.tools_edit_font_sans) to Typeface.DEFAULT,
+        stringResource(R.string.tools_edit_font_serif) to Typeface.SERIF,
+        stringResource(R.string.tools_edit_font_mono) to Typeface.MONOSPACE,
+        stringResource(R.string.tools_edit_bold) to Typeface.DEFAULT_BOLD
     )
     AlertDialog(
         onDismissRequest = onDismiss,

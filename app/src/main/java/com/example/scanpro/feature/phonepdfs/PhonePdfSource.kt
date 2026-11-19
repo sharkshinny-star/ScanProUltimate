@@ -43,6 +43,13 @@ object PhonePdfSource {
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
         }
 
+    /**
+     * Whether this build can offer the access at all. A build made with `-Pscanpro.allFilesAccess=false` (for a Play
+     * release without the All files access declaration) leaves MANAGE_EXTERNAL_STORAGE out of the manifest, so on
+     * Android 11 and later the permission can never be granted and must not be asked for.
+     */
+    val available: Boolean get() = com.example.scanpro.BuildConfig.ALL_FILES_ACCESS || Build.VERSION.SDK_INT < Build.VERSION_CODES.R
+
     /** Android 11 and later grant the access on a system settings page; older versions ask with the usual dialog. */
     val usesSettingsPage: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 

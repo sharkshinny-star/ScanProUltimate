@@ -532,9 +532,6 @@
         <item quantity="one">%1$d பக்கத்தின் நிறங்கள் மாற்றப்பட்டன.</item>
         <item quantity="other">%1$d பக்கங்களின் நிறங்கள் மாற்றப்பட்டன.</item>
     </plurals>
-    <string name="tools_wm_color_red">சிவப்பு</string>
-    <string name="tools_wm_color_green">பச்சை</string>
-    <string name="tools_wm_color_purple">ஊதா</string>
     <string name="tools_protect_already_title">இந்த PDF-க்கு ஏற்கனவே கடவுச்சொல் உள்ளது</string>
     <string name="tools_protect_already_body">இதைத் திறப்பவருக்கு ஏற்கனவே கடவுச்சொல் தேவை. வேறொன்றை அமைக்க, முதலில் தற்போதைய கடவுச்சொல்லை நீக்கி, பின்னர் திறக்கப்பட்ட நகலைப் பாதுகாக்கவும்.</string>
     <string name="tools_protect_remove_password_first">முதலில் கடவுச்சொல்லை நீக்கு</string>

@@ -532,9 +532,6 @@
         <item quantity="one">%1$d పేజీ రంగులు మార్చబడ్డాయి.</item>
         <item quantity="other">%1$d పేజీల రంగులు మార్చబడ్డాయి.</item>
     </plurals>
-    <string name="tools_wm_color_red">ఎరుపు</string>
-    <string name="tools_wm_color_green">ఆకుపచ్చ</string>
-    <string name="tools_wm_color_purple">పర్పుల్</string>
     <string name="tools_protect_already_title">ఈ PDF కి ఇప్పటికే పాస్‌వర్డ్ ఉంది</string>
     <string name="tools_protect_already_body">దీన్ని తెరిచేవారికి ఇప్పటికే పాస్‌వర్డ్ కావాలి. వేరేది పెట్టడానికి, ముందు ప్రస్తుత పాస్‌వర్డ్ తీసివేసి, ఆపై అన్‌లాక్ చేసిన కాపీని రక్షించండి.</string>
     <string name="tools_protect_remove_password_first">ముందు పాస్‌వర్డ్ తీసివేయండి</string>

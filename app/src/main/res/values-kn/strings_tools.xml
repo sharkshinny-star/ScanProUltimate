@@ -532,9 +532,6 @@
         <item quantity="one">%1$d ಪುಟದ ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲಾಗಿದೆ.</item>
         <item quantity="other">%1$d ಪುಟಗಳ ಬಣ್ಣಗಳನ್ನು ಹಿಮ್ಮುಖಗೊಳಿಸಲಾಗಿದೆ.</item>
     </plurals>
-    <string name="tools_wm_color_red">ಕೆಂಪು</string>
-    <string name="tools_wm_color_green">ಹಸಿರು</string>
-    <string name="tools_wm_color_purple">ನೇರಳೆ</string>
     <string name="tools_protect_already_title">ಈ PDF ಗೆ ಈಗಾಗಲೇ ಪಾಸ್‌ವರ್ಡ್ ಇದೆ</string>
     <string name="tools_protect_already_body">ಇದನ್ನು ತೆರೆಯುವವರಿಗೆ ಈಗಾಗಲೇ ಪಾಸ್‌ವರ್ಡ್ ಬೇಕು. ಬೇರೆ ಪಾಸ್‌ವರ್ಡ್ ಹಾಕಲು, ಮೊದಲು ಈಗಿನ ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆದು, ನಂತರ ಅನ್‌ಲಾಕ್ ಮಾಡಿದ ಪ್ರತಿಯನ್ನು ರಕ್ಷಿಸಿ.</string>
     <string name="tools_protect_remove_password_first">ಮೊದಲು ಪಾಸ್‌ವರ್ಡ್ ತೆಗೆಯಿರಿ</string>
