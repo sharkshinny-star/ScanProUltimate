@@ -11,13 +11,20 @@ import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
+import androidx.compose.material.icons.rounded.NotificationsPaused
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.TileTone
+import com.example.scanpro.core.notifications.HydrationSchedule
+import java.util.Calendar
 
 /** The Notifications page's state and actions, gathered so the screen's signature stays readable. */
 data class NotificationSettings(
@@ -27,11 +34,13 @@ data class NotificationSettings(
     val trash: Boolean = false,
     val backup: Boolean = false,
     val water: Boolean = true,
+    val waterTiming: HydrationSchedule.Timing = HydrationSchedule.Timing(),
     val onFinishedChange: (Boolean) -> Unit = {},
     val onFailuresChange: (Boolean) -> Unit = {},
     val onTrashChange: (Boolean) -> Unit = {},
     val onBackupChange: (Boolean) -> Unit = {},
     val onWaterChange: (Boolean) -> Unit = {},
+    val onWaterTimingChange: (HydrationSchedule.Timing) -> Unit = {},
     val onPermissionResult: () -> Unit = {},
     val systemSettingsIntent: (() -> Intent)? = null
 )
@@ -99,7 +108,7 @@ internal fun NotificationsPage(state: NotificationSettings) = SettingsPageColumn
             checked = state.backup,
             onCheckedChange = enabling(state.onBackupChange)
         )
-        // Three a day, with widening gaps (one hour after the day starts, then two, then three): HydrationSchedule.
+        // Through the day at the times set in the group below: HydrationSchedule.
         SettingsSwitchRow(
             title = stringResource(R.string.settings_notify_water_title),
             icon = Icons.Rounded.WaterDrop,
@@ -108,6 +117,7 @@ internal fun NotificationsPage(state: NotificationSettings) = SettingsPageColumn
             onCheckedChange = enabling(state.onWaterChange)
         )
     }
+    if (state.water) WaterTimingGroup(state.waterTiming, state.onWaterTimingChange)
     if (state.systemSettingsIntent != null) {
         SettingsGroup {
             SettingsRow(
@@ -117,5 +127,54 @@ internal fun NotificationsPage(state: NotificationSettings) = SettingsPageColumn
                 onClick = openSystemSettings
             )
         }
+    }
+}
+
+// Whole hours only: a reminder is a nudge, not an alarm, and WorkManager may run it a few minutes late anyway.
+private val FIRST_REMINDER_HOURS = (5..12).toList()
+private val LAST_REMINDER_HOURS = (12..23).toList()
+private val REMINDER_GAP_HOURS = listOf(1, 2, 3, 4)
+
+/** When the drink-water reminders fall. The first is never after noon and the cut-off never before it. */
+@Composable
+private fun WaterTimingGroup(timing: HydrationSchedule.Timing, onChange: (HydrationSchedule.Timing) -> Unit) =
+    SettingsGroup(header = stringResource(R.string.settings_group_water_times)) {
+        SettingsChoiceDialogRow(
+            title = stringResource(R.string.settings_notify_water_first_title),
+            icon = Icons.Rounded.Schedule,
+            options = FIRST_REMINDER_HOURS,
+            selected = timing.firstMinute / 60,
+            onSelect = { onChange(timing.copy(firstMinute = it * 60)) },
+            label = { hourLabel(it) }
+        )
+        SettingsChoiceDialogRow(
+            title = stringResource(R.string.settings_notify_water_every_title),
+            icon = Icons.Rounded.Repeat,
+            options = REMINDER_GAP_HOURS,
+            selected = timing.everyMinutes / 60,
+            onSelect = { onChange(timing.copy(everyMinutes = it * 60)) },
+            label = { pluralStringResource(R.plurals.settings_notify_water_every_value, it, it) }
+        )
+        SettingsChoiceDialogRow(
+            title = stringResource(R.string.settings_notify_water_last_title),
+            icon = Icons.Rounded.NotificationsPaused,
+            options = LAST_REMINDER_HOURS,
+            selected = timing.lastMinute / 60,
+            onSelect = { onChange(timing.copy(lastMinute = it * 60)) },
+            label = { hourLabel(it) }
+        )
+    }
+
+/** A whole hour as the phone writes times: "09:00" or "9:00 am", by the system's 12 or 24 hour setting. */
+@Composable
+private fun hourLabel(hour: Int): String {
+    val context = LocalContext.current
+    return remember(hour, context) {
+        val time = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+        }.time
+        android.text.format.DateFormat.getTimeFormat(context).format(time)
     }
 }

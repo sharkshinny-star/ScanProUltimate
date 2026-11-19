@@ -67,6 +67,15 @@ is the reference. (2) Add the same list to the privacy policy (`PRIVACY_POLICY_T
 paragraph; keep the two consistent). (3) The `INTERNET` permission exists only for translation model downloads; say so in
 the "Data collected" explanations if the form asks.
 
+### Health apps declaration (2026-11-19, F232)
+
+The answer and its source are in `docs/playstore-release/PLAYSTORE_DECLARATIONS.md` section 8: "My app doesn't provide
+any health features" (owner confirms). It rests on the drink-water reminder staying a plain reminder: a timed
+notification with "I drank" and "Skip" buttons that both only dismiss it. Nothing is logged, no intake, goal or history
+is kept, and Health Connect is not used. Do not add logging of the answers, daily totals or goals without revisiting
+that answer: it would make the feature a hydration tracker, which Google's Nutrition and weight management category
+("tools for tracking dietary intake") covers. Keep health claims out of the notice text and the store listing.
+
 ## 4. Scanner quality acceptance
 
 - [ ] A4/Letter pages: straight-on, 15°, 30°, and strong perspective angles.

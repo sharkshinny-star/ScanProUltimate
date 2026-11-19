@@ -110,6 +110,8 @@ credentials. **NOT VERIFIED interpretation; LEGAL/OWNER confirm.** If a reviewer
 Source: [Health apps declaration](https://support.google.com/googleplay/android-developer/answer/14738291).
 **"My app doesn't provide any health features."** The drink-water reminder is a simple notification, not a health
 feature in our reading (NOT VERIFIED; **OWNER** confirms, or turn the reminder off by default: PS-15).
+Since F232 the notice has "I drank" and "Skip" buttons; both only dismiss it and nothing is recorded, so it is still
+not a tracker. Logging the answers would change this answer (Nutrition and weight management category).
 
 ## 9. Content rating (IARC questionnaire hints)
 

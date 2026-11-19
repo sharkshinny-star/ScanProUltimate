@@ -45,6 +45,12 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-19, F232 drink-water reminder timings, merged with F231, Linux cloud container)
+
+- On the merge of F232 with `73d05d3` (F231): `:app:testDebugUnitTest` 1,157 tests, 0 failed, 0 errors, 161 skipped (counted from the result XML; `HydrationScheduleTest` rewritten, 10 tests); `python3 -I scripts/ci/scanpro-quality-audit.py` PASS before the merge.
+- NOT run: `:app:lintDebug` (ten attempts before the merge, each stopped by Maven Central answering HTTP 429 for a `:translate` dependency), `:app:bundleRelease`, sideload `assembleRelease`, anything on a device (R90).
+- SDK installed again in `/opt/android-sdk` with `sdkmanager` (cmdline-tools 13114758, platform `android-37.0`, Build-Tools 36.0.0). Maven Central rate-limited this container: the first compile needed five attempts with `--max-workers=1`.
+
 **CI run 183 (2026-11-18, `3c06b85`, includes F193):** compiled (warnings only); 965 tests, 1 failed: `compressImage_withTargetSize_producesSmallerFile` assumed Compress shrinks a picture already under its 50 KB target (F193 keeps it); test corrected in F197 to a target below the file's size. **F195–F197:** not compiled locally; pushed for CI.
 
 **F193 (2026-11-18, cloud container): not compiled and not run.** Three new Robolectric tests (`cropToFile_turnsThenCutsAndKeepsPngTransparency`, `compressImage_targetMetAtFullResolution_keepsResolution`, `convertImage_sameNames_bothKept`) were written but not run: Gradle cannot resolve the Android Gradle Plugin here. CI or the owner's Mac must compile and run `testDebugUnitTest --tests "*ImageToolsEngineTest*"`.

@@ -97,27 +97,38 @@ class AppNotifications @Inject constructor(
     }
 
     /**
-     * One of the day's three drink-water reminders ([HydrationSchedule]); [slot] picks the wording. Nothing private
-     * in it, so it reads the same on the lock screen. "Turn off" stops the reminders from the notice itself.
+     * One of the day's drink-water reminders ([HydrationSchedule]); [wording] picks the text. Nothing private in it,
+     * so it reads the same on the lock screen. "I drank" and "Skip" both put the notice away; neither is recorded.
      */
-    suspend fun drinkWater(slot: Int) {
+    suspend fun drinkWater(wording: HydrationSchedule.Wording) {
         if (!settings.hydrationReminders.first()) return
-        val bodies = intArrayOf(R.string.notify_water_body_morning, R.string.notify_water_body_midday, R.string.notify_water_body_afternoon)
-        val turnOff = PendingIntent.getBroadcast(
-            context,
-            ID_WATER,
-            Intent(context, com.example.scanpro.work.HydrationOffReceiver::class.java)
-                .setAction(com.example.scanpro.work.HydrationOffReceiver.ACTION_TURN_OFF),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val body = when (wording) {
+            HydrationSchedule.Wording.MORNING -> R.string.notify_water_body_morning
+            HydrationSchedule.Wording.MIDDAY -> R.string.notify_water_body_midday
+            HydrationSchedule.Wording.LATER -> R.string.notify_water_body_later
+            HydrationSchedule.Wording.LAST -> R.string.notify_water_body_last
+        }
+        fun button(label: Int, action: String) = NotificationCompat.Action(
+            0,
+            context.getString(label),
+            PendingIntent.getBroadcast(
+                context,
+                ID_WATER,
+                Intent(context, com.example.scanpro.work.HydrationActionReceiver::class.java).setAction(action),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
         )
         post(
             id = ID_WATER,
             channel = CHANNEL_WATER,
             title = context.getString(R.string.notify_water_title),
-            detail = context.getString(bodies[slot.coerceIn(0, bodies.lastIndex)]),
+            detail = context.getString(body),
             tap = openAppIntent(),
             neutralWhenLocked = false,
-            action = NotificationCompat.Action(0, context.getString(R.string.notify_water_turn_off), turnOff),
+            actions = listOf(
+                button(R.string.notify_water_drank, com.example.scanpro.work.HydrationActionReceiver.ACTION_DRANK),
+                button(R.string.notify_water_skip, com.example.scanpro.work.HydrationActionReceiver.ACTION_SKIP)
+            ),
             timeoutMs = WATER_TIMEOUT_MS
         )
     }
@@ -170,7 +181,7 @@ class AppNotifications @Inject constructor(
         detail: String?,
         tap: PendingIntent,
         neutralWhenLocked: Boolean = true,
-        action: NotificationCompat.Action? = null,
+        actions: List<NotificationCompat.Action> = emptyList(),
         /** The notice removes itself after this long; 0 keeps it until dismissed. */
         timeoutMs: Long = 0
     ) {
@@ -195,7 +206,7 @@ class AppNotifications @Inject constructor(
             .setPublicVersion(publicVersion)
             .setCategory(if (channel == CHANNEL_REMINDERS || channel == CHANNEL_WATER) NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_STATUS)
             .apply {
-                if (action != null) addAction(action)
+                actions.forEach { addAction(it) }
                 if (timeoutMs > 0) setTimeoutAfter(timeoutMs)
             }
             .build()

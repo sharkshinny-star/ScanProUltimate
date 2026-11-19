@@ -25,7 +25,7 @@ Paths are under `app/src/main/java/com/example/scanpro/` unless they start with 
 
 Components that need protecting: `MainActivity` is exported (launcher, VIEW/SEND/SEND_MULTIPLE for PDF and images;
 incoming URIs limited to `content://` from other authorities); `ScanTileService` is protected by
-`BIND_QUICK_SETTINGS_TILE`; `ScanWidgetProvider` builds immutable PendingIntents; `HydrationOffReceiver`,
+`BIND_QUICK_SETTINGS_TILE`; `ScanWidgetProvider` builds immutable PendingIntents; `HydrationActionReceiver`,
 `OperationForegroundService`, `FileProvider` and the startup provider are not exported.
 
 ## 2. Expected from libraries (merged manifest, NOT VERIFIED)
