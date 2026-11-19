@@ -264,6 +264,29 @@ class EncryptedDocumentPackageTest {
     }
 
     @Test
+    fun `an oversized version 1 backup is refused before it is decrypted`() {
+        // Version 1 is one GCM stream, which Android buffers whole before releasing any plaintext, so a huge
+        // one must be refused on its size alone. The file is sparse: only the header is really written.
+        val file = File(tmp.root, "legacy-huge.scanpro")
+        FileOutputStream(file).use { raw ->
+            val header = DataOutputStream(BufferedOutputStream(raw))
+            header.write(byteArrayOf('S'.code.toByte(), 'P'.code.toByte(), 'K'.code.toByte(), '1'.code.toByte()))
+            header.writeInt(100_000)
+            header.write(ByteArray(16) { it.toByte() })
+            header.flush()
+        }
+        java.io.RandomAccessFile(file, "rw").use { it.setLength(128L * 1024 * 1024 + 1) }
+        val outDir = File(tmp.root, "restore-legacy-huge")
+        try {
+            EncryptedDocumentPackage.read(file, outDir, password.toCharArray())
+            fail("a version 1 backup over 128 MB should be refused")
+        } catch (expected: UserFacingException) {
+            assertEquals(R.string.err_backup_too_large, expected.messageRes)
+        }
+        assertFalse("the restore folder is removed", outDir.exists())
+    }
+
+    @Test
     fun `copying a picked backup stops at the size limit`() {
         val out = ByteArrayOutputStream()
         EncryptedDocumentPackage.copyCapped(ByteArray(100).inputStream(), out, limit = 100)
