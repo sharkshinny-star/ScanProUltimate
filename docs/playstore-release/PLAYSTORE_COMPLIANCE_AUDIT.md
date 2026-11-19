@@ -102,7 +102,7 @@ zip-check AAB-derived APKs (needs bundletool).
 
 **PS-10 versionCode 7 (A4).** Must exceed every versionCode already uploaded to any track. NOT VERIFIED (no Console).
 
-**PS-11 Build without All files access is incomplete.** See PS-02: `PhonePdfsScreen.kt` access cards ignore
+**PS-11 (closed, checked 2026-11-19 for F225):** the Files explainer, the Home section and the Files card are gated by `PhonePdfSource.available` (`PhonePdfsScreen.kt`, `LibraryScreen.kt`), the welcome item and the start prompt by `BuildConfig.ALL_FILES_ACCESS`; nothing else opens the All files access page. Not seen on a phone. Original text: Build without All files access is incomplete. See PS-02: `PhonePdfsScreen.kt` access cards ignore
 `BuildConfig.ALL_FILES_ACCESS`. Fix (for the session that owns `feature/phonepdfs`): when the flag is false, replace the
 cards with "Add a folder" (SAF tree) or hide "Files on this phone". FAIL until done, if that build is used.
 
