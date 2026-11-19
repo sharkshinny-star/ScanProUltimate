@@ -45,6 +45,17 @@ Gradle properties:
 
 CI: `.github/workflows/android.yml` runs the full build (Room schema check, unit tests, lint, `bundleRelease`, sideload build, size report) on pushes to `main` and the working branch, pull requests to `main` and manual runs; docs-only changes are skipped. The repository is public (2026-11-11), so standard runners are free and unlimited; the earlier minute-saving gates were removed. 30-minute timeout; artifacts only on manual runs; the repository variable `CI_PAUSED=true` stops all runs. Not yet run with these settings.
 
+## Latest results (2026-11-19, F234 Files search in the top bar, Linux cloud container)
+
+- `:app:testDebugUnitTest` 1,163 tests, 0 failed, 0 errors, 163 skipped (counted from the result XML); `:app:lintDebug` passed, 0 errors, 166 warnings.
+- A first test run with `--max-workers=2` lost its Gradle daemon to the container's memory limit (daemons left over from lint); `./gradlew --stop` and `--max-workers=1` passed.
+- NOT run: a render of the changed Files top bar, `:app:bundleRelease`, sideload `assembleRelease`, anything on a device (R91).
+
+## Latest results (2026-11-19, F233 header scenes, Linux cloud container)
+
+- `:app:testDebugUnitTest` 1,163 tests, 0 failed, 0 errors, 163 skipped (counted from the result XML; new `HeaderSceneBagTest`, 4 tests); `:app:lintDebug` passed, 0 errors, 166 warnings (this run also covers F232, whose lint could not be run). `HeaderScenesScreenshotTest` (`-Pscanpro.screenshots=true`) rendered all 17 scenes in light and dark; the stills were looked at.
+- NOT run: `:app:bundleRelease`, sideload `assembleRelease`, anything on a device (motion and frame cost of the scenes: R89).
+
 ## Latest results (2026-11-19, F232 drink-water reminder timings, merged with F231, Linux cloud container)
 
 - On the merge of F232 with `73d05d3` (F231): `:app:testDebugUnitTest` 1,157 tests, 0 failed, 0 errors, 161 skipped (counted from the result XML; `HydrationScheduleTest` rewritten, 10 tests); `python3 -I scripts/ci/scanpro-quality-audit.py` PASS before the merge.

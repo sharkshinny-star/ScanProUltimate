@@ -314,7 +314,10 @@ fun LibraryRoute(
             }
         },
         phoneFilesPane = if (mode != ScanProDestinations.FILES) null else {
-            { com.example.scanpro.feature.phonepdfs.PhoneFilesPane(actions = phoneFileActions, onNotNow = null) }
+            { com.example.scanpro.feature.phonepdfs.PhoneFilesPane(actions = phoneFileActions, onNotNow = null, showSearch = false) }
+        },
+        phoneFilesSearch = if (mode != ScanProDestinations.FILES) null else {
+            { modifier -> com.example.scanpro.feature.phonepdfs.PhoneFilesSearchField(modifier) }
         }
     )
 }
@@ -385,6 +388,8 @@ internal fun LibraryScreen(
     onPhonePdfs: () -> Unit = {},
     /** Home: Files on this phone (access card or newest files). */
     homePhoneFiles: (@Composable () -> Unit)? = null,
+    /** Files, On this phone tab: its search field, shown in the top bar beside the title. */
+    phoneFilesSearch: (@Composable (Modifier) -> Unit)? = null,
     /** Files > My documents: the access card, until granted or closed. */
     filesAccessCard: (@Composable () -> Unit)? = null,
     /** Files > On this phone. Null hides the My documents / On this phone switch. */
@@ -489,6 +494,8 @@ internal fun LibraryScreen(
                 TopAppBar(
                     colors = topBarColors,
                     scrollBehavior = scrollBehavior,
+                    // Files and Search: a lower bar, so the list starts higher (owner, 2026-11-19: "a lot of gap").
+                    expandedHeight = if (isHome) TopAppBarDefaults.TopAppBarExpandedHeight else 56.dp,
                     title = {
                         when {
                             selecting -> TitleWithStatus(pluralStringResource(R.plurals.lib_title_selected_count, selected.size, selected.size), if (busy) busyLabel else null)
@@ -498,14 +505,18 @@ internal fun LibraryScreen(
                                 com.example.scanpro.core.designsystem.HeaderSceneStrip(Modifier.weight(1f).padding(start = 8.dp).height(52.dp))
                             }
                             isSearch -> Text(stringResource(R.string.common_search))
-                            else -> TitleWithStatus(
-                                stringResource(R.string.lib_title_files),
-                                when {
-                                    busy -> busyLabel
-                                    overview.documentCount == 0 || onPhoneTab -> null
-                                    else -> pluralStringResource(R.plurals.lib_document_count, overview.documentCount, overview.documentCount)
-                                }
-                            )
+                            else -> Row(verticalAlignment = Alignment.CenterVertically) {
+                                TitleWithStatus(
+                                    stringResource(R.string.lib_title_files),
+                                    when {
+                                        busy -> busyLabel
+                                        overview.documentCount == 0 || onPhoneTab -> null
+                                        else -> pluralStringResource(R.plurals.lib_document_count, overview.documentCount, overview.documentCount)
+                                    }
+                                )
+                                // On this phone: the search sits here, in the free space beside the title.
+                                if (onPhoneTab) phoneFilesSearch?.invoke(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp))
+                            }
                         }
                     },
                     navigationIcon = {

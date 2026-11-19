@@ -50,6 +50,7 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -194,7 +195,14 @@ fun PhonePdfsRoute(onBack: () -> Unit, actions: PhoneFileActions, viewModel: Pho
 
 /** The list with its explainer: the Files tab's "On this phone" and the full screen. */
 @Composable
-fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier: Modifier = Modifier, viewModel: PhonePdfsViewModel = hiltViewModel()) {
+fun PhoneFilesPane(
+    actions: PhoneFileActions,
+    onNotNow: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    /** False when the screen around the pane shows [PhoneFilesSearchField] itself (Files' top bar). */
+    showSearch: Boolean = true,
+    viewModel: PhonePdfsViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Back from the system settings page (or the permission dialog): look again.
@@ -233,6 +241,7 @@ fun PhoneFilesPane(actions: PhoneFileActions, onNotNow: (() -> Unit)?, modifier:
             }
             true -> PhoneFilesList(
                 state = state,
+                showSearch = showSearch,
                 onRefresh = viewModel::refresh,
                 onQueryChange = viewModel::setQuery,
                 onFilterChange = viewModel::setFilter,
@@ -364,6 +373,45 @@ private fun ExplainerPoint(icon: ImageVector, tone: TileTone, text: String) {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The On this phone search as a compact pill for Files' top bar, beside the title (owner's sketch, 2026-11-19), so it
+ * no longer takes a row of its own above the list. It shares [PhoneFilesPane]'s view model. Nothing is drawn until
+ * the files can be read, or while files are selected (the pane shows its selection bar then).
+ */
+@Composable
+fun PhoneFilesSearchField(modifier: Modifier = Modifier, viewModel: PhonePdfsViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    if (state.hasAccess != true || state.selected.isNotEmpty()) return
+    val style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
+    androidx.compose.foundation.text.BasicTextField(
+        value = state.query,
+        onValueChange = viewModel::setQuery,
+        singleLine = true,
+        textStyle = style,
+        cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+        modifier = modifier.height(44.dp),
+        decorationBox = { field ->
+            Row(
+                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape).padding(start = 12.dp, end = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                    if (state.query.isEmpty()) {
+                        Text(stringResource(R.string.phone_pdfs_search_hint), style = style, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    field()
+                }
+                if (state.query.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.setQuery("") }, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.phone_pdfs_clear_search), modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
+    )
+}
+
 @Composable
 internal fun PhoneFilesList(
     state: PhoneFilesState,
@@ -381,7 +429,8 @@ internal fun PhoneFilesList(
     /** How many files the tools have made, for the Made in ScanPro entry; null hides the storage overview. */
     processedCount: Int? = null,
     onOpenProcessed: () -> Unit = {},
-    onOpenCloud: () -> Unit = {}
+    onOpenCloud: () -> Unit = {},
+    showSearch: Boolean = true
 ) {
     val shown = state.shown
     val selecting = state.selected.isNotEmpty()
@@ -390,7 +439,7 @@ internal fun PhoneFilesList(
     Column(Modifier.fillMaxSize().widthIn(max = 900.dp)) {
         if (selecting) {
             SelectionBar(state.selection, onClear = onClearSelection, onAction = onSelectionAction)
-        } else {
+        } else if (showSearch) {
             // The same filled pill as the Settings search (2026-11-19), so the two tabs read as one app.
             TextField(
                 value = state.query,
