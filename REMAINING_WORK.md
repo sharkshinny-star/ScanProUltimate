@@ -30,8 +30,9 @@ the two trees merged is recorded.
 9. **GitHub housekeeping (checked 2026-11-19):** Dependabot pull requests #15 (Gradle wrapper 9.9.0) and #16 (ZXing core
    3.5.4) were closed unmerged on 2026-11-19 at the owner's request: the working branch already has both versions.
    `main` still has Gradle 9.8.2 and ZXing 3.5.3 until the working branch is merged (pull request #18, open; `main` was
-   last updated on 2026-11-11). Branches that can be deleted: `ccr-d3174e53-3zuive`, and the two `dependabot/gradle/…`
-   branches if Dependabot has not removed them.
+   last updated on 2026-11-11). Two branches are left for the owner to delete: `ccr-d3174e53-3zuive` (its tip `6f383c8`
+   is in the working branch) and `dependabot/gradle/gradle-wrapper-9.9.0`. A cloud session cannot: GitHub answers a
+   branch delete from it with HTTP 403. Dependabot removed its ZXing branch itself.
 10. **On the Mac only (a cloud session cannot see them):** the R50 stash, and an uncommitted 3° rotation in
     `res/layout/widget_scan.xml` that looks like an accidental drag.
 
