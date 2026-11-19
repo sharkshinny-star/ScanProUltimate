@@ -25,9 +25,11 @@ import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.clickable
@@ -40,7 +42,10 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import android.content.Context
 import com.example.scanpro.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.PI
@@ -59,12 +64,14 @@ enum class HeaderScene(val millis: Int) {
     /** A red racing car at speed, leaving tyre marks and smoke. */
     RACE_CAR(2600),
     BIKE(3800),
+    /** A racing motorcycle flat out: full fairing, the rider tucked in behind the screen. */
+    RACING_BIKE(2400),
     /** An auto-rickshaw: green body, yellow hood. */
     AUTO(4800),
     /** A painted lorry of the kind seen on Punjab's highways, crown over the cab and tassels swinging. */
     LORRY(6000),
-    /** A white and blue semi-high-speed train with a long sloped nose. */
-    TRAIN(3600),
+    /** A white bullet train with a long duck-bill nose and a thin blue line, gone in a moment. */
+    TRAIN(2400),
     /** A zombie shuffling slowly across, arms out. */
     ZOMBIE(11000),
     /** A small propeller plane towing a banner with the app's name. */
@@ -74,15 +81,49 @@ enum class HeaderScene(val millis: Int) {
     /** An elephant in a red and gold cloth, walking across. */
     ELEPHANT(9500),
     /** A paper plane folded from a scanned page, gliding up and down. */
-    PAPER_PLANE(4800)
+    PAPER_PLANE(4800),
+    /** An old lady in a shawl, walking slowly with her stick. */
+    OLD_LADY(13000),
+    /** A child running flat out with a dog bounding after them. */
+    DOG_AND_KID(4400),
+    /** A child running off and their mother running after them, one arm out. */
+    MUM_AND_KID(5000)
 }
 
-/** The empty pause between two scenes. */
-private const val REST_MILLIS = 1600
+/** The empty pause between two scenes: five seconds of plain sky (owner's request, 2026-11-19). */
+private const val REST_MILLIS = 5000
+
+private const val SCENE_PREFS = "header_scenes"
+private const val KEY_BAG = "bag"
+private const val KEY_LAST = "last"
+
+/**
+ * The order the scenes play in: every scene once, shuffled, before any comes round again. The scenes still to come are
+ * kept between launches ([HeaderSceneStrip] stores them), so each opening of the app starts with a scene the last
+ * openings did not show, instead of whatever a fresh shuffle happens to put first.
+ */
+internal object HeaderSceneBag {
+    fun encode(scenes: List<HeaderScene>): String = scenes.joinToString(",") { it.name }
+
+    /** Unknown names (a scene removed in a later version) are dropped. */
+    fun decode(stored: String?): List<HeaderScene> =
+        stored.orEmpty().split(',').mapNotNull { name -> HeaderScene.entries.firstOrNull { it.name == name } }
+
+    /** The next scene and what is left after it. An empty bag is refilled, never starting with [last]. */
+    fun draw(remaining: List<HeaderScene>, last: HeaderScene?, random: Random = Random): Pair<HeaderScene, List<HeaderScene>> {
+        var bag = remaining.distinct()
+        if (bag.isEmpty()) {
+            bag = HeaderScene.entries.shuffled(random)
+            if (bag.size > 1 && bag.first() == last) bag = bag.drop(1) + bag.first()
+        }
+        return bag.first() to bag.drop(1)
+    }
+}
 
 /**
  * A small decoration for Home's top bar (owner's request, 2026-11-19): one scene at random, a pause, then another, a
- * different one each time; a tap moves on to the next. Behind them a little sky for the time of day ([hour], 0 to 23):
+ * different one each time and a different first one each time the app is opened ([HeaderSceneBag]); a tap moves on to
+ * the next. Behind them a little sky for the time of day ([hour], 0 to 23):
  * a sun and clouds, or a moon and stars. Drawn with shapes only, nothing downloaded. Time is read in the draw phase, so
  * a frame only redraws this canvas. It is not read out. With animations turned off in the phone's settings only the
  * still sky is drawn.
@@ -107,10 +148,23 @@ fun HeaderSceneStrip(
     val skip = remember { mutableStateOf(false) }
     // A new number each pass, so a scene varies a little each time it comes round (how many birds, their heights).
     val seed = remember { mutableIntStateOf(Random.nextInt()) }
-    // Every scene once, in a shuffled order, before any comes round again.
-    val bag = remember { ArrayDeque<HeaderScene>() }
     if (animated) {
+        val context = LocalContext.current.applicationContext
         LaunchedEffect(Unit) {
+            // Read off the main thread once; after that the preferences answer from memory.
+            val prefs = withContext(Dispatchers.IO) {
+                context.getSharedPreferences(SCENE_PREFS, Context.MODE_PRIVATE).also { it.all }
+            }
+            var bag = HeaderSceneBag.decode(prefs.getString(KEY_BAG, null))
+            var last = HeaderSceneBag.decode(prefs.getString(KEY_LAST, null)).firstOrNull()
+            fun next(): HeaderScene {
+                val (picked, rest) = HeaderSceneBag.draw(bag, last)
+                bag = rest
+                last = picked
+                prefs.edit().putString(KEY_BAG, HeaderSceneBag.encode(rest)).putString(KEY_LAST, picked.name).apply()
+                return picked
+            }
+            scene.value = next()
             var first = -1L
             var start = -1L
             while (true) withInfiniteAnimationFrameMillis { now ->
@@ -122,8 +176,7 @@ fun HeaderSceneStrip(
                 when {
                     skip.value || elapsed > length + REST_MILLIS -> {
                         skip.value = false
-                        if (bag.isEmpty()) bag.addAll((HeaderScene.entries - scene.value).shuffled())
-                        scene.value = bag.removeFirst()
+                        scene.value = next()
                         mirrored.value = Random.nextBoolean()
                         seed.intValue = Random.nextInt()
                         start = now
@@ -184,19 +237,30 @@ private fun DrawScope.scene(current: HeaderScene, p: Float, mirrored: Boolean, s
                 // A faint road (or rail), so the wheels have something to run on.
                 drawLine(palette.soft.copy(alpha = 0.18f), Offset(0f, GROUND * u), Offset(size.width, GROUND * u), strokeWidth = 0.015f * u)
                 val length = when (current) {
-                    HeaderScene.TRAIN -> 4.2f * u
+                    HeaderScene.TRAIN -> 5.2f * u
                     HeaderScene.LORRY -> 1.9f * u
-                    HeaderScene.ZOMBIE -> 0.6f * u
+                    HeaderScene.ZOMBIE, HeaderScene.OLD_LADY -> 0.6f * u
+                    HeaderScene.DOG_AND_KID -> 1.7f * u
+                    HeaderScene.MUM_AND_KID -> 1.5f * u
                     else -> 1.4f * u
                 }
-                // The racing car pulls away, faster and faster; everything else keeps a steady pace.
-                val travel = if (current == HeaderScene.RACE_CAR) p * (0.45f + 0.55f * p) else p
+                // The racing car and the racing bike pull away, faster and faster; the auto putters along in little
+                // surges; everything else keeps a steady pace.
+                val travel = when (current) {
+                    HeaderScene.RACE_CAR, HeaderScene.RACING_BIKE -> p * (0.45f + 0.55f * p)
+                    HeaderScene.AUTO -> p + sin(p * 2f * PI.toFloat() * 4f) * 0.008f
+                    else -> p
+                }
                 val x = -length + (size.width + 2 * length) * travel
                 // Drawn facing right; half the time it comes from the other side.
                 scale(scaleX = if (mirrored) -1f else 1f, scaleY = 1f) {
                     when (current) {
                         HeaderScene.RACE_CAR -> raceCar(x, p, palette)
                         HeaderScene.BIKE -> bike(x, p, palette)
+                        HeaderScene.RACING_BIKE -> racingBike(x, p, palette)
+                        HeaderScene.OLD_LADY -> oldLady(x, p)
+                        HeaderScene.DOG_AND_KID -> dogChase(x, p)
+                        HeaderScene.MUM_AND_KID -> mumChase(x, p)
                         HeaderScene.LORRY -> lorry(x, p, palette)
                         HeaderScene.TRAIN -> train(x, palette)
                         HeaderScene.ZOMBIE -> zombie(x, p, palette)
@@ -425,17 +489,31 @@ private fun DrawScope.bike(x: Float, p: Float, c: ScenePalette) {
     drawLine(Color.White.copy(alpha = 0.6f), helmet + Offset(-0.05f * u, -0.05f * u), helmet + Offset(-0.01f * u, -0.07f * u), strokeWidth = 0.012f * u, cap = StrokeCap.Round)
 }
 
-/** An auto-rickshaw as on Indian roads: green body, yellow hood, one front wheel, the driver at the handlebar. */
+/**
+ * An auto-rickshaw as on Indian roads: green body, yellow hood, one front wheel, the driver at the handlebar. It
+ * putters: the body rocks on its springs over the rear axle, the exhaust coughs out puffs, dust kicks up behind the
+ * wheels and a charm swings from the hood.
+ */
 private fun DrawScope.auto(x: Float, p: Float, c: ScenePalette) {
     val u = size.height
     val length = 1.02f * u
     val ground = GROUND * u
-    val bounce = sin(p * 40f) * 0.008f * u
+    val bounce = (sin(p * 40f) * 0.008f + abs(sin(p * 23f)) * 0.006f) * u
     fun at(along: Float, up: Float) = Offset(x + 0.14f * u + along * length, ground - up * u + bounce)
     val r = 0.09f * u
     val rear = Offset(at(0.2f, 0f).x, ground - r)
     val front = Offset(at(0.9f, 0f).x, ground - r)
     shadow(at(-0.03f, 0f).x, 1.06f * length)
+    // Two-stroke exhaust: little puffs from under the tail, and dust off the road behind each wheel.
+    smoke(Offset(at(-0.02f, 0f).x, ground - 0.16f * u), p * 1.6f, reach = 0.45f * u, puffs = 4, strength = 0.32f)
+    for (wheelX in listOf(rear.x, front.x)) {
+        for (i in 0..2) {
+            val age = (p * 22f + i / 3f) % 1f
+            drawCircle(c.soft.copy(alpha = (1f - age) * 0.22f), (0.015f + age * 0.03f) * u, Offset(wheelX - r - age * 0.22f * u, ground - 0.02f * u - age * 0.05f * u))
+        }
+    }
+    // Everything above the axles rocks a little, nose up and nose down.
+    rotate(sin(p * 31f) * 1.3f, pivot = Offset(rear.x, ground - r)) {
     if (c.night) beam(at(0.97f, 0.36f), 0.42f * u, 0.2f * u)
 
     // Inside, seen through the open side: the passenger bench and the driver.
@@ -491,10 +569,17 @@ private fun DrawScope.auto(x: Float, p: Float, c: ScenePalette) {
     }
     drawPath(screen, Brush.verticalGradient(listOf(Glass, GlassDeep), startY = at(0f, 0.78f).y, endY = at(0f, 0.44f).y), alpha = 0.9f)
     drawPath(screen, DarkMetal, style = Stroke(width = 0.012f * u))
+    // A charm hanging from the hood behind the windscreen, swinging with the ride.
+    val hook = at(0.7f, 0.81f)
+    val charm = hook + Offset(sin(p * 31f + 1f) * 0.035f * u, 0.11f * u)
+    drawLine(DarkMetal, hook, charm, strokeWidth = 0.006f * u)
+    drawCircle(TailRed, 0.018f * u, charm)
+    drawCircle(AutoYellow, 0.008f * u, charm + Offset(0f, 0.022f * u))
     // Headlamp, front mudguard and wheels.
     drawCircle(Brush.radialGradient(listOf(Color.White, Lamp), center = at(0.97f, 0.36f), radius = 0.05f * u), 0.035f * u, at(0.965f, 0.35f))
     drawArc(AutoYellow, 190f, 140f, false, Offset(front.x - r * 1.2f, front.y - r * 1.2f + bounce), Size(r * 2.4f, r * 2.4f), style = Stroke(0.03f * u, cap = StrokeCap.Round))
     drawCircle(Tyre.copy(alpha = 0.9f), r * 1.2f, rear + Offset(0f, bounce))
+    }
     wheel(rear, r, x, spokes = 4)
     wheel(front, r, x, spokes = 4)
 }
@@ -822,75 +907,349 @@ private fun DrawScope.lorry(x: Float, p: Float, c: ScenePalette) {
     for (along in wheels) wheel(Offset(x + along * length, ground - r), r, x, spokes = 6)
 }
 
-/** A white train with a blue band and a long sloped nose, facing right, under its overhead wire. */
+/** A white bullet train, facing right under its overhead wire: a long duck-bill nose, small windows, a thin blue line. */
 private fun DrawScope.train(x: Float, c: ScenePalette) {
     val u = size.height
-    val length = 4.2f * u
+    val length = 5.2f * u
     val ground = GROUND * u
     fun at(along: Float, up: Float) = Offset(x + along * length, ground - up * u)
-    val band = Color(0xFF1B4FA8)
-    // Overhead wire and the pantograph reaching up to it.
+    fun Path.to(along: Float, up: Float) = at(along, up).let { lineTo(it.x, it.y) }
+    fun Path.curve(a1: Float, u1: Float, a2: Float, u2: Float, a3: Float, u3: Float) =
+        cubicTo(at(a1, u1).x, at(a1, u1).y, at(a2, u2).x, at(a2, u2).y, at(a3, u3).x, at(a3, u3).y)
+    val line = Color(0xFF1B4FA8)
+    val window = Color(0xFF16202E)
+    // Overhead wire and one low pantograph reaching up to it.
     drawLine(c.soft.copy(alpha = 0.45f), Offset(0f, 0.06f * u), Offset(size.width, 0.06f * u), strokeWidth = 0.008f * u)
-    val foot = at(0.6f, 0.66f)
-    val knee = at(0.585f, 0.78f)
-    val shoe = Offset(at(0.6f, 0f).x, 0.07f * u)
-    drawLine(DarkMetal, foot, knee, strokeWidth = 0.014f * u, cap = StrokeCap.Round)
-    drawLine(DarkMetal, knee, shoe, strokeWidth = 0.014f * u, cap = StrokeCap.Round)
-    drawLine(DarkMetal, shoe - Offset(0.07f * u, 0f), shoe + Offset(0.07f * u, 0f), strokeWidth = 0.018f * u, cap = StrokeCap.Round)
+    val foot = at(0.42f, 0.61f)
+    val knee = at(0.41f, 0.74f)
+    val shoe = Offset(at(0.42f, 0f).x, 0.07f * u)
+    drawLine(DarkMetal, foot, knee, strokeWidth = 0.012f * u, cap = StrokeCap.Round)
+    drawLine(DarkMetal, knee, shoe, strokeWidth = 0.012f * u, cap = StrokeCap.Round)
+    drawLine(DarkMetal, shoe - Offset(0.06f * u, 0f), shoe + Offset(0.06f * u, 0f), strokeWidth = 0.016f * u, cap = StrokeCap.Round)
+    // The air it pushes aside: faint streaks trailing behind the last car.
+    for ((i, up) in listOf(0.52f, 0.36f, 0.2f).withIndex()) {
+        val from = at(-0.015f - 0.02f * i, up)
+        drawLine(
+            Brush.horizontalGradient(listOf(Color.Transparent, c.soft.copy(alpha = 0.35f)), startX = from.x - 0.9f * u, endX = from.x),
+            from - Offset(0.9f * u, 0f), from, strokeWidth = 0.014f * u, cap = StrokeCap.Round
+        )
+    }
     shadow(x, length)
-    // Bogies under the skirt.
-    for (along in listOf(0.05f, 0.12f, 0.28f, 0.35f, 0.4f, 0.47f, 0.62f, 0.69f, 0.74f, 0.81f, 0.9f, 0.95f)) {
-        val centre = Offset(x + along * length, ground - 0.05f * u)
-        drawCircle(Tyre, 0.05f * u, centre)
-        drawCircle(Steel, 0.022f * u, centre)
+    // Bogies, mostly hidden behind the skirt.
+    for (along in listOf(0.04f, 0.085f, 0.215f, 0.26f, 0.3f, 0.345f, 0.475f, 0.52f, 0.56f, 0.605f, 0.76f, 0.805f)) {
+        val centre = Offset(x + along * length, ground - 0.04f * u)
+        drawCircle(Tyre, 0.04f * u, centre)
+        drawCircle(Steel, 0.018f * u, centre)
     }
-    drawRect(DarkMetal, at(0f, 0.17f), Size(0.97f * length, 0.08f * u))
-    // Body: three cars and the driving end, the roof line dropping in one curve to the coupler.
+    // Body: three cars and the driving car, whose roof falls in one long curve to a low rounded tip.
     val shell = Path().apply {
-        moveTo(at(0f, 0.15f).x, at(0f, 0.15f).y)
-        lineTo(at(0f, 0.64f).x, at(0f, 0.64f).y)
-        quadraticTo(at(0f, 0.67f).x, at(0f, 0.67f).y, at(0.01f, 0.67f).x, at(0.01f, 0.67f).y)
-        lineTo(at(0.86f, 0.67f).x, at(0.86f, 0.67f).y)
-        cubicTo(at(0.93f, 0.66f).x, at(0.93f, 0.66f).y, at(0.985f, 0.42f).x, at(0.985f, 0.42f).y, at(1f, 0.24f).x, at(1f, 0.24f).y)
-        quadraticTo(at(1f, 0.15f).x, at(1f, 0.15f).y, at(0.985f, 0.15f).x, at(0.985f, 0.15f).y)
+        at(0f, 0.07f).let { moveTo(it.x, it.y) }
+        to(0f, 0.57f)
+        quadraticTo(at(0f, 0.61f).x, at(0f, 0.61f).y, at(0.008f, 0.61f).x, at(0.008f, 0.61f).y)
+        to(0.76f, 0.61f)
+        curve(0.85f, 0.61f, 0.9f, 0.4f, 0.985f, 0.25f)
+        curve(1.003f, 0.21f, 1.003f, 0.13f, 0.98f, 0.1f)
+        curve(0.96f, 0.08f, 0.93f, 0.07f, 0.9f, 0.07f)
         close()
     }
-    drawPath(shell, Brush.verticalGradient(listOf(Color.White, Color(0xFFF2F4F7), Color(0xFFC9CED6)), startY = at(0f, 0.67f).y, endY = at(0f, 0.15f).y))
-    // The blue band through the windows, sweeping down the nose to the lamps.
-    val sweep = Path().apply {
-        moveTo(at(0f, 0.54f).x, at(0f, 0.54f).y)
-        lineTo(at(0.86f, 0.54f).x, at(0.86f, 0.54f).y)
-        cubicTo(at(0.93f, 0.52f).x, at(0.93f, 0.52f).y, at(0.97f, 0.4f).x, at(0.97f, 0.4f).y, at(0.995f, 0.27f).x, at(0.995f, 0.27f).y)
-        lineTo(at(0.975f, 0.22f).x, at(0.975f, 0.22f).y)
-        cubicTo(at(0.95f, 0.32f).x, at(0.95f, 0.32f).y, at(0.92f, 0.36f).x, at(0.92f, 0.36f).y, at(0.86f, 0.36f).x, at(0.86f, 0.36f).y)
-        lineTo(at(0f, 0.36f).x, at(0f, 0.36f).y)
-        close()
+    drawPath(shell, Brush.verticalGradient(listOf(Color.White, Color(0xFFF4F6F9), Color(0xFFC3C9D2)), startY = at(0f, 0.61f).y, endY = at(0f, 0.07f).y))
+    // A hairline round the body, so the white roof and nose stand out against a pale sky.
+    drawPath(shell, c.soft.copy(alpha = 0.4f), style = Stroke(width = 0.008f * u))
+    // The thin blue line under the windows, following the nose down to its tip, and a finer one below it.
+    val stripe = Path().apply {
+        at(0f, 0.33f).let { moveTo(it.x, it.y) }
+        to(0.8f, 0.33f)
+        curve(0.88f, 0.33f, 0.93f, 0.25f, 0.985f, 0.2f)
     }
-    drawPath(sweep, Brush.verticalGradient(listOf(band.lighter(0.18f), band.darker(0.15f)), startY = at(0f, 0.54f).y, endY = at(0f, 0.3f).y))
-    // Windows in the band, doors at the car ends, and the gaps between the cars.
+    drawPath(stripe, line, style = Stroke(width = 0.04f * u, cap = StrokeCap.Butt))
+    drawLine(line.lighter(0.35f), at(0f, 0.275f), at(0.82f, 0.275f), strokeWidth = 0.012f * u)
+    // Small windows, a door at each car end, and the gaps between the cars.
     for (car in 0..2) {
-        val start = 0.02f + car * 0.29f
-        for (i in 0..5) drawRoundRect(Color(0xFF16202E), at(start + 0.035f + i * 0.038f, 0.52f), Size(0.03f * length, 0.13f * u), CornerRadius(0.02f * u))
-        drawRoundRect(Color(0xFFDDE2E8), at(start + 0.005f, 0.58f), Size(0.02f * length, 0.4f * u), CornerRadius(0.012f * u))
-        drawRoundRect(Color(0xFF16202E), at(start + 0.009f, 0.52f), Size(0.012f * length, 0.13f * u), CornerRadius(0.01f * u))
-        if (car > 0) drawLine(DarkMetal, at(start - 0.002f, 0.67f), at(start - 0.002f, 0.16f), strokeWidth = 0.014f * u)
+        val start = 0.012f + car * 0.26f
+        for (i in 0..8) drawRoundRect(window, at(start + 0.03f + i * 0.0245f, 0.5f), Size(0.017f * length, 0.085f * u), CornerRadius(0.02f * u))
+        drawRoundRect(Color(0xFFDDE2E8), at(start + 0.006f, 0.55f), Size(0.016f * length, 0.42f * u), CornerRadius(0.012f * u))
+        drawRoundRect(window, at(start + 0.0095f, 0.5f), Size(0.009f * length, 0.085f * u), CornerRadius(0.01f * u))
+        if (car > 0) drawLine(DarkMetal, at(start - 0.003f, 0.61f), at(start - 0.003f, 0.08f), strokeWidth = 0.012f * u)
     }
-    drawLine(Color.White.copy(alpha = 0.9f), at(0.01f, 0.635f), at(0.86f, 0.635f), strokeWidth = 0.012f * u, cap = StrokeCap.Round)
-    // Driving cab: black windscreen wrapped round the nose, side window, headlamps.
+    drawLine(DarkMetal, at(0.777f, 0.61f), at(0.777f, 0.08f), strokeWidth = 0.012f * u)
+    drawLine(Color.White.copy(alpha = 0.9f), at(0.01f, 0.58f), at(0.76f, 0.58f), strokeWidth = 0.012f * u, cap = StrokeCap.Round)
+    // Driving car: its door and two windows, then the small dark cockpit glass set into the top of the nose.
+    drawRoundRect(Color(0xFFDDE2E8), at(0.784f, 0.55f), Size(0.016f * length, 0.42f * u), CornerRadius(0.012f * u))
+    drawRoundRect(window, at(0.7875f, 0.5f), Size(0.009f * length, 0.085f * u), CornerRadius(0.01f * u))
+    // Clipped to the body, so the glass follows the roof line exactly.
+    clipPath(shell) {
+        drawPath(
+            Path().apply {
+                at(0.8f, 0.64f).let { moveTo(it.x, it.y) }
+                to(0.9f, 0.64f)
+                to(0.9f, 0.4f)
+                to(0.862f, 0.4f)
+                curve(0.85f, 0.46f, 0.83f, 0.51f, 0.8f, 0.52f)
+                close()
+            },
+            Brush.verticalGradient(listOf(Color(0xFF4A5A70), Color(0xFF0E131B)), startY = at(0f, 0.6f).y, endY = at(0f, 0.4f).y)
+        )
+    }
+    // Headlamp low on the nose, its light at night, and the red marker beside it.
+    drawOval(Brush.radialGradient(listOf(Color.White, Lamp), center = at(0.955f, 0.235f), radius = 0.05f * u), at(0.945f, 0.26f), Size(0.016f * length, 0.045f * u))
+    if (c.night) beam(at(0.995f, 0.2f), 0.5f * u, 0.18f * u)
+    drawCircle(TailRed, 0.012f * u, at(0.985f, 0.14f))
+}
+
+/** A racing motorcycle flat out, facing right: full fairing with a race number, the rider tucked in behind the screen. */
+private fun DrawScope.racingBike(x: Float, p: Float, c: ScenePalette) {
+    val u = size.height
+    val ground = GROUND * u
+    val r = 0.125f * u
+    val bounce = sin(p * 70f) * 0.004f * u
+    fun at(along: Float, up: Float) = Offset(x + (along + 0.18f) * u, ground - up * u + bounce)
+    fun Path.start(along: Float, up: Float) = at(along, up).let { moveTo(it.x, it.y) }
+    fun Path.to(along: Float, up: Float) = at(along, up).let { lineTo(it.x, it.y) }
+    fun Path.curve(a1: Float, u1: Float, a2: Float, u2: Float, a3: Float, u3: Float) =
+        cubicTo(at(a1, u1).x, at(a1, u1).y, at(a2, u2).x, at(a2, u2).y, at(a3, u3).x, at(a3, u3).y)
+    val paint = Color(0xFF1E6FE0)
+    val rear = Offset(at(0.14f, 0f).x, ground - r)
+    val front = Offset(at(0.84f, 0f).x, ground - r)
+    shadow(rear.x - r, front.x - rear.x + 2 * r)
+    smoke(at(0f, 0.3f), p, reach = 0.6f * u, puffs = 5, strength = 0.3f)
+    // The air rushing past: streaks trailing behind.
+    for (i in 0..2) {
+        val from = at(-0.12f - 0.06f * i, 0.66f - 0.2f * i)
+        drawLine(
+            Brush.horizontalGradient(listOf(Color.Transparent, c.soft.copy(alpha = 0.4f)), startX = from.x - 0.5f * u, endX = from.x),
+            from - Offset(0.5f * u, 0f), from, strokeWidth = 0.014f * u, cap = StrokeCap.Round
+        )
+    }
+    if (c.night) beam(at(0.9f, 0.38f), 0.5f * u, 0.2f * u)
+    // Swing arm, fork and exhaust, then the wheels.
+    drawLine(DarkMetal, Offset(rear.x, rear.y + bounce), at(0.42f, 0.2f), strokeWidth = 0.04f * u, cap = StrokeCap.Round)
+    drawLine(Chrome, Offset(front.x, front.y + bounce), at(0.72f, 0.46f), strokeWidth = 0.035f * u, cap = StrokeCap.Round)
+    drawLine(Brush.horizontalGradient(listOf(Chrome, Steel)), at(0.02f, 0.33f), at(0.3f, 0.24f), strokeWidth = 0.05f * u, cap = StrokeCap.Round)
+    wheel(rear, r, x, spokes = 5)
+    wheel(front, r, x, spokes = 5)
+    // Fairing: belly pan rising into the pointed nose.
+    val fairing = Path().apply {
+        start(0.3f, 0.12f)
+        curve(0.3f, 0.3f, 0.34f, 0.4f, 0.4f, 0.44f)
+        to(0.62f, 0.5f)
+        curve(0.72f, 0.56f, 0.84f, 0.5f, 0.9f, 0.38f)
+        curve(0.86f, 0.3f, 0.8f, 0.3f, 0.74f, 0.3f)
+        curve(0.7f, 0.2f, 0.66f, 0.12f, 0.6f, 0.1f)
+        close()
+    }
+    drawPath(fairing, Brush.verticalGradient(listOf(paint.lighter(0.25f), paint, paint.darker(0.35f)), startY = at(0f, 0.55f).y, endY = at(0f, 0.1f).y))
+    // Seat unit: a high pointed tail, the seat dip and the tank.
+    val tail = Path().apply {
+        start(0.02f, 0.52f)
+        to(0.26f, 0.42f)
+        curve(0.34f, 0.4f, 0.36f, 0.5f, 0.44f, 0.54f)
+        curve(0.52f, 0.57f, 0.6f, 0.54f, 0.64f, 0.5f)
+        to(0.4f, 0.42f)
+        to(0.2f, 0.36f)
+        close()
+    }
+    drawPath(tail, Brush.verticalGradient(listOf(paint.lighter(0.3f), paint.darker(0.2f)), startY = at(0f, 0.56f).y, endY = at(0f, 0.36f).y))
+    drawRoundRect(TailRed, at(0.01f, 0.51f), Size(0.035f * u, 0.03f * u), CornerRadius(0.01f * u))
+    drawLine(Color.White.copy(alpha = 0.85f), at(0.44f, 0.4f), at(0.82f, 0.43f), strokeWidth = 0.014f * u, cap = StrokeCap.Round)
+    // Race number on a white disc (a 1, which reads the same when the bike comes from the other side).
+    drawCircle(Color.White, 0.06f * u, at(0.52f, 0.28f))
+    drawLine(Tyre, at(0.52f, 0.315f), at(0.52f, 0.245f), strokeWidth = 0.02f * u, cap = StrokeCap.Round)
+    // Screen bubble over the nose.
     drawPath(
         Path().apply {
-            moveTo(at(0.895f, 0.63f).x, at(0.895f, 0.63f).y)
-            cubicTo(at(0.925f, 0.62f).x, at(0.925f, 0.62f).y, at(0.955f, 0.53f).x, at(0.955f, 0.53f).y, at(0.972f, 0.42f).x, at(0.972f, 0.42f).y)
-            lineTo(at(0.93f, 0.42f).x, at(0.93f, 0.42f).y)
-            cubicTo(at(0.92f, 0.5f).x, at(0.92f, 0.5f).y, at(0.91f, 0.55f).x, at(0.91f, 0.55f).y, at(0.895f, 0.57f).x, at(0.895f, 0.57f).y)
+            start(0.66f, 0.52f)
+            curve(0.7f, 0.64f, 0.78f, 0.62f, 0.85f, 0.47f)
             close()
         },
-        Brush.verticalGradient(listOf(Color(0xFF4A5A70), Color(0xFF0E131B)), startY = at(0f, 0.63f).y, endY = at(0f, 0.42f).y)
+        Brush.verticalGradient(listOf(Glass, GlassDeep), startY = at(0f, 0.62f).y, endY = at(0f, 0.47f).y), alpha = 0.85f
     )
-    drawRoundRect(Color(0xFF16202E), at(0.868f, 0.52f), Size(0.02f * length, 0.13f * u), CornerRadius(0.02f * u))
-    drawOval(Brush.radialGradient(listOf(Color.White, Lamp), center = at(0.985f, 0.24f), radius = 0.05f * u), at(0.972f, 0.27f), Size(0.02f * length, 0.05f * u))
-    if (c.night) beam(at(0.995f, 0.24f), 0.45f * u, 0.18f * u)
-    drawCircle(TailRed, 0.014f * u, at(0.99f, 0.19f))
+    // Rider in leathers: knee tucked in, back flat, chin on the tank, helmet behind the screen.
+    val leathers = c.brand
+    val hip = at(0.24f, 0.5f)
+    val knee = at(0.45f, 0.37f)
+    val foot = at(0.31f, 0.2f)
+    drawLine(leathers.darker(0.3f), hip, knee, strokeWidth = 0.085f * u, cap = StrokeCap.Round)
+    drawLine(leathers.darker(0.3f), knee, foot, strokeWidth = 0.07f * u, cap = StrokeCap.Round)
+    drawRoundRect(Tyre, foot - Offset(0.03f * u, 0.02f * u), Size(0.11f * u, 0.05f * u), CornerRadius(0.02f * u))
+    val shoulder = at(0.5f, 0.63f)
+    drawLine(Brush.linearGradient(listOf(leathers.darker(0.2f), leathers.lighter(0.15f)), start = hip, end = shoulder), hip + Offset(0.01f * u, -0.03f * u), shoulder, strokeWidth = 0.13f * u, cap = StrokeCap.Round)
+    val elbow = at(0.6f, 0.5f)
+    val hand = at(0.71f, 0.49f)
+    drawLine(leathers.darker(0.12f), shoulder + Offset(0.02f * u, 0.03f * u), elbow, strokeWidth = 0.06f * u, cap = StrokeCap.Round)
+    drawLine(leathers.darker(0.12f), elbow, hand, strokeWidth = 0.055f * u, cap = StrokeCap.Round)
+    drawCircle(Tyre, 0.03f * u, hand)
+    val helmet = at(0.6f, 0.69f)
+    drawCircle(Brush.radialGradient(listOf(Color.White, Color(0xFFD0D4DA)), center = helmet - Offset(0.03f * u, 0.03f * u), radius = 0.12f * u), 0.085f * u, helmet)
+    drawArc(Brush.linearGradient(listOf(Tyre, DarkMetal)), -40f, 80f, true, helmet - Offset(0.072f * u, 0.068f * u), Size(0.145f * u, 0.136f * u))
+    drawLine(paint, helmet + Offset(-0.07f * u, -0.04f * u), helmet + Offset(0.01f * u, -0.082f * u), strokeWidth = 0.016f * u, cap = StrokeCap.Round)
+}
+
+/** The build and clothes of a walking or running figure; [height] is a share of the strip's height. */
+private class Figure(val height: Float, val top: Color, val bottom: Color, val hair: Color, val skirt: Boolean = false, val skin: Color = Skin)
+
+/**
+ * A person seen from the side, facing right, standing at [feetX]. Legs and arms swing with [phase] (radians);
+ * [run] goes from 0, a walk, to 1, a flat-out run; [lean] tips the body forward (degrees); [reach] holds the near arm
+ * out ahead (0 to 1) instead of letting it swing. [extras] draws on top, in the leaning body's frame.
+ */
+private fun DrawScope.figure(
+    feetX: Float,
+    f: Figure,
+    phase: Float,
+    run: Float,
+    lean: Float,
+    reach: Float = 0f,
+    extras: DrawScope.(head: Offset, neck: Offset, hand: Offset, h: Float) -> Unit = { _, _, _, _ -> }
+) {
+    val u = size.height
+    val ground = GROUND * u
+    val h = f.height * u
+    val hip = Offset(feetX, ground - 0.46f * h - abs(sin(phase)) * 0.015f * h * (1f + run))
+    drawOval(Color.Black.copy(alpha = 0.14f), Offset(feetX - 0.2f * h, ground - 0.03f * u), Size(0.4f * h, 0.05f * u))
+    val stride = (0.13f + 0.15f * run) * h
+    fun leg(at: Float, tone: Color) {
+        // The foot lifts while it swings forward and stays down while it pushes back.
+        val foot = Offset(feetX + sin(at) * stride, ground - 0.02f * h - maxOf(cos(at), 0f) * (0.03f + 0.1f * run) * h)
+        val knee = Offset((hip.x + foot.x) / 2f + (0.05f + 0.05f * run) * h, (hip.y + foot.y) / 2f)
+        if (f.skirt) {
+            drawLine(f.skin, Offset(foot.x, ground - 0.13f * h), foot, strokeWidth = 0.05f * h, cap = StrokeCap.Round)
+        } else {
+            drawLine(tone, hip, knee, strokeWidth = 0.085f * h, cap = StrokeCap.Round)
+            drawLine(tone, knee, foot, strokeWidth = 0.07f * h, cap = StrokeCap.Round)
+        }
+        drawRoundRect(Tyre, foot - Offset(0.03f * h, 0.03f * h), Size(0.12f * h, 0.05f * h), CornerRadius(0.02f * h))
+    }
+    leg(phase + PI.toFloat(), f.bottom.darker(0.2f))
+    leg(phase, f.bottom)
+    if (f.skirt) {
+        val sway = sin(phase) * 0.03f * h
+        drawPath(
+            Path().apply {
+                moveTo(hip.x - 0.08f * h, hip.y - 0.02f * h)
+                lineTo(hip.x + 0.08f * h, hip.y - 0.02f * h)
+                lineTo(feetX + 0.15f * h + sway, ground - 0.1f * h)
+                lineTo(feetX - 0.14f * h + sway, ground - 0.1f * h)
+                close()
+            },
+            Brush.verticalGradient(listOf(f.bottom.lighter(0.12f), f.bottom.darker(0.25f)), startY = hip.y, endY = ground)
+        )
+    }
+    rotate(lean, pivot = hip) {
+        val neck = hip + Offset(0f, -0.32f * h)
+        val shoulder = neck + Offset(0f, 0.05f * h)
+        fun arm(at: Float, tone: Color, reaching: Float): Offset {
+            val down = Offset(sin(at) * (0.1f + 0.1f * run) * h, (0.25f - 0.08f * run) * h)
+            val out = Offset(0.27f * h, 0.02f * h + sin(at * 2f) * 0.01f * h)
+            val hand = shoulder + Offset(down.x + (out.x - down.x) * reaching, down.y + (out.y - down.y) * reaching)
+            val bend = run * (1f - reaching) * 0.04f * h
+            val elbow = Offset((shoulder.x + hand.x) / 2f - bend, (shoulder.y + hand.y) / 2f + bend)
+            drawLine(tone, shoulder, elbow, strokeWidth = 0.06f * h, cap = StrokeCap.Round)
+            drawLine(tone, elbow, hand, strokeWidth = 0.05f * h, cap = StrokeCap.Round)
+            drawCircle(f.skin, 0.03f * h, hand)
+            return hand
+        }
+        arm(phase, f.top.darker(0.28f), 0f)
+        drawLine(
+            Brush.verticalGradient(listOf(f.top.lighter(0.15f), f.top.darker(0.2f)), startY = neck.y, endY = hip.y),
+            hip + Offset(0f, -0.04f * h), neck + Offset(0f, 0.06f * h), strokeWidth = 0.17f * h, cap = StrokeCap.Round
+        )
+        val hand = arm(phase + PI.toFloat(), f.top.darker(0.1f), reach)
+        val head = neck + Offset(0.015f * h, -0.085f * h)
+        drawCircle(f.skin, 0.09f * h, head)
+        drawArc(f.hair, 160f, 190f, true, head - Offset(0.095f * h, 0.1f * h), Size(0.19f * h, 0.17f * h))
+        drawCircle(Color(0xFF2A1A12), 0.012f * h, head + Offset(0.045f * h, -0.005f * h))
+        extras(head, neck, hand, h)
+    }
+}
+
+/** An old lady walking slowly to the right: grey bun, glasses, a shawl over a long skirt, leaning on her stick. */
+private fun DrawScope.oldLady(x: Float, p: Float) {
+    val u = size.height
+    val ground = GROUND * u
+    val lady = Figure(0.66f, top = Color(0xFF8E6BAE), bottom = Color(0xFFB5475B), hair = Color(0xFFD9DADF), skirt = true)
+    val wood = Color(0xFF6B4A2E)
+    figure(x + 0.3f * u, lady, phase = p * 2f * PI.toFloat() * 11f, run = 0f, lean = 13f, reach = 0.55f) { head, neck, hand, h ->
+        drawCircle(lady.hair, 0.045f * h, head + Offset(-0.1f * h, -0.03f * h))
+        drawCircle(DarkMetal, 0.03f * h, head + Offset(0.05f * h, -0.005f * h), style = Stroke(0.008f * h))
+        // The end of the shawl hanging down her back.
+        drawLine(lady.top.lighter(0.25f), neck + Offset(-0.06f * h, 0.05f * h), neck + Offset(-0.1f * h, 0.27f * h), strokeWidth = 0.05f * h, cap = StrokeCap.Round)
+        // The stick: its crook in her hand, its foot on the ground ahead of her.
+        val grip = hand + Offset(-0.01f * h, -0.03f * h)
+        drawLine(wood, grip, Offset(hand.x + 0.05f * h, ground), strokeWidth = 0.024f * h, cap = StrokeCap.Round)
+        drawLine(wood, grip, grip + Offset(-0.05f * h, 0f), strokeWidth = 0.024f * h, cap = StrokeCap.Round)
+    }
+}
+
+/** A child running flat out to the right, mouth open. */
+private fun DrawScope.kid(feetX: Float, p: Float, shirt: Color) {
+    val child = Figure(0.46f, top = shirt, bottom = Denim, hair = Color(0xFF2B2118))
+    figure(feetX, child, phase = p * 2f * PI.toFloat() * 16f, run = 1f, lean = 14f) { head, _, _, h ->
+        drawCircle(Color(0xFF7A2E2E), 0.022f * h, head + Offset(0.05f * h, 0.04f * h))
+    }
+}
+
+/** A tan dog bounding to the right: legs galloping in pairs, ear and tongue flapping, tail up and wagging. */
+private fun DrawScope.dog(x: Float, p: Float) {
+    val u = size.height
+    val ground = GROUND * u
+    val coat = Color(0xFFC98A4B)
+    val dark = coat.darker(0.3f)
+    val phase = p * 2f * PI.toFloat() * 14f
+    val wag = sin(phase * 1.5f) * 0.04f * u
+    val body = Offset(x + 0.3f * u, ground - 0.2f * u - abs(sin(phase)) * 0.03f * u)
+    drawOval(Color.Black.copy(alpha = 0.14f), Offset(body.x - 0.22f * u, ground - 0.03f * u), Size(0.46f * u, 0.05f * u))
+    fun leg(from: Offset, at: Float, tone: Color) {
+        val paw = Offset(from.x + sin(at) * 0.09f * u, ground - 0.015f * u - maxOf(cos(at), 0f) * 0.05f * u)
+        val joint = Offset((from.x + paw.x) / 2f - 0.02f * u, (from.y + paw.y) / 2f)
+        drawLine(tone, from, joint, strokeWidth = 0.042f * u, cap = StrokeCap.Round)
+        drawLine(tone, joint, paw, strokeWidth = 0.034f * u, cap = StrokeCap.Round)
+    }
+    val rearHip = body + Offset(-0.14f * u, 0.02f * u)
+    val frontHip = body + Offset(0.13f * u, 0.02f * u)
+    leg(rearHip, phase + 0.7f, dark)
+    leg(frontHip, phase + PI.toFloat() + 0.7f, dark)
+    drawLine(coat, body + Offset(-0.19f * u, -0.03f * u), body + Offset(-0.29f * u, -0.13f * u + wag), strokeWidth = 0.03f * u, cap = StrokeCap.Round)
+    val head = body + Offset(0.24f * u, -0.1f * u)
+    drawLine(coat, body + Offset(0.15f * u, -0.03f * u), head, strokeWidth = 0.08f * u, cap = StrokeCap.Round)
+    drawOval(
+        Brush.verticalGradient(listOf(coat.lighter(0.18f), coat.darker(0.15f)), startY = body.y - 0.08f * u, endY = body.y + 0.08f * u),
+        body - Offset(0.21f * u, 0.075f * u), Size(0.42f * u, 0.15f * u)
+    )
+    leg(rearHip, phase, coat)
+    leg(frontHip, phase + PI.toFloat(), coat)
+    // Head: snout, nose, eye, a floppy ear and the tongue out.
+    drawLine(Color(0xFFE5677A), head + Offset(0.07f * u, 0.035f * u), head + Offset(0.075f * u, 0.075f * u + wag * 0.3f), strokeWidth = 0.02f * u, cap = StrokeCap.Round)
+    drawCircle(coat, 0.07f * u, head)
+    drawRoundRect(coat.lighter(0.22f), head + Offset(0.03f * u, -0.015f * u), Size(0.095f * u, 0.058f * u), CornerRadius(0.025f * u))
+    drawCircle(Tyre, 0.015f * u, head + Offset(0.118f * u, 0.002f * u))
+    drawCircle(Color(0xFF2A1A12), 0.011f * u, head + Offset(0.03f * u, -0.028f * u))
+    drawLine(dark, head + Offset(-0.03f * u, -0.05f * u), head + Offset(-0.08f * u, 0.01f * u + wag * 0.5f), strokeWidth = 0.042f * u, cap = StrokeCap.Round)
+}
+
+/** A child running away to the right with a dog bounding after them. */
+private fun DrawScope.dogChase(x: Float, p: Float) {
+    dog(x, p)
+    kid(x + 1.3f * size.height, p, Color(0xFFF2B33D))
+}
+
+/** A child running off to the right and their mother running after them, one arm out, plait and scarf flying. */
+private fun DrawScope.mumChase(x: Float, p: Float) {
+    val u = size.height
+    val mum = Figure(0.72f, top = Color(0xFFD9477A), bottom = Color(0xFF2E7D74), hair = Color(0xFF2B2118))
+    val phase = p * 2f * PI.toFloat() * 11f
+    figure(x + 0.3f * u, mum, phase, run = 0.85f, lean = 12f, reach = 0.9f) { head, neck, _, h ->
+        val fly = sin(phase * 1.3f) * 0.03f * h
+        drawLine(mum.hair, head + Offset(-0.07f * h, -0.02f * h), head + Offset(-0.22f * h, 0.03f * h + fly), strokeWidth = 0.04f * h, cap = StrokeCap.Round)
+        val scarf = neck + Offset(-0.05f * h, 0.07f * h)
+        drawPath(
+            Path().apply {
+                moveTo(scarf.x, scarf.y)
+                quadraticTo(scarf.x - 0.14f * h, scarf.y - 0.06f * h + fly, scarf.x - 0.28f * h, scarf.y + 0.05f * h - fly)
+            },
+            Color(0xFFF2B33D), style = Stroke(width = 0.035f * h, cap = StrokeCap.Round)
+        )
+    }
+    kid(x + 1.15f * u, p, Color(0xFF3FA7D6))
 }
 
 /** A zombie shuffling to the right, slowly: arms out, one leg dragging, head lolling. */

@@ -59,9 +59,11 @@ class HeaderScenesScreenshotTest(private val dark: Boolean) {
     }
 
     /** Every scene, in two pictures (the list is too long for one screen): a day sky on the first, night on the second. */
-    @Test fun scenesFirstHalf() = shoot("header-scenes-1", HeaderScene.entries.take(7), hour = 10)
+    @Test fun scenesFirstThird() = shoot("header-scenes-1", HeaderScene.entries.take(6), hour = 10)
 
-    @Test fun scenesSecondHalf() = shoot("header-scenes-2", HeaderScene.entries.drop(7), hour = 22)
+    @Test fun scenesSecondThird() = shoot("header-scenes-2", HeaderScene.entries.drop(6).take(6), hour = 22)
+
+    @Test fun scenesLastThird() = shoot("header-scenes-3", HeaderScene.entries.drop(12), hour = 10)
 
     /** At its real size, beside the name as Home's top bar lays it out, with the menu button's space at the end. */
     @Test fun inTopBar() {
@@ -92,7 +94,7 @@ class HeaderScenesScreenshotTest(private val dark: Boolean) {
                     Column(Modifier.padding(8.dp)) {
                         scenes.forEach { scene ->
                             val at = when (scene) {
-                                HeaderScene.TRAIN -> 0.3f
+                                HeaderScene.TRAIN -> 0.2f
                                 HeaderScene.ROCKET -> 0.5f
                                 else -> 0.45f
                             }
