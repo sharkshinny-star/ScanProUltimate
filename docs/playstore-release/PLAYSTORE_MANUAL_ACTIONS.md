@@ -20,7 +20,7 @@ Roughly in order. Some Console forms (Data safety, content rating, target audien
    delete the draft box, and check `grep -c 'class="fill"' docs/privacy-policy/index.html` prints 0. Choose **one**
    contact address for the policy, the listing and `core/ui/Support.kt` `SupportLinks.EMAIL` (PS-08). Host it at a public
    HTTPS URL that is not a PDF (for example GitHub Pages; the repository is public). Put the URL in Play Console.
-5. **Decide All files access** ([Permissions §3](PLAYSTORE_PERMISSIONS_AUDIT.md)):
+5. **Decided 2026-11-19 (F225): dropped for Play**, the second choice below; the cards are gated and the listing and policy are changed. Was: **Decide All files access** ([Permissions §3](PLAYSTORE_PERMISSIONS_AUDIT.md)):
    - keep it: correct the two stale lines in `PLAY_ALL_FILES_ACCESS.md` (PS-12), file the declaration
      ([Declarations §6](PLAYSTORE_DECLARATIONS.md)), record the video; or
    - drop it for Play: build with `-Pscanpro.allFilesAccess=false`, have the Files access cards gated first (PS-11),
@@ -34,8 +34,8 @@ Roughly in order. Some Console forms (Data safety, content rating, target audien
    ```
    export SCANPRO_KEYSTORE=/path/outside/repo/upload.jks
    export SCANPRO_KEYSTORE_PASSWORD=…  SCANPRO_KEY_ALIAS=…  SCANPRO_KEY_PASSWORD=…
-   ./gradlew :app:bundleRelease -Pscanpro.privacyPolicyUrl=https://<your hosted policy URL>
-   #   add -Pscanpro.allFilesAccess=false for the build without All files access
+   ./gradlew :app:bundleRelease -Pscanpro.allFilesAccess=false -Pscanpro.privacyPolicyUrl=https://<your hosted policy URL>
+   #   -Pscanpro.allFilesAccess=false is the Play build (owner decision 2026-11-19, F225); the build stops without it
    ```
    The build fails if the policy URL is missing or not `https://`. It does **not** fail when the key is missing: check the
    output is signed (`jarsigner -verify app/build/outputs/bundle/release/app-release.aab`).
