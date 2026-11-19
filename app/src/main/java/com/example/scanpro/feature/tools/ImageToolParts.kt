@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material3.FilledTonalButton
@@ -83,21 +84,57 @@ internal class LoadedImage(
     val height: Int,
 )
 
-/** Loads [uri] once, off the main thread; null while loading, and null again if it cannot be read. */
+/** Where loading a picked picture has got to. Failed is its own state: it used to look like loading that never ended. */
+internal sealed interface ImageLoad {
+    data object Loading : ImageLoad
+    data object Failed : ImageLoad
+    class Ready(val image: LoadedImage) : ImageLoad
+}
+
+/** Loads [uri] once, off the main thread. */
 @Composable
-internal fun rememberLoadedImage(context: Context, uri: Uri): State<LoadedImage?> =
-    produceState<LoadedImage?>(null, uri) {
-        value = withContext(Dispatchers.IO) { loadImage(context, uri) }
+internal fun rememberImageLoad(context: Context, uri: Uri): State<ImageLoad> =
+    produceState<ImageLoad>(ImageLoad.Loading, uri) {
+        value = withContext(Dispatchers.IO) { loadImage(context, uri) }?.let { ImageLoad.Ready(it) } ?: ImageLoad.Failed
     }
 
-internal fun loadImage(context: Context, uri: Uri): LoadedImage? = runCatching {
-    val meta = ImageToolsEngine.inspectImage(context, uri) ?: return null
-    val temp = PdfToolsEngine.copyUriToTemp(context, uri, "img_preview_${UUID.randomUUID()}.tmp")
+/**
+ * The picture at [uri] as a tool screen needs it, or null when it cannot be read. Each step that can fail says which
+ * one in logcat (as a warning, which release builds keep; no file name or address is logged), so a picture that will
+ * not open can be traced on a phone with `adb logcat -s ImageTool`.
+ */
+internal fun loadImage(context: Context, uri: Uri): LoadedImage? {
+    val temp = try {
+        PdfToolsEngine.copyUriToTemp(context, uri, "img_preview_${UUID.randomUUID()}.tmp")
+    } catch (error: Throwable) {
+        android.util.Log.w(LOAD_TAG, "Could not copy the picked picture: ${error.javaClass.simpleName}")
+        return null
+    }
     try {
-        val preview = ImageProcessor.decodeOrientedScaled(temp.absolutePath, PREVIEW_SIDE) ?: return null
+        val preview = ImageProcessor.decodeOrientedScaled(temp.absolutePath, PREVIEW_SIDE)
+        if (preview == null) {
+            val mime = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                .also { BitmapFactory.decodeFile(temp.absolutePath, it) }.outMimeType
+            android.util.Log.w(LOAD_TAG, "The picked picture could not be decoded (type $mime, ${temp.length()} bytes)")
+            return null
+        }
+        // The provider's own facts first; when it will not answer (some apps return no size or refuse a second
+        // read), the copy already in hand gives the same facts.
+        val meta = ImageToolsEngine.inspectImage(context, uri) ?: run {
+            android.util.Log.w(LOAD_TAG, "The picture's provider gave no details; using the copy")
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(temp.absolutePath, bounds)
+            ImageMetadata(
+                fileName = PdfToolsEngine.sourceBaseName(context, uri),
+                width = bounds.outWidth,
+                height = bounds.outHeight,
+                sizeBytes = temp.length(),
+                mimeType = bounds.outMimeType
+            )
+        }
         val turn = runCatching { androidx.exifinterface.media.ExifInterface(temp.absolutePath).rotationDegrees }.getOrDefault(0)
         val sideways = turn == 90 || turn == 270
-        LoadedImage(
+        return LoadedImage(
             meta = meta,
             format = ImageToolsEngine.formatForMime(meta.mimeType),
             preview = preview,
@@ -105,10 +142,15 @@ internal fun loadImage(context: Context, uri: Uri): LoadedImage? = runCatching {
             width = if (sideways) meta.height else meta.width,
             height = if (sideways) meta.width else meta.height
         )
+    } catch (error: Throwable) {
+        android.util.Log.w(LOAD_TAG, "Reading the picked picture failed: ${error.javaClass.simpleName}")
+        return null
     } finally {
         temp.delete()
     }
-}.getOrNull()
+}
+
+private const val LOAD_TAG = "ImageTool"
 
 /** Samples a grid of pixels: a PNG can carry an alpha channel without using it. */
 private fun hasSeeThroughPixels(bitmap: Bitmap): Boolean {
@@ -232,7 +274,14 @@ internal fun formatLabel(format: ImageExportFormat?): String = when (format) {
  * compression blur, a crop from Fill or a white background is seen before the tool runs.
  */
 @Composable
-internal fun ImagePreviewCard(image: LoadedImage?, result: ImageEstimate?, onCrop: (() -> Unit)?, loading: Boolean = false) {
+internal fun ImagePreviewCard(
+    image: LoadedImage?,
+    result: ImageEstimate?,
+    onCrop: (() -> Unit)?,
+    loading: Boolean = false,
+    /** The picture could not be read: says so instead of showing the loading animation for ever. */
+    failed: Boolean = false
+) {
     var showOriginal by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
@@ -253,6 +302,25 @@ internal fun ImagePreviewCard(image: LoadedImage?, result: ImageEstimate?, onCro
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize().padding(10.dp)
                 )
+            } else if (failed) {
+                Column(
+                    Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.BrokenImage,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Text(
+                        stringResource(R.string.img_tool_unreadable),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
             } else {
                 FileLoadingAnimation(size = 88.dp)
             }

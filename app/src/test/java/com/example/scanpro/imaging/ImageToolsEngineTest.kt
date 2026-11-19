@@ -105,6 +105,23 @@ class ImageToolsEngineTest {
     }
 
     @Test
+    fun compressImage_pngToATargetSize_staysPngAndFits() = runBlocking {
+        // PNG has no quality setting, so a target is met by lowering the resolution (F239: PNG offered in Compress).
+        val sourceFile = File(testDir, "drawing.png")
+        saveBitmap(createSampleBitmap(1600, 1200), Bitmap.CompressFormat.PNG, sourceFile)
+        val targetBytes = sourceFile.length() / 2
+        val outFile = File(testDir, "drawing_out.png")
+
+        ImageToolsEngine.compressImage(app, Uri.fromFile(sourceFile), ImageCompressConfig(targetSizeBytes = targetBytes, outputFormat = ImageExportFormat.PNG), outFile)
+
+        assertTrue("Output must meet the target (${outFile.length()} > $targetBytes)", outFile.length() <= targetBytes)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(outFile.absolutePath, bounds)
+        assertEquals("image/png", bounds.outMimeType)
+        assertTrue("Resolution must have come down", bounds.outWidth < 1600)
+    }
+
+    @Test
     fun compressImage_tinyPng_isNeverLargerThanTheOriginal() = runBlocking {
         val sourceFile = File(testDir, "tiny.png")
         saveBitmap(createSampleBitmap(16, 16), Bitmap.CompressFormat.PNG, sourceFile)
