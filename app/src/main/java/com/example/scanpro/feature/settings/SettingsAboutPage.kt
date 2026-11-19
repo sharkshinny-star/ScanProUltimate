@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
@@ -21,30 +20,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.scanpro.BuildConfig
 import com.example.scanpro.R
 import com.example.scanpro.core.designsystem.BrandMark
 import com.example.scanpro.core.designsystem.TileTone
 import com.example.scanpro.core.ui.openPlayStoreListing
 import com.example.scanpro.core.ui.sharePlayStoreListing
 
-/** A library ScanPro ships with and its licence. Names and licence titles are proper names, so they are not translated. */
-private class Credit(val name: String, val licence: String)
-
-private const val APACHE_2 = "Apache License 2.0"
-
-/** What the app is built with; keep in step with app/build.gradle.kts. */
-private val CREDITS = listOf(
-    Credit("OpenCV", APACHE_2),
-    Credit("PdfBox-Android", APACHE_2),
-    Credit("ZXing", APACHE_2),
-    Credit("Android Jetpack (Compose, CameraX, Room, WorkManager)", APACHE_2),
-    Credit("Kotlin and kotlinx.coroutines", APACHE_2),
-    Credit("Dagger Hilt", APACHE_2),
-    Credit("Google ML Kit", "ML Kit Terms of Service")
-)
-
-/** About ScanPro: who the app is, its version, how it treats your data, sharing, and the software it is built on. */
+/** About ScanPro: who the app is, its version, how it treats your data, sharing and rating. */
 @Composable
 internal fun AboutPage(onOpenPrivacy: () -> Unit) = SettingsPageColumn {
     val context = LocalContext.current
@@ -61,7 +43,7 @@ internal fun AboutPage(onOpenPrivacy: () -> Unit) = SettingsPageColumn {
             modifier = Modifier.padding(top = 6.dp).semantics { heading() }
         )
         Text(
-            stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+            stringResource(R.string.settings_version, DISPLAY_VERSION),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -96,17 +78,5 @@ internal fun AboutPage(onOpenPrivacy: () -> Unit) = SettingsPageColumn {
             summary = stringResource(R.string.settings_rate_subtitle),
             onClick = { openPlayStoreListing(context) }
         )
-    }
-
-    SettingsGroup(header = stringResource(R.string.settings_about_open_source)) {
-        Text(
-            stringResource(R.string.settings_about_open_source_body),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-        )
-        CREDITS.forEach { credit ->
-            SettingsRow(title = credit.name, icon = Icons.Rounded.Code, summary = credit.licence, summaryMaxLines = 1)
-        }
     }
 }
