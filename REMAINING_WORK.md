@@ -47,7 +47,7 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 <!-- BEGIN open-items: written by scripts/remaining-work.py from AUDIT_FINDINGS.md; do not edit by hand -->
 
-36 open items: 13 P1, 18 P2, 5 P3.
+37 open items: 13 P1, 18 P2, 6 P3.
 
 ### P1
 
@@ -119,6 +119,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P3
 
+- **R89** (Device check (F227); `core/designsystem/HeaderScenes.kt`). The header scenes were looked at as still frames only. Their motion, speed, size in the real top bar (about 52 dp high) and cost in frames and battery were not measured: the strip redraws every frame while Home is open and a scene plays.
+  - Next: Watch Home on a release build on a phone; if it stutters or distracts, lengthen `REST_MILLIS`, or stop after a few scenes per visit. Ask the owner which scenes to keep.
 - **R85** (Device check (F216, F217); `feature/settings/SettingsAboutPage.kt`, `SettingsMainPage.kt`, …). The About page, the Settings main page (library figures, named groups) and the Files controls and storage tiles were compiled, unit-tested and rendered by Robolectric (light and dark), not seen on a phone.
   - Next: Look at Settings and Files on a phone in light, dark and one Indian language; have a native speaker read the new strings.
 - **R84** (Known limit; F213, `scripts/scan-bench` scene `k_card_in_guide_wood`). A card filling ID card mode's guide on a grained desk: in about a third of noisy frames the whole-card outline is not found (its contour joins the wood grain and reaches the frame edge), so the detector returns the card's face.

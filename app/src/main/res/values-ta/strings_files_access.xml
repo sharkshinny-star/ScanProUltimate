@@ -72,7 +72,6 @@
     <string name="phone_files_processed">ScanPro-வில் உருவானவை</string>
     <string name="phone_files_cloud_title">கிளவுட் டிரைவ்களும் பிற ஆப்களும்</string>
     <string name="phone_files_cloud_open">Google Drive, Dropbox, OneDrive… இலிருந்து திற</string>
-    <string name="phone_files_cloud_hint">உங்கள் போனின் கோப்புத் தேர்வியைப் பயன்படுத்துகிறது. ScanPro எதிலும் உள்நுழையாது.</string>
     <string name="phone_files_all_files">எல்லாக் கோப்புகளும்</string>
     <string name="phone_files_up">ஒரு கோப்புறை மேலே</string>
 </resources>

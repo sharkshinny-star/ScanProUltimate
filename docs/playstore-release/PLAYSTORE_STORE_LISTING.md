@@ -96,8 +96,8 @@ translation download and OCR language packs arrive through Play as described.
 
 | Asset | Spec ([Preview assets](https://support.google.com/googleplay/android-developer/answer/9866151)) | Status |
 |---|---|---|
-| App icon | 512 × 512 px, 32-bit PNG with alpha, ≤ 1024 KB | Not made (adaptive launcher icon exists in `app/src/main/res/mipmap-anydpi-v26`; export it at 512 px) |
-| Feature graphic | 1024 × 500 px, JPEG or 24-bit PNG, no alpha | Not made |
+| App icon | 512 × 512 px, 32-bit PNG with alpha, ≤ 1024 KB | Made 2026-11-19: `assets/play-icon-512.png` (rendered from the launcher icon's vector paths and gradients, full square, 175 KB; the owner has not approved it yet) |
+| Feature graphic | 1024 × 500 px, JPEG or 24-bit PNG, no alpha | Made 2026-11-19: `assets/play-feature-graphic-1024x500.png` (icon glyph, name, "Scan, sign and organise documents on your phone", brand gradient, RGB without alpha; the owner has not approved it yet) |
 | Phone screenshots | 2–8, JPEG or 24-bit PNG, no alpha, shortest side 320–3840 px, long side ≤ 2 × short side | Not captured |
 | 7" and 10" tablet screenshots | Same rules; needed for tablet visibility | Not captured |
 | Promo video | Optional public or unlisted YouTube URL, ads off | Optional |
