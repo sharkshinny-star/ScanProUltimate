@@ -6,6 +6,7 @@
     <string name="hint_tool_step_pick_pdfs">Choose two or more PDFs</string>
     <string name="hint_tool_step_pick_image">Choose an image</string>
     <string name="hint_tool_step_pick_images">Choose one or more images</string>
+    <string name="hint_tool_step_pick_any">Choose any file: a PDF, photo, document, song, video or archive</string>
     <string name="hint_tool_step_pick_office">Choose a Word, Excel, PowerPoint, text or web file</string>
     <string name="hint_tool_step_options">Check the preview and options</string>
     <!-- %1$s: the "Your results" heading on the Tools screen. -->

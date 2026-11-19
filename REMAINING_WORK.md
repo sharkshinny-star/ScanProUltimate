@@ -47,10 +47,12 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 <!-- BEGIN open-items: written by scripts/remaining-work.py from AUDIT_FINDINGS.md; do not edit by hand -->
 
-37 open items: 13 P1, 18 P2, 6 P3.
+40 open items: 14 P1, 19 P2, 7 P3.
 
 ### P1
 
+- **R92** (Owner + device check (F243); `imaging/metadata/`, `feature/tools/FileInfoScreen.kt`, `THIRD_PARTY_NOTICES.md`). File info and metadata was not compiled in the cloud (no Android SDK): only its pure parts ran (7 JUnit tests). jaudiotagger is LGPL 2.1.
+  - Next: Owner: confirm the LGPL terms are acceptable for the Play build (licence text in the app's notices, source offer), or drop audio tag writing. On a phone: open a camera photo with location (see GPS, Remove location, check the copy in a map app shows none and is not turned sideways), a DOCX (edit title, open the copy in Word), an MP3 (edit artist; Android 7 shows read only), an MP4, a ZIP, a HEIC and a RAW; Export JSON and CSV; confirm the release build (R8) still reads audio tags and XMP.
 - **R88** (Device check; F222–F224). The 2026-11-19 animation, layout, rating and How-it-works changes were checked with rendered screens and unit tests only; no frame of motion was seen.
   - Next: On a phone, release build: switch tabs and watch the highlight move; in the review of a 3-page scan switch Crop, Filters, Adjust, Reorder (page glides, no jump), in portrait and landscape; pick each filter (no cut border); open the camera from Home's QR code and Book pills (mode underlined and in view); save a scan and rate it with 5, then (Settings > Rate) with 2 stars (thanks at once; problem form, email opens with the rating line); after Clear data, open Merge and Compress (How it works open the first time, folded the second).
 - **R81** (Device check; F213). Detection changes measured on the desktop benchmark only (generated scenes, no real camera frames); the owner's report (paper, book, ID card, jumpy outline) was not reproduced on a phone.
@@ -80,6 +82,8 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P2
 
+- **R90** (Device check / Play; F232 (drink-water reminders)). The reworked reminders ran only as unit tests of the schedule; the notice, its two buttons and the Settings rows were never seen on a phone.
+  - Next: On a phone: reminders arrive at about the set times and survive a restart; "I drank" and "Skip" put the notice away without opening the app; changing a timing moves the next reminder; the three rows hide when the switch is off; the hour labels follow the 12/24-hour setting. In Play Console: answer the Health apps declaration as described in `PLAY_STORE_CHECKLIST.md` section 3.
 - **R87** (Device check (F221); `core/designsystem/Components.kt` (`TaskBanner`), …). The task banner and the bar above it were looked at as two still renders only, never moving or on a phone. The Files change (no search, sort or grid switch in the top bar while On this phone shows) compiles and the unit suite passes, but was not rendered or seen.
   - Next: On a phone: start a long task (Re-read text on a long document, or import a large PDF) and look at Home, Files and the document screen: after 0.7 s the banner slides open with the task's words and Stop, the bar sweeps without an empty moment, Stop stops the task and the banner closes. Files › On this phone: the top bar shows the title and the menu only; My documents still has search, sort and the grid switch.
 - **R86** (Device check (F219); `feature/tools/ProcessingOverlay.kt`, `core/designsystem/LoadingAnimations.kt`, …). The progress card's new layout, arrival, two-second minimum and finish were checked with unit tests and JVM renders only (eleven still frames looked at).
@@ -119,7 +123,9 @@ Judge smoothness on a release build (`AGENTS.md`). Where a check fails, name the
 
 ### P3
 
-- **R89** (Device check (F227); `core/designsystem/HeaderScenes.kt`). The header scenes were looked at as still frames only. Their motion, speed, size in the real top bar (about 52 dp high) and cost in frames and battery were not measured: the strip redraws every frame while Home is open and a scene plays.
+- **R91** (Device check (F234); `feature/library/LibraryScreen.kt`, `feature/phonepdfs/PhonePdfsScreen.kt`). The search pill in Files' top bar and the lower bar were not rendered or seen on a phone.
+  - Next: On a phone, Files > On this phone: the pill sits beside "My files" and is not cramped at large font sizes or in the longer translations of the title; typing filters the list and the cursor behaves; the clear button works; the pill hides while files are selected; My documents and Search still look right with the 56 dp bar.
+- **R89** (Device check (F227, F233); `core/designsystem/HeaderScenes.kt`). The header scenes were looked at as still frames only. Their motion, speed, size in the real top bar (about 52 dp high) and cost in frames and battery were not measured: the strip redraws every frame while Home is open and a scene plays.
   - Next: Watch Home on a release build on a phone; if it stutters or distracts, lengthen `REST_MILLIS`, or stop after a few scenes per visit. Ask the owner which scenes to keep.
 - **R85** (Device check (F216, F217); `feature/settings/SettingsAboutPage.kt`, `SettingsMainPage.kt`, …). The About page, the Settings main page (library figures, named groups) and the Files controls and storage tiles were compiled, unit-tested and rendered by Robolectric (light and dark), not seen on a phone.
   - Next: Look at Settings and Files on a phone in light, dark and one Indian language; have a native speaker read the new strings.

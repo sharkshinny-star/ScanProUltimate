@@ -359,6 +359,18 @@ All dependency coordinates live in `gradle/libs.versions.toml` (F71, 2026-11-08)
 Main libraries: Jetpack Compose (BOM 2026.09.00) + Material3, Navigation Compose 2.10.2, Hilt 2.60.1, Room 2.8.5 (FTS4,
 schema v3, schemas in `app/schemas`), DataStore 1.3.0, WorkManager 2.12.0, CameraX, ML Kit (text recognition 19.0.2 / scripts 16.0.2, barcode,
 document scanner, translate, language-id), PDFBox-Android 2.0.27.0 with BouncyCastle forced to 1.86, coroutines 1.11.0.
+File info and metadata (F243, 2026-11-19, owner's choice "read and write"): metadata-extractor 2.22.0 (Apache 2.0, pulls
+Adobe xmpcore 6.1.11, BSD) reads every tag of pictures, camera RAW and video; jaudiotagger 3.0.1 (LGPL 2.1) reads and
+writes audio tags on Android 8+ only (it uses `java.nio.file`). Kept whole by R8 (`proguard-rules.pro`), about 1-2 MB.
+
+**File info and metadata (`imaging/metadata/`, F243).** `FileFormat` tells a file's kind from its signature bytes (then
+name and type; 100+ extensions); `FileMetadataEngine` reads (PDFBox, ExifInterface, metadata-extractor,
+MediaMetadataRetriever and MediaExtractor, jaudiotagger, `OfficeMetadata` for DOCX/XLSX/PPTX, ODF, EPUB and ZIP) and
+writes a copy (never the original): PDF info, EXIF of JPEG/PNG/WebP, Office core/app properties (only the property parts
+are rewritten, every other zip entry copied as is), audio tags. `MetadataStrip` removes metadata from JPEG, PNG and WebP
+without decoding the picture (keeps ICC, Adobe and PNG colour chunks; orientation written back). `MetadataExport` writes
+JSON and CSV (CSV cells guarded against formulas). Pure parts (`FileFormat`, `MetadataModel`, `MetadataStrip`,
+`OfficeMetadata`) have no Android dependency and are tested on the JVM (`MetadataCoreTest`).
 
 **Tests.** JVM unit tests plus `LaunchSmokeTest` (Robolectric, test-only dependency) that starts the app on every supported Android version, API 24–37. `ScreenScreenshotTest` (opt-in, `-Pscanpro.screenshots=true`) renders the stateless screen composables with sample data under Robolectric native graphics and a plain `Application` (no Hilt), for design review in Figma without an emulator; it adds Compose `ui-test-junit4` to the test classpath only. Camera, PDF viewer and PDF tools are not covered.
 
