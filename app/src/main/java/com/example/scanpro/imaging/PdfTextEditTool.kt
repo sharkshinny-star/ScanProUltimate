@@ -45,13 +45,16 @@ internal class PdfTextEditSession private constructor(private val source: File, 
 
     /**
      * [page] at [width] pixels wide, with [edits] (those for this page) applied when there are any; also the page's
-     * size in points as shown, which the editor maps the spans with. Null if it can't be drawn.
+     * size in points as shown, which the editor maps the spans with, where each edit's words now are and which lines
+     * moved down to make room. Null if it can't be drawn.
      */
-    fun render(context: Context, page: Int, width: Int, edits: List<PdfTextEditor.Edit>): Pair<Bitmap, Pair<Float, Float>>? {
+    fun render(context: Context, page: Int, width: Int, edits: List<PdfTextEditor.Edit>): PagePreview? {
         val mine = edits.filter { it.page == page }
-        if (mine.isEmpty()) return renderPage(source, page, width)
+        fun plain() = renderPage(source, page, width)?.let { (bitmap, size) -> PagePreview(page, bitmap, size.first, size.second) }
+        if (mine.isEmpty()) return plain()
         val preview = File(context.cacheDir, "pdfedit_preview_${UUID.randomUUID()}.pdf")
         return try {
+            var outcome: PdfTextEditor.Outcome? = null
             // Only this page is copied into a new PDF (a fresh read of the file, so the session's copy is never
             // changed): a preview costs one page however long the PDF is.
             PDDocument.load(source, MemoryUsageSetting.setupTempFileOnly()).use { copy ->
@@ -63,13 +66,19 @@ internal class PdfTextEditSession private constructor(private val source: File, 
                     imported.mediaBox = original.mediaBox
                     imported.cropBox = original.cropBox
                     imported.rotation = original.rotation
-                    PdfTextEditor.apply(single, mine.map { it.copy(page = 0) }, ::phoneUnicodeFont)
+                    outcome = PdfTextEditor.apply(single, mine.map { it.copy(page = 0) }, ::phoneUnicodeFont, PhoneTextShaper)
                     single.save(preview)
                 }
             }
-            renderPage(preview, 0, width)
+            renderPage(preview, 0, width)?.let { (bitmap, size) ->
+                PagePreview(
+                    page, bitmap, size.first, size.second,
+                    placed = outcome?.placed.orEmpty().map { it.copy(edit = it.edit.copy(page = page)) },
+                    moved = outcome?.moved.orEmpty().mapKeys { it.key.second }
+                )
+            } ?: plain()
         } catch (_: Exception) {
-            renderPage(source, page, width)
+            plain()
         } finally {
             preview.delete()
         }
@@ -111,6 +120,80 @@ internal class PdfTextEditSession private constructor(private val source: File, 
     }
 }
 
+/**
+ * A page as the editor shows it: [bitmap] of page [page], its size in points as shown, the box of each edit's words
+ * ([placed]) and the lines that moved down to make room (span index to points, [moved]).
+ */
+internal class PagePreview(
+    val page: Int,
+    val bitmap: Bitmap,
+    val width: Float,
+    val height: Float,
+    val placed: List<PdfTextEditor.Placed> = emptyList(),
+    val moved: Map<Int, Float> = emptyMap()
+)
+
+/**
+ * Hindi, Kannada, Malayalam, Tamil, Telugu and other scripts whose letters join: Android sets the words (it knows how
+ * the letters combine) and gives their outlines, which the editor draws on the page as shapes. PDFBox writing the same
+ * letters one by one leaves them apart and out of order.
+ */
+internal object PhoneTextShaper : PdfTextEditor.Shaper {
+    /** Outlines are taken at this size and scaled down, so curves keep their shape. */
+    private const val EM = 200f
+
+    private fun paint(family: PdfTextEditor.Family, bold: Boolean, italic: Boolean) = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = EM
+        val base = when (family) {
+            PdfTextEditor.Family.SERIF -> android.graphics.Typeface.SERIF
+            PdfTextEditor.Family.MONO -> android.graphics.Typeface.MONOSPACE
+            else -> android.graphics.Typeface.SANS_SERIF
+        }
+        val style = when {
+            bold && italic -> android.graphics.Typeface.BOLD_ITALIC
+            bold -> android.graphics.Typeface.BOLD
+            italic -> android.graphics.Typeface.ITALIC
+            else -> android.graphics.Typeface.NORMAL
+        }
+        typeface = android.graphics.Typeface.create(base, style)
+    }
+
+    override fun width(text: String, family: PdfTextEditor.Family, bold: Boolean, italic: Boolean): Float =
+        paint(family, bold, italic).measureText(text) / EM
+
+    override fun outline(text: String, family: PdfTextEditor.Family, bold: Boolean, italic: Boolean): List<FloatArray> {
+        val path = android.graphics.Path()
+        paint(family, bold, italic).getTextPath(text, 0, text.length, 0f, 0f, path)
+        val contours = ArrayList<FloatArray>()
+        val measure = android.graphics.PathMeasure(path, false)
+        val point = FloatArray(2)
+        do {
+            val length = measure.length
+            if (length <= 0f) continue
+            val points = if (android.os.Build.VERSION.SDK_INT >= 26) {
+                // The contour on its own, as straight pieces that stay within a quarter of a unit of the curve.
+                val contour = android.graphics.Path()
+                measure.getSegment(0f, length, contour, true)
+                val approximate = contour.approximate(0.25f)
+                FloatArray(approximate.size / 3 * 2) { i -> approximate[i / 2 * 3 + 1 + i % 2] }
+            } else {
+                val steps = (length / 1.5f).toInt().coerceIn(8, 2000)
+                FloatArray(steps * 2).also { out ->
+                    for (step in 0 until steps) {
+                        measure.getPosTan(length * step / steps, point, null)
+                        out[step * 2] = point[0]
+                        out[step * 2 + 1] = point[1]
+                    }
+                }
+            }
+            // Android draws downwards; the page's text goes upwards.
+            for (i in points.indices) points[i] = if (i % 2 == 0) points[i] / EM else -points[i] / EM
+            if (points.size >= 6) contours += points
+        } while (measure.nextContour())
+        return contours
+    }
+}
+
 internal object PdfTextEditTool {
     /** Writes [outputFile]: the PDF at [uri] with [edits] applied. */
     suspend fun save(context: Context, uri: Uri, edits: List<PdfTextEditor.Edit>, outputFile: File): PdfToolResult =
@@ -119,14 +202,16 @@ internal object PdfTextEditTool {
             try {
                 val (pages, outcome) = PDDocument.load(temp, MemoryUsageSetting.setupTempFileOnly()).use { document ->
                     if (document.isEncrypted) document.isAllSecurityToBeRemoved = true
-                    val outcome = PdfTextEditor.apply(document, edits, ::phoneUnicodeFont)
+                    val outcome = PdfTextEditor.apply(document, edits, ::phoneUnicodeFont, PhoneTextShaper)
                     outputFile.parentFile?.mkdirs()
                     document.save(outputFile)
                     document.numberOfPages to outcome
                 }
                 val notes = buildList {
                     add(AppStrings.plural(R.plurals.tools_edit_done, outcome.applied, outcome.applied))
-                    if (outcome.similarFont > 0) add(AppStrings.plural(R.plurals.tools_edit_similar_font, outcome.similarFont, outcome.similarFont))
+                    if (outcome.shaped > 0) add(AppStrings.plural(R.plurals.tools_edit_shaped, outcome.shaped, outcome.shaped))
+                    val similar = outcome.similarFont - outcome.shaped
+                    if (similar > 0) add(AppStrings.plural(R.plurals.tools_edit_similar_font, similar, similar))
                     if (outcome.skipped > 0) add(AppStrings.plural(R.plurals.tools_edit_skipped, outcome.skipped, outcome.skipped))
                     if (outcome.covered > 0) add(AppStrings.plural(R.plurals.tools_edit_covered, outcome.covered, outcome.covered))
                 }

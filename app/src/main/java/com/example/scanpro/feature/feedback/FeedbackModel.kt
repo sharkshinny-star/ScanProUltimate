@@ -3,7 +3,7 @@ package com.example.scanpro.feature.feedback
 import androidx.annotation.StringRes
 import com.example.scanpro.R
 
-/** The five faces of "Rate your experience", worst first; [rating] is 1 to 5. */
+/** The five ratings of the rating sheet, worst first, each with its word; [rating] is 1 to 5 stars. */
 enum class Mood(val rating: Int, @param:StringRes val label: Int) {
     AWFUL(1, R.string.feedback_face_awful),
     POOR(2, R.string.feedback_face_poor),
@@ -16,61 +16,18 @@ enum class Mood(val rating: Int, @param:StringRes val label: Int) {
     }
 }
 
-/** The follow-up chips under the faces. Which ones show depends on the rating ([reasonsFor]). */
-enum class FeedbackReason(@param:StringRes val label: Int) {
-    BLURRY(R.string.feedback_reason_blurry),
-    EDGES(R.string.feedback_reason_edges),
-    SLOW(R.string.feedback_reason_slow),
-    HARD_TO_FIND(R.string.feedback_reason_hard_to_find),
-    CRASHED(R.string.feedback_reason_crashed),
-    QUALITY(R.string.feedback_reason_quality),
-    TOOLS(R.string.feedback_reason_tools),
-    EASY(R.string.feedback_reason_easy),
-    FAST(R.string.feedback_reason_fast),
-    TEXT(R.string.feedback_reason_text),
-    OTHER(R.string.feedback_reason_other)
+/** What the rating sheet does after a rating. */
+enum class RatingFollowUp { THANKS, PROBLEM }
+
+/**
+ * Four and five stars are thanked at once; one to three are asked what went wrong ("Tell us the problem you
+ * encountered"). Null for anything that is not a rating.
+ */
+fun followUpFor(rating: Int): RatingFollowUp? = when (rating) {
+    in 4..5 -> RatingFollowUp.THANKS
+    in 1..3 -> RatingFollowUp.PROBLEM
+    else -> null
 }
-
-private val LOW_REASONS = listOf(
-    FeedbackReason.BLURRY, FeedbackReason.EDGES, FeedbackReason.SLOW,
-    FeedbackReason.HARD_TO_FIND, FeedbackReason.CRASHED, FeedbackReason.OTHER
-)
-private val HIGH_REASONS = listOf(
-    FeedbackReason.QUALITY, FeedbackReason.TOOLS, FeedbackReason.EASY,
-    FeedbackReason.FAST, FeedbackReason.TEXT, FeedbackReason.OTHER
-)
-
-/** One to three faces ask what to fix; four and five ask what the user likes. */
-fun reasonsFor(rating: Int): List<FeedbackReason> = when (rating) {
-    in 1..3 -> LOW_REASONS
-    in 4..5 -> HIGH_REASONS
-    else -> emptyList()
-}
-
-@StringRes
-fun followUpQuestion(rating: Int): Int = when (rating) {
-    1, 2 -> R.string.feedback_follow_low
-    3 -> R.string.feedback_follow_mid
-    else -> R.string.feedback_follow_high
-}
-
-/** A face is needed; "Other" on its own says nothing until the user writes what it is. */
-fun canSubmitRating(rating: Int, reasons: Set<FeedbackReason>, text: String): Boolean =
-    Mood.of(rating) != null && !(reasons == setOf(FeedbackReason.OTHER) && text.isBlank())
-
-/** Whether "Other" is chosen, which turns the optional comment box into "Tell us more". */
-fun asksForDetail(reasons: Set<FeedbackReason>): Boolean = FeedbackReason.OTHER in reasons
-
-/** The body of a rating email: the rating line, the follow-up question with the chosen answers, then the comments. */
-fun ratingEmailText(ratingLine: String, question: String, reasons: List<String>, commentsLabel: String, comments: String): String =
-    buildString {
-        append(ratingLine)
-        if (reasons.isNotEmpty()) {
-            append("\n\n").append(question)
-            reasons.forEach { append("\n• ").append(it) }
-        }
-        if (comments.isNotBlank()) append("\n\n").append(commentsLabel).append('\n').append(comments.trim())
-    }
 
 /** The topics of "Report an issue". */
 enum class IssueCategory(@param:StringRes val label: Int) {
